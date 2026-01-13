@@ -53,43 +53,21 @@ canvas{
   padding:36px 40px;
 
   background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.08),
-      rgba(255,255,255,0.02)
-    ),
-    rgba(12,16,32,0.78);
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),
+    rgba(12,16,32,.78);
 
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter:blur(14px) saturate(120%);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);
 
   border-radius:22px;
-  border:1px solid rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,.12);
 
   box-shadow:
-    0 50px 140px rgba(0,0,0,0.65),
-    inset 0 1px 0 rgba(255,255,255,0.18),
-    inset 0 -1px 0 rgba(255,255,255,0.05);
-
-  position:relative;
-  overflow:hidden;
+    0 50px 140px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(255,255,255,.05);
 
   display:none;
-}
-
-.quiz::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  pointer-events:none;
-  background:linear-gradient(
-    120deg,
-    rgba(255,255,255,0.25),
-    rgba(255,255,255,0.05),
-    rgba(255,255,255,0)
-  );
-  opacity:.15;
 }
 
 /* ---------- HEADER ---------- */
@@ -124,11 +102,7 @@ canvas{
 .option{
   padding:16px 20px;
   border-radius:14px;
-  background:linear-gradient(
-    180deg,
-    rgba(255,255,255,.06),
-    rgba(255,255,255,.02)
-  );
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.1);
   cursor:pointer;
   transition:.2s;
@@ -154,15 +128,27 @@ canvas{
   background:rgba(0,0,0,.35);
   border:1px solid rgba(255,255,255,.1);
   line-height:1.6;
+  animation:reveal .35s ease forwards;
+}
+
+@keyframes reveal{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
 .correct{color:#6dffcc}
 .wrong{color:#ff8a8a}
 .fact{margin-top:8px;font-size:.9rem;opacity:.85}
 
-/* ---------- BUTTON ---------- */
-button{
+/* ---------- BUTTONS ---------- */
+.actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
   margin-top:22px;
+}
+
+button{
   padding:12px 26px;
   border-radius:12px;
   border:none;
@@ -170,6 +156,17 @@ button{
   color:white;
   cursor:pointer;
   display:none;
+}
+
+#skip{
+  background:transparent;
+  color:#aab6ff;
+  border:1px solid rgba(255,255,255,.15);
+  display:inline-block;
+}
+
+#skip:hover{
+  background:rgba(255,255,255,.05);
 }
 
 /* ---------- FOOTER ---------- */
@@ -197,13 +194,13 @@ footer{
   Loading Quiz…
 </div>
 
-<!-- SPACE BACKGROUND -->
+<!-- SPACE -->
 <canvas id="stars"></canvas>
 
 <!-- QUIZ -->
 <div class="quiz" id="quiz">
   <div class="header">
-    <div class="title">Biology : Cell </div>
+    <div class="title">Biology • Interactive Quiz</div>
     <div class="meta">
       <span id="progress"></span>
       <span id="difficulty"></span>
@@ -213,7 +210,11 @@ footer{
   <div class="question" id="question"></div>
   <div class="options" id="options"></div>
   <div class="feedback" id="feedback" style="display:none"></div>
-  <button id="next">Next</button>
+
+  <div class="actions">
+    <button id="skip">Skip</button>
+    <button id="next">Next</button>
+  </div>
 </div>
 
 <footer>Made by Muntazir</footer>
@@ -221,7 +222,6 @@ footer{
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
 
-/* ---------- SERVICE WORKER ---------- */
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("service-worker.js");
 }
@@ -229,12 +229,10 @@ if("serviceWorker" in navigator){
 const loading=document.getElementById("loading");
 const quiz=document.getElementById("quiz");
 
-/* ---------- QUIZ STATE ---------- */
 let quizData=[];
-let i=Number(localStorage.getItem("quizIndex")) || 0;
+let i=Number(localStorage.getItem("quizIndex"))||0;
 let locked=false;
 
-/* ---------- START ---------- */
 setTimeout(()=>{
   loading.style.display="none";
   quiz.style.display="block";
@@ -243,10 +241,9 @@ setTimeout(()=>{
     .then(d=>{quizData=d;load();});
 },2000);
 
-/* ---------- ELEMENTS ---------- */
 const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty;
+const skipBtn=document.getElementById("skip");
 
-/* ---------- HELPERS ---------- */
 function shuffleOptions(q){
   const correct=q.options[q.answer];
   q.options=q.options.map(o=>({o,sort:Math.random()}))
@@ -255,14 +252,15 @@ function shuffleOptions(q){
   q.answer=q.options.indexOf(correct);
 }
 
-/* ---------- LOAD QUESTION ---------- */
 function load(){
   locked=false;
   const q=quizData[i];
   shuffleOptions(q);
+
   qEl.textContent=q.question;
   pEl.textContent=`Q ${i+1}/${quizData.length}`;
   dEl.textContent=q.difficulty||"";
+
   oEl.innerHTML="";
   oEl.classList.remove("focused");
   fEl.style.display="none";
@@ -279,7 +277,6 @@ function load(){
   localStorage.setItem("quizIndex",i);
 }
 
-/* ---------- SELECT ---------- */
 function select(idx){
   if(locked)return;
   locked=true;
@@ -290,12 +287,8 @@ function select(idx){
   const q=quizData[i];
 
   if(idx===q.answer){
-    localStorage.setItem(
-      "correct",
-      Number(localStorage.getItem("correct")||0)+1
-    );
+    localStorage.setItem("correct",Number(localStorage.getItem("correct")||0)+1);
   }
-
   localStorage.setItem("total",quizData.length);
 
   let html=idx===q.answer
@@ -309,11 +302,21 @@ function select(idx){
   fEl.innerHTML=html;
   fEl.style.display="block";
 
-  setTimeout(()=>nEl.style.display="inline-block",600);
+  setTimeout(()=>nEl.style.display="inline-block",500);
 }
 
-/* ---------- NEXT ---------- */
 nEl.onclick=()=>{
+  i++;
+  if(i<quizData.length){
+    load();
+  }else{
+    localStorage.removeItem("quizIndex");
+    location.href="results.html";
+  }
+};
+
+skipBtn.onclick=()=>{
+  if(locked)return;
   i++;
   if(i<quizData.length){
     load();
@@ -326,8 +329,6 @@ nEl.onclick=()=>{
 });
 </script>
 
-<!-- SPACE BACKGROUND -->
 <script src="space.js"></script>
-
 </body>
 </html>
