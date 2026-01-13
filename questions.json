@@ -230,5 +230,330 @@
     "explanation": "Mitochondria function independently.",
     "fact": "They have their own DNA.",
     "difficulty": "Medium"
+  },
+  {
+    "question": "Why are cells generally microscopic in size?",
+    "options": [
+      "Limited genetic material",
+      "Surface area to volume ratio",
+      "Low metabolic rate",
+      "Lack of structural support"
+    ],
+    "answer": 1,
+    "explanation": "As cell size increases, volume increases faster than surface area, limiting exchange of materials.",
+    "fact": "This principle explains why cells divide after reaching a certain size.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which modification increases surface area of a cell for absorption?",
+    "options": [
+      "Spherical shape",
+      "Flattened extensions",
+      "Thick cell wall",
+      "Dense cytoplasm"
+    ],
+    "answer": 1,
+    "explanation": "Flattened extensions increase surface area for rapid diffusion.",
+    "fact": "Intestinal epithelial cells show such adaptations.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "According to the fluid mosaic model, membrane proteins are:",
+    "options": [
+      "Fixed in position",
+      "Floating in lipid bilayer",
+      "Arranged in layers",
+      "Absent in plasma membrane"
+    ],
+    "answer": 1,
+    "explanation": "Proteins move laterally within the lipid bilayer.",
+    "fact": "This model was proposed in 1972.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which membrane component is involved in cell-to-cell recognition?",
+    "options": [
+      "Phospholipids",
+      "Proteins",
+      "Carbohydrates",
+      "Steroids"
+    ],
+    "answer": 2,
+    "explanation": "Carbohydrates form glycoproteins and glycolipids used for recognition.",
+    "fact": "They are present on the outer membrane surface.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which transport mechanism is highly specific but does not require energy?",
+    "options": [
+      "Diffusion",
+      "Active transport",
+      "Facilitated diffusion",
+      "Endocytosis"
+    ],
+    "answer": 2,
+    "explanation": "Facilitated diffusion uses carrier proteins without ATP.",
+    "fact": "Glucose transport is an example.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Active transport differs from facilitated diffusion because it:",
+    "options": [
+      "Is non-selective",
+      "Requires ATP",
+      "Occurs only in plants",
+      "Does not use proteins"
+    ],
+    "answer": 1,
+    "explanation": "Active transport needs metabolic energy.",
+    "fact": "It can move substances against gradient.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which process allows intake of liquid substances by a cell?",
+    "options": [
+      "Phagocytosis",
+      "Pinocytosis",
+      "Diffusion",
+      "Osmosis"
+    ],
+    "answer": 1,
+    "explanation": "Pinocytosis involves intake of liquid droplets.",
+    "fact": "It is also called cell drinking.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Bulk transport across the plasma membrane involves:",
+    "options": [
+      "Carrier proteins",
+      "Ion channels",
+      "Vesicle formation",
+      "Concentration gradient"
+    ],
+    "answer": 2,
+    "explanation": "Bulk transport occurs through vesicles.",
+    "fact": "Endocytosis and exocytosis are examples.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which organelle forms an extensive internal transport system?",
+    "options": [
+      "Golgi apparatus",
+      "Endoplasmic reticulum",
+      "Lysosome",
+      "Ribosome"
+    ],
+    "answer": 1,
+    "explanation": "ER forms interconnected membranous channels.",
+    "fact": "It connects nuclear region to plasma membrane.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Rough endoplasmic reticulum is mainly involved in:",
+    "options": [
+      "Lipid synthesis",
+      "Protein synthesis",
+      "Detoxification",
+      "Ion storage"
+    ],
+    "answer": 1,
+    "explanation": "RER has ribosomes attached for protein synthesis.",
+    "fact": "Proteins synthesized are often secretory.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Smooth endoplasmic reticulum is abundant in cells involved in:",
+    "options": [
+      "Protein secretion",
+      "Lipid metabolism",
+      "Photosynthesis",
+      "Cell division"
+    ],
+    "answer": 1,
+    "explanation": "SER synthesizes lipids and steroids.",
+    "fact": "SER also detoxifies drugs.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which face of Golgi apparatus receives vesicles from ER?",
+    "options": [
+      "Trans face",
+      "Cis face",
+      "Medial face",
+      "Convex face"
+    ],
+    "answer": 1,
+    "explanation": "Cis face is the receiving side of Golgi.",
+    "fact": "Golgi apparatus is functionally polarized.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "The trans face of Golgi apparatus is involved in:",
+    "options": [
+      "Receiving proteins",
+      "Packaging and dispatch",
+      "Protein synthesis",
+      "Lipid breakdown"
+    ],
+    "answer": 1,
+    "explanation": "Trans face releases secretory vesicles.",
+    "fact": "Proteins are modified before release.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which organelle shows maximum variation in size and shape?",
+    "options": [
+      "Mitochondria",
+      "Lysosome",
+      "Ribosome",
+      "Vacuole"
+    ],
+    "answer": 1,
+    "explanation": "Lysosomes vary depending on their function.",
+    "fact": "They contain hydrolytic enzymes.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Primary lysosomes originate from:",
+    "options": [
+      "Endoplasmic reticulum",
+      "Golgi apparatus",
+      "Ribosomes",
+      "Mitochondria"
+    ],
+    "answer": 1,
+    "explanation": "Golgi packages enzymes into primary lysosomes.",
+    "fact": "These enzymes are initially inactive.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Autophagy helps a cell by:",
+    "options": [
+      "Digesting foreign particles",
+      "Digesting damaged organelles",
+      "Producing energy",
+      "Synthesizing proteins"
+    ],
+    "answer": 1,
+    "explanation": "Autophagy removes old or damaged organelles.",
+    "fact": "It maintains cellular homeostasis.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Lysosomes are called suicidal bags because they:",
+    "options": [
+      "Store toxic substances",
+      "Contain digestive enzymes",
+      "Lack membrane",
+      "Produce ATP"
+    ],
+    "answer": 1,
+    "explanation": "Their enzymes can digest the cell if released.",
+    "fact": "This occurs during programmed cell death.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which organelle maintains turgidity in plant cells?",
+    "options": [
+      "Lysosome",
+      "Vacuole",
+      "Golgi apparatus",
+      "ER"
+    ],
+    "answer": 1,
+    "explanation": "Vacuole maintains osmotic balance.",
+    "fact": "It may occupy up to 90% of cell volume.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "The vacuolar membrane is known as:",
+    "options": [
+      "Plasmalemma",
+      "Tonoplast",
+      "Mesosome",
+      "Cristae"
+    ],
+    "answer": 1,
+    "explanation": "Tonoplast surrounds the vacuole.",
+    "fact": "It is selectively permeable.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Ribosomes are composed mainly of:",
+    "options": [
+      "DNA and protein",
+      "RNA and protein",
+      "Only protein",
+      "RNA and lipid"
+    ],
+    "answer": 1,
+    "explanation": "Ribosomes consist of rRNA and proteins.",
+    "fact": "rRNA plays a catalytic role.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Free ribosomes synthesize proteins destined for:",
+    "options": [
+      "Secretion",
+      "Lysosomes",
+      "Cytosol",
+      "Plasma membrane"
+    ],
+    "answer": 2,
+    "explanation": "Free ribosomes produce cytosolic proteins.",
+    "fact": "They are structurally identical to bound ribosomes.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Bound ribosomes differ from free ribosomes because they:",
+    "options": [
+      "Have different structure",
+      "Are attached to ER",
+      "Lack rRNA",
+      "Synthesize different amino acids"
+    ],
+    "answer": 1,
+    "explanation": "Bound ribosomes are attached to rough ER.",
+    "fact": "Attachment depends on protein destination.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Which system coordinates ER, Golgi and lysosomes?",
+    "options": [
+      "Cytoskeleton",
+      "Endomembrane system",
+      "Plasma membrane",
+      "Cell wall"
+    ],
+    "answer": 1,
+    "explanation": "Endomembrane system works in a coordinated manner.",
+    "fact": "Not all organelles are part of it.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which organelle is NOT part of endomembrane system?",
+    "options": [
+      "ER",
+      "Golgi apparatus",
+      "Lysosome",
+      "Mitochondria"
+    ],
+    "answer": 3,
+    "explanation": "Mitochondria function independently.",
+    "fact": "They have their own DNA.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which transport process is least selective?",
+    "options": [
+      "Active transport",
+      "Facilitated diffusion",
+      "Simple diffusion",
+      "Endocytosis"
+    ],
+    "answer": 2,
+    "explanation": "Simple diffusion occurs without specificity.",
+    "fact": "Small nonpolar molecules diffuse easily.",
+    "difficulty": "Medium"
   }
-]
+  ]
