@@ -19,7 +19,7 @@ body {
   overflow: hidden;
 }
 
-/* ---------- LOADING SCREEN ---------- */
+/* ---------- LOADING ---------- */
 .loading {
   position: fixed;
   inset: 0;
@@ -50,7 +50,7 @@ canvas {
   z-index: -1;
 }
 
-/* ---------- QUIZ CARD ---------- */
+/* ---------- QUIZ ---------- */
 .quiz {
   max-width: 880px;
   margin: 60px auto;
@@ -66,11 +66,20 @@ canvas {
 .header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 18px;
 }
 
 .title { font-weight: 600; opacity: 0.9; }
 .progress { font-size: 0.9rem; opacity: 0.6; }
+
+.shuffle {
+  font-size: 0.85rem;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.shuffle input { margin-right: 6px; }
 
 .question {
   font-size: clamp(1.25rem, 3vw, 1.9rem);
@@ -132,12 +141,18 @@ canvas {
 .correct { color: #6dffcc; }
 .wrong { color: #ff8a8a; }
 
+.fact {
+  margin-top: 10px;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ---------- NEXT BUTTON (NEUTRAL) ---------- */
+/* ---------- NEXT BUTTON ---------- */
 button {
   margin-top: 22px;
   padding: 12px 26px;
@@ -163,7 +178,6 @@ button:hover { transform: scale(1.05); }
 
 <body>
 
-<!-- LOADING -->
 <div class="loading" id="loading">
   <div class="loader"></div>
   <div>Loading Quiz…</div>
@@ -173,8 +187,13 @@ button:hover { transform: scale(1.05); }
 
 <div class="quiz" id="quiz">
   <div class="header">
-    <div class="title">Biology • Interactive Quiz</div>
-    <div class="progress" id="progress"></div>
+    <div>
+      <div class="title">Biology • Interactive Quiz</div>
+      <div class="progress" id="progress"></div>
+    </div>
+    <label class="shuffle">
+      <input type="checkbox" id="shuffleToggle"> 🔀 Shuffle
+    </label>
   </div>
 
   <div class="question" id="question"></div>
@@ -184,7 +203,7 @@ button:hover { transform: scale(1.05); }
 </div>
 
 <script>
-/* ---------- LOADING LOGIC ---------- */
+/* ---------- LOADING ---------- */
 setTimeout(() => {
   document.getElementById("loading").style.display = "none";
   document.getElementById("quiz").style.display = "block";
@@ -193,109 +212,111 @@ setTimeout(() => {
 /* ---------- STARFIELD ---------- */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
-
-function resize() {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-resize();
-addEventListener("resize", resize);
+function resize(){ canvas.width=innerWidth; canvas.height=innerHeight }
+resize(); addEventListener("resize", resize);
 
 const stars = Array.from({ length: 120 }, () => ({
-  x: Math.random() * canvas.width,
-  y: Math.random() * canvas.height,
-  r: Math.random() * 1.2,
-  s: Math.random() * 0.2 + 0.05
+  x: Math.random()*canvas.width,
+  y: Math.random()*canvas.height,
+  r: Math.random()*1.2,
+  s: Math.random()*0.2+0.05
 }));
 
-(function animateStars() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#ffffff";
-  stars.forEach(star => {
+(function animateStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#fff";
+  stars.forEach(st=>{
     ctx.beginPath();
-    ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+    ctx.arc(st.x,st.y,st.r,0,Math.PI*2);
     ctx.fill();
-    star.y += star.s;
-    if (star.y > canvas.height) star.y = 0;
+    st.y+=st.s;
+    if(st.y>canvas.height) st.y=0;
   });
   requestAnimationFrame(animateStars);
 })();
 
 /* ---------- QUIZ LOGIC ---------- */
-let quiz = [];
-let index = 0;
-let locked = false;
+let quiz=[], index=0, locked=false;
 
-const qEl = document.getElementById("question");
-const oEl = document.getElementById("options");
-const fEl = document.getElementById("feedback");
-const nEl = document.getElementById("next");
-const pEl = document.getElementById("progress");
+const qEl=document.getElementById("question");
+const oEl=document.getElementById("options");
+const fEl=document.getElementById("feedback");
+const nEl=document.getElementById("next");
+const pEl=document.getElementById("progress");
+const shuffleToggle=document.getElementById("shuffleToggle");
 
 fetch("questions.json")
-  .then(r => r.json())
-  .then(data => {
-    quiz = data;
+  .then(r=>r.json())
+  .then(data=>{
+    quiz=data;
+    if(shuffleToggle.checked) quiz.sort(()=>Math.random()-0.5);
     load();
   });
 
-function load() {
-  locked = false;
-  const q = quiz[index];
+shuffleToggle.onchange=()=>{
+  quiz.sort(()=>Math.random()-0.5);
+  index=0;
+  load();
+};
 
-  qEl.textContent = q.question;
-  pEl.textContent = `Question ${index + 1} / ${quiz.length}`;
+function load(){
+  locked=false;
+  const q=quiz[index];
 
-  oEl.innerHTML = "";
+  qEl.textContent=q.question;
+  pEl.textContent=`Question ${index+1} / ${quiz.length}`;
+
+  oEl.innerHTML="";
   oEl.classList.remove("focused");
-  fEl.style.display = "none";
-  nEl.style.display = "none";
+  fEl.style.display="none";
+  nEl.style.display="none";
 
-  q.options.forEach((text, i) => {
-    const div = document.createElement("div");
-    div.className = "option";
-    div.textContent = text;
-    div.onclick = () => select(i);
-    oEl.appendChild(div);
+  q.options.forEach((t,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    d.textContent=t;
+    d.onclick=()=>select(i);
+    oEl.appendChild(d);
   });
 }
 
-function select(i) {
-  if (locked) return;
-  locked = true;
+function select(i){
+  if(locked) return;
+  locked=true;
 
-  const q = quiz[index];
-  const optionEls = [...oEl.children];
-
+  const q=quiz[index];
+  const opts=[...oEl.children];
   oEl.classList.add("focused");
 
-  optionEls.forEach((el, idx) => {
-    if (idx === i) el.classList.add("focus");
-    else el.classList.add("fade");
+  opts.forEach((el,idx)=>{
+    idx===i ? el.classList.add("focus") : el.classList.add("fade");
   });
 
-  fEl.style.display = "block";
-  fEl.innerHTML =
-    i === q.answer
-      ? `<div class="correct"><strong>✔ Correct</strong></div><p>${q.explanation}</p>`
-      : `<div class="wrong"><strong>✖ Incorrect</strong></div>
-         <p><strong>Correct answer:</strong> ${q.options[q.answer]}</p>
-         <p>${q.explanation}</p>`;
+  let html = i===q.answer
+    ? `<div class="correct"><strong>✔ Correct</strong></div><p>${q.explanation}</p>`
+    : `<div class="wrong"><strong>✖ Incorrect</strong></div>
+       <p><strong>Correct answer:</strong> ${q.options[q.answer]}</p>
+       <p>${q.explanation}</p>`;
 
-  nEl.style.display = "inline-block";
+  if(q.fact){
+    html += `<div class="fact">💡 Did you know? ${q.fact}</div>`;
+  }
+
+  fEl.innerHTML=html;
+  fEl.style.display="block";
+
+  setTimeout(()=>{ nEl.style.display="inline-block"; },600);
 }
 
-nEl.onclick = () => {
+nEl.onclick=()=>{
   index++;
-  if (index < quiz.length) load();
-  else {
-    qEl.textContent = "Quiz completed";
-    oEl.innerHTML = "";
-    fEl.style.display = "block";
-    fEl.innerHTML = "You have reached the end of the quiz.";
-    nEl.style.display = "none";
-    pEl.textContent = "";
-  }
+  index<quiz.length ? load() :
+  (qEl.textContent="Quiz completed",
+   oEl.innerHTML="",
+   fEl.innerHTML="You’ve reached the end of the quiz.",
+   fEl.style.display="block",
+   nEl.style.display="none",
+   pEl.textContent="");
 };
 </script>
 
