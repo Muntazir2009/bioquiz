@@ -1,0 +1,20 @@
+[
+  {
+    "question": "Which organelle is called the suicidal bag of the cell?",
+    "options": ["Lysosome", "Ribosome", "Golgi apparatus", "Mitochondria"],
+    "answer": 0,
+    "explanation": "Lysosomes contain hydrolytic enzymes that can digest damaged organelles, hence called suicidal bags."
+  },
+  {
+    "question": "Fluid mosaic model of plasma membrane was proposed by:",
+    "options": ["Singer and Nicolson", "Watson and Crick", "Robert Hooke", "Schleiden"],
+    "answer": 0,
+    "explanation": "Singer and Nicolson proposed that proteins float in a fluid lipid bilayer."
+  },
+  {
+    "question": "In which phase of the cell cycle does DNA replication occur?",
+    "options": ["S phase", "G1 phase", "G2 phase", "M phase"],
+    "answer": 0,
+    "explanation": "DNA replication happens during the S phase of interphase."
+  }
+]
