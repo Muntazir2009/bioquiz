@@ -1,5 +1,162 @@
 [
   {
+    "question": "Which factor mainly limits the maximum size of a living cell?",
+    "options": [
+      "Availability of nutrients",
+      "Surface area to volume ratio",
+      "Number of organelles",
+      "Rate of cell division"
+    ],
+    "answer": 1,
+    "explanation": "As a cell grows, its volume increases faster than its surface area, limiting efficient exchange of materials.",
+    "fact": "This is why many large cells develop folds or extensions.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "According to fluid mosaic model, which component provides fluidity to the plasma membrane?",
+    "options": [
+      "Proteins",
+      "Carbohydrates",
+      "Phospholipids",
+      "Cellulose"
+    ],
+    "answer": 2,
+    "explanation": "The phospholipid bilayer allows lateral movement, giving the membrane its fluid nature.",
+    "fact": "The fluid mosaic model was proposed by Singer and Nicolson.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which process allows transport of large molecules into the cell without energy expenditure?",
+    "options": [
+      "Active transport",
+      "Diffusion",
+      "Facilitated diffusion",
+      "Endocytosis"
+    ],
+    "answer": 2,
+    "explanation": "Facilitated diffusion uses carrier proteins to transport large molecules along the concentration gradient.",
+    "fact": "Glucose transport in RBCs occurs via facilitated diffusion.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which part of the endoplasmic reticulum is primarily involved in lipid synthesis?",
+    "options": [
+      "Rough ER",
+      "Smooth ER",
+      "Golgi cis-face",
+      "Lysosome"
+    ],
+    "answer": 1,
+    "explanation": "Smooth ER lacks ribosomes and is responsible for lipid and steroid synthesis.",
+    "fact": "SER is abundant in liver cells due to detoxification roles.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which feature distinguishes rough ER from smooth ER?",
+    "options": [
+      "Presence of ribosomes",
+      "Ability to detoxify drugs",
+      "Lipid synthesis",
+      "Calcium storage"
+    ],
+    "answer": 0,
+    "explanation": "Rough ER has ribosomes attached to its surface, giving it a rough appearance.",
+    "fact": "Proteins synthesized on RER are usually secretory or membrane-bound.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "The cisternae of Golgi apparatus are functionally polarized. This means:",
+    "options": [
+      "They have identical functions",
+      "Proteins move randomly inside Golgi",
+      "Entry and exit faces are different",
+      "Golgi works only during cell division"
+    ],
+    "answer": 2,
+    "explanation": "Cis-face receives materials while trans-face dispatches modified products.",
+    "fact": "This polarity ensures proper processing and packaging of proteins.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which enzyme is commonly present in lysosomes?",
+    "options": [
+      "Oxidase",
+      "Hydrolase",
+      "Ligase",
+      "Isomerase"
+    ],
+    "answer": 1,
+    "explanation": "Lysosomes contain hydrolytic enzymes capable of digesting biomolecules.",
+    "fact": "Lysosomal enzymes work best in acidic conditions.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Autophagy refers to:",
+    "options": [
+      "Digestion of foreign particles",
+      "Digestion of old cell organelles",
+      "Cell division process",
+      "Transport of proteins"
+    ],
+    "answer": 1,
+    "explanation": "Autophagy is the process by which a cell digests its own damaged organelles.",
+    "fact": "Autophagy helps maintain cellular homeostasis.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which structure maintains osmotic balance in plant cells?",
+    "options": [
+      "Lysosome",
+      "Mitochondria",
+      "Vacuole",
+      "Golgi apparatus"
+    ],
+    "answer": 2,
+    "explanation": "The large central vacuole regulates water balance and maintains turgidity.",
+    "fact": "The vacuolar membrane is called tonoplast.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Bulk transport across plasma membrane requires:",
+    "options": [
+      "Carrier proteins",
+      "ATP only",
+      "Vesicle formation",
+      "Diffusion gradient"
+    ],
+    "answer": 2,
+    "explanation": "Bulk transport occurs via vesicles during endocytosis and exocytosis.",
+    "fact": "Phagocytosis and pinocytosis are types of bulk transport.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Pinocytosis is best described as:",
+    "options": [
+      "Cell eating",
+      "Cell drinking",
+      "Passive transport",
+      "Protein synthesis"
+    ],
+    "answer": 1,
+    "explanation": "Pinocytosis involves intake of liquid materials into the cell.",
+    "fact": "It occurs in most cells continuously.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which statement about ribosomes is correct?",
+    "options": [
+      "Free ribosomes synthesize secretory proteins",
+      "Bound ribosomes synthesize cytosolic proteins",
+      "Both synthesize proteins but for different destinations",
+      "Ribosomes are membrane-bound organelles"
+    ],
+    "answer": 2,
+    "explanation": "Free and bound ribosomes are structurally same but differ in the destination of proteins synthesized.",
+    "fact": "Ribosomes are composed of rRNA and proteins.",
+    "difficulty": "Hard"
+  }
+]
+  {
     "question": "Which statement was added later to modify the original cell theory?",
     "options": [
       "Cells contain genetic material",
