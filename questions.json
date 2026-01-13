@@ -1,20 +1,92 @@
 [
   {
-    "question": "Which organelle is called the suicidal bag of the cell?",
-    "options": ["Lysosome", "Ribosome", "Golgi apparatus", "Mitochondria"],
+    "question": "Who discovered the cell in 1665?",
+    "options": ["Robert Hooke", "Antonie van Leeuwenhoek", "Schleiden", "Virchow"],
     "answer": 0,
-    "explanation": "Lysosomes contain hydrolytic enzymes that can digest damaged organelles, hence called suicidal bags."
+    "explanation": "Robert Hooke observed cork cells under a microscope and coined the term 'cell'.",
+    "fact": "Hooke published his observations in a book called Micrographia.",
+    "difficulty": "Easy"
   },
   {
-    "question": "Fluid mosaic model of plasma membrane was proposed by:",
-    "options": ["Singer and Nicolson", "Watson and Crick", "Robert Hooke", "Schleiden"],
+    "question": "Who first observed living cells?",
+    "options": ["Antonie van Leeuwenhoek", "Robert Hooke", "Schwann", "Virchow"],
     "answer": 0,
-    "explanation": "Singer and Nicolson proposed that proteins float in a fluid lipid bilayer."
+    "explanation": "Antonie van Leeuwenhoek observed living cells like bacteria and protozoa.",
+    "fact": "He used simple microscopes with very high magnification.",
+    "difficulty": "Easy"
   },
   {
-    "question": "In which phase of the cell cycle does DNA replication occur?",
-    "options": ["S phase", "G1 phase", "G2 phase", "M phase"],
+    "question": "Which statement is a part of cell theory?",
+    "options": [
+      "All living organisms are composed of cells",
+      "Cells arise spontaneously",
+      "Cells can exist without membranes",
+      "Only plants have cells"
+    ],
     "answer": 0,
-    "explanation": "DNA replication happens during the S phase of interphase."
+    "explanation": "Cell theory states that all living organisms are made up of cells.",
+    "fact": "Cell theory was proposed by Schleiden and Schwann.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which type of cell lacks a well-defined nucleus?",
+    "options": ["Prokaryotic cell", "Eukaryotic cell", "Plant cell", "Animal cell"],
+    "answer": 0,
+    "explanation": "Prokaryotic cells do not have a membrane-bound nucleus.",
+    "fact": "Bacteria are prokaryotic organisms.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which of the following shows maximum diversity?",
+    "options": ["Cells", "Tissues", "Organs", "Organ systems"],
+    "answer": 0,
+    "explanation": "Cells show the greatest diversity in size, shape, and function.",
+    "fact": "Human nerve cells can be over a meter long.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which cell organelle is involved in intracellular transport?",
+    "options": ["Endoplasmic reticulum", "Ribosome", "Lysosome", "Centrosome"],
+    "answer": 0,
+    "explanation": "Endoplasmic reticulum helps in transport of materials within the cell.",
+    "fact": "It forms a network of membranous tubules.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which organelle is responsible for modification and packaging of proteins?",
+    "options": ["Golgi apparatus", "Ribosome", "Lysosome", "Nucleus"],
+    "answer": 0,
+    "explanation": "Golgi apparatus modifies, packages, and dispatches proteins.",
+    "fact": "It was discovered by Camillo Golgi.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which organelle is known as the suicidal bag of the cell?",
+    "options": ["Lysosome", "Mitochondria", "Golgi apparatus", "Ribosome"],
+    "answer": 0,
+    "explanation": "Lysosomes contain digestive enzymes that can destroy the cell if released.",
+    "fact": "Lysosomes are part of the endomembrane system.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which of the following is NOT a part of the endomembrane system?",
+    "options": ["Mitochondria", "Endoplasmic reticulum", "Golgi apparatus", "Lysosome"],
+    "answer": 0,
+    "explanation": "Mitochondria are not connected to the endomembrane system.",
+    "fact": "Mitochondria have their own DNA.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Smooth endoplasmic reticulum is mainly involved in:",
+    "options": [
+      "Lipid synthesis",
+      "Protein synthesis",
+      "Photosynthesis",
+      "Cell division"
+    ],
+    "answer": 0,
+    "explanation": "Smooth ER is responsible for synthesis of lipids and steroids.",
+    "fact": "It also helps in detoxification of drugs.",
+    "difficulty": "Medium"
   }
 ]
