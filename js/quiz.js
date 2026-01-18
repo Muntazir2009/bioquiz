@@ -1,9 +1,12 @@
-// ---------- STATE ----------
+// ---------------- STATE ----------------
 let quizData = [];
 let i = Number(localStorage.getItem("quizIndex")) || 0;
 let locked = false;
 
-// ---------- ELEMENTS ----------
+// ---------------- ELEMENTS ----------------
+const loading = document.getElementById("loading");
+const quizBox = document.getElementById("quiz");
+
 const qEl = document.getElementById("question");
 const oEl = document.getElementById("options");
 const fEl = document.getElementById("feedback");
@@ -12,15 +15,24 @@ const pEl = document.getElementById("progress");
 const dEl = document.getElementById("difficulty");
 const skipBtn = document.getElementById("skip");
 
-// ---------- LOAD QUESTIONS ----------
+// ---------------- FETCH QUESTIONS ----------------
 fetch("questions.json")
   .then(r => r.json())
   .then(d => {
     quizData = d;
+
+    // 🔑 HIDE LOADER, SHOW QUIZ
+    loading.style.display = "none";
+    quizBox.style.display = "block";
+
     load();
+  })
+  .catch(err => {
+    loading.innerHTML = "Failed to load quiz.";
+    console.error(err);
   });
 
-// ---------- UTIL ----------
+// ---------------- UTIL ----------------
 function shuffleOptions(q){
   const correct = q.options[q.answer];
   q.options = q.options
@@ -30,7 +42,7 @@ function shuffleOptions(q){
   q.answer = q.options.indexOf(correct);
 }
 
-// ---------- LOAD QUESTION ----------
+// ---------------- LOAD QUESTION ----------------
 function load(){
   locked = false;
   const q = quizData[i];
@@ -48,20 +60,20 @@ function load(){
   q.options.forEach((text, idx) => {
     const div = document.createElement("div");
     div.className = "option";
-    div.innerHTML = `<span class="label">${"ABCD"[idx]}.</span>${text}`;
+    div.innerHTML = `<span class="label">${"ABCD"[idx]}.</span> ${text}`;
     div.onclick = () => select(idx);
     oEl.appendChild(div);
   });
 
   localStorage.setItem("quizIndex", i);
 
-  // 🔑 TIMER RESET (manual start)
+  // 🔑 RESET TIMER (manual start)
   if (typeof resetTimer === "function") {
     resetTimer();
   }
 }
 
-// ---------- OPTION SELECT ----------
+// ---------------- SELECT OPTION ----------------
 function select(idx){
   if (locked) return;
   locked = true;
@@ -108,7 +120,7 @@ function select(idx){
   }, 500);
 }
 
-// ---------- TIME UP HANDLER (CALLED BY timer.js) ----------
+// ---------------- TIME UP (CALLED BY timer.js) ----------------
 function handleTimeUp(){
   if (locked) return;
   locked = true;
@@ -127,7 +139,7 @@ function handleTimeUp(){
   nEl.style.display = "inline-block";
 }
 
-// ---------- NEXT ----------
+// ---------------- NEXT ----------------
 nEl.onclick = () => {
   i++;
   if (i < quizData.length) {
@@ -138,7 +150,7 @@ nEl.onclick = () => {
   }
 };
 
-// ---------- SKIP ----------
+// ---------------- SKIP ----------------
 skipBtn.onclick = () => {
   if (locked) return;
   i++;
