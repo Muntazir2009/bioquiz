@@ -1,12 +1,23 @@
 /* =========================
-   QUIZ MODULE – FINAL
+   QUIZ MODULE – FINAL MOBILE SAFE
 ========================= */
 
+/* ---------- PRELOADED SOUNDS (MOBILE FIX) ---------- */
+const correctAudio = new Audio("sounds/correct.mp3");
+const wrongAudio   = new Audio("sounds/wrong.mp3");
+
+correctAudio.preload = "auto";
+wrongAudio.preload   = "auto";
+
+correctAudio.volume = 1;
+wrongAudio.volume   = 1;
+
+/* ---------- STATE ---------- */
 let quizData = [];
 let index = 0;
 let locked = false;
 
-/* ELEMENTS */
+/* ---------- ELEMENTS ---------- */
 const loading = document.getElementById("loading");
 const quizBox = document.getElementById("quiz");
 
@@ -17,10 +28,7 @@ const nEl = document.getElementById("next");
 const pEl = document.getElementById("progress");
 const dEl = document.getElementById("difficulty");
 
-/* =========================
-   LOAD QUESTIONS
-========================= */
-
+/* ---------- LOAD QUESTIONS ---------- */
 fetch("questions.json")
   .then(r => r.json())
   .then(data => {
@@ -34,15 +42,11 @@ fetch("questions.json")
     loading.innerText = "Failed to load quiz.";
   });
 
-/* =========================
-   LOAD QUESTION
-========================= */
-
+/* ---------- LOAD QUESTION ---------- */
 function loadQuestion() {
   locked = false;
 
-  // reset timer but DO NOT auto-start
-  if (typeof resetTimer === "function") resetTimer();
+  if (window.resetTimer) resetTimer();
 
   const q = quizData[index];
 
@@ -59,17 +63,17 @@ function loadQuestion() {
     option.className = "option";
     option.textContent = text;
 
-    /* 🔊 SOUND FIRES DIRECTLY ON USER TAP (GUARANTEED) */
+    /* 🔊 SOUND + ANSWER (SAME TAP = WORKS ON MOBILE) */
     option.onclick = () => {
       if (locked) return;
 
-      const sound = new Audio(
-        i === q.answer
-          ? "sounds/correct.mp3"
-          : "sounds/wrong.mp3"
-      );
-      sound.volume = 0.9;
-      sound.play();
+      if (i === q.answer) {
+        correctAudio.currentTime = 0;
+        correctAudio.play();
+      } else {
+        wrongAudio.currentTime = 0;
+        wrongAudio.play();
+      }
 
       selectAnswer(i);
     };
@@ -78,15 +82,12 @@ function loadQuestion() {
   });
 }
 
-/* =========================
-   SELECT ANSWER
-========================= */
-
+/* ---------- SELECT ANSWER ---------- */
 function selectAnswer(i) {
   if (locked) return;
   locked = true;
 
-  if (typeof stopTimer === "function") stopTimer();
+  if (window.stopTimer) stopTimer();
 
   const q = quizData[index];
 
@@ -107,10 +108,7 @@ function selectAnswer(i) {
   nEl.style.display = "inline-block";
 }
 
-/* =========================
-   NEXT QUESTION
-========================= */
-
+/* ---------- NEXT QUESTION ---------- */
 nEl.onclick = () => {
   index++;
   if (index < quizData.length) {
@@ -123,20 +121,15 @@ nEl.onclick = () => {
   }
 };
 
-/* =========================
-   TIMER TIME-UP CALLBACK
-========================= */
-
+/* ---------- TIMER TIME-UP ---------- */
 function handleTimeUp() {
   if (locked) return;
   locked = true;
 
-  const q = quizData[index];
+  wrongAudio.currentTime = 0;
+  wrongAudio.play();
 
-  // 🔊 wrong sound on timeout
-  const sound = new Audio("sounds/wrong.mp3");
-  sound.volume = 0.9;
-  sound.play();
+  const q = quizData[index];
 
   [...oEl.children].forEach(opt => opt.classList.add("disabled"));
 
