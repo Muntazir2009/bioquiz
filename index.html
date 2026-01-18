@@ -1,69 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biology Quiz</title>
 
 <style>
 *{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
 
-/* 🌌 DEEP SPACE BACKGROUND */
+/* BACKGROUND */
 body{
-  margin:0;
-  min-height:100vh;
-  color:#eaf1ff;
-  overflow-x:hidden;
+  margin:0;min-height:100vh;color:#eaf1ff;overflow-x:hidden;
   background:
     radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
     radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
-    linear-gradient(180deg, #05070f 0%, #04060c 100%);
+    linear-gradient(180deg,#05070f,#04060c);
 }
 
-/* ---------- LOADING ---------- */
+/* LOADING */
 .loading{
-  position:fixed; inset:0;
-  background:#05070f;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  z-index:999;
+  position:fixed;inset:0;background:#05070f;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:999;animation:fadeIn .4s ease;
 }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
 .loader{
   width:48px;height:48px;
-  border:3px solid rgba(255,255,255,.2);
+  border:3px solid rgba(255,255,255,.15);
   border-top-color:#4dd6ff;
   border-radius:50%;
   animation:spin 1s linear infinite;
-  margin-bottom:16px;
+  margin-bottom:14px;
+  box-shadow:0 0 12px rgba(77,214,255,.4);
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ---------- SPACE ---------- */
-canvas,.nebula{
-  position:fixed; inset:0; pointer-events:none;
+.loading-text{
+  font-size:.85rem;
+  opacity:.75;
+  animation:pulse 2s ease-in-out infinite;
 }
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+
+/* SPACE */
+canvas,.nebula{position:fixed;inset:0;pointer-events:none}
 canvas{z-index:0}
 .nebula{
   z-index:1;
   background:
     radial-gradient(800px 600px at 30% 40%, rgba(90,140,255,.06), transparent 60%),
     radial-gradient(900px 700px at 70% 60%, rgba(180,80,255,.05), transparent 65%);
-  animation: nebulaMove 120s linear infinite;
+  animation:nebulaMove 120s linear infinite;
 }
 @keyframes nebulaMove{
   from{transform:translate(0,0)}
   to{transform:translate(-200px,150px)}
 }
 
-/* ---------- QUIZ CARD ---------- */
+/* QUIZ */
 .quiz{
-  position:relative; z-index:5;
-  max-width:880px;
-  margin:60px auto;
-  padding:36px 40px;
-  display:none;
+  position:relative;z-index:5;
+  max-width:880px;margin:60px auto;
+  padding:36px 40px;display:none;
   background:
-    linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02)),
+    linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),
     rgba(12,16,32,.78);
   backdrop-filter:blur(18px) saturate(130%);
   border-radius:22px;
@@ -71,88 +73,49 @@ canvas{z-index:0}
   box-shadow:0 60px 160px rgba(0,0,0,.7);
 }
 
-/* ---------- HEADER ---------- */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:14px;
-}
-.meta{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  font-size:.85rem;
-}
+.header{display:flex;justify-content:space-between;align-items:center}
+.meta{display:flex;gap:14px;font-size:.85rem}
 
-/* ---------- TIMER ---------- */
 .timer-wrap{
-  position:relative;
-  width:46px;height:46px;
-  cursor:pointer;
+  position:relative;width:46px;height:46px;cursor:pointer
 }
 .timer-wrap span{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-weight:600; color:#4dd6ff;
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:600;color:#4dd6ff
 }
 .timer-ring{transform:rotate(-90deg)}
 .timer-ring circle{
-  fill:none;
-  stroke:#4dd6ff;
-  stroke-width:3;
-  stroke-linecap:round;
-  stroke-dasharray:113;
+  fill:none;stroke:#4dd6ff;stroke-width:3;
+  stroke-linecap:round;stroke-dasharray:113
 }
 
-/* ---------- CONTENT ---------- */
-.question{
-  font-size:clamp(1.25rem,3vw,1.9rem);
-  margin:18px 0 26px;
-}
-.options{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:18px;
-}
+.question{font-size:clamp(1.25rem,3vw,1.9rem);margin:18px 0 26px}
+.options{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
 .option{
-  padding:16px 20px;
-  border-radius:14px;
-  cursor:pointer;
+  padding:16px 20px;border-radius:14px;
   background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.12);
+  cursor:pointer
 }
 .option.disabled{opacity:.4;pointer-events:none}
 
-/* ---------- FEEDBACK ---------- */
 .feedback{
-  margin-top:22px;
-  padding:20px;
-  border-radius:14px;
-  background:rgba(0,0,0,.35);
+  margin-top:22px;padding:20px;border-radius:14px;
+  background:rgba(0,0,0,.35)
 }
 .correct{color:#6dffcc}
 .wrong{color:#ff8a8a}
 .fact{margin-top:8px;font-size:.9rem}
 
-/* ---------- ACTIONS ---------- */
 .actions{margin-top:22px}
 button{
-  padding:12px 26px;
-  border-radius:12px;
-  border:none;
-  background:#1f3cff;
-  color:white;
-  display:none;
+  padding:12px 26px;border-radius:12px;
+  border:none;background:#1f3cff;color:white;
+  display:none
 }
 
-/* ---------- FOOTER ---------- */
-footer{
-  text-align:center;
-  font-size:.35rem;
-  opacity:.15;
-  margin:18px 0 8px;
-}
+footer{text-align:center;font-size:.35rem;opacity:.15;margin:18px 0 8px}
 </style>
 </head>
 
@@ -160,7 +123,7 @@ footer{
 
 <div class="loading" id="loading">
   <div class="loader"></div>
-  Loading Quiz…
+  <div class="loading-text">Loading Quiz…</div>
 </div>
 
 <canvas id="stars"></canvas>
@@ -172,7 +135,6 @@ footer{
     <div class="meta">
       <span id="progress"></span>
       <span id="difficulty"></span>
-
       <div class="timer-wrap" id="timerWrap">
         <svg class="timer-ring" width="46" height="46">
           <circle cx="23" cy="23" r="18"></circle>
@@ -196,46 +158,53 @@ footer{
 <script src="space.js"></script>
 
 <script>
-/* ---------- AUDIO ---------- */
+/* AUDIO */
 const correctAudio=new Audio("sounds/correct.mp3");
 const wrongAudio=new Audio("sounds/wrong.mp3");
+const timerSound=new Audio("sounds/timer.mp3");
+timerSound.loop=true;timerSound.volume=.4;
 
-/* ---------- TIMER ---------- */
+/* TIMER */
 let timeLeft=30,interval=null,running=false;
-const timerEl=document.getElementById("timer");
+const timerEl=timer.textContent?timer:document.getElementById("timer");
 const ring=document.querySelector(".timer-ring circle");
-const timerWrap=document.getElementById("timerWrap");
 const FULL=113;
 
 function resetTimer(){
   clearInterval(interval);running=false;
   timeLeft=30;timerEl.textContent=30;
   ring.style.strokeDashoffset=0;
+  timerSound.pause();timerSound.currentTime=0;
 }
 function startTimer(){
   if(running)return;
   running=true;
+  timerSound.play().catch(()=>{});
   interval=setInterval(()=>{
     timeLeft--;timerEl.textContent=timeLeft;
     ring.style.strokeDashoffset=FULL-(timeLeft/30)*FULL;
-    if(timeLeft<=0)clearInterval(interval);
+    if(timeLeft<=0){clearInterval(interval);timerSound.pause()}
   },1000);
 }
 timerWrap.onclick=startTimer;
 
-/* ---------- QUIZ ---------- */
+/* QUIZ */
 const loading=document.getElementById("loading");
 const quiz=document.getElementById("quiz");
 const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty;
 let data=[],idx=0,locked=false;
 
+const MIN_LOAD=1200,start=Date.now();
 fetch("questions.json")
 .then(r=>r.json())
 .then(d=>{
   data=d;
-  loading.style.display="none";
-  quiz.style.display="block";
-  load();
+  const delay=Math.max(0,MIN_LOAD-(Date.now()-start));
+  setTimeout(()=>{
+    loading.style.display="none";
+    quiz.style.display="block";
+    load();
+  },delay);
 });
 
 function load(){
@@ -252,13 +221,12 @@ function load(){
     div.textContent=t;
     div.onclick=()=>{
       if(locked)return;
-      (i===q.answer?correctAudio:wrongAudio).play();
+      (i===q.answer?correctAudio:wrongAudio).play().catch(()=>{});
       select(i);
     };
     oEl.appendChild(div);
   });
 }
-
 function select(i){
   locked=true;
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
