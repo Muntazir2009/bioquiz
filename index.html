@@ -126,14 +126,28 @@ footer{
 
 <canvas id="stars"></canvas>
 
-<div class="quiz" id="quiz">
-  <div class="header">
-    <div>Biology • Cell Quiz</div>
-    <div class="meta">
-      <span id="progress"></span>
-      <span id="difficulty"></span>
-    </div>
+<div class="header">
+  <div class="title">Biology • Cell Quiz</div>
+
+  <div class="meta">
+    <span id="progress"></span>
+    <span id="difficulty"></span>
+
+    <!-- TIMER -->
+    <span id="timer" style="font-weight:600;color:#4dd6ff">20</span>
+    <button id="startTimerBtn"
+      style="
+        padding:4px 10px;
+        border-radius:8px;
+        border:1px solid rgba(255,255,255,.2);
+        background:transparent;
+        color:#aab6ff;
+        cursor:pointer;
+      ">
+      Start
+    </button>
   </div>
+</div>
 
   <!-- TIMER UI -->
   <div style="display:flex;justify-content:space-between;margin-bottom:10px">
