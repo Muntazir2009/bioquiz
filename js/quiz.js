@@ -1,63 +1,182 @@
-let timeLeft = 20;
-let timerInterval = null;
-let timerStarted = false;
+// ===============================
+// QUIZ STATE
+// ===============================
+let quizData = [];
+let i = Number(localStorage.getItem("quizIndex")) || 0;
+let locked = false;
 
-const timerEl = document.getElementById("timer");
-const startBtn = document.getElementById("startTimerBtn");
-const ring = document.querySelector(".timer-ring circle");
+// ===============================
+// ELEMENTS
+// ===============================
+const loading = document.getElementById("loading");
 
-const FULL_DASH = 113;
+const qEl = document.getElementById("question");
+const oEl = document.getElementById("options");
+const fEl = document.getElementById("feedback");
+const nEl = document.getElementById("next");
+const pEl = document.getElementById("progress");
+const dEl = document.getElementById("difficulty");
+const skipBtn = document.getElementById("skip");
 
-// 🔊 SINGLE TIMER SOUND
-const timerSound = new Audio("sounds/timer.mp3");
-timerSound.volume = 0.4;
+// ===============================
+// FETCH QUESTIONS + HIDE LOADER
+// ===============================
+fetch("questions.json")
+  .then(res => {
+    if (!res.ok) throw new Error("Failed to load questions");
+    return res.json();
+  })
+  .then(data => {
+    quizData = data;
 
-function updateTimerUI(){
-  timerEl.textContent = timeLeft;
+    // 🔑 ALWAYS HIDE LOADER HERE
+    loading.style.display = "none";
 
-  // circle progress
-  ring.style.strokeDashoffset =
-    FULL_DASH - (timeLeft / 20) * FULL_DASH;
+    load();
+  })
+  .catch(err => {
+    loading.innerHTML = "❌ Failed to load quiz data.";
+    console.error(err);
+  });
 
-  // turn red in last 5 seconds
-  ring.style.stroke = timeLeft <= 5 ? "#ff8a8a" : "#4dd6ff";
+// ===============================
+// UTIL
+// ===============================
+function shuffleOptions(q){
+  const correct = q.options[q.answer];
+  q.options = q.options
+    .map(o => ({ o, r: Math.random() }))
+    .sort((a, b) => a.r - b.r)
+    .map(x => x.o);
+  q.answer = q.options.indexOf(correct);
 }
 
-function startTimer(){
-  if(timerStarted) return;
-  timerStarted = true;
-  startBtn.disabled = true;
+// ===============================
+// LOAD QUESTION
+// ===============================
+function load(){
+  locked = false;
+  const q = quizData[i];
+  shuffleOptions(q);
 
-  timerInterval = setInterval(()=>{
-    timeLeft--;
+  qEl.textContent = q.question;
+  pEl.textContent = `Q ${i + 1} / ${quizData.length}`;
+  dEl.textContent = q.difficulty || "";
 
-    // play single sound
-    timerSound.currentTime = 0;
-    timerSound.play().catch(()=>{});
+  oEl.innerHTML = "";
+  oEl.classList.remove("focused");
+  fEl.style.display = "none";
+  nEl.style.display = "none";
 
-    updateTimerUI();
+  q.options.forEach((text, idx) => {
+    const div = document.createElement("div");
+    div.className = "option";
+    div.innerHTML = `<span class="label">${"ABCD"[idx]}.</span> ${text}`;
+    div.onclick = () => select(idx);
+    oEl.appendChild(div);
+  });
 
-    if(timeLeft <= 0){
-      stopTimer();
-      if(typeof handleTimeUp === "function"){
-        handleTimeUp();
-      }
-    }
-  },1000);
+  localStorage.setItem("quizIndex", i);
+
+  // 🔁 RESET TIMER (manual start)
+  if (typeof resetTimer === "function") {
+    resetTimer();
+  }
 }
 
-function stopTimer(){
-  clearInterval(timerInterval);
-  timerInterval = null;
+// ===============================
+// OPTION SELECT
+// ===============================
+function select(idx){
+  if (locked) return;
+  locked = true;
+
+  if (typeof stopTimer === "function") {
+    stopTimer();
+  }
+
+  oEl.classList.add("focused");
+  [...oEl.children].forEach((o, j) =>
+    j === idx ? o.classList.add("focus") : o.classList.add("fade")
+  );
+
+  const q = quizData[i];
+  const correct = idx === q.answer;
+
+  if (correct) {
+    if (typeof playSound === "function") playSound("correct");
+    localStorage.setItem(
+      "correct",
+      Number(localStorage.getItem("correct") || 0) + 1
+    );
+  } else {
+    if (typeof playSound === "function") playSound("wrong");
+  }
+
+  localStorage.setItem("total", quizData.length);
+
+  let html = correct
+    ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+    : `<div class="wrong"><b>Incorrect</b></div>
+       <p><b>Correct:</b> ${q.options[q.answer]}</p>
+       <p>${q.explanation}</p>`;
+
+  if (q.fact) {
+    html += `<div class="fact"><b>Fact:</b> ${q.fact}</div>`;
+  }
+
+  fEl.innerHTML = html;
+  fEl.style.display = "block";
+
+  setTimeout(() => {
+    nEl.style.display = "inline-block";
+  }, 400);
 }
 
-function resetTimer(){
-  stopTimer();
-  timerStarted = false;
-  timeLeft = 20;
-  startBtn.disabled = false;
-  updateTimerUI();
+// ===============================
+// TIME UP (CALLED BY timer.js)
+// ===============================
+function handleTimeUp(){
+  if (locked) return;
+  locked = true;
+
+  if (typeof playSound === "function") playSound("wrong");
+
+  const q = quizData[i];
+
+  fEl.innerHTML = `
+    <div class="wrong"><b>Time’s up!</b></div>
+    <p><b>Correct:</b> ${q.options[q.answer]}</p>
+    <p>${q.explanation}</p>
+    ${q.fact ? `<div class="fact"><b>Fact:</b> ${q.fact}</div>` : ""}
+  `;
+  fEl.style.display = "block";
+  nEl.style.display = "inline-block";
 }
 
-startBtn.onclick = startTimer;
-updateTimerUI();
+// ===============================
+// NEXT QUESTION
+// ===============================
+nEl.onclick = () => {
+  i++;
+  if (i < quizData.length) {
+    load();
+  } else {
+    localStorage.removeItem("quizIndex");
+    location.href = "results.html";
+  }
+};
+
+// ===============================
+// SKIP QUESTION
+// ===============================
+skipBtn.onclick = () => {
+  if (locked) return;
+  i++;
+  if (i < quizData.length) {
+    load();
+  } else {
+    localStorage.removeItem("quizIndex");
+    location.href = "results.html";
+  }
+};
