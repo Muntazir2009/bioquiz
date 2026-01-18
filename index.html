@@ -49,24 +49,17 @@ canvas{
 .quiz{
   position:relative;
   z-index:5;
-
   max-width:880px;
   margin:60px auto;
   padding:36px 40px;
-
   background:
     linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),
     rgba(12,16,32,.78);
-
   backdrop-filter:blur(14px) saturate(120%);
   border-radius:22px;
   border:1px solid rgba(255,255,255,.12);
-
-  box-shadow:
-    0 50px 140px rgba(0,0,0,.65),
-    inset 0 1px 0 rgba(255,255,255,.18);
-
-  min-height:280px;
+  box-shadow:0 50px 140px rgba(0,0,0,.65);
+  display:none;
 }
 
 /* ---------- HEADER ---------- */
@@ -79,28 +72,30 @@ canvas{
 .meta{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:14px;
   font-size:.85rem;
-  opacity:.8;
+  opacity:.85;
 }
 
 /* ---------- TIMER ---------- */
 .timer-wrap{
   position:relative;
-  width:44px;
-  height:44px;
+  width:46px;
+  height:46px;
+  cursor:pointer;
+}
+.timer-wrap span{
+  position:absolute;
+  inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-}
-
-.timer-wrap span{
-  position:absolute;
-  font-size:.8rem;
   font-weight:600;
   color:#4dd6ff;
 }
-
+.timer-ring{
+  transform:rotate(-90deg);
+}
 .timer-ring circle{
   fill:none;
   stroke:#4dd6ff;
@@ -108,8 +103,7 @@ canvas{
   stroke-linecap:round;
   stroke-dasharray:113;
   stroke-dashoffset:0;
-  transform:rotate(-90deg);
-  transform-origin:50% 50%;
+  transition:stroke-dashoffset 1s linear;
 }
 
 /* ---------- QUESTION ---------- */
@@ -133,8 +127,7 @@ canvas{
   transition:.2s;
 }
 .option:hover{transform:translateY(-2px)}
-.option.fade{opacity:0;pointer-events:none}
-.option.focus{transform:scale(1.05)}
+.option.disabled{opacity:.4;pointer-events:none}
 
 /* ---------- FEEDBACK ---------- */
 .feedback{
@@ -176,33 +169,28 @@ footer{
 
 <body>
 
-<!-- LOADER -->
+<!-- LOADING -->
 <div class="loading" id="loading">
   <div class="loader"></div>
   Loading Quiz…
 </div>
 
-<!-- BACKGROUND -->
 <canvas id="stars"></canvas>
 
-<!-- QUIZ -->
 <div class="quiz" id="quiz">
-
   <div class="header">
-    <div class="title">Biology • Cell Quiz</div>
-
+    <div>Biology • Cell Quiz</div>
     <div class="meta">
       <span id="progress"></span>
       <span id="difficulty"></span>
 
       <!-- TIMER -->
-      <div class="timer-wrap">
-        <svg class="timer-ring" width="44" height="44">
-          <circle cx="22" cy="22" r="18"></circle>
+      <div class="timer-wrap" id="timerWrap" title="Tap to start timer">
+        <svg class="timer-ring" width="46" height="46">
+          <circle cx="23" cy="23" r="18"></circle>
         </svg>
-        <span id="timer">20</span>
+        <span id="timer">30</span>
       </div>
-
     </div>
   </div>
 
@@ -211,19 +199,132 @@ footer{
   <div class="feedback" id="feedback" style="display:none"></div>
 
   <div class="actions">
-    <button id="skip">Skip</button>
     <button id="next">Next</button>
   </div>
-
 </div>
 
 <footer>Made by Muntazir</footer>
 
-<!-- SCRIPTS (ORDER MATTERS) -->
+<!-- BACKGROUND -->
 <script src="space.js"></script>
-<script src="js/sound.js"></script>
-<script src="js/timer.js"></script>
-<script src="js/quiz.js"></script>
+
+<script>
+/* ================= TIMER ================= */
+let timeLeft = 30;
+let timerRunning = false;
+let timerInterval = null;
+
+const timerEl = document.getElementById("timer");
+const circle = document.querySelector(".timer-ring circle");
+const timerWrap = document.getElementById("timerWrap");
+
+const timerSound = new Audio("sounds/timer.mp3");
+timerSound.loop = true;
+
+const FULL = 113;
+
+function updateRing(){
+  circle.style.strokeDashoffset = FULL - (timeLeft/30)*FULL;
+}
+
+function startTimer(){
+  if(timerRunning) return;
+  timerRunning = true;
+  timerSound.play();
+
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    updateRing();
+
+    if(timeLeft <= 0){
+      stopTimer();
+    }
+  },1000);
+}
+
+function stopTimer(){
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  timerSound.pause();
+  timerSound.currentTime = 0;
+}
+
+function resetTimer(){
+  stopTimer();
+  timeLeft = 30;
+  timerEl.textContent = 30;
+  updateRing();
+}
+
+timerWrap.onclick = startTimer;
+
+/* ================= QUIZ ================= */
+const loading = document.getElementById("loading");
+const quiz = document.getElementById("quiz");
+const qEl = document.getElementById("question");
+const oEl = document.getElementById("options");
+const fEl = document.getElementById("feedback");
+const nEl = document.getElementById("next");
+const pEl = document.getElementById("progress");
+const dEl = document.getElementById("difficulty");
+
+let data=[], index=0, locked=false;
+
+setTimeout(()=>{
+  loading.style.display="none";
+  quiz.style.display="block";
+  fetch("questions.json")
+    .then(r=>r.json())
+    .then(d=>{data=d;load();});
+},1200);
+
+function load(){
+  resetTimer();
+  locked=false;
+  const q=data[index];
+  qEl.textContent=q.question;
+  pEl.textContent=`Q ${index+1}/${data.length}`;
+  dEl.textContent=q.difficulty||"";
+  oEl.innerHTML="";
+  fEl.style.display="none";
+  nEl.style.display="none";
+
+  q.options.forEach((t,i)=>{
+    const div=document.createElement("div");
+    div.className="option";
+    div.textContent=t;
+    div.onclick=()=>select(i);
+    oEl.appendChild(div);
+  });
+}
+
+function select(i){
+  if(locked)return;
+  locked=true;
+  stopTimer();
+  const q=data[index];
+
+  [...oEl.children].forEach(o=>o.classList.add("disabled"));
+
+  fEl.innerHTML =
+    i===q.answer
+      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+      : `<div class="wrong"><b>Incorrect</b></div><p><b>Correct:</b> ${q.options[q.answer]}</p><p>${q.explanation}</p>`;
+
+  if(q.fact) fEl.innerHTML+=`<div class="fact">💡 ${q.fact}</div>`;
+
+  fEl.style.display="block";
+  nEl.style.display="inline-block";
+}
+
+nEl.onclick=()=>{
+  index++;
+  if(index<data.length) load();
+  else qEl.textContent="Quiz completed!";
+};
+</script>
 
 </body>
 </html>
