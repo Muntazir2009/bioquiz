@@ -1,84 +1,148 @@
 /* =========================
-   TIMER MODULE – FINAL
+   QUIZ MODULE – FINAL
 ========================= */
 
-let timeLeft = 30;
-let timerInterval = null;
-let timerRunning = false;
+let quizData = [];
+let index = 0;
+let locked = false;
 
-const timerEl = document.getElementById("timer");
+/* ELEMENTS */
+const loading = document.getElementById("loading");
+const quizBox = document.getElementById("quiz");
 
-/* 🔊 SINGLE TIMER SOUND */
-const timerTick = new Audio("sounds/timer.mp3");
-timerTick.volume = 0.4;
+const qEl = document.getElementById("question");
+const oEl = document.getElementById("options");
+const fEl = document.getElementById("feedback");
+const nEl = document.getElementById("next");
+const pEl = document.getElementById("progress");
+const dEl = document.getElementById("difficulty");
 
 /* =========================
-   UI UPDATE
+   LOAD QUESTIONS
 ========================= */
-function updateTimerUI() {
-  timerEl.textContent = timeLeft;
 
-  /* visual urgency */
-  if (timeLeft <= 5) {
-    timerEl.style.color = "#ff6b6b";
-    timerEl.style.boxShadow = "0 0 12px rgba(255,100,100,.6)";
-  } else {
-    timerEl.style.color = "#4dd6ff";
-    timerEl.style.boxShadow = "none";
-  }
-}
+fetch("questions.json")
+  .then(r => r.json())
+  .then(data => {
+    quizData = data;
+    loading.style.display = "none";
+    quizBox.style.display = "block";
+    loadQuestion();
+  })
+  .catch(err => {
+    loading.innerText = "Failed to load quiz.";
+    console.error(err);
+  });
 
 /* =========================
-   START TIMER (MANUAL)
+   LOAD QUESTION
 ========================= */
-function startTimer() {
-  if (timerRunning) return;
 
-  timerRunning = true;
-  timerTick.currentTime = 0;
-  timerTick.play();
+function loadQuestion() {
+  locked = false;
+  resetTimer(); // reset timer but DO NOT auto start
 
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    updateTimerUI();
+  const q = quizData[index];
 
-    /* play tick sound */
-    if (timeLeft > 0) {
-      timerTick.currentTime = 0;
-      timerTick.play();
-    }
+  qEl.textContent = q.question;
+  pEl.textContent = `Q ${index + 1} / ${quizData.length}`;
+  dEl.textContent = q.difficulty || "";
 
-    if (timeLeft <= 0) {
-      stopTimer();
-      if (typeof handleTimeUp === "function") {
-        handleTimeUp();
+  oEl.innerHTML = "";
+  fEl.style.display = "none";
+  nEl.style.display = "none";
+
+  q.options.forEach((text, i) => {
+    const option = document.createElement("div");
+    option.className = "option";
+    option.textContent = text;
+
+    /* 🔊 SOUND FIRES DIRECTLY ON TAP */
+    option.onclick = () => {
+      if (locked) return;
+
+      if (i === q.answer) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
       }
-    }
-  }, 1000);
+
+      selectAnswer(i);
+    };
+
+    oEl.appendChild(option);
+  });
 }
 
 /* =========================
-   STOP TIMER
+   SELECT ANSWER
 ========================= */
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timerRunning = false;
-}
 
-/* =========================
-   RESET TIMER
-========================= */
-function resetTimer() {
+function selectAnswer(i) {
+  if (locked) return;
+  locked = true;
+
   stopTimer();
-  timeLeft = 30;
-  updateTimerUI();
+
+  const q = quizData[index];
+
+  [...oEl.children].forEach(opt => opt.classList.add("disabled"));
+
+  fEl.innerHTML =
+    i === q.answer
+      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+      : `<div class="wrong"><b>Incorrect</b></div>
+         <p><b>Correct:</b> ${q.options[q.answer]}</p>
+         <p>${q.explanation}</p>`;
+
+  if (q.fact) {
+    fEl.innerHTML += `<div class="fact">💡 ${q.fact}</div>`;
+  }
+
+  fEl.style.display = "block";
+  nEl.style.display = "inline-block";
 }
 
 /* =========================
-   CLICK TO START
+   NEXT QUESTION
 ========================= */
-timerEl.addEventListener("click", startTimer);
 
-/* INITIAL STATE */
-updateTimerUI();
+nEl.onclick = () => {
+  index++;
+  if (index < quizData.length) {
+    loadQuestion();
+  } else {
+    qEl.textContent = "Quiz Completed 🎉";
+    oEl.innerHTML = "";
+    fEl.style.display = "none";
+    nEl.style.display = "none";
+  }
+};
+
+/* =========================
+   TIMER TIME-UP CALLBACK
+========================= */
+
+function handleTimeUp() {
+  if (locked) return;
+  locked = true;
+
+  playWrongSound();
+
+  const q = quizData[index];
+
+  [...oEl.children].forEach(opt => opt.classList.add("disabled"));
+
+  fEl.innerHTML = `
+    <div class="wrong"><b>Time’s up</b></div>
+    <p><b>Correct:</b> ${q.options[q.answer]}</p>
+    <p>${q.explanation}</p>
+  `;
+
+  if (q.fact) {
+    fEl.innerHTML += `<div class="fact">💡 ${q.fact}</div>`;
+  }
+
+  fEl.style.display = "block";
+  nEl.style.display = "inline-block";
+}
