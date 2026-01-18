@@ -1,14 +1,14 @@
-// ===============================
-// QUIZ STATE
-// ===============================
+/* =========================
+   QUIZ LOGIC – FINAL
+========================= */
+
 let quizData = [];
 let i = Number(localStorage.getItem("quizIndex")) || 0;
 let locked = false;
 
-// ===============================
-// ELEMENTS
-// ===============================
+/* ELEMENTS */
 const loading = document.getElementById("loading");
+const quiz = document.getElementById("quiz");
 
 const qEl = document.getElementById("question");
 const oEl = document.getElementById("options");
@@ -18,44 +18,47 @@ const pEl = document.getElementById("progress");
 const dEl = document.getElementById("difficulty");
 const skipBtn = document.getElementById("skip");
 
-// ===============================
-// FETCH QUESTIONS + HIDE LOADER
-// ===============================
+/* =========================
+   LOAD QUESTIONS
+========================= */
+
 fetch("questions.json")
-  .then(res => {
-    if (!res.ok) throw new Error("Failed to load questions");
-    return res.json();
-  })
+  .then(r => r.json())
   .then(data => {
     quizData = data;
 
-    // 🔑 ALWAYS HIDE LOADER HERE
+    /* 🔑 REMOVE LOADING SCREEN */
     loading.style.display = "none";
+    quiz.style.display = "block";
 
     load();
   })
   .catch(err => {
-    loading.innerHTML = "❌ Failed to load quiz data.";
     console.error(err);
+    loading.innerText = "Failed to load quiz.";
   });
 
-// ===============================
-// UTIL
-// ===============================
-function shuffleOptions(q){
+/* =========================
+   SHUFFLE OPTIONS
+========================= */
+function shuffleOptions(q) {
   const correct = q.options[q.answer];
   q.options = q.options
     .map(o => ({ o, r: Math.random() }))
     .sort((a, b) => a.r - b.r)
     .map(x => x.o);
+
   q.answer = q.options.indexOf(correct);
 }
 
-// ===============================
-// LOAD QUESTION
-// ===============================
-function load(){
+/* =========================
+   LOAD QUESTION
+========================= */
+function load() {
   locked = false;
+
+  resetTimer(); // ⏱ reset timer but DO NOT start
+
   const q = quizData[i];
   shuffleOptions(q);
 
@@ -65,6 +68,7 @@ function load(){
 
   oEl.innerHTML = "";
   oEl.classList.remove("focused");
+
   fEl.style.display = "none";
   nEl.style.display = "none";
 
@@ -77,106 +81,90 @@ function load(){
   });
 
   localStorage.setItem("quizIndex", i);
-
-  // 🔁 RESET TIMER (manual start)
-  if (typeof resetTimer === "function") {
-    resetTimer();
-  }
 }
 
-// ===============================
-// OPTION SELECT
-// ===============================
-function select(idx){
+/* =========================
+   SELECT OPTION
+========================= */
+function select(idx) {
   if (locked) return;
   locked = true;
 
-  if (typeof stopTimer === "function") {
-    stopTimer();
-  }
+  stopTimer(); // ⏱ stop timer when answered
 
   oEl.classList.add("focused");
+
   [...oEl.children].forEach((o, j) =>
     j === idx ? o.classList.add("focus") : o.classList.add("fade")
   );
 
   const q = quizData[i];
-  const correct = idx === q.answer;
 
-  if (correct) {
-    if (typeof playSound === "function") playSound("correct");
+  if (idx === q.answer) {
     localStorage.setItem(
       "correct",
       Number(localStorage.getItem("correct") || 0) + 1
     );
+    playCorrectSound();
   } else {
-    if (typeof playSound === "function") playSound("wrong");
+    playWrongSound();
   }
 
   localStorage.setItem("total", quizData.length);
 
-  let html = correct
-    ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
-    : `<div class="wrong"><b>Incorrect</b></div>
-       <p><b>Correct:</b> ${q.options[q.answer]}</p>
-       <p>${q.explanation}</p>`;
+  let html =
+    idx === q.answer
+      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+      : `<div class="wrong"><b>Incorrect</b></div>
+         <p><b>Correct:</b> ${q.options[q.answer]}</p>
+         <p>${q.explanation}</p>`;
 
-  if (q.fact) {
-    html += `<div class="fact"><b>Fact:</b> ${q.fact}</div>`;
-  }
+  if (q.fact) html += `<div class="fact">💡 ${q.fact}</div>`;
 
   fEl.innerHTML = html;
   fEl.style.display = "block";
 
-  setTimeout(() => {
-    nEl.style.display = "inline-block";
-  }, 400);
+  setTimeout(() => (nEl.style.display = "inline-block"), 500);
 }
 
-// ===============================
-// TIME UP (CALLED BY timer.js)
-// ===============================
-function handleTimeUp(){
+/* =========================
+   NEXT / SKIP
+========================= */
+nEl.onclick = nextQuestion;
+skipBtn.onclick = nextQuestion;
+
+function nextQuestion() {
+  if (!locked) stopTimer();
+
+  i++;
+  if (i < quizData.length) {
+    load();
+  } else {
+    localStorage.removeItem("quizIndex");
+    location.href = "results.html";
+  }
+}
+
+/* =========================
+   TIMER TIME-UP HANDLER
+========================= */
+function handleTimeUp() {
   if (locked) return;
   locked = true;
 
-  if (typeof playSound === "function") playSound("wrong");
+  playWrongSound();
 
   const q = quizData[i];
 
+  oEl.classList.add("focused");
+  [...oEl.children].forEach(o => o.classList.add("fade"));
+
   fEl.innerHTML = `
-    <div class="wrong"><b>Time’s up!</b></div>
+    <div class="wrong"><b>Time’s up</b></div>
     <p><b>Correct:</b> ${q.options[q.answer]}</p>
     <p>${q.explanation}</p>
-    ${q.fact ? `<div class="fact"><b>Fact:</b> ${q.fact}</div>` : ""}
   `;
+
   fEl.style.display = "block";
   nEl.style.display = "inline-block";
 }
-
-// ===============================
-// NEXT QUESTION
-// ===============================
-nEl.onclick = () => {
-  i++;
-  if (i < quizData.length) {
-    load();
-  } else {
-    localStorage.removeItem("quizIndex");
-    location.href = "results.html";
-  }
-};
-
-// ===============================
-// SKIP QUESTION
-// ===============================
-skipBtn.onclick = () => {
-  if (locked) return;
-  i++;
-  if (i < quizData.length) {
-    load();
-  } else {
-    localStorage.removeItem("quizIndex");
-    location.href = "results.html";
-  }
-};
