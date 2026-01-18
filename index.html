@@ -17,7 +17,7 @@ body{
   overflow-y:auto;
 }
 
-/* ---------- LOADING ---------- */
+/* LOADING */
 .loading{
   position:fixed;
   inset:0;
@@ -39,65 +39,39 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ---------- BACKGROUND ---------- */
-canvas{
-  position:fixed;
-  inset:0;
-  z-index:-1;
-}
+/* BACKGROUND */
+canvas{position:fixed;inset:0;z-index:-1}
 
-/* ---------- QUIZ CARD (GLASS) ---------- */
+/* QUIZ CARD */
 .quiz{
   max-width:880px;
   margin:60px auto;
   padding:36px 40px;
-
   background:
     linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),
     rgba(12,16,32,.78);
-
   backdrop-filter:blur(14px) saturate(120%);
-  -webkit-backdrop-filter:blur(14px) saturate(120%);
-
   border-radius:22px;
   border:1px solid rgba(255,255,255,.12);
-
-  box-shadow:
-    0 50px 140px rgba(0,0,0,.65),
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 -1px 0 rgba(255,255,255,.05);
-
+  box-shadow:0 50px 140px rgba(0,0,0,.65);
   display:none;
 }
 
-/* ---------- HEADER ---------- */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:14px;
-}
+.header{display:flex;justify-content:space-between;margin-bottom:14px}
+.meta{font-size:.85rem;opacity:.7}
 
-.title{font-weight:600}
-.meta{display:flex;gap:12px;font-size:.85rem;opacity:.7}
-
-/* ---------- QUESTION ---------- */
 .question{
   font-size:clamp(1.25rem,3vw,1.9rem);
   margin:18px 0 26px;
 }
 
-/* ---------- OPTIONS ---------- */
 .options{
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:18px;
 }
 
-.options.focused{
-  display:flex;
-  justify-content:center;
-}
+.options.focused{display:flex;justify-content:center}
 
 .option{
   padding:16px 20px;
@@ -107,47 +81,23 @@ canvas{
   cursor:pointer;
   transition:.2s;
 }
-
 .option:hover{transform:translateY(-2px)}
 .option.fade{opacity:0;pointer-events:none;transform:scale(.9)}
+.option.focus{width:100%;max-width:520px;transform:scale(1.05)}
 
-.option.focus{
-  width:100%;
-  max-width:520px;
-  transform:scale(1.05);
-  box-shadow:0 20px 60px rgba(80,120,255,.35);
-}
-
-.label{opacity:.5;margin-right:6px}
-
-/* ---------- FEEDBACK ---------- */
 .feedback{
   margin-top:22px;
   padding:20px;
   border-radius:14px;
   background:rgba(0,0,0,.35);
   border:1px solid rgba(255,255,255,.1);
-  line-height:1.6;
-  animation:reveal .35s ease forwards;
-}
-
-@keyframes reveal{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
 }
 
 .correct{color:#6dffcc}
 .wrong{color:#ff8a8a}
 .fact{margin-top:8px;font-size:.9rem;opacity:.85}
 
-/* ---------- BUTTONS ---------- */
-.actions{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-top:22px;
-}
-
+.actions{display:flex;gap:12px;margin-top:22px}
 button{
   padding:12px 26px;
   border-radius:12px;
@@ -158,53 +108,37 @@ button{
   display:none;
 }
 
-#skip{
-  background:transparent;
-  color:#aab6ff;
-  border:1px solid rgba(255,255,255,.15);
-  display:inline-block;
-}
-
-#skip:hover{
-  background:rgba(255,255,255,.05);
-}
-
-/* ---------- FOOTER ---------- */
 footer{
   text-align:center;
   font-size:.35rem;
   opacity:.15;
-  letter-spacing:.4px;
   margin:18px 0 8px;
-  user-select:none;
-}
-
-@media(max-width:640px){
-  .quiz{margin:20px;padding:26px}
-  .options{grid-template-columns:1fr}
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOADING -->
 <div class="loading" id="loading">
   <div class="loader"></div>
   Loading Quiz…
 </div>
 
-<!-- SPACE -->
 <canvas id="stars"></canvas>
 
-<!-- QUIZ -->
 <div class="quiz" id="quiz">
   <div class="header">
-    <div class="title">Biology • Cell Quiz</div>
+    <div>Biology • Cell Quiz</div>
     <div class="meta">
       <span id="progress"></span>
       <span id="difficulty"></span>
     </div>
+  </div>
+
+  <!-- TIMER UI -->
+  <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+    <div id="timer">20</div>
+    <button id="startTimerBtn">Start</button>
   </div>
 
   <div class="question" id="question"></div>
@@ -219,116 +153,13 @@ footer{
 
 <footer>Made by Muntazir</footer>
 
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
-
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("service-worker.js");
-}
-
-const loading=document.getElementById("loading");
-const quiz=document.getElementById("quiz");
-
-let quizData=[];
-let i=Number(localStorage.getItem("quizIndex"))||0;
-let locked=false;
-
-setTimeout(()=>{
-  loading.style.display="none";
-  quiz.style.display="block";
-  fetch("questions.json")
-    .then(r=>r.json())
-    .then(d=>{quizData=d;load();});
-},2000);
-
-const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty;
-const skipBtn=document.getElementById("skip");
-
-function shuffleOptions(q){
-  const correct=q.options[q.answer];
-  q.options=q.options.map(o=>({o,sort:Math.random()}))
-    .sort((a,b)=>a.sort-b.sort)
-    .map(x=>x.o);
-  q.answer=q.options.indexOf(correct);
-}
-
-function load(){
-  locked=false;
-  const q=quizData[i];
-  shuffleOptions(q);
-
-  qEl.textContent=q.question;
-  pEl.textContent=`Q ${i+1}/${quizData.length}`;
-  dEl.textContent=q.difficulty||"";
-
-  oEl.innerHTML="";
-  oEl.classList.remove("focused");
-  fEl.style.display="none";
-  nEl.style.display="none";
-
-  q.options.forEach((t,idx)=>{
-    const div=document.createElement("div");
-    div.className="option";
-    div.innerHTML=`<span class="label">${"ABCD"[idx]}.</span>${t}`;
-    div.onclick=()=>select(idx);
-    oEl.appendChild(div);
-  });
-
-  localStorage.setItem("quizIndex",i);
-}
-
-function select(idx){
-  if(locked)return;
-  locked=true;
-
-  oEl.classList.add("focused");
-  [...oEl.children].forEach((o,j)=>j===idx?o.classList.add("focus"):o.classList.add("fade"));
-
-  const q=quizData[i];
-
-  if(idx===q.answer){
-    localStorage.setItem("correct",Number(localStorage.getItem("correct")||0)+1);
-  }
-  localStorage.setItem("total",quizData.length);
-
-  let html=idx===q.answer
-    ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
-    : `<div class="wrong"><b>Incorrect</b></div>
-       <p><b>Correct:</b> ${q.options[q.answer]}</p>
-       <p>${q.explanation}</p>`;
-
-  if(q.fact)html+=`<div class="fact">💡 ${q.fact}</div>`;
-
-  fEl.innerHTML=html;
-  fEl.style.display="block";
-
-  setTimeout(()=>nEl.style.display="inline-block",500);
-}
-
-nEl.onclick=()=>{
-  i++;
-  if(i<quizData.length){
-    load();
-  }else{
-    localStorage.removeItem("quizIndex");
-    location.href="results.html";
-  }
-};
-
-skipBtn.onclick=()=>{
-  if(locked)return;
-  i++;
-  if(i<quizData.length){
-    load();
-  }else{
-    localStorage.removeItem("quizIndex");
-    location.href="results.html";
-  }
-};
-
-});
-</script>
-
+<!-- BACKGROUND -->
 <script src="space.js"></script>
+
+<!-- MODULES -->
+<script src="js/sound.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/quiz.js"></script>
+
 </body>
 </html>
