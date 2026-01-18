@@ -8,23 +8,24 @@
 <style>
 *{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
 
+/* 🌌 DEEP SPACE BACKGROUND */
 body{
   margin:0;
   min-height:100vh;
   color:#eaf1ff;
-  background:#05070f;
   overflow-x:hidden;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg, #05070f 0%, #04060c 100%);
 }
 
 /* ---------- LOADING ---------- */
 .loading{
-  position:fixed;
-  inset:0;
+  position:fixed; inset:0;
   background:#05070f;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
   z-index:999;
 }
 .loader{
@@ -37,57 +38,49 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ---------- BACKGROUND ---------- */
-canvas{
+/* ---------- SPACE LAYERS ---------- */
+canvas, .nebula{
   position:fixed;
   inset:0;
-  z-index:0;
   pointer-events:none;
 }
 
-/* ---------- QUIZ CARD ---------- */
+canvas{z-index:0}
+
+/* 🌫️ NEBULA FOG */
+.nebula{
+  z-index:1;
+  background:
+    radial-gradient(800px 600px at 30% 40%, rgba(90,140,255,.06), transparent 60%),
+    radial-gradient(900px 700px at 70% 60%, rgba(180,80,255,.05), transparent 65%);
+  animation: nebulaMove 120s linear infinite;
+}
+@keyframes nebulaMove{
+  from{transform:translate(0,0)}
+  to{transform:translate(-200px,150px)}
+}
+
+/* ---------- QUIZ CARD (GLASS HUD) ---------- */
 .quiz{
   position:relative;
   z-index:5;
   max-width:880px;
   margin:60px auto;
   padding:36px 40px;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),
-    rgba(12,16,32,.78);
-  backdrop-filter:blur(14px) saturate(120%);
-  border-radius:22px;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 50px 140px rgba(0,0,0,.65);
   display:none;
-}
 
-/* Cosmic aura */
-.quiz::before{
-  content:"";
-  position:absolute;
-  inset:-30px;
-  border-radius:28px;
-  background:radial-gradient(60% 40% at 50% 0%,rgba(120,180,255,.25),transparent 70%);
-  filter:blur(30px);
-  opacity:.6;
-  z-index:-1;
-}
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02)),
+    rgba(12,16,32,.78);
 
-/* Shimmer */
-.quiz::after{
-  content:"";
-  position:absolute;
-  inset:0;
+  backdrop-filter:blur(18px) saturate(130%);
   border-radius:22px;
-  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.06) 50%,transparent 70%);
-  opacity:.15;
-  animation:shimmer 10s linear infinite;
-  pointer-events:none;
-}
-@keyframes shimmer{
-  from{background-position:-200% 0}
-  to{background-position:200% 0}
+  border:1px solid rgba(120,160,255,.18);
+
+  box-shadow:
+    0 60px 160px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.25),
+    inset 0 -1px 0 rgba(0,0,0,.4);
 }
 
 /* ---------- HEADER ---------- */
@@ -102,36 +95,31 @@ canvas{
   align-items:center;
   gap:14px;
   font-size:.85rem;
-  opacity:.85;
+  opacity:.9;
 }
 
-/* ---------- TIMER ---------- */
+/* ---------- TIMER (REACTOR CORE) ---------- */
 .timer-wrap{
   position:relative;
-  width:46px;
-  height:46px;
+  width:46px;height:46px;
   cursor:pointer;
 }
 .timer-wrap span{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:absolute; inset:0;
+  display:flex;align-items:center;justify-content:center;
   font-weight:600;
   color:#4dd6ff;
+  text-shadow:0 0 8px rgba(77,214,255,.6);
 }
-.timer-ring{
-  transform:rotate(-90deg);
-}
+.timer-ring{transform:rotate(-90deg)}
 .timer-ring circle{
   fill:none;
   stroke:#4dd6ff;
   stroke-width:3;
   stroke-linecap:round;
   stroke-dasharray:113;
-  stroke-dashoffset:0;
-  transition:stroke-dashoffset 1s linear;
+  transition:stroke-dashoffset 1s linear, stroke .3s;
+  filter:drop-shadow(0 0 6px rgba(77,214,255,.6));
 }
 
 /* ---------- QUESTION ---------- */
@@ -140,7 +128,7 @@ canvas{
   margin:18px 0 26px;
 }
 
-/* ---------- OPTIONS ---------- */
+/* ---------- OPTIONS (ENERGY FIELD) ---------- */
 .options{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -149,17 +137,20 @@ canvas{
 .option{
   padding:16px 20px;
   border-radius:14px;
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.1);
   cursor:pointer;
-  transition:.2s;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.12);
+  transition:box-shadow .2s, transform .2s, border-color .2s;
 }
-.option:hover{transform:translateY(-2px)}
-.option.disabled{opacity:.4;pointer-events:none}
-.option.selected{
-  border-color:rgba(120,180,255,.8);
-  box-shadow:0 0 22px rgba(120,180,255,.45), inset 0 0 12px rgba(120,180,255,.15);
-  transform:scale(1.04);
+.option:hover{
+  transform:translateY(-2px);
+  border-color:rgba(120,180,255,.6);
+  box-shadow:0 0 18px rgba(120,180,255,.35);
+}
+.option.disabled{
+  opacity:.4;
+  pointer-events:none;
 }
 
 /* ---------- FEEDBACK ---------- */
@@ -175,18 +166,13 @@ canvas{
 .fact{margin-top:8px;font-size:.9rem;opacity:.85}
 
 /* ---------- ACTIONS ---------- */
-.actions{
-  display:flex;
-  gap:12px;
-  margin-top:22px;
-}
+.actions{margin-top:22px}
 button{
   padding:12px 26px;
   border-radius:12px;
   border:none;
   background:#1f3cff;
   color:white;
-  cursor:pointer;
   display:none;
 }
 
@@ -208,6 +194,7 @@ footer{
 </div>
 
 <canvas id="stars"></canvas>
+<div class="nebula"></div>
 
 <div class="quiz" id="quiz">
   <div class="header">
@@ -215,132 +202,7 @@ footer{
     <div class="meta">
       <span id="progress"></span>
       <span id="difficulty"></span>
-
-      <!-- TIMER -->
-      <div class="timer-wrap" id="timerWrap" title="Tap to start">
+      <div class="timer-wrap" id="timerWrap" title="Tap to start timer / fullscreen">
         <svg class="timer-ring" width="46" height="46">
           <circle cx="23" cy="23" r="18"></circle>
         </svg>
-        <span id="timer">30</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="question" id="question"></div>
-  <div class="options" id="options"></div>
-  <div class="feedback" id="feedback" style="display:none"></div>
-
-  <div class="actions">
-    <button id="next">Next</button>
-  </div>
-</div>
-
-<footer>Made by Muntazir</footer>
-
-<script src="space.js"></script>
-
-<script>
-/* ===== FULLSCREEN ===== */
-function enterFullscreen(){
-  const el=document.documentElement;
-  if(el.requestFullscreen) el.requestFullscreen();
-  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-}
-
-/* ===== TIMER ===== */
-let timeLeft=30, running=false, interval=null;
-const timerEl=document.getElementById("timer");
-const ring=document.querySelector(".timer-ring circle");
-const FULL=113;
-
-function updateRing(){
-  ring.style.strokeDashoffset = FULL - (timeLeft/30)*FULL;
-}
-function startTimer(){
-  if(running) return;
-  enterFullscreen();
-  running=true;
-  interval=setInterval(()=>{
-    timeLeft--;
-    timerEl.textContent=timeLeft;
-    updateRing();
-    if(timeLeft<=0) stopTimer();
-  },1000);
-}
-function stopTimer(){
-  clearInterval(interval);
-  running=false;
-}
-function resetTimer(){
-  stopTimer();
-  timeLeft=30;
-  timerEl.textContent=30;
-  updateRing();
-}
-document.getElementById("timerWrap").onclick=startTimer;
-
-/* ===== QUIZ ===== */
-const loading=document.getElementById("loading");
-const quiz=document.getElementById("quiz");
-const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty;
-
-let data=[],idx=0,locked=false;
-
-setTimeout(()=>{
-  loading.style.display="none";
-  quiz.style.display="block";
-  fetch("questions.json")
-    .then(r=>r.json())
-    .then(d=>{data=d;load();});
-},1200);
-
-function load(){
-  resetTimer();
-  locked=false;
-  const q=data[idx];
-  qEl.textContent=q.question;
-  pEl.textContent=`Q ${idx+1}/${data.length}`;
-  dEl.textContent=q.difficulty||"";
-  oEl.innerHTML="";
-  fEl.style.display="none";
-  nEl.style.display="none";
-
-  q.options.forEach((t,i)=>{
-    const div=document.createElement("div");
-    div.className="option";
-    div.textContent=t;
-    div.onclick=()=>select(i);
-    oEl.appendChild(div);
-  });
-}
-
-function select(i){
-  if(locked) return;
-  locked=true;
-  stopTimer();
-  const q=data[idx];
-
-  [...oEl.children].forEach((o,j)=>{
-    o.classList.add("disabled");
-    if(j===i) o.classList.add("selected");
-  });
-
-  fEl.innerHTML =
-    i===q.answer
-      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
-      : `<div class="wrong"><b>Incorrect</b></div><p><b>Correct:</b> ${q.options[q.answer]}</p><p>${q.explanation}</p>`;
-
-  if(q.fact) fEl.innerHTML+=`<div class="fact">💡 ${q.fact}</div>`;
-  fEl.style.display="block";
-  nEl.style.display="inline-block";
-}
-
-nEl.onclick=()=>{
-  idx++;
-  if(idx<data.length) load();
-  else qEl.textContent="Quiz Completed!";
-};
-</script>
-
-</body>
-</html>
