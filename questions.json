@@ -1,5 +1,245 @@
 [
   {
+    "question": "A cell exhibits an unusually high rate of vesicle formation at its plasma membrane. This activity is most closely associated with:",
+    "options": [
+      "Facilitated diffusion",
+      "Active transport",
+      "Bulk transport mechanisms",
+      "Simple diffusion"
+    ],
+    "answer": 2,
+    "explanation": "Vesicle formation is characteristic of endocytosis and exocytosis.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which property of plasma membrane allows cells to self-seal after minor mechanical damage?",
+    "options": [
+      "Selective permeability",
+      "Bilayer organization of phospholipids",
+      "Presence of membrane proteins",
+      "Carbohydrate coating"
+    ],
+    "answer": 1,
+    "explanation": "Fluid phospholipid bilayer enables self-sealing.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "The asymmetrical distribution of membrane lipids is primarily maintained by:",
+    "options": [
+      "Diffusion",
+      "Flip-flop movement",
+      "ATP-dependent enzymes",
+      "Cholesterol molecules"
+    ],
+    "answer": 2,
+    "explanation": "Flippases maintain lipid asymmetry using ATP.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Which observation best explains why very large unicellular organisms develop folded membranes?",
+    "options": [
+      "Increase in cytoplasmic density",
+      "Enhanced enzymatic activity",
+      "Improved surface area to volume ratio",
+      "Faster DNA replication"
+    ],
+    "answer": 2,
+    "explanation": "Folding increases surface area for exchange.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which membrane transport process can continue even after ATP synthesis is blocked?",
+    "options": [
+      "Active transport",
+      "Facilitated diffusion",
+      "Endocytosis",
+      "Exocytosis"
+    ],
+    "answer": 1,
+    "explanation": "Facilitated diffusion does not require ATP.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "A mutation affecting signal recognition particle (SRP) would directly disrupt:",
+    "options": [
+      "Cytosolic protein synthesis",
+      "Lipid synthesis",
+      "Targeting of proteins to ER",
+      "Golgi modification of proteins"
+    ],
+    "answer": 2,
+    "explanation": "SRP directs ribosomes to RER.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Which condition would most severely impair lysosomal enzyme activity?",
+    "options": [
+      "Neutral cytosolic pH",
+      "Absence of ribosomes",
+      "High mitochondrial density",
+      "Reduced Golgi function"
+    ],
+    "answer": 0,
+    "explanation": "Lysosomal enzymes require acidic pH.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Primary lysosomes differ from secondary lysosomes in that primary lysosomes:",
+    "options": [
+      "Contain digested material",
+      "Have inactive enzymes",
+      "Lack membrane",
+      "Are involved in autophagy"
+    ],
+    "answer": 1,
+    "explanation": "Primary lysosomes contain enzymes before digestion.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which cellular process is directly responsible for renewal of damaged organelles?",
+    "options": [
+      "Heterophagy",
+      "Pinocytosis",
+      "Autophagy",
+      "Exocytosis"
+    ],
+    "answer": 2,
+    "explanation": "Autophagy removes worn-out organelles.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which feature distinguishes rough endoplasmic reticulum from smooth endoplasmic reticulum?",
+    "options": [
+      "Presence of ribosomes",
+      "Lipid synthesis",
+      "Tubular structure",
+      "Detoxification ability"
+    ],
+    "answer": 0,
+    "explanation": "RER has ribosomes attached to its surface.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "The polarity of Golgi apparatus is functionally important because it:",
+    "options": [
+      "Prevents enzyme leakage",
+      "Ensures directional transport",
+      "Allows ATP synthesis",
+      "Maintains membrane rigidity"
+    ],
+    "answer": 1,
+    "explanation": "Materials move from cis to trans face.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which Golgi modification is essential for proper protein sorting?",
+    "options": [
+      "Protein folding",
+      "Glycosylation",
+      "Translation",
+      "Signal peptide removal"
+    ],
+    "answer": 1,
+    "explanation": "Glycosylation aids protein targeting.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "A cell lacking functional Golgi apparatus would show maximum disruption in:",
+    "options": [
+      "DNA replication",
+      "Protein packaging and secretion",
+      "ATP production",
+      "Lipid bilayer formation"
+    ],
+    "answer": 1,
+    "explanation": "Golgi packages and sorts proteins.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which component of membrane is least likely to show lateral mobility?",
+    "options": [
+      "Phospholipids",
+      "Peripheral proteins",
+      "Integral proteins anchored to cytoskeleton",
+      "Cholesterol"
+    ],
+    "answer": 2,
+    "explanation": "Cytoskeleton anchoring restricts movement.",
+    "difficulty": "Hard"
+  },
+  {
+    "question": "Which statement best explains why ribosomes are not considered part of endomembrane system?",
+    "options": [
+      "They lack membrane",
+      "They synthesize lipids",
+      "They function independently",
+      "They are found in cytosol"
+    ],
+    "answer": 0,
+    "explanation": "Endomembrane system includes membranous organelles.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "The transport of ions against concentration gradient across membrane requires:",
+    "options": [
+      "Carrier proteins only",
+      "ATP hydrolysis",
+      "High membrane fluidity",
+      "Large pore size"
+    ],
+    "answer": 1,
+    "explanation": "Active transport is energy dependent.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which factor primarily determines direction of simple diffusion across membrane?",
+    "options": [
+      "ATP availability",
+      "Membrane thickness",
+      "Concentration gradient",
+      "Carrier protein specificity"
+    ],
+    "answer": 2,
+    "explanation": "Diffusion occurs down concentration gradient.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which cellular event would be directly affected if vesicle fusion is inhibited?",
+    "options": [
+      "Diffusion of gases",
+      "Protein secretion",
+      "Osmosis",
+      "Facilitated diffusion"
+    ],
+    "answer": 1,
+    "explanation": "Secretion requires vesicle fusion.",
+    "difficulty": "Medium"
+  },
+  {
+    "question": "Which type of cell is expected to have the largest central vacuole?",
+    "options": [
+      "Animal epithelial cell",
+      "Bacterial cell",
+      "Plant parenchyma cell",
+      "Meristematic cell"
+    ],
+    "answer": 2,
+    "explanation": "Plant parenchyma cells store water and solutes.",
+    "difficulty": "Easy"
+  },
+  {
+    "question": "Which cellular adaptation best compensates for lack of cell wall in animal cells?",
+    "options": [
+      "Presence of tonoplast",
+      "Cytoskeletal support",
+      "Large vacuole",
+      "Plasmodesmata"
+    ],
+    "answer": 1,
+    "explanation": "Cytoskeleton provides mechanical support.",
+    "difficulty": "Hard"
+  }
+  {
     "question": "Increase in size of a cell beyond a limit primarily affects which cellular function?",
     "options": [
       "Protein synthesis",
