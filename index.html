@@ -83,14 +83,35 @@ body{
 .wrong{color:#ff8a8a}
 .fact{margin-top:8px;font-size:.9rem}
 
-.actions{margin-top:22px}
-button{
-  padding:12px 26px;border-radius:12px;
-  border:none;background:#1f3cff;color:white;
-  display:none
+.actions{
+  margin-top:22px;
+  display:flex;
+  gap:12px;
 }
 
-footer{text-align:center;font-size:.35rem;opacity:.15;margin:18px 0 8px}
+button{
+  padding:12px 26px;border-radius:12px;
+  border:none;color:white;
+  display:none;
+  cursor:pointer;
+}
+
+/* NEXT */
+#next{
+  background:#1f3cff;
+}
+
+/* SKIP (RED → GOLD) */
+#skip{
+  display:inline-block;
+  background:linear-gradient(135deg,#ff3b3b,#ffb347);
+  box-shadow:0 0 18px rgba(255,140,60,.45);
+}
+#skip:hover{
+  filter:brightness(1.1);
+}
+
+footer{text-align:center;font-size:.35rem;opacity:.25;margin:18px 0 8px}
 </style>
 </head>
 
@@ -123,6 +144,7 @@ footer{text-align:center;font-size:.35rem;opacity:.15;margin:18px 0 8px}
   <div class="feedback" id="feedback" style="display:none"></div>
 
   <div class="actions">
+    <button id="skip">Skip</button>
     <button id="next">Next</button>
   </div>
 </div>
@@ -155,7 +177,7 @@ function resetTimer(){
 }
 
 timerWrap.onclick=()=>{
-  if(running) return;
+  if(running)return;
   running=true;
   timerSound.play().catch(()=>{});
   interval=setInterval(()=>{
@@ -173,7 +195,7 @@ timerWrap.onclick=()=>{
 /* QUIZ */
 const loading=document.getElementById("loading");
 const quiz=document.getElementById("quiz");
-const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty;
+const qEl=question,oEl=options,fEl=feedback,nEl=next,pEl=progress,dEl=difficulty,skipEl=skip;
 
 let data=[],idx=0,locked=false;
 
@@ -189,7 +211,9 @@ fetch("questions.json")
 function load(){
   resetTimer();
   locked=false;
+
   nEl.style.display="none";
+  skipEl.style.display="inline-block";
 
   const q=data[idx];
   qEl.textContent=q.question;
@@ -235,12 +259,21 @@ function select(i){
 
   fEl.style.display="block";
   nEl.style.display="inline-block";
+  skipEl.style.display="none";
 }
+
+skipEl.onclick=()=>{
+  if(locked)return;
+  clearInterval(interval);
+  timerSound.pause();
+  timerSound.currentTime=0;
+  idx++;
+  idx<data.length?load():qEl.textContent="Quiz completed!";
+};
 
 nEl.onclick=()=>{
   idx++;
-  if(idx<data.length) load();
-  else qEl.textContent="Quiz completed!";
+  idx<data.length?load():qEl.textContent="Quiz completed!";
 };
 </script>
 
