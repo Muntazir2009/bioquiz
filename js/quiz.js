@@ -1,100 +1,90 @@
-/* =========================
-   QUIZ MODULE – FINAL MOBILE SAFE
-========================= */
+/* ================= QUIZ LOGIC ================= */
 
-/* ---------- PRELOADED SOUNDS (MOBILE FIX) ---------- */
-const correctAudio = new Audio("sounds/correct.mp3");
-const wrongAudio   = new Audio("sounds/wrong.mp3");
-
-correctAudio.preload = "auto";
-wrongAudio.preload   = "auto";
-
-correctAudio.volume = 1;
-wrongAudio.volume   = 1;
-
-/* ---------- STATE ---------- */
-let quizData = [];
-let index = 0;
-let locked = false;
-
-/* ---------- ELEMENTS ---------- */
+/* DOM */
 const loading = document.getElementById("loading");
-const quizBox = document.getElementById("quiz");
-
+const quiz = document.getElementById("quiz");
 const qEl = document.getElementById("question");
 const oEl = document.getElementById("options");
 const fEl = document.getElementById("feedback");
 const nEl = document.getElementById("next");
+const skipEl = document.getElementById("skip");
 const pEl = document.getElementById("progress");
 const dEl = document.getElementById("difficulty");
 
-/* ---------- LOAD QUESTIONS ---------- */
+/* STATE */
+let questions = [];
+let index = 0;
+let locked = false;
+
+/* LOAD QUESTIONS */
 fetch("questions.json")
-  .then(r => r.json())
+  .then(res => res.json())
   .then(data => {
-    quizData = data;
+    questions = data;
     loading.style.display = "none";
-    quizBox.style.display = "block";
+    quiz.style.display = "block";
     loadQuestion();
   })
   .catch(err => {
-    console.error(err);
-    loading.innerText = "Failed to load quiz.";
+    console.error("Failed to load questions:", err);
   });
 
-/* ---------- LOAD QUESTION ---------- */
+/* LOAD QUESTION */
 function loadQuestion() {
+  resetTimer();
   locked = false;
 
-  if (window.resetTimer) resetTimer();
+  nEl.style.display = "none";
+  skipEl.style.display = "inline-block";
+  fEl.style.display = "none";
 
-  const q = quizData[index];
+  if (index >= questions.length) {
+    qEl.textContent = "Quiz completed!";
+    oEl.innerHTML = "";
+    pEl.textContent = "";
+    dEl.textContent = "";
+    skipEl.style.display = "none";
+    return;
+  }
+
+  const q = questions[index];
 
   qEl.textContent = q.question;
-  pEl.textContent = `Q ${index + 1} / ${quizData.length}`;
+  pEl.textContent = `Q ${index + 1}/${questions.length}`;
   dEl.textContent = q.difficulty || "";
 
   oEl.innerHTML = "";
-  fEl.style.display = "none";
-  nEl.style.display = "none";
 
   q.options.forEach((text, i) => {
-    const option = document.createElement("div");
-    option.className = "option";
-    option.textContent = text;
+    const div = document.createElement("div");
+    div.className = "option";
+    div.innerHTML = `<b>${"ABCD"[i]}.</b> ${text}`;
 
-    /* 🔊 SOUND + ANSWER (SAME TAP = WORKS ON MOBILE) */
-    option.onclick = () => {
-      if (locked) return;
-
-      if (i === q.answer) {
-        correctAudio.currentTime = 0;
-        correctAudio.play();
-      } else {
-        wrongAudio.currentTime = 0;
-        wrongAudio.play();
-      }
-
-      selectAnswer(i);
-    };
-
-    oEl.appendChild(option);
+    div.onclick = () => handleAnswer(i);
+    oEl.appendChild(div);
   });
 }
 
-/* ---------- SELECT ANSWER ---------- */
-function selectAnswer(i) {
+/* HANDLE ANSWER */
+function handleAnswer(choice) {
   if (locked) return;
   locked = true;
 
-  if (window.stopTimer) stopTimer();
+  /* STOP TIMER */
+  resetTimer();
 
-  const q = quizData[index];
+  const q = questions[index];
+
+  if (choice === q.answer) {
+    playCorrectSound();
+  } else {
+    playWrongSound();
+  }
 
   [...oEl.children].forEach(opt => opt.classList.add("disabled"));
 
   fEl.innerHTML =
-    i === q.answer
+    choice === q.answer
       ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
       : `<div class="wrong"><b>Incorrect</b></div>
          <p><b>Correct:</b> ${q.options[q.answer]}</p>
@@ -106,43 +96,19 @@ function selectAnswer(i) {
 
   fEl.style.display = "block";
   nEl.style.display = "inline-block";
+  skipEl.style.display = "none";
 }
 
-/* ---------- NEXT QUESTION ---------- */
+/* NEXT */
 nEl.onclick = () => {
   index++;
-  if (index < quizData.length) {
-    loadQuestion();
-  } else {
-    qEl.textContent = "Quiz Completed 🎉";
-    oEl.innerHTML = "";
-    fEl.style.display = "none";
-    nEl.style.display = "none";
-  }
+  loadQuestion();
 };
 
-/* ---------- TIMER TIME-UP ---------- */
-function handleTimeUp() {
+/* SKIP */
+skipEl.onclick = () => {
   if (locked) return;
-  locked = true;
-
-  wrongAudio.currentTime = 0;
-  wrongAudio.play();
-
-  const q = quizData[index];
-
-  [...oEl.children].forEach(opt => opt.classList.add("disabled"));
-
-  fEl.innerHTML = `
-    <div class="wrong"><b>Time’s up</b></div>
-    <p><b>Correct:</b> ${q.options[q.answer]}</p>
-    <p>${q.explanation}</p>
-  `;
-
-  if (q.fact) {
-    fEl.innerHTML += `<div class="fact">💡 ${q.fact}</div>`;
-  }
-
-  fEl.style.display = "block";
-  nEl.style.display = "inline-block";
-}
+  resetTimer();
+  index++;
+  loadQuestion();
+};
