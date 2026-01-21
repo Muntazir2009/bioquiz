@@ -1,53 +1,128 @@
 /* ===============================
-   TIMER – SPACE HUD MODULE
+   ⏱ COSMIC TIMER HUD (PREMIUM)
    =============================== */
 
 .timer-wrap{
   position:relative;
   width:48px;
   height:48px;
+  display:grid;
+  place-items:center;
   cursor:pointer;
-  filter:drop-shadow(0 0 14px rgba(120,220,255,.55));
+  isolation:isolate;
 }
 
-.timer-wrap span{
+/* SVG RING */
+.timer-ring{
   position:absolute;
   inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:600;
-  font-size:.85rem;
-  color:#cfefff;
-  text-shadow:0 0 10px rgba(120,220,255,.8);
-  pointer-events:none;
-}
-
-/* SVG */
-.timer-ring{
   transform:rotate(-90deg);
+  z-index:1;
 }
 
 .timer-ring circle{
   fill:none;
-  stroke-width:3.2;
+  stroke:#4dd6ff;
+  stroke-width:3;
   stroke-linecap:round;
   stroke-dasharray:113;
   stroke-dashoffset:0;
-  stroke:url(#timerGradient);
-  transition:stroke-dashoffset .9s linear;
+
+  /* smooth countdown */
+  transition:stroke-dashoffset .3s linear;
+
+  /* glow */
+  filter:
+    drop-shadow(0 0 6px rgba(77,214,255,.6))
+    drop-shadow(0 0 14px rgba(77,214,255,.35));
 }
 
-/* LOW TIME WARNING */
-.timer-wrap.danger{
-  filter:drop-shadow(0 0 22px rgba(255,90,90,.9));
+/* TIMER CORE */
+#timer{
+  position:relative;
+  z-index:2;
+
+  width:34px;
+  height:34px;
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:.85rem;
+  font-weight:600;
+  color:#cfefff;
+
+  background:
+    radial-gradient(circle at 30% 30%, rgba(120,180,255,.35), rgba(10,20,40,.95));
+
+  box-shadow:
+    inset 0 0 12px rgba(0,0,0,.6),
+    0 0 18px rgba(77,214,255,.45);
+
+  transition:
+    color .3s ease,
+    box-shadow .3s ease,
+    transform .25s ease;
 }
 
-.timer-wrap.danger span{
-  color:#ffd6d6;
-  text-shadow:0 0 12px rgba(255,90,90,1);
+/* ===============================
+   🚀 ACTIVE STATE (TIMER RUNNING)
+   =============================== */
+
+.timer-wrap:active #timer{
+  transform:scale(.96);
 }
 
-.timer-wrap.danger circle{
-  stroke:#ff5a5a;
+/* ===============================
+   ⚠ URGENCY STATES (PURE CSS)
+   =============================== */
+
+/* 5 seconds left */
+#timer[data-urgent="true"]{
+  color:#ffd9d9;
+  box-shadow:
+    inset 0 0 14px rgba(0,0,0,.6),
+    0 0 22px rgba(255,80,80,.65);
+  animation:pulseWarning 1s infinite;
+}
+
+@keyframes pulseWarning{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+
+/* Ring turns red smoothly */
+.timer-wrap[data-urgent="true"] .timer-ring circle{
+  stroke:#ff6b6b;
+  filter:
+    drop-shadow(0 0 6px rgba(255,100,100,.7))
+    drop-shadow(0 0 14px rgba(255,100,100,.4));
+}
+
+/* ===============================
+   💎 HOVER FEEDBACK
+   =============================== */
+
+.timer-wrap:hover #timer{
+  box-shadow:
+    inset 0 0 12px rgba(0,0,0,.6),
+    0 0 26px rgba(120,200,255,.75);
+}
+
+/* ===============================
+   📱 MOBILE TUNING
+   =============================== */
+
+@media(max-width:720px){
+  .timer-wrap{
+    width:44px;
+    height:44px;
+  }
+  #timer{
+    width:30px;
+    height:30px;
+    font-size:.8rem;
+  }
 }
