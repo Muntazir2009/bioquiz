@@ -1,87 +1,97 @@
-/* ==================================================
-   QUIZ CARD – ULTRA PREMIUM SPACE HUD
-   ================================================== */
+/* ===============================
+   🌌 COSMIC QUIZ CARD (PREMIUM – STABLE)
+   =============================== */
 
 .quiz{
   position:relative;
   z-index:5;
-  max-width:900px;
+  max-width:880px;
   margin:60px auto;
-  padding:42px 46px;
-
-  border-radius:30px;
+  padding:38px 42px;
 
   background:
-    radial-gradient(140% 160% at 12% 8%, rgba(120,170,255,.18), transparent 45%),
-    radial-gradient(140% 160% at 88% 92%, rgba(190,120,255,.22), transparent 52%),
-    linear-gradient(180deg, rgba(16,24,60,.94), rgba(7,10,32,.97));
+    radial-gradient(520px 360px at 18% 12%, rgba(120,160,255,.18), transparent 60%),
+    radial-gradient(620px 460px at 82% 82%, rgba(180,80,255,.16), transparent 65%),
+    linear-gradient(180deg, rgba(20,26,60,.94), rgba(8,10,22,.98));
 
-  backdrop-filter: blur(24px) saturate(125%);
-  border:1px solid rgba(160,190,255,.25);
+  backdrop-filter:blur(20px) saturate(145%);
+  border-radius:22px;
+
+  border:1px solid rgba(140,180,255,.25);
 
   box-shadow:
-    0 60px 160px rgba(0,0,0,.82),
-    inset 0 0 0 1px rgba(255,255,255,.06);
+    0 50px 140px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.05),
+    inset 0 -36px 70px rgba(0,0,0,.6);
+
+  overflow:hidden;
 }
 
-/* ===== subtle frame glow ===== */
+/* 🌌 subtle star grain (safe tiling) */
 .quiz::before{
   content:"";
   position:absolute;
   inset:0;
-  border-radius:inherit;
+  background-image:
+    radial-gradient(1px 1px at 12% 24%, rgba(255,255,255,.28), transparent),
+    radial-gradient(1px 1px at 46% 68%, rgba(255,255,255,.22), transparent),
+    radial-gradient(1px 1px at 78% 38%, rgba(255,255,255,.18), transparent);
+  background-size:420px 420px;
+  opacity:.28;
   pointer-events:none;
-
-  background:
-    linear-gradient(120deg,
-      transparent 30%,
-      rgba(150,200,255,.12),
-      transparent 70%
-    );
-
-  opacity:.35;
 }
 
-/* ==================================================
-   HEADER
-   ================================================== */
+/* 🌀 nebula glow (lighter + safer) */
+.quiz::after{
+  content:"";
+  position:absolute;
+  inset:-30%;
+  background:
+    conic-gradient(
+      from 210deg,
+      transparent,
+      rgba(90,140,255,.10),
+      rgba(200,80,255,.10),
+      transparent
+    );
+  animation:nebulaSpin 160s linear infinite;
+  opacity:.28;
+  pointer-events:none;
+}
+
+@keyframes nebulaSpin{
+  to{transform:rotate(360deg)}
+}
+
+/* ===============================
+   🧭 HEADER
+   =============================== */
 
 .header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-}
-
-.header > div:first-child{
-  font-size:.72rem;
-  letter-spacing:.16em;
-  opacity:.75;
+  margin-bottom:18px;
   text-transform:uppercase;
-}
-
-.meta{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  font-size:.75rem;
+  letter-spacing:.12em;
+  font-size:.72rem;
   opacity:.85;
 }
 
-/* ==================================================
-   QUESTION
-   ================================================== */
+/* ===============================
+   ❓ QUESTION
+   =============================== */
 
 .question{
-  font-size:clamp(1.4rem,3.1vw,2.05rem);
-  margin:26px 0 32px;
+  font-size:clamp(1.35rem,3vw,1.9rem);
+  margin:20px 0 28px;
   line-height:1.48;
-  color:#f4f7ff;
-  text-shadow:0 2px 14px rgba(0,0,0,.55);
+  text-shadow:0 0 14px rgba(120,180,255,.32);
 }
 
-/* ==================================================
-   OPTIONS
-   ================================================== */
+/* ===============================
+   🪐 OPTIONS
+   =============================== */
 
 .options{
   display:grid;
@@ -91,172 +101,90 @@
 
 .option{
   position:relative;
-  padding:18px 24px;
-  border-radius:18px;
-
-  background:
-    linear-gradient(180deg,
-      rgba(255,255,255,.10),
-      rgba(255,255,255,.03)
-    );
-
-  border:1px solid rgba(255,255,255,.18);
+  padding:18px 22px;
+  border-radius:14px;
   cursor:pointer;
 
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+
+  border:1px solid rgba(255,255,255,.18);
+
   transition:
-    transform .28s ease,
-    box-shadow .28s ease,
-    border-color .28s ease;
-}
-
-/* option glow seam */
-.option::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity .28s ease;
-
-  box-shadow:
-    inset 0 0 0 1px rgba(160,210,255,.35);
+    transform .22s ease,
+    box-shadow .22s ease,
+    border-color .22s ease;
 }
 
 .option:hover{
   transform:translateY(-3px);
-  border-color:rgba(160,210,255,.55);
-
+  border-color:rgba(120,180,255,.6);
   box-shadow:
-    0 0 0 1px rgba(160,210,255,.3),
-    0 16px 42px rgba(90,140,255,.35);
-}
-
-.option:hover::after{
-  opacity:1;
+    0 10px 34px rgba(120,180,255,.32),
+    inset 0 0 0 1px rgba(255,255,255,.12);
 }
 
 .option.disabled{
-  opacity:.45;
+  opacity:.35;
   pointer-events:none;
 }
 
-/* ==================================================
-   FEEDBACK
-   ================================================== */
+/* ===============================
+   ✅ FEEDBACK
+   =============================== */
 
 .feedback{
-  margin-top:26px;
-  padding:22px 24px;
-  border-radius:18px;
-  background:rgba(0,0,0,.36);
+  margin-top:24px;
+  padding:22px;
+  border-radius:14px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.12);
 }
 
-.correct{
-  color:#6dffcc;
-  text-shadow:0 0 12px rgba(100,255,200,.45);
-}
-
-.wrong{
-  color:#ff9b9b;
-  text-shadow:0 0 12px rgba(255,120,120,.45);
-}
-
+.correct{color:#6dffcc}
+.wrong{color:#ff8a8a}
 .fact{
   margin-top:10px;
-  font-size:.86rem;
-  opacity:.9;
+  font-size:.88rem;
+  opacity:.85;
 }
 
-/* ==================================================
-   ACTIONS
-   ================================================== */
+/* ===============================
+   🚀 ACTIONS
+   =============================== */
 
 .actions{
-  margin-top:28px;
+  margin-top:24px;
   display:flex;
-  gap:14px;
+  gap:12px;
 }
 
-/* ==================================================
-   BUTTONS
-   ================================================== */
-
 button{
-  padding:13px 30px;
-  border-radius:16px;
+  padding:12px 28px;
+  border-radius:12px;
   border:none;
-  color:white;
   cursor:pointer;
   display:none;
-  font-weight:500;
 }
 
 /* NEXT */
 #next{
-  background:linear-gradient(135deg,#3f6bff,#2747ff);
-  box-shadow:
-    0 12px 34px rgba(80,120,255,.55),
-    inset 0 0 0 1px rgba(255,255,255,.2);
+  background:linear-gradient(135deg,#3b6cff,#1f3cff);
+  box-shadow:0 0 26px rgba(60,120,255,.45);
 }
 
 /* SKIP */
 #skip{
   display:inline-block;
-  background:linear-gradient(135deg,#ff4b4b,#ffb84d);
-  box-shadow:
-    0 12px 30px rgba(255,120,80,.55),
-    inset 0 0 0 1px rgba(255,255,255,.25);
+  background:linear-gradient(135deg,#ff3b3b,#ffb347);
+  box-shadow:0 0 22px rgba(255,150,60,.55);
 }
 
-/* ==================================================
-   TIMER – FIXED & PREMIUM
-   ================================================== */
+/* ===============================
+   📱 MOBILE REFINEMENT
+   =============================== */
 
-.timer-wrap{
-  position:relative;
-  width:50px;
-  height:50px;
-  border-radius:50%;
-
-  background:rgba(0,0,0,.35);
-
-  box-shadow:
-    0 0 0 1px rgba(130,190,255,.45),
-    0 0 24px rgba(110,170,255,.55);
-}
-
-.timer-ring{
-  transform:rotate(-90deg);
-}
-
-.timer-ring circle{
-  fill:none;
-  stroke:#6fd3ff;
-  stroke-width:3.2;
-  stroke-linecap:round;
-  stroke-dasharray:113;
-
-  filter:drop-shadow(0 0 8px rgba(120,200,255,.8));
-}
-
-.timer-wrap span{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-weight:600;
-  color:#ecf8ff;
-  text-shadow:0 0 10px rgba(120,200,255,.7);
-}
-
-/* ==================================================
-   RESPONSIVE
-   ================================================== */
-
-@media (max-width:720px){
+@media(max-width:720px){
   .quiz{
     margin:32px 14px;
     padding:30px 26px;
