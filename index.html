@@ -233,7 +233,7 @@ const dEl = document.getElementById("difficulty");
 
 let data=[],idx=0,locked=false;
 
-fetch("questions.json")
+fetch("/questions.json")
 .then(r=>r.json())
 .then(d=>{
   data=d;
