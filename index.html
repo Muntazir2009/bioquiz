@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biology Quiz</title>
 
-<!-- ORBITRON FONT -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{
   box-sizing:border-box;
-  font-family:'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family:Inter,system-ui,sans-serif;
 }
 
+/* BACKGROUND */
 body{
-  margin:0;min-height:100vh;color:#eaf1ff;overflow-x:hidden;
+  margin:0;
+  min-height:100vh;
+  color:#eaf1ff;
+  overflow-x:hidden;
   background:
     radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
     radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
@@ -23,9 +25,13 @@ body{
 
 /* LOADING */
 .loading{
-  position:fixed;inset:0;background:#05070f;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
+  position:fixed;
+  inset:0;
+  background:#05070f;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
   z-index:999;
 }
 .loader{
@@ -38,87 +44,158 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* QUIZ */
+/* QUIZ CARD (PREMIUM) */
 .quiz{
-  position:relative;z-index:5;
-  max-width:880px;margin:60px auto;
-  padding:36px 40px;display:none;
+  position:relative;
+  z-index:5;
+  max-width:880px;
+  margin:60px auto;
+  padding:36px 40px;
+  display:none;
+
   background:
-    linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),
-    rgba(12,16,32,.78);
+    linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03)),
+    rgba(10,14,28,.9);
+
   backdrop-filter:blur(18px);
   border-radius:22px;
-  border:1px solid rgba(120,160,255,.18);
-  box-shadow:0 60px 160px rgba(0,0,0,.7);
+  border:1px solid rgba(140,180,255,.18);
+
+  box-shadow:
+    0 60px 160px rgba(0,0,0,.75),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.4);
 }
 
-.header{display:flex;justify-content:space-between;align-items:center}
-.meta{display:flex;gap:14px;font-size:.85rem}
+/* NASA scanline texture */
+.quiz::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,.015),
+    rgba(255,255,255,.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity:.15;
+  pointer-events:none;
+}
 
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+.meta{
+  display:flex;
+  gap:14px;
+  font-size:.85rem;
+  opacity:.85;
+}
+
+/* TIMER */
 .timer-wrap{
-  position:relative;width:46px;height:46px;cursor:pointer
+  position:relative;
+  width:46px;
+  height:46px;
+  cursor:pointer;
 }
 .timer-wrap span{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:600;color:#4dd6ff
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  color:#4dd6ff;
 }
 .timer-ring{transform:rotate(-90deg)}
 .timer-ring circle{
-  fill:none;stroke:#4dd6ff;stroke-width:3;
-  stroke-linecap:round;stroke-dasharray:113
+  fill:none;
+  stroke:#4dd6ff;
+  stroke-width:3;
+  stroke-linecap:round;
+  stroke-dasharray:113;
+  transition:stroke .3s linear;
 }
 
+/* QUESTION */
 .question{
   font-size:clamp(1.25rem,3vw,1.9rem);
   margin:18px 0 26px;
   letter-spacing:.3px;
 }
 
-.options{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-
+/* OPTIONS */
+.options{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+}
 .option{
-  padding:16px 20px;border-radius:14px;
+  padding:16px 20px;
+  border-radius:14px;
   background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.12);
   cursor:pointer;
-  letter-spacing:.15px;
+  transition:transform .18s ease, box-shadow .18s ease;
 }
-.option.disabled{opacity:.4;pointer-events:none}
+.option:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(0,0,0,.35);
+}
+.option.disabled{
+  opacity:.45;
+  pointer-events:none;
+}
 
+/* FEEDBACK */
 .feedback{
-  margin-top:22px;padding:20px;border-radius:14px;
-  background:rgba(0,0,0,.35)
+  margin-top:22px;
+  padding:20px;
+  border-radius:14px;
+  background:rgba(0,0,0,.35);
+  animation:fadeSlide .25s ease forwards;
+}
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
 }
 .correct{color:#6dffcc}
 .wrong{color:#ff8a8a}
-.fact{margin-top:8px;font-size:.85rem}
+.fact{margin-top:8px;font-size:.9rem;opacity:.85}
 
+/* ACTIONS */
 .actions{
   margin-top:22px;
   display:flex;
   gap:12px;
 }
-
 button{
-  padding:12px 26px;border-radius:12px;
-  border:none;color:white;
-  display:none;
+  padding:12px 26px;
+  border-radius:12px;
+  border:none;
+  color:white;
   cursor:pointer;
+  display:none;
 }
-
-/* NEXT */
 #next{background:#1f3cff}
-
-/* SKIP */
 #skip{
-  display:inline-block;
   background:linear-gradient(135deg,#ff3b3b,#ffb347);
   box-shadow:0 0 18px rgba(255,140,60,.45);
 }
-#skip:hover{filter:brightness(1.1)}
 
-footer{text-align:center;font-size:.35rem;opacity:.25;margin:18px 0 8px}
+/* FOOTER */
+footer{
+  text-align:center;
+  font-size:.35rem;
+  opacity:.25;
+  margin:18px 0 8px;
+}
 </style>
 </head>
 
@@ -160,13 +237,13 @@ footer{text-align:center;font-size:.35rem;opacity:.25;margin:18px 0 8px}
 
 <script src="space.js"></script>
 
-<!-- YOUR EXISTING SCRIPT BLOCK (UNCHANGED) -->
 <script>
 /* AUDIO */
 const correctAudio=new Audio("sounds/correct.mp3");
 const wrongAudio=new Audio("sounds/wrong.mp3");
 const timerSound=new Audio("sounds/timer.mp3");
-timerSound.loop=true;timerSound.volume=.4;
+timerSound.loop=true;
+timerSound.volume=.4;
 
 /* TIMER */
 let timeLeft=15,interval=null,running=false;
@@ -180,6 +257,7 @@ function resetTimer(){
   timeLeft=15;
   timerEl.textContent=15;
   ring.style.strokeDashoffset=0;
+  ring.style.stroke="#4dd6ff";
   timerSound.pause();
   timerSound.currentTime=0;
 }
@@ -192,6 +270,11 @@ timerWrap.onclick=()=>{
     timeLeft--;
     timerEl.textContent=timeLeft;
     ring.style.strokeDashoffset=FULL-(timeLeft/15)*FULL;
+
+    if(timeLeft<=5) ring.style.stroke="#ff5c5c";
+    else if(timeLeft<=8) ring.style.stroke="#ffd166";
+    else ring.style.stroke="#4dd6ff";
+
     if(timeLeft<=0){
       clearInterval(interval);
       timerSound.pause();
@@ -221,6 +304,7 @@ function load(){
   locked=false;
   nEl.style.display="none";
   skipEl.style.display="inline-block";
+  fEl.style.display="none";
 
   const q=data[idx];
   qEl.textContent=q.question;
@@ -228,8 +312,6 @@ function load(){
   dEl.textContent=q.difficulty||"";
 
   oEl.innerHTML="";
-  fEl.style.display="none";
-
   q.options.forEach((t,i)=>{
     const div=document.createElement("div");
     div.className="option";
@@ -244,16 +326,11 @@ function load(){
 }
 
 function select(i){
-  if(locked)return;
   locked=true;
-  clearInterval(interval);
-  timerSound.pause();
-  timerSound.currentTime=0;
-  running=false;
-
+  resetTimer();
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
-
   const q=data[idx];
+
   fEl.innerHTML=
     i===q.answer
     ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
@@ -269,10 +346,7 @@ function select(i){
 }
 
 skipEl.onclick=()=>{
-  if(locked)return;
-  clearInterval(interval);
-  timerSound.pause();
-  timerSound.currentTime=0;
+  resetTimer();
   idx++;
   idx<data.length?load():qEl.textContent="Quiz completed!";
 };
