@@ -1,128 +1,142 @@
-/* ===============================
-   ⏱ COSMIC TIMER HUD (PREMIUM)
-   =============================== */
+/* =========================================
+   🌌 COSMIC HUD TIMER — FINAL VERSION
+   ========================================= */
 
 .timer-wrap{
   position:relative;
-  width:48px;
-  height:48px;
+  width:56px;
+  height:56px;
   display:grid;
   place-items:center;
   cursor:pointer;
   isolation:isolate;
 }
 
-/* SVG RING */
+/* ================= RING ================= */
+
 .timer-ring{
   position:absolute;
   inset:0;
   transform:rotate(-90deg);
-  z-index:1;
+  z-index:2;
 }
 
 .timer-ring circle{
   fill:none;
-  stroke:#4dd6ff;
-  stroke-width:3;
+  stroke:url(#timerGradient);
+  stroke-width:4;
   stroke-linecap:round;
   stroke-dasharray:113;
   stroke-dashoffset:0;
 
-  /* smooth countdown */
-  transition:stroke-dashoffset .3s linear;
+  transition:stroke-dashoffset .35s linear;
 
-  /* glow */
   filter:
-    drop-shadow(0 0 6px rgba(77,214,255,.6))
-    drop-shadow(0 0 14px rgba(77,214,255,.35));
+    drop-shadow(0 0 8px rgba(80,180,255,.75))
+    drop-shadow(0 0 20px rgba(80,180,255,.45));
 }
 
-/* TIMER CORE */
+/* ================= CORE ================= */
+
 #timer{
   position:relative;
-  z-index:2;
+  z-index:3;
 
-  width:34px;
-  height:34px;
+  width:38px;
+  height:38px;
   border-radius:50%;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  font-size:.85rem;
-  font-weight:600;
-  color:#cfefff;
+  font-size:.9rem;
+  font-weight:700;
+  color:#eaf6ff;
 
   background:
-    radial-gradient(circle at 30% 30%, rgba(120,180,255,.35), rgba(10,20,40,.95));
+    radial-gradient(circle at 30% 30%,
+      rgba(140,200,255,.5),
+      rgba(15,30,60,.95) 70%);
 
   box-shadow:
-    inset 0 0 12px rgba(0,0,0,.6),
-    0 0 18px rgba(77,214,255,.45);
+    inset 0 0 16px rgba(0,0,0,.7),
+    0 0 26px rgba(90,170,255,.55);
 
   transition:
-    color .3s ease,
+    transform .3s ease,
     box-shadow .3s ease,
-    transform .25s ease;
+    color .3s ease;
 }
 
-/* ===============================
-   🚀 ACTIVE STATE (TIMER RUNNING)
-   =============================== */
+/* ================= ACTIVE ================= */
 
 .timer-wrap:active #timer{
-  transform:scale(.96);
+  transform:scale(.94);
 }
 
-/* ===============================
-   ⚠ URGENCY STATES (PURE CSS)
-   =============================== */
+/* ================= URGENT ================= */
 
-/* 5 seconds left */
-#timer[data-urgent="true"]{
-  color:#ffd9d9;
+.timer-wrap[data-urgent="true"] #timer{
+  color:#ffdcdc;
   box-shadow:
-    inset 0 0 14px rgba(0,0,0,.6),
-    0 0 22px rgba(255,80,80,.65);
-  animation:pulseWarning 1s infinite;
+    inset 0 0 18px rgba(0,0,0,.8),
+    0 0 30px rgba(255,80,80,.7);
+  animation:warningPulse 1s infinite;
 }
 
-@keyframes pulseWarning{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(1.08)}
-}
-
-/* Ring turns red smoothly */
 .timer-wrap[data-urgent="true"] .timer-ring circle{
   stroke:#ff6b6b;
   filter:
-    drop-shadow(0 0 6px rgba(255,100,100,.7))
-    drop-shadow(0 0 14px rgba(255,100,100,.4));
+    drop-shadow(0 0 10px rgba(255,90,90,.8))
+    drop-shadow(0 0 24px rgba(255,90,90,.5));
 }
 
-/* ===============================
-   💎 HOVER FEEDBACK
-   =============================== */
-
-.timer-wrap:hover #timer{
-  box-shadow:
-    inset 0 0 12px rgba(0,0,0,.6),
-    0 0 26px rgba(120,200,255,.75);
+@keyframes warningPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.12)}
 }
 
-/* ===============================
-   📱 MOBILE TUNING
-   =============================== */
+/* ================= TIME UP ================= */
+
+.timer-wrap[data-timeup="true"] #timer{
+  animation:timeUpCore .6s ease-out forwards;
+}
+
+.timer-wrap[data-timeup="true"]::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle,
+      rgba(255,120,120,.55),
+      transparent 70%);
+  animation:shockwave .7s ease-out forwards;
+  z-index:1;
+}
+
+@keyframes timeUpCore{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.25)}
+  100%{transform:scale(.9); opacity:.7}
+}
+
+@keyframes shockwave{
+  from{transform:scale(.2); opacity:.9}
+  to{transform:scale(1); opacity:0}
+}
+
+/* ================= MOBILE ================= */
 
 @media(max-width:720px){
   .timer-wrap{
-    width:44px;
-    height:44px;
+    width:50px;
+    height:50px;
   }
   #timer{
-    width:30px;
-    height:30px;
-    font-size:.8rem;
+    width:34px;
+    height:34px;
+    font-size:.85rem;
   }
 }
