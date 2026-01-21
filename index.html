@@ -5,9 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biology Quiz</title>
 
-<style>
-*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+<!-- ORBITRON FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600&display=swap" rel="stylesheet">
 
+<style>
+*{
+  box-sizing:border-box;
+  font-family:"Orbitron", system-ui, sans-serif;
+}
+
+/* BACKGROUND */
 body{
   margin:0;
   min-height:100vh;
@@ -98,6 +105,8 @@ body{
 .question{
   font-size:clamp(1.25rem,3vw,1.9rem);
   margin:18px 0 26px;
+  font-weight:500;
+  letter-spacing:.3px;
 }
 
 /* OPTIONS */
@@ -112,6 +121,8 @@ body{
   background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.12);
   cursor:pointer;
+  font-weight:400;
+  letter-spacing:.15px;
 }
 .option.disabled{
   opacity:.4;
@@ -127,7 +138,7 @@ body{
 }
 .correct{color:#6dffcc}
 .wrong{color:#ff8a8a}
-.fact{margin-top:8px;font-size:.9rem}
+.fact{margin-top:8px;font-size:.85rem}
 
 /* ACTIONS */
 .actions{
@@ -143,9 +154,13 @@ button{
   cursor:pointer;
   display:none;
 }
+
+/* NEXT */
 #next{
   background:#1f3cff;
 }
+
+/* SKIP */
 #skip{
   display:inline-block;
   background:linear-gradient(135deg,#ff3b3b,#ffb347);
@@ -201,7 +216,7 @@ footer{
 <!-- BACKGROUND -->
 <script src="space.js"></script>
 
-<!-- AUDIO + TIMER MODULES -->
+<!-- MODULES -->
 <script src="sound.js"></script>
 <script src="timer.js"></script>
 
@@ -216,40 +231,38 @@ const skipEl = document.getElementById("skip");
 const pEl = document.getElementById("progress");
 const dEl = document.getElementById("difficulty");
 
-let data = [];
-let idx = 0;
-let locked = false;
+let data=[],idx=0,locked=false;
 
 fetch("questions.json")
-  .then(r=>r.json())
-  .then(d=>{
-    data = d;
-    loading.style.display = "none";
-    quiz.style.display = "block";
-    load();
-  });
+.then(r=>r.json())
+.then(d=>{
+  data=d;
+  loading.style.display="none";
+  quiz.style.display="block";
+  load();
+});
 
 function load(){
   resetTimer();
-  locked = false;
+  locked=false;
 
-  nEl.style.display = "none";
-  skipEl.style.display = "inline-block";
-  fEl.style.display = "none";
+  nEl.style.display="none";
+  skipEl.style.display="inline-block";
+  fEl.style.display="none";
 
-  const q = data[idx];
-  qEl.textContent = q.question;
-  pEl.textContent = `Q ${idx+1}/${data.length}`;
-  dEl.textContent = q.difficulty || "";
+  const q=data[idx];
+  qEl.textContent=q.question;
+  pEl.textContent=`Q ${idx+1}/${data.length}`;
+  dEl.textContent=q.difficulty||"";
 
-  oEl.innerHTML = "";
+  oEl.innerHTML="";
   q.options.forEach((t,i)=>{
-    const div = document.createElement("div");
-    div.className = "option";
-    div.innerHTML = `<b>${"ABCD"[i]}.</b> ${t}`;
-    div.onclick = ()=>{
-      if(locked) return;
-      i===q.answer ? playCorrectSound() : playWrongSound();
+    const div=document.createElement("div");
+    div.className="option";
+    div.innerHTML=`<b>${"ABCD"[i]}.</b> ${t}`;
+    div.onclick=()=>{
+      if(locked)return;
+      i===q.answer?playCorrectSound():playWrongSound();
       select(i);
     };
     oEl.appendChild(div);
@@ -257,35 +270,35 @@ function load(){
 }
 
 function select(i){
-  locked = true;
+  locked=true;
   resetTimer();
 
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
-  const q = data[idx];
+  const q=data[idx];
 
-  fEl.innerHTML =
+  fEl.innerHTML=
     i===q.answer
       ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
       : `<div class="wrong"><b>Incorrect</b></div>
          <p><b>Correct:</b> ${q.options[q.answer]}</p>
          <p>${q.explanation}</p>`;
 
-  if(q.fact) fEl.innerHTML += `<div class="fact">💡 ${q.fact}</div>`;
+  if(q.fact)fEl.innerHTML+=`<div class="fact">💡 ${q.fact}</div>`;
 
-  fEl.style.display = "block";
-  nEl.style.display = "inline-block";
-  skipEl.style.display = "none";
+  fEl.style.display="block";
+  nEl.style.display="inline-block";
+  skipEl.style.display="none";
 }
 
-skipEl.onclick = ()=>{
+skipEl.onclick=()=>{
   resetTimer();
   idx++;
-  idx < data.length ? load() : qEl.textContent = "Quiz completed!";
+  idx<data.length?load():qEl.textContent="Quiz completed!";
 };
 
-nEl.onclick = ()=>{
+nEl.onclick=()=>{
   idx++;
-  idx < data.length ? load() : qEl.textContent = "Quiz completed!";
+  idx<data.length?load():qEl.textContent="Quiz completed!";
 };
 </script>
 
