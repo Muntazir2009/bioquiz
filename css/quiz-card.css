@@ -1,126 +1,120 @@
-/* =========================================================
-   QUIZ CARD – SPACE / HUD UI
-   ========================================================= */
+/* ===============================
+   QUIZ CARD – PREMIUM SPACE HUD
+   =============================== */
 
-/* ---------- QUIZ CARD ---------- */
+/* CARD */
 .quiz{
   position:relative;
   z-index:5;
-  max-width:880px;
-  margin:56px auto;
-  padding:34px 38px 36px;
-  border-radius:24px;
+  max-width:900px;
+  margin:60px auto;
+  padding:42px 44px;
+  display:none;
 
   background:
-    linear-gradient(135deg, rgba(70,120,255,.14), rgba(120,60,255,.08)),
-    radial-gradient(900px 400px at top left, rgba(100,180,255,.12), transparent 60%),
-    rgba(12,16,32,.78);
+    radial-gradient(140% 100% at 15% 10%, rgba(120,160,255,.22), transparent 45%),
+    radial-gradient(120% 90% at 90% 90%, rgba(180,120,255,.18), transparent 50%),
+    linear-gradient(180deg, rgba(12,20,55,.94), rgba(6,10,28,.97));
 
-  backdrop-filter: blur(18px) saturate(140%);
-  border:1px solid rgba(130,180,255,.25);
+  border-radius:26px;
+  border:1px solid rgba(150,190,255,.28);
+
   box-shadow:
-    0 40px 120px rgba(0,0,0,.65),
-    inset 0 0 40px rgba(120,180,255,.06);
+    0 50px 160px rgba(0,0,0,.85),
+    inset 0 1px 0 rgba(255,255,255,.10);
 
-  animation:cardFade 0.8s ease forwards;
+  backdrop-filter: blur(18px) saturate(135%);
 }
 
-@keyframes cardFade{
-  from{opacity:0;transform:translateY(14px) scale(.98)}
-  to{opacity:1;transform:none}
-}
-
-/* ---------- HEADER ---------- */
+/* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
-  align-items:flex-start;
-  gap:14px;
+  align-items:center;
+  margin-bottom:22px;
 }
 
 .header > div:first-child{
-  font-size:.72rem;
-  letter-spacing:.18em;
-  opacity:.75;
+  font-size:.75rem;
+  letter-spacing:1.6px;
+  opacity:.65;
+  text-transform:uppercase;
 }
 
-/* ---------- META ---------- */
+/* META */
 .meta{
   display:flex;
   align-items:center;
-  gap:16px;
-  font-size:.75rem;
-  opacity:.85;
+  gap:18px;
+  font-size:.8rem;
+  opacity:.9;
 }
 
-/* =========================================================
-   TIMER – HUD STYLE
-   ========================================================= */
+/* ===============================
+   TIMER – FIXED & PREMIUM
+   =============================== */
 
 .timer-wrap{
   position:relative;
-  width:46px;
-  height:46px;
+  width:48px;
+  height:48px;
+  cursor:pointer;
+  filter:drop-shadow(0 0 14px rgba(120,220,255,.55));
+}
+
+.timer-wrap span{
+  position:absolute;
+  inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  cursor:pointer;
-}
-
-/* Number */
-.timer-wrap span{
-  position:absolute;
-  z-index:2;
   font-weight:600;
-  font-size:.9rem;
-  color:#7fe7ff;
-  text-shadow:
-    0 0 6px rgba(127,231,255,.7),
-    0 0 12px rgba(127,231,255,.4);
+  font-size:.85rem;
+  color:#cfefff;
+  text-shadow:0 0 10px rgba(120,220,255,.8);
+  pointer-events:none;
 }
 
-/* SVG ring */
 .timer-ring{
-  position:absolute;
-  inset:0;
   transform:rotate(-90deg);
-  z-index:1;
 }
 
 .timer-ring circle{
-  fill:none; /* FIXES BLACK DOT */
-  stroke:#4dd6ff;
-  stroke-width:3;
+  fill:none;
+  stroke-width:3.2;
   stroke-linecap:round;
   stroke-dasharray:113;
   stroke-dashoffset:0;
-  filter:drop-shadow(0 0 8px rgba(77,214,255,.6));
+  stroke:url(#timerGradient);
 }
 
-/* Running pulse (JS can toggle .active) */
-.timer-wrap.active .timer-ring circle{
-  animation:timerPulse 1.4s infinite alternate;
-}
-
-@keyframes timerPulse{
-  from{filter:drop-shadow(0 0 6px rgba(77,214,255,.6))}
-  to{filter:drop-shadow(0 0 14px rgba(140,230,255,.95))}
-}
-
-/* =========================================================
+/* ===============================
    QUESTION
-   ========================================================= */
+   =============================== */
 
 .question{
-  margin:22px 0 28px;
-  font-size:clamp(1.15rem,3.2vw,1.9rem);
-  line-height:1.35;
-  letter-spacing:.2px;
+  max-width:92%;
+  font-size:1.45rem;
+  line-height:1.45;
+  letter-spacing:.25px;
+  margin:18px 0 28px;
+  color:#f2f6ff;
 }
 
-/* =========================================================
+/* subtle divider */
+.question::after{
+  content:"";
+  display:block;
+  width:64px;
+  height:2px;
+  margin-top:16px;
+  background:linear-gradient(90deg,#6ddcff,#a88bff);
+  opacity:.55;
+}
+
+/* ===============================
    OPTIONS
-   ========================================================= */
+   =============================== */
 
 .options{
   display:grid;
@@ -129,16 +123,14 @@
 }
 
 .option{
-  position:relative;
-  padding:16px 20px;
+  padding:14px 18px;
   border-radius:14px;
   cursor:pointer;
 
   background:
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
-    rgba(20,24,44,.8);
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
 
-  border:1px solid rgba(255,255,255,.14);
+  border:1px solid rgba(160,190,255,.22);
 
   transition:
     transform .2s ease,
@@ -147,9 +139,9 @@
 }
 
 .option:hover{
-  transform:translateY(-2px);
-  border-color:rgba(140,210,255,.55);
-  box-shadow:0 0 22px rgba(120,190,255,.35);
+  transform:translateY(-1px);
+  border-color:#7fd3ff;
+  box-shadow:0 0 22px rgba(127,211,255,.32);
 }
 
 .option.disabled{
@@ -157,83 +149,86 @@
   pointer-events:none;
 }
 
-/* =========================================================
+/* ===============================
    FEEDBACK
-   ========================================================= */
+   =============================== */
 
 .feedback{
-  margin-top:22px;
-  padding:18px 20px;
-  border-radius:14px;
-  background:rgba(0,0,0,.35);
-  animation:fadeUp .35s ease forwards;
+  margin-top:26px;
+  padding:20px;
+  border-radius:16px;
+
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.25));
+
+  border:1px solid rgba(255,255,255,.12);
 }
 
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:none}
+.correct{
+  color:#6dffcc;
 }
 
-.correct{color:#6dffcc}
-.wrong{color:#ff8a8a}
+.wrong{
+  color:#ff8a8a;
+}
+
 .fact{
-  margin-top:8px;
+  margin-top:10px;
   font-size:.85rem;
   opacity:.85;
 }
 
-/* =========================================================
-   ACTIONS
-   ========================================================= */
+/* ===============================
+   ACTION BUTTONS
+   =============================== */
 
 .actions{
-  margin-top:22px;
+  margin-top:26px;
   display:flex;
-  gap:12px;
+  gap:14px;
 }
 
 button{
   padding:12px 26px;
-  border-radius:12px;
+  border-radius:14px;
   border:none;
-  color:white;
   cursor:pointer;
+  font-weight:500;
   display:none;
 }
 
 /* NEXT */
 #next{
-  background:#1f3cff;
-  box-shadow:0 0 16px rgba(80,120,255,.6);
+  background:linear-gradient(135deg,#3b6cff,#6f9dff);
+  box-shadow:0 0 18px rgba(90,140,255,.45);
 }
 
-/* SKIP – RED → GOLD */
+/* SKIP */
 #skip{
   display:inline-block;
   background:linear-gradient(135deg,#ff3b3b,#ffb347);
-  box-shadow:0 0 18px rgba(255,140,60,.45);
+  box-shadow:0 0 20px rgba(255,150,80,.55);
 }
 
 #skip:hover{
-  filter:brightness(1.1);
+  filter:brightness(1.08);
 }
 
-/* =========================================================
+/* ===============================
    RESPONSIVE
-   ========================================================= */
+   =============================== */
 
-@media (max-width:720px){
+@media(max-width:720px){
   .quiz{
-    margin:24px 14px;
-    padding:26px 22px 28px;
+    padding:32px 26px;
+    margin:30px 14px;
+  }
+
+  .question{
+    font-size:1.25rem;
   }
 
   .options{
     grid-template-columns:1fr;
-  }
-
-  .timer-wrap{
-    width:42px;
-    height:42px;
   }
 }
