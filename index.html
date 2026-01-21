@@ -5,23 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biology Quiz</title>
 
+<!-- QUIZ CARD -->
 <link rel="stylesheet" href="css/quiz-card.css">
+
+<!-- TIMER -->
 <link rel="stylesheet" href="css/timer.css">
 
 <style>
-*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
 
 body{
-  margin:0;min-height:100vh;color:#eaf1ff;overflow-x:hidden;
+  margin:0;
+  min-height:100vh;
+  color:#eaf1ff;
+  overflow-x:hidden;
   background:
     radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
     radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
     linear-gradient(180deg,#05070f,#04060c);
 }
 
+/* LOADING */
 .loading{
-  position:fixed;inset:0;background:#05070f;
-  display:flex;align-items:center;justify-content:center;
+  position:fixed;
+  inset:0;
+  background:#05070f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   z-index:999;
 }
 .loader{
@@ -33,18 +47,26 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-footer{text-align:center;font-size:.35rem;opacity:.25;margin:18px 0 8px}
+footer{
+  text-align:center;
+  font-size:.35rem;
+  opacity:.25;
+  margin:18px 0 8px;
+}
 </style>
 </head>
 
 <body>
 
+<!-- LOADING -->
 <div class="loading" id="loading">
   <div class="loader"></div>
 </div>
 
+<!-- SPACE -->
 <canvas id="stars"></canvas>
 
+<!-- QUIZ -->
 <div class="quiz" id="quiz">
 
   <div class="header">
@@ -54,12 +76,14 @@ footer{text-align:center;font-size:.35rem;opacity:.25;margin:18px 0 8px}
       <span id="progress"></span>
       <span id="difficulty"></span>
 
+      <!-- TIMER -->
       <div class="timer-wrap" id="timerWrap">
         <svg class="timer-ring" width="56" height="56">
           <circle cx="28" cy="28" r="22"></circle>
         </svg>
 
         <span id="timer">15</span>
+
         <div class="clock-hand"></div>
         <div class="timeup-burst" id="timeupBurst"></div>
       </div>
@@ -94,7 +118,7 @@ const FULL = 138;
 
 let timeLeft = TOTAL_TIME;
 let interval = null;
-let running  = false;
+let running = false;
 
 const timerEl   = document.getElementById("timer");
 const ring      = document.querySelector(".timer-ring circle");
@@ -106,9 +130,14 @@ function resetTimer(){
   clearInterval(interval);
   running = false;
   timeLeft = TOTAL_TIME;
+
   timerEl.textContent = TOTAL_TIME;
   ring.style.strokeDashoffset = 0;
-  clockHand.style.transform = "translate(-50%,-100%) rotate(0deg)";
+
+  // 12 o'clock start
+  clockHand.style.transform =
+    "translate(-50%, -100%) rotate(270deg)";
+
   timerWrap.classList.remove("danger");
   timerSound.pause();
   timerSound.currentTime = 0;
@@ -117,17 +146,23 @@ function resetTimer(){
 timerWrap.onclick = ()=>{
   if(running) return;
   running = true;
+
   timerSound.play().catch(()=>{});
 
   interval = setInterval(()=>{
     timeLeft--;
     timerEl.textContent = timeLeft;
 
-    /* Ring + hand move SAME direction */
     const progress = timeLeft / TOTAL_TIME;
+
+    // Ring (anti-clockwise)
     ring.style.strokeDashoffset = FULL * (1 - progress);
+
+    // Clock hand (anti-clockwise)
+    const angle = progress * 360 - 90;
     clockHand.style.transform =
-      `translate(-50%,-100%) rotate(${360 * (1 - progress) - 90}deg)`;
+      `translate(-50%, -100%) rotate(${angle}deg)`;
+
     if(timeLeft <= 5){
       timerWrap.classList.add("danger");
     } else {
@@ -136,11 +171,13 @@ timerWrap.onclick = ()=>{
 
     if(timeLeft <= 0){
       clearInterval(interval);
+      running = false;
+
       timerSound.pause();
       timerWrap.classList.remove("danger");
+
       burst.classList.add("active");
       setTimeout(()=>burst.classList.remove("active"),600);
-      running = false;
     }
   },1000);
 };
@@ -164,7 +201,7 @@ let locked = false;
 fetch("questions.json")
 .then(r=>r.json())
 .then(d=>{
-  data=d;
+  data = d;
   loading.style.display="none";
   quiz.style.display="block";
   load();
@@ -173,6 +210,7 @@ fetch("questions.json")
 function load(){
   resetTimer();
   locked=false;
+
   nEl.style.display="none";
   skipEl.style.display="inline-block";
   fEl.style.display="none";
@@ -188,7 +226,7 @@ function load(){
     div.className="option";
     div.innerHTML=`<b>${"ABCD"[i]}.</b> ${t}`;
     div.onclick=()=>{
-      if(locked)return;
+      if(locked) return;
       (i===q.answer?correctAudio:wrongAudio).play().catch(()=>{});
       select(i);
     };
@@ -197,27 +235,34 @@ function load(){
 }
 
 function select(i){
-  if(locked)return;
+  if(locked) return;
   locked=true;
-  resetTimer();
 
+  resetTimer();
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
 
   const q=data[idx];
-  fEl.innerHTML=
+  fEl.innerHTML =
     i===q.answer
-      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
-      : `<div class="wrong"><b>Incorrect</b></div>
-         <p><b>Correct:</b> ${q.options[q.answer]}</p>
-         <p>${q.explanation}</p>`;
+    ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+    : `<div class="wrong"><b>Incorrect</b></div>
+       <p><b>Correct:</b> ${q.options[q.answer]}</p>
+       <p>${q.explanation}</p>`;
 
   fEl.style.display="block";
   nEl.style.display="inline-block";
   skipEl.style.display="none";
 }
 
-skipEl.onclick=()=>{idx++;idx<data.length?load():qEl.textContent="Quiz completed!"};
-nEl.onclick=()=>{idx++;idx<data.length?load():qEl.textContent="Quiz completed!"};
+skipEl.onclick=()=>{
+  idx++;
+  idx<data.length?load():qEl.textContent="Quiz completed!";
+};
+
+nEl.onclick=()=>{
+  idx++;
+  idx<data.length?load():qEl.textContent="Quiz completed!";
+};
 </script>
 
 </body>
