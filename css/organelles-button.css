@@ -1,47 +1,45 @@
 /* ===============================
-   🧬 ORGANELLES BUTTON (COSMIC)
+   🧬 ORGANELLES BUTTON – HUD STYLE
    =============================== */
 
 .organelles-footer{
   text-align:center;
-  margin:22px 0 26px;
+  margin:26px 0 30px;
 }
 
-/* BUTTON CORE */
+/* ===== BUTTON CORE ===== */
 .organelles-btn{
+  position:relative;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:10px;
 
-  padding:14px 34px;
-  border-radius:999px;
+  padding:14px 36px;
+  border-radius:14px;
 
-  font-size:.9rem;
+  font-size:.85rem;
   font-weight:600;
-  letter-spacing:.08em;
+  letter-spacing:.12em;
   text-transform:uppercase;
 
-  color:#eaf6ff;
+  color:#eaf8ff;
   text-decoration:none;
 
-  /* 🌌 COSMIC GRADIENT */
   background:
     linear-gradient(
-      135deg,
-      rgba(90,140,255,.95),
-      rgba(160,90,255,.95)
+      180deg,
+      rgba(14,20,48,.95),
+      rgba(6,10,26,.98)
     );
 
-  border:1px solid rgba(180,200,255,.45);
+  border:1px solid rgba(120,200,255,.35);
 
   box-shadow:
-    0 0 22px rgba(120,160,255,.55),
-    0 0 42px rgba(160,90,255,.35),
-    inset 0 0 0 1px rgba(255,255,255,.12);
+    0 0 18px rgba(90,160,255,.45),
+    inset 0 0 0 1px rgba(255,255,255,.08);
 
-  position:relative;
   overflow:hidden;
+  isolation:isolate;
 
   transition:
     transform .25s ease,
@@ -49,52 +47,76 @@
     filter .25s ease;
 }
 
-/* 🌠 GLOW SHEEN */
+/* ===== ANIMATED PROGRESS BORDER ===== */
 .organelles-btn::before{
   content:"";
   position:absolute;
-  inset:-40%;
+  inset:-2px;
+  border-radius:inherit;
+
   background:
-    linear-gradient(
-      120deg,
+    conic-gradient(
+      from 0deg,
       transparent,
-      rgba(255,255,255,.35),
+      #6fdcff,
+      #9a7bff,
+      #6fdcff,
       transparent
     );
-  transform:rotate(20deg) translateX(-100%);
-  transition:transform .6s ease;
-  pointer-events:none;
+
+  animation:orbit 4s linear infinite;
+  z-index:-1;
 }
 
-/* HOVER */
+/* mask inner area so only border shows */
+.organelles-btn::after{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:inherit;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(14,20,48,.96),
+      rgba(6,10,26,.98)
+    );
+  z-index:-1;
+}
+
+/* ===== HOVER ===== */
 .organelles-btn:hover{
-  transform:translateY(-3px) scale(1.02);
+  transform:translateY(-3px);
   filter:brightness(1.15);
 
   box-shadow:
-    0 0 28px rgba(120,180,255,.8),
-    0 0 60px rgba(180,90,255,.55),
-    inset 0 0 0 1px rgba(255,255,255,.18);
+    0 0 26px rgba(120,200,255,.85),
+    0 0 60px rgba(140,120,255,.55),
+    inset 0 0 0 1px rgba(255,255,255,.14);
 }
 
+/* speed up border on hover */
 .organelles-btn:hover::before{
-  transform:rotate(20deg) translateX(100%);
+  animation-duration:1.6s;
 }
 
-/* ACTIVE (CLICK) */
+/* ===== ACTIVE ===== */
 .organelles-btn:active{
-  transform:translateY(0) scale(.98);
-  box-shadow:
-    0 0 14px rgba(120,160,255,.6);
+  transform:translateY(0) scale(.97);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes orbit{
+  to{transform:rotate(360deg)}
 }
 
 /* ===============================
-   📱 MOBILE TWEAK
+   📱 MOBILE
    =============================== */
 
 @media(max-width:600px){
   .organelles-btn{
     padding:12px 26px;
-    font-size:.82rem;
+    font-size:.78rem;
+    letter-spacing:.1em;
   }
 }
