@@ -1,17 +1,21 @@
-/* ===== SPACE MOTION VARIABLES ===== */
+/* ===============================
+   🌌 ULTRA-PREMIUM ORGANELLE CARD
+   =============================== */
+
 :root{
   --blue:#7dd3ff;
   --violet:#c084fc;
-  --glow:0 0 40px rgba(120,180,255,.6);
+  --pink:#ff9bd5;
+  --glass:rgba(12,16,40,.85);
 }
 
-/* ===== CARD CONTAINER ===== */
+/* ===== CONTAINER ===== */
 .organelle-container{
   max-width:1200px;
-  margin:80px auto;
-  padding:0 20px;
+  margin:90px auto;
+  padding:0 22px;
   display:grid;
-  gap:70px;
+  gap:80px;
 }
 
 /* ===== CARD ===== */
@@ -19,49 +23,49 @@
   position:relative;
   display:grid;
   grid-template-columns:380px 1fr;
-  gap:40px;
+  gap:42px;
 
-  padding:40px;
-  border-radius:28px;
+  padding:42px;
+  border-radius:30px;
 
   background:
-    radial-gradient(circle at 20% 10%, rgba(120,180,255,.35), transparent 60%),
-    radial-gradient(circle at 80% 90%, rgba(200,120,255,.35), transparent 65%),
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.01)),
-    rgba(6,10,30,.95);
+    radial-gradient(circle at 15% 10%, rgba(120,180,255,.45), transparent 60%),
+    radial-gradient(circle at 85% 90%, rgba(200,120,255,.45), transparent 65%),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+    var(--glass);
 
   border:1px solid rgba(150,190,255,.35);
-  backdrop-filter:blur(30px) saturate(180%);
+  backdrop-filter:blur(32px) saturate(180%);
 
   box-shadow:
-    0 60px 180px rgba(0,0,0,.95),
+    0 80px 220px rgba(0,0,0,.95),
     inset 0 0 0 1px rgba(255,255,255,.06);
 
-  animation:floatIn 1s ease both;
+  animation:cardIn 1s cubic-bezier(.2,.8,.2,1) both;
 }
 
-/* ===== ENTRANCE ===== */
-@keyframes floatIn{
-  from{opacity:0; transform:translateY(60px) scale(.96)}
+/* ===== ENTRY ===== */
+@keyframes cardIn{
+  from{opacity:0; transform:translateY(80px) scale(.94)}
   to{opacity:1; transform:none}
 }
 
-/* ===== HOVER PHYSICS ===== */
+/* ===== HOVER ===== */
 .organelle-card:hover{
-  transform:translateY(-12px) scale(1.01);
+  transform:translateY(-14px) scale(1.015);
   box-shadow:
-    0 90px 220px rgba(0,0,0,1),
-    0 0 80px rgba(140,180,255,.4);
+    0 120px 280px rgba(0,0,0,1),
+    0 0 120px rgba(140,180,255,.45);
 }
 
-/* ===== VISUAL SIDE ===== */
+/* ===== VISUAL ===== */
 .organelle-visual{
   position:relative;
-  border-radius:22px;
+  border-radius:24px;
 
   background:
-    radial-gradient(circle at 30% 20%, rgba(160,200,255,.6), transparent 60%),
-    linear-gradient(180deg,#050a22,#020411);
+    radial-gradient(circle at 30% 20%, rgba(160,210,255,.8), transparent 60%),
+    linear-gradient(180deg,#060c2a,#020311);
 
   display:flex;
   align-items:center;
@@ -71,91 +75,100 @@
 
 /* ===== FLOATING IMAGE ===== */
 .organelle-visual img{
-  width:80%;
-  max-width:260px;
+  width:82%;
+  max-width:270px;
 
   animation:float 6s ease-in-out infinite;
   filter:
-    drop-shadow(0 40px 80px rgba(0,0,0,.9))
-    drop-shadow(0 0 40px rgba(140,180,255,.6));
+    drop-shadow(0 45px 90px rgba(0,0,0,.95))
+    drop-shadow(0 0 55px rgba(140,180,255,.7));
 }
 
 @keyframes float{
   0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-14px)}
+  50%{transform:translateY(-18px)}
 }
 
-/* ===== SIZE RING ===== */
+/* ===== SIZE BADGE ===== */
 .size-badge{
   position:absolute;
-  inset:auto 20px 20px auto;
-  padding:10px 18px;
+  bottom:18px;
+  right:18px;
 
+  padding:12px 20px;
   font-size:.8rem;
-  font-weight:700;
-  letter-spacing:.08em;
+  font-weight:800;
+  letter-spacing:.12em;
 
-  color:#eaf6ff;
+  color:#f3fbff;
   border-radius:999px;
 
   background:
-    linear-gradient(135deg,var(--blue),var(--violet));
+    linear-gradient(135deg,var(--blue),var(--violet),var(--pink));
 
   box-shadow:
-    0 0 30px rgba(160,200,255,.7),
-    inset 0 0 0 2px rgba(255,255,255,.3);
+    0 0 40px rgba(160,200,255,.9),
+    inset 0 0 0 2px rgba(255,255,255,.35);
 
-  animation:pulse 2.5s infinite;
+  animation:badgePulse 2.6s infinite;
 }
 
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 30px rgba(160,200,255,.6)}
-  50%{box-shadow:0 0 60px rgba(200,140,255,.9)}
+@keyframes badgePulse{
+  0%,100%{box-shadow:0 0 40px rgba(160,200,255,.6)}
+  50%{box-shadow:0 0 80px rgba(220,160,255,1)}
 }
 
 /* ===== CONTENT ===== */
 .organelle-content h2{
-  margin:0 0 16px;
-  font-size:2.2rem;
+  margin:0 0 18px;
+  font-size:2.4rem;
+  letter-spacing:.6px;
 
-  background:linear-gradient(135deg,#a6dcff,#e6b3ff);
+  background:linear-gradient(135deg,#b6e5ff,#f0b7ff);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
 
 .organelle-desc{
-  font-size:1.1rem;
-  line-height:1.75;
-  opacity:.95;
-  margin-bottom:20px;
+  font-size:1.15rem;
+  line-height:1.8;
+  opacity:.96;
+  margin-bottom:22px;
 }
 
 .organelle-points li{
   margin-bottom:10px;
-  opacity:.9;
+  opacity:.92;
 }
 
 /* ===== TAGS ===== */
+.organelle-tags{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
 .organelle-tags span{
-  padding:10px 18px;
+  padding:10px 20px;
   font-size:.7rem;
-  letter-spacing:.14em;
+  letter-spacing:.15em;
   text-transform:uppercase;
 
   border-radius:999px;
-  color:#eef6ff;
+  color:#f3faff;
 
   background:
-    linear-gradient(135deg, rgba(120,180,255,.5), rgba(200,120,255,.5));
+    linear-gradient(135deg, rgba(120,180,255,.55), rgba(220,140,255,.55));
 
   box-shadow:
-    0 0 26px rgba(160,200,255,.6),
-    inset 0 0 0 1px rgba(255,255,255,.25);
+    0 0 30px rgba(160,200,255,.7),
+    inset 0 0 0 1px rgba(255,255,255,.3);
 }
 
 /* ===== MOBILE ===== */
 @media(max-width:900px){
   .organelle-card{
     grid-template-columns:1fr;
+    padding:32px;
   }
 }
