@@ -1,151 +1,143 @@
-/* ===============================
-   🧬 PREMIUM ORGANELLE CARD
-   =============================== */
-
+/* ===== CONTAINER ===== */
 .organelle-container{
-  max-width:1100px;
-  margin:60px auto;
+  max-width:1200px;
+  margin:0 auto 80px;
   padding:0 20px;
+
   display:grid;
   grid-template-columns:1fr;
-  gap:40px;
+  gap:50px;
 }
 
+/* ===== CARD ===== */
 .organelle-card{
+  position:relative;
   display:grid;
-  grid-template-columns:340px 1fr;
-  gap:32px;
+  grid-template-columns:360px 1fr;
+  gap:36px;
 
-  padding:32px;
-  border-radius:22px;
+  padding:36px;
+  border-radius:26px;
 
   background:
+    radial-gradient(circle at 30% 20%, rgba(120,180,255,.25), transparent 60%),
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)),
-    rgba(10,14,28,.88);
+    rgba(8,12,30,.92);
 
-  backdrop-filter:blur(20px) saturate(140%);
-  border:1px solid rgba(140,180,255,.22);
+  backdrop-filter:blur(26px) saturate(160%);
+  border:1px solid rgba(140,180,255,.25);
 
   box-shadow:
-    0 40px 120px rgba(0,0,0,.75),
-    inset 0 0 0 1px rgba(255,255,255,.04);
+    0 50px 140px rgba(0,0,0,.9),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 
-  transition:transform .35s ease, box-shadow .35s ease;
+  animation:cardIn .7s ease both;
 }
 
-.organelle-card:hover{
-  transform:translateY(-6px);
-  box-shadow:
-    0 60px 160px rgba(0,0,0,.85),
-    0 0 60px rgba(120,180,255,.25);
+@keyframes cardIn{
+  from{opacity:0; transform:translateY(30px)}
+  to{opacity:1; transform:none}
 }
 
-/* ===============================
-   🖼️ IMAGE SIDE
-   =============================== */
-
+/* ===== IMAGE SIDE ===== */
 .organelle-visual{
   position:relative;
+  border-radius:20px;
+
+  background:
+    radial-gradient(circle at 30% 20%, rgba(160,200,255,.35), transparent 65%),
+    linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,.85));
+
   display:flex;
   align-items:center;
   justify-content:center;
-
-  border-radius:18px;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(120,180,255,.25), transparent 60%),
-    rgba(0,0,0,.35);
-
   overflow:hidden;
 }
 
 .organelle-visual img{
-  width:80%;
+  width:85%;
   max-width:260px;
-  filter:drop-shadow(0 20px 40px rgba(0,0,0,.8));
+  filter:
+    drop-shadow(0 30px 60px rgba(0,0,0,.9))
+    drop-shadow(0 0 30px rgba(140,180,255,.35));
 }
 
+/* ===== SIZE BADGE ===== */
 .size-badge{
   position:absolute;
-  bottom:14px;
-  right:14px;
+  bottom:16px;
+  right:16px;
 
-  padding:6px 12px;
+  padding:6px 14px;
   font-size:.75rem;
   font-weight:600;
 
-  color:#cfe9ff;
+  color:#dff1ff;
   background:rgba(0,0,0,.55);
-  border:1px solid rgba(120,180,255,.35);
-  border-radius:20px;
-  backdrop-filter:blur(6px);
+  border:1px solid rgba(140,180,255,.4);
+  border-radius:999px;
+
+  box-shadow:0 0 18px rgba(140,180,255,.5);
 }
 
-/* ===============================
-   📘 CONTENT
-   =============================== */
-
+/* ===== CONTENT ===== */
 .organelle-content h2{
-  margin:0 0 12px;
-  font-size:1.8rem;
-  letter-spacing:.5px;
+  margin:0 0 14px;
+  font-size:2rem;
 
-  background:linear-gradient(135deg,#9fd3ff,#cfa8ff);
+  background:linear-gradient(135deg,#a6d8ff,#e0b3ff);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
 
 .organelle-desc{
-  font-size:1rem;
-  line-height:1.6;
+  font-size:1.05rem;
+  line-height:1.7;
   opacity:.9;
-  margin-bottom:16px;
+  margin-bottom:18px;
 }
 
 .organelle-points{
   padding-left:18px;
-  margin:0 0 18px;
+  margin:0 0 20px;
 }
 
 .organelle-points li{
-  margin-bottom:8px;
+  margin-bottom:10px;
   opacity:.85;
 }
 
-/* ===============================
-   🏷️ TAGS
-   =============================== */
-
+/* ===== TAGS ===== */
 .organelle-tags{
   display:flex;
-  gap:10px;
+  gap:12px;
   flex-wrap:wrap;
 }
 
 .organelle-tags span{
-  padding:6px 14px;
+  padding:8px 16px;
   font-size:.7rem;
-  letter-spacing:.08em;
+  letter-spacing:.12em;
   text-transform:uppercase;
 
   border-radius:999px;
-  color:#bfe4ff;
+  color:#d6ecff;
 
   background:
-    linear-gradient(135deg, rgba(120,180,255,.25), rgba(200,120,255,.25));
+    linear-gradient(135deg, rgba(120,180,255,.35), rgba(200,120,255,.35));
 
-  box-shadow:0 0 16px rgba(140,180,255,.35);
+  box-shadow:
+    0 0 20px rgba(140,180,255,.45),
+    inset 0 0 0 1px rgba(255,255,255,.15);
 }
 
-/* ===============================
-   📱 RESPONSIVE
-   =============================== */
-
+/* ===== RESPONSIVE ===== */
 @media(max-width:900px){
   .organelle-card{
     grid-template-columns:1fr;
   }
 
   .organelle-visual{
-    padding:28px 0;
+    padding:40px 0;
   }
 }
