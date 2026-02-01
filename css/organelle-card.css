@@ -1,21 +1,19 @@
-/* ===============================
-   🌌 ULTRA-PREMIUM ORGANELLE CARD
-   =============================== */
-
 :root{
-  --blue:#7dd3ff;
-  --violet:#c084fc;
-  --pink:#ff9bd5;
-  --glass:rgba(12,16,40,.85);
+  --bg:#070a18;
+  --cyan:#3df2ff;
+  --blue:#5aa9ff;
+  --violet:#8b7cff;
+  --pink:#ff6bdc;
+  --glass:rgba(10,14,36,.88);
 }
 
 /* ===== CONTAINER ===== */
 .organelle-container{
   max-width:1200px;
-  margin:90px auto;
+  margin:100px auto;
   padding:0 22px;
   display:grid;
-  gap:80px;
+  gap:90px;
 }
 
 /* ===== CARD ===== */
@@ -23,49 +21,49 @@
   position:relative;
   display:grid;
   grid-template-columns:380px 1fr;
-  gap:42px;
+  gap:44px;
 
-  padding:42px;
-  border-radius:30px;
+  padding:44px;
+  border-radius:32px;
 
   background:
-    radial-gradient(circle at 15% 10%, rgba(120,180,255,.45), transparent 60%),
-    radial-gradient(circle at 85% 90%, rgba(200,120,255,.45), transparent 65%),
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+    radial-gradient(circle at 12% 12%, rgba(61,242,255,.35), transparent 55%),
+    radial-gradient(circle at 88% 85%, rgba(255,107,220,.35), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02)),
     var(--glass);
 
-  border:1px solid rgba(150,190,255,.35);
-  backdrop-filter:blur(32px) saturate(180%);
+  border:1px solid rgba(120,200,255,.35);
+  backdrop-filter:blur(36px) saturate(190%);
 
   box-shadow:
-    0 80px 220px rgba(0,0,0,.95),
-    inset 0 0 0 1px rgba(255,255,255,.06);
+    0 90px 260px rgba(0,0,0,.95),
+    inset 0 0 0 1px rgba(255,255,255,.08);
 
-  animation:cardIn 1s cubic-bezier(.2,.8,.2,1) both;
+  animation:cardIn .9s cubic-bezier(.16,.84,.44,1) both;
 }
 
 /* ===== ENTRY ===== */
 @keyframes cardIn{
-  from{opacity:0; transform:translateY(80px) scale(.94)}
+  from{opacity:0; transform:translateY(90px) scale(.92)}
   to{opacity:1; transform:none}
 }
 
 /* ===== HOVER ===== */
 .organelle-card:hover{
-  transform:translateY(-14px) scale(1.015);
+  transform:translateY(-18px) scale(1.02);
   box-shadow:
-    0 120px 280px rgba(0,0,0,1),
-    0 0 120px rgba(140,180,255,.45);
+    0 140px 360px rgba(0,0,0,1),
+    0 0 140px rgba(90,200,255,.6);
 }
 
 /* ===== VISUAL ===== */
 .organelle-visual{
   position:relative;
-  border-radius:24px;
+  border-radius:26px;
 
   background:
-    radial-gradient(circle at 30% 20%, rgba(160,210,255,.8), transparent 60%),
-    linear-gradient(180deg,#060c2a,#020311);
+    radial-gradient(circle at 30% 20%, rgba(90,220,255,.9), transparent 55%),
+    linear-gradient(180deg,#03072a,#010214);
 
   display:flex;
   align-items:center;
@@ -73,20 +71,20 @@
   overflow:hidden;
 }
 
-/* ===== FLOATING IMAGE ===== */
+/* ===== IMAGE ===== */
 .organelle-visual img{
-  width:82%;
-  max-width:270px;
+  width:84%;
+  max-width:280px;
 
-  animation:float 6s ease-in-out infinite;
+  animation:float 5.5s ease-in-out infinite;
   filter:
-    drop-shadow(0 45px 90px rgba(0,0,0,.95))
-    drop-shadow(0 0 55px rgba(140,180,255,.7));
+    drop-shadow(0 50px 110px rgba(0,0,0,1))
+    drop-shadow(0 0 70px rgba(61,242,255,.9));
 }
 
 @keyframes float{
   0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-18px)}
+  50%{transform:translateY(-22px)}
 }
 
 /* ===== SIZE BADGE ===== */
@@ -95,80 +93,81 @@
   bottom:18px;
   right:18px;
 
-  padding:12px 20px;
+  padding:12px 22px;
   font-size:.8rem;
-  font-weight:800;
-  letter-spacing:.12em;
+  font-weight:900;
+  letter-spacing:.14em;
 
-  color:#f3fbff;
+  color:#ffffff;
   border-radius:999px;
 
   background:
-    linear-gradient(135deg,var(--blue),var(--violet),var(--pink));
+    linear-gradient(135deg,var(--cyan),var(--violet),var(--pink));
 
   box-shadow:
-    0 0 40px rgba(160,200,255,.9),
-    inset 0 0 0 2px rgba(255,255,255,.35);
+    0 0 60px rgba(61,242,255,1),
+    inset 0 0 0 2px rgba(255,255,255,.45);
 
-  animation:badgePulse 2.6s infinite;
+  animation:badgePulse 2.2s infinite;
 }
 
 @keyframes badgePulse{
-  0%,100%{box-shadow:0 0 40px rgba(160,200,255,.6)}
-  50%{box-shadow:0 0 80px rgba(220,160,255,1)}
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
 }
 
 /* ===== CONTENT ===== */
 .organelle-content h2{
   margin:0 0 18px;
-  font-size:2.4rem;
-  letter-spacing:.6px;
+  font-size:2.6rem;
+  letter-spacing:.8px;
 
-  background:linear-gradient(135deg,#b6e5ff,#f0b7ff);
+  background:linear-gradient(135deg,#6ff3ff,#ff8be9);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
 
 .organelle-desc{
-  font-size:1.15rem;
-  line-height:1.8;
-  opacity:.96;
-  margin-bottom:22px;
+  font-size:1.18rem;
+  line-height:1.9;
+  color:#e8f6ff;
+  margin-bottom:24px;
 }
 
+/* ===== BULLETS ===== */
 .organelle-points li{
-  margin-bottom:10px;
-  opacity:.92;
+  margin-bottom:12px;
+  color:#d7eeff;
 }
 
 /* ===== TAGS ===== */
 .organelle-tags{
   display:flex;
-  gap:12px;
+  gap:14px;
   flex-wrap:wrap;
 }
 
 .organelle-tags span{
-  padding:10px 20px;
+  padding:12px 22px;
   font-size:.7rem;
-  letter-spacing:.15em;
+  letter-spacing:.18em;
   text-transform:uppercase;
 
   border-radius:999px;
-  color:#f3faff;
+  color:#ffffff;
 
   background:
-    linear-gradient(135deg, rgba(120,180,255,.55), rgba(220,140,255,.55));
+    linear-gradient(135deg, rgba(61,242,255,.7), rgba(255,107,220,.7));
 
   box-shadow:
-    0 0 30px rgba(160,200,255,.7),
-    inset 0 0 0 1px rgba(255,255,255,.3);
+    0 0 40px rgba(61,242,255,.8),
+    inset 0 0 0 1px rgba(255,255,255,.4);
 }
 
 /* ===== MOBILE ===== */
 @media(max-width:900px){
   .organelle-card{
     grid-template-columns:1fr;
-    padding:32px;
+    padding:34px;
   }
 }
