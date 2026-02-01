@@ -152,4 +152,91 @@
   .organelle-visual{
     height:320px;
   }
+  /* ===============================
+   🎯 CENTER / FOCUS MODE
+   =============================== */
+
+.organelle-card{
+  cursor:pointer;
+  transition:
+    transform .45s cubic-bezier(.2,.8,.2,1),
+    box-shadow .45s ease,
+    opacity .4s ease,
+    filter .4s ease;
+  transform-style:preserve-3d;
+}
+
+/* Hover 3D */
+.organelle-card:hover{
+  transform:translateY(-8px) rotateX(4deg) rotateY(-4deg);
+}
+
+/* Background dim */
+.organelle-container.center-mode .organelle-card{
+  opacity:.15;
+  filter:blur(3px);
+  pointer-events:none;
+}
+
+/* Active card */
+.organelle-card.active{
+  position:relative;
+  z-index:100;
+  opacity:1 !important;
+  filter:none !important;
+  pointer-events:auto;
+  transform:scale(1.08);
+  box-shadow:
+    0 80px 240px rgba(0,0,0,.95),
+    0 0 90px rgba(180,120,255,.45);
+}
+
+/* ===============================
+   🪟 MODAL OVERLAY
+   =============================== */
+
+.organelle-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(5,8,20,.75);
+  backdrop-filter:blur(10px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:.4s ease;
+  z-index:200;
+}
+
+.organelle-modal.active{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.organelle-modal-content{
+  max-width:720px;
+  max-height:80vh;
+  overflow:auto;
+  padding:32px;
+  border-radius:22px;
+
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,215,150,.25), transparent 60%),
+    linear-gradient(180deg,#0b0f25,#050713);
+
+  box-shadow:0 60px 180px rgba(0,0,0,.9);
+}
+
+.organelle-modal-close{
+  position:absolute;
+  top:18px;
+  right:22px;
+  font-size:1.4rem;
+  cursor:pointer;
+  opacity:.7;
+}
+
+.organelle-modal-close:hover{
+  opacity:1;
 }
