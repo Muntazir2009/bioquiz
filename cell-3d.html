@@ -8,42 +8,37 @@
 <style>
 html,body{
   margin:0;
-  padding:0;
   width:100%;
   height:100%;
   overflow:hidden;
   background:#050814;
-  font-family:system-ui, sans-serif;
 }
-
-#cell3d{
+#app{
   position:fixed;
   inset:0;
 }
-
 .hint{
   position:fixed;
-  bottom:14px;
+  bottom:12px;
   left:50%;
   transform:translateX(-50%);
+  color:#9fb6ff;
   font-size:.7rem;
-  opacity:.6;
-  color:#cfd8ff;
+  opacity:.7;
 }
 </style>
 </head>
 
 <body>
 
-<div id="cell3d"></div>
-<div class="hint">Drag to rotate · Scroll to zoom</div>
+<div id="app"></div>
+<div class="hint">3D Cell Preview</div>
 
-<!-- THREE.JS -->
+<!-- THREE.JS ONLY -->
 <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-/* SCENE */
+/* BASIC SCENE */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050814);
 
@@ -52,32 +47,29 @@ const camera = new THREE.PerspectiveCamera(
   60,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000
+  100
 );
-camera.position.set(0,0,6);
+camera.position.z = 6;
 
 /* RENDERER */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
-document.getElementById("cell3d").appendChild(renderer.domElement);
+document.getElementById("app").appendChild(renderer.domElement);
 
 /* LIGHTS */
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
-
-const keyLight = new THREE.PointLight(0x88ccff,1.2);
-keyLight.position.set(6,6,6);
-scene.add(keyLight);
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
+const light = new THREE.PointLight(0x88ccff,1.4);
+light.position.set(5,5,5);
+scene.add(light);
 
 /* CELL BODY */
 const cell = new THREE.Mesh(
   new THREE.SphereGeometry(2,64,64),
   new THREE.MeshStandardMaterial({
-    color:0x2b4cff,
+    color:0x355cff,
     transparent:true,
-    opacity:0.85,
-    roughness:0.25,
-    metalness:0.1
+    opacity:0.85
   })
 );
 scene.add(cell);
@@ -85,26 +77,15 @@ scene.add(cell);
 /* NUCLEUS */
 const nucleus = new THREE.Mesh(
   new THREE.SphereGeometry(0.8,48,48),
-  new THREE.MeshStandardMaterial({
-    color:0xff6b6b,
-    roughness:0.3
-  })
+  new THREE.MeshStandardMaterial({ color:0xff5c5c })
 );
 scene.add(nucleus);
-
-/* CONTROLS */
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.minDistance = 3;
-controls.maxDistance = 10;
 
 /* ANIMATE */
 function animate(){
   requestAnimationFrame(animate);
   cell.rotation.y += 0.002;
   nucleus.rotation.y -= 0.003;
-  controls.update();
   renderer.render(scene,camera);
 }
 animate();
