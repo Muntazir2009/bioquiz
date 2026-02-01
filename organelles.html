@@ -11,57 +11,43 @@
 
 <body>
 
-<header class="org-header">
-  <h1>Cell Organelles</h1>
-  <p>Structure • Function • Approximate Size</p>
-</header>
+<main class="organelle-page">
 
-<main class="org-grid">
+  <header class="organelle-header">
+    <h1>CELL ORGANELLES</h1>
+    <p>Structure • Function • Approximate Size</p>
+  </header>
 
-  <!-- ================= NUCLEUS CARD ================= -->
-  <article class="org-card">
-    <button class="org-toggle">
-      <div class="org-title">
-        <h2>Nucleus</h2>
-        <span class="org-size">≈ 5–10 µm</span>
+  <section class="organelle-grid">
+
+    <!-- NUCLEUS CARD -->
+    <article class="organelle-card">
+
+      <div class="organelle-top">
+        <img src="images/organelles/nucleus.png" alt="Nucleus diagram">
+        <span class="organelle-badge">5–10 µm</span>
       </div>
-      <span class="org-icon">+</span>
-    </button>
 
-    <div class="org-content">
-      <img
-        src="images/organelles/nucleus.png"
-        alt="Nucleus diagram"
-        class="org-image"
-      >
+      <div class="organelle-body">
+        <h2>Nucleus</h2>
 
-      <p>
-        The <b>nucleus</b> is a membrane-bound organelle that stores the genetic
-        material of the cell in the form of DNA. It controls cellular activities
-        such as growth, metabolism, and protein synthesis.
-      </p>
+        <p class="organelle-summary">
+          Membrane-bound organelle that stores genetic material (DNA) and controls
+          cellular activities.
+        </p>
 
-      <ul>
-        <li>Surrounded by a double membrane called the nuclear envelope</li>
-        <li>Contains nucleolus for rRNA synthesis</li>
-        <li>Absent in prokaryotic cells and mammalian RBCs</li>
-      </ul>
-    </div>
-  </article>
+        <ul class="organelle-points">
+          <li>Surrounded by double membrane (nuclear envelope)</li>
+          <li>Contains nucleolus for rRNA synthesis</li>
+          <li>Absent in prokaryotes & mammalian RBCs</li>
+        </ul>
+      </div>
+
+    </article>
+
+  </section>
 
 </main>
-
-<script>
-/* Accordion toggle (minimal & safe) */
-document.querySelectorAll(".org-toggle").forEach(btn=>{
-  btn.onclick=()=>{
-    const card=btn.parentElement;
-    card.classList.toggle("open");
-    btn.querySelector(".org-icon").textContent =
-      card.classList.contains("open") ? "–" : "+";
-  };
-});
-</script>
 
 </body>
 </html>
