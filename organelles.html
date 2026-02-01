@@ -420,6 +420,7 @@ cards.forEach(card=>{
       // Modal content clone
       modalBody.innerHTML = card.querySelector('.organelle-content').innerHTML;
       modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
   });
 });
