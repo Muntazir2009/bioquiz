@@ -429,8 +429,8 @@ document.addEventListener('click',()=>{
   cards.forEach(c=>c.classList.remove('active'));
   container.classList.remove('center-mode');
   modal.classList.remove('active');
+  document.body.style.overflow = '';
 });
-
 /* CLOSE BUTTON */
 modalClose.onclick = ()=>{
   cards.forEach(c=>c.classList.remove('active'));
