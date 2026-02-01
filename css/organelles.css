@@ -1,1 +1,125 @@
+/* ===============================
+   🌌 ORGANELLES PAGE – COSMIC
+   =============================== */
 
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  color:#eaf1ff;
+  background:
+    radial-gradient(1000px 700px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+}
+
+/* HEADER */
+.org-header{
+  text-align:center;
+  padding:48px 20px 24px;
+}
+
+.org-header h1{
+  font-size:2.4rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.org-header p{
+  opacity:.75;
+  margin-bottom:16px;
+}
+
+.back-btn{
+  display:inline-block;
+  margin-top:10px;
+  padding:10px 20px;
+  border-radius:999px;
+  text-decoration:none;
+  color:#cfe6ff;
+  border:1px solid rgba(120,180,255,.35);
+  backdrop-filter:blur(10px);
+}
+
+.back-btn:hover{
+  background:rgba(120,180,255,.15);
+}
+
+/* GRID */
+.org-container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:32px 20px 60px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:24px;
+}
+
+/* CARD */
+.org-card{
+  position:relative;
+  padding:22px 20px 26px;
+  border-radius:18px;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+    rgba(12,16,32,.75);
+
+  border:1px solid rgba(140,180,255,.22);
+  box-shadow:0 30px 90px rgba(0,0,0,.7);
+
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+
+.org-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 40px 120px rgba(120,180,255,.35);
+}
+
+/* IMAGE */
+.org-card img{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  margin-bottom:14px;
+  filter:drop-shadow(0 0 12px rgba(120,180,255,.45));
+}
+
+/* TEXT */
+.org-card h2{
+  font-size:1.2rem;
+  margin:6px 0 4px;
+}
+
+.org-card .size{
+  display:block;
+  font-size:.85rem;
+  color:#9fd4ff;
+  margin-bottom:8px;
+}
+
+.org-card p{
+  font-size:.9rem;
+  opacity:.85;
+  line-height:1.45;
+}
+
+/* FOOTER */
+.org-footer{
+  text-align:center;
+  padding:20px;
+  font-size:.7rem;
+  opacity:.4;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  .org-header h1{
+    font-size:1.9rem;
+  }
+}
