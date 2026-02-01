@@ -388,6 +388,55 @@
     <div id="modalBody"></div>
   </div>
 </div>
-  
+
+  <script>
+const cards = document.querySelectorAll('.organelle-card');
+const container = document.querySelector('.organelle-container');
+
+const modal = document.getElementById('organelleModal');
+const modalBody = document.getElementById('modalBody');
+const modalClose = document.getElementById('modalClose');
+
+/* CENTER + MODAL */
+cards.forEach(card=>{
+  card.addEventListener('click',e=>{
+    e.stopPropagation();
+
+    const isActive = card.classList.contains('active');
+
+    cards.forEach(c=>c.classList.remove('active'));
+    container.classList.remove('center-mode');
+    modal.classList.remove('active');
+
+    if(!isActive){
+      card.classList.add('active');
+      container.classList.add('center-mode');
+
+      card.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+      });
+
+      // Modal content clone
+      modalBody.innerHTML = card.querySelector('.organelle-content').innerHTML;
+      modal.classList.add('active');
+    }
+  });
+});
+
+/* CLICK OUTSIDE TO CLOSE */
+document.addEventListener('click',()=>{
+  cards.forEach(c=>c.classList.remove('active'));
+  container.classList.remove('center-mode');
+  modal.classList.remove('active');
+});
+
+/* CLOSE BUTTON */
+modalClose.onclick = ()=>{
+  cards.forEach(c=>c.classList.remove('active'));
+  container.classList.remove('center-mode');
+  modal.classList.remove('active');
+};
+  </script>
 </body>
 </html>
