@@ -1,10 +1,9 @@
 :root{
-  --bg:#070a18;
-  --cyan:#3df2ff;
-  --blue:#5aa9ff;
-  --violet:#8b7cff;
-  --pink:#ff6bdc;
-  --glass:rgba(10,14,36,.88);
+  --black:#05060c;
+  --deep:#0b0e1a;
+  --gold:#f5c16c;
+  --red:#ff4d4d;
+  --white:#f5f7ff;
 }
 
 /* ===== CONTAINER ===== */
@@ -20,50 +19,50 @@
 .organelle-card{
   position:relative;
   display:grid;
-  grid-template-columns:380px 1fr;
-  gap:44px;
+  grid-template-columns:360px 1fr;
+  gap:42px;
 
-  padding:44px;
-  border-radius:32px;
+  padding:42px;
+  border-radius:30px;
 
   background:
-    radial-gradient(circle at 12% 12%, rgba(61,242,255,.35), transparent 55%),
-    radial-gradient(circle at 88% 85%, rgba(255,107,220,.35), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02)),
-    var(--glass);
+    radial-gradient(circle at 15% 15%, rgba(245,193,108,.22), transparent 55%),
+    radial-gradient(circle at 85% 85%, rgba(255,77,77,.18), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)),
+    var(--deep);
 
-  border:1px solid rgba(120,200,255,.35);
-  backdrop-filter:blur(36px) saturate(190%);
+  border:1px solid rgba(245,193,108,.35);
+  backdrop-filter:blur(26px) saturate(160%);
 
   box-shadow:
-    0 90px 260px rgba(0,0,0,.95),
-    inset 0 0 0 1px rgba(255,255,255,.08);
+    0 80px 220px rgba(0,0,0,.95),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 
-  animation:cardIn .9s cubic-bezier(.16,.84,.44,1) both;
+  animation:cardIn .9s ease both;
 }
 
 /* ===== ENTRY ===== */
 @keyframes cardIn{
-  from{opacity:0; transform:translateY(90px) scale(.92)}
+  from{opacity:0; transform:translateY(80px) scale(.94)}
   to{opacity:1; transform:none}
 }
 
 /* ===== HOVER ===== */
 .organelle-card:hover{
-  transform:translateY(-18px) scale(1.02);
+  transform:translateY(-14px) scale(1.015);
   box-shadow:
-    0 140px 360px rgba(0,0,0,1),
-    0 0 140px rgba(90,200,255,.6);
+    0 130px 320px rgba(0,0,0,1),
+    0 0 120px rgba(245,193,108,.45);
 }
 
 /* ===== VISUAL ===== */
 .organelle-visual{
   position:relative;
-  border-radius:26px;
+  border-radius:24px;
 
   background:
-    radial-gradient(circle at 30% 20%, rgba(90,220,255,.9), transparent 55%),
-    linear-gradient(180deg,#03072a,#010214);
+    radial-gradient(circle at 30% 20%, rgba(245,193,108,.45), transparent 55%),
+    linear-gradient(180deg,#05060c,#02030a);
 
   display:flex;
   align-items:center;
@@ -71,20 +70,20 @@
   overflow:hidden;
 }
 
-/* ===== IMAGE ===== */
+/* ===== IMAGE FLOAT ===== */
 .organelle-visual img{
-  width:84%;
-  max-width:280px;
+  width:82%;
+  max-width:260px;
 
-  animation:float 5.5s ease-in-out infinite;
+  animation:float 6s ease-in-out infinite;
   filter:
-    drop-shadow(0 50px 110px rgba(0,0,0,1))
-    drop-shadow(0 0 70px rgba(61,242,255,.9));
+    drop-shadow(0 40px 90px rgba(0,0,0,.9))
+    drop-shadow(0 0 40px rgba(245,193,108,.6));
 }
 
 @keyframes float{
   0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-22px)}
+  50%{transform:translateY(-18px)}
 }
 
 /* ===== SIZE BADGE ===== */
@@ -93,51 +92,47 @@
   bottom:18px;
   right:18px;
 
-  padding:12px 22px;
+  padding:10px 22px;
   font-size:.8rem;
-  font-weight:900;
-  letter-spacing:.14em;
+  font-weight:800;
+  letter-spacing:.15em;
 
-  color:#ffffff;
+  color:#000;
   border-radius:999px;
 
-  background:
-    linear-gradient(135deg,var(--cyan),var(--violet),var(--pink));
+  background:linear-gradient(135deg,var(--gold),#ffd98a);
 
   box-shadow:
-    0 0 60px rgba(61,242,255,1),
-    inset 0 0 0 2px rgba(255,255,255,.45);
+    0 0 40px rgba(245,193,108,.9),
+    inset 0 0 0 2px rgba(255,255,255,.35);
 
-  animation:badgePulse 2.2s infinite;
+  animation:pulse 2.4s infinite;
 }
 
-@keyframes badgePulse{
+@keyframes pulse{
   0%,100%{transform:scale(1)}
-  50%{transform:scale(1.08)}
+  50%{transform:scale(1.07)}
 }
 
 /* ===== CONTENT ===== */
 .organelle-content h2{
-  margin:0 0 18px;
-  font-size:2.6rem;
+  margin:0 0 16px;
+  font-size:2.4rem;
   letter-spacing:.8px;
-
-  background:linear-gradient(135deg,#6ff3ff,#ff8be9);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+  color:var(--gold);
 }
 
 .organelle-desc{
-  font-size:1.18rem;
-  line-height:1.9;
-  color:#e8f6ff;
-  margin-bottom:24px;
+  font-size:1.15rem;
+  line-height:1.85;
+  color:var(--white);
+  margin-bottom:22px;
 }
 
 /* ===== BULLETS ===== */
 .organelle-points li{
   margin-bottom:12px;
-  color:#d7eeff;
+  color:#e2e6ff;
 }
 
 /* ===== TAGS ===== */
@@ -148,20 +143,20 @@
 }
 
 .organelle-tags span{
-  padding:12px 22px;
+  padding:10px 22px;
   font-size:.7rem;
   letter-spacing:.18em;
   text-transform:uppercase;
 
   border-radius:999px;
-  color:#ffffff;
+  color:var(--white);
 
   background:
-    linear-gradient(135deg, rgba(61,242,255,.7), rgba(255,107,220,.7));
+    linear-gradient(135deg, rgba(245,193,108,.35), rgba(255,77,77,.35));
 
   box-shadow:
-    0 0 40px rgba(61,242,255,.8),
-    inset 0 0 0 1px rgba(255,255,255,.4);
+    0 0 30px rgba(245,193,108,.5),
+    inset 0 0 0 1px rgba(255,255,255,.25);
 }
 
 /* ===== MOBILE ===== */
