@@ -1,4 +1,7 @@
-/* ===== GLOBAL SPACE BACKGROUND ===== */
+/* ===============================
+   🌌 SPACE BACKGROUND (ANIMATED)
+   =============================== */
+
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -8,46 +11,93 @@ body{
   margin:0;
   min-height:100vh;
   color:#eaf1ff;
+  overflow-x:hidden;
 
   background:
-    radial-gradient(1200px 700px at 15% 10%, #1b2a6b 0%, transparent 60%),
-    radial-gradient(900px 600px at 85% 90%, #3a115f 0%, transparent 55%),
-    linear-gradient(180deg,#030510,#02030a);
+    radial-gradient(1200px 800px at 15% 10%, #0b1d3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 85% 90%, #2a0b3f 0%, transparent 55%),
+    linear-gradient(180deg,#02040c,#010208);
 
-  overflow-x:hidden;
+  position:relative;
 }
 
-/* ===== HEADER ===== */
+/* ===== STAR LAYER ===== */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, white, transparent),
+    radial-gradient(1px 1px at 30% 80%, white, transparent),
+    radial-gradient(1px 1px at 60% 40%, white, transparent),
+    radial-gradient(1px 1px at 80% 70%, white, transparent);
+
+  background-size:300px 300px;
+  opacity:.4;
+  animation:starsMove 120s linear infinite;
+  pointer-events:none;
+  z-index:-2;
+}
+
+/* ===== NEBULA GLOW ===== */
+body::after{
+  content:"";
+  position:fixed;
+  inset:-40%;
+
+  background:
+    conic-gradient(
+      from 180deg,
+      rgba(111,182,255,.15),
+      rgba(245,193,108,.12),
+      rgba(180,100,255,.15),
+      rgba(111,182,255,.15)
+    );
+
+  animation:nebulaSpin 160s linear infinite;
+  opacity:.25;
+  pointer-events:none;
+  z-index:-1;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes starsMove{
+  from{background-position:0 0}
+  to{background-position:1000px 2000px}
+}
+
+@keyframes nebulaSpin{
+  to{transform:rotate(360deg)}
+}
+
+/* ===============================
+   HEADER / FOOTER
+   =============================== */
+
 .organelle-header{
   text-align:center;
-  padding:70px 20px 40px;
+  padding:70px 20px 30px;
 }
 
 .organelle-header h1{
   margin:0;
-  font-size:clamp(2rem,6vw,2.8rem);
-  letter-spacing:.25em;
-
-  background:linear-gradient(135deg,#9fd3ff,#d9a8ff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+  font-size:2.6rem;
+  letter-spacing:.18em;
 }
 
 .organelle-header p{
-  opacity:.7;
-  margin-top:14px;
-  font-size:.9rem;
+  opacity:.75;
+  margin-top:12px;
 }
 
-/* ===== FOOTER ===== */
 .organelle-footer{
   text-align:center;
-  margin:60px 0 30px;
+  margin:60px 0 40px;
 }
 
 .organelle-footer a{
-  color:#8fd3ff;
+  color:#8cc8ff;
   text-decoration:none;
-  font-size:.85rem;
-  opacity:.8;
+  font-size:.9rem;
 }
