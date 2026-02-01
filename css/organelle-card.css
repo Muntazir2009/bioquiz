@@ -75,19 +75,31 @@
 /* ===== VISUAL ===== */
 .organelle-visual{
   position:relative;
-  height:320px;
+  width:100%;
+  min-height:280px;           /* 🔥 increases visible area */
   border-radius:22px;
-
-  background:
-    radial-gradient(circle at 40% 30%, rgba(120,180,255,.35), transparent 55%),
-    linear-gradient(180deg,#020414,#00010a);
 
   display:flex;
   align-items:center;
   justify-content:center;
-  overflow:hidden;
+
+  background:
+    radial-gradient(circle at 30% 20%, rgba(120,180,255,.35), transparent 60%),
+    linear-gradient(180deg,#050a22,#020411);
+
+  overflow:visible;           /* 🔥 IMPORTANT */
 }
 
+.organelle-visual img{
+  width:100%;
+  max-width:320px;            /* 🔥 bigger image */
+  height:auto;
+  object-fit:contain;         /* 🔥 no cropping */
+
+  filter:
+    drop-shadow(0 30px 60px rgba(0,0,0,.85))
+    drop-shadow(0 0 30px rgba(120,180,255,.6));
+}
 .organelle-visual img{
   width:78%;
   animation:float 6s ease-in-out infinite;
