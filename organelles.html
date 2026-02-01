@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cell Organelles</title>
 
 <link rel="stylesheet" href="css/organelles.css">
@@ -11,43 +11,49 @@
 
 <body>
 
-<main class="organelle-page">
+<header class="organelle-header">
+  <h1>CELL ORGANELLES</h1>
+  <p>Structure • Function • Approximate Size</p>
+</header>
 
-  <header class="organelle-header">
-    <h1>CELL ORGANELLES</h1>
-    <p>Structure • Function • Approximate Size</p>
-  </header>
+<main class="organelle-container">
 
-  <section class="organelle-grid">
+  <!-- ================= NUCLEUS CARD ================= -->
+  <article class="organelle-card">
 
-    <!-- NUCLEUS CARD -->
-    <article class="organelle-card">
+    <div class="organelle-visual">
+      <img src="images/organelles/nucleus.png" alt="Nucleus diagram">
+      <span class="size-badge">5–10 µm</span>
+    </div>
 
-      <div class="organelle-top">
-        <img src="images/organelles/nucleus.png" alt="Nucleus diagram">
-        <span class="organelle-badge">5–10 µm</span>
+    <div class="organelle-content">
+      <h2>Nucleus</h2>
+
+      <p class="organelle-desc">
+        The nucleus is a membrane-bound organelle that stores genetic material
+        (DNA) and acts as the control center of the cell.
+      </p>
+
+      <ul class="organelle-points">
+        <li>Surrounded by a double membrane called the nuclear envelope</li>
+        <li>Contains nucleolus for rRNA synthesis</li>
+        <li>Absent in prokaryotes and mammalian RBCs</li>
+      </ul>
+
+      <div class="organelle-tags">
+        <span>DNA Storage</span>
+        <span>Transcription</span>
+        <span>rRNA</span>
       </div>
+    </div>
 
-      <div class="organelle-body">
-        <h2>Nucleus</h2>
-
-        <p class="organelle-summary">
-          Membrane-bound organelle that stores genetic material (DNA) and controls
-          cellular activities.
-        </p>
-
-        <ul class="organelle-points">
-          <li>Surrounded by double membrane (nuclear envelope)</li>
-          <li>Contains nucleolus for rRNA synthesis</li>
-          <li>Absent in prokaryotes & mammalian RBCs</li>
-        </ul>
-      </div>
-
-    </article>
-
-  </section>
+  </article>
 
 </main>
+
+<footer class="organelle-footer">
+  <a href="index.html">← Back to Quiz</a>
+</footer>
 
 </body>
 </html>
