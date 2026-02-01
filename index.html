@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="css/quiz-card.css">
 <link rel="stylesheet" href="css/timer.css">
+<link rel="stylesheet" href="css/organelles-button.css">
 
 <style>
 *{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
@@ -80,6 +81,11 @@ body{
     <button id="next">Next</button>
   </div>
 </div>
+
+<!-- ORGANELLES BUTTON -->
+<footer class="organelles-footer">
+  <a href="organelles.html">Explore Cell Organelles</a>
+</footer>
 
 <script src="space.js"></script>
 
@@ -166,9 +172,7 @@ fetch("questions.json")
 
 /* 💾 SAVE STATE */
 function saveState(){
-  localStorage.setItem("bioquiz_state",JSON.stringify({
-    data,idx
-  }));
+  localStorage.setItem("bioquiz_state",JSON.stringify({data,idx}));
 }
 
 function load(){
@@ -240,12 +244,6 @@ nEl.onclick=()=>{
   idx<data.length?load():qEl.textContent="Quiz Completed";
 };
 </script>
-  <footer style="text-align:center;font-size:.6rem;opacity:.5;margin:14px 0;">
-  <a href="organelles.html"
-     style="color:#6fb6ff;text-decoration:none;">
-    Explore Cell Organelles
-  </a>
-  </footer>
 
 </body>
 </html>
