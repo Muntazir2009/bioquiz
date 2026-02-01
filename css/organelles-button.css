@@ -1,41 +1,58 @@
 /* ===============================
-   🧬 ORGANELLES BUTTON (NO PAGE YET)
+   🧬 ORGANELLES BUTTON (PREMIUM)
    =============================== */
 
-.organelles-footer{
-  text-align:center;
-  margin:22px 0 28px;
-}
+.organelles-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 
-#organellesBtn{
+  margin-top:18px;
   padding:12px 26px;
-  border-radius:14px;
 
-  font-size:.7rem;
-  letter-spacing:.12em;
-  text-transform:uppercase;
+  font-size:.85rem;
   font-weight:600;
+  letter-spacing:.04em;
 
-  color:#eaf1ff;
-  background:linear-gradient(135deg,#1f3cff,#6fb6ff);
+  color:#cfe8ff;
+  text-decoration:none;
 
-  border:none;
-  cursor:pointer;
+  border-radius:999px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(120,160,255,.25),
+      rgba(90,120,255,.15)
+    );
+
+  border:1px solid rgba(140,180,255,.35);
 
   box-shadow:
-    0 0 26px rgba(90,140,255,.55),
-    inset 0 0 0 1px rgba(255,255,255,.25);
+    0 0 22px rgba(120,180,255,.35),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+
+  backdrop-filter:blur(12px);
 
   transition:
     transform .25s ease,
     box-shadow .25s ease,
-    filter .25s ease;
+    color .25s ease;
 }
 
-#organellesBtn:hover{
+/* ✨ Hover effect */
+.organelles-btn:hover{
   transform:translateY(-2px);
-  filter:brightness(1.1);
+  color:#ffffff;
+
   box-shadow:
-    0 0 36px rgba(120,180,255,.85),
-    inset 0 0 0 1px rgba(255,255,255,.35);
+    0 0 36px rgba(120,180,255,.65),
+    inset 0 0 0 1px rgba(255,255,255,.15);
+}
+
+/* 🔘 Active click */
+.organelles-btn:active{
+  transform:translateY(0);
+  box-shadow:
+    0 0 18px rgba(120,180,255,.45);
 }
