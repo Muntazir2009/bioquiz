@@ -151,89 +151,100 @@
 }
 
 /* ===============================
-   🎯 CENTER / FOCUS MODE (FIXED)
+   🌌 ACTIVE / CENTER MODE (SMOOTH + CINEMATIC)
    =============================== */
 
-/* Dim background cards */
-.organelle-container.center-mode .organelle-card{
-  opacity:.15;
-  filter:blur(3px);
-  pointer-events:none;
+/* smooth default */
+.organelle-card{
+  transition:
+    transform .6s cubic-bezier(.22,1,.36,1),
+    box-shadow .6s ease,
+    opacity .5s ease,
+    filter .5s ease;
 }
 
-/* Active card */
+/* dim background cards */
+.organelle-container.center-mode .organelle-card{
+  opacity:.18;
+  filter:blur(4px);
+  pointer-events:none;
+  transform:scale(.96);
+}
+
+/* ACTIVE CARD */
 .organelle-card.active{
-  z-index:100;
+  position:relative;
+  z-index:120;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
   opacity:1 !important;
   filter:none !important;
   pointer-events:auto;
 
-  transform:scale(1.08);
+  transform:scale(1.1);
   box-shadow:
-    0 80px 240px rgba(0,0,0,.95),
-    0 0 90px rgba(180,120,255,.45);
+    0 120px 320px rgba(0,0,0,.95),
+    0 0 120px rgba(140,180,255,.45);
 }
 
-/* ===============================
-   🪟 MODAL
-   =============================== */
+/* ===== IMAGE CENTERING + ANIMATION ===== */
+.organelle-card.active .organelle-visual{
+  width:100%;
+  max-width:560px;
+  height:480px;
+  margin:0 auto 32px;
 
-.organelle-modal{
-  position:fixed;
-  inset:0;
-  background:rgba(5,8,20,.75);
-  backdrop-filter:blur(10px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  opacity:0;
-  pointer-events:none;
-  transition:.4s ease;
-  z-index:200;
+  animation:imageFocus .9s cubic-bezier(.22,1,.36,1) both;
 }
 
-.organelle-modal.active{
-  opacity:1;
-  pointer-events:auto;
+@keyframes imageFocus{
+  from{
+    opacity:0;
+    transform:scale(.9) translateY(40px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
 }
 
-.organelle-modal-content{
-  max-width:720px;
-  max-height:80vh;
-  overflow:auto;
-  padding:32px;
-  border-radius:22px;
-
-  background:
-    radial-gradient(circle at 20% 10%, rgba(255,215,150,.25), transparent 60%),
-    linear-gradient(180deg,#0b0f25,#050713);
-
-  box-shadow:0 60px 180px rgba(0,0,0,.9);
+/* floating image */
+.organelle-card.active .organelle-visual img{
+  animation:floatSlow 6s ease-in-out infinite;
 }
 
-.organelle-modal-close{
-  position:absolute;
-  top:18px;
-  right:22px;
-  font-size:1.4rem;
-  cursor:pointer;
-  opacity:.7;
+@keyframes floatSlow{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-14px)}
 }
 
-.organelle-modal-close:hover{
-  opacity:1;
+/* ===== TEXT SMOOTH REVEAL ===== */
+.organelle-card.active .organelle-content{
+  max-width:760px;
+  animation:textReveal .8s ease both;
 }
 
-/* ===============================
-   📱 RESPONSIVE (CLEAN)
-   =============================== */
+@keyframes textReveal{
+  from{
+    opacity:0;
+    transform:translateY(30px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+/* ===== MOBILE SAFETY ===== */
 @media(max-width:900px){
-  .organelle-card{
-    grid-template-columns:1fr;
-    padding:30px;
+  .organelle-card.active{
+    transform:scale(1.02);
   }
 
-  .organelle-visual{
-    height:320px;
+  .organelle-card.active .organelle-visual{
+    height:340px;
   }
 }
