@@ -1,4 +1,3 @@
-/* ===== GLOBAL RESET ===== */
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -8,51 +7,36 @@ body{
   margin:0;
   min-height:100vh;
   color:#eaf1ff;
+
   background:
-    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    radial-gradient(1200px 800px at 15% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 85% 90%, #2a0b3f 0%, transparent 55%),
     linear-gradient(180deg,#05070f,#04060c);
 }
 
-/* ===== HEADER ===== */
 .organelle-header{
   text-align:center;
-  padding:60px 20px 30px;
+  padding:60px 20px 20px;
 }
 
 .organelle-header h1{
-  letter-spacing:.35em;
-  font-size:1.9rem;
-  margin-bottom:10px;
+  margin:0;
+  font-size:2.4rem;
+  letter-spacing:.15em;
 }
 
 .organelle-header p{
   opacity:.7;
-  font-size:.9rem;
+  margin-top:10px;
 }
 
-/* ===== CONTAINER ===== */
-.organelle-container{
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  gap:32px;
-}
-
-/* ===== FOOTER ===== */
 .organelle-footer{
   text-align:center;
-  padding:40px 0;
+  margin:50px 0 30px;
 }
 
 .organelle-footer a{
-  color:#6fb6ff;
+  color:#7cc4ff;
   text-decoration:none;
-  opacity:.7;
-}
-
-.organelle-footer a:hover{
-  opacity:1;
+  font-size:.9rem;
 }
