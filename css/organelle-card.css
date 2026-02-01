@@ -247,4 +247,59 @@
   .organelle-card.active .organelle-visual{
     height:340px;
   }
+  /* ===============================
+   🪟 ORGANELLE MODAL (FIX)
+   =============================== */
+
+.organelle-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(5,8,20,.85);
+  backdrop-filter:blur(14px);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+
+  transition:.4s ease;
+  z-index:999;
 }
+
+.organelle-modal.active{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+.organelle-modal-content{
+  position:relative;
+  max-width:720px;
+  max-height:80vh;
+  overflow:auto;
+  padding:32px;
+  border-radius:22px;
+
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,215,150,.25), transparent 60%),
+    linear-gradient(180deg,#0b0f25,#050713);
+
+  box-shadow:0 60px 180px rgba(0,0,0,.9);
+}
+
+.organelle-modal-close{
+  position:absolute;
+  top:16px;
+  right:20px;
+  font-size:1.4rem;
+  cursor:pointer;
+  opacity:.7;
+}
+
+.organelle-modal-close:hover{
+  opacity:1;
+}
+
