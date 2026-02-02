@@ -1,88 +1,124 @@
-// ===============================
-// 🌌 THREE.JS SPACE SHADER BG
-// ===============================
+// ================================
+// DEEP SPACE – PARALLAX STARFIELD
+// ================================
 
-let scene, camera, renderer, mesh, start = Date.now();
+const scene = new THREE.Scene();
 
-init();
+const camera = new THREE.PerspectiveCamera(
+  65,
+  window.innerWidth / window.innerHeight,
+  1,
+  3000
+);
+camera.position.z = 600;
+
+const renderer = new THREE.WebGLRenderer({
+  alpha: true,
+  antialias: true
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.style.position = "fixed";
+renderer.domElement.style.inset = "0";
+renderer.domElement.style.zIndex = "0";
+renderer.domElement.style.pointerEvents = "none";
+document.body.prepend(renderer.domElement);
+
+// ================================
+// STAR LAYER CREATOR
+// ================================
+function createStarLayer(count, size, spread, speed, colors) {
+  const geo = new THREE.BufferGeometry();
+  const pos = [];
+  const col = [];
+
+  for (let i = 0; i < count; i++) {
+    pos.push(
+      (Math.random() - 0.5) * spread,
+      (Math.random() - 0.5) * spread,
+      -Math.random() * spread
+    );
+
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    col.push(c.r, c.g, c.b);
+  }
+
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+
+  const points = new THREE.Points(geo, mat);
+  points.userData.speed = speed;
+  return points;
+}
+
+// Color palette (realistic stars)
+const STAR_COLORS = [
+  new THREE.Color(0xffffff),
+  new THREE.Color(0xcfe6ff),
+  new THREE.Color(0xffe7b3)
+];
+
+// Layers (near → far)
+const nearStars = createStarLayer(700, 2.2, 1200, 0.35, STAR_COLORS);
+const midStars  = createStarLayer(500, 1.6, 1800, 0.2, STAR_COLORS);
+const farStars  = createStarLayer(350, 1.1, 2400, 0.1, STAR_COLORS);
+
+scene.add(nearStars, midStars, farStars);
+
+// ================================
+// NEBULA GLOW (SOFT & WIDE)
+// ================================
+const nebula = new THREE.Mesh(
+  new THREE.PlaneGeometry(2600, 2600),
+  new THREE.MeshBasicMaterial({
+    color: 0x3a5cff,
+    transparent: true,
+    opacity: 0.18
+  })
+);
+nebula.position.z = -1200;
+scene.add(nebula);
+
+// ================================
+// ANIMATION
+// ================================
+let time = 0;
+function animate() {
+  time += 0.0008;
+
+  // Slow cinematic camera drift
+  camera.position.x = Math.sin(time) * 10;
+  camera.position.y = Math.cos(time * 0.7) * 8;
+
+  // Parallax star motion
+  [nearStars, midStars, farStars].forEach(layer => {
+    layer.rotation.z += layer.userData.speed * 0.0002;
+    layer.position.z += layer.userData.speed;
+    if (layer.position.z > camera.position.z)
+      layer.position.z = -2000;
+  });
+
+  nebula.rotation.z += 0.00015;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
 animate();
 
-function init() {
-  scene = new THREE.Scene();
-
-  camera = new THREE.Camera();
-  camera.position.z = 1;
-
-  renderer = new THREE.WebGLRenderer({
-    canvas: document.getElementById("stars"),
-    alpha: true,
-    antialias: true
-  });
-
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// ================================
+// RESIZE
+// ================================
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-
-  const geometry = new THREE.PlaneGeometry(2, 2);
-
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      iTime: { value: 0 },
-      iResolution: { value: new THREE.Vector3() }
-    },
-    vertexShader: `
-      void main() {
-        gl_Position = vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      precision highp float;
-      uniform float iTime;
-      uniform vec3 iResolution;
-
-      // --- ShaderToy-style planet shader (simplified & stable)
-      vec3 palette(float t){
-        return vec3(0.05,0.1,0.2) + vec3(0.3,0.2,0.4)*cos(6.283*(vec3(0.0,0.33,0.67)+t));
-      }
-
-      void main(){
-        vec2 uv = (gl_FragCoord.xy - 0.5*iResolution.xy)/iResolution.y;
-
-        float r = length(uv);
-        float glow = exp(-r*3.0);
-
-        float t = iTime*0.1;
-        float n = sin(uv.x*6.0 + t) * cos(uv.y*6.0 - t);
-
-        vec3 col = palette(n*0.2 + t*0.05);
-        col *= glow * 1.6;
-
-        // subtle stars
-        float stars = fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233))) * 43758.5453);
-        col += vec3(step(0.997, stars));
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  });
-
-  mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-
-  window.addEventListener("resize", onResize);
-  onResize();
-}
-
-function onResize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  mesh.material.uniforms.iResolution.value.set(
-    window.innerWidth,
-    window.innerHeight,
-    1
-  );
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  mesh.material.uniforms.iTime.value = (Date.now() - start) * 0.001;
-  renderer.render(scene, camera);
-}
+});
