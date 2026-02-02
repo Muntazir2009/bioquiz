@@ -1,121 +1,171 @@
-// =====================================
-// CINEMATIC SPACE BACKGROUND
-// Stars • Constellations • Shooting Stars
-// =====================================
+// ======================================
+// SUPREME SPACE BACKGROUND (THREE.JS)
+// Stars + Parallax + Shooting Stars
+// ======================================
 
-const canvas = document.getElementById("space-bg");
-const ctx = canvas.getContext("2d");
-
-canvas.style.position = "fixed";
-canvas.style.inset = "0";
-canvas.style.zIndex = "0";
-canvas.style.pointerEvents = "none";
-
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+if (!window.THREE) {
+  console.error("Three.js not loaded");
 }
-resize();
-window.addEventListener("resize", resize);
 
-// --------------------
-// STAR FIELD
-// --------------------
-const STAR_COUNT = Math.min(300, window.innerWidth / 3);
-const stars = [];
+// ---------- SCENE ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
-for (let i = 0; i < STAR_COUNT; i++) {
-  stars.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 1.4 + 0.2,
-    a: Math.random(),
-    tw: Math.random() * 0.02 + 0.005
+// ---------- CAMERA ----------
+const camera = new THREE.PerspectiveCamera(
+  65,
+  window.innerWidth / window.innerHeight,
+  1,
+  4000
+);
+camera.position.z = 800;
+
+// ---------- RENDERER ----------
+const renderer = new THREE.WebGLRenderer({
+  alpha: true,
+  antialias: true
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.style.position = "fixed";
+renderer.domElement.style.inset = "0";
+renderer.domElement.style.zIndex = "0";
+renderer.domElement.style.pointerEvents = "none";
+document.body.prepend(renderer.domElement);
+
+// ---------- STAR COLORS ----------
+const STAR_COLORS = [
+  new THREE.Color(0xffffff),
+  new THREE.Color(0xcfe6ff),
+  new THREE.Color(0xfff1c1),
+  new THREE.Color(0xffd2d2)
+];
+
+// ---------- CREATE STAR FIELD ----------
+function createStars(count, size, depth, speed) {
+  const geo = new THREE.BufferGeometry();
+  const positions = [];
+  const colors = [];
+
+  for (let i = 0; i < count; i++) {
+    positions.push(
+      (Math.random() - 0.5) * depth,
+      (Math.random() - 0.5) * depth,
+      -Math.random() * depth
+    );
+
+    const c = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
+    colors.push(c.r, c.g, c.b);
+  }
+
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
   });
+
+  const stars = new THREE.Points(geo, mat);
+  stars.userData.speed = speed;
+  return stars;
 }
 
-// --------------------
-// CONSTELLATIONS
-// --------------------
-const constellationLines = [];
-for (let i = 0; i < 45; i++) {
-  constellationLines.push({
-    a: stars[Math.floor(Math.random() * stars.length)],
-    b: stars[Math.floor(Math.random() * stars.length)]
-  });
-}
+// ---------- STAR LAYERS ----------
+const starsNear = createStars(700, 2.2, 1400, 0.45);
+const starsMid  = createStars(500, 1.5, 2200, 0.25);
+const starsFar  = createStars(350, 1.0, 3000, 0.12);
 
-// --------------------
-// SHOOTING STARS
-// --------------------
-let meteors = [];
+scene.add(starsNear, starsMid, starsFar);
+
+// ---------- NEBULA GLOW ----------
+const nebula = new THREE.Mesh(
+  new THREE.PlaneGeometry(3500, 3500),
+  new THREE.MeshBasicMaterial({
+    color: 0x3a4cff,
+    transparent: true,
+    opacity: 0.12
+  })
+);
+nebula.position.z = -2000;
+scene.add(nebula);
+
+// ---------- SHOOTING STARS ----------
+const meteors = [];
 function spawnMeteor() {
-  meteors.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height * 0.3,
-    len: Math.random() * 300 + 200,
-    speed: Math.random() * 10 + 8,
-    life: 1
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute([0, 0, 0, -120, 60, 0], 3)
+  );
+
+  const mat = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.9
   });
+
+  const line = new THREE.Line(geo, mat);
+  line.position.set(
+    (Math.random() - 0.5) * 1200,
+    600,
+    -800
+  );
+
+  line.userData.life = 0;
+  meteors.push(line);
+  scene.add(line);
 }
+
 setInterval(() => {
   if (Math.random() > 0.7) spawnMeteor();
 }, 5000);
 
-// --------------------
-// ANIMATION LOOP
-// --------------------
+// ---------- ANIMATION ----------
+let t = 0;
 function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  t += 0.0006;
 
-  // Background
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Camera drift (cinematic)
+  camera.position.x = Math.sin(t) * 15;
+  camera.position.y = Math.cos(t * 0.8) * 10;
 
-  // Stars
-  for (const s of stars) {
-    s.a += s.tw;
-    if (s.a > 1 || s.a < 0) s.tw *= -1;
-
-    ctx.fillStyle = `rgba(255,255,255,${s.a})`;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Constellation lines
-  ctx.strokeStyle = "rgba(180,200,255,0.12)";
-  ctx.lineWidth = 0.6;
-  constellationLines.forEach(l => {
-    const dx = l.a.x - l.b.x;
-    const dy = l.a.y - l.b.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 160) {
-      ctx.beginPath();
-      ctx.moveTo(l.a.x, l.a.y);
-      ctx.lineTo(l.b.x, l.b.y);
-      ctx.stroke();
-    }
+  // Parallax motion
+  [starsNear, starsMid, starsFar].forEach(layer => {
+    layer.position.z += layer.userData.speed;
+    if (layer.position.z > camera.position.z)
+      layer.position.z = -3000;
   });
 
-  // Shooting stars
+  // Nebula slow rotation
+  nebula.rotation.z += 0.0001;
+
+  // Meteors
   for (let i = meteors.length - 1; i >= 0; i--) {
     const m = meteors[i];
-    ctx.strokeStyle = `rgba(200,220,255,${m.life})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(m.x, m.y);
-    ctx.lineTo(m.x - m.len, m.y + m.len);
-    ctx.stroke();
+    m.position.x += 12;
+    m.position.y -= 8;
+    m.material.opacity -= 0.02;
+    m.userData.life++;
 
-    m.x += m.speed;
-    m.y += m.speed;
-    m.life -= 0.015;
-
-    if (m.life <= 0) meteors.splice(i, 1);
+    if (m.userData.life > 40) {
+      scene.remove(m);
+      meteors.splice(i, 1);
+    }
   }
 
+  renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
-
 animate();
+
+// ---------- RESIZE ----------
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
