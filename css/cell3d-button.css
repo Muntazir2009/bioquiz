@@ -1,33 +1,97 @@
+/* ===============================
+   🌌 3D CELL BUTTON – COSMIC
+   =============================== */
+
 .cell3d-footer{
-  text-align:center;
-  margin:14px 0 28px;
+  display:flex;
+  justify-content:center;
+  margin:40px 0 60px;
+  position:relative;
+  z-index:5;
 }
 
 .cell3d-btn{
-  display:inline-block;
-  padding:14px 34px;
-
-  font-size:.75rem;
+  position:relative;
+  padding:16px 38px;
+  font-size:.9rem;
   letter-spacing:.18em;
   text-transform:uppercase;
+  font-weight:600;
 
   color:#fff;
   text-decoration:none;
 
   border-radius:999px;
-
   background:
-    linear-gradient(135deg,#f5c16c,#ff6b6b);
+    linear-gradient(135deg,#0a0f2a,#11184a,#1b0f2f);
+
+  border:1px solid rgba(180,140,255,.35);
 
   box-shadow:
-    0 0 25px rgba(255,140,90,.55),
-    inset 0 0 0 1px rgba(255,255,255,.35);
+    0 0 30px rgba(140,120,255,.35),
+    0 0 80px rgba(90,140,255,.25),
+    inset 0 0 0 1px rgba(255,255,255,.12);
 
-  transition:.3s ease;
+  overflow:hidden;
+  transition:transform .4s ease, box-shadow .4s ease;
 }
 
+/* ✨ glow pulse */
+.cell3d-btn::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:inherit;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent,
+      rgba(255,215,140,.8),
+      rgba(140,180,255,.9),
+      transparent
+    );
+
+  animation:orbit 4s linear infinite;
+  opacity:.6;
+  z-index:-1;
+}
+
+/* 🌌 star shimmer */
+.cell3d-btn::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 60%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 80%, #fff, transparent);
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* 🌀 hover physics */
 .cell3d-btn:hover{
-  transform:scale(1.08);
+  transform:translateY(-4px) scale(1.05);
   box-shadow:
-    0 0 45px rgba(255,120,80,.9);
+    0 0 50px rgba(180,140,255,.6),
+    0 0 120px rgba(90,140,255,.45);
+}
+
+/* ✨ click */
+.cell3d-btn:active{
+  transform:scale(.98);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes orbit{
+  to{transform:rotate(360deg)}
+}
+
+/* 📱 mobile */
+@media(max-width:600px){
+  .cell3d-btn{
+    padding:14px 30px;
+    font-size:.75rem;
+  }
 }
