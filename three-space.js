@@ -1,29 +1,23 @@
-// ======================================
-// SUPREME SPACE BACKGROUND (THREE.JS)
-// Stars + Parallax + Shooting Stars
-// ======================================
+// =====================================
+// TRUE DEEP SPACE — INFINITE STARFIELD
+// No gaps • No loops • Mobile-safe
+// =====================================
 
-if (!window.THREE) {
-  console.error("Three.js not loaded");
-}
-
-// ---------- SCENE ----------
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
 
-// ---------- CAMERA ----------
+/* CAMERA */
 const camera = new THREE.PerspectiveCamera(
-  65,
+  75,
   window.innerWidth / window.innerHeight,
-  1,
-  4000
+  0.1,
+  5000
 );
 camera.position.z = 800;
 
-// ---------- RENDERER ----------
+/* RENDERER */
 const renderer = new THREE.WebGLRenderer({
   alpha: true,
-  antialias: true
+  antialias: true,
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -33,137 +27,92 @@ renderer.domElement.style.zIndex = "0";
 renderer.domElement.style.pointerEvents = "none";
 document.body.prepend(renderer.domElement);
 
-// ---------- STAR COLORS ----------
-const STAR_COLORS = [
+/* ===============================
+   STARFIELD
+=============================== */
+
+const STAR_COUNT = window.innerWidth < 768 ? 1200 : 2200;
+const STAR_SPREAD = 4000;
+
+const starGeo = new THREE.BufferGeometry();
+const positions = [];
+const colors = [];
+
+const starColors = [
   new THREE.Color(0xffffff),
   new THREE.Color(0xcfe6ff),
-  new THREE.Color(0xfff1c1),
-  new THREE.Color(0xffd2d2)
+  new THREE.Color(0xfff1d6),
 ];
 
-// ---------- CREATE STAR FIELD ----------
-function createStars(count, size, depth, speed) {
-  const geo = new THREE.BufferGeometry();
-  const positions = [];
-  const colors = [];
+for (let i = 0; i < STAR_COUNT; i++) {
+  positions.push(
+    (Math.random() - 0.5) * STAR_SPREAD,
+    (Math.random() - 0.5) * STAR_SPREAD,
+    (Math.random() - 0.5) * STAR_SPREAD
+  );
 
-  for (let i = 0; i < count; i++) {
-    positions.push(
-      (Math.random() - 0.5) * depth,
-      (Math.random() - 0.5) * depth,
-      -Math.random() * depth
-    );
-
-    const c = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
-    colors.push(c.r, c.g, c.b);
-  }
-
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-
-  const mat = new THREE.PointsMaterial({
-    size,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-
-  const stars = new THREE.Points(geo, mat);
-  stars.userData.speed = speed;
-  return stars;
+  const c = starColors[Math.floor(Math.random() * starColors.length)];
+  colors.push(c.r, c.g, c.b);
 }
 
-// ---------- STAR LAYERS ----------
-const starsNear = createStars(700, 2.2, 1400, 0.45);
-const starsMid  = createStars(500, 1.5, 2200, 0.25);
-const starsFar  = createStars(350, 1.0, 3000, 0.12);
+starGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+starGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
-scene.add(starsNear, starsMid, starsFar);
+const starMat = new THREE.PointsMaterial({
+  size: 1.8,
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.95,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
 
-// ---------- NEBULA GLOW ----------
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+/* ===============================
+   NEBULA CLOUD (SUBTLE)
+=============================== */
+
 const nebula = new THREE.Mesh(
-  new THREE.PlaneGeometry(3500, 3500),
+  new THREE.SphereGeometry(3000, 64, 64),
   new THREE.MeshBasicMaterial({
-    color: 0x3a4cff,
+    color: 0x2b4cff,
     transparent: true,
-    opacity: 0.12
+    opacity: 0.12,
+    side: THREE.BackSide,
   })
 );
-nebula.position.z = -2000;
 scene.add(nebula);
 
-// ---------- SHOOTING STARS ----------
-const meteors = [];
-function spawnMeteor() {
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute([0, 0, 0, -120, 60, 0], 3)
-  );
+/* ===============================
+   ANIMATION (NO RESET)
+=============================== */
 
-  const mat = new THREE.LineBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.9
-  });
-
-  const line = new THREE.Line(geo, mat);
-  line.position.set(
-    (Math.random() - 0.5) * 1200,
-    600,
-    -800
-  );
-
-  line.userData.life = 0;
-  meteors.push(line);
-  scene.add(line);
-}
-
-setInterval(() => {
-  if (Math.random() > 0.7) spawnMeteor();
-}, 5000);
-
-// ---------- ANIMATION ----------
 let t = 0;
+
 function animate() {
-  t += 0.0006;
+  t += 0.00035;
 
-  // Camera drift (cinematic)
-  camera.position.x = Math.sin(t) * 15;
-  camera.position.y = Math.cos(t * 0.8) * 10;
+  // ultra-slow drift (no looping feel)
+  camera.position.x = Math.sin(t * 0.8) * 18;
+  camera.position.y = Math.cos(t * 0.6) * 14;
 
-  // Parallax motion
-  [starsNear, starsMid, starsFar].forEach(layer => {
-    layer.position.z += layer.userData.speed;
-    if (layer.position.z > camera.position.z)
-      layer.position.z = -3000;
-  });
+  stars.rotation.y += 0.00005;
+  stars.rotation.x += 0.00002;
 
-  // Nebula slow rotation
-  nebula.rotation.z += 0.0001;
-
-  // Meteors
-  for (let i = meteors.length - 1; i >= 0; i--) {
-    const m = meteors[i];
-    m.position.x += 12;
-    m.position.y -= 8;
-    m.material.opacity -= 0.02;
-    m.userData.life++;
-
-    if (m.userData.life > 40) {
-      scene.remove(m);
-      meteors.splice(i, 1);
-    }
-  }
+  nebula.rotation.y -= 0.00008;
 
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
+
 animate();
 
-// ---------- RESIZE ----------
+/* ===============================
+   RESIZE
+=============================== */
+
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
