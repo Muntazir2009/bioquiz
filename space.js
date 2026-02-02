@@ -1,87 +1,123 @@
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
+/* =================================================
+   SUPREME SPACE BACKGROUND (GALAXY EDITION)
+   Stars • Parallax • Nebula • Rare Meteors
+================================================= */
 
-let w, h;
-function resize(){
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
+document.addEventListener("DOMContentLoaded", () => {
 
-/* ===== STAR SYSTEM ===== */
-const STAR_LAYERS = [
-  { count: 80, speed: 0.15, size: 1.2 },
-  { count: 120, speed: 0.3, size: 1.6 },
-  { count: 180, speed: 0.6, size: 2.2 }
-];
+  /* ---------- CANVAS ---------- */
+  let canvas = document.getElementById("stars");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.id = "stars";
+    document.body.prepend(canvas);
+  }
 
-let stars = [];
+  canvas.style.position = "fixed";
+  canvas.style.inset = "0";
+  canvas.style.zIndex = "0";
+  canvas.style.pointerEvents = "none";
 
-function createStars(){
-  stars = [];
-  STAR_LAYERS.forEach(layer=>{
+  const ctx = canvas.getContext("2d");
+  let w, h;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  /* ---------- STAR LAYERS (PARALLAX) ---------- */
+  const layers = [
+    { count: 80, speed: 0.08, size: 0.8 },
+    { count: 120, speed: 0.18, size: 1.4 },
+    { count: 160, speed: 0.35, size: 2.2 }
+  ];
+
+  let stars = [];
+  layers.forEach(layer=>{
     for(let i=0;i<layer.count;i++){
       stars.push({
         x: Math.random()*w,
         y: Math.random()*h,
-        z: Math.random(),
         r: Math.random()*layer.size + 0.3,
         speed: layer.speed,
-        twinkle: Math.random()*Math.PI*2
+        phase: Math.random()*Math.PI*2
       });
     }
   });
-}
-createStars();
 
-/* ===== NEBULA ===== */
-const nebula = [];
-for(let i=0;i<6;i++){
-  nebula.push({
+  /* ---------- NEBULA CLOUDS ---------- */
+  const nebula = Array.from({length:4},()=>({
     x: Math.random()*w,
     y: Math.random()*h,
-    r: Math.random()*600 + 400,
-    hue: Math.random()*60 + 220
-  });
-}
+    r: Math.random()*700 + 500,
+    hue: Math.random()*60 + 210
+  }));
 
-/* ===== DRAW ===== */
-function draw(){
-  ctx.clearRect(0,0,w,h);
+  /* ---------- METEORS (RARE) ---------- */
+  let meteors = [];
+  function spawnMeteor(){
+    meteors.push({
+      x: Math.random()*w*0.8 + w*0.2,
+      y: -100,
+      len: Math.random()*220 + 160,
+      speed: Math.random()*8 + 10,
+      alpha: 1
+    });
+  }
+  setInterval(()=>{
+    if(Math.random() > 0.75) spawnMeteor();
+  }, 8000);
 
-  /* Nebula background */
-  nebula.forEach(n=>{
-    const g = ctx.createRadialGradient(
-      n.x,n.y,0,
-      n.x,n.y,n.r
-    );
-    g.addColorStop(0,`hsla(${n.hue},70%,60%,0.08)`);
-    g.addColorStop(1,"transparent");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
-    ctx.fill();
-  });
+  /* ---------- DRAW LOOP ---------- */
+  function animate(){
+    ctx.clearRect(0,0,w,h);
 
-  /* Stars */
-  stars.forEach(s=>{
-    s.y += s.speed;
-    s.x += Math.sin(s.z*10)*0.05;
+    /* Nebula */
+    nebula.forEach(n=>{
+      const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+      g.addColorStop(0,`hsla(${n.hue},70%,60%,0.06)`);
+      g.addColorStop(1,"transparent");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fill();
+    });
 
-    if(s.y > h) s.y = 0;
-    if(s.x > w) s.x = 0;
+    /* Stars */
+    stars.forEach(s=>{
+      s.y += s.speed;
+      s.phase += 0.02;
+      if(s.y > h) s.y = 0;
 
-    s.twinkle += 0.03;
-    const alpha = 0.4 + Math.sin(s.twinkle)*0.4;
+      const alpha = 0.4 + Math.sin(s.phase)*0.35;
+      ctx.fillStyle = `rgba(210,225,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fill();
+    });
 
-    ctx.fillStyle = `rgba(200,220,255,${alpha})`;
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fill();
-  });
+    /* Meteors */
+    for(let i=meteors.length-1;i>=0;i--){
+      const m = meteors[i];
+      ctx.strokeStyle = `rgba(190,220,255,${m.alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(m.x,m.y);
+      ctx.lineTo(m.x-m.len,m.y+m.len);
+      ctx.stroke();
 
-  requestAnimationFrame(draw);
-}
+      m.x += m.speed;
+      m.y += m.speed;
+      m.alpha -= 0.015;
 
-draw();
+      if(m.alpha <= 0) meteors.splice(i,1);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+});
