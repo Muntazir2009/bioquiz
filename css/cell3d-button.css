@@ -1,0 +1,33 @@
+.cell3d-footer{
+  text-align:center;
+  margin:14px 0 28px;
+}
+
+.cell3d-btn{
+  display:inline-block;
+  padding:14px 34px;
+
+  font-size:.75rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+
+  color:#fff;
+  text-decoration:none;
+
+  border-radius:999px;
+
+  background:
+    linear-gradient(135deg,#f5c16c,#ff6b6b);
+
+  box-shadow:
+    0 0 25px rgba(255,140,90,.55),
+    inset 0 0 0 1px rgba(255,255,255,.35);
+
+  transition:.3s ease;
+}
+
+.cell3d-btn:hover{
+  transform:scale(1.08);
+  box-shadow:
+    0 0 45px rgba(255,120,80,.9);
+}
