@@ -1,124 +1,257 @@
-// ================================
-// DEEP SPACE – PARALLAX STARFIELD
-// ================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biology Quiz</title>
 
-const scene = new THREE.Scene();
+<link rel="stylesheet" href="css/cell3d-button.css">
+<link rel="stylesheet" href="css/quiz-card.css">
+<link rel="stylesheet" href="css/timer.css">
+<link rel="stylesheet" href="css/organelles-button.css">
 
-const camera = new THREE.PerspectiveCamera(
-  65,
-  window.innerWidth / window.innerHeight,
-  1,
-  3000
-);
-camera.position.z = 600;
+<style>
+*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
 
-const renderer = new THREE.WebGLRenderer({
-  alpha: true,
-  antialias: true
+body{
+  margin:0;min-height:100vh;color:#eaf1ff;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+}
+
+.loading{
+  position:fixed;inset:0;background:#05070f;
+  display:flex;align-items:center;justify-content:center;z-index:999;
+}
+
+.loader{
+  width:48px;height:48px;
+  border:3px solid rgba(255,255,255,.15);
+  border-top-color:#4dd6ff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.feedback{
+  margin-top:18px;
+  padding:14px 18px;
+  border-radius:12px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.15);
+  font-weight:600;
+  display:none;
+}
+.feedback.correct{color:#6dffcc}
+.feedback.wrong{color:#ff8a8a}
+</style>
+</head>
+
+<body>
+  <canvas id="stars"></canvas>
+
+<div class="loading" id="loading">
+  <div class="loader"></div>
+</div>
+
+
+<div class="quiz" id="quiz">
+  <div class="header">
+    <div>Biology • Cell Quiz</div>
+    <div class="meta">
+      <span id="progress"></span>
+      <span id="difficulty"></span>
+
+      <div class="timer-wrap" id="timerWrap">
+        <svg class="timer-ring" width="56" height="56">
+          <circle cx="28" cy="28" r="22"></circle>
+        </svg>
+        <span id="timer">15</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"></div>
+
+  <div class="actions">
+    <button id="skip">Skip</button>
+    <button id="next">Next</button>
+  </div>
+</div>
+
+<!-- ORGANELLES BUTTON -->
+<footer class="organelles-footer">
+  <a href="organelles.html" class="organelles-btn">
+    Explore Cell Organelles
+  </a>
+</footer>
+  <footer class="cell3d-footer">
+  <a href="cell-3d.html" class="cell3d-btn">
+    Explore 3D Cell
+  </a>
+  </footer>
+
+<script>
+/* ================= AUDIO ================= */
+const correctAudio=new Audio("sounds/correct.mp3");
+const wrongAudio=new Audio("sounds/wrong.mp3");
+const timerSound=new Audio("sounds/timer.mp3");
+timerSound.loop=true;timerSound.volume=.4;
+
+/* ================= TIMER ================= */
+const TOTAL_TIME=15;
+let timeLeft=TOTAL_TIME,interval=null,running=false;
+
+const timerEl=document.getElementById("timer");
+const ring=document.querySelector(".timer-ring circle");
+const timerWrap=document.getElementById("timerWrap");
+const FULL=138;
+
+function resetTimer(){
+  clearInterval(interval);
+  running=false;
+  timeLeft=TOTAL_TIME;
+  timerEl.textContent=TOTAL_TIME;
+  ring.style.strokeDashoffset=0;
+  timerSound.pause();
+  timerSound.currentTime=0;
+}
+
+timerWrap.onclick=()=>{
+  if(running)return;
+  running=true;
+  timerSound.play().catch(()=>{});
+  interval=setInterval(()=>{
+    timeLeft--;
+    timerEl.textContent=timeLeft;
+    ring.style.strokeDashoffset=FULL-(timeLeft/TOTAL_TIME)*FULL;
+    if(timeLeft<=0){
+      clearInterval(interval);
+      timerSound.pause();
+      running=false;
+    }
+  },1000);
+};
+
+/* ================= QUIZ ================= */
+const loading=document.getElementById("loading");
+const quiz=document.getElementById("quiz");
+const qEl=document.getElementById("question");
+const oEl=document.getElementById("options");
+const fEl=document.getElementById("feedback");
+const nEl=document.getElementById("next");
+const skipEl=document.getElementById("skip");
+const pEl=document.getElementById("progress");
+const dEl=document.getElementById("difficulty");
+
+let data=[],idx=0,locked=false;
+
+/* 🔀 SHUFFLE */
+function shuffle(arr){
+  return arr.map(v=>({v,s:Math.random()}))
+            .sort((a,b)=>a.s-b.s)
+            .map(x=>x.v);
+}
+
+/* 🔒 LOAD FROM LOCALSTORAGE */
+const saved=localStorage.getItem("bioquiz_state");
+
+fetch("questions.json")
+.then(r=>r.json())
+.then(d=>{
+  if(saved){
+    const s=JSON.parse(saved);
+    data=s.data;
+    idx=s.idx;
+  }else{
+    data=shuffle(d);
+    saveState();
+  }
+  loading.style.display="none";
+  quiz.style.display="block";
+  load();
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.domElement.style.position = "fixed";
-renderer.domElement.style.inset = "0";
-renderer.domElement.style.zIndex = "0";
-renderer.domElement.style.pointerEvents = "none";
-document.body.prepend(renderer.domElement);
 
-// ================================
-// STAR LAYER CREATOR
-// ================================
-function createStarLayer(count, size, spread, speed, colors) {
-  const geo = new THREE.BufferGeometry();
-  const pos = [];
-  const col = [];
+/* 💾 SAVE STATE */
+function saveState(){
+  localStorage.setItem("bioquiz_state",JSON.stringify({data,idx}));
+}
 
-  for (let i = 0; i < count; i++) {
-    pos.push(
-      (Math.random() - 0.5) * spread,
-      (Math.random() - 0.5) * spread,
-      -Math.random() * spread
-    );
+function load(){
+  resetTimer();
+  locked=false;
+  fEl.style.display="none";
+  nEl.style.display="none";
+  skipEl.style.display="inline-block";
 
-    const c = colors[Math.floor(Math.random() * colors.length)];
-    col.push(c.r, c.g, c.b);
+  const q=data[idx];
+  qEl.textContent=q.question;
+  pEl.textContent=`Q ${idx+1}/${data.length}`;
+  dEl.textContent=q.difficulty||"";
+
+  oEl.innerHTML="";
+
+  const opts=shuffle(q.options.map((t,i)=>({t,i})));
+  opts.forEach((o,pos)=>{
+    const div=document.createElement("div");
+    div.className="option";
+    div.innerHTML=`<b>${"ABCD"[pos]}.</b> ${o.t}`;
+    div.onclick=()=>{
+      if(locked)return;
+      select(o.i,div);
+    };
+    oEl.appendChild(div);
+  });
+
+  saveState();
+}
+
+function select(ans,div){
+  locked=true;
+  resetTimer();
+
+  const q=data[idx];
+  [...oEl.children].forEach(o=>o.classList.add("disabled"));
+
+  const correct=ans===q.answer;
+
+  if(correct){
+    correctAudio.play().catch(()=>{});
+    div.style.borderColor="#6dffcc";
+  }else{
+    wrongAudio.play().catch(()=>{});
+    div.style.borderColor="#ff8a8a";
+    [...oEl.children].forEach(o=>{
+      if(o.textContent.includes(q.options[q.answer])){
+        o.style.borderColor="#6dffcc";
+      }
+    });
   }
 
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  fEl.textContent=correct?"Correct":"Incorrect";
+  fEl.className="feedback "+(correct?"correct":"wrong");
+  fEl.style.display="block";
 
-  const mat = new THREE.PointsMaterial({
-    size,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-
-  const points = new THREE.Points(geo, mat);
-  points.userData.speed = speed;
-  return points;
+  nEl.style.display="inline-block";
+  skipEl.style.display="none";
 }
 
-// Color palette (realistic stars)
-const STAR_COLORS = [
-  new THREE.Color(0xffffff),
-  new THREE.Color(0xcfe6ff),
-  new THREE.Color(0xffe7b3)
-];
+skipEl.onclick=()=>{
+  idx++;saveState();
+  idx<data.length?load():qEl.textContent="Quiz Completed";
+};
 
-// Layers (near → far)
-const nearStars = createStarLayer(700, 2.2, 1200, 0.35, STAR_COLORS);
-const midStars  = createStarLayer(500, 1.6, 1800, 0.2, STAR_COLORS);
-const farStars  = createStarLayer(350, 1.1, 2400, 0.1, STAR_COLORS);
+nEl.onclick=()=>{
+  idx++;saveState();
+  idx<data.length?load():qEl.textContent="Quiz Completed";
+};
+</script>
 
-scene.add(nearStars, midStars, farStars);
-
-// ================================
-// NEBULA GLOW (SOFT & WIDE)
-// ================================
-const nebula = new THREE.Mesh(
-  new THREE.PlaneGeometry(2600, 2600),
-  new THREE.MeshBasicMaterial({
-    color: 0x3a5cff,
-    transparent: true,
-    opacity: 0.18
-  })
-);
-nebula.position.z = -1200;
-scene.add(nebula);
-
-// ================================
-// ANIMATION
-// ================================
-let time = 0;
-function animate() {
-  time += 0.0008;
-
-  // Slow cinematic camera drift
-  camera.position.x = Math.sin(time) * 10;
-  camera.position.y = Math.cos(time * 0.7) * 8;
-
-  // Parallax star motion
-  [nearStars, midStars, farStars].forEach(layer => {
-    layer.rotation.z += layer.userData.speed * 0.0002;
-    layer.position.z += layer.userData.speed;
-    if (layer.position.z > camera.position.z)
-      layer.position.z = -2000;
-  });
-
-  nebula.rotation.z += 0.00015;
-
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
-}
-animate();
-
-// ================================
-// RESIZE
-// ================================
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="three-space.js"></script>
+</body>
+</html>
