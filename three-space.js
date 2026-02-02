@@ -1,93 +1,88 @@
-/* ========= REAL SPACE BACKGROUND ========= */
-document.addEventListener("DOMContentLoaded", () => {
-  const canvas = document.getElementById("stars") || document.createElement("canvas");
-  canvas.id = "stars";
-  document.body.prepend(canvas);
+// ===============================
+// 🌌 THREE.JS SPACE SHADER BG
+// ===============================
 
-  Object.assign(canvas.style,{
-    position:"fixed",
-    inset:"0",
-    zIndex:"0",
-    pointerEvents:"none"
+let scene, camera, renderer, mesh, start = Date.now();
+
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+
+  camera = new THREE.Camera();
+  camera.position.z = 1;
+
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById("stars"),
+    alpha: true,
+    antialias: true
   });
 
-  const ctx = canvas.getContext("2d");
-  const DPR = window.devicePixelRatio || 1;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-  function resize(){
-    canvas.width = innerWidth * DPR;
-    canvas.height = innerHeight * DPR;
-    ctx.scale(DPR, DPR);
-  }
-  resize();
-  addEventListener("resize", resize);
+  const geometry = new THREE.PlaneGeometry(2, 2);
 
-  /* ---------- STAR FIELD ---------- */
-  const stars = Array.from({length:600},()=>({
-    x:Math.random()*innerWidth,
-    y:Math.random()*innerHeight,
-    r:Math.random()*1.5,
-    a:Math.random()*0.8+0.2,
-    s:Math.random()*0.15+0.05
-  }));
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      iTime: { value: 0 },
+      iResolution: { value: new THREE.Vector3() }
+    },
+    vertexShader: `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      precision highp float;
+      uniform float iTime;
+      uniform vec3 iResolution;
 
-  /* ---------- NEBULA ---------- */
-  function drawNebula(){
-    const g = ctx.createRadialGradient(
-      innerWidth*0.6, innerHeight*0.4, 0,
-      innerWidth*0.6, innerHeight*0.4, innerWidth
-    );
-    g.addColorStop(0,"rgba(120,90,255,.08)");
-    g.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=g;
-    ctx.fillRect(0,0,innerWidth,innerHeight);
-  }
+      // --- ShaderToy-style planet shader (simplified & stable)
+      vec3 palette(float t){
+        return vec3(0.05,0.1,0.2) + vec3(0.3,0.2,0.4)*cos(6.283*(vec3(0.0,0.33,0.67)+t));
+      }
 
-  /* ---------- SHOOTING STAR ---------- */
-  let meteor=null;
-  function spawnMeteor(){
-    meteor={
-      x:Math.random()*innerWidth,
-      y:-100,
-      dx:6, dy:6,
-      life:80
-    };
-  }
+      void main(){
+        vec2 uv = (gl_FragCoord.xy - 0.5*iResolution.xy)/iResolution.y;
 
-  function animate(){
-    ctx.clearRect(0,0,innerWidth,innerHeight);
+        float r = length(uv);
+        float glow = exp(-r*3.0);
 
-    // stars
-    for(const s of stars){
-      ctx.fillStyle=`rgba(255,255,255,${s.a})`;
-      ctx.beginPath();
-      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fill();
+        float t = iTime*0.1;
+        float n = sin(uv.x*6.0 + t) * cos(uv.y*6.0 - t);
 
-      s.y+=s.s;
-      if(s.y>innerHeight){s.y=0;s.x=Math.random()*innerWidth;}
-    }
+        vec3 col = palette(n*0.2 + t*0.05);
+        col *= glow * 1.6;
 
-    // nebula
-    drawNebula();
+        // subtle stars
+        float stars = fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233))) * 43758.5453);
+        col += vec3(step(0.997, stars));
 
-    // meteor
-    if(Math.random()<0.002 && !meteor) spawnMeteor();
-    if(meteor){
-      ctx.strokeStyle="rgba(180,200,255,.8)";
-      ctx.lineWidth=2;
-      ctx.beginPath();
-      ctx.moveTo(meteor.x,meteor.y);
-      ctx.lineTo(meteor.x-80,meteor.y+80);
-      ctx.stroke();
-      meteor.x+=meteor.dx;
-      meteor.y+=meteor.dy;
-      meteor.life--;
-      if(meteor.life<=0) meteor=null;
-    }
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
 
-    requestAnimationFrame(animate);
-  }
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
-  animate();
-});
+  window.addEventListener("resize", onResize);
+  onResize();
+}
+
+function onResize() {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  mesh.material.uniforms.iResolution.value.set(
+    window.innerWidth,
+    window.innerHeight,
+    1
+  );
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  mesh.material.uniforms.iTime.value = (Date.now() - start) * 0.001;
+  renderer.render(scene, camera);
+}
