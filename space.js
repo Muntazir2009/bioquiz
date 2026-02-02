@@ -1,114 +1,87 @@
-/* =================================================
-   SPACE BACKGROUND – AUTO INJECT (FAIL-SAFE)
-   Stars + Meteors + Subtle Galaxy Glow
-================================================= */
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
 
-document.addEventListener("DOMContentLoaded", () => {
+let w, h;
+function resize(){
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
-  /* ---------- CREATE CANVAS ---------- */
-  let canvas = document.getElementById("stars");
+/* ===== STAR SYSTEM ===== */
+const STAR_LAYERS = [
+  { count: 80, speed: 0.15, size: 1.2 },
+  { count: 120, speed: 0.3, size: 1.6 },
+  { count: 180, speed: 0.6, size: 2.2 }
+];
 
-  if (!canvas) {
-    canvas = document.createElement("canvas");
-    canvas.id = "stars";
-    document.body.prepend(canvas);
-  }
+let stars = [];
 
-  canvas.style.position = "fixed";
-  canvas.style.inset = "0";
-  canvas.style.zIndex = "0";
-  canvas.style.pointerEvents = "none";
-
-  const ctx = canvas.getContext("2d");
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener("resize", resize);
-
-  /* ---------- STARS ---------- */
-  const STAR_COUNT = Math.min(220, Math.floor(window.innerWidth / 4));
-  const stars = Array.from({ length: STAR_COUNT }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 1.2 + 0.3,
-    s: Math.random() * 0.35 + 0.1,
-    a: Math.random() * 0.6 + 0.3
-  }));
-
-  /* ---------- METEORS ---------- */
-  let meteors = [];
-
-  function spawnMeteor() {
-    meteors.push({
-      x: Math.random() * canvas.width,
-      y: -80,
-      len: Math.random() * 200 + 120,
-      speed: Math.random() * 6 + 5,
-      alpha: 1
-    });
-  }
-
-  setInterval(() => {
-    if (Math.random() > 0.6) spawnMeteor();
-  }, 6000);
-
-  /* ---------- GALAXY GLOW ---------- */
-  let swirl = 0;
-
-  /* ---------- DRAW LOOP ---------- */
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Stars
-    for (const s of stars) {
-      ctx.fillStyle = `rgba(255,255,255,${s.a})`;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fill();
-
-      s.y += s.s;
-      if (s.y > canvas.height) {
-        s.y = 0;
-        s.x = Math.random() * canvas.width;
-      }
+function createStars(){
+  stars = [];
+  STAR_LAYERS.forEach(layer=>{
+    for(let i=0;i<layer.count;i++){
+      stars.push({
+        x: Math.random()*w,
+        y: Math.random()*h,
+        z: Math.random(),
+        r: Math.random()*layer.size + 0.3,
+        speed: layer.speed,
+        twinkle: Math.random()*Math.PI*2
+      });
     }
+  });
+}
+createStars();
 
-    // Galaxy glow (subtle)
-    swirl += 0.0006;
-    ctx.save();
-    ctx.translate(canvas.width * 0.7, canvas.height * 0.4);
-    ctx.rotate(swirl);
-    const glow = ctx.createRadialGradient(0, 0, 40, 0, 0, 360);
-    glow.addColorStop(0, "rgba(120,150,255,0.08)");
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = glow;
+/* ===== NEBULA ===== */
+const nebula = [];
+for(let i=0;i<6;i++){
+  nebula.push({
+    x: Math.random()*w,
+    y: Math.random()*h,
+    r: Math.random()*600 + 400,
+    hue: Math.random()*60 + 220
+  });
+}
+
+/* ===== DRAW ===== */
+function draw(){
+  ctx.clearRect(0,0,w,h);
+
+  /* Nebula background */
+  nebula.forEach(n=>{
+    const g = ctx.createRadialGradient(
+      n.x,n.y,0,
+      n.x,n.y,n.r
+    );
+    g.addColorStop(0,`hsla(${n.hue},70%,60%,0.08)`);
+    g.addColorStop(1,"transparent");
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(0, 0, 360, 0, Math.PI * 2);
+    ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
     ctx.fill();
-    ctx.restore();
+  });
 
-    // Meteors
-    for (let i = meteors.length - 1; i >= 0; i--) {
-      const m = meteors[i];
-      ctx.strokeStyle = `rgba(180,210,255,${m.alpha})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(m.x, m.y);
-      ctx.lineTo(m.x - m.len, m.y + m.len);
-      ctx.stroke();
+  /* Stars */
+  stars.forEach(s=>{
+    s.y += s.speed;
+    s.x += Math.sin(s.z*10)*0.05;
 
-      m.x += m.speed;
-      m.y += m.speed;
-      m.alpha -= 0.01;
+    if(s.y > h) s.y = 0;
+    if(s.x > w) s.x = 0;
 
-      if (m.alpha <= 0) meteors.splice(i, 1);
-    }
+    s.twinkle += 0.03;
+    const alpha = 0.4 + Math.sin(s.twinkle)*0.4;
 
-    requestAnimationFrame(animate);
-  }
+    ctx.fillStyle = `rgba(200,220,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
 
-  animate();
-});
+  requestAnimationFrame(draw);
+}
+
+draw();
