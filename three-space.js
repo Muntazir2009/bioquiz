@@ -77,9 +77,9 @@ scene.add(stars);
 const nebula = new THREE.Mesh(
   new THREE.SphereGeometry(3000, 64, 64),
   new THREE.MeshBasicMaterial({
-    color: 0x2b4cff,
+    color: 0x000000,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.18,
     side: THREE.BackSide,
   })
 );
