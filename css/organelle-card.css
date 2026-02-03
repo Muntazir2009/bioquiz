@@ -303,3 +303,85 @@
   opacity:1;
 }
 
+/* ===============================
+   🔬 EUKARYOTIC vs PROKARYOTIC – PREMIUM
+   =============================== */
+
+.comparison-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:28px;
+  margin-top:28px;
+  perspective:1200px;
+}
+
+/* CARD */
+.compare-box{
+  position:relative;
+  padding:26px 26px 28px;
+  border-radius:22px;
+
+  background:
+    radial-gradient(400px 200px at 20% 10%, rgba(245,193,108,.18), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(10,14,35,.85);
+
+  border:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(18px);
+
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+
+  transition:
+    transform .5s cubic-bezier(.2,.8,.2,1),
+    box-shadow .5s ease;
+}
+
+/* Hover depth */
+.compare-box:hover{
+  transform:translateY(-10px) rotateX(4deg);
+  box-shadow:
+    0 60px 180px rgba(0,0,0,.95),
+    0 0 80px rgba(245,193,108,.25);
+}
+
+/* TITLE */
+.compare-box h3{
+  margin:0 0 16px;
+  font-size:1.3rem;
+  letter-spacing:.04em;
+
+  background:linear-gradient(135deg,#ffe3a0,#f5c16c,#ff9f5a);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* LIST */
+.compare-box ul{
+  margin:0;
+  padding-left:18px;
+}
+
+.compare-box li{
+  margin-bottom:10px;
+  line-height:1.6;
+  opacity:.9;
+}
+
+/* EDGE GLOW */
+.compare-box::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* MOBILE */
+@media(max-width:800px){
+  .comparison-grid{
+    grid-template-columns:1fr;
+  }
+}
