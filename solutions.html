@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questions & Answers • BioQuiz</title>
+
+<style>
+/* ===============================
+   🌌 SPACE / STUDY THEME
+   =============================== */
+:root{
+  --bg:#050814;
+  --panel:#0a0f24;
+  --glass:rgba(255,255,255,.06);
+  --blue:#6fb6ff;
+  --gold:#f5c16c;
+  --green:#6dffcc;
+}
+
+*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+
+body{
+  margin:0;
+  min-height:100vh;
+  color:#eaf1ff;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+}
+
+/* ===============================
+   HEADER
+   =============================== */
+header{
+  text-align:center;
+  padding:70px 20px 40px;
+}
+
+header h1{
+  margin:0 0 10px;
+  font-size:2.4rem;
+  background:linear-gradient(135deg,#fff,#bcdcff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+header p{
+  opacity:.8;
+  letter-spacing:.05em;
+}
+
+/* ===============================
+   CONTAINER
+   =============================== */
+.container{
+  max-width:900px;
+  margin:0 auto 80px;
+  padding:0 20px;
+  display:grid;
+  gap:32px;
+}
+
+/* ===============================
+   Q&A CARD
+   =============================== */
+.qa-card{
+  padding:28px;
+  border-radius:22px;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
+    var(--panel);
+
+  border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(16px);
+
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+}
+
+/* QUESTION */
+.question{
+  font-size:1.15rem;
+  margin-bottom:14px;
+  line-height:1.6;
+}
+
+.question span{
+  color:var(--blue);
+  font-weight:700;
+}
+
+/* ANSWER */
+.answer{
+  margin-top:16px;
+  padding:16px 18px;
+  border-radius:14px;
+
+  background:rgba(0,0,0,.35);
+  border-left:4px solid var(--green);
+}
+
+.answer b{
+  color:var(--green);
+}
+
+/* EXPLANATION */
+.explanation{
+  margin-top:14px;
+  padding-left:18px;
+}
+
+.explanation li{
+  margin-bottom:8px;
+  opacity:.9;
+}
+
+/* TAG */
+.tag{
+  display:inline-block;
+  margin-top:16px;
+  padding:6px 14px;
+  font-size:.7rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+
+  border-radius:999px;
+  background:linear-gradient(135deg,#111,#222);
+  border:1px solid rgba(255,255,255,.25);
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:30px;
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Questions & Answers</h1>
+  <p>Cell Biology • Exam-oriented • Clear explanations</p>
+</header>
+
+<main class="container">
+
+  <!-- QUESTION 1 -->
+  <section class="qa-card">
+    <div class="question">
+      <span>Q1.</span> Why are lysosomes called the “suicidal bags” of the cell?
+    </div>
+
+    <div class="answer">
+      <b>Answer:</b> Lysosomes are called suicidal bags because they contain powerful
+      hydrolytic enzymes that can digest the cell’s own components if released.
+    </div>
+
+    <ul class="explanation">
+      <li>They contain enzymes like proteases, lipases, and nucleases</li>
+      <li>These enzymes work best in acidic conditions</li>
+      <li>During cell damage, lysosomes can cause self-destruction (autolysis)</li>
+    </ul>
+
+    <span class="tag">Cell Organelles</span>
+  </section>
+
+  <!-- QUESTION 2 -->
+  <section class="qa-card">
+    <div class="question">
+      <span>Q2.</span> State two differences between prokaryotic and eukaryotic cells.
+    </div>
+
+    <div class="answer">
+      <b>Answer:</b> Prokaryotic cells lack a true nucleus and membrane-bound organelles,
+      while eukaryotic cells possess both.
+    </div>
+
+    <ul class="explanation">
+      <li>Prokaryotes: DNA lies in nucleoid region</li>
+      <li>Eukaryotes: DNA enclosed within nuclear membrane</li>
+    </ul>
+
+    <span class="tag">Cell Types</span>
+  </section>
+
+</main>
+
+<footer>
+  © BioQuiz • Study Smart
+</footer>
+
+</body>
+</html>
