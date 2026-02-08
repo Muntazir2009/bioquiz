@@ -58,26 +58,33 @@ const qaData = [
 {
   question: "Differentiate between Prokaryotic Cell and Eukaryotic Cell.",
   answer: `
-<table style="width:100%;border-collapse:collapse;margin-top:14px">
-<tr>
-<th style="padding:10px;border-bottom:1px solid #444;text-align:left">Prokaryotic Cell</th>
-<th style="padding:10px;border-bottom:1px solid #444;text-align:left">Eukaryotic Cell</th>
-</tr>
+  <div class="diff-wrapper">
 
-<tr><td style="padding:8px">True nucleus absent.</td><td style="padding:8px">True nucleus present.</td></tr>
-<tr><td style="padding:8px">Nuclear membrane absent.</td><td style="padding:8px">Nuclear membrane present.</td></tr>
-<tr><td style="padding:8px">Membrane-bound organelles absent.</td><td style="padding:8px">Membrane-bound organelles present.</td></tr>
-<tr><td style="padding:8px">DNA is naked and circular.</td><td style="padding:8px">DNA is linear and associated with proteins.</td></tr>
-<tr><td style="padding:8px">Ribosomes are 70S.</td><td style="padding:8px">Ribosomes are 80S.</td></tr>
-<tr><td style="padding:8px">Cell size small (1–10 µm).</td><td style="padding:8px">Cell size larger (10–100 µm).</td></tr>
-<tr><td style="padding:8px">Mitochondria absent.</td><td style="padding:8px">Mitochondria present.</td></tr>
-<tr><td style="padding:8px">Reproduction by binary fission.</td><td style="padding:8px">Reproduction by mitosis/meiosis.</td></tr>
-<tr><td style="padding:8px">Examples: Bacteria, Cyanobacteria.</td><td style="padding:8px">Examples: Plant & animal cells.</td></tr>
-<tr><td style="padding:8px">Cell organization is simple.</td><td style="padding:8px">Cell organization is complex.</td></tr>
-</table>
-`
+    <div class="diff-header">
+      <span>Prokaryotic Cell</span>
+      <span class="vs">VS</span>
+      <span>Eukaryotic Cell</span>
+    </div>
+
+    <div class="diff-images">
+      <img src="images/prokaryotic_cell.png" alt="Prokaryotic Cell">
+      <img src="images/eukaryotic_cell.png" alt="Eukaryotic Cell">
+    </div>
+
+    <div class="diff-row"><div>No true nucleus</div><div>True nucleus present</div></div>
+    <div class="diff-row"><div>Nuclear membrane absent</div><div>Nuclear membrane present</div></div>
+    <div class="diff-row"><div>Membrane-bound organelles absent</div><div>Membrane-bound organelles present</div></div>
+    <div class="diff-row"><div>DNA is circular and naked</div><div>DNA is linear with proteins</div></div>
+    <div class="diff-row"><div>Ribosomes are 70S</div><div>Ribosomes are 80S</div></div>
+    <div class="diff-row"><div>Cell size small (1–10 µm)</div><div>Cell size larger (10–100 µm)</div></div>
+    <div class="diff-row"><div>Mitochondria absent</div><div>Mitochondria present</div></div>
+    <div class="diff-row"><div>Binary fission</div><div>Mitosis / Meiosis</div></div>
+    <div class="diff-row"><div>Examples: Bacteria</div><div>Plants & Animals</div></div>
+    <div class="diff-row"><div>Simple organisation</div><div>Complex organisation</div></div>
+
+  </div>
+  `
 },
-
 /* ===============================
    THEORY QUESTIONS
    =============================== */
