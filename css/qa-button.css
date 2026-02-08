@@ -1,0 +1,32 @@
+/* ===============================
+📘 SOLVED QUESTIONS BUTTON (CLEAN)
+=============================== */
+
+.qa-footer{
+  display:flex;
+  justify-content:center;
+  margin:26px 0 36px;
+  z-index:5;
+}
+
+.qa-btn{
+  padding:14px 30px;
+  border-radius:999px;
+  text-decoration:none;
+
+  font-weight:800;
+  letter-spacing:.06em;
+
+  color:#eaf1ff;
+  background:linear-gradient(135deg,#1b2b5f,#0b1538);
+
+  border:1px solid rgba(140,180,255,.35);
+
+  box-shadow:0 12px 40px rgba(0,0,0,.7);
+
+  transition:transform .2s ease;
+}
+
+.qa-btn:hover{
+  transform:translateY(-2px);
+}
