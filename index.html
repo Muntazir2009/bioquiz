@@ -55,6 +55,39 @@ body{
   <div class="loader"></div>
 </div>
 
+  /* ===== SOLUTIONS BUTTON ===== */
+.qa-footer{
+  display:flex;
+  justify-content:center;
+  margin:18px 0 28px;
+}
+
+.qa-btn{
+  padding:14px 26px;
+  border-radius:999px;
+  text-decoration:none;
+
+  font-weight:800;
+  letter-spacing:.08em;
+
+  color:#0b0f1f;
+  background:
+    linear-gradient(135deg,#f5c16c,#ff6b6b);
+
+  box-shadow:
+    0 14px 45px rgba(245,193,108,.45),
+    inset 0 0 0 1px rgba(255,255,255,.45);
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.qa-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:
+    0 22px 70px rgba(255,107,107,.6);
+}
 
 <div class="quiz" id="quiz">
   <div class="header">
@@ -91,6 +124,11 @@ body{
   <footer class="cell3d-footer">
   <a href="cell-3d.html" class="cell3d-btn">
     Explore 3D Cell
+  </a>
+  </footer>
+  <footer class="qa-footer">
+  <a href="solutions.html" class="qa-btn">
+    📘 Solved Questions
   </a>
   </footer>
 
