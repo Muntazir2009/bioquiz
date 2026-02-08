@@ -1,170 +1,256 @@
-/* ===============================
-🌌 COSMIC QUIZ CARD — FINAL STABLE
-=============================== */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biology Quiz</title>
 
-.quiz{
-  position:relative;
-  z-index:5;
-  max-width:880px;
-  margin:60px auto;
-  padding:38px 42px;
+<link rel="stylesheet" href="css/cell3d-button.css?v=2">
+<link rel="stylesheet" href="css/quiz-card.css?v=2">
+<link rel="stylesheet" href="css/timer.css?v=2">
+<link rel="stylesheet" href="css/organelles-button.css?v=2">
+<style>
+*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
 
+body{
+  margin:0;min-height:100vh;color:#eaf1ff;
   background:
-    radial-gradient(520px 360px at 18% 12%, rgba(120,160,255,.18), transparent 60%),
-    radial-gradient(620px 460px at 82% 82%, rgba(180,80,255,.16), transparent 65%),
-    linear-gradient(180deg, rgba(20,26,60,.94), rgba(8,10,22,.98));
-
-  backdrop-filter:blur(18px);
-  border-radius:22px;
-  border:1px solid rgba(140,180,255,.25);
-
-  box-shadow:
-    0 50px 140px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.05);
-
-  overflow:hidden;
+    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
 }
 
-/* ===============================
-🧭 HEADER
-=============================== */
-
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:18px;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  font-size:.72rem;
-  opacity:.85;
+.loading{
+  position:fixed;inset:0;background:#05070f;
+  display:flex;align-items:center;justify-content:center;z-index:999;
 }
 
-/* ===============================
-❓ QUESTION
-=============================== */
-
-.question{
-  text-align:center;
-  font-size:clamp(1.35rem,3vw,1.9rem);
-  margin:20px 0 34px;
-  line-height:1.5;
+.loader{
+  width:48px;height:48px;
+  border:3px solid rgba(255,255,255,.15);
+  border-top-color:#4dd6ff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
 }
-
-/* ===============================
-🪐 OPTIONS — FINAL FIX
-A
-B
-C
-D
-=============================== */
-
-.options{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:14px;
-}
-
-/* OPTION BUTTON */
-.option{
-  width:100%;
-  max-width:520px;
-  position:relative;
-  padding:16px 22px;
-  border-radius:14px;
-  cursor:pointer;
-  text-align:left;
-
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-
-  border:1px solid rgba(255,255,255,.18);
-  overflow:hidden;
-}
-
-/* RADIAL GLOW FLOW (SUBTLE & SMOOTH) */
-.option::before{
-  content:"";
-  position:absolute;
-  inset:-60%;
-  background:
-    radial-gradient(circle at 30% 30%,
-      rgba(120,180,255,.35),
-      transparent 45%);
-  animation:glowFlow 6s linear infinite;
-  opacity:.6;
-  pointer-events:none;
-}
-
-/* GLOW MOTION */
-@keyframes glowFlow{
-  0%{transform:translate(-20%,-20%)}
-  50%{transform:translate(20%,20%)}
-  100%{transform:translate(-20%,-20%)}
-}
-
-/* DISABLED STATE */
-.option.disabled{
-  opacity:.35;
-  pointer-events:none;
-}
-
-/* ===============================
-✅ FEEDBACK
-=============================== */
+@keyframes spin{to{transform:rotate(360deg)}}
 
 .feedback{
-  margin-top:24px;
-  padding:18px;
-  border-radius:14px;
+  margin-top:18px;
+  padding:14px 18px;
+  border-radius:12px;
   background:rgba(0,0,0,.45);
-  border:1px solid rgba(255,255,255,.12);
-  text-align:center;
-}
-
-.correct{color:#6dffcc}
-.wrong{color:#ff8a8a}
-
-/* ===============================
-🚀 ACTIONS
-=============================== */
-
-.actions{
-  margin-top:26px;
-  display:flex;
-  justify-content:center;
-  gap:14px;
-}
-
-button{
-  padding:12px 30px;
-  border-radius:14px;
-  border:none;
-  cursor:pointer;
+  border:1px solid rgba(255,255,255,.15);
+  font-weight:600;
   display:none;
 }
+.feedback.correct{color:#6dffcc}
+.feedback.wrong{color:#ff8a8a}
+</style>
+</head>
 
-/* NEXT */
-#next{
-  background:linear-gradient(135deg,#3b6cff,#1f3cff);
-  box-shadow:0 0 26px rgba(60,120,255,.45);
+<body>
+  <canvas id="stars"></canvas>
+
+<div class="loading" id="loading">
+  <div class="loader"></div>
+</div>
+
+
+<div class="quiz" id="quiz">
+  <div class="header">
+    <div>Biology • Cell Quiz</div>
+    <div class="meta">
+      <span id="progress"></span>
+      <span id="difficulty"></span>
+
+      <div class="timer-wrap" id="timerWrap">
+        <svg class="timer-ring" width="56" height="56">
+          <circle cx="28" cy="28" r="22"></circle>
+        </svg>
+        <span id="timer">15</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"></div>
+
+  <div class="actions">
+    <button id="skip">Skip</button>
+    <button id="next">Next</button>
+  </div>
+</div>
+
+<!-- ORGANELLES BUTTON -->
+<footer class="organelles-footer">
+  <a href="organelles.html" class="organelles-btn">
+    Explore Cell Organelles
+  </a>
+</footer>
+  <footer class="cell3d-footer">
+  <a href="cell-3d.html" class="cell3d-btn">
+    Explore 3D Cell
+  </a>
+  </footer>
+
+<script>
+/* ================= AUDIO ================= */
+const correctAudio=new Audio("sounds/correct.mp3");
+const wrongAudio=new Audio("sounds/wrong.mp3");
+const timerSound=new Audio("sounds/timer.mp3");
+timerSound.loop=true;timerSound.volume=.4;
+
+/* ================= TIMER ================= */
+const TOTAL_TIME=15;
+let timeLeft=TOTAL_TIME,interval=null,running=false;
+
+const timerEl=document.getElementById("timer");
+const ring=document.querySelector(".timer-ring circle");
+const timerWrap=document.getElementById("timerWrap");
+const FULL=138;
+
+function resetTimer(){
+  clearInterval(interval);
+  running=false;
+  timeLeft=TOTAL_TIME;
+  timerEl.textContent=TOTAL_TIME;
+  ring.style.strokeDashoffset=0;
+  timerSound.pause();
+  timerSound.currentTime=0;
 }
 
-/* SKIP */
-#skip{
-  display:inline-block;
-  background:linear-gradient(135deg,#ff3b3b,#ffb347);
-  box-shadow:0 0 22px rgba(255,150,60,.55);
+timerWrap.onclick=()=>{
+  if(running)return;
+  running=true;
+  timerSound.play().catch(()=>{});
+  interval=setInterval(()=>{
+    timeLeft--;
+    timerEl.textContent=timeLeft;
+    ring.style.strokeDashoffset=FULL-(timeLeft/TOTAL_TIME)*FULL;
+    if(timeLeft<=0){
+      clearInterval(interval);
+      timerSound.pause();
+      running=false;
+    }
+  },1000);
+};
+
+/* ================= QUIZ ================= */
+const loading=document.getElementById("loading");
+const quiz=document.getElementById("quiz");
+const qEl=document.getElementById("question");
+const oEl=document.getElementById("options");
+const fEl=document.getElementById("feedback");
+const nEl=document.getElementById("next");
+const skipEl=document.getElementById("skip");
+const pEl=document.getElementById("progress");
+const dEl=document.getElementById("difficulty");
+
+let data=[],idx=0,locked=false;
+
+/* 🔀 SHUFFLE */
+function shuffle(arr){
+  return arr.map(v=>({v,s:Math.random()}))
+            .sort((a,b)=>a.s-b.s)
+            .map(x=>x.v);
 }
 
-/* ===============================
-📱 MOBILE
-=============================== */
+/* 🔒 LOAD FROM LOCALSTORAGE */
+const saved=localStorage.getItem("bioquiz_state");
 
-@media(max-width:720px){
-  .quiz{
-    margin:28px 14px;
-    padding:30px 24px;
+fetch("questions.json")
+.then(r=>r.json())
+.then(d=>{
+  if(saved){
+    const s=JSON.parse(saved);
+    data=s.data;
+    idx=s.idx;
+  }else{
+    data=shuffle(d);
+    saveState();
   }
+  loading.style.display="none";
+  quiz.style.display="block";
+  load();
+});
+
+/* 💾 SAVE STATE */
+function saveState(){
+  localStorage.setItem("bioquiz_state",JSON.stringify({data,idx}));
 }
+
+function load(){
+  resetTimer();
+  locked=false;
+  fEl.style.display="none";
+  nEl.style.display="none";
+  skipEl.style.display="inline-block";
+
+  const q=data[idx];
+  qEl.textContent=q.question;
+  pEl.textContent=`Q ${idx+1}/${data.length}`;
+  dEl.textContent=q.difficulty||"";
+
+  oEl.innerHTML="";
+
+  const opts=shuffle(q.options.map((t,i)=>({t,i})));
+  opts.forEach((o,pos)=>{
+    const div=document.createElement("div");
+    div.className="option";
+    div.innerHTML=`<b>${"ABCD"[pos]}.</b> ${o.t}`;
+    div.onclick=()=>{
+      if(locked)return;
+      select(o.i,div);
+    };
+    oEl.appendChild(div);
+  });
+
+  saveState();
+}
+
+function select(ans,div){
+  locked=true;
+  resetTimer();
+
+  const q=data[idx];
+  [...oEl.children].forEach(o=>o.classList.add("disabled"));
+
+  const correct=ans===q.answer;
+
+  if(correct){
+    correctAudio.play().catch(()=>{});
+    div.style.borderColor="#6dffcc";
+  }else{
+    wrongAudio.play().catch(()=>{});
+    div.style.borderColor="#ff8a8a";
+    [...oEl.children].forEach(o=>{
+      if(o.textContent.includes(q.options[q.answer])){
+        o.style.borderColor="#6dffcc";
+      }
+    });
+  }
+
+  fEl.textContent=correct?"Correct":"Incorrect";
+  fEl.className="feedback "+(correct?"correct":"wrong");
+  fEl.style.display="block";
+
+  nEl.style.display="inline-block";
+  skipEl.style.display="none";
+}
+
+skipEl.onclick=()=>{
+  idx++;saveState();
+  idx<data.length?load():qEl.textContent="Quiz Completed";
+};
+
+nEl.onclick=()=>{
+  idx++;saveState();
+  idx<data.length?load():qEl.textContent="Quiz Completed";
+};
+</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="three-space.js"></script>
+</body>
+</html>
