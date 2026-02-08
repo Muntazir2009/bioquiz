@@ -1,34 +1,40 @@
 const qaData = [
   {
     question: "What would happen if the plasma membrane ruptures or breaks down?",
-    answer: "If the plasma membrane ruptures, the contents of the cell will leak into the surrounding environment. This will disturb the internal balance of the cell, stopping essential life processes. As a result, the cell will eventually die."
+    answer:
+      "If the plasma membrane ruptures, the contents of the cell will leak into the surrounding environment. This disturbs the internal balance of the cell and essential life processes stop. As a result, the cell cannot survive and eventually dies."
   },
 
   {
     question: "What would happen to the life of a cell if there was no Golgi apparatus?",
-    answer: "The Golgi apparatus modifies, packages, and transports proteins and lipids. Without it, these substances would not reach their correct destinations, disrupting secretion and transport. This would severely affect cell functioning and survival."
+    answer:
+      "The Golgi apparatus modifies, packages, and transports proteins and lipids. Without it, these substances would not reach their correct destinations inside or outside the cell. This would disrupt secretion and transport, severely affecting cell survival."
   },
 
   {
     question: "Which organelle is known as the powerhouse of the cell? Why?",
-    answer: "Mitochondria are known as the powerhouse of the cell because they produce energy in the form of ATP during cellular respiration. This energy is required for all activities of the cell."
+    answer:
+      "Mitochondria are known as the powerhouse of the cell because they release energy in the form of ATP during cellular respiration. This energy is required for all metabolic and life activities of the cell."
   },
 
   {
     question: "Where do the lipids and proteins constituting the cell membrane get synthesised?",
-    answer: "Lipids are synthesised in the smooth endoplasmic reticulum, while proteins are synthesised by ribosomes, mainly on the rough endoplasmic reticulum. These are later modified and transported by the Golgi apparatus."
+    answer:
+      "Lipids are synthesised in the smooth endoplasmic reticulum, while proteins are synthesised by ribosomes present on the rough endoplasmic reticulum. These materials are later modified and transported by the Golgi apparatus to form the cell membrane."
   },
 
   {
     question: "How does an Amoeba obtain its food?",
-    answer: "An Amoeba obtains its food by endocytosis. It forms finger-like projections called pseudopodia that surround the food particle and engulf it, forming a food vacuole where digestion occurs."
+    answer:
+      "An Amoeba obtains its food by endocytosis. It forms finger-like projections called pseudopodia that surround and engulf the food particle, forming a food vacuole. Digestion takes place inside this vacuole."
   },
 
   {
     question: "What is osmosis?",
-    answer: "Osmosis is the movement of water molecules through a semi-permeable membrane from a region of higher water concentration to a region of lower water concentration. It is a passive process."
-  },
-
+    answer:
+      "Osmosis is the movement of water molecules through a semi-permeable membrane from a region of higher water concentration to a region of lower water concentration. It is a passive process and does not require energy."
+  }
+  
   {
     question: `Carry out the following osmosis experiment:
 
