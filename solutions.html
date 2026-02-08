@@ -3,19 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biology – Solved Questions</title>
+<title>Biology | NCERT Solved Questions</title>
 
 <style>
-:root{
-  --bg1:#050814;
-  --bg2:#0b1538;
-  --panel:#0c122b;
-  --glass:rgba(255,255,255,.08);
-  --accent:#6fb6ff;
-  --accent2:#f5c16c;
-  --answer:#6dffcc;
-}
-
+/* ===============================
+   🌌 GLOBAL THEME
+   =============================== */
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -24,50 +17,57 @@
 body{
   margin:0;
   min-height:100vh;
-  background:
-    radial-gradient(1200px 800px at 20% 10%, var(--bg2) 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
-    linear-gradient(180deg,var(--bg1),#03040a);
   color:#eaf1ff;
-  padding:36px 16px;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #0b1538 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+  padding:32px 14px;
 }
 
-/* ===== TITLE ===== */
+/* ===============================
+   🧠 PAGE TITLE
+   =============================== */
 h1{
   text-align:center;
-  margin-bottom:42px;
-  letter-spacing:.18em;
+  margin-bottom:40px;
+  letter-spacing:.14em;
   font-weight:800;
   font-size:1.6rem;
 }
 
-/* ===== CONTAINER ===== */
+/* ===============================
+   📦 CONTAINER
+   =============================== */
 .qa-container{
-  max-width:960px;
+  max-width:900px;
   margin:auto;
   display:flex;
   flex-direction:column;
-  gap:32px; /* breathing space */
+  gap:30px;
 }
 
-/* ===== CARD ===== */
+/* ===============================
+   🧾 QUESTION CARD
+   =============================== */
 .qa-card{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    var(--panel);
+    linear-gradient(180deg,#0a0f24,#060918);
   border:1px solid rgba(255,255,255,.14);
   border-radius:22px;
   overflow:hidden;
-  box-shadow:0 40px 120px rgba(0,0,0,.85);
+  box-shadow:0 40px 100px rgba(0,0,0,.85);
   transition:transform .35s ease, box-shadow .35s ease;
 }
 
 .qa-card:hover{
   transform:translateY(-6px);
-  box-shadow:0 60px 160px rgba(0,0,0,.95);
+  box-shadow:0 60px 140px rgba(0,0,0,.95);
 }
 
-/* ===== QUESTION ===== */
+/* ===============================
+   ❓ QUESTION BAR
+   =============================== */
 .qa-question{
   padding:22px 24px;
   cursor:pointer;
@@ -82,16 +82,18 @@ h1{
   font-weight:900;
   padding:6px 14px;
   border-radius:12px;
-  font-size:.85rem;
   flex-shrink:0;
 }
 
 .qa-question span{
   font-size:1.08rem;
   line-height:1.7;
+  font-weight:600;
 }
 
-/* ===== ANSWER (ACCORDION) ===== */
+/* ===============================
+   ✅ ANSWER DROPDOWN
+   =============================== */
 .qa-answer{
   max-height:0;
   overflow:hidden;
@@ -99,26 +101,45 @@ h1{
 }
 
 .qa-card.active .qa-answer{
-  max-height:3000px;
+  max-height:1200px;
 }
 
+/* ===============================
+   🟢 ANSWER BOX
+   =============================== */
 .qa-answer-inner{
-  margin:0 20px 24px;
-  padding:22px 24px;
+  margin:0 20px 22px;
+  padding:20px 22px;
   background:
-    radial-gradient(400px 200px at 10% 10%, rgba(109,255,204,.12), transparent 60%),
     linear-gradient(180deg,#071d18,#04120f);
-  border-left:5px solid var(--answer);
+  border-left:5px solid #6dffcc;
   border-radius:18px;
-  line-height:1.7;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.06),
+    0 20px 60px rgba(0,0,0,.6);
+  animation:fadeUp .6s ease both;
 }
 
-/* ===== DIFFERENCE TABLE (PREMIUM) ===== */
+@keyframes fadeUp{
+  from{opacity:0; transform:translateY(20px)}
+  to{opacity:1; transform:none}
+}
+
+.ans-badge{
+  color:#6dffcc;
+  font-weight:900;
+  margin-right:8px;
+}
+
+/* ===============================
+   📊 DIFFERENCE SECTION (SPECIAL)
+   =============================== */
 .diff-wrapper{
-  margin-top:18px;
+  margin-top:14px;
   border-radius:18px;
   overflow:hidden;
-  background:linear-gradient(180deg,#0b1028,#060918);
+  background:
+    linear-gradient(180deg,#0b1028,#060918);
   border:1px solid rgba(255,255,255,.14);
 }
 
@@ -129,18 +150,33 @@ h1{
   text-align:center;
   padding:16px;
   font-weight:800;
-  letter-spacing:.04em;
   background:linear-gradient(135deg,#1a2355,#0e1435);
 }
 
 .diff-header .vs{
-  font-size:.75rem;
-  padding:4px 12px;
+  font-size:.8rem;
+  padding:5px 12px;
   border-radius:999px;
-  background:var(--accent2);
+  background:#f5c16c;
   color:#2a1b00;
 }
 
+/* IMAGE ROW */
+.diff-images{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:16px;
+}
+
+.diff-images img{
+  width:100%;
+  border-radius:14px;
+  background:#000;
+  border:1px solid rgba(255,255,255,.15);
+}
+
+/* POINT ROWS */
 .diff-row{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -148,28 +184,26 @@ h1{
   padding:14px 18px;
   border-top:1px solid rgba(255,255,255,.08);
   font-size:.95rem;
-}
-
-.diff-row div{
   line-height:1.6;
 }
 
-/* ===== MOBILE ===== */
-@media(max-width:720px){
+/* ===============================
+   📱 MOBILE
+   =============================== */
+@media(max-width:700px){
+  .diff-images,
   .diff-row{
     grid-template-columns:1fr;
   }
 
-  h1{
-    font-size:1.3rem;
-  }
+  h1{font-size:1.4rem}
 }
 </style>
 </head>
 
 <body>
 
-<h1>BIOLOGY – SOLVED QUESTIONS</h1>
+<h1>NCERT Biology – Solved Questions</h1>
 
 <div class="qa-container" id="qaContainer"></div>
 
@@ -189,6 +223,7 @@ qaData.forEach((item, index) => {
 
     <div class="qa-answer">
       <div class="qa-answer-inner">
+        <span class="ans-badge">Ans</span>
         ${item.answer}
       </div>
     </div>
