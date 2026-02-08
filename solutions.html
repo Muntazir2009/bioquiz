@@ -118,30 +118,29 @@ h1{
 <script>
 const container = document.getElementById("qaContainer");
 
-QA_DATA.forEach((item,index)=>{
+qaData.forEach((item, index) => {
   const card = document.createElement("div");
   card.className = "qa-card";
 
   card.innerHTML = `
     <div class="qa-question">
-      <div class="q-badge">Q${index+1}</div>
-      <span>${item.q}</span>
+      <div class="q-badge">Q${index + 1}</div>
+      <span>${item.question}</span>
     </div>
 
     <div class="qa-answer">
       <div class="qa-answer-inner">
-        <span class="ans-badge">Ans</span>${item.a}
+        <span class="ans-badge">Ans</span>${item.answer}
       </div>
     </div>
   `;
 
-  card.querySelector(".qa-question").onclick = ()=>{
+  card.querySelector(".qa-question").onclick = () => {
     card.classList.toggle("active");
   };
 
   container.appendChild(card);
 });
 </script>
-
 </body>
 </html>
