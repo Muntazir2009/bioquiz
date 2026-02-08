@@ -1,13 +1,11 @@
 /* =====================================
-   🌌 PREMIUM BLUE BUTTON – FINAL VERSION
-   Alive • Calm • No Spinner • No Orbit
+   🌌 PREMIUM BLUE BUTTON – FINAL
    ===================================== */
 
 .button-footer{
   display:flex;
   justify-content:center;
   margin:28px 0 42px;
-  z-index:5;
 }
 
 /* ===== CORE BUTTON ===== */
@@ -50,7 +48,7 @@
     box-shadow .25s ease;
 }
 
-/* ===== GAS / ENERGY FLOW (SUBTLE) ===== */
+/* ===== GAS FLOW ===== */
 .premium-btn::before{
   content:"";
   position:absolute;
@@ -73,7 +71,7 @@
   z-index:-1;
 }
 
-/* ===== SOFT INNER SHEEN ===== */
+/* ===== SOFT SHEEN ===== */
 .premium-btn::after{
   content:"";
   position:absolute;
@@ -88,7 +86,6 @@
   pointer-events:none;
 }
 
-/* ===== HOVER (PREMIUM, NOT FLASHY) ===== */
 .premium-btn:hover{
   transform:translateY(-3px);
   box-shadow:
@@ -96,19 +93,16 @@
     0 0 100px rgba(120,180,255,.25);
 }
 
-/* ===== PRESS ===== */
 .premium-btn:active{
   transform:scale(.97);
 }
 
-/* ===== ANIMATION ===== */
 @keyframes gasFlow{
   0%{transform:translate(0,0)}
   50%{transform:translate(-6%, -4%)}
   100%{transform:translate(0,0)}
 }
 
-/* ===== MOBILE ===== */
 @media(max-width:600px){
   .premium-btn{
     padding:13px 30px;
