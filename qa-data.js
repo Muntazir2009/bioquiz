@@ -1,5 +1,27 @@
 const qaData = [
   {
+  question: "Differentiate between Plant Cell and Animal Cell.",
+  answer: `
+<table style="width:100%;border-collapse:collapse;margin-top:12px">
+<tr>
+<th style="text-align:left;padding:8px;border-bottom:1px solid #444">Plant Cell</th>
+<th style="text-align:left;padding:8px;border-bottom:1px solid #444">Animal Cell</th>
+</tr>
+
+<tr><td>Cell wall present</td><td>Cell wall absent</td></tr>
+<tr><td>Chloroplast present</td><td>Chloroplast absent</td></tr>
+<tr><td>Large central vacuole</td><td>Small or temporary vacuoles</td></tr>
+<tr><td>Fixed shape</td><td>Irregular shape</td></tr>
+<tr><td>Autotrophic</td><td>Heterotrophic</td></tr>
+<tr><td>Stores starch</td><td>Stores glycogen</td></tr>
+<tr><td>Plastids present</td><td>Plastids absent</td></tr>
+<tr><td>Centrioles absent</td><td>Centrioles present</td></tr>
+<tr><td>Plasmodesmata present</td><td>Plasmodesmata absent</td></tr>
+<tr><td>Larger in size</td><td>Smaller in size</td></tr>
+</table>
+`
+  }
+  {
     question: "What would happen if the plasma membrane ruptures or breaks down?",
     answer:
       "If the plasma membrane ruptures, the contents of the cell will leak into the surrounding environment. This disturbs the internal balance of the cell and essential life processes stop. As a result, the cell cannot survive and eventually dies."
