@@ -67,8 +67,8 @@ const qaData = [
     </div>
 
     <div class="diff-images">
-      <img src="images/prokaryotic_cell.png" alt="Prokaryotic Cell">
-      <img src="images/eukaryotic_cell.png" alt="Eukaryotic Cell">
+      <img src="images/diagrams/prokaryotic_cell.png" alt="Prokaryotic Cell">
+      <img src="images/diagrams/eukaryotic_cell.png" alt="Eukaryotic Cell">
     </div>
 
     <div class="diff-row"><div>No true nucleus</div><div>True nucleus present</div></div>
