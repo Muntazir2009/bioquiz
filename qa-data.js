@@ -40,11 +40,15 @@ d) Put one teaspoon sugar in the boiled potato cup D
 After two hours, answer the following questions.`,
     
     answer: `
-i) Water collects in cups B and C due to osmosis. The sugar and salt solutions inside create a higher concentration, so water enters through the semi-permeable membrane of potato cells.
+i) **Why does water collect in cups B and C?**  
+Water collects in cups B and C due to **osmosis**. The sugar and salt solutions inside these cups have a higher solute concentration, so water moves from the surrounding dilute solution into the cups through the semi-permeable membrane of potato cells.
 
-ii) Potato cup A acts as a control. It shows that without a concentration difference, osmosis does not occur.
+ii) **Why is potato cup A necessary?**  
+Potato cup A acts as a **control**. Since no solute is present, no concentration difference exists. This proves that osmosis occurs only when there is a concentration gradient.
 
-iii) In cup A, no solute is present, so no osmosis takes place. In cup D, boiling destroys the semi-permeable membrane, so osmosis cannot occur.
+iii) **Why does water not collect in cups A and D?**  
+• In cup A, no solute is present, so osmosis does not occur.  
+• In cup D, boiling destroys the semi-permeable membrane of potato cells, so osmosis cannot take place.
 `
   }
 ];
