@@ -1,5 +1,5 @@
 /* ===============================
-   🧬 ORGANELLES BUTTON – PREMIUM BLUE (NO LOADING, NO RINGS)
+   🧬 ORGANELLES BUTTON – PREMIUM (ALIVE, NOT LOADING)
    =============================== */
 
 .organelles-footer{
@@ -8,7 +8,7 @@
   margin:28px 0 36px;
 }
 
-/* ===== BUTTON ===== */
+/* ===== BUTTON CORE ===== */
 .organelles-btn{
   position:relative;
   padding:14px 36px;
@@ -23,11 +23,6 @@
   text-decoration:none;
 
   background:
-    radial-gradient(
-      120px 60px at 0% 50%,
-      rgba(120,180,255,.35),
-      transparent 70%
-    ),
     linear-gradient(135deg,#0b1538,#060a1f);
 
   border:1px solid rgba(120,180,255,.45);
@@ -37,34 +32,50 @@
     inset 0 0 0 1px rgba(255,255,255,.06);
 
   overflow:hidden;
+  isolation:isolate;
 }
 
-/* ===== SOFT GAS FLOW (NO LOADING LOOK) ===== */
+/* ===== INTERNAL ENERGY GLOW (NO SWEEP) ===== */
 .organelles-btn::before{
   content:"";
   position:absolute;
   inset:-40%;
+
   background:
     radial-gradient(
-      300px 120px at 0% 50%,
-      rgba(120,180,255,.25),
-      transparent 60%
+      260px 140px at 50% 50%,
+      rgba(120,180,255,.35),
+      transparent 65%
     );
-  animation:gasFlow 6s linear infinite;
+
+  opacity:.65;
+  filter:blur(18px);
+
+  animation:energyDrift 7s ease-in-out infinite;
   pointer-events:none;
 }
 
-/* ===== HOVER ===== */
+/* ===== HOVER (MORE LIFE, STILL NOT LOADING) ===== */
 .organelles-btn:hover{
   box-shadow:
     0 0 40px rgba(120,180,255,.6),
     0 0 90px rgba(80,140,255,.45);
 }
 
-/* ===== GAS ANIMATION ===== */
-@keyframes gasFlow{
-  from{transform:translateX(-30%)}
-  to{transform:translateX(30%)}
+/* ===== ORGANIC MOTION (NO DIRECTIONAL FLOW) ===== */
+@keyframes energyDrift{
+  0%{
+    transform:scale(1) translate(0,0);
+    opacity:.55;
+  }
+  50%{
+    transform:scale(1.08) translate(6px,-4px);
+    opacity:.75;
+  }
+  100%{
+    transform:scale(1) translate(0,0);
+    opacity:.55;
+  }
 }
 
 /* ===== MOBILE ===== */
