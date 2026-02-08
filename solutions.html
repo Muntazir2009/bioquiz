@@ -6,6 +6,16 @@
 <title>Biology – Solved Questions</title>
 
 <style>
+:root{
+  --bg1:#050814;
+  --bg2:#0b1538;
+  --panel:#0c122b;
+  --glass:rgba(255,255,255,.08);
+  --accent:#6fb6ff;
+  --accent2:#f5c16c;
+  --answer:#6dffcc;
+}
+
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -15,92 +25,101 @@ body{
   margin:0;
   min-height:100vh;
   background:
-    radial-gradient(1200px 800px at 20% 10%, #0b1538 0%, transparent 60%),
+    radial-gradient(1200px 800px at 20% 10%, var(--bg2) 0%, transparent 60%),
     radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
-    linear-gradient(180deg,#05070f,#04060c);
+    linear-gradient(180deg,var(--bg1),#03040a);
   color:#eaf1ff;
-  padding:32px 16px;
+  padding:36px 16px;
 }
 
+/* ===== TITLE ===== */
 h1{
   text-align:center;
-  margin-bottom:36px;
-  letter-spacing:.14em;
-  font-weight:700;
+  margin-bottom:42px;
+  letter-spacing:.18em;
+  font-weight:800;
+  font-size:1.6rem;
 }
 
 /* ===== CONTAINER ===== */
 .qa-container{
-  max-width:920px;
+  max-width:960px;
   margin:auto;
   display:flex;
   flex-direction:column;
-  gap:28px;
+  gap:32px; /* breathing space */
 }
 
 /* ===== CARD ===== */
 .qa-card{
-  background:linear-gradient(180deg,#0a0f24,#060918);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    var(--panel);
   border:1px solid rgba(255,255,255,.14);
-  border-radius:20px;
+  border-radius:22px;
   overflow:hidden;
-  box-shadow:0 30px 80px rgba(0,0,0,.8);
-  transition:transform .3s ease;
+  box-shadow:0 40px 120px rgba(0,0,0,.85);
+  transition:transform .35s ease, box-shadow .35s ease;
 }
 
 .qa-card:hover{
-  transform:translateY(-4px);
+  transform:translateY(-6px);
+  box-shadow:0 60px 160px rgba(0,0,0,.95);
 }
 
 /* ===== QUESTION ===== */
 .qa-question{
-  padding:20px 22px;
+  padding:22px 24px;
   cursor:pointer;
   display:flex;
-  gap:14px;
+  gap:16px;
   align-items:flex-start;
 }
 
 .q-badge{
   background:linear-gradient(135deg,#ff6b6b,#ffb36b);
   color:#2a0000;
-  font-weight:800;
-  padding:6px 12px;
-  border-radius:10px;
+  font-weight:900;
+  padding:6px 14px;
+  border-radius:12px;
+  font-size:.85rem;
   flex-shrink:0;
 }
 
 .qa-question span{
   font-size:1.08rem;
-  line-height:1.65;
+  line-height:1.7;
 }
 
-/* ===== ANSWER ===== */
+/* ===== ANSWER (ACCORDION) ===== */
 .qa-answer{
   max-height:0;
   overflow:hidden;
-  transition:max-height .45s ease;
+  transition:max-height .55s cubic-bezier(.22,1,.36,1);
 }
 
 .qa-card.active .qa-answer{
-  max-height:2000px;
+  max-height:3000px;
 }
 
 .qa-answer-inner{
-  margin:0 18px 22px;
-  padding:18px 20px;
-  background:linear-gradient(180deg,#071d18,#04120f);
-  border-left:4px solid #6dffcc;
-  border-radius:16px;
+  margin:0 20px 24px;
+  padding:22px 24px;
+  background:
+    radial-gradient(400px 200px at 10% 10%, rgba(109,255,204,.12), transparent 60%),
+    linear-gradient(180deg,#071d18,#04120f);
+  border-left:5px solid var(--answer);
+  border-radius:18px;
+  line-height:1.7;
 }
 
-/* ===== DIFFERENCE STYLE ===== */
+/* ===== DIFFERENCE TABLE (PREMIUM) ===== */
 .diff-wrapper{
-  margin-top:14px;
-  border-radius:14px;
+  margin-top:18px;
+  border-radius:18px;
   overflow:hidden;
   background:linear-gradient(180deg,#0b1028,#060918);
-  border:1px solid rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.14);
 }
 
 .diff-header{
@@ -108,30 +127,41 @@ h1{
   grid-template-columns:1fr auto 1fr;
   align-items:center;
   text-align:center;
-  padding:14px;
-  font-weight:700;
+  padding:16px;
+  font-weight:800;
+  letter-spacing:.04em;
   background:linear-gradient(135deg,#1a2355,#0e1435);
 }
 
 .diff-header .vs{
-  font-size:.8rem;
-  padding:4px 10px;
+  font-size:.75rem;
+  padding:4px 12px;
   border-radius:999px;
-  background:#f5c16c;
+  background:var(--accent2);
   color:#2a1b00;
 }
 
 .diff-row{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:14px;
-  padding:12px 16px;
+  gap:16px;
+  padding:14px 18px;
   border-top:1px solid rgba(255,255,255,.08);
+  font-size:.95rem;
 }
 
-@media(max-width:700px){
+.diff-row div{
+  line-height:1.6;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:720px){
   .diff-row{
     grid-template-columns:1fr;
+  }
+
+  h1{
+    font-size:1.3rem;
   }
 }
 </style>
@@ -139,7 +169,7 @@ h1{
 
 <body>
 
-<h1>Biology – Solved Questions</h1>
+<h1>BIOLOGY – SOLVED QUESTIONS</h1>
 
 <div class="qa-container" id="qaContainer"></div>
 
