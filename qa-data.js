@@ -4,51 +4,35 @@ const qaData = [
    Q1: PLANT vs ANIMAL CELL
    =============================== */
 {
-  question: "Differentiate between Plant Cell and Animal Cell.",
+  question: "Differentiate between Animal Cell and Plant Cell.",
   answer: `
 <div class="diff-wrapper">
+
+  <!-- HEADER -->
   <div class="diff-header">
     <span>Plant Cell</span>
     <span class="vs">VS</span>
     <span>Animal Cell</span>
   </div>
 
-  <div class="diff-row">
-    <div>Cell wall present</div>
-    <div>Cell wall absent</div>
+  <!-- IMAGES -->
+  <div class="diff-images">
+    <img src="images/diagrams/plant_cell.png" alt="Plant Cell Diagram">
+    <img src="images/diagrams/animal_cell.png" alt="Animal Cell Diagram">
   </div>
-  <div class="diff-row">
-    <div>Chloroplasts present</div>
-    <div>Chloroplasts absent</div>
-  </div>
-  <div class="diff-row">
-    <div>Large central vacuole</div>
-    <div>Small or temporary vacuoles</div>
-  </div>
-  <div class="diff-row">
-    <div>Autotrophic (photosynthesis)</div>
-    <div>Heterotrophic</div>
-  </div>
-  <div class="diff-row">
-    <div>Stores food as starch</div>
-    <div>Stores food as glycogen</div>
-  </div>
-  <div class="diff-row">
-    <div>Plastids present</div>
-    <div>Plastids absent</div>
-  </div>
-  <div class="diff-row">
-    <div>Centrioles usually absent</div>
-    <div>Centrioles present</div>
-  </div>
-  <div class="diff-row">
-    <div>Plasmodesmata present</div>
-    <div>Plasmodesmata absent</div>
-  </div>
-  <div class="diff-row">
-    <div>Usually larger in size</div>
-    <div>Usually smaller in size</div>
-  </div>
+
+  <!-- DIFFERENCES -->
+  <div class="diff-row"><div>Cell wall present</div><div>Cell wall absent</div></div>
+  <div class="diff-row"><div>Chloroplasts present</div><div>Chloroplasts absent</div></div>
+  <div class="diff-row"><div>Large central vacuole</div><div>Small or temporary vacuoles</div></div>
+  <div class="diff-row"><div>Plastids present</div><div>Plastids absent</div></div>
+  <div class="diff-row"><div>Fixed / rectangular shape</div><div>Irregular / rounded shape</div></div>
+  <div class="diff-row"><div>Autotrophic (photosynthesis)</div><div>Heterotrophic</div></div>
+  <div class="diff-row"><div>Food stored as starch</div><div>Food stored as glycogen</div></div>
+  <div class="diff-row"><div>Centrioles usually absent</div><div>Centrioles present</div></div>
+  <div class="diff-row"><div>Plasmodesmata present</div><div>Plasmodesmata absent</div></div>
+  <div class="diff-row"><div>Generally larger in size</div><div>Generally smaller in size</div></div>
+
 </div>
 `
 },
