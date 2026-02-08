@@ -1,21 +1,17 @@
-/* =====================================
-   🌌 PREMIUM BLUE BUTTON – FINAL
-   ===================================== */
+/* ===============================
+   🧬 ORGANELLES BUTTON – PREMIUM BLUE (NO LOADING, NO RINGS)
+   =============================== */
 
-.button-footer{
+.organelles-footer{
   display:flex;
   justify-content:center;
-  margin:28px 0 42px;
+  margin:28px 0 36px;
 }
 
-/* ===== CORE BUTTON ===== */
-.premium-btn{
+/* ===== BUTTON ===== */
+.organelles-btn{
   position:relative;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-
-  padding:15px 40px;
+  padding:14px 36px;
   border-radius:999px;
 
   font-size:.85rem;
@@ -23,90 +19,58 @@
   letter-spacing:.12em;
   text-transform:uppercase;
 
-  color:#eaf6ff;
+  color:#eaf8ff;
   text-decoration:none;
 
   background:
     radial-gradient(
-      140% 140% at 25% 20%,
+      120px 60px at 0% 50%,
       rgba(120,180,255,.35),
-      rgba(40,80,180,.25),
-      rgba(8,14,40,.96)
-    );
+      transparent 70%
+    ),
+    linear-gradient(135deg,#0b1538,#060a1f);
 
-  border:1px solid rgba(140,190,255,.45);
+  border:1px solid rgba(120,180,255,.45);
 
   box-shadow:
-    0 14px 50px rgba(0,0,0,.85),
+    0 10px 35px rgba(0,0,0,.8),
     inset 0 0 0 1px rgba(255,255,255,.06);
 
   overflow:hidden;
-  isolation:isolate;
-
-  transition:
-    transform .25s ease,
-    box-shadow .25s ease;
 }
 
-/* ===== GAS FLOW ===== */
-.premium-btn::before{
+/* ===== SOFT GAS FLOW (NO LOADING LOOK) ===== */
+.organelles-btn::before{
   content:"";
   position:absolute;
   inset:-40%;
-
   background:
     radial-gradient(
-      circle at 30% 40%,
-      rgba(140,200,255,.25),
+      300px 120px at 0% 50%,
+      rgba(120,180,255,.25),
       transparent 60%
-    ),
-    radial-gradient(
-      circle at 70% 60%,
-      rgba(90,150,255,.18),
-      transparent 55%
     );
-
-  animation:gasFlow 14s ease-in-out infinite;
-  opacity:.7;
-  z-index:-1;
-}
-
-/* ===== SOFT SHEEN ===== */
-.premium-btn::after{
-  content:"";
-  position:absolute;
-  inset:2px;
-  border-radius:inherit;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,.10),
-      transparent
-    );
+  animation:gasFlow 6s linear infinite;
   pointer-events:none;
 }
 
-.premium-btn:hover{
-  transform:translateY(-3px);
+/* ===== HOVER ===== */
+.organelles-btn:hover{
   box-shadow:
-    0 20px 70px rgba(90,150,255,.45),
-    0 0 100px rgba(120,180,255,.25);
+    0 0 40px rgba(120,180,255,.6),
+    0 0 90px rgba(80,140,255,.45);
 }
 
-.premium-btn:active{
-  transform:scale(.97);
-}
-
+/* ===== GAS ANIMATION ===== */
 @keyframes gasFlow{
-  0%{transform:translate(0,0)}
-  50%{transform:translate(-6%, -4%)}
-  100%{transform:translate(0,0)}
+  from{transform:translateX(-30%)}
+  to{transform:translateX(30%)}
 }
 
+/* ===== MOBILE ===== */
 @media(max-width:600px){
-  .premium-btn{
-    padding:13px 30px;
-    font-size:.75rem;
-    letter-spacing:.1em;
+  .organelles-btn{
+    padding:12px 26px;
+    font-size:.78rem;
   }
 }
