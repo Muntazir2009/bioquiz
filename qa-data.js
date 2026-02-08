@@ -30,17 +30,21 @@ const qaData = [
   },
 
   {
-    question: "Why does water gather in the hollowed portions of potato cups B and C?",
-    answer: "Sugar and salt solutions inside cups B and C create a concentrated solution. Water moves from the surrounding dilute solution into the cups by osmosis, causing water to collect inside."
-  },
+    question: `Carry out the following osmosis experiment:
 
-  {
-    question: "Why is potato cup A necessary for the osmosis experiment?",
-    answer: "Potato cup A acts as a control. It shows that osmosis occurs only when there is a concentration difference between the inside and outside of the potato tissue."
-  },
+a) Keep potato cup A empty  
+b) Put one teaspoon sugar in cup B  
+c) Put one teaspoon salt in cup C  
+d) Put one teaspoon sugar in the boiled potato cup D  
 
-  {
-    question: "Why does water not gather in the hollowed portions of potato cups A and D?",
-    answer: "In cup A, no solute is present, so no osmotic movement occurs. In cup D, boiling destroys the semi-permeable membrane of potato cells, preventing osmosis."
+After two hours, answer the following questions.`,
+    
+    answer: `
+i) Water collects in cups B and C due to osmosis. The sugar and salt solutions inside create a higher concentration, so water enters through the semi-permeable membrane of potato cells.
+
+ii) Potato cup A acts as a control. It shows that without a concentration difference, osmosis does not occur.
+
+iii) In cup A, no solute is present, so no osmosis takes place. In cup D, boiling destroys the semi-permeable membrane, so osmosis cannot occur.
+`
   }
 ];
