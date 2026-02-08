@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biology – Answers</title>
+<title>Biology – Solutions</title>
 
 <style>
 *{
@@ -13,193 +13,138 @@
 
 body{
   margin:0;
-  min-height:100vh;
-  background:linear-gradient(180deg,#05070f,#04060c);
+  background:#05070f;
   color:#eaf1ff;
-  padding:40px 16px;
+  padding:24px;
 }
 
-/* ===== CONTAINER ===== */
+h1{
+  text-align:center;
+  margin-bottom:24px;
+  letter-spacing:.12em;
+}
+
+/* CONTAINER */
 .qa-container{
   max-width:900px;
   margin:auto;
   display:flex;
   flex-direction:column;
-  gap:22px;
+  gap:18px;
 }
 
-/* ===== QUESTION CARD ===== */
+/* CARD */
 .qa-card{
-  border-radius:20px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
-    rgba(8,12,26,.95);
-  border:1px solid rgba(255,255,255,.15);
-  box-shadow:0 30px 90px rgba(0,0,0,.85);
+  background:linear-gradient(180deg,#0a0f24,#060918);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:18px;
   overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
 }
 
-/* QUESTION HEADER */
+/* QUESTION */
 .qa-question{
+  padding:18px 20px;
   cursor:pointer;
-  padding:22px 24px;
   display:flex;
-  align-items:center;
-  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
 }
 
 .q-badge{
-  background:linear-gradient(135deg,#ff6b6b,#ff9f9f);
+  background:linear-gradient(135deg,#ff6b6b,#ff9a6b);
   color:#2a0000;
   font-weight:800;
-  padding:6px 14px;
-  border-radius:10px;
+  padding:4px 10px;
+  border-radius:8px;
+  flex-shrink:0;
 }
 
 .qa-question span{
   font-size:1.05rem;
   line-height:1.6;
-  flex:1;
-  margin-left:16px;
 }
 
-/* ARROW */
-.arrow{
-  transition:.4s ease;
-  opacity:.6;
-}
-.qa-card.active .arrow{
-  transform:rotate(180deg);
-  opacity:1;
-}
-
-/* ===== ANSWER DROPDOWN ===== */
+/* ANSWER (HIDDEN) */
 .qa-answer{
   max-height:0;
   overflow:hidden;
-  transition:max-height .6s cubic-bezier(.22,1,.36,1);
+  transition:max-height .45s ease;
 }
 
 .qa-card.active .qa-answer{
-  max-height:600px;
+  max-height:500px;
 }
 
-/* ===== ANSWER CONTENT (FOCUS DESIGN) ===== */
+/* ANSWER BOX */
 .qa-answer-inner{
-  position:relative;
-  display:flex;
-  gap:16px;
-  align-items:flex-start;
-
-  padding:22px 22px 26px 26px;
-  margin:0 18px 22px;
-
-  border-radius:18px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    rgba(8,14,30,.95);
-
-  box-shadow:
-    0 25px 80px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.05);
-
-  animation:answerReveal .6s cubic-bezier(.22,1,.36,1) both;
+  margin:0 16px 18px;
+  padding:16px 18px;
+  background:linear-gradient(180deg,#071d18,#04120f);
+  border-left:4px solid #6dffcc;
+  border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
 }
 
-/* LEFT GLOW STRIP */
-.qa-answer-inner::before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:12px;
-  bottom:12px;
-  width:4px;
-  border-radius:4px;
-  background:linear-gradient(180deg,#6dffcc,#4fdcff,#6dffcc);
-  box-shadow:0 0 18px rgba(110,255,200,.8);
-}
-
-/* ANSWER BADGE */
 .ans-badge{
-  background:linear-gradient(135deg,#6dffcc,#9effe5);
-  color:#062017;
+  color:#6dffcc;
   font-weight:800;
-  padding:6px 14px;
-  border-radius:10px;
-  box-shadow:0 0 20px rgba(110,255,200,.6);
+  margin-right:8px;
 }
 
-/* ANSWER TEXT */
-.ans-text{
-  font-size:1.05rem;
-  line-height:1.8;
-  letter-spacing:.02em;
-}
-
-/* ANIMATION */
-@keyframes answerReveal{
-  from{
-    opacity:0;
-    transform:translateY(18px);
-  }
-  to{
-    opacity:1;
-    transform:none;
-  }
+/* MOBILE */
+@media(max-width:600px){
+  body{padding:16px}
 }
 </style>
 </head>
 
 <body>
 
-<div class="qa-container">
+<h1>SOLUTIONS</h1>
 
-  <!-- Q1 -->
-  <div class="qa-card">
-    <div class="qa-question">
-      <span class="q-badge">Q</span>
-      <span>What is the function of mitochondria?</span>
-      <div class="arrow">⌄</div>
-    </div>
-
-    <div class="qa-answer">
-      <div class="qa-answer-inner">
-        <span class="ans-badge">Ans</span>
-        <div class="ans-text">
-          Mitochondria produce ATP during cellular respiration and supply
-          energy required for cellular activities.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Q2 -->
-  <div class="qa-card">
-    <div class="qa-question">
-      <span class="q-badge">Q</span>
-      <span>Why is nucleus called the control center?</span>
-      <div class="arrow">⌄</div>
-    </div>
-
-    <div class="qa-answer">
-      <div class="qa-answer-inner">
-        <span class="ans-badge">Ans</span>
-        <div class="ans-text">
-          The nucleus controls cellular activities by regulating gene
-          expression and storing genetic material (DNA).
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
+<div class="qa-container" id="qaContainer"></div>
 
 <script>
-document.querySelectorAll(".qa-question").forEach(q=>{
-  q.addEventListener("click",()=>{
-    const card = q.parentElement;
+const QA_DATA = [
+  {
+    q: "What is the function of mitochondria?",
+    a: "Mitochondria produce ATP during cellular respiration and supply energy to the cell."
+  },
+  {
+    q: "Why is nucleus called the control center of the cell?",
+    a: "Because it regulates gene expression and controls all metabolic and reproductive activities."
+  },
+  {
+    q: "What is the role of ribosomes?",
+    a: "Ribosomes synthesize proteins by translating mRNA into polypeptide chains."
+  }
+];
+
+const container = document.getElementById("qaContainer");
+
+QA_DATA.forEach(item=>{
+  const card = document.createElement("div");
+  card.className = "qa-card";
+
+  card.innerHTML = `
+    <div class="qa-question">
+      <div class="q-badge">Q</div>
+      <span>${item.q}</span>
+    </div>
+
+    <div class="qa-answer">
+      <div class="qa-answer-inner">
+        <span class="ans-badge">Ans</span>${item.a}
+      </div>
+    </div>
+  `;
+
+  card.querySelector(".qa-question").onclick = ()=>{
     card.classList.toggle("active");
-  });
+  };
+
+  container.appendChild(card);
 });
 </script>
 
