@@ -1,102 +1,118 @@
-/* ===============================
-🧬 ORGANELLES BUTTON – NEBULA FLOW
-=============================== */
+/* =====================================
+   🌌 PREMIUM BLUE BUTTON – FINAL VERSION
+   Alive • Calm • No Spinner • No Orbit
+   ===================================== */
 
-.organelles-footer{
+.button-footer{
   display:flex;
   justify-content:center;
-  margin:30px 0 40px;
-  position:relative;
+  margin:28px 0 42px;
   z-index:5;
 }
 
-.organelles-btn{
+/* ===== CORE BUTTON ===== */
+.premium-btn{
   position:relative;
   display:inline-flex;
   align-items:center;
   justify-content:center;
 
-  padding:16px 36px;
+  padding:15px 40px;
   border-radius:999px;
 
   font-size:.85rem;
-  letter-spacing:.14em;
-  text-transform:uppercase;
   font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
 
-  color:#eaf8ff;
+  color:#eaf6ff;
   text-decoration:none;
 
   background:
-    linear-gradient(135deg,#0b1a2f,#040912);
+    radial-gradient(
+      140% 140% at 25% 20%,
+      rgba(120,180,255,.35),
+      rgba(40,80,180,.25),
+      rgba(8,14,40,.96)
+    );
 
-  border:1px solid rgba(90,200,255,.45);
+  border:1px solid rgba(140,190,255,.45);
 
   box-shadow:
-    0 18px 50px rgba(0,0,0,.85),
-    0 0 40px rgba(90,200,255,.35),
-    inset 0 0 0 1px rgba(255,255,255,.08);
+    0 14px 50px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.06);
 
   overflow:hidden;
+  isolation:isolate;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
 }
 
-/* 🌫️ BIO / SPACE GAS */
-.organelles-btn::before{
+/* ===== GAS / ENERGY FLOW (SUBTLE) ===== */
+.premium-btn::before{
   content:"";
   position:absolute;
-  inset:-60%;
+  inset:-40%;
 
   background:
     radial-gradient(
-      circle at 35% 40%,
-      rgba(90,200,255,.45),
-      rgba(90,200,255,.25),
+      circle at 30% 40%,
+      rgba(140,200,255,.25),
       transparent 60%
     ),
     radial-gradient(
-      circle at 65% 65%,
-      rgba(120,255,240,.35),
-      transparent 65%
+      circle at 70% 60%,
+      rgba(90,150,255,.18),
+      transparent 55%
     );
 
-  filter:blur(28px);
-  opacity:.9;
+  animation:gasFlow 14s ease-in-out infinite;
+  opacity:.7;
+  z-index:-1;
+}
 
-  animation:organelleNebula 20s ease-in-out infinite;
+/* ===== SOFT INNER SHEEN ===== */
+.premium-btn::after{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:inherit;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.10),
+      transparent
+    );
   pointer-events:none;
 }
 
-/* 🌬️ slow organic motion */
-@keyframes organelleNebula{
-  0%{
-    transform:translate(-12%,-8%);
-  }
-  50%{
-    transform:translate(12%,8%);
-  }
-  100%{
-    transform:translate(-12%,-8%);
-  }
-}
-
-/* keep text crisp */
-.organelles-btn span{
-  position:relative;
-  z-index:1;
-}
-
-/* hover = depth only (no gimmicks) */
-.organelles-btn:hover{
+/* ===== HOVER (PREMIUM, NOT FLASHY) ===== */
+.premium-btn:hover{
+  transform:translateY(-3px);
   box-shadow:
-    0 26px 75px rgba(0,0,0,.95),
-    0 0 65px rgba(90,200,255,.55);
+    0 20px 70px rgba(90,150,255,.45),
+    0 0 100px rgba(120,180,255,.25);
 }
 
-/* mobile */
+/* ===== PRESS ===== */
+.premium-btn:active{
+  transform:scale(.97);
+}
+
+/* ===== ANIMATION ===== */
+@keyframes gasFlow{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(-6%, -4%)}
+  100%{transform:translate(0,0)}
+}
+
+/* ===== MOBILE ===== */
 @media(max-width:600px){
-  .organelles-btn{
-    padding:14px 28px;
-    font-size:.78rem;
-    letter-spacing:.12em;
+  .premium-btn{
+    padding:13px 30px;
+    font-size:.75rem;
+    letter-spacing:.1em;
   }
 }
