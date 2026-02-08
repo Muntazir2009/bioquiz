@@ -3,12 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biology – Q&A</title>
+<title>Biology – Answers</title>
 
 <style>
-/* ===============================
-   🌌 BASE
-=============================== */
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -17,237 +14,191 @@
 body{
   margin:0;
   min-height:100vh;
-  background:
-    radial-gradient(1200px 800px at 20% 10%, #0b153a 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
-    linear-gradient(180deg,#04060f,#03040a);
+  background:linear-gradient(180deg,#05070f,#04060c);
   color:#eaf1ff;
+  padding:40px 16px;
 }
 
-/* ===============================
-   HEADER
-=============================== */
-.qa-header{
-  text-align:center;
-  padding:70px 20px 40px;
-}
-
-.qa-header h1{
-  margin:0;
-  font-size:2.4rem;
-  letter-spacing:.14em;
-}
-
-.qa-header p{
-  opacity:.7;
-  margin-top:10px;
-}
-
-/* ===============================
-   Q&A LIST
-=============================== */
-.qa-list{
+/* ===== CONTAINER ===== */
+.qa-container{
   max-width:900px;
-  margin:0 auto 80px;
-  padding:0 20px;
-  display:grid;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
   gap:22px;
 }
 
-/* ===============================
-   CARD
-=============================== */
+/* ===== QUESTION CARD ===== */
 .qa-card{
-  border-radius:22px;
-  overflow:hidden;
-
+  border-radius:20px;
   background:
-    radial-gradient(500px 260px at 15% 10%, rgba(255,90,90,.14), transparent 60%),
-    radial-gradient(500px 260px at 85% 90%, rgba(120,170,255,.16), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    rgba(10,14,30,.92);
-
-  border:1px solid rgba(255,255,255,.18);
-  backdrop-filter:blur(18px);
-
-  box-shadow:
-    0 40px 140px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.04);
-
-  transition:.45s cubic-bezier(.22,1,.36,1);
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
+    rgba(8,12,26,.95);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 30px 90px rgba(0,0,0,.85);
+  overflow:hidden;
 }
 
-.qa-card:hover{
-  transform:translateY(-6px);
-  box-shadow:
-    0 70px 200px rgba(0,0,0,.95),
-    0 0 90px rgba(120,160,255,.35);
-}
-
-/* ===============================
-   QUESTION (CLICKABLE)
-=============================== */
+/* QUESTION HEADER */
 .qa-question{
+  cursor:pointer;
+  padding:22px 24px;
   display:flex;
   align-items:center;
-  gap:14px;
-  padding:24px 28px;
-  cursor:pointer;
-  font-size:1.15rem;
-  font-weight:600;
-  color:#ffe1e1;
+  justify-content:space-between;
+}
+
+.q-badge{
+  background:linear-gradient(135deg,#ff6b6b,#ff9f9f);
+  color:#2a0000;
+  font-weight:800;
+  padding:6px 14px;
+  border-radius:10px;
 }
 
 .qa-question span{
-  background:linear-gradient(135deg,#ff6b6b,#ff9a6b);
-  color:#1a0707;
-  font-weight:800;
-  padding:6px 12px;
-  border-radius:10px;
-  box-shadow:0 0 20px rgba(255,107,107,.6);
+  font-size:1.05rem;
+  line-height:1.6;
+  flex:1;
+  margin-left:16px;
 }
 
-/* Arrow */
-.qa-question::after{
-  content:"▾";
-  margin-left:auto;
-  font-size:1.2rem;
+/* ARROW */
+.arrow{
   transition:.4s ease;
-  opacity:.7;
+  opacity:.6;
+}
+.qa-card.active .arrow{
+  transform:rotate(180deg);
+  opacity:1;
 }
 
-/* ===============================
-   ANSWER (DROPDOWN)
-=============================== */
+/* ===== ANSWER DROPDOWN ===== */
 .qa-answer{
   max-height:0;
   overflow:hidden;
-  padding:0 28px;
-  opacity:0;
-  transition:
-    max-height .6s cubic-bezier(.22,1,.36,1),
-    opacity .4s ease,
-    padding .4s ease;
+  transition:max-height .6s cubic-bezier(.22,1,.36,1);
 }
 
+.qa-card.active .qa-answer{
+  max-height:600px;
+}
+
+/* ===== ANSWER CONTENT (FOCUS DESIGN) ===== */
 .qa-answer-inner{
+  position:relative;
   display:flex;
-  gap:14px;
-  padding-bottom:26px;
-  font-size:1.05rem;
-  line-height:1.75;
-  color:#dfffea;
+  gap:16px;
+  align-items:flex-start;
+
+  padding:22px 22px 26px 26px;
+  margin:0 18px 22px;
+
+  border-radius:18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(8,14,30,.95);
+
+  box-shadow:
+    0 25px 80px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+
+  animation:answerReveal .6s cubic-bezier(.22,1,.36,1) both;
 }
 
-.qa-answer-inner span{
+/* LEFT GLOW STRIP */
+.qa-answer-inner::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:12px;
+  bottom:12px;
+  width:4px;
+  border-radius:4px;
+  background:linear-gradient(180deg,#6dffcc,#4fdcff,#6dffcc);
+  box-shadow:0 0 18px rgba(110,255,200,.8);
+}
+
+/* ANSWER BADGE */
+.ans-badge{
   background:linear-gradient(135deg,#6dffcc,#9effe5);
   color:#062017;
   font-weight:800;
-  padding:6px 12px;
+  padding:6px 14px;
   border-radius:10px;
   box-shadow:0 0 20px rgba(110,255,200,.6);
 }
 
-/* ===============================
-   ACTIVE STATE
-=============================== */
-.qa-card.active .qa-answer{
-  max-height:300px;
-  opacity:1;
-  padding:0 28px;
+/* ANSWER TEXT */
+.ans-text{
+  font-size:1.05rem;
+  line-height:1.8;
+  letter-spacing:.02em;
 }
 
-.qa-card.active .qa-question::after{
-  transform:rotate(180deg);
-}
-
-/* ===============================
-   MOBILE
-=============================== */
-@media(max-width:700px){
-  .qa-question{
-    font-size:1rem;
+/* ANIMATION */
+@keyframes answerReveal{
+  from{
+    opacity:0;
+    transform:translateY(18px);
   }
-  .qa-answer-inner{
-    font-size:.95rem;
+  to{
+    opacity:1;
+    transform:none;
   }
-}
-
-/* FOOTER */
-.qa-footer{
-  text-align:center;
-  padding-bottom:40px;
-}
-
-.qa-footer a{
-  color:#7cc4ff;
-  text-decoration:none;
-  opacity:.8;
 }
 </style>
 </head>
 
 <body>
 
-<header class="qa-header">
-  <h1>QUESTIONS & ANSWERS</h1>
-  <p>Biology • NCERT • Exam Ready</p>
-</header>
+<div class="qa-container">
 
-<main class="qa-list">
-
+  <!-- Q1 -->
   <div class="qa-card">
     <div class="qa-question">
-      <span>Q</span>
-      What is the function of mitochondria?
+      <span class="q-badge">Q</span>
+      <span>What is the function of mitochondria?</span>
+      <div class="arrow">⌄</div>
     </div>
+
     <div class="qa-answer">
       <div class="qa-answer-inner">
-        <span>Ans</span>
-        Mitochondria produce ATP during cellular respiration and supply energy required for cellular activities.
+        <span class="ans-badge">Ans</span>
+        <div class="ans-text">
+          Mitochondria produce ATP during cellular respiration and supply
+          energy required for cellular activities.
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Q2 -->
   <div class="qa-card">
     <div class="qa-question">
-      <span>Q</span>
-      Why is the nucleus called the control center?
+      <span class="q-badge">Q</span>
+      <span>Why is nucleus called the control center?</span>
+      <div class="arrow">⌄</div>
     </div>
+
     <div class="qa-answer">
       <div class="qa-answer-inner">
-        <span>Ans</span>
-        It controls cell activities by regulating gene expression and stores genetic material in the form of DNA.
+        <span class="ans-badge">Ans</span>
+        <div class="ans-text">
+          The nucleus controls cellular activities by regulating gene
+          expression and storing genetic material (DNA).
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="qa-card">
-    <div class="qa-question">
-      <span>Q</span>
-      What is the role of ribosomes?
-    </div>
-    <div class="qa-answer">
-      <div class="qa-answer-inner">
-        <span>Ans</span>
-        Ribosomes synthesize proteins by translating mRNA into polypeptide chains.
-      </div>
-    </div>
-  </div>
-
-</main>
-
-<footer class="qa-footer">
-  <a href="index.html">← Back to Quiz</a>
-</footer>
+</div>
 
 <script>
-/* ===============================
-   DROPDOWN LOGIC
-=============================== */
-document.querySelectorAll('.qa-card').forEach(card=>{
-  card.querySelector('.qa-question').addEventListener('click',()=>{
-    card.classList.toggle('active');
+document.querySelectorAll(".qa-question").forEach(q=>{
+  q.addEventListener("click",()=>{
+    const card = q.parentElement;
+    card.classList.toggle("active");
   });
 });
 </script>
