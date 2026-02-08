@@ -1,6 +1,5 @@
 /* ===============================
-🌌 3D CELL BUTTON – STATIC RED GLOW
-(NO ANIMATIONS)
+🌌 3D CELL BUTTON – NEBULA FLOW
 =============================== */
 
 .cell3d-footer{
@@ -11,7 +10,6 @@
   z-index:5;
 }
 
-/* ===== BUTTON CORE ===== */
 .cell3d-btn{
   position:relative;
   display:inline-flex;
@@ -30,56 +28,71 @@
   text-decoration:none;
 
   background:
-    linear-gradient(
-      135deg,
-      #0b1538,
-      #050a1f
-    );
+    linear-gradient(135deg,#0b1538,#050a1f);
 
   border:1px solid rgba(255,90,90,.45);
 
   box-shadow:
-    0 20px 55px rgba(0,0,0,.8),
+    0 20px 55px rgba(0,0,0,.85),
     0 0 45px rgba(255,70,70,.35),
     inset 0 0 0 1px rgba(255,255,255,.08);
 
   overflow:hidden;
 }
 
-/* 🔴 STATIC RED RADIAL GLOW */
+/* 🌫️ NEBULA GAS LAYER */
 .cell3d-btn::before{
   content:"";
   position:absolute;
-  inset:-40%;
+  inset:-60%;
 
   background:
     radial-gradient(
-      circle at center,
-      rgba(255,80,80,.45),
-      rgba(255,80,80,.2),
+      circle at 30% 40%,
+      rgba(255,90,90,.45),
+      rgba(255,90,90,.25),
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 70% 60%,
+      rgba(255,120,120,.35),
       transparent 65%
     );
 
-  opacity:.85;
+  filter:blur(30px);
+  opacity:.9;
+
+  animation:nebulaFlow 18s ease-in-out infinite;
   pointer-events:none;
 }
 
-/* keep text clean */
-.cell3d-btn,
+/* 🌬️ VERY SLOW GAS MOTION */
+@keyframes nebulaFlow{
+  0%{
+    transform:translate(-10%,-10%);
+  }
+  50%{
+    transform:translate(10%,10%);
+  }
+  100%{
+    transform:translate(-10%,-10%);
+  }
+}
+
+/* keep text sharp */
 .cell3d-btn span{
   position:relative;
   z-index:1;
 }
 
-/* ===== HOVER (NO MOTION, ONLY DEPTH) ===== */
+/* hover = depth only */
 .cell3d-btn:hover{
   box-shadow:
-    0 26px 75px rgba(0,0,0,.9),
-    0 0 65px rgba(255,90,90,.55),
-    inset 0 0 0 1px rgba(255,255,255,.14);
+    0 28px 80px rgba(0,0,0,.95),
+    0 0 70px rgba(255,90,90,.55);
 }
 
-/* ===== MOBILE ===== */
+/* mobile */
 @media(max-width:600px){
   .cell3d-btn{
     padding:14px 30px;
