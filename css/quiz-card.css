@@ -14,8 +14,9 @@
     radial-gradient(620px 460px at 82% 82%, rgba(180,80,255,.16), transparent 65%),
     linear-gradient(180deg, rgba(20,26,60,.94), rgba(8,10,22,.98));
 
-  backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px) saturate(140%);
   border-radius:22px;
+
   border:1px solid rgba(140,180,255,.25);
 
   box-shadow:
@@ -45,76 +46,68 @@
 =============================== */
 
 .question{
-  font-size:clamp(1.4rem,3vw,1.9rem);
-  margin:22px 0 30px;
+  font-size:clamp(1.35rem,3vw,1.9rem);
+  margin:20px 0 30px;
   line-height:1.5;
-  text-shadow:0 0 12px rgba(120,180,255,.25);
+  text-align:center;
+  text-shadow:0 0 14px rgba(120,180,255,.35);
 }
 
 /* ===============================
-🪐 OPTIONS (A B / C D)
+🪐 OPTIONS – CENTERED (A B C D)
 =============================== */
 
 .options{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:20px;
-  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
 }
 
+/* OPTION BUTTON */
 .option{
   position:relative;
-  padding:20px 24px;
-  border-radius:14px;
+  width:100%;
+  max-width:520px;
+  padding:18px 26px;
+  border-radius:16px;
   cursor:pointer;
-  overflow:hidden;
 
   background:
     linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
 
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.22);
+  overflow:hidden;
 
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.04),
-    0 12px 32px rgba(0,0,0,.65);
-
-  transition:
-    border-color .25s ease,
-    box-shadow .25s ease;
+  transition:border-color .25s ease;
 }
 
-/* 🌟 FLOWING RADIAL GLOW */
+/* 🌊 RADIAL GLOW FLOW */
 .option::before{
   content:"";
   position:absolute;
-  inset:-70%;
+  inset:-60%;
+
   background:
-    radial-gradient(circle at 30% 30%,
+    radial-gradient(
+      circle at center,
       rgba(120,180,255,.22),
-      transparent 60%);
-  opacity:.4;
-  animation:optionGlow 6s linear infinite;
+      transparent 55%
+    );
+
+  animation:radialFlow 6s linear infinite;
+  opacity:.7;
   pointer-events:none;
 }
 
-@keyframes optionGlow{
-  0%{transform:translate(-12%,-10%)}
-  50%{transform:translate(12%,10%)}
-  100%{transform:translate(-12%,-10%)}
+@keyframes radialFlow{
+  0%{transform:translateX(-30%)}
+  100%{transform:translateX(30%)}
 }
 
-/* Hover — focus only */
+/* Hover (NO jump) */
 .option:hover{
-  border-color:rgba(120,180,255,.45);
-  box-shadow:
-    0 0 26px rgba(120,180,255,.28),
-    inset 0 0 0 1px rgba(255,255,255,.12);
-}
-
-/* Active click */
-.option:active{
-  box-shadow:
-    inset 0 0 14px rgba(120,180,255,.35);
+  border-color:rgba(120,180,255,.6);
 }
 
 /* Disabled */
@@ -128,15 +121,16 @@
 =============================== */
 
 .feedback{
-  margin-top:26px;
+  margin-top:24px;
   padding:20px;
   border-radius:14px;
   background:rgba(0,0,0,.45);
   border:1px solid rgba(255,255,255,.12);
+  text-align:center;
 }
 
-.feedback.correct{color:#6dffcc}
-.feedback.wrong{color:#ff8a8a}
+.correct{color:#6dffcc}
+.wrong{color:#ff8a8a}
 
 /* ===============================
 🚀 ACTIONS
@@ -145,7 +139,8 @@
 .actions{
   margin-top:26px;
   display:flex;
-  gap:12px;
+  justify-content:center;
+  gap:14px;
 }
 
 button{
@@ -159,7 +154,6 @@ button{
 /* NEXT */
 #next{
   background:linear-gradient(135deg,#3b6cff,#1f3cff);
-  color:white;
   box-shadow:0 0 26px rgba(60,120,255,.45);
 }
 
@@ -167,7 +161,6 @@ button{
 #skip{
   display:inline-block;
   background:linear-gradient(135deg,#ff3b3b,#ffb347);
-  color:#120600;
   box-shadow:0 0 22px rgba(255,150,60,.55);
 }
 
@@ -179,9 +172,5 @@ button{
   .quiz{
     margin:32px 14px;
     padding:30px 26px;
-  }
-
-  .options{
-    grid-template-columns:1fr;
   }
 }
