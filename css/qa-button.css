@@ -1,63 +1,92 @@
 /* ===============================
-📘 SOLVED QUESTIONS BUTTON – FLOWING GLOW
-=============================== */
+   📘 SOLVED QUESTIONS BUTTON – PREMIUM ALIVE
+   (NO LOADING / NO SWEEP)
+   =============================== */
 
 .qa-footer{
   display:flex;
   justify-content:center;
-  margin:26px 0 36px;
+  margin:26px 0 40px;
+  position:relative;
   z-index:5;
 }
 
-/* BUTTON BASE */
+/* ===== BUTTON CORE ===== */
 .qa-btn{
   position:relative;
-  padding:14px 30px;
+  padding:15px 36px;
   border-radius:999px;
+
+  font-size:.85rem;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+
+  color:#fff4e6;
   text-decoration:none;
 
-  font-weight:800;
-  letter-spacing:.06em;
+  background:
+    linear-gradient(135deg,#24120a,#3a1a0a,#1a0b06);
 
-  color:#eaf1ff;
-  background:linear-gradient(135deg,#1b2b5f,#0b1538);
+  border:1px solid rgba(255,170,110,.45);
 
-  border:1px solid rgba(140,180,255,.35);
-  box-shadow:0 12px 40px rgba(0,0,0,.7);
+  box-shadow:
+    0 12px 38px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.06);
 
   overflow:hidden;
+  isolation:isolate;
 }
 
-/* 🌊 RADIAL FLOWING GLOW */
+/* ===== INTERNAL ENERGY (WARM / ORGANIC) ===== */
 .qa-btn::before{
   content:"";
   position:absolute;
-  inset:-40%;
+  inset:-45%;
+
   background:
     radial-gradient(
-      circle at 20% 50%,
-      rgba(120,180,255,.35),
-      transparent 60%
+      320px 180px at 50% 50%,
+      rgba(255,160,90,.45),
+      rgba(255,120,70,.32),
+      transparent 68%
     );
-  opacity:.6;
-  animation:qaGlowFlow 6s linear infinite;
+
+  filter:blur(24px);
+  opacity:.65;
+
+  animation:qaEnergy 8.5s ease-in-out infinite;
   pointer-events:none;
 }
 
-/* TEXT ABOVE GLOW */
-.qa-btn span,
-.qa-btn{
-  position:relative;
-  z-index:1;
-}
-
-/* FLOW ANIMATION */
-@keyframes qaGlowFlow{
-  0%   { transform:translateX(-40%); }
-  100% { transform:translateX(40%); }
-}
-
-/* OPTIONAL: subtle hover (safe) */
+/* ===== HOVER ===== */
 .qa-btn:hover{
-  border-color:rgba(160,200,255,.6);
+  box-shadow:
+    0 0 45px rgba(255,160,90,.6),
+    0 0 100px rgba(255,120,70,.45);
+}
+
+/* ===== ORGANIC MOTION (BREATHING GAS EFFECT) ===== */
+@keyframes qaEnergy{
+  0%{
+    transform:scale(1) translate(0,0);
+    opacity:.55;
+  }
+  50%{
+    transform:scale(1.12) translate(6px,-4px);
+    opacity:.85;
+  }
+  100%{
+    transform:scale(1) translate(0,0);
+    opacity:.55;
+  }
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:600px){
+  .qa-btn{
+    padding:13px 30px;
+    font-size:.78rem;
+    letter-spacing:.12em;
+  }
 }
