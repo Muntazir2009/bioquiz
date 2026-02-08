@@ -6,26 +6,52 @@ const qaData = [
 {
   question: "Differentiate between Plant Cell and Animal Cell.",
   answer: `
-<table style="width:100%;border-collapse:collapse;margin-top:14px">
-<tr>
-<th style="padding:10px;border-bottom:1px solid #444;text-align:left">Plant Cell</th>
-<th style="padding:10px;border-bottom:1px solid #444;text-align:left">Animal Cell</th>
-</tr>
+<div class="diff-wrapper">
+  <div class="diff-header">
+    <span>Plant Cell</span>
+    <span class="vs">VS</span>
+    <span>Animal Cell</span>
+  </div>
 
-<tr><td style="padding:8px">Cell wall is present.</td><td style="padding:8px">Cell wall is absent.</td></tr>
-<tr><td style="padding:8px">Chloroplasts are present.</td><td style="padding:8px">Chloroplasts are absent.</td></tr>
-<tr><td style="padding:8px">Large central vacuole present.</td><td style="padding:8px">Vacuoles small or temporary.</td></tr>
-<tr><td style="padding:8px">Plastids present.</td><td style="padding:8px">Plastids absent.</td></tr>
-<tr><td style="padding:8px">Usually fixed rectangular shape.</td><td style="padding:8px">Usually irregular or rounded shape.</td></tr>
-<tr><td style="padding:8px">Autotrophic (photosynthesis).</td><td style="padding:8px">Heterotrophic.</td></tr>
-<tr><td style="padding:8px">Stores food as starch.</td><td style="padding:8px">Stores food as glycogen.</td></tr>
-<tr><td style="padding:8px">Centrioles usually absent.</td><td style="padding:8px">Centrioles present.</td></tr>
-<tr><td style="padding:8px">Plasmodesmata present.</td><td style="padding:8px">Plasmodesmata absent.</td></tr>
-<tr><td style="padding:8px">Generally larger in size.</td><td style="padding:8px">Generally smaller in size.</td></tr>
-</table>
+  <div class="diff-row">
+    <div>Cell wall present</div>
+    <div>Cell wall absent</div>
+  </div>
+  <div class="diff-row">
+    <div>Chloroplasts present</div>
+    <div>Chloroplasts absent</div>
+  </div>
+  <div class="diff-row">
+    <div>Large central vacuole</div>
+    <div>Small or temporary vacuoles</div>
+  </div>
+  <div class="diff-row">
+    <div>Autotrophic (photosynthesis)</div>
+    <div>Heterotrophic</div>
+  </div>
+  <div class="diff-row">
+    <div>Stores food as starch</div>
+    <div>Stores food as glycogen</div>
+  </div>
+  <div class="diff-row">
+    <div>Plastids present</div>
+    <div>Plastids absent</div>
+  </div>
+  <div class="diff-row">
+    <div>Centrioles usually absent</div>
+    <div>Centrioles present</div>
+  </div>
+  <div class="diff-row">
+    <div>Plasmodesmata present</div>
+    <div>Plasmodesmata absent</div>
+  </div>
+  <div class="diff-row">
+    <div>Usually larger in size</div>
+    <div>Usually smaller in size</div>
+  </div>
+</div>
 `
 },
-
 /* ===============================
    Q2: PROKARYOTIC vs EUKARYOTIC
    =============================== */
