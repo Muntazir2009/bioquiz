@@ -30,37 +30,45 @@ body{
 
 /* ===== CARD ===== */
 .qa-card{
-  margin-bottom:24px;
-  border-radius:18px;
-  background:rgba(10,14,35,.85);
-  border:1px solid rgba(255,255,255,.14);
-  backdrop-filter:blur(18px);
-  box-shadow:0 30px 120px rgba(0,0,0,.85);
+  margin-bottom:22px;
+  border-radius:20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)),
+    rgba(10,14,35,.9);
+
+  border:1px solid rgba(255,255,255,.15);
+  backdrop-filter:blur(20px);
+
+  box-shadow:
+    0 40px 140px rgba(0,0,0,.9),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+
   overflow:hidden;
-  transition:.4s ease;
+  transition:.45s ease;
 }
 
 /* ===== QUESTION BAR ===== */
 .qa-question{
   padding:22px 26px;
   cursor:pointer;
+
   display:flex;
   justify-content:space-between;
   align-items:center;
 
   font-size:1.05rem;
   font-weight:600;
-  letter-spacing:.2px;
+  letter-spacing:.3px;
 
   background:
-    linear-gradient(135deg, rgba(255,107,107,.15), transparent);
+    linear-gradient(135deg, rgba(255,107,107,.18), transparent);
 
   border-left:4px solid #ff6b6b;
 }
 
-.qa-question span{
-  opacity:.85;
-  font-size:.85rem;
+.qa-question .label{
+  opacity:.75;
+  margin-right:6px;
 }
 
 /* ===== ANSWER ===== */
@@ -68,47 +76,47 @@ body{
   max-height:0;
   overflow:hidden;
   opacity:0;
-  transition:
-    max-height .6s ease,
-    opacity .4s ease;
 
   padding:0 26px;
+  transition:
+    max-height .6s cubic-bezier(.22,1,.36,1),
+    opacity .4s ease,
+    padding .4s ease;
 }
 
 .qa-card.active .qa-answer{
-  max-height:600px;
+  max-height:500px;
   opacity:1;
   padding:22px 26px 26px;
 }
 
 /* ===== ANSWER TEXT ===== */
 .answer-text{
-  line-height:1.8;
   font-size:1rem;
-  margin-bottom:14px;
+  line-height:1.85;
+  color:#dbe7ff;
+
+  padding-left:10px;
+  border-left:3px solid #6fb6ff;
 }
 
-/* ===== FACT ===== */
-.fact{
-  margin-top:16px;
-  padding:14px 18px;
-  border-radius:12px;
-
-  background:
-    linear-gradient(135deg, rgba(109,255,204,.18), transparent);
-
-  border-left:4px solid #6dffcc;
-  font-size:.95rem;
-  opacity:.9;
+/* ===== ICON ===== */
+.arrow{
+  transition:.45s ease;
+  opacity:.7;
 }
 
-/* ===== ICON ROTATION ===== */
 .qa-card.active .arrow{
   transform:rotate(180deg);
+  opacity:1;
 }
 
-.arrow{
-  transition:.4s ease;
+/* ===== HOVER ===== */
+.qa-card:hover{
+  transform:translateY(-4px);
+  box-shadow:
+    0 60px 180px rgba(0,0,0,.95),
+    0 0 60px rgba(120,180,255,.15);
 }
 
 /* ===== MOBILE ===== */
@@ -127,18 +135,17 @@ body{
   <!-- ===== QUESTION 1 ===== -->
   <div class="qa-card">
     <div class="qa-question">
-      Q1. What is the function of the nucleus?
+      <div>
+        <span class="label">Q.</span>
+        What is the function of the nucleus?
+      </div>
       <span class="arrow">▼</span>
     </div>
 
     <div class="qa-answer">
       <div class="answer-text">
-        The nucleus stores genetic material (DNA) and controls all cellular
-        activities by regulating gene expression.
-      </div>
-
-      <div class="fact">
-        📌 The nucleus contains nucleolus, which is responsible for rRNA synthesis.
+        <b>Ans.</b> The nucleus stores genetic material (DNA) and controls all
+        cellular activities by regulating gene expression and cell division.
       </div>
     </div>
   </div>
@@ -146,18 +153,18 @@ body{
   <!-- ===== QUESTION 2 ===== -->
   <div class="qa-card">
     <div class="qa-question">
-      Q2. Why are mitochondria called the powerhouse of the cell?
+      <div>
+        <span class="label">Q.</span>
+        Why are mitochondria called the powerhouse of the cell?
+      </div>
       <span class="arrow">▼</span>
     </div>
 
     <div class="qa-answer">
       <div class="answer-text">
-        Mitochondria generate ATP through cellular respiration, providing energy
-        required for cellular functions.
-      </div>
-
-      <div class="fact">
-        📌 Mitochondria have their own DNA, supporting the endosymbiotic theory.
+        <b>Ans.</b> Mitochondria are called the powerhouse of the cell because they
+        produce ATP through cellular respiration, supplying energy for all
+        cellular processes.
       </div>
     </div>
   </div>
@@ -167,8 +174,7 @@ body{
 <script>
 document.querySelectorAll('.qa-question').forEach(q=>{
   q.addEventListener('click',()=>{
-    const card = q.parentElement;
-    card.classList.toggle('active');
+    q.parentElement.classList.toggle('active');
   });
 });
 </script>
