@@ -6,7 +6,6 @@
 <title>Biology – Questions & Answers</title>
 
 <style>
-/* ===== BASE ===== */
 *{
   box-sizing:border-box;
   font-family:Inter,system-ui,sans-serif;
@@ -32,39 +31,55 @@ body{
 /* ===== CARD ===== */
 .qa-card{
   background:rgba(10,14,35,.85);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:20px;
-  padding:26px 28px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  padding:24px 26px;
   margin-bottom:28px;
 
-  backdrop-filter:blur(18px);
-  box-shadow:0 40px 120px rgba(0,0,0,.85);
-
-  animation:fadeUp .6s ease both;
+  backdrop-filter:blur(16px);
+  box-shadow:0 30px 100px rgba(0,0,0,.8);
 }
 
-@keyframes fadeUp{
-  from{opacity:0; transform:translateY(30px)}
-  to{opacity:1; transform:none}
-}
-
-/* ===== QUESTION ===== */
-.question{
-  color:#ff6b6b;
-  font-size:1.2rem;
-  font-weight:600;
+/* ===== EMBED BLOCK ===== */
+.embed{
+  position:relative;
+  padding:16px 18px;
+  border-radius:12px;
   margin-bottom:14px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.12);
 }
 
-/* ===== ANSWER ===== */
-.answer{
-  color:#6dffcc;
-  font-size:1.05rem;
+/* Accent bar */
+.embed::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:4px;
+  border-radius:12px 0 0 12px;
+}
+
+/* QUESTION */
+.embed.question::before{
+  background:#ff6b6b;
+}
+
+.embed.question{
+  font-weight:600;
+}
+
+/* ANSWER */
+.embed.answer::before{
+  background:#6dffcc;
+}
+
+.embed.answer{
   line-height:1.7;
-  margin-bottom:16px;
 }
 
-/* ===== TOGGLE BUTTON ===== */
+/* TOGGLE */
 .toggle-btn{
   background:none;
   border:none;
@@ -78,41 +93,33 @@ body{
   text-decoration:underline;
 }
 
-/* ===== FACT / EXPLANATION ===== */
+/* FACT */
 .fact{
   margin-top:14px;
-  padding:14px 18px;
-  border-radius:14px;
-
-  background:rgba(0,0,0,.4);
+  padding:14px 16px;
+  border-radius:12px;
+  background:rgba(0,0,0,.45);
   border:1px solid rgba(255,255,255,.12);
-
   font-size:.95rem;
   line-height:1.6;
+
   opacity:0;
   max-height:0;
   overflow:hidden;
-
   transition:.4s ease;
 }
 
 .fact.show{
   opacity:1;
-  max-height:500px;
+  max-height:400px;
 }
 
-/* ===== FOOTER ===== */
+/* FOOTER */
 .footer{
   text-align:center;
   opacity:.4;
   font-size:.7rem;
   margin:40px 0 20px;
-}
-
-/* ===== MOBILE ===== */
-@media(max-width:600px){
-  .question{font-size:1.05rem}
-  .answer{font-size:1rem}
 }
 </style>
 </head>
@@ -121,15 +128,15 @@ body{
 
 <div class="qa-container">
 
-  <!-- ===== QUESTION 1 ===== -->
   <div class="qa-card">
-    <div class="question">
+
+    <div class="embed question">
       Q1. What is the function of the nucleus?
     </div>
 
-    <div class="answer">
-      The nucleus stores genetic material (DNA) and controls all cellular
-      activities by regulating gene expression.
+    <div class="embed answer">
+      The nucleus stores genetic material (DNA) and controls cellular activities
+      by regulating gene expression.
     </div>
 
     <button class="toggle-btn" onclick="toggleFact(this)">
@@ -137,30 +144,10 @@ body{
     </button>
 
     <div class="fact">
-      The nucleus is surrounded by a double membrane called the nuclear envelope
-      and contains nucleolus, which is involved in rRNA synthesis.
-    </div>
-  </div>
-
-  <!-- ===== QUESTION 2 ===== -->
-  <div class="qa-card">
-    <div class="question">
-      Q2. Why are mitochondria called the powerhouse of the cell?
+      The nucleus is surrounded by a nuclear envelope and contains nucleolus,
+      which synthesizes rRNA.
     </div>
 
-    <div class="answer">
-      Because they produce ATP through aerobic respiration, supplying energy
-      required for cellular processes.
-    </div>
-
-    <button class="toggle-btn" onclick="toggleFact(this)">
-      Show explanation
-    </button>
-
-    <div class="fact">
-      Mitochondria have their own DNA and ribosomes, supporting the endosymbiotic
-      theory of their origin.
-    </div>
   </div>
 
 </div>
