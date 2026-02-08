@@ -24,7 +24,6 @@ const qaData = [
 },
 
   {
-  {
   question: "Differentiate between Prokaryotic Cell and Eukaryotic Cell.",
   answer: `
 <table style="width:100%;border-collapse:collapse;margin-top:14px">
