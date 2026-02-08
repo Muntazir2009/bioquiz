@@ -1,5 +1,5 @@
 /* ===============================
-📘 SOLVED QUESTIONS BUTTON (CLEAN)
+📘 SOLVED QUESTIONS BUTTON – FLOWING GLOW
 =============================== */
 
 .qa-footer{
@@ -9,7 +9,9 @@
   z-index:5;
 }
 
+/* BUTTON BASE */
 .qa-btn{
+  position:relative;
   padding:14px 30px;
   border-radius:999px;
   text-decoration:none;
@@ -21,12 +23,41 @@
   background:linear-gradient(135deg,#1b2b5f,#0b1538);
 
   border:1px solid rgba(140,180,255,.35);
-
   box-shadow:0 12px 40px rgba(0,0,0,.7);
 
-  transition:transform .2s ease;
+  overflow:hidden;
 }
 
+/* 🌊 RADIAL FLOWING GLOW */
+.qa-btn::before{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(120,180,255,.35),
+      transparent 60%
+    );
+  opacity:.6;
+  animation:qaGlowFlow 6s linear infinite;
+  pointer-events:none;
+}
+
+/* TEXT ABOVE GLOW */
+.qa-btn span,
+.qa-btn{
+  position:relative;
+  z-index:1;
+}
+
+/* FLOW ANIMATION */
+@keyframes qaGlowFlow{
+  0%   { transform:translateX(-40%); }
+  100% { transform:translateX(40%); }
+}
+
+/* OPTIONAL: subtle hover (safe) */
 .qa-btn:hover{
-  transform:translateY(-2px);
+  border-color:rgba(160,200,255,.6);
 }
