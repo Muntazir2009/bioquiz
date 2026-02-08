@@ -1,4 +1,4 @@
-const QA_DATA = [
+const qaData = [
   {
     question: "What would happen if the plasma membrane ruptures or breaks down?",
     answer: "If the plasma membrane ruptures, the contents of the cell will leak into the surrounding environment. This will disturb the internal balance of the cell, stopping essential life processes. As a result, the cell will eventually die."
