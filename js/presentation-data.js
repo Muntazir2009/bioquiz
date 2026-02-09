@@ -135,28 +135,32 @@ const presentationData = {
     /* ===============================
        SLIDE 9 – QUESTIONS (REVEAL)
     =============================== */
-    {
-      heading: "Check Your Understanding",
-      content: `
-        <div class="reveal-block">
-          <b>Q1.</b> Who discovered the cell wall and in which year?
-          <br><br>
-          <b>Ans:</b> Robert Hooke discovered the cell wall in 1665 while studying cork.
-        </div>
+{
+  heading: "Check Your Understanding",
+  content: `
 
-        <div class="reveal-block">
-          <b>Q2.</b> Name the main components of the plant cell wall.
-          <br><br>
-          <b>Ans:</b> Cellulose, hemicellulose, and pectin.
-        </div>
+    <div class="qa-question">
+      Q1. Who discovered the cell wall and in which year?
+    </div>
+    <div class="reveal-block qa-answer">
+      <b>Ans:</b> The cell wall was discovered by Robert Hooke in 1665 while studying cork.
+    </div>
 
-        <div class="reveal-block">
-          <b>Q3.</b> Why do animal cells lack a cell wall?
-          <br><br>
-          <b>Ans:</b> Animal cells require flexibility for movement, which a rigid wall would prevent.
-        </div>
-      `
-    }
+    <div class="qa-question">
+      Q2. Name the main components of the plant cell wall.
+    </div>
+    <div class="reveal-block qa-answer">
+      <b>Ans:</b> Cellulose, hemicellulose, and pectin.
+    </div>
 
+    <div class="qa-question">
+      Q3. Why do animal cells lack a cell wall?
+    </div>
+    <div class="reveal-block qa-answer">
+      <b>Ans:</b> Animal cells need flexibility for movement, which a rigid cell wall would restrict.
+    </div>
+
+  `
+}
   ]
 };
