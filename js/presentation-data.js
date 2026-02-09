@@ -1,21 +1,14 @@
 const slides = [
   {
-    title: "Cell – The Basic Unit of Life",
-    points: [
-      "All living organisms are made of cells",
-      "Cells carry out life processes",
-      "Discovered by Robert Hooke"
-    ],
-    image: "images/diagrams/cell.png"
+    title: "Cell",
+    content: "The cell is the basic structural and functional unit of life."
   },
-
   {
-    title: "Types of Cells",
-    points: [
-      "Prokaryotic cells",
-      "Eukaryotic cells",
-      "Plant and animal cells"
-    ],
-    image: "images/diagrams/types.png"
+    title: "Prokaryotic Cell",
+    content: "Prokaryotic cells lack a true nucleus and membrane-bound organelles."
+  },
+  {
+    title: "Eukaryotic Cell",
+    content: "Eukaryotic cells contain a nucleus and membrane-bound organelles."
   }
 ];
