@@ -1,148 +1,186 @@
 /* ===============================
-   🌌 PRESENTATION BASE
-   =============================== */
+🌌 PRESENTATION – COSMIC PREMIUM
+=============================== */
+
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
 
 body{
   margin:0;
   min-height:100vh;
-  font-family:Inter,system-ui,sans-serif;
-  color:#eaf1ff;
   background:
-    radial-gradient(1200px 800px at 20% 10%, #0b1538 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
-    linear-gradient(180deg,#05070f,#04060c);
+    radial-gradient(1200px 700px at 20% 10%, #0b1b3f 0%, transparent 60%),
+    radial-gradient(900px 600px at 80% 85%, #1a0b3f 0%, transparent 55%),
+    linear-gradient(180deg,#04060c,#03040a);
+  color:#eaf1ff;
+  padding:36px 14px;
 }
 
 /* ===============================
-   🧠 MAIN WRAPPER
-   =============================== */
+📦 MAIN CONTAINER
+=============================== */
 
 .presentation{
-  max-width:900px;
-  margin:40px auto 80px;
-  padding:0 18px;
+  max-width:880px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:42px;
 }
 
 /* ===============================
-   🏷️ TITLE (CENTERED & BOXED)
-   =============================== */
+🧠 TITLE
+=============================== */
 
 .presentation-title{
   text-align:center;
-  margin-bottom:40px;
-}
+  padding:18px 22px;
+  border-radius:16px;
 
-.presentation-title h1{
-  display:inline-block;
-  padding:14px 40px;
-  border-radius:14px;
-
-  font-size:1.35rem;
-  letter-spacing:.18em;
+  font-size:1.6rem;
+  font-weight:800;
+  letter-spacing:.14em;
   text-transform:uppercase;
 
-  background:linear-gradient(180deg,#101a3a,#060918);
-  border:1px solid rgba(140,180,255,.35);
+  background:
+    linear-gradient(135deg,#0f1c46,#08122e);
+  border:1px solid rgba(120,160,255,.35);
 
   box-shadow:
-    0 14px 45px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.06);
+    0 18px 60px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 }
 
-.presentation-title p{
-  margin-top:12px;
+.presentation-subtitle{
+  text-align:center;
   font-size:.85rem;
-  opacity:.7;
+  opacity:.75;
   letter-spacing:.12em;
+  margin-top:-20px;
 }
 
 /* ===============================
-   📘 SECTION BLOCK
-   =============================== */
+📘 SECTION BLOCK
+=============================== */
 
 .section{
-  margin-bottom:54px; /* ✅ SPACING BETWEEN TOPICS */
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
 
 .section h2{
-  margin-bottom:14px;
-  font-size:1.1rem;
-  color:#7fb7ff;
+  color:#8fc6ff;
+  font-size:1.25rem;
+  letter-spacing:.06em;
 }
 
 /* ===============================
-   📄 CONTENT CARD
-   =============================== */
+🫥 BLUR REVEAL BLOCK
+=============================== */
 
-.card{
+.reveal{
+  position:relative;
   padding:18px 20px;
   border-radius:14px;
 
-  background:linear-gradient(180deg,#0a1228,#050813);
-  border:1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.18);
 
-  box-shadow:
-    0 12px 36px rgba(0,0,0,.75),
-    inset 0 0 0 1px rgba(255,255,255,.04);
-
-  line-height:1.6;
-}
-
-/* ===============================
-   👁️ REVEAL (BLUR SYSTEM)
-   =============================== */
-
-.reveal{
-  filter:blur(6px);
-  opacity:.75;
+  backdrop-filter:blur(12px);
   cursor:pointer;
+
+  filter:blur(6px);
   transition:
-    filter .35s ease,
-    opacity .35s ease;
+    filter .45s ease,
+    box-shadow .45s ease,
+    transform .35s ease;
 }
 
+.reveal:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 45px rgba(120,160,255,.35);
+}
+
+/* revealed state */
 .reveal.revealed{
   filter:blur(0);
-  opacity:1;
+  cursor:default;
+}
+
+/* hint text */
+.reveal::after{
+  content:"Tap to reveal";
+  position:absolute;
+  bottom:8px;
+  right:14px;
+  font-size:.65rem;
+  opacity:.5;
+}
+
+.reveal.revealed::after{
+  content:"";
 }
 
 /* ===============================
-   🖼️ DIAGRAM BUTTON
-   =============================== */
+🖼 DIAGRAM BUTTON
+=============================== */
 
 .diagram-btn{
-  margin:16px auto 0;
+  margin-top:10px;
+  align-self:flex-start;
+
   padding:10px 18px;
-  width:fit-content;
-
-  font-size:.8rem;
-  letter-spacing:.1em;
-
   border-radius:999px;
-  text-align:center;
+  font-size:.75rem;
+  letter-spacing:.08em;
 
-  color:#cfe6ff;
-  background:#060b18;
+  color:#cfe8ff;
+  background:
+    linear-gradient(135deg,#0d1f3f,#08142b);
 
-  border:1px dashed rgba(140,180,255,.35);
-  opacity:.75;
+  border:1px dashed rgba(140,180,255,.45);
+  text-decoration:none;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.diagram-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 22px rgba(120,180,255,.6);
 }
 
 /* ===============================
-   📱 MOBILE
-   =============================== */
+❓ QUESTIONS
+=============================== */
+
+.question{
+  padding:16px 18px;
+  border-radius:12px;
+
+  background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.14);
+
+  font-size:.95rem;
+  font-weight:600;
+}
+
+/* ===============================
+📱 MOBILE
+=============================== */
 
 @media(max-width:600px){
-  .presentation{
-    margin-top:28px;
+  .presentation-title{
+    font-size:1.25rem;
+    letter-spacing:.1em;
   }
 
-  .presentation-title h1{
+  .section h2{
     font-size:1.1rem;
-    padding:12px 26px;
-  }
-
-  .section{
-    margin-bottom:44px;
   }
 }
