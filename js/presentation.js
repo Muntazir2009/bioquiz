@@ -1,31 +1,51 @@
-const slideEl = document.getElementById("slide");
-const countEl = document.getElementById("slideCount");
+let currentSlide = 0;
+
+const slideContainer = document.getElementById("slide");
+const titleEl = document.getElementById("slideTitle");
+const counterEl = document.getElementById("slideCounter");
 const progressFill = document.getElementById("progressFill");
 
-let current = 0;
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
 
-function render(){
-  const s = slides[current];
-  slideEl.innerHTML = s.content;
-  countEl.textContent = `Slide ${current+1} / ${slides.length}`;
-  progressFill.style.width = ((current+1)/slides.length)*100 + "%";
+function renderSlide(){
+  const slide = slides[currentSlide];
 
-  slideEl.querySelectorAll(".blur").forEach(el=>{
-    el.onclick = ()=>el.classList.add("reveal");
+  // inject content
+  titleEl.textContent = slide.title;
+  slideContainer.innerHTML = slide.content;
+  counterEl.textContent = `Slide ${currentSlide + 1} / ${slides.length}`;
+
+  // progress bar
+  progressFill.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+
+  // 🔥 THIS IS THE FIX
+  attachRevealHandlers();
+}
+
+function attachRevealHandlers(){
+  const blocks = slideContainer.querySelectorAll(".reveal-block");
+
+  blocks.forEach(block=>{
+    block.addEventListener("click", ()=>{
+      block.classList.add("revealed");
+    });
   });
 }
 
-document.getElementById("next").onclick = ()=>{
-  if(current < slides.length-1){ current++; render(); }
+prevBtn.onclick = ()=>{
+  if(currentSlide > 0){
+    currentSlide--;
+    renderSlide();
+  }
 };
 
-document.getElementById("prev").onclick = ()=>{
-  if(current > 0){ current--; render(); }
+nextBtn.onclick = ()=>{
+  if(currentSlide < slides.length - 1){
+    currentSlide++;
+    renderSlide();
+  }
 };
 
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowRight") document.getElementById("next").click();
-  if(e.key==="ArrowLeft") document.getElementById("prev").click();
-});
-
-render();
+// initial load
+renderSlide();
