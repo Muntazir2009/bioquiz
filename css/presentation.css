@@ -1,188 +1,120 @@
-/* ===============================
-   🌌 PRESENTATION BASE
-=============================== */
-
-* {
-  box-sizing: border-box;
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
 }
 
-body {
-  margin: 0;
-  padding: 24px 16px 80px;
-  font-family: Inter, system-ui, sans-serif;
-  color: #eaf1ff;
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(1000px 700px at 20% 10%, #101a3a, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #1b0f3f, transparent 60%),
+    linear-gradient(180deg,#05070f,#04060c);
+  color:#eaf1ff;
+}
+
+/* HEADER */
+.top-header{
+  text-align:center;
+  padding:36px 16px;
+}
+
+.top-header h1{
+  margin:0;
+  font-size:2.4rem;
+  letter-spacing:.12em;
+}
+
+.top-header p{
+  opacity:.75;
+}
+
+/* PRESENTATION */
+.presentation{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.slide{
+  margin-bottom:60px;
+}
+
+.slide h2{
+  font-size:1.6rem;
+  margin-bottom:16px;
+  color:#6fb6ff;
+}
+
+/* IMAGE */
+.slide img{
+  width:100%;
+  max-width:520px;
+  display:block;
+  margin:22px auto 0;
+  border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+}
+
+/* ===============================
+   CLICK TO REVEAL BLOCK
+=============================== */
+
+.reveal-block{
+  position:relative;
+  padding:22px;
+  margin-top:16px;
+  border-radius:18px;
 
   background:
-    radial-gradient(1200px 800px at 20% 10%, #0f1a3a 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
-    linear-gradient(180deg, #05070f, #04060c);
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(10,14,35,.9);
+
+  border:1px solid rgba(140,180,255,.25);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+
+  line-height:1.7;
+  font-size:1.05rem;
+
+  cursor:pointer;
+
+  /* BLUR */
+  filter:blur(6px);
+  opacity:.55;
+
+  transition:
+    filter .35s ease,
+    opacity .35s ease,
+    transform .3s ease,
+    box-shadow .35s ease;
 }
 
-/* ===============================
-   🏷 TITLE
-=============================== */
-
-.presentation-title {
-  max-width: 900px;
-  margin: 0 auto 12px;
-  padding: 18px 24px;
-
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-
-  background: linear-gradient(180deg, #1a2b5f, #0c1436);
-  border-radius: 14px;
-
-  border: 1px solid rgba(140, 180, 255, 0.35);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+.reveal-block:hover{
+  transform:translateY(-2px);
 }
 
-.presentation-subtitle {
-  text-align: center;
-  opacity: 0.75;
-  font-size: 0.85rem;
-  margin-bottom: 42px;
-}
-
-/* ===============================
-   📦 CONTENT WRAPPER
-=============================== */
-
-.presentation {
-  max-width: 900px;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-}
-
-/* ===============================
-   📘 SECTION
-=============================== */
-
-.section {
-  padding: 26px 26px 30px;
-  border-radius: 18px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(18, 28, 66, 0.92),
-      rgba(8, 12, 30, 0.96)
-    );
-
-  border: 1px solid rgba(140, 180, 255, 0.22);
+/* REVEALED */
+.reveal-block.revealed{
+  filter:blur(0);
+  opacity:1;
 
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.75),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 24px 80px rgba(120,180,255,.4),
+    inset 0 0 0 1px rgba(255,255,255,.08);
 }
 
-/* ===============================
-   🔹 SECTION TITLE
-=============================== */
-
-.section h2 {
-  margin: 0 0 18px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #7fc4ff;
+/* SMALL INDICATOR */
+.reveal-block::after{
+  content:"Tap to reveal";
+  position:absolute;
+  bottom:10px;
+  right:14px;
+  font-size:.7rem;
+  opacity:.45;
 }
 
-/* ===============================
-   📝 TEXT BOX
-=============================== */
-
-.text-box {
-  padding: 18px 20px;
-  margin-bottom: 22px;
-
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 14px;
-
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  line-height: 1.7;
-  font-size: 0.95rem;
-}
-
-/* ===============================
-   🖼 DIAGRAM PLACEHOLDER
-=============================== */
-
-.diagram {
-  margin-top: 10px;
-  padding: 14px;
-
-  text-align: center;
-  font-size: 0.85rem;
-  letter-spacing: 0.06em;
-
-  color: #b8e0ff;
-
-  border-radius: 12px;
-  border: 1px dashed rgba(140, 200, 255, 0.35);
-  background: rgba(10, 18, 40, 0.55);
-}
-
-/* ===============================
-   ❓ QUESTIONS
-=============================== */
-
-.question {
-  margin-top: 20px;
-}
-
-.question-title {
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-/* ===============================
-   🔒 BLUR / REVEAL ANSWER
-=============================== */
-
-.reveal {
-  padding: 14px 16px;
-  border-radius: 12px;
-
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-
-  filter: blur(6px);
-  cursor: pointer;
-  transition: filter 0.35s ease;
-}
-
-.reveal::after {
-  content: "Tap to reveal answer";
-  display: block;
-  margin-top: 6px;
-  font-size: 0.7rem;
-  opacity: 0.6;
-}
-
-.reveal.revealed {
-  filter: none;
-}
-
-.reveal.revealed::after {
-  display: none;
-}
-
-/* ===============================
-   📱 MOBILE
-=============================== */
-
-@media (max-width: 600px) {
-  .presentation-title {
-    font-size: 1.3rem;
-    padding: 16px 18px;
-  }
-
-  .section {
-    padding: 22px;
-  }
+.reveal-block.revealed::after{
+  content:"";
 }
