@@ -1,186 +1,171 @@
 /* ===============================
-🌌 PRESENTATION – COSMIC PREMIUM
-=============================== */
+   🎓 PRESENTATION – PROFESSIONAL UI
+   =============================== */
 
 *{
   box-sizing:border-box;
-  font-family:Inter,system-ui,sans-serif;
+  font-family:Inter, system-ui, -apple-system, sans-serif;
 }
 
 body{
   margin:0;
   min-height:100vh;
-  background:
-    radial-gradient(1200px 700px at 20% 10%, #0b1b3f 0%, transparent 60%),
-    radial-gradient(900px 600px at 80% 85%, #1a0b3f 0%, transparent 55%),
-    linear-gradient(180deg,#04060c,#03040a);
   color:#eaf1ff;
-  padding:36px 14px;
+
+  background:
+    radial-gradient(900px 600px at 15% 10%, #0e1c46 0%, transparent 55%),
+    radial-gradient(900px 600px at 85% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
 }
 
 /* ===============================
-📦 MAIN CONTAINER
-=============================== */
+   🧠 MAIN WRAPPER
+   =============================== */
 
 .presentation{
-  max-width:880px;
-  margin:auto;
-  display:flex;
-  flex-direction:column;
-  gap:42px;
+  max-width:900px;
+  margin:0 auto;
+  padding:40px 18px 80px;
 }
 
 /* ===============================
-🧠 TITLE
-=============================== */
+   🏷️ TITLE BLOCK
+   =============================== */
 
 .presentation-title{
   text-align:center;
-  padding:18px 22px;
-  border-radius:16px;
+  margin-bottom:42px;
+}
 
-  font-size:1.6rem;
-  font-weight:800;
-  letter-spacing:.14em;
+.presentation-title h1{
+  display:inline-block;
+  padding:14px 36px;
+  border-radius:14px;
+
+  font-size:1.5rem;
+  letter-spacing:.18em;
+  font-weight:700;
   text-transform:uppercase;
 
   background:
-    linear-gradient(135deg,#0f1c46,#08122e);
-  border:1px solid rgba(120,160,255,.35);
+    linear-gradient(180deg,#12235a,#0b1538);
+
+  border:1px solid rgba(140,180,255,.35);
 
   box-shadow:
-    0 18px 60px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.05);
+    0 16px 50px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.06);
 }
 
-.presentation-subtitle{
-  text-align:center;
+.presentation-title p{
+  margin-top:14px;
   font-size:.85rem;
+  letter-spacing:.14em;
   opacity:.75;
-  letter-spacing:.12em;
-  margin-top:-20px;
 }
 
 /* ===============================
-📘 SECTION BLOCK
-=============================== */
+   📚 SECTION BLOCK
+   =============================== */
 
 .section{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
+  margin-bottom:42px;
+  padding-bottom:36px;
+  border-bottom:1px solid rgba(255,255,255,.08);
 }
 
-.section h2{
-  color:#8fc6ff;
-  font-size:1.25rem;
-  letter-spacing:.06em;
+.section:last-child{
+  border-bottom:none;
 }
 
 /* ===============================
-🫥 BLUR REVEAL BLOCK
-=============================== */
+   🔹 SECTION HEADING
+   =============================== */
 
-.reveal{
-  position:relative;
+.section h2{
+  margin:0 0 14px;
+  font-size:1.05rem;
+  letter-spacing:.04em;
+  font-weight:600;
+  color:#7ecbff;
+}
+
+/* ===============================
+   🧾 CONTENT CARD
+   =============================== */
+
+.content-card{
+  background:
+    linear-gradient(180deg,
+      rgba(20,30,70,.85),
+      rgba(10,14,36,.92)
+    );
+
   padding:18px 20px;
   border-radius:14px;
 
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid rgba(120,160,255,.25);
 
-  backdrop-filter:blur(12px);
-  cursor:pointer;
+  box-shadow:
+    0 12px 36px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 
-  filter:blur(6px);
-  transition:
-    filter .45s ease,
-    box-shadow .45s ease,
-    transform .35s ease;
-}
-
-.reveal:hover{
-  transform:translateY(-2px);
-  box-shadow:0 14px 45px rgba(120,160,255,.35);
-}
-
-/* revealed state */
-.reveal.revealed{
-  filter:blur(0);
-  cursor:default;
-}
-
-/* hint text */
-.reveal::after{
-  content:"Tap to reveal";
-  position:absolute;
-  bottom:8px;
-  right:14px;
-  font-size:.65rem;
-  opacity:.5;
-}
-
-.reveal.revealed::after{
-  content:"";
+  line-height:1.55;
+  font-size:.9rem;
 }
 
 /* ===============================
-🖼 DIAGRAM BUTTON
-=============================== */
+   🔍 REVEAL (BLUR CONTENT)
+   =============================== */
 
-.diagram-btn{
-  margin-top:10px;
-  align-self:flex-start;
+.reveal{
+  filter:blur(7px);
+  opacity:.65;
+  cursor:pointer;
+  transition:
+    filter .3s ease,
+    opacity .3s ease;
+}
 
-  padding:10px 18px;
-  border-radius:999px;
-  font-size:.75rem;
+.reveal.revealed{
+  filter:none;
+  opacity:1;
+}
+
+/* ===============================
+   🖼️ DIAGRAM PLACEHOLDER
+   =============================== */
+
+.diagram{
+  margin:18px 0 0;
+  padding:12px 16px;
+  text-align:center;
+
+  font-size:.8rem;
   letter-spacing:.08em;
 
-  color:#cfe8ff;
-  background:
-    linear-gradient(135deg,#0d1f3f,#08142b);
-
-  border:1px dashed rgba(140,180,255,.45);
-  text-decoration:none;
-
-  transition:
-    transform .25s ease,
-    box-shadow .25s ease;
-}
-
-.diagram-btn:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 22px rgba(120,180,255,.6);
-}
-
-/* ===============================
-❓ QUESTIONS
-=============================== */
-
-.question{
-  padding:16px 18px;
   border-radius:12px;
+  border:1px dashed rgba(140,180,255,.35);
 
-  background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.14);
-
-  font-size:.95rem;
-  font-weight:600;
+  color:#bcdcff;
+  opacity:.85;
 }
 
 /* ===============================
-📱 MOBILE
-=============================== */
+   📱 MOBILE POLISH
+   =============================== */
 
 @media(max-width:600px){
-  .presentation-title{
-    font-size:1.25rem;
-    letter-spacing:.1em;
+  .presentation{
+    padding:32px 14px 70px;
   }
 
-  .section h2{
-    font-size:1.1rem;
+  .presentation-title h1{
+    font-size:1.25rem;
+    padding:12px 26px;
+  }
+
+  .content-card{
+    font-size:.88rem;
   }
 }
