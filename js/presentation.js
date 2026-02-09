@@ -1,20 +1,17 @@
+const slideEl = document.getElementById("slide");
+const countEl = document.getElementById("slideCount");
+const progressFill = document.getElementById("progressFill");
+
 let current = 0;
 
-const container = document.getElementById("slideContainer");
-const titleEl = document.getElementById("slideTitle");
-const counterEl = document.getElementById("slideCounter");
-
 function render(){
-  const slide = slides[current];
-  titleEl.textContent = slide.title;
-  counterEl.textContent = `Slide ${current+1} / ${slides.length}`;
-  container.innerHTML = `<div class="slide">${slide.content}</div>`;
+  const s = slides[current];
+  slideEl.innerHTML = s.content;
+  countEl.textContent = `Slide ${current+1} / ${slides.length}`;
+  progressFill.style.width = ((current+1)/slides.length)*100 + "%";
 
-  container.querySelectorAll(".blur").forEach(el=>{
-    el.onclick = ()=>{
-      el.classList.add("revealed");
-      el.classList.remove("blur");
-    };
+  slideEl.querySelectorAll(".blur").forEach(el=>{
+    el.onclick = ()=>el.classList.add("reveal");
   });
 }
 
