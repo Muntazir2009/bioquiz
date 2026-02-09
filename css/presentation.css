@@ -16,13 +16,13 @@ body{
 /* HEADER */
 .top-header{
   text-align:center;
-  padding:36px 16px;
+  padding:40px 16px;
 }
 
 .top-header h1{
   margin:0;
-  font-size:2.4rem;
-  letter-spacing:.12em;
+  font-size:2.6rem;
+  letter-spacing:.14em;
 }
 
 .top-header p{
@@ -36,13 +36,16 @@ body{
   padding:20px;
 }
 
+/* SLIDE */
 .slide{
-  margin-bottom:60px;
+  margin-bottom:70px;
+  padding-bottom:30px;
+  border-bottom:1px solid rgba(255,255,255,.08);
 }
 
 .slide h2{
-  font-size:1.6rem;
-  margin-bottom:16px;
+  font-size:1.7rem;
+  margin-bottom:18px;
   color:#6fb6ff;
 }
 
@@ -51,18 +54,15 @@ body{
   width:100%;
   max-width:520px;
   display:block;
-  margin:22px auto 0;
+  margin:26px auto 0;
   border-radius:18px;
   box-shadow:0 20px 60px rgba(0,0,0,.7);
 }
 
-/* ===============================
-   CLICK TO REVEAL BLOCK
-=============================== */
-
+/* REVEAL BLOCK */
 .reveal-block{
   position:relative;
-  padding:22px;
+  padding:24px;
   margin-top:16px;
   border-radius:18px;
 
@@ -77,10 +77,8 @@ body{
 
   line-height:1.7;
   font-size:1.05rem;
-
   cursor:pointer;
 
-  /* BLUR */
   filter:blur(6px);
   opacity:.55;
 
@@ -95,7 +93,6 @@ body{
   transform:translateY(-2px);
 }
 
-/* REVEALED */
 .reveal-block.revealed{
   filter:blur(0);
   opacity:1;
@@ -105,7 +102,6 @@ body{
     inset 0 0 0 1px rgba(255,255,255,.08);
 }
 
-/* SMALL INDICATOR */
 .reveal-block::after{
   content:"Tap to reveal";
   position:absolute;
