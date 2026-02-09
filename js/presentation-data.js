@@ -1,89 +1,106 @@
-const slides = [
+const presentationData = [
+  {
+    title: "Cell Wall",
+    subtitle: "Structure, Composition & Importance",
+    content: `
+      <div class="reveal">
+        <p>
+          The <b>cell wall</b> is a rigid, non-living outer layer present outside
+          the plasma membrane of plant cells. It provides shape, strength,
+          protection and prevents bursting due to osmotic pressure.
+        </p>
+      </div>
+    `,
+    image: "images/diagrams/cell-wall.png"
+  },
 
-{
-title:"Cell Wall – Introduction",
-content:`
-<h1>Cell Wall</h1>
+  {
+    title: "Composition of Cell Wall",
+    content: `
+      <div class="reveal">
+        <ul>
+          <li><b>Cellulose</b> – main structural component</li>
+          <li><b>Hemicellulose</b> – binds cellulose fibres</li>
+          <li><b>Pectin</b> – provides flexibility</li>
+          <li><b>Proteins</b> – involved in growth</li>
+        </ul>
+      </div>
+    `
+  },
 
-<p class="reveal-block">
-The cell wall is a rigid, non-living outer covering present outside the plasma membrane
-in plant cells, fungi, and many prokaryotes.
-</p>
+  {
+    title: "Layers of Cell Wall",
+    content: `
+      <div class="reveal">
+        <ol>
+          <li>Middle Lamella</li>
+          <li>Primary Cell Wall</li>
+          <li>Secondary Cell Wall</li>
+        </ol>
+      </div>
+    `,
+    image: "images/diagrams/cell-wall-layers.png"
+  },
 
-<p class="reveal-block">
-It provides structural support and distinguishes plant cells from animal cells.
-</p>
-`
-},
+  {
+    title: "Functions of Cell Wall",
+    content: `
+      <div class="reveal">
+        <ul>
+          <li>Provides shape to the cell</li>
+          <li>Gives mechanical strength</li>
+          <li>Protects against damage</li>
+          <li>Prevents bursting of cell</li>
+        </ul>
+      </div>
+    `
+  },
 
-{
-title:"Chemical Composition",
-content:`
-<h1>Chemical Composition</h1>
+  {
+    title: "Short Answer Questions",
+    content: `
+      <p><b>Q1. What is a cell wall?</b></p>
+      <div class="reveal">
+        <p>
+          The cell wall is a rigid, non-living outer covering of plant cells
+          present outside the plasma membrane.
+        </p>
+      </div>
 
-<p class="reveal-block">
-The plant cell wall is mainly composed of <b>cellulose</b>, a polysaccharide made of
-β-glucose units.
-</p>
+      <p><b>Q2. Name the main component of the cell wall.</b></p>
+      <div class="reveal">
+        <p>
+          Cellulose is the main structural component of the cell wall.
+        </p>
+      </div>
 
-<div class="diagram">
-  <img src="images/diagrams/cell_wall.png" alt="Cell Wall Diagram">
-  <span>Structure of Plant Cell Wall</span>
-</div>
+      <p><b>Q3. Is the cell wall living or non-living?</b></p>
+      <div class="reveal">
+        <p>
+          The cell wall is a non-living structure.
+        </p>
+      </div>
 
-<ul>
-  <li class="reveal-block">Hemicellulose – provides flexibility</li>
-  <li class="reveal-block">Pectin – helps in cell adhesion</li>
-  <li class="reveal-block">Lignin – provides rigidity (secondary wall)</li>
-</ul>
-`
-},
+      <p><b>Q4. Which layer joins two adjacent plant cells?</b></p>
+      <div class="reveal">
+        <p>
+          The middle lamella joins two adjacent plant cells.
+        </p>
+      </div>
 
-{
-title:"Structure of Cell Wall",
-content:`
-<h1>Structure</h1>
+      <p><b>Q5. Why does a plant cell not burst in hypotonic solution?</b></p>
+      <div class="reveal">
+        <p>
+          The rigid cell wall prevents excessive expansion and bursting.
+        </p>
+      </div>
 
-<p class="reveal-block">
-The cell wall is composed of three layers: middle lamella, primary wall,
-and secondary wall.
-</p>
-
-<ul>
-  <li class="reveal-block"><b>Middle lamella:</b> Rich in pectin, cements adjacent cells</li>
-  <li class="reveal-block"><b>Primary wall:</b> Thin, elastic, allows growth</li>
-  <li class="reveal-block"><b>Secondary wall:</b> Thick, lignified, provides strength</li>
-</ul>
-`
-},
-
-{
-title:"Functions",
-content:`
-<h1>Functions of Cell Wall</h1>
-
-<ul>
-  <li class="reveal-block">Maintains shape and rigidity of the cell</li>
-  <li class="reveal-block">Prevents osmotic bursting in hypotonic solutions</li>
-  <li class="reveal-block">Provides mechanical protection</li>
-  <li class="reveal-block">Allows free diffusion of substances</li>
-</ul>
-`
-},
-
-{
-title:"Importance",
-content:`
-<h1>Why Cell Wall is Important</h1>
-
-<p class="reveal-block">
-Without the cell wall, plant cells would lose rigidity and burst due to osmotic pressure.
-</p>
-
-<p class="reveal-block">
-It is essential for plant growth, mechanical strength, and resistance to pathogens.
-</p>
-`
-}
-
+      <p><b>Q6. Name any two functions of the cell wall.</b></p>
+      <div class="reveal">
+        <p>
+          It provides shape to the cell and offers mechanical support.
+        </p>
+      </div>
+    `
+  }
 ];
