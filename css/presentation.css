@@ -1,120 +1,76 @@
-*{
-  box-sizing:border-box;
-  font-family:Inter,system-ui,sans-serif;
-}
+/* ===============================
+   📘 PRESENTATION TITLE (CENTERED)
+   =============================== */
 
-body{
-  margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(1000px 700px at 20% 10%, #101a3a, transparent 60%),
-    radial-gradient(900px 600px at 80% 90%, #1b0f3f, transparent 60%),
-    linear-gradient(180deg,#05070f,#04060c);
-  color:#eaf1ff;
-}
+.presentation-title{
+  max-width:780px;
+  margin:40px auto 64px;
+  padding:26px 28px;
 
-/* HEADER */
-.top-header{
   text-align:center;
-  padding:36px 16px;
+
+  background:
+    linear-gradient(180deg, rgba(20,30,70,.75), rgba(10,15,40,.9));
+
+  border-radius:18px;
+  border:1px solid rgba(140,180,255,.25);
+
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.65),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 }
 
-.top-header h1{
+.presentation-title h1{
   margin:0;
-  font-size:2.4rem;
-  letter-spacing:.12em;
+  font-size:2rem;
+  letter-spacing:.14em;
 }
 
-.top-header p{
+.presentation-title p{
+  margin-top:10px;
+  font-size:.9rem;
   opacity:.75;
 }
 
-/* PRESENTATION */
-.presentation{
-  max-width:900px;
-  margin:auto;
-  padding:20px;
+/* ===============================
+   📚 TOPIC SPACING + CARDS
+   =============================== */
+
+.topic-section{
+  max-width:820px;
+  margin:0 auto 72px; /* 👈 SPACE BETWEEN TOPICS */
 }
 
-.slide{
-  margin-bottom:60px;
-}
-
-.slide h2{
-  font-size:1.6rem;
+.topic-section h2{
   margin-bottom:16px;
-  color:#6fb6ff;
+  font-size:1.3rem;
+  color:#7fb6ff;
 }
 
-/* IMAGE */
-.slide img{
-  width:100%;
-  max-width:520px;
-  display:block;
-  margin:22px auto 0;
-  border-radius:18px;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
+.topic-card{
+  padding:22px 26px;
+  border-radius:16px;
+
+  background:
+    linear-gradient(180deg, rgba(15,25,60,.75), rgba(8,12,32,.9));
+
+  border:1px solid rgba(120,170,255,.2);
+
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.6),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 }
 
 /* ===============================
-   CLICK TO REVEAL BLOCK
-=============================== */
+   🧬 DIAGRAM LABEL
+   =============================== */
 
-.reveal-block{
-  position:relative;
-  padding:22px;
+.diagram-link{
   margin-top:16px;
-  border-radius:18px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
 
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    rgba(10,14,35,.9);
-
-  border:1px solid rgba(140,180,255,.25);
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.7),
-    inset 0 0 0 1px rgba(255,255,255,.05);
-
-  line-height:1.7;
-  font-size:1.05rem;
-
-  cursor:pointer;
-
-  /* BLUR */
-  filter:blur(6px);
-  opacity:.55;
-
-  transition:
-    filter .35s ease,
-    opacity .35s ease,
-    transform .3s ease,
-    box-shadow .35s ease;
-}
-
-.reveal-block:hover{
-  transform:translateY(-2px);
-}
-
-/* REVEALED */
-.reveal-block.revealed{
-  filter:blur(0);
-  opacity:1;
-
-  box-shadow:
-    0 24px 80px rgba(120,180,255,.4),
-    inset 0 0 0 1px rgba(255,255,255,.08);
-}
-
-/* SMALL INDICATOR */
-.reveal-block::after{
-  content:"Tap to reveal";
-  position:absolute;
-  bottom:10px;
-  right:14px;
-  font-size:.7rem;
-  opacity:.45;
-}
-
-.reveal-block.revealed::after{
-  content:"";
+  font-size:.85rem;
+  opacity:.85;
 }
