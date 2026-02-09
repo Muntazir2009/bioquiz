@@ -1,156 +1,81 @@
-*{
-  box-sizing:border-box;
-  font-family:Inter,system-ui,sans-serif;
-}
-
-body{
-  margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(1000px 700px at 15% 20%, #0e1b46 0%, transparent 60%),
-    radial-gradient(900px 600px at 85% 80%, #1a0f3d 0%, transparent 60%),
-    linear-gradient(180deg,#05070f,#04060c);
-  color:#eaf1ff;
-}
-
-.presentation{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  padding:28px;
-}
-
-.top-bar{
-  width:100%;
-  max-width:1100px;
-  display:flex;
-  justify-content:space-between;
-  font-size:.8rem;
-  letter-spacing:.12em;
-  opacity:.85;
-  margin-bottom:12px;
-}
-
-.progress-bar{
-  width:100%;
-  max-width:1100px;
-  height:4px;
-  background:rgba(255,255,255,.12);
-  border-radius:999px;
-  overflow:hidden;
-  margin-bottom:20px;
-}
-
-#progressFill{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#6fb6ff,#9a7bff);
-  transition:width .45s ease;
-}
-
-.slide{
-  width:100%;
-  max-width:1100px;
-  padding:44px 48px;
-  border-radius:30px;
-
-  background:
-    radial-gradient(700px 500px at 18% 18%, rgba(120,160,255,.22), transparent 60%),
-    linear-gradient(180deg, rgba(14,20,48,.97), rgba(6,10,26,.99));
-
-  border:1px solid rgba(140,180,255,.28);
-
-  box-shadow:
-    0 90px 220px rgba(0,0,0,.9),
-    inset 0 0 0 1px rgba(255,255,255,.06);
-
-  animation:slideIn .4s ease;
-}
-
-@keyframes slideIn{
-  from{opacity:0;transform:translateY(14px)}
-  to{opacity:1;transform:none}
-}
-
-/* ---------- CONTENT ---------- */
-
-.slide h1{
-  margin:0 0 16px;
-  font-size:2.1rem;
-  letter-spacing:.02em;
-}
-
-.slide h2{
-  margin:26px 0 12px;
-  font-size:1.3rem;
-  opacity:.95;
-}
-
-.slide p, .slide li{
-  font-size:1.05rem;
-  line-height:1.75;
-  opacity:.95;
-}
-
-/* ---------- CLICK TO REVEAL ---------- */
+/* ===============================
+   🔓 CLICK TO REVEAL (ENHANCED)
+=============================== */
 
 .reveal-block{
-  filter:blur(7px);
-  cursor:pointer;
-  transition:filter .45s ease;
-  margin-bottom:16px;
-}
-
-.reveal-block.revealed{
-  filter:none;
-}
-
-/* ---------- DIAGRAM ---------- */
-
-.diagram{
-  margin:26px 0 30px;
-  padding:22px;
-  border-radius:22px;
+  position:relative;
+  margin:20px 0;
+  padding:20px 22px;
+  border-radius:16px;
 
   background:
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(10,15,35,.9);
 
-  border:1px solid rgba(255,255,255,.18);
-
+  border:1px solid rgba(160,200,255,.25);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.06);
+    0 12px 40px rgba(0,0,0,.6),
+    inset 0 0 0 1px rgba(255,255,255,.05);
 
-  text-align:center;
-}
-
-.diagram img{
-  max-width:100%;
-  border-radius:18px;
-}
-
-.diagram span{
-  display:block;
-  margin-top:10px;
-  font-size:.85rem;
-  opacity:.75;
-}
-
-/* ---------- NAV ---------- */
-
-.nav{
-  display:flex;
-  gap:16px;
-  margin-top:28px;
-}
-
-.nav button{
-  padding:12px 24px;
-  border-radius:999px;
-  border:none;
-  cursor:pointer;
-  background:linear-gradient(135deg,#1b2b5f,#0b1538);
   color:#eaf1ff;
   font-size:1rem;
+  line-height:1.7;
+
+  cursor:pointer;
+
+  /* BLUR STATE */
+  filter:blur(6px);
+  opacity:.55;
+
+  transition:
+    filter .35s ease,
+    opacity .35s ease,
+    transform .35s cubic-bezier(.2,.8,.2,1),
+    box-shadow .35s ease;
+}
+
+/* subtle hover hint */
+.reveal-block:hover{
+  transform:translateY(-2px);
+}
+
+/* REVEALED */
+.reveal-block.revealed{
+  filter:blur(0);
+  opacity:1;
+
+  box-shadow:
+    0 18px 60px rgba(120,180,255,.35),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* CORNER INDICATOR */
+.reveal-block::after{
+  content:"●";
+  position:absolute;
+  top:12px;
+  right:14px;
+  font-size:.6rem;
+  opacity:.35;
+  color:#6fb6ff;
+  transition:opacity .3s ease, transform .3s ease;
+}
+
+.reveal-block.revealed::after{
+  opacity:0;
+  transform:scale(0);
+}
+
+/* ===============================
+   ✨ MICRO REVEAL PULSE (ONE-TIME)
+=============================== */
+
+.reveal-block.revealed{
+  animation:revealPulse .45s ease;
+}
+
+@keyframes revealPulse{
+  0%{box-shadow:0 0 0 rgba(120,180,255,0)}
+  50%{box-shadow:0 0 40px rgba(120,180,255,.45)}
+  100%{box-shadow:0 18px 60px rgba(120,180,255,.35)}
 }
