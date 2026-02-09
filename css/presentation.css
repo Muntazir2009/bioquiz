@@ -6,102 +6,96 @@
 body{
   margin:0;
   min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
   background:
-    radial-gradient(1000px 600px at 20% 10%, #0b1d4d, transparent 60%),
-    radial-gradient(900px 600px at 80% 90%, #3a0b4d, transparent 55%),
+    radial-gradient(1200px 800px at 20% 10%, #0b1538 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
     linear-gradient(180deg,#05070f,#04060c);
   color:#eaf1ff;
 }
 
 .presentation{
-  width:100%;
-  max-width:900px;
-  padding:20px;
+  max-width:960px;
+  margin:30px auto;
+  padding:24px;
 }
 
-.slide-card{
-  background:
-    linear-gradient(180deg,rgba(18,26,60,.95),rgba(8,10,22,.98));
-  border-radius:24px;
-  padding:42px 46px;
-  box-shadow:
-    0 40px 120px rgba(0,0,0,.85),
-    inset 0 0 0 1px rgba(255,255,255,.06);
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:16px;
+  opacity:.85;
+  letter-spacing:.12em;
+  font-size:.75rem;
 }
 
-.slide-card h1{
-  font-size:2rem;
-  margin-bottom:20px;
-  text-shadow:0 0 18px rgba(120,180,255,.35);
+.slide{
+  background:rgba(10,14,35,.9);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:22px;
+  padding:32px;
+  box-shadow:0 40px 120px rgba(0,0,0,.8);
 }
 
-.slide-card p{
-  font-size:1.15rem;
+.slide h2{
+  margin-top:0;
+  font-size:1.8rem;
+}
+
+.slide p{
   line-height:1.7;
-  transition:filter .4s ease, opacity .4s ease;
+  margin:14px 0;
 }
 
-/* 🔒 HIDDEN CONTENT */
-.blurred{
+/* 🔒 BLUR SYSTEM */
+.blur{
+  filter:blur(10px);
+  opacity:.6;
+  cursor:pointer;
+  transition:.35s ease;
+  position:relative;
+}
+
+.blur:hover{
   filter:blur(8px);
-  opacity:.55;
-  user-select:none;
 }
 
-/* 🔓 REVEALED */
-.revealed{
+.blur.revealed{
   filter:none;
   opacity:1;
-  user-select:text;
+  cursor:default;
 }
 
-.controls{
-  margin-top:32px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
+/* subtle hint glow */
+.blur::after{
+  content:"Tap to reveal";
+  position:absolute;
+  right:0;
+  bottom:-18px;
+  font-size:.7rem;
+  opacity:.4;
 }
 
-.controls button{
-  padding:12px 22px;
-  border:none;
+/* QUESTIONS */
+.question{
+  margin-top:22px;
+  padding:18px;
+  border-left:4px solid #6fb6ff;
+  background:rgba(255,255,255,.03);
   border-radius:14px;
+}
+
+/* NAV */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  margin-top:18px;
+}
+
+button{
+  padding:10px 20px;
+  border-radius:10px;
+  border:none;
   cursor:pointer;
-  font-size:.9rem;
-  font-weight:700;
-  color:#eaf1ff;
-  background:
-    linear-gradient(135deg,#1a2f6f,#0b1538);
-  box-shadow:
-    0 0 22px rgba(120,180,255,.35);
-}
-
-#reveal{
-  background:
-    linear-gradient(135deg,#ffb347,#ff6b6b);
-  color:#2a0000;
-}
-
-#counter{
-  opacity:.75;
-  font-weight:600;
-}
-
-/* 📱 MOBILE */
-@media(max-width:600px){
-  .slide-card{
-    padding:30px 26px;
-  }
-
-  .slide-card h1{
-    font-size:1.6rem;
-  }
-
-  .slide-card p{
-    font-size:1rem;
-  }
+  background:#1b2b5f;
+  color:#fff;
 }
