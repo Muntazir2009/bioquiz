@@ -1,135 +1,148 @@
 /* ===============================
    🌌 PRESENTATION BASE
-=============================== */
-
-*{
-  box-sizing:border-box;
-  font-family:Inter, system-ui, sans-serif;
-}
+   =============================== */
 
 body{
   margin:0;
   min-height:100vh;
+  font-family:Inter,system-ui,sans-serif;
   color:#eaf1ff;
   background:
-    radial-gradient(900px 600px at 15% 15%, #0d1a3a 0%, transparent 60%),
-    radial-gradient(900px 600px at 85% 85%, #0b2a3f 0%, transparent 60%),
+    radial-gradient(1200px 800px at 20% 10%, #0b1538 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #1a0b3f 0%, transparent 55%),
     linear-gradient(180deg,#05070f,#04060c);
 }
 
 /* ===============================
-   🧠 TITLE
-=============================== */
+   🧠 MAIN WRAPPER
+   =============================== */
 
-.presentation-title{
-  max-width:760px;
-  margin:48px auto 12px;
-  padding:18px 24px;
-  text-align:center;
-
-  font-size:1.9rem;
-  font-weight:800;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-
-  border-radius:16px;
-  background:
-    linear-gradient(180deg, rgba(120,160,255,.18), rgba(40,60,120,.25));
-  border:1px solid rgba(140,180,255,.35);
-
-  box-shadow:
-    0 14px 50px rgba(0,0,0,.75),
-    inset 0 0 0 1px rgba(255,255,255,.06);
-}
-
-.presentation-subtitle{
-  text-align:center;
-  font-size:.82rem;
-  opacity:.75;
-  letter-spacing:.18em;
-  margin-bottom:64px; /* MORE SPACE */
-}
-
-/* ===============================
-   📚 SECTIONS
-=============================== */
-
-.section{
-  max-width:760px;
-  margin:0 auto 72px; /* BIGGER GAP BETWEEN TOPICS */
+.presentation{
+  max-width:900px;
+  margin:40px auto 80px;
   padding:0 18px;
 }
 
-.section h2{
-  font-size:1.35rem;
-  color:#7db6ff;
-  margin-bottom:18px; /* SPACE BELOW TITLE */
-  margin-top:0;
+/* ===============================
+   🏷️ TITLE (CENTERED & BOXED)
+   =============================== */
+
+.presentation-title{
+  text-align:center;
+  margin-bottom:40px;
 }
 
-/* ===============================
-   🧾 CONTENT CARD
-=============================== */
+.presentation-title h1{
+  display:inline-block;
+  padding:14px 40px;
+  border-radius:14px;
 
-.card{
-  padding:20px 24px;
-  border-radius:16px;
+  font-size:1.35rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
 
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(180deg,#101a3a,#060918);
+  border:1px solid rgba(140,180,255,.35);
 
   box-shadow:
-    0 14px 45px rgba(0,0,0,.75),
-    inset 0 0 0 1px rgba(255,255,255,.05);
+    0 14px 45px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.06);
+}
 
-  line-height:1.7;
-  font-size:.95rem;
+.presentation-title p{
+  margin-top:12px;
+  font-size:.85rem;
+  opacity:.7;
+  letter-spacing:.12em;
 }
 
 /* ===============================
-   🔒 BLUR / REVEAL
-=============================== */
+   📘 SECTION BLOCK
+   =============================== */
+
+.section{
+  margin-bottom:54px; /* ✅ SPACING BETWEEN TOPICS */
+}
+
+.section h2{
+  margin-bottom:14px;
+  font-size:1.1rem;
+  color:#7fb7ff;
+}
+
+/* ===============================
+   📄 CONTENT CARD
+   =============================== */
+
+.card{
+  padding:18px 20px;
+  border-radius:14px;
+
+  background:linear-gradient(180deg,#0a1228,#050813);
+  border:1px solid rgba(255,255,255,.12);
+
+  box-shadow:
+    0 12px 36px rgba(0,0,0,.75),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+
+  line-height:1.6;
+}
+
+/* ===============================
+   👁️ REVEAL (BLUR SYSTEM)
+   =============================== */
 
 .reveal{
   filter:blur(6px);
+  opacity:.75;
   cursor:pointer;
-  transition:filter .35s ease;
+  transition:
+    filter .35s ease,
+    opacity .35s ease;
 }
 
 .reveal.revealed{
-  filter:none;
+  filter:blur(0);
+  opacity:1;
 }
 
 /* ===============================
-   🧬 DIAGRAM PLACEHOLDER
-=============================== */
+   🖼️ DIAGRAM BUTTON
+   =============================== */
 
-.diagram{
-  margin:22px auto 0;
-  padding:16px;
-  max-width:360px;
+.diagram-btn{
+  margin:16px auto 0;
+  padding:10px 18px;
+  width:fit-content;
 
+  font-size:.8rem;
+  letter-spacing:.1em;
+
+  border-radius:999px;
   text-align:center;
-  font-size:.85rem;
-  opacity:.9;
 
-  border-radius:14px;
-  border:1px dashed rgba(120,180,255,.35);
-  background:rgba(10,20,40,.45);
+  color:#cfe6ff;
+  background:#060b18;
+
+  border:1px dashed rgba(140,180,255,.35);
+  opacity:.75;
 }
 
 /* ===============================
    📱 MOBILE
-=============================== */
+   =============================== */
 
 @media(max-width:600px){
-  .presentation-title{
-    font-size:1.5rem;
-    letter-spacing:.1em;
+  .presentation{
+    margin-top:28px;
+  }
+
+  .presentation-title h1{
+    font-size:1.1rem;
+    padding:12px 26px;
   }
 
   .section{
-    margin-bottom:60px;
+    margin-bottom:44px;
   }
 }
