@@ -3,21 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Presentation</title>
+<title>Biology Presentation</title>
 
 <link rel="stylesheet" href="css/presentation.css">
 </head>
-
 <body>
 
-<div id="presentation">
-  <h1 id="slide-title"></h1>
-  <p id="slide-content"></p>
+<div class="presentation">
 
-  <div class="controls">
-    <button id="prev">◀</button>
-    <button id="next">▶</button>
+  <div class="slide-card">
+    <h1 id="title"></h1>
+
+    <p id="content" class="blurred"></p>
+
+    <div class="controls">
+      <button id="prev">◀</button>
+      <span id="counter"></span>
+      <button id="reveal">Reveal</button>
+      <button id="next">▶</button>
+    </div>
   </div>
+
 </div>
 
 <script src="js/presentation-data.js"></script>
