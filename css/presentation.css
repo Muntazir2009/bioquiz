@@ -1,76 +1,170 @@
 /* ===============================
-   📘 PRESENTATION TITLE (CENTERED)
+   📊 PRESENTATION – PREMIUM CLEAN
+   =============================== */
+
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  color:#eaf1ff;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+  padding:40px 16px 80px;
+}
+
+/* ===============================
+   🟦 MAIN TITLE
    =============================== */
 
 .presentation-title{
-  max-width:780px;
-  margin:40px auto 64px;
-  padding:26px 28px;
-
+  max-width:820px;
+  margin:40px auto 10px;
+  padding:26px 30px;
   text-align:center;
 
-  background:
-    linear-gradient(180deg, rgba(20,30,70,.75), rgba(10,15,40,.9));
+  border-radius:22px;
+  letter-spacing:.16em;
+  font-weight:700;
 
-  border-radius:18px;
-  border:1px solid rgba(140,180,255,.25);
+  background:
+    linear-gradient(180deg,rgba(18,30,70,.9),rgba(8,12,30,.96));
+  border:1px solid rgba(140,180,255,.28);
 
   box-shadow:
-    0 20px 70px rgba(0,0,0,.65),
-    inset 0 0 0 1px rgba(255,255,255,.05);
+    0 28px 80px rgba(0,0,0,.65),
+    inset 0 0 0 1px rgba(255,255,255,.06);
 }
 
-.presentation-title h1{
-  margin:0;
-  font-size:2rem;
-  letter-spacing:.14em;
-}
-
-.presentation-title p{
-  margin-top:10px;
-  font-size:.9rem;
+.presentation-subtitle{
+  text-align:center;
   opacity:.75;
+  margin-bottom:90px;
 }
 
 /* ===============================
-   📚 TOPIC SPACING + CARDS
+   🧩 SECTION WRAPPER
    =============================== */
 
-.topic-section{
-  max-width:820px;
-  margin:0 auto 72px; /* 👈 SPACE BETWEEN TOPICS */
+.section{
+  max-width:920px;
+  margin:0 auto 90px; /* ✅ spacing between topics */
 }
 
-.topic-section h2{
-  margin-bottom:16px;
-  font-size:1.3rem;
+.section h2{
+  margin-bottom:18px;
   color:#7fb6ff;
+  letter-spacing:.05em;
 }
 
-.topic-card{
-  padding:22px 26px;
-  border-radius:16px;
+/* ===============================
+   📦 CONTENT CARD
+   =============================== */
+
+.card{
+  padding:24px 28px;
+  border-radius:20px;
+  line-height:1.7;
 
   background:
-    linear-gradient(180deg, rgba(15,25,60,.75), rgba(8,12,32,.9));
-
-  border:1px solid rgba(120,170,255,.2);
+    linear-gradient(180deg,rgba(15,25,60,.82),rgba(8,12,32,.96));
+  border:1px solid rgba(120,170,255,.28);
 
   box-shadow:
-    0 18px 55px rgba(0,0,0,.6),
+    0 20px 60px rgba(0,0,0,.6),
     inset 0 0 0 1px rgba(255,255,255,.05);
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:
+    0 28px 80px rgba(0,0,0,.75);
 }
 
 /* ===============================
-   🧬 DIAGRAM LABEL
+   🔍 CLICK-TO-REVEAL
    =============================== */
 
-.diagram-link{
-  margin-top:16px;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
+.reveal{
+  filter:blur(6px);
+  cursor:pointer;
+  transition:filter .35s ease;
+}
 
-  font-size:.85rem;
+.reveal.revealed{
+  filter:none;
+}
+
+/* ===============================
+   🧬 DIAGRAM BLOCK
+   =============================== */
+
+.diagram{
+  margin-top:22px;
+  padding:16px;
+  text-align:center;
+  font-size:.9rem;
   opacity:.85;
+
+  border-radius:16px;
+  background:rgba(0,0,0,.38);
+  border:1px dashed rgba(140,180,255,.35);
+}
+
+/* ===============================
+   🎛 NAVIGATION
+   =============================== */
+
+.presentation-nav{
+  display:flex;
+  justify-content:center;
+  gap:22px;
+  margin-top:70px;
+}
+
+.presentation-nav button{
+  padding:12px 28px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+
+  font-weight:700;
+  letter-spacing:.08em;
+
+  color:#eaf1ff;
+  background:linear-gradient(135deg,#1b2b5f,#0b1538);
+
+  box-shadow:0 14px 40px rgba(0,0,0,.7);
+}
+
+.presentation-nav button:active{
+  transform:scale(.97);
+}
+
+/* ===============================
+   📱 MOBILE
+   =============================== */
+
+@media(max-width:700px){
+  .presentation-title{
+    padding:22px 20px;
+    letter-spacing:.12em;
+  }
+
+  .section{
+    margin-bottom:70px;
+  }
+
+  .card{
+    padding:20px;
+  }
 }
