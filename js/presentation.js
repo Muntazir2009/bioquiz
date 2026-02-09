@@ -10,7 +10,6 @@ function render(){
   counterEl.textContent = `Slide ${current+1} / ${slides.length}`;
   container.innerHTML = `<div class="slide">${slide.content}</div>`;
 
-  // enable click-to-unblur
   container.querySelectorAll(".blur").forEach(el=>{
     el.onclick = ()=>{
       el.classList.add("revealed");
@@ -26,5 +25,10 @@ document.getElementById("next").onclick = ()=>{
 document.getElementById("prev").onclick = ()=>{
   if(current > 0){ current--; render(); }
 };
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight") document.getElementById("next").click();
+  if(e.key==="ArrowLeft") document.getElementById("prev").click();
+});
 
 render();
