@@ -6,36 +6,102 @@
 body{
   margin:0;
   min-height:100vh;
-  background:#0b1020;
-  color:#eaf1ff;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
+  background:
+    radial-gradient(1000px 600px at 20% 10%, #0b1d4d, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #3a0b4d, transparent 55%),
+    linear-gradient(180deg,#05070f,#04060c);
+  color:#eaf1ff;
 }
 
-#presentation{
-  width:90%;
-  max-width:800px;
-  padding:40px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#111a3a,#070b1c);
-  box-shadow:0 40px 120px rgba(0,0,0,.9);
+.presentation{
+  width:100%;
+  max-width:900px;
+  padding:20px;
 }
 
-h1{
-  margin-top:0;
+.slide-card{
+  background:
+    linear-gradient(180deg,rgba(18,26,60,.95),rgba(8,10,22,.98));
+  border-radius:24px;
+  padding:42px 46px;
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+.slide-card h1{
+  font-size:2rem;
+  margin-bottom:20px;
+  text-shadow:0 0 18px rgba(120,180,255,.35);
+}
+
+.slide-card p{
+  font-size:1.15rem;
+  line-height:1.7;
+  transition:filter .4s ease, opacity .4s ease;
+}
+
+/* 🔒 HIDDEN CONTENT */
+.blurred{
+  filter:blur(8px);
+  opacity:.55;
+  user-select:none;
+}
+
+/* 🔓 REVEALED */
+.revealed{
+  filter:none;
+  opacity:1;
+  user-select:text;
 }
 
 .controls{
-  margin-top:30px;
+  margin-top:32px;
   display:flex;
+  align-items:center;
   justify-content:space-between;
+  gap:14px;
 }
 
-button{
-  padding:12px 24px;
+.controls button{
+  padding:12px 22px;
   border:none;
-  border-radius:10px;
-  font-size:1rem;
+  border-radius:14px;
   cursor:pointer;
+  font-size:.9rem;
+  font-weight:700;
+  color:#eaf1ff;
+  background:
+    linear-gradient(135deg,#1a2f6f,#0b1538);
+  box-shadow:
+    0 0 22px rgba(120,180,255,.35);
+}
+
+#reveal{
+  background:
+    linear-gradient(135deg,#ffb347,#ff6b6b);
+  color:#2a0000;
+}
+
+#counter{
+  opacity:.75;
+  font-weight:600;
+}
+
+/* 📱 MOBILE */
+@media(max-width:600px){
+  .slide-card{
+    padding:30px 26px;
+  }
+
+  .slide-card h1{
+    font-size:1.6rem;
+  }
+
+  .slide-card p{
+    font-size:1rem;
+  }
 }
