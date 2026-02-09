@@ -2,25 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biology Presentation</title>
-<link rel="stylesheet" href="presentation.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentation</title>
+
+<link rel="stylesheet" href="css/presentation.css">
 </head>
 
 <body>
 
-<div class="slide" id="slide">
-  <h1 id="title"></h1>
-  <ul id="points"></ul>
-  <img id="image" />
+<div id="presentation">
+  <h1 id="slide-title"></h1>
+  <p id="slide-content"></p>
+
+  <div class="controls">
+    <button id="prev">◀</button>
+    <button id="next">▶</button>
+  </div>
 </div>
 
-<div class="controls">
-  <button id="prev">◀</button>
-  <button id="next">▶</button>
-</div>
-
-<script src="presentation-data.js"></script>
-<script src="presentation.js"></script>
+<script src="js/presentation-data.js"></script>
+<script src="js/presentation.js"></script>
 </body>
 </html>
