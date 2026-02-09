@@ -1,49 +1,30 @@
-const titleEl = document.getElementById("title");
-const contentEl = document.getElementById("content");
-const counterEl = document.getElementById("counter");
+let current = 0;
 
-const prevBtn = document.getElementById("prev");
-const nextBtn = document.getElementById("next");
-const revealBtn = document.getElementById("reveal");
-
-let index = 0;
+const container = document.getElementById("slideContainer");
+const titleEl = document.getElementById("slideTitle");
+const counterEl = document.getElementById("slideCounter");
 
 function render(){
-  const slide = slides[index];
+  const slide = slides[current];
   titleEl.textContent = slide.title;
-  contentEl.textContent = slide.content;
+  counterEl.textContent = `Slide ${current+1} / ${slides.length}`;
+  container.innerHTML = `<div class="slide">${slide.content}</div>`;
 
-  contentEl.classList.add("blurred");
-  contentEl.classList.remove("revealed");
-
-  counterEl.textContent = `${index + 1} / ${slides.length}`;
+  // enable click-to-unblur
+  container.querySelectorAll(".blur").forEach(el=>{
+    el.onclick = ()=>{
+      el.classList.add("revealed");
+      el.classList.remove("blur");
+    };
+  });
 }
 
-prevBtn.onclick = () => {
-  if(index > 0){
-    index--;
-    render();
-  }
+document.getElementById("next").onclick = ()=>{
+  if(current < slides.length-1){ current++; render(); }
 };
 
-nextBtn.onclick = () => {
-  if(index < slides.length - 1){
-    index++;
-    render();
-  }
+document.getElementById("prev").onclick = ()=>{
+  if(current > 0){ current--; render(); }
 };
 
-revealBtn.onclick = () => {
-  contentEl.classList.remove("blurred");
-  contentEl.classList.add("revealed");
-};
-
-/* ⌨️ KEYBOARD SUPPORT */
-document.addEventListener("keydown", e => {
-  if(e.key === "ArrowRight") nextBtn.click();
-  if(e.key === "ArrowLeft") prevBtn.click();
-  if(e.key === " ") revealBtn.click();
-});
-
-/* INIT */
 render();
