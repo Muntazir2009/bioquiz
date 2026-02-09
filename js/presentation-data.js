@@ -1,166 +1,86 @@
 const presentationData = {
-  title: "Cell Wall – Structure, Discovery & Functions",
+  title: "Cell Wall",
 
   slides: [
 
     /* ===============================
-       SLIDE 1 – INTRODUCTION
+       SLIDE 1 – WHAT IS CELL WALL
     =============================== */
     {
       heading: "What is a Cell Wall?",
       content: `
-        The <b>cell wall</b> is a rigid, non-living outer layer found outside the plasma membrane.
-        It is present in <b>plant cells</b>, <b>fungi</b>, <b>bacteria</b>, and some protists.
-        <br><br>
-        The cell wall gives the cell a definite shape, strength, and protection.
-        It also prevents the cell from bursting due to excess water entry.
+        <div class="reveal-block">
+          The <b>cell wall</b> is a rigid, non-living outer layer present outside
+          the plasma membrane of plant cells. It provides a definite shape,
+          protection, and mechanical strength to the cell.
+          <br><br>
+          The cell wall also prevents the cell from bursting when excess water
+          enters the cell due to osmosis.
+        </div>
+
+        <img src="images/diagrams/cell_wall_basic.png" alt="Cell Wall Diagram">
       `
     },
 
     /* ===============================
-       SLIDE 2 – DISCOVERY
+       SLIDE 2 – COMPOSITION
     =============================== */
     {
-      heading: "Discovery of the Cell Wall",
+      heading: "Composition of the Cell Wall",
       content: `
-        The cell wall was first observed by <b>Robert Hooke</b> in <b>1665</b> while studying cork.
-        <br><br>
-        Hooke noticed box-like compartments, which he called <b>cells</b>.
-        These compartments were actually empty cell walls of dead plant tissue.
-        <br><br>
-        This discovery laid the foundation of modern cell biology.
+        <div class="reveal-block">
+          The plant cell wall is mainly composed of:
+          <ul>
+            <li><b>Cellulose</b> – provides tensile strength</li>
+            <li><b>Hemicellulose</b> – binds cellulose fibres together</li>
+            <li><b>Pectin</b> – provides flexibility and porosity</li>
+          </ul>
+          <br>
+          In addition, some cells contain <b>lignin</b>, which increases rigidity,
+          especially in xylem cells.
+        </div>
       `
     },
 
     /* ===============================
-       SLIDE 3 – FIRST OBSERVATION
-    =============================== */
-    {
-      heading: "First Observation of Cell Wall",
-      content: `
-        The cell wall was first seen in <b>plant cells</b> because it is thick and easily visible.
-        <br><br>
-        Early microscopes could not clearly show internal organelles,
-        but the rigid outer boundary (cell wall) was easily observed.
-        <br><br>
-        Animal cells do not have a cell wall, which is why it was not observed in them.
-      `,
-      image: "images/diagrams/cell-wall-diagram.png"
-    },
-
-    /* ===============================
-       SLIDE 4 – COMPOSITION
-    =============================== */
-    {
-      heading: "Composition of Cell Wall",
-      content: `
-        In plant cells, the cell wall is mainly made of:
-        <ul>
-          <li><b>Cellulose</b> – provides strength</li>
-          <li><b>Hemicellulose</b> – binds cellulose fibers</li>
-          <li><b>Pectin</b> – provides flexibility</li>
-        </ul>
-        <br>
-        In bacteria, the cell wall is made of <b>peptidoglycan</b>,
-        while in fungi it is made of <b>chitin</b>.
-      `
-    },
-
-    /* ===============================
-       SLIDE 5 – LAYERS
+       SLIDE 3 – LAYERS
     =============================== */
     {
       heading: "Layers of the Cell Wall",
       content: `
-        The plant cell wall has <b>three main layers</b>:
-        <ol>
-          <li><b>Middle Lamella</b> – binds neighboring cells</li>
-          <li><b>Primary Cell Wall</b> – thin, flexible layer</li>
-          <li><b>Secondary Cell Wall</b> – thick, rigid layer</li>
-        </ol>
-        <br>
-        The secondary wall is found in mature cells like xylem.
-      `,
-      image: "images/diagrams/cell-wall-layers.png"
-    },
+        <div class="reveal-block">
+          The plant cell wall consists of three main layers:
+          <ol>
+            <li><b>Middle Lamella</b> – cements adjacent cells together</li>
+            <li><b>Primary Cell Wall</b> – thin, elastic, and allows growth</li>
+            <li><b>Secondary Cell Wall</b> – thick, rigid, and fully developed</li>
+          </ol>
+          <br>
+          The secondary wall is commonly found in mature cells and provides
+          maximum strength.
+        </div>
 
-    /* ===============================
-       SLIDE 6 – FUNCTIONS
-    =============================== */
-    {
-      heading: "Functions of Cell Wall",
-      content: `
-        The cell wall performs several important functions:
-        <ul>
-          <li>Gives <b>shape</b> to the cell</li>
-          <li>Provides <b>mechanical strength</b></li>
-          <li>Protects against physical injury</li>
-          <li>Prevents <b>osmotic bursting</b></li>
-          <li>Allows diffusion of substances</li>
-        </ul>
+        <img src="images/diagrams/cell_wall_layers.png" alt="Cell Wall Layers Diagram">
       `
     },
 
     /* ===============================
-       SLIDE 7 – PERMEABILITY
+       SLIDE 4 – FUNCTIONS
     =============================== */
     {
-      heading: "Permeability of Cell Wall",
+      heading: "Functions of the Cell Wall",
       content: `
-        The cell wall is <b>freely permeable</b>.
-        <br><br>
-        This means it allows water, gases, and small molecules to pass through easily.
-        <br><br>
-        The plasma membrane inside the cell wall controls selective transport.
+        <div class="reveal-block">
+          The cell wall performs several vital functions:
+          <ul>
+            <li>Gives a definite shape to the cell</li>
+            <li>Provides mechanical support and rigidity</li>
+            <li>Protects the cell from physical damage</li>
+            <li>Prevents osmotic bursting in hypotonic solutions</li>
+            <li>Allows free movement of water and gases</li>
+          </ul>
+        </div>
       `
-    },
-
-    /* ===============================
-       SLIDE 8 – IMPORTANCE
-    =============================== */
-    {
-      heading: "Why is the Cell Wall Important?",
-      content: `
-        Without a cell wall:
-        <ul>
-          <li>Plant cells would lose shape</li>
-          <li>Cells could burst in hypotonic solutions</li>
-          <li>Plants would not remain upright</li>
-        </ul>
-        <br>
-        The cell wall is essential for plant structure and survival.
-      `
-    },
-
-    /* ===============================
-       SLIDE 9 – QUESTIONS (REVEAL)
-    =============================== */
-{
-  heading: "Check Your Understanding",
-  content: `
-
-    <div class="qa-question">
-      Q1. Who discovered the cell wall and in which year?
-    </div>
-    <div class="reveal-block qa-answer">
-      <b>Ans:</b> The cell wall was discovered by Robert Hooke in 1665 while studying cork.
-    </div>
-
-    <div class="qa-question">
-      Q2. Name the main components of the plant cell wall.
-    </div>
-    <div class="reveal-block qa-answer">
-      <b>Ans:</b> Cellulose, hemicellulose, and pectin.
-    </div>
-
-    <div class="qa-question">
-      Q3. Why do animal cells lack a cell wall?
-    </div>
-    <div class="reveal-block qa-answer">
-      <b>Ans:</b> Animal cells need flexibility for movement, which a rigid cell wall would restrict.
-    </div>
-
-  `
-}
+    }
   ]
 };
