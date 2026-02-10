@@ -10,45 +10,49 @@
 
 <body>
 
-<!-- OPTIONAL STAR BACKGROUND -->
 <canvas id="stars"></canvas>
 
-<main class="page-wrap">
+<main class="page-center">
 
-  <header class="top-header">
+<form id="suggestionForm" class="suggestion-card">
+
+  <header class="card-header">
     <h1>Suggestions</h1>
-    <p>Help us make BioQuiz even better 🚀</p>
+    <p>Help us improve BioQuiz 🚀</p>
   </header>
 
-  <section class="suggestion-wrap">
-    <form class="suggestion-card">
+  <div class="section-title">Your Details</div>
 
-      <label>
-        Your Name
-        <input type="text" placeholder="Optional">
-      </label>
+  <input type="text" name="name" placeholder="Your name (optional)">
 
-      <label>
-        Suggestion Type
-        <select>
-          <option>Feature Request</option>
-          <option>Bug Report</option>
-          <option>Content Improvement</option>
-          <option>Other</option>
-        </select>
-      </label>
+  <div class="section-title">Suggestion Type</div>
 
-      <label>
-        Your Suggestion
-        <textarea placeholder="Write your idea here..." required></textarea>
-      </label>
+  <!-- ✅ REAL DROPDOWN -->
+  <select name="type" required>
+    <option value="">Select suggestion type</option>
+    <option value="Feature Request">🚀 Feature Request</option>
+    <option value="Bug Report">🐞 Bug Report</option>
+    <option value="Content Improvement">📘 Content Improvement</option>
+    <option value="Other">✨ Other</option>
+  </select>
 
-      <button type="submit">✨ Submit Suggestion</button>
+  <div class="section-title">Your Suggestion</div>
 
-    </form>
-  </section>
+  <textarea
+    name="suggestion"
+    placeholder="Write your idea, feedback, or issue here…"
+    required></textarea>
+
+  <button type="submit">✨ Submit Suggestion</button>
+
+  <p class="note" id="message"></p>
+
+  <a href="my-suggestions.html" class="my-link">📂 My Suggestions</a>
+
+</form>
 
 </main>
 
+<script src="js/suggestions.js"></script>
 </body>
 </html>
