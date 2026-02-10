@@ -21,28 +21,47 @@
 <main class="suggestion-wrap">
 
   <form id="suggestionForm" class="suggestion-card">
-    
-    <label>
-      Name (optional)
-      <input type="text" name="name" placeholder="Your name">
-    </label>
+  
+  <label>
+    Name (optional)
+    <input type="text" name="name">
+  </label>
 
-    <label>
-      Class / Grade (optional)
-      <input type="text" name="grade" placeholder="Class 9, 10, etc.">
-    </label>
+  <label>
+    Class / Grade (optional)
+    <input type="text" name="grade">
+  </label>
 
-    <label>
-      Your Suggestion
-      <textarea name="suggestion" required placeholder="Tell us what you think..."></textarea>
-    </label>
+  <label>
+    Type of Suggestion
+    <select name="type">
+      <option>Feature Request</option>
+      <option>Bug Report</option>
+      <option>Content Improvement</option>
+      <option>Other</option>
+    </select>
+  </label>
 
-    <button type="submit">
-      ✨ Submit Suggestion
-    </button>
+  <label>
+    Your Mood
+    <div class="emoji-row">
+      <span class="emoji">😐</span>
+      <span class="emoji">🙂</span>
+      <span class="emoji">😍</span>
+      <span class="emoji">🤯</span>
+    </div>
+    <input type="hidden" name="mood" id="mood">
+  </label>
 
-    <p class="note" id="message"></p>
+  <label>
+    Your Suggestion
+    <textarea name="suggestion" required></textarea>
+  </label>
 
+  <input type="hidden" name="device" id="device">
+
+  <button type="submit">✨ Submit Suggestion</button>
+  <p class="note" id="message"></p>
   </form>
 
 </main>
