@@ -23,25 +23,20 @@
     <label>Name (optional)</label>
     <input type="text" name="name">
 
-    <label>Suggestion Type</label>
-    <div class="type-grid">
-      <label class="type-box">
-        <input type="radio" name="type" value="Feature Request" required>
-        🚀 Feature Request
-      </label>
-      <label class="type-box">
-        <input type="radio" name="type" value="Bug Report">
-        🐞 Bug Report
-      </label>
-      <label class="type-box">
-        <input type="radio" name="type" value="Content Improvement">
-        📘 Content Improvement
-      </label>
-      <label class="type-box">
-        <input type="radio" name="type" value="Other">
-        ✨ Other
-      </label>
-    </div>
+<label class="fancy-label">Suggestion Type</label>
+
+<div class="select-box" id="typeSelect">
+  <span id="selectedType">🚀 Select suggestion type</span>
+</div>
+
+<div class="select-options" id="typeOptions">
+  <div data-value="Feature Request">🚀 Feature Request</div>
+  <div data-value="Bug Report">🐞 Bug Report</div>
+  <div data-value="Content Improvement">📘 Content Improvement</div>
+  <div data-value="Other">✨ Other</div>
+</div>
+
+<input type="hidden" name="type" id="typeInput" required>
 
     <label>Your Suggestion</label>
     <textarea name="suggestion" required placeholder="Write your idea here..."></textarea>
