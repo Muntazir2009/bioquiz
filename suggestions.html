@@ -67,6 +67,23 @@
 </main>
 
 <script>
+  <script>
+/* EMOJI SELECT */
+const emojis = document.querySelectorAll(".emoji");
+const moodInput = document.getElementById("mood");
+
+emojis.forEach(e=>{
+  e.onclick = ()=>{
+    emojis.forEach(x=>x.classList.remove("active"));
+    e.classList.add("active");
+    moodInput.value = e.textContent;
+  };
+});
+
+/* DEVICE INFO */
+document.getElementById("device").value =
+  navigator.userAgent.includes("Mobile") ? "Mobile" : "Desktop";
+</script>
 /* ⭐ STAR BACKGROUND */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
