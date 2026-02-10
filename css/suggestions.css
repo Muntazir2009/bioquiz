@@ -6,16 +6,16 @@
 body{
   margin:0;
   min-height:100vh;
-  color:#eaf1ff;
   background:
-    radial-gradient(1000px 700px at 20% 10%, #101a3a, transparent 60%),
-    radial-gradient(900px 600px at 80% 90%, #1b0f3f, transparent 60%),
+    radial-gradient(1200px 800px at 20% 10%, #101a3a, transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%, #1b0f3f, transparent 60%),
     linear-gradient(180deg,#05070f,#04060c);
+  color:#eaf1ff;
   overflow-x:hidden;
 }
 
-/* CANVAS */
-canvas{
+/* STAR CANVAS */
+#stars{
   position:fixed;
   inset:0;
   z-index:0;
@@ -23,80 +23,70 @@ canvas{
 
 /* HEADER */
 .top-header{
+  text-align:center;
+  padding:40px 16px 20px;
   position:relative;
   z-index:2;
-  text-align:center;
-  padding:44px 16px 28px;
 }
 
 .top-header h1{
   margin:0;
   font-size:2.4rem;
-  letter-spacing:.14em;
-  background:linear-gradient(135deg,#ffffff,#a8c7ff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+  letter-spacing:.12em;
 }
 
 .top-header p{
-  opacity:.75;
-  margin-top:10px;
-}
-
-/* MAIN */
-.suggestion-wrap{
-  position:relative;
-  z-index:2;
-  max-width:540px;
-  margin:auto;
-  padding:20px;
+  opacity:.7;
+  margin-top:8px;
 }
 
 /* CARD */
+.suggestion-wrap{
+  display:flex;
+  justify-content:center;
+  padding:20px;
+  position:relative;
+  z-index:2;
+}
+
 .suggestion-card{
+  width:100%;
+  max-width:560px;
+  padding:34px;
+  border-radius:24px;
+
   background:
-    radial-gradient(500px 300px at 20% 10%, rgba(120,160,255,.18), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-    rgba(10,14,35,.9);
+    radial-gradient(600px 400px at 20% 10%, rgba(120,160,255,.18), transparent 60%),
+    linear-gradient(180deg, rgba(20,26,60,.95), rgba(8,10,22,.98));
 
-  border:1px solid rgba(140,180,255,.3);
-  border-radius:26px;
-  padding:30px;
-
+  border:1px solid rgba(140,180,255,.28);
   box-shadow:
     0 40px 120px rgba(0,0,0,.9),
     inset 0 0 0 1px rgba(255,255,255,.05);
-
-  animation:floatIn .9s ease both;
 }
 
-@keyframes floatIn{
-  from{opacity:0; transform:translateY(40px) scale(.96)}
-  to{opacity:1; transform:none}
-}
-
-/* INPUTS */
+/* LABELS */
 label{
   display:block;
-  margin-bottom:20px;
+  margin-bottom:18px;
   font-size:.85rem;
-  letter-spacing:.04em;
+  letter-spacing:.06em;
   opacity:.9;
 }
 
-input, textarea{
+/* INPUTS */
+input, textarea, select{
   width:100%;
-  margin-top:8px;
+  margin-top:6px;
   padding:14px 16px;
   border-radius:14px;
 
-  background:rgba(0,0,0,.45);
+  background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.18);
   color:#eaf1ff;
 
-  border:1px solid rgba(140,180,255,.3);
   outline:none;
-
-  transition:border .25s ease, box-shadow .25s ease;
+  font-size:.9rem;
 }
 
 textarea{
@@ -104,58 +94,63 @@ textarea{
   resize:vertical;
 }
 
-input:focus, textarea:focus{
-  border-color:#6fb6ff;
-  box-shadow:0 0 20px rgba(120,180,255,.4);
+/* EMOJI */
+.emoji-row{
+  display:flex;
+  gap:12px;
+  margin:12px 0 20px;
+}
+
+.emoji{
+  font-size:1.6rem;
+  cursor:pointer;
+  opacity:.5;
+  transition:transform .2s ease, opacity .2s ease;
+}
+
+.emoji.active{
+  opacity:1;
+  transform:scale(1.25);
 }
 
 /* BUTTON */
 button{
   width:100%;
-  margin-top:14px;
+  margin-top:20px;
   padding:16px;
   border-radius:999px;
   border:none;
   cursor:pointer;
 
-  font-weight:900;
-  letter-spacing:.14em;
-  text-transform:uppercase;
+  font-weight:800;
+  letter-spacing:.12em;
+  font-size:.9rem;
 
-  color:#0b0f1f;
-
+  color:#0b1024;
   background:
-    linear-gradient(135deg,#6fb6ff,#c084fc,#f5c16c);
+    radial-gradient(circle at 30% 30%, #6fb6ff, #3b6cff);
 
   box-shadow:
-    0 20px 70px rgba(120,180,255,.6),
-    inset 0 0 0 1px rgba(255,255,255,.45);
+    0 0 40px rgba(120,180,255,.55),
+    0 20px 60px rgba(0,0,0,.8);
 
-  transition:
-    transform .25s cubic-bezier(.2,.8,.2,1),
-    box-shadow .25s ease;
+  transition:transform .25s ease;
 }
 
 button:hover{
-  transform:translateY(-4px);
-  box-shadow:
-    0 30px 90px rgba(160,120,255,.8);
+  transform:translateY(-3px);
 }
 
-button:active{
-  transform:scale(.97);
-}
-
-/* NOTE */
+/* MESSAGE */
 .note{
+  margin-top:16px;
   text-align:center;
-  margin-top:18px;
-  font-size:.75rem;
-  opacity:.65;
+  font-weight:700;
 }
 
 /* MOBILE */
 @media(max-width:600px){
-  .top-header h1{font-size:2rem}
-  .suggestion-card{padding:24px}
+  .suggestion-card{
+    padding:26px;
+  }
 }
