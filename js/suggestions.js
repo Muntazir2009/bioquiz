@@ -7,60 +7,59 @@ function resize(){
   canvas.height = innerHeight;
 }
 resize();
-window.addEventListener("resize", resize);
+addEventListener("resize", resize);
 
-const stars = Array.from({length:160}, () => ({
+const stars = Array.from({length:140}, () => ({
   x: Math.random() * innerWidth,
   y: Math.random() * innerHeight,
-  r: Math.random() * 1.4,
+  r: Math.random() * 1.2,
   o: Math.random()
 }));
 
-function drawStars(){
+function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   stars.forEach(s=>{
-    ctx.globalAlpha = s.o;
+    ctx.globalAlpha=s.o;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    ctx.fillStyle = "#fff";
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle="#fff";
     ctx.fill();
   });
-  requestAnimationFrame(drawStars);
+  requestAnimationFrame(draw);
 }
-drawStars();
+draw();
 
-/* DEVICE */
-document.getElementById("device").value =
-  /Mobile|Android/i.test(navigator.userAgent) ? "Mobile" : "Desktop";
-
-/* AUTO EXPAND + CHAR COUNT */
-const textarea = document.getElementById("suggestionText");
-const counter = document.getElementById("charCount");
-
-textarea.addEventListener("input", ()=>{
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
-  counter.textContent = textarea.value.length;
-});
-
-/* FORM SUBMIT */
+/* 💾 SAVE + SEND */
 const form = document.getElementById("suggestionForm");
 const msg = document.getElementById("message");
+
+function saveLocal(data){
+  const saved = JSON.parse(localStorage.getItem("mySuggestions") || "[]");
+  saved.unshift({
+    id: Date.now(),
+    type: data.get("type"),
+    text: data.get("suggestion"),
+    date: new Date().toLocaleString()
+  });
+  localStorage.setItem("mySuggestions", JSON.stringify(saved));
+}
 
 form.addEventListener("submit", e=>{
   e.preventDefault();
 
-  fetch("https://formspree.io/f/xqedearo", {
+  const data = new FormData(form);
+  saveLocal(data);
+
+  fetch("https://formspree.io/f/xqedearo",{
     method:"POST",
-    body:new FormData(form),
-    mode:"no-cors"
+    body:data,
+    headers:{Accept:"application/json"}
   }).then(()=>{
-    msg.textContent = "✨ Thank you! Your suggestion has been received.";
-    msg.style.color = "#6dffcc";
+    msg.textContent="✨ Suggestion sent successfully!";
+    msg.style.color="#6dffcc";
     form.reset();
-    counter.textContent = "0";
   }).catch(()=>{
-    msg.textContent = "⚠ Something went wrong. Try again.";
-    msg.style.color = "#ff8a8a";
+    msg.textContent="⚠ Failed to submit.";
+    msg.style.color="#ff8a8a";
   });
 });
