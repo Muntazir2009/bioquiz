@@ -3,146 +3,146 @@
   font-family:Inter,system-ui,sans-serif;
 }
 
-/* ===============================
-   PAGE LAYOUT (CENTER FIX)
-=============================== */
-
 body{
   margin:0;
   min-height:100vh;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
   background:
-    radial-gradient(1000px 700px at 20% 10%, #120010, transparent 60%),
-    radial-gradient(900px 600px at 80% 90%, #1a0000, transparent 60%),
-    linear-gradient(180deg,#050000,#020000);
-
-  color:#f6eaea;
-}
-
-/* ⭐ FIX: make stars canvas a true background */
-#stars{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:-1;
-  pointer-events:none;
-}
-/* wrapper so header + card stay centered */
-.page-wrap{
-  width:100%;
-  max-width:700px;
-  padding:20px;
-}
-
-/* ===============================
-   HEADER
-=============================== */
-
-.top-header{
-  text-align:center;
-  margin-bottom:26px;
-}
-
-.top-header h1{
-  margin:0;
-  font-size:2.2rem;
-  letter-spacing:.14em;
-}
-
-.top-header p{
-  opacity:.7;
-  margin-top:6px;
-}
-
-/* ===============================
-   CENTERED CARD
-=============================== */
-
-.suggestion-wrap{
-  display:flex;
-  justify-content:center;
-}
-
-.suggestion-card{
-  width:100%;
-  max-width:520px;
-  padding:34px;
-
-  border-radius:22px;
-  background:
-    linear-gradient(180deg, rgba(255,0,0,.06), rgba(255,255,255,.02)),
-    rgba(10,0,0,.9);
-
-  border:1px solid rgba(255,80,80,.35);
-
-  box-shadow:
-    0 30px 90px rgba(0,0,0,.9),
-    inset 0 0 0 1px rgba(255,255,255,.06);
-}
-
-/* ===============================
-   FORM
-=============================== */
-
-label{
-  display:block;
-  margin-bottom:18px;
-  font-size:.85rem;
-  letter-spacing:.08em;
-}
-
-input, select, textarea{
-  width:100%;
-  margin-top:8px;
-  padding:12px 14px;
-
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.2);
-
-  background:rgba(0,0,0,.45);
+    radial-gradient(900px 700px at 20% 10%, #2a0000, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #120000, transparent 60%),
+    linear-gradient(180deg,#040000,#000);
   color:#fff;
 }
 
-textarea{
-  min-height:110px;
-  resize:vertical;
+/* ⭐ FIXED STAR CANVAS */
+#stars{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
 }
 
-/* ===============================
-   BUTTON
-=============================== */
+/* CENTER LAYOUT */
+.page-center{
+  position:relative;
+  z-index:1;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
 
-button{
+/* CARD */
+.suggestion-card{
   width:100%;
-  margin-top:14px;
-  padding:14px;
+  max-width:420px;
+  padding:26px;
+  border-radius:26px;
 
-  border-radius:999px;
-  border:none;
-
-  font-weight:800;
-  letter-spacing:.12em;
-  cursor:pointer;
-
-  color:#120000;
-  background:
-    radial-gradient(circle at 30% 30%, #ff7b7b, #ff2a2a);
+  background:rgba(0,0,0,.75);
+  border:1px solid rgba(255,70,70,.35);
 
   box-shadow:
-    0 14px 40px rgba(255,0,0,.6);
+    0 0 80px rgba(255,0,0,.25),
+    inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* ===============================
-   MOBILE
-=============================== */
+/* HEADER */
+.card-header{
+  text-align:center;
+  margin-bottom:18px;
+}
+.card-header h1{
+  margin:0;
+  letter-spacing:.14em;
+}
+.card-header p{
+  opacity:.7;
+  margin:6px 0 0;
+}
 
-@media(max-width:600px){
-  .suggestion-card{
-    padding:26px;
-  }
+/* SECTION TITLE */
+.section-title{
+  margin:22px 0 10px;
+  padding:8px 12px;
+  border-radius:10px;
+
+  border-left:3px solid #ff3b3b;
+  background:rgba(255,255,255,.03);
+
+  font-size:.75rem;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#ffb3b3;
+}
+
+/* INPUTS */
+input, textarea, select{
+  width:100%;
+  padding:14px 16px;
+  border-radius:14px;
+
+  background:#000;
+  color:#fff;
+
+  border:1px solid rgba(255,70,70,.4);
+  outline:none;
+
+  font-size:.95rem;
+  margin-bottom:12px;
+}
+
+textarea{
+  resize:none;
+  min-height:120px;
+}
+
+select{
+  appearance:none;
+  background:
+    linear-gradient(180deg,#000,#100),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='white' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  background-size:12px;
+}
+
+/* BUTTON */
+button{
+  margin-top:14px;
+  width:100%;
+  padding:16px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+
+  background:linear-gradient(135deg,#ff3b3b,#b00000);
+  color:#fff;
+
+  font-size:1rem;
+  font-weight:700;
+  letter-spacing:.08em;
+
+  box-shadow:0 0 40px rgba(255,50,50,.6);
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+/* MESSAGE */
+.note{
+  margin-top:12px;
+  text-align:center;
+  font-size:.9rem;
+}
+
+/* LINK */
+.my-link{
+  display:block;
+  margin-top:14px;
+  text-align:center;
+  text-decoration:none;
+  color:#ffb3b3;
+  font-weight:600;
 }
