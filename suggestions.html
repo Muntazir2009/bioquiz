@@ -12,23 +12,22 @@
 
 <canvas id="stars"></canvas>
 
-<header class="top-header">
-  <h1>Suggestions</h1>
-  <p>Help us improve BioQuiz 🚀</p>
-</header>
-
-<main class="suggestion-wrap">
+<main class="page-center">
 
 <form id="suggestionForm" class="suggestion-card">
 
+  <header class="card-header">
+    <h1>Suggestions</h1>
+    <p>Help us improve BioQuiz 🚀</p>
+  </header>
+
   <div class="section-title">Your Details</div>
 
-  <label class="fancy-label">Name <span>(optional)</span></label>
-  <input type="text" name="name" placeholder="Anonymous explorer">
+  <input type="text" name="name" placeholder="Your name (optional)">
 
   <div class="section-title">Suggestion Type</div>
 
-  <!-- ✅ OLD STYLE REAL DROPDOWN -->
+  <!-- ✅ REAL DROPDOWN -->
   <select name="type" required>
     <option value="">Select suggestion type</option>
     <option value="Feature Request">🚀 Feature Request</option>
@@ -41,7 +40,7 @@
 
   <textarea
     name="suggestion"
-    placeholder="Write your idea, feedback, or issue here..."
+    placeholder="Write your idea, feedback, or issue here…"
     required></textarea>
 
   <button type="submit">✨ Submit Suggestion</button>
