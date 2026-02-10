@@ -15,42 +15,40 @@
 
 <header class="top-header">
   <h1>Suggestions</h1>
-  <p>Help us make BioQuiz better 🚀</p>
+  <p>Help us make BioQuiz even better 🚀</p>
 </header>
 
 <main class="suggestion-wrap">
 
-  <form class="suggestion-card">
+  <form id="suggestionForm" class="suggestion-card">
     
     <label>
       Name (optional)
-      <input type="text" placeholder="Your name">
+      <input type="text" name="name" placeholder="Your name">
     </label>
 
     <label>
       Class / Grade (optional)
-      <input type="text" placeholder="Class 9, 10, etc.">
+      <input type="text" name="grade" placeholder="Class 9, 10, etc.">
     </label>
 
     <label>
       Your Suggestion
-      <textarea placeholder="What feature, improvement, or idea do you have?"></textarea>
+      <textarea name="suggestion" required placeholder="Tell us what you think..."></textarea>
     </label>
 
     <button type="submit">
-      ✨ Send Suggestion
+      ✨ Submit Suggestion
     </button>
 
-    <p class="note">
-      Your feedback directly improves this platform.
-    </p>
+    <p class="note" id="message"></p>
 
   </form>
 
 </main>
 
 <script>
-/* ⭐ LIGHT STAR BACKGROUND (ULTRA LIGHT) */
+/* ⭐ STAR BACKGROUND */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
@@ -59,27 +57,53 @@ function resize(){
   canvas.height = innerHeight;
 }
 resize();
-addEventListener("resize", resize);
+window.onresize = resize;
 
-const stars = Array.from({length:120}, () => ({
-  x: Math.random()*innerWidth,
-  y: Math.random()*innerHeight,
-  r: Math.random()*1.2,
+const stars = Array.from({length:140}, () => ({
+  x: Math.random() * innerWidth,
+  y: Math.random() * innerHeight,
+  r: Math.random() * 1.2,
   o: Math.random()
 }));
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#fff";
-  stars.forEach(s=>{
+  stars.forEach(s => {
     ctx.globalAlpha = s.o;
     ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
     ctx.fill();
   });
   requestAnimationFrame(draw);
 }
 draw();
+
+/* 📨 FORMSPREE AJAX SUBMIT */
+const form = document.getElementById("suggestionForm");
+const msg = document.getElementById("message");
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+
+  const data = new FormData(form);
+
+  fetch(
+    "https://formspree.io/f/xqedearo",
+    {
+      method: "POST",
+      mode: "no-cors",
+      body: data
+    }
+  ).then(() => {
+    msg.textContent = "✨ Thank you! Your suggestion has been submitted.";
+    msg.style.color = "#6dffcc";
+    form.reset();
+  }).catch(() => {
+    msg.textContent = "⚠ Oops! Something went wrong. Try again.";
+    msg.style.color = "#ff8a8a";
+  });
+});
 </script>
 
 </body>
