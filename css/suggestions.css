@@ -23,6 +23,15 @@ body{
   color:#f6eaea;
 }
 
+/* ⭐ FIX: make stars canvas a true background */
+#stars{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:-1;
+  pointer-events:none;
+}
 /* wrapper so header + card stay centered */
 .page-wrap{
   width:100%;
