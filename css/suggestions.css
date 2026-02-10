@@ -7,150 +7,157 @@ body{
   margin:0;
   min-height:100vh;
   background:
-    radial-gradient(1200px 800px at 20% 10%, #101a3a, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #1b0f3f, transparent 60%),
+    radial-gradient(1000px 700px at 20% 10%, #101a3a, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #1b0f3f, transparent 60%),
     linear-gradient(180deg,#05070f,#04060c);
   color:#eaf1ff;
   overflow-x:hidden;
 }
 
-/* STAR CANVAS */
-#stars{
-  position:fixed;
-  inset:0;
-  z-index:0;
-}
-
 /* HEADER */
 .top-header{
   text-align:center;
-  padding:40px 16px 20px;
-  position:relative;
-  z-index:2;
+  padding:42px 16px 20px;
 }
 
 .top-header h1{
   margin:0;
-  font-size:2.4rem;
-  letter-spacing:.12em;
+  font-size:2.6rem;
+  letter-spacing:.14em;
 }
 
 .top-header p{
-  opacity:.7;
-  margin-top:8px;
+  opacity:.75;
+  margin-top:10px;
+}
+
+/* WRAP */
+.suggestion-wrap{
+  max-width:520px;
+  margin:40px auto 80px;
+  padding:0 16px;
 }
 
 /* CARD */
-.suggestion-wrap{
-  display:flex;
-  justify-content:center;
-  padding:20px;
-  position:relative;
-  z-index:2;
+.suggestion-card{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(10,14,35,.9);
+
+  border:1px solid rgba(140,180,255,.25);
+  border-radius:22px;
+  padding:28px;
+
+  box-shadow:
+    0 40px 120px rgba(0,0,0,.85),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+
+  animation:cardEnter .8s ease;
 }
 
-.suggestion-card{
-  width:100%;
-  max-width:560px;
-  padding:34px;
-  border-radius:24px;
-
-  background:
-    radial-gradient(600px 400px at 20% 10%, rgba(120,160,255,.18), transparent 60%),
-    linear-gradient(180deg, rgba(20,26,60,.95), rgba(8,10,22,.98));
-
-  border:1px solid rgba(140,180,255,.28);
-  box-shadow:
-    0 40px 120px rgba(0,0,0,.9),
-    inset 0 0 0 1px rgba(255,255,255,.05);
+@keyframes cardEnter{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:none}
 }
 
 /* LABELS */
 label{
   display:block;
-  margin-bottom:18px;
-  font-size:.85rem;
-  letter-spacing:.06em;
+  margin-bottom:22px;
+  font-size:.9rem;
   opacity:.9;
 }
 
-/* INPUTS */
-input, textarea, select{
+input, select, textarea{
   width:100%;
-  margin-top:6px;
+  margin-top:8px;
   padding:14px 16px;
-  border-radius:14px;
 
-  background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;
+  border:1px solid rgba(140,180,255,.25);
+
+  background:rgba(5,8,25,.8);
   color:#eaf1ff;
 
   outline:none;
-  font-size:.9rem;
+  transition:border .25s ease, box-shadow .25s ease;
 }
 
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:#6fb6ff;
+  box-shadow:0 0 0 3px rgba(111,182,255,.25);
+}
+
+/* TEXTAREA */
 textarea{
+  resize:none;
   min-height:120px;
-  resize:vertical;
 }
 
-/* EMOJI */
-.emoji-row{
+/* CHAR COUNT */
+.char-count{
+  text-align:right;
+  font-size:.75rem;
+  opacity:.6;
+  margin-top:6px;
+}
+
+/* RANGE */
+.range-label input[type="range"]{
+  margin-top:14px;
+}
+
+.range-hint{
   display:flex;
-  gap:12px;
-  margin:12px 0 20px;
-}
-
-.emoji{
-  font-size:1.6rem;
-  cursor:pointer;
-  opacity:.5;
-  transition:transform .2s ease, opacity .2s ease;
-}
-
-.emoji.active{
-  opacity:1;
-  transform:scale(1.25);
+  justify-content:space-between;
+  font-size:.7rem;
+  opacity:.6;
 }
 
 /* BUTTON */
 button{
   width:100%;
-  margin-top:20px;
   padding:16px;
-  border-radius:999px;
+  margin-top:10px;
+
   border:none;
-  cursor:pointer;
+  border-radius:999px;
 
   font-weight:800;
-  letter-spacing:.12em;
-  font-size:.9rem;
+  letter-spacing:.1em;
 
-  color:#0b1024;
-  background:
-    radial-gradient(circle at 30% 30%, #6fb6ff, #3b6cff);
+  color:#08101f;
+  background:linear-gradient(135deg,#6fb6ff,#9a7bff);
 
   box-shadow:
-    0 0 40px rgba(120,180,255,.55),
-    0 20px 60px rgba(0,0,0,.8);
+    0 20px 60px rgba(111,182,255,.45);
 
-  transition:transform .25s ease;
+  cursor:pointer;
+  transition:transform .25s ease, box-shadow .25s ease;
 }
 
 button:hover{
   transform:translateY(-3px);
+  box-shadow:
+    0 28px 90px rgba(154,123,255,.65);
+}
+
+button:active{
+  transform:scale(.97);
 }
 
 /* MESSAGE */
 .note{
-  margin-top:16px;
   text-align:center;
-  font-weight:700;
+  margin-top:16px;
+  font-weight:600;
 }
 
-/* MOBILE */
-@media(max-width:600px){
-  .suggestion-card{
-    padding:26px;
-  }
+/* STAR CANVAS */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:-1;
 }
