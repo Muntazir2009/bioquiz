@@ -1,74 +1,76 @@
-/* ⭐ STAR BACKGROUND */
+/* ===============================
+   ⭐ STAR BACKGROUND
+=============================== */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
 function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 resize();
 window.addEventListener("resize", resize);
 
-const stars = Array.from({length:120}, () => ({
-  x: Math.random()*innerWidth,
-  y: Math.random()*innerHeight,
-  r: Math.random()*1.2,
-  o: Math.random()
+const stars = Array.from({ length: 160 }, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 1.3 + 0.2,
+  o: Math.random() * 0.8 + 0.2,
+  s: Math.random() * 0.2 + 0.05
 }));
 
-function draw(){
+function animateStars(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  stars.forEach(s=>{
-    ctx.globalAlpha = s.o;
+  stars.forEach(star => {
+    ctx.globalAlpha = star.o;
     ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fillStyle="#fff";
+    ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
     ctx.fill();
+
+    star.y += star.s;
+    if(star.y > canvas.height){
+      star.y = 0;
+      star.x = Math.random() * canvas.width;
+    }
   });
-  requestAnimationFrame(draw);
+  requestAnimationFrame(animateStars);
 }
-draw();
+animateStars();
 
-/* 🎉 CONFETTI */
-function confetti(){
-  for(let i=0;i<80;i++){
-    const c=document.createElement("div");
-    c.style.position="fixed";
-    c.style.left=Math.random()*100+"vw";
-    c.style.top="-10px";
-    c.style.width="6px";
-    c.style.height="6px";
-    c.style.background=["#ff3b3b","#ff8080","#fff"][Math.floor(Math.random()*3)];
-    c.style.borderRadius="50%";
-    c.style.zIndex=9999;
-    document.body.appendChild(c);
+/* ===============================
+   📨 FORMSPREE SUBMIT (FIXED)
+=============================== */
+const form = document.getElementById("suggestionForm");
+const msg  = document.getElementById("message");
 
-    const fall=Math.random()*800+400;
-    c.animate([
-      {transform:"translateY(0)",opacity:1},
-      {transform:`translateY(${fall}px)`,opacity:0}
-    ],{duration:1200,easing:"ease-out"});
-
-    setTimeout(()=>c.remove(),1200);
-  }
-}
-
-/* 📩 FORMSPREE SUBMIT (FIXED) */
-const form=document.getElementById("suggestionForm");
-const msg=document.getElementById("message");
-
-form.addEventListener("submit",e=>{
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  fetch("https://formspree.io/f/xqedearo",{
-    method:"POST",
-    body:new FormData(form),
-    mode:"no-cors"
-  });
+  msg.textContent = "Submitting...";
+  msg.style.color = "#ffb3b3";
 
-  // ALWAYS SUCCESS (this is correct for no-cors)
-  msg.textContent="✨ Suggestion sent successfully!";
-  msg.style.color="#6dffcc";
-  confetti();
-  form.reset();
+  try{
+    const res = await fetch(
+      "https://formspree.io/f/xqedearo",
+      {
+        method: "POST",
+        headers: {
+          "Accept": "application/json"
+        },
+        body: new FormData(form)
+      }
+    );
+
+    if(res.ok){
+      msg.textContent = "✨ Thank you! Your suggestion has been sent.";
+      msg.style.color = "#6dffcc";
+      form.reset();
+    } else {
+      throw new Error("Formspree error");
+    }
+  } catch(err){
+    msg.textContent = "⚠ Something went wrong. Try again.";
+    msg.style.color = "#ff8a8a";
+  }
 });
