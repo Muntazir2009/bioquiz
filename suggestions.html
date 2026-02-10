@@ -7,158 +7,71 @@
 
 <link rel="stylesheet" href="css/suggestions.css">
 </head>
-
 <body>
 
-<!-- STAR BACKGROUND -->
 <canvas id="stars"></canvas>
 
 <header class="top-header">
   <h1>Suggestions</h1>
-  <p>Help us make BioQuiz even better 🚀</p>
+  <p>Your ideas help shape the future of BioQuiz 🚀</p>
 </header>
 
 <main class="suggestion-wrap">
 
   <form id="suggestionForm" class="suggestion-card">
-  
+
+    <!-- NAME -->
     <label>
       Name (optional)
-      <input type="text" name="name">
+      <input type="text" name="name" placeholder="Your name">
     </label>
 
-    <label>
-      Class / Grade (optional)
-      <input type="text" name="grade">
-    </label>
-
+    <!-- TYPE -->
     <label>
       Type of Suggestion
       <select name="type">
-        <option>Feature Request</option>
-        <option>Bug Report</option>
-        <option>Content Improvement</option>
-        <option>Other</option>
+        <option value="Feature Request">Feature Request</option>
+        <option value="Bug Report">Bug Report</option>
+        <option value="Content Improvement">Content Improvement</option>
+        <option value="Design Feedback">Design Feedback</option>
+        <option value="Other">Other</option>
       </select>
     </label>
 
-    <label>
-      Your Mood
-      <div class="emoji-row">
-        <span class="emoji">😐</span>
-        <span class="emoji">🙂</span>
-        <span class="emoji">😍</span>
-        <span class="emoji">🤯</span>
+    <!-- CONFIDENCE -->
+    <label class="range-label">
+      How confident are you about this suggestion?
+      <input type="range" min="1" max="5" value="3" name="confidence">
+      <div class="range-hint">
+        <span>Low</span><span>High</span>
       </div>
-      <input type="hidden" name="mood" id="mood">
     </label>
 
+    <!-- SUGGESTION -->
     <label>
       Your Suggestion
-      <textarea name="suggestion" required></textarea>
+      <textarea name="suggestion" id="suggestionText"
+        placeholder="Describe your idea clearly..."
+        required></textarea>
+      <div class="char-count">
+        <span id="charCount">0</span> / 500
+      </div>
     </label>
 
+    <!-- HIDDEN CONTEXT -->
     <input type="hidden" name="device" id="device">
+    <input type="hidden" name="page" value="Suggestions Page">
 
-    <button type="submit">✨ Submit Suggestion</button>
+    <button type="submit">
+      ✨ Submit Suggestion
+    </button>
+
     <p class="note" id="message"></p>
 
   </form>
 
 </main>
 
-<script>
-/* ===============================
-   🌟 STAR BACKGROUND
-=============================== */
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
-
-function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
-
-const stars = Array.from({ length: 140 }, () => ({
-  x: Math.random() * innerWidth,
-  y: Math.random() * innerHeight,
-  r: Math.random() * 1.2,
-  o: Math.random(),
-  s: Math.random() * 0.2 + 0.05
-}));
-
-function animateStars(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  stars.forEach(star=>{
-    star.y += star.s;
-    if(star.y > canvas.height) star.y = 0;
-    ctx.globalAlpha = star.o;
-    ctx.beginPath();
-    ctx.arc(star.x, star.y, star.r, 0, Math.PI*2);
-    ctx.fillStyle = "#fff";
-    ctx.fill();
-  });
-  requestAnimationFrame(animateStars);
-}
-animateStars();
-
-/* ===============================
-   😄 EMOJI SELECT
-=============================== */
-const emojis = document.querySelectorAll(".emoji");
-const moodInput = document.getElementById("mood");
-
-emojis.forEach(e=>{
-  e.addEventListener("click", ()=>{
-    emojis.forEach(x=>x.classList.remove("active"));
-    e.classList.add("active");
-    moodInput.value = e.textContent;
-  });
-});
-
-/* ===============================
-   📱 DEVICE INFO
-=============================== */
-document.getElementById("device").value =
-  /Mobile|Android|iPhone/i.test(navigator.userAgent)
-  ? "Mobile"
-  : "Desktop";
-
-/* ===============================
-   📨 FORMSPREE SUBMIT (SMOOTH)
-=============================== */
-const form = document.getElementById("suggestionForm");
-const msg = document.getElementById("message");
-
-form.addEventListener("submit", e=>{
-  e.preventDefault();
-
-  msg.textContent = "Sending...";
-  msg.style.color = "#6fb6ff";
-
-  fetch("https://formspree.io/f/xqedearo", {
-    method: "POST",
-    body: new FormData(form),
-    headers: { "Accept": "application/json" }
-  })
-  .then(res=>{
-    if(res.ok){
-      msg.textContent = "✨ Thank you! Suggestion received.";
-      msg.style.color = "#6dffcc";
-      form.reset();
-      emojis.forEach(e=>e.classList.remove("active"));
-    }else{
-      throw new Error();
-    }
-  })
-  .catch(()=>{
-    msg.textContent = "⚠ Something went wrong. Try again.";
-    msg.style.color = "#ff8a8a";
-  });
-});
-</script>
-
+<script src="js/suggestions.js"></script>
 </body>
 </html>
