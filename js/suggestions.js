@@ -1,4 +1,14 @@
-/* ⭐ STAR BACKGROUND */
+/* RADIO ACTIVE STATE */
+document.querySelectorAll(".type-option").forEach(opt=>{
+  opt.addEventListener("click",()=>{
+    document.querySelectorAll(".type-option")
+      .forEach(o=>o.classList.remove("active"));
+    opt.classList.add("active");
+    opt.querySelector("input").checked = true;
+  });
+});
+
+/* STAR BACKGROUND */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
@@ -7,16 +17,16 @@ function resize(){
   canvas.height = innerHeight;
 }
 resize();
-addEventListener("resize", resize);
+window.onresize = resize;
 
-const stars = Array.from({length:140}, () => ({
-  x: Math.random() * innerWidth,
-  y: Math.random() * innerHeight,
-  r: Math.random() * 1.2,
-  o: Math.random()
+const stars = Array.from({length:120},()=>({
+  x:Math.random()*innerWidth,
+  y:Math.random()*innerHeight,
+  r:Math.random()*1.3,
+  o:Math.random()
 }));
 
-function draw(){
+(function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   stars.forEach(s=>{
     ctx.globalAlpha=s.o;
@@ -26,40 +36,26 @@ function draw(){
     ctx.fill();
   });
   requestAnimationFrame(draw);
-}
-draw();
+})();
 
-/* 💾 SAVE + SEND */
+/* FORMSPREE SUBMIT */
 const form = document.getElementById("suggestionForm");
 const msg = document.getElementById("message");
 
-function saveLocal(data){
-  const saved = JSON.parse(localStorage.getItem("mySuggestions") || "[]");
-  saved.unshift({
-    id: Date.now(),
-    type: data.get("type"),
-    text: data.get("suggestion"),
-    date: new Date().toLocaleString()
-  });
-  localStorage.setItem("mySuggestions", JSON.stringify(saved));
-}
-
-form.addEventListener("submit", e=>{
+form.addEventListener("submit",e=>{
   e.preventDefault();
-
-  const data = new FormData(form);
-  saveLocal(data);
-
   fetch("https://formspree.io/f/xqedearo",{
     method:"POST",
-    body:data,
-    headers:{Accept:"application/json"}
+    mode:"no-cors",
+    body:new FormData(form)
   }).then(()=>{
     msg.textContent="✨ Suggestion sent successfully!";
     msg.style.color="#6dffcc";
     form.reset();
+    document.querySelectorAll(".type-option")
+      .forEach(o=>o.classList.remove("active"));
   }).catch(()=>{
-    msg.textContent="⚠ Failed to submit.";
+    msg.textContent="⚠ Something went wrong.";
     msg.style.color="#ff8a8a";
   });
 });
