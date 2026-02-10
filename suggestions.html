@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suggestions • BioQuiz</title>
+
+<link rel="stylesheet" href="css/suggestions.css">
+</head>
+
+<body>
+
+<!-- STAR BACKGROUND -->
+<canvas id="stars"></canvas>
+
+<header class="top-header">
+  <h1>Suggestions</h1>
+  <p>Help us make BioQuiz better 🚀</p>
+</header>
+
+<main class="suggestion-wrap">
+
+  <form class="suggestion-card">
+    
+    <label>
+      Name (optional)
+      <input type="text" placeholder="Your name">
+    </label>
+
+    <label>
+      Class / Grade (optional)
+      <input type="text" placeholder="Class 9, 10, etc.">
+    </label>
+
+    <label>
+      Your Suggestion
+      <textarea placeholder="What feature, improvement, or idea do you have?"></textarea>
+    </label>
+
+    <button type="submit">
+      ✨ Send Suggestion
+    </button>
+
+    <p class="note">
+      Your feedback directly improves this platform.
+    </p>
+
+  </form>
+
+</main>
+
+<script>
+/* ⭐ LIGHT STAR BACKGROUND (ULTRA LIGHT) */
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+const stars = Array.from({length:120}, () => ({
+  x: Math.random()*innerWidth,
+  y: Math.random()*innerHeight,
+  r: Math.random()*1.2,
+  o: Math.random()
+}));
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#fff";
+  stars.forEach(s=>{
+    ctx.globalAlpha = s.o;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+
+</body>
+</html>
