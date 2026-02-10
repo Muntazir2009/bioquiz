@@ -1,39 +1,26 @@
 body{
   margin:0;
-  background:linear-gradient(180deg,#05070f,#04060c);
-  color:#eaf1ff;
+  min-height:100vh;
+  background:linear-gradient(180deg,#050000,#0a0000);
+  color:#fff;
   font-family:Inter,system-ui,sans-serif;
 }
 
 .top-header{
   text-align:center;
-  padding:36px 16px;
+  padding:40px 16px;
 }
 
-.suggestions-list{
-  max-width:900px;
+.wrap{
+  max-width:600px;
   margin:auto;
   padding:20px;
-  display:grid;
-  gap:22px;
 }
 
-.card{
-  padding:22px;
-  border-radius:18px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
-}
-
-.meta{
-  display:flex;
-  justify-content:space-between;
-  font-size:.75rem;
-  opacity:.7;
-}
-
-.text{
-  margin:14px 0;
-  line-height:1.6;
+.item{
+  padding:16px;
+  margin-bottom:14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,80,80,.35);
 }
