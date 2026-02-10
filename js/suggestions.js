@@ -1,33 +1,23 @@
-/* RADIO ACTIVE STATE */
-document.querySelectorAll(".type-option").forEach(opt=>{
-  opt.addEventListener("click",()=>{
-    document.querySelectorAll(".type-option")
-      .forEach(o=>o.classList.remove("active"));
-    opt.classList.add("active");
-    opt.querySelector("input").checked = true;
-  });
-});
-
 /* STAR BACKGROUND */
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
+const c = document.getElementById("stars");
+const ctx = c.getContext("2d");
 
 function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  c.width = innerWidth;
+  c.height = innerHeight;
 }
 resize();
 window.onresize = resize;
 
-const stars = Array.from({length:120},()=>({
+const stars = Array.from({length:140},()=>({
   x:Math.random()*innerWidth,
   y:Math.random()*innerHeight,
-  r:Math.random()*1.3,
+  r:Math.random()*1.2,
   o:Math.random()
 }));
 
 (function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,c.width,c.height);
   stars.forEach(s=>{
     ctx.globalAlpha=s.o;
     ctx.beginPath();
@@ -38,24 +28,25 @@ const stars = Array.from({length:120},()=>({
   requestAnimationFrame(draw);
 })();
 
-/* FORMSPREE SUBMIT */
+/* SUBMIT */
 const form = document.getElementById("suggestionForm");
 const msg = document.getElementById("message");
 
-form.addEventListener("submit",e=>{
+form.addEventListener("submit", e=>{
   e.preventDefault();
+  const data = new FormData(form);
+  const text = data.get("suggestion");
+
   fetch("https://formspree.io/f/xqedearo",{
     method:"POST",
-    mode:"no-cors",
-    body:new FormData(form)
-  }).then(()=>{
-    msg.textContent="✨ Suggestion sent successfully!";
-    msg.style.color="#6dffcc";
-    form.reset();
-    document.querySelectorAll(".type-option")
-      .forEach(o=>o.classList.remove("active"));
-  }).catch(()=>{
-    msg.textContent="⚠ Something went wrong.";
-    msg.style.color="#ff8a8a";
+    body:data,
+    mode:"no-cors"
   });
+
+  const saved = JSON.parse(localStorage.getItem("mySuggestions") || "[]");
+  saved.unshift(text);
+  localStorage.setItem("mySuggestions", JSON.stringify(saved));
+
+  msg.textContent = "✨ Suggestion sent!";
+  form.reset();
 });
