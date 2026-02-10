@@ -42,6 +42,30 @@ form.addEventListener("submit", e=>{
     body:data,
     mode:"no-cors"
   });
+  /* COLLAPSIBLE TYPE SELECT */
+const box = document.getElementById("typeSelect");
+const opts = document.getElementById("typeOptions");
+const output = document.getElementById("selectedType");
+const input = document.getElementById("typeInput");
+
+box.onclick = () => {
+  opts.style.display = opts.style.display === "block" ? "none" : "block";
+};
+
+opts.querySelectorAll("div").forEach(opt=>{
+  opt.onclick = () => {
+    output.textContent = opt.textContent;
+    input.value = opt.dataset.value;
+    opts.style.display = "none";
+  };
+});
+
+/* CLOSE ON OUTSIDE CLICK */
+document.addEventListener("click", e=>{
+  if(!box.contains(e.target) && !opts.contains(e.target)){
+    opts.style.display = "none";
+  }
+});
 
   const saved = JSON.parse(localStorage.getItem("mySuggestions") || "[]");
   saved.unshift(text);
