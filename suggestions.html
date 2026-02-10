@@ -12,36 +12,49 @@
 
 <canvas id="stars"></canvas>
 
-<header class="top-header">
-  <h1>Suggestions</h1>
-  <p>Help us improve BioQuiz 🚀</p>
-</header>
+<main class="page-center">
 
-<main class="suggestion-wrap">
+  <section class="suggestion-card">
 
-<form id="suggestionForm" class="suggestion-card">
+    <header class="card-header">
+      <h1>Suggestions</h1>
+      <p>Help us improve BioQuiz 🚀</p>
+    </header>
 
-  <label>
-    Type of Suggestion
-    <select name="type">
-      <option>Feature Request</option>
-      <option>Bug Report</option>
-      <option>Content Improvement</option>
-      <option>Other</option>
-    </select>
-  </label>
+    <form id="suggestionForm">
 
-  <label>
-    Your Suggestion
-    <textarea name="suggestion" required placeholder="Write your idea here..."></textarea>
-  </label>
+      <!-- TYPE -->
+      <div class="suggestion-type">
+        <label class="type-option">
+          Feature Request
+          <input type="radio" name="type" value="Feature Request" required>
+        </label>
 
-  <button type="submit">✨ Submit Suggestion</button>
-  <p class="note" id="message"></p>
+        <label class="type-option">
+          Bug Report
+          <input type="radio" name="type" value="Bug Report">
+        </label>
 
-</form>
+        <label class="type-option">
+          Content Improvement
+          <input type="radio" name="type" value="Content Improvement">
+        </label>
 
-<a href="my-suggestions.html" class="my-link">📂 My Suggestions</a>
+        <label class="type-option">
+          Other
+          <input type="radio" name="type" value="Other">
+        </label>
+      </div>
+
+      <!-- TEXT -->
+      <textarea name="suggestion" placeholder="Write your idea here..." required></textarea>
+
+      <button type="submit">✨ Submit Suggestion</button>
+      <p class="note" id="message"></p>
+
+    </form>
+
+  </section>
 
 </main>
 
