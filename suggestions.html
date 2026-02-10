@@ -13,40 +13,45 @@
 <canvas id="stars"></canvas>
 
 <header class="top-header">
-  <h1>SUGGESTIONS</h1>
-  <p>Help improve BioQuiz 🚀</p>
+  <h1>Suggestions</h1>
+  <p>Help us improve BioQuiz 🚀</p>
 </header>
 
 <main class="suggestion-wrap">
-  <form id="suggestionForm" class="suggestion-card">
 
-    <label class="fancy-label">Name <span>(optional)</span></label>
-    <input type="text" name="name">
+<form id="suggestionForm" class="suggestion-card">
 
-<label class="fancy-label">Suggestion Type</span></label>
+  <div class="section-title">Your Details</div>
 
-<div class="select-box" id="typeSelect">
-  <span id="selectedType">🚀 Select suggestion type</span>
-</div>
+  <label class="fancy-label">Name <span>(optional)</span></label>
+  <input type="text" name="name" placeholder="Anonymous explorer">
 
-<div class="select-options" id="typeOptions">
-  <div data-value="Feature Request">🚀 Feature Request</div>
-  <div data-value="Bug Report">🐞 Bug Report</div>
-  <div data-value="Content Improvement">📘 Content Improvement</div>
-  <div data-value="Other">✨ Other</div>
-</div>
+  <div class="section-title">Suggestion Type</div>
 
-<input type="hidden" name="type" id="typeInput" required>
+  <!-- ✅ OLD STYLE REAL DROPDOWN -->
+  <select name="type" required>
+    <option value="">Select suggestion type</option>
+    <option value="Feature Request">🚀 Feature Request</option>
+    <option value="Bug Report">🐞 Bug Report</option>
+    <option value="Content Improvement">📘 Content Improvement</option>
+    <option value="Other">✨ Other</option>
+  </select>
 
-    <label class="fancy-label">Your Suggestion</span></label>
-    <textarea name="suggestion" required placeholder="Write your idea here..."></textarea>
+  <div class="section-title">Your Suggestion</div>
 
-    <button type="submit">✨ Submit Suggestion</button>
-    <p id="message"></p>
+  <textarea
+    name="suggestion"
+    placeholder="Write your idea, feedback, or issue here..."
+    required></textarea>
 
-    <a class="my-link" href="my-suggestions.html">📂 My Suggestions</a>
+  <button type="submit">✨ Submit Suggestion</button>
 
-  </form>
+  <p class="note" id="message"></p>
+
+  <a href="my-suggestions.html" class="my-link">📂 My Suggestions</a>
+
+</form>
+
 </main>
 
 <script src="js/suggestions.js"></script>
