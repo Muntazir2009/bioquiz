@@ -22,69 +22,55 @@
 
   <form id="suggestionForm" class="suggestion-card">
   
-  <label>
-    Name (optional)
-    <input type="text" name="name">
-  </label>
+    <label>
+      Name (optional)
+      <input type="text" name="name">
+    </label>
 
-  <label>
-    Class / Grade (optional)
-    <input type="text" name="grade">
-  </label>
+    <label>
+      Class / Grade (optional)
+      <input type="text" name="grade">
+    </label>
 
-  <label>
-    Type of Suggestion
-    <select name="type">
-      <option>Feature Request</option>
-      <option>Bug Report</option>
-      <option>Content Improvement</option>
-      <option>Other</option>
-    </select>
-  </label>
+    <label>
+      Type of Suggestion
+      <select name="type">
+        <option>Feature Request</option>
+        <option>Bug Report</option>
+        <option>Content Improvement</option>
+        <option>Other</option>
+      </select>
+    </label>
 
-  <label>
-    Your Mood
-    <div class="emoji-row">
-      <span class="emoji">😐</span>
-      <span class="emoji">🙂</span>
-      <span class="emoji">😍</span>
-      <span class="emoji">🤯</span>
-    </div>
-    <input type="hidden" name="mood" id="mood">
-  </label>
+    <label>
+      Your Mood
+      <div class="emoji-row">
+        <span class="emoji">😐</span>
+        <span class="emoji">🙂</span>
+        <span class="emoji">😍</span>
+        <span class="emoji">🤯</span>
+      </div>
+      <input type="hidden" name="mood" id="mood">
+    </label>
 
-  <label>
-    Your Suggestion
-    <textarea name="suggestion" required></textarea>
-  </label>
+    <label>
+      Your Suggestion
+      <textarea name="suggestion" required></textarea>
+    </label>
 
-  <input type="hidden" name="device" id="device">
+    <input type="hidden" name="device" id="device">
 
-  <button type="submit">✨ Submit Suggestion</button>
-  <p class="note" id="message"></p>
+    <button type="submit">✨ Submit Suggestion</button>
+    <p class="note" id="message"></p>
+
   </form>
 
 </main>
 
 <script>
-  <script>
-/* EMOJI SELECT */
-const emojis = document.querySelectorAll(".emoji");
-const moodInput = document.getElementById("mood");
-
-emojis.forEach(e=>{
-  e.onclick = ()=>{
-    emojis.forEach(x=>x.classList.remove("active"));
-    e.classList.add("active");
-    moodInput.value = e.textContent;
-  };
-});
-
-/* DEVICE INFO */
-document.getElementById("device").value =
-  navigator.userAgent.includes("Mobile") ? "Mobile" : "Desktop";
-</script>
-/* ⭐ STAR BACKGROUND */
+/* ===============================
+   🌟 STAR BACKGROUND
+=============================== */
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
@@ -93,50 +79,82 @@ function resize(){
   canvas.height = innerHeight;
 }
 resize();
-window.onresize = resize;
+window.addEventListener("resize", resize);
 
-const stars = Array.from({length:140}, () => ({
+const stars = Array.from({ length: 140 }, () => ({
   x: Math.random() * innerWidth,
   y: Math.random() * innerHeight,
   r: Math.random() * 1.2,
-  o: Math.random()
+  o: Math.random(),
+  s: Math.random() * 0.2 + 0.05
 }));
 
-function draw(){
+function animateStars(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  stars.forEach(s => {
-    ctx.globalAlpha = s.o;
+  stars.forEach(star=>{
+    star.y += star.s;
+    if(star.y > canvas.height) star.y = 0;
+    ctx.globalAlpha = star.o;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.arc(star.x, star.y, star.r, 0, Math.PI*2);
     ctx.fillStyle = "#fff";
     ctx.fill();
   });
-  requestAnimationFrame(draw);
+  requestAnimationFrame(animateStars);
 }
-draw();
+animateStars();
 
-/* 📨 FORMSPREE AJAX SUBMIT */
+/* ===============================
+   😄 EMOJI SELECT
+=============================== */
+const emojis = document.querySelectorAll(".emoji");
+const moodInput = document.getElementById("mood");
+
+emojis.forEach(e=>{
+  e.addEventListener("click", ()=>{
+    emojis.forEach(x=>x.classList.remove("active"));
+    e.classList.add("active");
+    moodInput.value = e.textContent;
+  });
+});
+
+/* ===============================
+   📱 DEVICE INFO
+=============================== */
+document.getElementById("device").value =
+  /Mobile|Android|iPhone/i.test(navigator.userAgent)
+  ? "Mobile"
+  : "Desktop";
+
+/* ===============================
+   📨 FORMSPREE SUBMIT (SMOOTH)
+=============================== */
 const form = document.getElementById("suggestionForm");
 const msg = document.getElementById("message");
 
-form.addEventListener("submit", e => {
+form.addEventListener("submit", e=>{
   e.preventDefault();
 
-  const data = new FormData(form);
+  msg.textContent = "Sending...";
+  msg.style.color = "#6fb6ff";
 
-  fetch(
-    "https://formspree.io/f/xqedearo",
-    {
-      method: "POST",
-      mode: "no-cors",
-      body: data
+  fetch("https://formspree.io/f/xqedearo", {
+    method: "POST",
+    body: new FormData(form),
+    headers: { "Accept": "application/json" }
+  })
+  .then(res=>{
+    if(res.ok){
+      msg.textContent = "✨ Thank you! Suggestion received.";
+      msg.style.color = "#6dffcc";
+      form.reset();
+      emojis.forEach(e=>e.classList.remove("active"));
+    }else{
+      throw new Error();
     }
-  ).then(() => {
-    msg.textContent = "✨ Thank you! Your suggestion has been submitted.";
-    msg.style.color = "#6dffcc";
-    form.reset();
-  }).catch(() => {
-    msg.textContent = "⚠ Oops! Something went wrong. Try again.";
+  })
+  .catch(()=>{
+    msg.textContent = "⚠ Something went wrong. Try again.";
     msg.style.color = "#ff8a8a";
   });
 });
