@@ -1,62 +1,60 @@
-const WORKER_URL = "https://bioquiz-suggestion.killermunu.workers.dev";
+const container = document.getElementById("list");
 
-const listEl = document.getElementById("list");
-const statsEl = document.getElementById("stats");
+async function loadSuggestions() {
 
-async function loadSuggestions(){
-  try{
-    const res = await fetch(WORKER_URL);
+  container.innerHTML = "<p style='text-align:center'>Loading...</p>";
+
+  try {
+    const res = await fetch("https://bioquiz-suggestion.killermunu.workers.dev");
     const data = await res.json();
 
-    if(!data.length){
-      listEl.innerHTML = '<div class="empty">No suggestions yet.</div>';
-      statsEl.textContent = "0 Suggestions";
+    if (!Array.isArray(data) || data.length === 0) {
+      container.innerHTML = "<p style='text-align:center'>No suggestions yet.</p>";
       return;
     }
 
-    // Sort newest first
-    data.sort((a,b)=> new Date(b.time) - new Date(a.time));
-
-    statsEl.textContent = data.length + " Suggestions";
-    listEl.innerHTML = "";
+    container.innerHTML = "";
 
     data.forEach(item => {
 
       const card = document.createElement("div");
-      card.className = "card";
-
-      const date = new Date(item.time);
+      card.className = "suggestion-card";
 
       card.innerHTML = `
-        <div class="card-top">
-          <div class="type">${item.type}</div>
-          <div class="time">${date.toLocaleString()}</div>
+        <div class="top-row">
+          <span class="badge">${item.type}</span>
+          <span class="date">${new Date(item.time).toLocaleString()}</span>
         </div>
 
-        <div class="name">${item.name}</div>
-        <div class="text">${item.suggestion}</div>
+        <p class="message">${item.suggestion}</p>
+        <p class="author">— ${item.name}</p>
 
-        <button class="delete-btn">Delete</button>
+        <button class="delete-btn" data-id="${item.id}">
+          Delete
+        </button>
       `;
 
-      card.querySelector(".delete-btn").onclick = async () => {
-
-        if(!confirm("Delete this suggestion?")) return;
-
-        await fetch(WORKER_URL + "?id=" + item.id, {
-          method:"DELETE"
-        });
-
-        loadSuggestions();
-      };
-
-      listEl.appendChild(card);
+      container.appendChild(card);
     });
 
-  }catch(err){
-    listEl.innerHTML = '<div class="empty">Error loading suggestions.</div>';
-    statsEl.textContent = "Error";
+  } catch (err) {
+    container.innerHTML = "<p style='text-align:center;color:red'>Failed to load.</p>";
   }
 }
+
+document.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("delete-btn")) return;
+
+  const id = e.target.getAttribute("data-id");
+
+  if (!confirm("Delete this suggestion?")) return;
+
+  await fetch(
+    `https://bioquiz-suggestion.killermunu.workers.dev?id=${id}`,
+    { method: "DELETE" }
+  );
+
+  loadSuggestions();
+});
 
 loadSuggestions();
