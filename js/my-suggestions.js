@@ -1,12 +1,23 @@
 const listEl = document.getElementById("list");
+const toast = document.getElementById("toast");
 
-async function loadSuggestions() {
+function showToast(message){
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
 
-  try {
+async function loadSuggestions(){
+
+  listEl.innerHTML = `<div class="loading">Loading suggestions...</div>`;
+
+  try{
     const res = await fetch("https://bioquiz-suggestion.killermunu.workers.dev");
     const data = await res.json();
 
-    if (!data.length) {
+    if(!data.length){
       listEl.innerHTML = `<div class="loading">No suggestions yet.</div>`;
       return;
     }
@@ -18,25 +29,25 @@ async function loadSuggestions() {
       const card = document.createElement("div");
       card.className = "card";
 
-      const date = new Date(item.time).toLocaleString();
+      const date = item.time
+        ? new Date(item.time).toLocaleString()
+        : "Unknown date";
 
       card.innerHTML = `
-        <div class="card-top">
-          <div class="tag">${item.type}</div>
-          <div class="date">${date}</div>
-        </div>
+        <div class="badge">${item.type || "Other"}</div>
+        <div class="date">${date}</div>
 
-        <div class="suggestion-text">
-          ${item.suggestion}
+        <div class="text">
+          ${item.suggestion || ""}
         </div>
 
         <div class="author">
-          — ${item.name}
+          — ${item.name || "Anonymous"}
         </div>
 
         <button class="delete-btn" data-id="${item.id}">
-  🗑
-</button>
+          🗑
+        </button>
       `;
 
       listEl.appendChild(card);
@@ -44,23 +55,30 @@ async function loadSuggestions() {
 
     attachDeleteEvents();
 
-  } catch (err) {
+  }catch(err){
     listEl.innerHTML = `<div class="loading">Failed to load suggestions.</div>`;
   }
 }
 
-function attachDeleteEvents() {
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
+function attachDeleteEvents(){
+  document.querySelectorAll(".delete-btn").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
 
       const id = btn.getAttribute("data-id");
 
-      await fetch(
+      if(!confirm("Delete this suggestion?")) return;
+
+      const res = await fetch(
         `https://bioquiz-suggestion.killermunu.workers.dev?id=${id}`,
-        { method: "DELETE" }
+        { method:"DELETE" }
       );
 
-      loadSuggestions();
+      if(res.ok){
+        showToast("Suggestion deleted");
+        loadSuggestions();
+      }else{
+        showToast("Delete failed");
+      }
     });
   });
 }
