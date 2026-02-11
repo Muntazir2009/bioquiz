@@ -3,37 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Community Suggestions • BioQuiz</title>
+<title>All Suggestions • BioQuiz</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/my-suggestions.css">
 </head>
 
 <body>
 
-<header class="header">
-  <h1>Community Suggestions</h1>
-  <p id="count">Loading...</p>
+<header class="top-header">
+  <h1>ALL SUGGESTIONS</h1>
+  <div class="stats" id="stats">Loading...</div>
 </header>
 
-<section class="controls">
-  <input type="text" id="search" placeholder="Search suggestions...">
-  
-  <select id="filter">
-    <option value="all">All Types</option>
-    <option value="Bug Report">Bug Reports</option>
-    <option value="Feature Request">Feature Requests</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <select id="sort">
-    <option value="new">Newest First</option>
-    <option value="old">Oldest First</option>
-  </select>
-</section>
-
-<main class="container">
-  <div id="list"></div>
+<main class="wrap">
+  <div id="list" class="grid"></div>
 </main>
 
 <script src="js/my-suggestions.js"></script>
