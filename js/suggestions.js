@@ -4,7 +4,7 @@
 const canvas = document.getElementById("stars");
 const ctx = canvas.getContext("2d");
 
-function resize(){
+function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
@@ -19,8 +19,9 @@ const stars = Array.from({ length: 160 }, () => ({
   s: Math.random() * 0.2 + 0.05
 }));
 
-function animateStars(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function animateStars() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   stars.forEach(star => {
     ctx.globalAlpha = star.o;
     ctx.beginPath();
@@ -29,20 +30,21 @@ function animateStars(){
     ctx.fill();
 
     star.y += star.s;
-    if(star.y > canvas.height){
+    if (star.y > canvas.height) {
       star.y = 0;
       star.x = Math.random() * canvas.width;
     }
   });
+
   requestAnimationFrame(animateStars);
 }
 animateStars();
 
 /* ===============================
-   📨 FORMSPREE SUBMIT (FIXED)
+   📨 CLOUDFLARE WORKER SUBMIT
 =============================== */
 const form = document.getElementById("suggestionForm");
-const msg  = document.getElementById("message");
+const msg = document.getElementById("message");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -50,27 +52,23 @@ form.addEventListener("submit", async (e) => {
   msg.textContent = "Submitting...";
   msg.style.color = "#ffb3b3";
 
-  try{
+  try {
     const res = await fetch(
-      "https://formspree.io/f/xqedearo",
+      "https://bioquiz-suggestion.killermunu.workers.dev",
       {
         method: "POST",
-        headers: {
-          "Accept": "application/json"
-        },
         body: new FormData(form)
       }
     );
 
-    if(res.ok){
-      msg.textContent = "✨ Thank you! Your suggestion has been sent.";
-      msg.style.color = "#6dffcc";
-      form.reset();
-    } else {
-      throw new Error("Formspree error");
-    }
-  } catch(err){
-    msg.textContent = "⚠ Something went wrong. Try again.";
+    if (!res.ok) throw new Error("Worker failed");
+
+    msg.textContent = "✨ Thank you! Your suggestion has been saved.";
+    msg.style.color = "#6dffcc";
+    form.reset();
+
+  } catch (err) {
+    msg.textContent = "⚠ Submission failed. Please try again.";
     msg.style.color = "#ff8a8a";
   }
 });
