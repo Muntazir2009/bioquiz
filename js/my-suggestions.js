@@ -35,8 +35,8 @@ async function loadSuggestions() {
         </div>
 
         <button class="delete-btn" data-id="${item.id}">
-          Delete
-        </button>
+  🗑
+</button>
       `;
 
       listEl.appendChild(card);
