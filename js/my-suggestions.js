@@ -1,39 +1,64 @@
-const container = document.getElementById("suggestions-container");
+const container = document.getElementById("list");
+
+const WORKER_URL = "https://bioquiz-suggestion.killermunu.workers.dev";
 
 async function loadSuggestions() {
+  container.innerHTML = "<p style='text-align:center;opacity:.6'>Loading...</p>";
+
   try {
-    const res = await fetch(
-      "https://bioquiz-suggestion.killermunu.workers.dev/"
-    );
+    const res = await fetch(WORKER_URL);
+
+    if (!res.ok) throw new Error("Failed to fetch");
 
     const data = await res.json();
 
-    container.innerHTML = "";
-
-    if (!data.length) {
-      container.innerHTML = "<p>No suggestions yet.</p>";
+    if (!Array.isArray(data) || data.length === 0) {
+      container.innerHTML = `
+        <p style="text-align:center;opacity:.6">
+          No suggestions yet.
+        </p>
+      `;
       return;
     }
 
-    data.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "suggestion-item";
+    // Sort newest first
+    data.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-      const date = new Date(item.time);
+    container.innerHTML = "";
+
+    data.forEach(item => {
+      // Skip invalid entries
+      if (!item.name || !item.type || !item.suggestion || !item.time) return;
+
+      const card = document.createElement("div");
+      card.className = "suggestion-card";
 
       card.innerHTML = `
-        <h3>${item.type}</h3>
-        <p>${item.suggestion}</p>
-        <small>
-          By ${item.name} • ${date.toLocaleString()}
-        </small>
+        <div class="suggestion-top">
+          <span class="suggestion-type">${item.type}</span>
+          <span class="suggestion-date">
+            ${new Date(item.time).toLocaleString()}
+          </span>
+        </div>
+
+        <div class="suggestion-body">
+          <p>${item.suggestion}</p>
+        </div>
+
+        <div class="suggestion-footer">
+          — ${item.name || "Anonymous"}
+        </div>
       `;
 
       container.appendChild(card);
     });
 
   } catch (err) {
-    container.innerHTML = "<p>Failed to load suggestions.</p>";
+    container.innerHTML = `
+      <p style="text-align:center;color:#ff6b6b">
+        Failed to load suggestions.
+      </p>
+    `;
   }
 }
 
