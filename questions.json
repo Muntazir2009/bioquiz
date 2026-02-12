@@ -22,6 +22,281 @@
   "difficulty": "Hard"
 },
 {
+  "question": "Which of the following organelles shows structural similarity with prokaryotic cells?",
+  "options": [
+    "Golgi apparatus",
+    "Mitochondria",
+    "Lysosome",
+    "Centrosome"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following is NOT a component of the endomembrane system?",
+  "options": [
+    "Endoplasmic reticulum",
+    "Golgi apparatus",
+    "Lysosome",
+    "Mitochondria"
+  ],
+  "answer": 3,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following statements about prokaryotic ribosomes is correct?",
+  "options": [
+    "They are 80S and present in cytoplasm",
+    "They are 70S and made of 50S and 30S subunits",
+    "They are 60S and 40S subunits",
+    "They are membrane bound"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "The site of oxidative phosphorylation in mitochondria is:",
+  "options": [
+    "Outer membrane",
+    "Matrix",
+    "Cristae",
+    "Intermembrane space"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "The enzyme RuBisCO is located in:",
+  "options": [
+    "Grana",
+    "Thylakoid membrane",
+    "Stroma",
+    "Cristae"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which cell organelle is responsible for acrosome formation in sperm?",
+  "options": [
+    "Lysosome",
+    "Golgi apparatus",
+    "Mitochondria",
+    "Rough ER"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following statements is correct regarding microtubules?",
+  "options": [
+    "Made of actin",
+    "Made of tubulin",
+    "Present only in plant cells",
+    "Found inside lysosomes"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following is true about the nuclear envelope?",
+  "options": [
+    "Single membrane",
+    "Triple membrane",
+    "Double membrane with pores",
+    "Non-porous structure"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following is absent in mature RBCs of mammals?",
+  "options": [
+    "Mitochondria",
+    "Ribosomes",
+    "Nucleus",
+    "All of the above"
+  ],
+  "answer": 3,
+  "difficulty": "Hard"
+},
+{
+  "question": "In plant cells, the secondary cell wall is deposited:",
+  "options": [
+    "Outside primary wall",
+    "Between plasma membrane and primary wall",
+    "Between middle lamella and primary wall",
+    "Inside primary wall"
+  ],
+  "answer": 3,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which process requires ATP directly?",
+  "options": [
+    "Facilitated diffusion",
+    "Osmosis",
+    "Active transport",
+    "Simple diffusion"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following statements about lysosomes is incorrect?",
+  "options": [
+    "They contain hydrolytic enzymes",
+    "They are acidic inside",
+    "They are formed from ER directly",
+    "They perform autophagy"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "The fluidity of plasma membrane increases with:",
+  "options": [
+    "Increase in saturated fatty acids",
+    "Increase in cholesterol at low temperature",
+    "Increase in unsaturated fatty acids",
+    "Decrease in temperature"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which cytoskeletal element is involved in muscle contraction?",
+  "options": [
+    "Microtubules",
+    "Intermediate filaments",
+    "Microfilaments",
+    "Centrioles"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which organelle contains catalase enzyme?",
+  "options": [
+    "Lysosome",
+    "Peroxisome",
+    "Golgi body",
+    "Rough ER"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "The '9 + 2' arrangement of microtubules is seen in:",
+  "options": [
+    "Centrioles",
+    "Cilia and flagella",
+    "Nucleus",
+    "Ribosomes"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following is true about prokaryotic DNA?",
+  "options": [
+    "Linear and associated with histones",
+    "Circular and naked",
+    "Enclosed in nuclear membrane",
+    "Present inside mitochondria"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following organelles participates in photorespiration?",
+  "options": [
+    "Mitochondria and peroxisomes",
+    "Golgi and ER",
+    "Lysosome and ribosome",
+    "Nucleus and vacuole"
+  ],
+  "answer": 0,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following statements about vacuoles is correct?",
+  "options": [
+    "Bounded by plasma membrane",
+    "Bounded by tonoplast",
+    "Absent in plant cells",
+    "Contain ribosomes"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "The number of mitochondria in a cell depends upon:",
+  "options": [
+    "Size of nucleus",
+    "Energy requirement of cell",
+    "Number of chromosomes",
+    "Presence of vacuole"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which structure ensures adhesion between adjacent plant cells?",
+  "options": [
+    "Primary wall",
+    "Secondary wall",
+    "Middle lamella",
+    "Tonoplast"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which organelle shows cis and trans faces?",
+  "options": [
+    "Lysosome",
+    "Golgi apparatus",
+    "Rough ER",
+    "Mitochondria"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following is NOT found in chloroplast?",
+  "options": [
+    "Stroma",
+    "Thylakoids",
+    "Cristae",
+    "Grana"
+  ],
+  "answer": 2,
+  "difficulty": "Hard"
+},
+{
+  "question": "In Gram-positive bacteria, the cell wall is:",
+  "options": [
+    "Thin and contains lipopolysaccharide",
+    "Thick and rich in peptidoglycan",
+    "Absent",
+    "Made of cellulose"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
+  "question": "Which of the following processes occurs in the stroma of chloroplast?",
+  "options": [
+    "Light reaction",
+    "Calvin cycle",
+    "Electron transport chain",
+    "Photolysis"
+  ],
+  "answer": 1,
+  "difficulty": "Hard"
+},
+{
   "question": "Which of the following statements about prokaryotic ribosomes is correct?",
   "options": [
     "They are 80S and present in cytoplasm",
