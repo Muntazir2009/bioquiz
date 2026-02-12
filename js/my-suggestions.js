@@ -1,20 +1,43 @@
+const API = "https://bioquiz-suggestion.killermunu.workers.dev";
+
 const listEl = document.getElementById("list");
 const toast = document.getElementById("toast");
 
+let adminPassword = sessionStorage.getItem("adminPass") || null;
+
+/* ===============================
+   🔔 TOAST
+=============================== */
 function showToast(message){
   toast.textContent = message;
   toast.classList.add("show");
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2500);
+  setTimeout(() => toast.classList.remove("show"), 2500);
 }
 
+/* ===============================
+   🔐 ASK PASSWORD (ONCE)
+=============================== */
+function getPassword(){
+  if(adminPassword) return adminPassword;
+
+  const pass = prompt("Enter admin password to delete:");
+  if(pass){
+    adminPassword = pass;
+    sessionStorage.setItem("adminPass", pass);
+    return pass;
+  }
+  return null;
+}
+
+/* ===============================
+   📥 LOAD SUGGESTIONS
+=============================== */
 async function loadSuggestions(){
 
   listEl.innerHTML = `<div class="loading">Loading suggestions...</div>`;
 
   try{
-    const res = await fetch("https://bioquiz-suggestion.killermunu.workers.dev");
+    const res = await fetch(API);
     const data = await res.json();
 
     if(!data.length){
@@ -60,6 +83,9 @@ async function loadSuggestions(){
   }
 }
 
+/* ===============================
+   🗑 DELETE WITH PASSWORD
+=============================== */
 function attachDeleteEvents(){
   document.querySelectorAll(".delete-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
@@ -68,15 +94,32 @@ function attachDeleteEvents(){
 
       if(!confirm("Delete this suggestion?")) return;
 
-      const res = await fetch(
-        `https://bioquiz-suggestion.killermunu.workers.dev?id=${id}`,
-        { method:"DELETE" }
-      );
+      const password = getPassword();
+      if(!password){
+        showToast("Password required");
+        return;
+      }
 
-      if(res.ok){
-        showToast("Suggestion deleted");
-        loadSuggestions();
-      }else{
+      try{
+        const res = await fetch(`${API}?id=${id}`, {
+          method: "DELETE",
+          headers: {
+            "X-Admin-Password": password
+          }
+        });
+
+        const result = await res.json();
+
+        if(result.success){
+          showToast("Suggestion deleted");
+          loadSuggestions();
+        }else{
+          showToast("Wrong password");
+          sessionStorage.removeItem("adminPass");
+          adminPassword = null;
+        }
+
+      }catch(err){
         showToast("Delete failed");
       }
     });
