@@ -1,140 +1,57 @@
-const queryInput = document.getElementById("query");
-const searchBtn = document.getElementById("searchBtn");
-const clearBtn = document.getElementById("clearBtn");
-const resultDiv = document.getElementById("result");
-const clockEl = document.getElementById("clock");
+let currentTopic = "";
+let currentText = "";
 
-let controller = null;
-const cache = new Map();
-let history = [];
+async function searchTopic() {
+  const query = document.getElementById("query").value;
+  currentTopic = query;
 
-/* LIVE CLOCK */
-setInterval(()=>{
-  clockEl.textContent = new Date().toLocaleTimeString();
-},1000);
+  const res = await fetch(
+    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
+  );
+  const data = await res.json();
 
-/* EVENTS */
-searchBtn.onclick = execute;
-clearBtn.onclick = ()=> resultDiv.innerHTML = "";
+  currentText = data.extract;
 
-queryInput.addEventListener("keypress", e=>{
-  if(e.key==="Enter") execute();
-});
-
-/* MAIN EXECUTION */
-async function execute(){
-  const query = queryInput.value.trim();
-  if(!query) return;
-
-  if(handleCommand(query)) return;
-
-  history.push(query);
-
-  if(cache.has(query)){
-    render(cache.get(query));
-    return;
-  }
-
-  if(controller) controller.abort();
-  controller = new AbortController();
-
-  resultDiv.innerHTML = `<div class="loading">Processing query...</div>`;
-
-  try{
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
-      {signal:controller.signal}
-    );
-
-    if(!res.ok) throw new Error();
-
-    const data = await res.json();
-    cache.set(query,data);
-    render(data);
-
-  }catch{
-    resultDiv.innerHTML = "No result found.";
-  }
+  document.getElementById("result").innerHTML =
+    `<h2>${data.title}</h2><p>${data.extract}</p>`;
 }
 
-/* COMMANDS */
-function handleCommand(cmd){
-  cmd = cmd.toLowerCase();
-
-  if(cmd==="clear"){
-    resultDiv.innerHTML="";
-    return true;
-  }
-
-  if(cmd==="history"){
-    resultDiv.innerHTML = history.map(h=>`> ${h}`).join("<br>");
-    return true;
-  }
-
-  if(cmd==="help"){
-    resultDiv.innerHTML = `
-      Commands:<br>
-      help<br>
-      clear<br>
-      history<br>
-      about
-    `;
-    return true;
-  }
-
-  if(cmd==="about"){
-    resultDiv.innerHTML = "Mission Intelligence Panel v3.0";
-    return true;
-  }
-
-  return false;
+function openModeSelector() {
+  document.getElementById("modeModal").classList.remove("hidden");
 }
 
-/* RENDER RESULT */
-function render(data){
-  const words = data.extract.split(" ").length;
-  const readingTime = Math.ceil(words/200);
+function startQuiz(mode) {
+  document.getElementById("modeModal").classList.add("hidden");
 
-  let html = `<h2>${data.title}</h2>`;
-  html += `<p>${data.extract}</p>`;
+  const questions = generateConceptQuiz(currentText, mode);
 
-  if(data.thumbnail){
-    html += `<img src="${data.thumbnail.source}">`;
-  }
+  sessionStorage.setItem("generatedQuiz", JSON.stringify({
+    topic: currentTopic,
+    mode,
+    questions
+  }));
 
-  html += `
-    <div class="meta">
-      Words: ${words} | Reading time: ${readingTime} min
-    </div>
-  `;
-
-  html += `
-    <div class="action-bar">
-      <button onclick="copyText()">Copy</button>
-      <button onclick="speakText()">Speak</button>
-      <button onclick="downloadText('${data.title}')">Download</button>
-      <button onclick="window.open('https://en.wikipedia.org/wiki/${data.title}','_blank')">Full Article</button>
-    </div>
-  `;
-
-  resultDiv.innerHTML = html;
-
-  window.currentText = data.extract;
+  window.location.href = "quiz.html";
 }
 
-/* ACTION FUNCTIONS */
-function copyText(){
-  navigator.clipboard.writeText(window.currentText);
-}
+// ===== Concept-based Generator =====
+function generateConceptQuiz(text, mode) {
+  const sentences = text.split(". ").filter(s => s.length > 50);
 
-function speakText(){
-  speechSynthesis.speak(new SpeechSynthesisUtterance(window.currentText));
-}
+  return sentences.slice(0, 5).map(sentence => {
+    const words = sentence.split(" ");
+    const correct = words[Math.floor(Math.random() * words.length)];
 
-function downloadText(title){
-  const blob = new Blob([window.currentText],{type:"text/plain"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = title + ".txt";
-  a.click();
+    const options = new Set([correct]);
+
+    while (options.size < 4) {
+      options.add(words[Math.floor(Math.random() * words.length)]);
+    }
+
+    return {
+      question: sentence.replace(correct, "_____"),
+      options: Array.from(options),
+      answer: Array.from(options).indexOf(correct)
+    };
+  });
 }
