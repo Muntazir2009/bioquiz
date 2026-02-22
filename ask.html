@@ -3,43 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cosmic Knowledge • BioQuiz</title>
+<title>Knowledge Console</title>
 <link rel="stylesheet" href="css/ask.css">
 </head>
 <body>
 
-<canvas id="stars"></canvas>
+<div class="grid-bg"></div>
 
-<main class="ask-wrap">
+<div class="console">
 
-  <div class="glass-panel">
+  <div class="console-header">
+    <span>Knowledge Console v2.0</span>
+  </div>
 
-    <h1 class="title">COSMIC KNOWLEDGE</h1>
-    <p class="subtitle">Search anything. Learn instantly.</p>
+  <div class="console-body">
 
-    <div class="search-box">
-      <input type="text" id="query" placeholder="Type a topic (e.g. Mitochondria)">
-      <button id="searchBtn">Search</button>
+    <div class="input-line">
+      <span class="prompt">></span>
+      <input id="query" type="text" placeholder="Enter topic...">
+      <span class="cursor"></span>
     </div>
 
-    <div class="quick-chips">
-      <span class="chip">Cell</span>
-      <span class="chip">Mitochondria</span>
-      <span class="chip">Ribosome</span>
-      <span class="chip">Photosynthesis</span>
-    </div>
-
-    <div class="history-section">
-      <h3>Recent Searches</h3>
-      <div id="history"></div>
-      <button id="clearHistory" class="clear-btn">Clear History</button>
-    </div>
+    <button id="searchBtn" class="search-btn">EXECUTE</button>
 
     <div id="result" class="result"></div>
 
   </div>
 
-</main>
+</div>
 
 <script src="js/ask.js"></script>
 </body>
