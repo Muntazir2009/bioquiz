@@ -1,0 +1,94 @@
+*{
+  box-sizing:border-box;
+  font-family:Inter,system-ui,sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(900px 700px at 20% 10%, #101a3a, transparent 60%),
+    radial-gradient(900px 600px at 80% 90%, #1b0f3f, transparent 60%),
+    linear-gradient(180deg,#05070f,#04060c);
+  color:#fff;
+  overflow-x:hidden;
+}
+
+/* Center Layout */
+.ask-wrap{
+  max-width:800px;
+  margin:auto;
+  padding:60px 20px;
+  text-align:center;
+}
+
+.title{
+  font-size:2.4rem;
+  margin-bottom:30px;
+  letter-spacing:.1em;
+}
+
+/* Search Box */
+.search-box{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:30px;
+}
+
+.search-box input{
+  flex:1;
+  max-width:500px;
+  padding:16px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  background:#0d1126;
+  color:#fff;
+  font-size:1rem;
+}
+
+.search-box button{
+  padding:16px 24px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  background:linear-gradient(135deg,#3b6cff,#7a5cff);
+  color:#fff;
+}
+
+/* Result Card */
+.result{
+  margin-top:20px;
+  text-align:left;
+}
+
+.card{
+  background:rgba(255,255,255,.05);
+  padding:25px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 0 40px rgba(0,0,0,.5);
+}
+
+.card img{
+  max-width:200px;
+  float:right;
+  margin-left:20px;
+  border-radius:12px;
+}
+
+.card h2{
+  margin-top:0;
+}
+
+.card a{
+  color:#6d9dff;
+  text-decoration:none;
+}
+
+/* Loading */
+.loading{
+  opacity:.6;
+  font-size:1rem;
+}
