@@ -1,52 +1,92 @@
+/* ================= DOM ================= */
+
 const queryInput = document.getElementById("query");
-const searchBtn = document.getElementById("searchBtn");
-const clearBtn = document.getElementById("clearBtn");
-const resultDiv = document.getElementById("result");
-const clockEl = document.getElementById("clock");
+const searchBtn  = document.getElementById("searchBtn");
+const clearBtn   = document.getElementById("clearBtn");
+const resultDiv  = document.getElementById("result");
+const clockEl    = document.getElementById("clock");
+const themeSwitcher = document.getElementById("themeSwitcher");
+
+/* ================= STATE ================= */
 
 let controller = null;
 const cache = new Map();
 let history = [];
-let historyIndex = -1;
+let voices = [];
 
-/* LIVE CLOCK */
+/* ================= LIVE CLOCK ================= */
+
 setInterval(()=>{
   clockEl.textContent = new Date().toLocaleTimeString();
 },1000);
 
-/* EVENTS */
+/* ================= THEME SYSTEM ================= */
+
+const themes = {
+  blue:{
+    primary:"#00c8ff",
+    text:"#8fdfff",
+    glow:"rgba(0,200,255,.25)",
+    soft:"rgba(0,200,255,.35)"
+  },
+  green:{
+    primary:"#00ff88",
+    text:"#aaffdd",
+    glow:"rgba(0,255,150,.25)",
+    soft:"rgba(0,255,150,.35)"
+  },
+  amber:{
+    primary:"#ffb300",
+    text:"#ffd580",
+    glow:"rgba(255,179,0,.25)",
+    soft:"rgba(255,179,0,.35)"
+  },
+  red:{
+    primary:"#ff3c3c",
+    text:"#ffaaaa",
+    glow:"rgba(255,60,60,.25)",
+    soft:"rgba(255,60,60,.35)"
+  }
+};
+
+function applyTheme(name){
+  const t = themes[name];
+  document.documentElement.style.setProperty("--primary", t.primary);
+  document.documentElement.style.setProperty("--text", t.text);
+  document.documentElement.style.setProperty("--glow", t.glow);
+  document.documentElement.style.setProperty("--primary-soft", t.soft);
+  localStorage.setItem("terminalTheme", name);
+}
+
+if(themeSwitcher){
+  themeSwitcher.addEventListener("change", e=>{
+    applyTheme(e.target.value);
+  });
+
+  const savedTheme = localStorage.getItem("terminalTheme") || "blue";
+  themeSwitcher.value = savedTheme;
+  applyTheme(savedTheme);
+}
+
+/* ================= EVENTS ================= */
+
 searchBtn.onclick = execute;
-clearBtn.onclick = ()=> resultDiv.innerHTML = "";
+clearBtn.onclick  = ()=> resultDiv.innerHTML = "";
 
-queryInput.addEventListener("keydown", e=>{
+queryInput.addEventListener("keypress", e=>{
   if(e.key==="Enter") execute();
-
-  if(e.key==="ArrowUp"){
-    if(historyIndex > 0){
-      historyIndex--;
-      queryInput.value = history[historyIndex];
-    }
-  }
-
-  if(e.key==="ArrowDown"){
-    if(historyIndex < history.length-1){
-      historyIndex++;
-      queryInput.value = history[historyIndex];
-    } else {
-      queryInput.value = "";
-    }
-  }
 });
 
-/* MAIN EXECUTION */
+/* ================= MAIN EXECUTION ================= */
+
 async function execute(){
+
   const query = queryInput.value.trim();
   if(!query) return;
 
   if(handleCommand(query)) return;
 
   history.push(query);
-  historyIndex = history.length;
 
   if(cache.has(query)){
     render(cache.get(query));
@@ -56,97 +96,100 @@ async function execute(){
   if(controller) controller.abort();
   controller = new AbortController();
 
-  resultDiv.innerHTML = `<div class="loading">Accessing knowledge network...</div>`;
+  resultDiv.innerHTML = `<div class="loading">Processing query...</div>`;
 
   try{
-    const data = await fetchWikipedia(query);
-    cache.set(query,data);
-    render(data);
+
+    /* PRIMARY SOURCE — WIKIPEDIA */
+    const wikiRes = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
+      { signal:controller.signal }
+    );
+
+    if(wikiRes.ok){
+      const data = await wikiRes.json();
+      cache.set(query,data);
+      render(data);
+      return;
+    }
+
+    throw new Error("Wiki failed");
+
   }catch{
+
     try{
-      const backup = await fetchDuckDuckGo(query);
-      render(backup);
+
+      /* BACKUP SOURCE — DuckDuckGo Instant Answer */
+      const ddgRes = await fetch(
+        `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`
+      );
+
+      const ddgData = await ddgRes.json();
+
+      if(ddgData.Abstract){
+        const fallback = {
+          title: query,
+          extract: ddgData.Abstract,
+          thumbnail: null
+        };
+
+        cache.set(query,fallback);
+        render(fallback);
+        return;
+      }
+
+      resultDiv.innerHTML = "No result found.";
+
     }catch{
-      resultDiv.innerHTML = "No reliable data found.";
+      resultDiv.innerHTML = "No result found.";
     }
   }
 }
 
-/* PRIMARY SOURCE */
-async function fetchWikipedia(query){
-  const res = await fetch(
-    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
-    {signal:controller.signal}
-  );
+/* ================= COMMAND SYSTEM ================= */
 
-  if(!res.ok) throw new Error();
-
-  return await res.json();
-}
-
-/* BACKUP SOURCE */
-async function fetchDuckDuckGo(query){
-  const res = await fetch(
-    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`
-  );
-
-  const data = await res.json();
-
-  if(!data.Abstract) throw new Error();
-
-  return {
-    title: query,
-    extract: data.Abstract
-  };
-}
-
-/* COMMANDS */
 function handleCommand(cmd){
-  const c = cmd.toLowerCase();
 
-  if(c==="clear"){
+  cmd = cmd.toLowerCase();
+
+  if(cmd==="clear"){
     resultDiv.innerHTML="";
     return true;
   }
 
-  if(c==="history"){
+  if(cmd==="history"){
     resultDiv.innerHTML = history.map(h=>`> ${h}`).join("<br>");
     return true;
   }
 
-  if(c==="help"){
+  if(cmd==="help"){
     resultDiv.innerHTML = `
       Commands:<br>
       help<br>
       clear<br>
       history<br>
-      about<br>
-      random<br>
+      about
     `;
     return true;
   }
 
-  if(c==="about"){
-    resultDiv.innerHTML = "Mission Intelligence Panel v4.0 — Stable Core";
-    return true;
-  }
-
-  if(c==="random"){
-    queryInput.value = "cell biology";
-    execute();
+  if(cmd==="about"){
+    resultDiv.innerHTML = "Mission Intelligence Panel v3.0";
     return true;
   }
 
   return false;
 }
 
-/* RENDER RESULT */
+/* ================= RENDER ================= */
+
 function render(data){
+
   const words = data.extract ? data.extract.split(" ").length : 0;
-  const readingTime = words ? Math.ceil(words/200) : 0;
+  const readingTime = Math.ceil(words/200);
 
   let html = `<h2>${data.title}</h2>`;
-  html += `<p>${data.extract || "No summary available."}</p>`;
+  html += `<p>${data.extract || ""}</p>`;
 
   if(data.thumbnail){
     html += `<img src="${data.thumbnail.source}">`;
@@ -172,20 +215,51 @@ function render(data){
   window.currentText = data.extract || "";
 }
 
-/* ACTION FUNCTIONS */
+/* ================= ACTION FUNCTIONS ================= */
+
 function copyText(){
+  if(!window.currentText) return;
   navigator.clipboard.writeText(window.currentText);
 }
 
-function speakText(){
-  speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(window.currentText));
-}
-
 function downloadText(title){
+  if(!window.currentText) return;
   const blob = new Blob([window.currentText],{type:"text/plain"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = title + ".txt";
   a.click();
+}
+
+/* ================= IMPROVED TTS ================= */
+
+function loadVoices(){
+  voices = speechSynthesis.getVoices();
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speakText(){
+
+  if(!window.currentText) return;
+
+  speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(window.currentText);
+
+  /* Try to pick best available voice */
+  const preferred =
+    voices.find(v=>v.name.includes("Google")) ||
+    voices.find(v=>v.name.includes("Microsoft")) ||
+    voices.find(v=>v.lang.startsWith("en"));
+
+  if(preferred){
+    utter.voice = preferred;
+  }
+
+  utter.rate = 1;
+  utter.pitch = 1;
+
+  speechSynthesis.speak(utter);
 }
