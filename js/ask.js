@@ -233,33 +233,41 @@ function downloadText(title){
 
 /* ================= IMPROVED TTS ================= */
 
-function loadVoices(){
-  voices = speechSynthesis.getVoices();
-}
-
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-
-function speakText(){
+async function speakText(){
 
   if(!window.currentText) return;
 
-  speechSynthesis.cancel();
+  try{
 
-  const utter = new SpeechSynthesisUtterance(window.currentText);
+    const res = await fetch(
+      "https://bioquiz-suggestion.killermunu.workers.dev/tts",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          text: window.currentText
+        })
+      }
+    );
 
-  /* Try to pick best available voice */
-  const preferred =
-    voices.find(v=>v.name.includes("Google")) ||
-    voices.find(v=>v.name.includes("Microsoft")) ||
-    voices.find(v=>v.lang.startsWith("en"));
+    if(!res.ok) throw new Error();
 
-  if(preferred){
-    utter.voice = preferred;
+    const blob = await res.blob();
+    const audioUrl = URL.createObjectURL(blob);
+    const audio = new Audio(audioUrl);
+    audio.play();
+
+  }catch{
+
+    /* Fallback to browser TTS */
+
+    speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(window.currentText);
+    utter.rate = 1;
+    utter.pitch = 1;
+    speechSynthesis.speak(utter);
   }
-
-  utter.rate = 1;
-  utter.pitch = 1;
-
-  speechSynthesis.speak(utter);
 }
