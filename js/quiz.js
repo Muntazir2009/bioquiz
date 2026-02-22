@@ -1,70 +1,114 @@
-const searchInput = document.getElementById("searchInput");
-const searchBtn = document.getElementById("searchBtn");
-const resultBox = document.getElementById("result");
-const generateBtn = document.getElementById("generateBtn");
-const modeButtons = document.querySelectorAll(".mode-btn");
+/* ================= QUIZ LOGIC ================= */
 
-let selectedMode = "Quick";
-let lastTopic = "";
+/* DOM */
+const loading = document.getElementById("loading");
+const quiz = document.getElementById("quiz");
+const qEl = document.getElementById("question");
+const oEl = document.getElementById("options");
+const fEl = document.getElementById("feedback");
+const nEl = document.getElementById("next");
+const skipEl = document.getElementById("skip");
+const pEl = document.getElementById("progress");
+const dEl = document.getElementById("difficulty");
 
-/* MODE SELECT */
-modeButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    modeButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedMode = btn.textContent;
+/* STATE */
+let questions = [];
+let index = 0;
+let locked = false;
+
+/* LOAD QUESTIONS */
+fetch("questions.json")
+  .then(res => res.json())
+  .then(data => {
+    questions = data;
+    loading.style.display = "none";
+    quiz.style.display = "block";
+    loadQuestion();
+  })
+  .catch(err => {
+    console.error("Failed to load questions:", err);
   });
-});
 
-/* SEARCH */
-searchBtn.addEventListener("click", () => {
-  const query = searchInput.value.trim();
-  if (!query) return;
+/* LOAD QUESTION */
+function loadQuestion() {
+  resetTimer();
+  locked = false;
 
-  lastTopic = query;
+  nEl.style.display = "none";
+  skipEl.style.display = "inline-block";
+  fEl.style.display = "none";
 
-  resultBox.innerHTML = `
-    <h2>${query}</h2>
-    <p>Loading information...</p>
-  `;
-
-  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${query}`)
-    .then(res => res.json())
-    .then(data => {
-      resultBox.innerHTML = `
-        <h2>${data.title}</h2>
-        <p>${data.extract}</p>
-      `;
-    })
-    .catch(() => {
-      resultBox.innerHTML = `<p>Failed to fetch info.</p>`;
-    });
-});
-
-/* GENERATE QUIZ */
-generateBtn.addEventListener("click", () => {
-  if (!lastTopic) {
-    alert("Search a topic first.");
+  if (index >= questions.length) {
+    qEl.textContent = "Quiz completed!";
+    oEl.innerHTML = "";
+    pEl.textContent = "";
+    dEl.textContent = "";
+    skipEl.style.display = "none";
     return;
   }
 
-  const quizData = {
-    topic: lastTopic,
-    mode: selectedMode,
-    questions: [
-      {
-        question: `What is ${lastTopic}?`,
-        options: [
-          "A celestial object",
-          "A chemical element",
-          "A biological cell",
-          "A mathematical constant"
-        ],
-        answer: 0
-      }
-    ]
-  };
+  const q = questions[index];
 
-  sessionStorage.setItem("generatedQuiz", JSON.stringify(quizData));
-  window.location.href = "quiz.html";
-});
+  qEl.textContent = q.question;
+  pEl.textContent = `Q ${index + 1}/${questions.length}`;
+  dEl.textContent = q.difficulty || "";
+
+  oEl.innerHTML = "";
+
+  q.options.forEach((text, i) => {
+    const div = document.createElement("div");
+    div.className = "option";
+    div.innerHTML = `<b>${"ABCD"[i]}.</b> ${text}`;
+
+    div.onclick = () => handleAnswer(i);
+    oEl.appendChild(div);
+  });
+}
+
+/* HANDLE ANSWER */
+function handleAnswer(choice) {
+  if (locked) return;
+  locked = true;
+
+  /* STOP TIMER */
+  resetTimer();
+
+  const q = questions[index];
+
+  if (choice === q.answer) {
+    playCorrectSound();
+  } else {
+    playWrongSound();
+  }
+
+  [...oEl.children].forEach(opt => opt.classList.add("disabled"));
+
+  fEl.innerHTML =
+    choice === q.answer
+      ? `<div class="correct"><b>Correct</b></div><p>${q.explanation}</p>`
+      : `<div class="wrong"><b>Incorrect</b></div>
+         <p><b>Correct:</b> ${q.options[q.answer]}</p>
+         <p>${q.explanation}</p>`;
+
+  if (q.fact) {
+    fEl.innerHTML += `<div class="fact">💡 ${q.fact}</div>`;
+  }
+
+  fEl.style.display = "block";
+  nEl.style.display = "inline-block";
+  skipEl.style.display = "none";
+}
+
+/* NEXT */
+nEl.onclick = () => {
+  index++;
+  loadQuestion();
+};
+
+/* SKIP */
+skipEl.onclick = () => {
+  if (locked) return;
+  resetTimer();
+  index++;
+  loadQuestion();
+};
