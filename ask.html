@@ -1,34 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Knowledge Console</title>
+<title>Mission Intelligence Panel</title>
 <link rel="stylesheet" href="css/ask.css">
 </head>
 <body>
 
-<div class="grid-bg"></div>
-
 <div class="console">
 
-  <div class="console-header">
-    <span>Knowledge Console v2.0</span>
-  </div>
-
-  <div class="console-body">
-
-    <div class="input-line">
-      <span class="prompt">></span>
-      <input id="query" type="text" placeholder="Enter topic...">
-      <span class="cursor"></span>
+  <div class="header">
+    <div class="title">MISSION INTELLIGENCE PANEL</div>
+    <div class="right">
+      <span class="status">● ONLINE</span>
+      <span id="clock"></span>
     </div>
-
-    <button id="searchBtn" class="search-btn">EXECUTE</button>
-
-    <div id="result" class="result"></div>
-
   </div>
+
+  <div class="input-area">
+    <span class="prompt">></span>
+    <input id="query" placeholder="Enter topic or command...">
+  </div>
+
+  <div class="controls">
+    <button id="searchBtn">EXECUTE</button>
+    <button id="clearBtn">CLEAR</button>
+  </div>
+
+  <div id="result" class="result"></div>
 
 </div>
 
