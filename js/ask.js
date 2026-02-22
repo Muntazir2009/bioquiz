@@ -1,105 +1,140 @@
 const queryInput = document.getElementById("query");
 const searchBtn = document.getElementById("searchBtn");
+const clearBtn = document.getElementById("clearBtn");
 const resultDiv = document.getElementById("result");
+const clockEl = document.getElementById("clock");
 
-searchBtn.onclick = search;
+let controller = null;
+const cache = new Map();
+let history = [];
+
+/* LIVE CLOCK */
+setInterval(()=>{
+  clockEl.textContent = new Date().toLocaleTimeString();
+},1000);
+
+/* EVENTS */
+searchBtn.onclick = execute;
+clearBtn.onclick = ()=> resultDiv.innerHTML = "";
+
 queryInput.addEventListener("keypress", e=>{
-  if(e.key==="Enter") search();
+  if(e.key==="Enter") execute();
 });
 
-async function search(){
-
+/* MAIN EXECUTION */
+async function execute(){
   const query = queryInput.value.trim();
   if(!query) return;
 
-  resultDiv.innerHTML = "Fetching data...\n";
+  if(handleCommand(query)) return;
+
+  history.push(query);
+
+  if(cache.has(query)){
+    render(cache.get(query));
+    return;
+  }
+
+  if(controller) controller.abort();
+  controller = new AbortController();
+
+  resultDiv.innerHTML = `<div class="loading">Processing query...</div>`;
 
   try{
     const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
+      {signal:controller.signal}
     );
 
     if(!res.ok) throw new Error();
 
     const data = await res.json();
-
-    displayResult(data);
+    cache.set(query,data);
+    render(data);
 
   }catch{
-    resultDiv.innerHTML = "No result found.\n";
+    resultDiv.innerHTML = "No result found.";
   }
 }
 
-function typeWriter(text, element){
-  element.innerHTML = "";
-  let i = 0;
-  const speed = 15;
+/* COMMANDS */
+function handleCommand(cmd){
+  cmd = cmd.toLowerCase();
 
-  function type(){
-    if(i < text.length){
-      element.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, speed);
-    }
+  if(cmd==="clear"){
+    resultDiv.innerHTML="";
+    return true;
   }
-  type();
+
+  if(cmd==="history"){
+    resultDiv.innerHTML = history.map(h=>`> ${h}`).join("<br>");
+    return true;
+  }
+
+  if(cmd==="help"){
+    resultDiv.innerHTML = `
+      Commands:<br>
+      help<br>
+      clear<br>
+      history<br>
+      about
+    `;
+    return true;
+  }
+
+  if(cmd==="about"){
+    resultDiv.innerHTML = "Mission Intelligence Panel v3.0";
+    return true;
+  }
+
+  return false;
 }
 
-function displayResult(data){
+/* RENDER RESULT */
+function render(data){
+  const words = data.extract.split(" ").length;
+  const readingTime = Math.ceil(words/200);
 
-  const container = document.createElement("div");
-
-  const text = document.createElement("div");
-
-  const fullText = `
-TITLE: ${data.title}
-
-${data.extract}
-`;
-
-  typeWriter(fullText, text);
-
-  container.appendChild(text);
+  let html = `<h2>${data.title}</h2>`;
+  html += `<p>${data.extract}</p>`;
 
   if(data.thumbnail){
-    const img = document.createElement("img");
-    img.src = data.thumbnail.source;
-    container.appendChild(img);
+    html += `<img src="${data.thumbnail.source}">`;
   }
 
-  const actionBar = document.createElement("div");
-  actionBar.className = "action-bar";
+  html += `
+    <div class="meta">
+      Words: ${words} | Reading time: ${readingTime} min
+    </div>
+  `;
 
-  // Copy
-  const copyBtn = document.createElement("button");
-  copyBtn.textContent = "Copy";
-  copyBtn.onclick = ()=>{
-    navigator.clipboard.writeText(data.extract);
-  };
+  html += `
+    <div class="action-bar">
+      <button onclick="copyText()">Copy</button>
+      <button onclick="speakText()">Speak</button>
+      <button onclick="downloadText('${data.title}')">Download</button>
+      <button onclick="window.open('https://en.wikipedia.org/wiki/${data.title}','_blank')">Full Article</button>
+    </div>
+  `;
 
-  // Speak
-  const speakBtn = document.createElement("button");
-  speakBtn.textContent = "Speak";
-  speakBtn.onclick = ()=>{
-    const speech = new SpeechSynthesisUtterance(data.extract);
-    speechSynthesis.speak(speech);
-  };
+  resultDiv.innerHTML = html;
 
-  // Download
-  const downloadBtn = document.createElement("button");
-  downloadBtn.textContent = "Download";
-  downloadBtn.onclick = ()=>{
-    const blob = new Blob([data.extract], {type:"text/plain"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = data.title + ".txt";
-    a.click();
-  };
+  window.currentText = data.extract;
+}
 
-  actionBar.append(copyBtn, speakBtn, downloadBtn);
+/* ACTION FUNCTIONS */
+function copyText(){
+  navigator.clipboard.writeText(window.currentText);
+}
 
-  container.appendChild(actionBar);
+function speakText(){
+  speechSynthesis.speak(new SpeechSynthesisUtterance(window.currentText));
+}
 
-  resultDiv.innerHTML = "";
-  resultDiv.appendChild(container);
+function downloadText(title){
+  const blob = new Blob([window.currentText],{type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = title + ".txt";
+  a.click();
 }
