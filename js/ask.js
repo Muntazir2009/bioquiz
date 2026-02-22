@@ -1,116 +1,105 @@
 const queryInput = document.getElementById("query");
 const searchBtn = document.getElementById("searchBtn");
 const resultDiv = document.getElementById("result");
-const historyDiv = document.getElementById("history");
-const clearBtn = document.getElementById("clearHistory");
 
-/* ⭐ STARFIELD */
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
-
-function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-resize();
-window.onresize = resize;
-
-const stars = Array.from({length:120},()=>({
-  x:Math.random()*canvas.width,
-  y:Math.random()*canvas.height,
-  r:Math.random()*1.2,
-  s:Math.random()*0.3+0.05
-}));
-
-function animate(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  stars.forEach(star=>{
-    ctx.beginPath();
-    ctx.arc(star.x,star.y,star.r,0,Math.PI*2);
-    ctx.fillStyle="#fff";
-    ctx.fill();
-    star.y+=star.s;
-    if(star.y>canvas.height){
-      star.y=0;
-      star.x=Math.random()*canvas.width;
-    }
-  });
-  requestAnimationFrame(animate);
-}
-animate();
-
-/* SEARCH */
 searchBtn.onclick = search;
 queryInput.addEventListener("keypress", e=>{
   if(e.key==="Enter") search();
 });
 
-document.querySelectorAll(".chip").forEach(chip=>{
-  chip.onclick = ()=>{
-    queryInput.value = chip.textContent;
-    search();
-  };
-});
-
 async function search(){
+
   const query = queryInput.value.trim();
   if(!query) return;
 
-  saveHistory(query);
-
-  resultDiv.innerHTML = `<div class="loading">Searching...</div>`;
+  resultDiv.innerHTML = "Fetching data...\n";
 
   try{
     const res = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
     );
+
     if(!res.ok) throw new Error();
 
     const data = await res.json();
 
-    resultDiv.innerHTML = `
-      <div class="card">
-        ${data.thumbnail ? `<img src="${data.thumbnail.source}">` : ""}
-        <h2>${data.title}</h2>
-        <p>${data.extract}</p>
-        <br>
-        <a href="${data.content_urls.desktop.page}" target="_blank">
-          Read full article →
-        </a>
-      </div>
-    `;
+    displayResult(data);
 
   }catch{
-    resultDiv.innerHTML = `<div class="card">No result found.</div>`;
+    resultDiv.innerHTML = "No result found.\n";
   }
 }
 
-/* HISTORY */
-function saveHistory(query){
-  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
-  history.unshift(query);
-  history = [...new Set(history)].slice(0,8);
-  localStorage.setItem("searchHistory", JSON.stringify(history));
-  renderHistory();
+function typeWriter(text, element){
+  element.innerHTML = "";
+  let i = 0;
+  const speed = 15;
+
+  function type(){
+    if(i < text.length){
+      element.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
+    }
+  }
+  type();
 }
 
-function renderHistory(){
-  let history = JSON.parse(localStorage.getItem("searchHistory")) || [];
-  historyDiv.innerHTML="";
-  history.forEach(item=>{
-    const span = document.createElement("span");
-    span.textContent = item;
-    span.onclick=()=>{
-      queryInput.value=item;
-      search();
-    };
-    historyDiv.appendChild(span);
-  });
+function displayResult(data){
+
+  const container = document.createElement("div");
+
+  const text = document.createElement("div");
+
+  const fullText = `
+TITLE: ${data.title}
+
+${data.extract}
+`;
+
+  typeWriter(fullText, text);
+
+  container.appendChild(text);
+
+  if(data.thumbnail){
+    const img = document.createElement("img");
+    img.src = data.thumbnail.source;
+    container.appendChild(img);
+  }
+
+  const actionBar = document.createElement("div");
+  actionBar.className = "action-bar";
+
+  // Copy
+  const copyBtn = document.createElement("button");
+  copyBtn.textContent = "Copy";
+  copyBtn.onclick = ()=>{
+    navigator.clipboard.writeText(data.extract);
+  };
+
+  // Speak
+  const speakBtn = document.createElement("button");
+  speakBtn.textContent = "Speak";
+  speakBtn.onclick = ()=>{
+    const speech = new SpeechSynthesisUtterance(data.extract);
+    speechSynthesis.speak(speech);
+  };
+
+  // Download
+  const downloadBtn = document.createElement("button");
+  downloadBtn.textContent = "Download";
+  downloadBtn.onclick = ()=>{
+    const blob = new Blob([data.extract], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = data.title + ".txt";
+    a.click();
+  };
+
+  actionBar.append(copyBtn, speakBtn, downloadBtn);
+
+  container.appendChild(actionBar);
+
+  resultDiv.innerHTML = "";
+  resultDiv.appendChild(container);
 }
-
-clearBtn.onclick = ()=>{
-  localStorage.removeItem("searchHistory");
-  renderHistory();
-};
-
-renderHistory();
