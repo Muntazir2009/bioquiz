@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ask • BioQuiz</title>
-
+<title>Cosmic Knowledge • BioQuiz</title>
 <link rel="stylesheet" href="css/ask.css">
 </head>
 <body>
@@ -13,14 +12,32 @@
 
 <main class="ask-wrap">
 
-  <h1 class="title">Ask Anything</h1>
+  <div class="glass-panel">
 
-  <div class="search-box">
-    <input type="text" id="query" placeholder="Type a topic (e.g. Mitochondria)">
-    <button id="searchBtn">Search</button>
+    <h1 class="title">COSMIC KNOWLEDGE</h1>
+    <p class="subtitle">Search anything. Learn instantly.</p>
+
+    <div class="search-box">
+      <input type="text" id="query" placeholder="Type a topic (e.g. Mitochondria)">
+      <button id="searchBtn">Search</button>
+    </div>
+
+    <div class="quick-chips">
+      <span class="chip">Cell</span>
+      <span class="chip">Mitochondria</span>
+      <span class="chip">Ribosome</span>
+      <span class="chip">Photosynthesis</span>
+    </div>
+
+    <div class="history-section">
+      <h3>Recent Searches</h3>
+      <div id="history"></div>
+      <button id="clearHistory" class="clear-btn">Clear History</button>
+    </div>
+
+    <div id="result" class="result"></div>
+
   </div>
-
-  <div id="result" class="result"></div>
 
 </main>
 
