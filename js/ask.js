@@ -7,6 +7,7 @@ const clockEl = document.getElementById("clock");
 let controller = null;
 const cache = new Map();
 let history = [];
+let historyIndex = -1;
 
 /* LIVE CLOCK */
 setInterval(()=>{
@@ -17,8 +18,24 @@ setInterval(()=>{
 searchBtn.onclick = execute;
 clearBtn.onclick = ()=> resultDiv.innerHTML = "";
 
-queryInput.addEventListener("keypress", e=>{
+queryInput.addEventListener("keydown", e=>{
   if(e.key==="Enter") execute();
+
+  if(e.key==="ArrowUp"){
+    if(historyIndex > 0){
+      historyIndex--;
+      queryInput.value = history[historyIndex];
+    }
+  }
+
+  if(e.key==="ArrowDown"){
+    if(historyIndex < history.length-1){
+      historyIndex++;
+      queryInput.value = history[historyIndex];
+    } else {
+      queryInput.value = "";
+    }
+  }
 });
 
 /* MAIN EXECUTION */
@@ -29,6 +46,7 @@ async function execute(){
   if(handleCommand(query)) return;
 
   history.push(query);
+  historyIndex = history.length;
 
   if(cache.has(query)){
     render(cache.get(query));
@@ -38,52 +56,84 @@ async function execute(){
   if(controller) controller.abort();
   controller = new AbortController();
 
-  resultDiv.innerHTML = `<div class="loading">Processing query...</div>`;
+  resultDiv.innerHTML = `<div class="loading">Accessing knowledge network...</div>`;
 
   try{
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
-      {signal:controller.signal}
-    );
-
-    if(!res.ok) throw new Error();
-
-    const data = await res.json();
+    const data = await fetchWikipedia(query);
     cache.set(query,data);
     render(data);
-
   }catch{
-    resultDiv.innerHTML = "No result found.";
+    try{
+      const backup = await fetchDuckDuckGo(query);
+      render(backup);
+    }catch{
+      resultDiv.innerHTML = "No reliable data found.";
+    }
   }
+}
+
+/* PRIMARY SOURCE */
+async function fetchWikipedia(query){
+  const res = await fetch(
+    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
+    {signal:controller.signal}
+  );
+
+  if(!res.ok) throw new Error();
+
+  return await res.json();
+}
+
+/* BACKUP SOURCE */
+async function fetchDuckDuckGo(query){
+  const res = await fetch(
+    `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`
+  );
+
+  const data = await res.json();
+
+  if(!data.Abstract) throw new Error();
+
+  return {
+    title: query,
+    extract: data.Abstract
+  };
 }
 
 /* COMMANDS */
 function handleCommand(cmd){
-  cmd = cmd.toLowerCase();
+  const c = cmd.toLowerCase();
 
-  if(cmd==="clear"){
+  if(c==="clear"){
     resultDiv.innerHTML="";
     return true;
   }
 
-  if(cmd==="history"){
+  if(c==="history"){
     resultDiv.innerHTML = history.map(h=>`> ${h}`).join("<br>");
     return true;
   }
 
-  if(cmd==="help"){
+  if(c==="help"){
     resultDiv.innerHTML = `
       Commands:<br>
       help<br>
       clear<br>
       history<br>
-      about
+      about<br>
+      random<br>
     `;
     return true;
   }
 
-  if(cmd==="about"){
-    resultDiv.innerHTML = "Mission Intelligence Panel v3.0";
+  if(c==="about"){
+    resultDiv.innerHTML = "Mission Intelligence Panel v4.0 — Stable Core";
+    return true;
+  }
+
+  if(c==="random"){
+    queryInput.value = "cell biology";
+    execute();
     return true;
   }
 
@@ -92,11 +142,11 @@ function handleCommand(cmd){
 
 /* RENDER RESULT */
 function render(data){
-  const words = data.extract.split(" ").length;
-  const readingTime = Math.ceil(words/200);
+  const words = data.extract ? data.extract.split(" ").length : 0;
+  const readingTime = words ? Math.ceil(words/200) : 0;
 
   let html = `<h2>${data.title}</h2>`;
-  html += `<p>${data.extract}</p>`;
+  html += `<p>${data.extract || "No summary available."}</p>`;
 
   if(data.thumbnail){
     html += `<img src="${data.thumbnail.source}">`;
@@ -119,7 +169,7 @@ function render(data){
 
   resultDiv.innerHTML = html;
 
-  window.currentText = data.extract;
+  window.currentText = data.extract || "";
 }
 
 /* ACTION FUNCTIONS */
@@ -128,6 +178,7 @@ function copyText(){
 }
 
 function speakText(){
+  speechSynthesis.cancel();
   speechSynthesis.speak(new SpeechSynthesisUtterance(window.currentText));
 }
 
