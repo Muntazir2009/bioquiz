@@ -237,39 +237,45 @@ async function speakText(){
 
   if(!window.currentText) return;
 
-  try{
+  speechSynthesis.cancel();
 
-    const res = await fetch(
-      "https://bioquiz-tts.killermunu.workers.dev",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body: JSON.stringify({
-          text: window.currentText
-        })
-      }
-    );
+  const utter = new SpeechSynthesisUtterance(window.currentText);
 
-    if(!res.ok) throw new Error();
+  function selectBestVoice(){
 
-    const blob = await res.blob();
-    const audioUrl = URL.createObjectURL(blob);
+    const voices = speechSynthesis.getVoices();
 
-    const audio = new Audio(audioUrl);
-    audio.play();
+    // Prefer Microsoft Neural
+    let voice =
+      voices.find(v => v.name.includes("Microsoft") && v.name.includes("Neural")) ||
 
-  }catch{
+      // Then Google US English
+      voices.find(v => v.name.includes("Google US English")) ||
 
-    /* Fallback to browser voice */
+      // Then any English voice
+      voices.find(v => v.lang.startsWith("en")) ||
 
-    speechSynthesis.cancel();
+      voices[0];
 
-    const utter = new SpeechSynthesisUtterance(window.currentText);
-    utter.rate = 1;
+    return voice;
+  }
+
+  const applyVoice = () => {
+    const voice = selectBestVoice();
+    if(voice){
+      utter.voice = voice;
+    }
+
+    utter.rate = 0.95;
     utter.pitch = 1;
+    utter.volume = 1;
 
     speechSynthesis.speak(utter);
+  };
+
+  if (speechSynthesis.getVoices().length === 0) {
+    speechSynthesis.onvoiceschanged = applyVoice;
+  } else {
+    applyVoice();
   }
 }
