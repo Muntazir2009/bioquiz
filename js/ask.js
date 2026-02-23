@@ -240,7 +240,7 @@ async function speakText(){
   try{
 
     const res = await fetch(
-      "https://bioquiz-suggestion.killermunu.workers.dev/tts",
+      "https://bioquiz-tts.killermunu.workers.dev",
       {
         method:"POST",
         headers:{
@@ -256,18 +256,20 @@ async function speakText(){
 
     const blob = await res.blob();
     const audioUrl = URL.createObjectURL(blob);
+
     const audio = new Audio(audioUrl);
     audio.play();
 
   }catch{
 
-    /* Fallback to browser TTS */
+    /* Fallback to browser voice */
 
     speechSynthesis.cancel();
 
     const utter = new SpeechSynthesisUtterance(window.currentText);
     utter.rate = 1;
     utter.pitch = 1;
+
     speechSynthesis.speak(utter);
   }
 }
