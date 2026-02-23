@@ -1,19 +1,21 @@
-/* ================= THEME VARIABLES ================= */
-
-:root{
-  --primary:#00c8ff;
-  --primary-soft:rgba(0,200,255,.35);
-  --glow:rgba(0,200,255,.25);
-  --text:#8fdfff;
-  --bg-dark:#071018;
-}
-
 /* ================= GLOBAL ================= */
 
 *{
   box-sizing:border-box;
-  font-family:Orbitron, monospace;
+  font-family: "Orbitron", monospace;
 }
+
+:root{
+  --primary:#00d9ff;
+  --secondary:#7a8cff;
+  --bg:#050913;
+  --panel:#0b1424;
+  --text:#cfefff;
+  --soft:rgba(0,217,255,.25);
+  --border:rgba(0,217,255,.4);
+}
+
+/* ================= BODY ================= */
 
 body{
   margin:0;
@@ -21,7 +23,10 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:#020509;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0,217,255,.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(122,140,255,.08), transparent 50%),
+    var(--bg);
   color:var(--text);
 }
 
@@ -33,23 +38,14 @@ body{
   height:85vh;
   display:flex;
   flex-direction:column;
-
-  background:
-    linear-gradient(135deg,
-      var(--primary-soft),
-      rgba(0,0,0,0)
-    ),
-    var(--bg-dark);
-
-  border:2px solid var(--primary);
-  border-radius:14px;
-  padding:25px;
-
+  background:linear-gradient(145deg, #0b1424, #081120);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:28px;
   box-shadow:
-    0 0 40px var(--glow),
-    0 0 60px rgba(0,0,0,.5);
-
-  transition:.3s ease;
+    0 0 60px rgba(0,217,255,.15),
+    inset 0 0 40px rgba(0,217,255,.05);
+  backdrop-filter: blur(8px);
 }
 
 /* ================= HEADER ================= */
@@ -58,42 +54,35 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:20px;
+  margin-bottom:25px;
 }
 
 .title{
-  font-size:1.2rem;
-  letter-spacing:.15em;
-  color:var(--text);
-  text-shadow:0 0 10px var(--glow);
+  font-size:1.3rem;
+  letter-spacing:.25em;
+  font-weight:600;
+  color:var(--primary);
+  text-shadow:0 0 10px rgba(0,217,255,.5);
 }
 
 .status{
-  color:var(--primary);
-  margin-right:15px;
+  color:#00ff99;
+  font-size:.9rem;
 }
 
 #clock{
   font-size:.8rem;
   opacity:.7;
-}
-
-/* ================= THEME SWITCHER ================= */
-
-#themeSwitcher{
-  background:#000;
-  color:var(--primary);
-  border:1px solid var(--primary);
-  padding:4px 8px;
-  border-radius:4px;
+  margin-left:15px;
 }
 
 /* ================= INPUT ================= */
 
 .input-area{
   display:flex;
-  border-bottom:1px solid var(--primary-soft);
-  padding-bottom:10px;
+  align-items:center;
+  border-bottom:1px solid var(--soft);
+  padding-bottom:12px;
 }
 
 .prompt{
@@ -108,61 +97,54 @@ input{
   outline:none;
   color:var(--text);
   font-size:1rem;
-  caret-color:var(--primary);
+  letter-spacing:.05em;
 }
 
 /* ================= BUTTONS ================= */
 
 .controls{
-  margin-top:15px;
+  margin-top:18px;
   display:flex;
   gap:15px;
 }
 
 button{
-  padding:8px 16px;
+  padding:10px 18px;
   background:transparent;
   border:1px solid var(--primary);
   color:var(--primary);
   cursor:pointer;
+  border-radius:8px;
   transition:.25s ease;
-  border-radius:6px;
-  font-size:.85rem;
+  font-weight:500;
+  letter-spacing:.08em;
 }
 
 button:hover{
   background:var(--primary);
   color:#000;
-  box-shadow:0 0 15px var(--glow);
+  box-shadow:0 0 15px rgba(0,217,255,.6);
 }
 
-button:active{
-  transform:scale(.95);
-}
-
-/* ================= RESULT AREA ================= */
+/* ================= RESULT ================= */
 
 .result{
   flex:1;
-  margin-top:20px;
-  border:1px solid var(--primary-soft);
-  border-radius:10px;
-  padding:20px;
+  margin-top:25px;
+  border:1px solid var(--soft);
+  border-radius:14px;
+  padding:25px;
   overflow-y:auto;
   overflow-x:hidden;
-  line-height:1.7;
+  line-height:1.8;
   font-size:.95rem;
-  background:rgba(0,0,0,.25);
+  background:rgba(10,20,35,.6);
 }
 
 /* Scrollbar */
 
 .result::-webkit-scrollbar{
   width:8px;
-}
-
-.result::-webkit-scrollbar-track{
-  background:transparent;
 }
 
 .result::-webkit-scrollbar-thumb{
@@ -177,9 +159,9 @@ button:active{
   height:auto;
   display:block;
   margin:20px auto;
-  border-radius:8px;
+  border-radius:10px;
   border:1px solid var(--primary);
-  box-shadow:0 0 20px var(--glow);
+  box-shadow:0 0 25px rgba(0,217,255,.2);
 }
 
 /* ================= META ================= */
@@ -187,17 +169,16 @@ button:active{
 .meta{
   margin-top:15px;
   font-size:.8rem;
-  opacity:.6;
-  border-top:1px solid var(--primary-soft);
-  padding-top:10px;
+  opacity:.7;
+  color:var(--secondary);
 }
 
 /* ================= ACTION BAR ================= */
 
 .action-bar{
-  margin-top:15px;
+  margin-top:18px;
   display:flex;
-  gap:10px;
+  gap:12px;
   flex-wrap:wrap;
 }
 
@@ -205,11 +186,6 @@ button:active{
 
 .loading{
   opacity:.6;
-  animation:pulse 1.2s infinite;
-}
-
-@keyframes pulse{
-  0%{opacity:.3;}
-  50%{opacity:1;}
-  100%{opacity:.3;}
+  letter-spacing:.1em;
+  color:var(--secondary);
 }
