@@ -233,7 +233,7 @@ function downloadText(title){
 
 /* ================= IMPROVED TTS ================= */
 
-async function speakText(){
+function speakText(){
 
   if(!window.currentText) return;
 
@@ -241,18 +241,24 @@ async function speakText(){
 
   const utter = new SpeechSynthesisUtterance(window.currentText);
 
-  function selectBestVoice(){
+  function pickBestVoice(){
 
     const voices = speechSynthesis.getVoices();
 
-    // Prefer Microsoft Neural
+    // Prefer Microsoft Neural voices
     let voice =
-      voices.find(v => v.name.includes("Microsoft") && v.name.includes("Neural")) ||
+      voices.find(v =>
+        v.name.toLowerCase().includes("microsoft") &&
+        v.name.toLowerCase().includes("neural")
+      ) ||
 
-      // Then Google US English
-      voices.find(v => v.name.includes("Google US English")) ||
+      // Then Google voices
+      voices.find(v =>
+        v.name.toLowerCase().includes("google") &&
+        v.lang.startsWith("en")
+      ) ||
 
-      // Then any English voice
+      // Any English voice
       voices.find(v => v.lang.startsWith("en")) ||
 
       voices[0];
@@ -260,10 +266,12 @@ async function speakText(){
     return voice;
   }
 
-  const applyVoice = () => {
-    const voice = selectBestVoice();
+  function applyVoice(){
+
+    const voice = pickBestVoice();
     if(voice){
       utter.voice = voice;
+      console.log("Using voice:", voice.name);
     }
 
     utter.rate = 0.95;
@@ -271,9 +279,9 @@ async function speakText(){
     utter.volume = 1;
 
     speechSynthesis.speak(utter);
-  };
+  }
 
-  if (speechSynthesis.getVoices().length === 0) {
+  if(speechSynthesis.getVoices().length === 0){
     speechSynthesis.onvoiceschanged = applyVoice;
   } else {
     applyVoice();
