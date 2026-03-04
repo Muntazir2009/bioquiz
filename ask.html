@@ -6,74 +6,48 @@
 <title>Mission Intelligence Panel</title>
 <link rel="stylesheet" href="css/ask.css">
 <style>
-/* ── AI button distinct color ── */
-#aiBtn{
-  border-color:#a855f7;
-  color:#a855f7;
+#aiBtn {
+  border-color: #a855f7;
+  color: #a855f7;
 }
-#aiBtn:hover{
-  background:#a855f7;
-  color:#000;
-  box-shadow:0 0 18px rgba(168,85,247,.45);
+#aiBtn:hover {
+  background: #a855f7;
+  color: #000;
+  box-shadow: 0 0 18px rgba(168,85,247,.45);
 }
-#aiBtn:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-  transform:none;
+#aiBtn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
 }
-
-/* ── AI result block ── */
-.ai-block{
-  margin-top:28px;
-  border-top:1px solid rgba(168,85,247,.3);
-  padding-top:22px;
+.ai-block {
+  margin-top: 28px;
+  border-top: 1px solid rgba(168,85,247,.3);
+  padding-top: 22px;
 }
-.ai-label{
-  font-size:.72rem;
-  letter-spacing:.2em;
-  color:#a855f7;
-  margin-bottom:10px;
+.ai-label {
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: #a855f7;
+  margin-bottom: 10px;
 }
-.ai-text{
-  font-size:.93rem;
-  line-height:1.9;
-  color:#e8d8ff;
+.ai-text {
+  font-size: .93rem;
+  line-height: 1.9;
+  color: #e8d8ff;
   font-family: "Courier New", monospace;
-  white-space:pre-wrap;
+  white-space: pre-wrap;
 }
-.ai-cursor{
-  display:inline-block;
-  width:2px;
-  height:1em;
-  background:#a855f7;
-  margin-left:2px;
-  vertical-align:middle;
-  animation:blink .7s steps(1) infinite;
+.ai-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #a855f7;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink .7s steps(1) infinite;
 }
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-
-/* ── Theme selector ── */
-.theme-wrap{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-left:auto;
-}
-.theme-wrap label{
-  font-size:.7rem;
-  color:var(--muted);
-  letter-spacing:.1em;
-}
-select#themeSwitcher{
-  background:#0b1322;
-  border:1px solid var(--border);
-  color:var(--accent);
-  border-radius:6px;
-  padding:4px 8px;
-  font-size:.75rem;
-  cursor:pointer;
-  outline:none;
-}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 </head>
 <body>
@@ -82,16 +56,7 @@ select#themeSwitcher{
 
   <div class="header">
     <div class="title">MISSION INTELLIGENCE PANEL</div>
-    <div class="right" style="display:flex;align-items:center;gap:16px;">
-      <div class="theme-wrap">
-        <label>THEME</label>
-        <select id="themeSwitcher">
-          <option value="blue">BLUE</option>
-          <option value="green">GREEN</option>
-          <option value="amber">AMBER</option>
-          <option value="red">RED</option>
-        </select>
-      </div>
+    <div class="right">
       <span class="status">● ONLINE</span>
       <span id="clock"></span>
     </div>
