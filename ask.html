@@ -47,6 +47,39 @@
   animation: blink .7s steps(1) infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  #compareBtn {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+#compareBtn:hover {
+  background: #f59e0b;
+  color: #000;
+  box-shadow: 0 0 18px rgba(245,158,11,.45);
+}
+#compareBtn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+}
+.compare-block {
+  margin-top: 28px;
+  border-top: 1px solid rgba(245,158,11,.3);
+  padding-top: 22px;
+}
+.compare-label {
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: #f59e0b;
+  margin-bottom: 10px;
+}
+.compare-text {
+  font-size: .93rem;
+  line-height: 1.9;
+  color: #fff8e8;
+  font-family: "Inter", system-ui, sans-serif;
+  white-space: pre-wrap;
+}
+  
 </style>
 </head>
 <body>
