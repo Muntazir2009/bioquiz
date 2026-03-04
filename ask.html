@@ -61,16 +61,22 @@
     </div>
   </div>
 
-  <div class="input-area">
-    <span class="prompt">></span>
-    <input id="query" placeholder="Enter topic or command...">
-  </div>
+<div class="input-area">
+  <span class="prompt">></span>
+  <input id="query" placeholder="Enter topic or command...">
+</div>
 
-  <div class="controls">
-    <button id="searchBtn">EXECUTE</button>
-    <button id="aiBtn">ASK AI</button>
-    <button id="clearBtn">CLEAR</button>
-  </div>
+<div class="input-area" id="compareArea" style="display:none;margin-top:10px;">
+  <span class="prompt" style="color:#f59e0b;">vs</span>
+  <input id="query2" placeholder="Enter second topic to compare...">
+</div>
+
+<div class="controls">
+  <button id="searchBtn">EXECUTE</button>
+  <button id="aiBtn">ASK AI</button>
+  <button id="compareBtn">COMPARE</button>
+  <button id="clearBtn">CLEAR</button>
+</div>
 
   <div id="result" class="result"></div>
 
