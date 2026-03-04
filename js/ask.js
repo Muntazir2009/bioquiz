@@ -118,14 +118,7 @@ async function executeAI() {
   const query = queryInput.value.trim();
   if (!query) return;
 
-  /* Remove previous AI block if present */
-  const existing = resultDiv.querySelector(".ai-block");
-  if (existing) existing.remove();
-
-  /* Add a header if result area is blank */
-  if (!resultDiv.querySelector("h2")) {
-    resultDiv.innerHTML = `<h2 style="color:var(--accent);margin:0 0 10px">${escapeHtml(query)}</h2>`;
-  }
+resultDiv.innerHTML = `<h2 style="color:var(--accent);margin:0 0 10px">${escapeHtml(query)}</h2>`;
 
   /* Build AI block */
   const aiBlock = document.createElement("div");
