@@ -56,7 +56,13 @@ if (themeSwitcher) {
 /* ================= BUTTON EVENTS ================= */
 
 searchBtn.addEventListener("click", execute);
-clearBtn.addEventListener("click",  () => { resultDiv.innerHTML = ""; });
+clearBtn.addEventListener("click", () => {
+  resultDiv.innerHTML = "";
+  queryInput.value = "";
+  query2Input.value = "";
+  compareArea.style.display = "none";
+  query2Input.placeholder = "Enter second topic to compare...";
+});
 if (aiBtn) aiBtn.addEventListener("click", executeAI);
 compareBtn.addEventListener("click", executeCompare);
 
