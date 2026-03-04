@@ -299,6 +299,73 @@ function speakContent(text) {
     : applyVoice();
 }
 
+/* ================= COMPARE TWO TOPICS ================= */
+
+async function executeCompare() {
+  const q1 = queryInput.value.trim();
+  const q2 = query2Input.value.trim();
+
+  /* Toggle second input visibility */
+  if (compareArea.style.display === "none") {
+    compareArea.style.display = "flex";
+    query2Input.focus();
+    return;
+  }
+
+  if (!q1 || !q2) {
+    query2Input.placeholder = "Please enter a second topic!";
+    return;
+  }
+
+  resultDiv.innerHTML = `<h2 style="color:#f59e0b;margin:0 0 10px">${escapeHtml(q1)} vs ${escapeHtml(q2)}</h2>`;
+
+  const compareBlock = document.createElement("div");
+  compareBlock.className = "compare-block";
+  compareBlock.innerHTML = `
+    <div class="compare-label">▸ AI COMPARISON</div>
+    <div class="compare-text" id="compareText"><span class="ai-cursor" style="background:#f59e0b"></span></div>
+  `;
+  resultDiv.appendChild(compareBlock);
+
+  const compareTextEl = document.getElementById("compareText");
+
+  compareBtn.disabled    = true;
+  compareBtn.textContent = "COMPARING...";
+
+  const prompt = `Compare these two biology topics in a clear, structured way: "${q1}" vs "${q2}".
+Cover: definition, key differences, similarities, and which exam points to remember.
+Keep it under 250 words. Plain text only, no markdown symbols.`;
+
+  try {
+    const res = await fetch(AI_WORKER_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ query: prompt })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    typewriter(compareTextEl, data.answer, () => {
+      window.currentAIText = data.answer;
+      const bar = document.createElement("div");
+      bar.className = "action-bar";
+      bar.style.marginTop = "16px";
+      bar.innerHTML = `
+        <button onclick="copyAI()">Copy</button>
+        <button onclick="speakContent(window.currentAIText)">Speak</button>
+        <button onclick="downloadAI()">Download</button>
+      `;
+      compareBlock.appendChild(bar);
+    });
+
+  } catch(err) {
+    compareTextEl.innerHTML = `<span style="color:#ff8a8a">Compare failed: ${err.message}</span>`;
+  } finally {
+    compareBtn.disabled    = false;
+    compareBtn.textContent = "COMPARE";
+  }
+}
 /* ================= UTIL ================= */
 
 function escapeHtml(str) {
