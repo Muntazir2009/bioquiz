@@ -154,7 +154,7 @@ const skipEl=document.getElementById("skip");
 const pEl=document.getElementById("progress");
 const dEl=document.getElementById("difficulty");
 
-let data=[],idx=0,locked=false;
+let data=[],idx=0,locked=false,correctCount=0,totalCount=0;
 
 /* 🔀 SHUFFLE */
 function shuffle(arr){
@@ -224,6 +224,8 @@ function select(ans,div){
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
 
   const correct=ans===q.answer;
+totalCount++;
+if(correct) correctCount++;
 
   if(correct){
     correctAudio.play().catch(()=>{});
@@ -253,7 +255,13 @@ skipEl.onclick=()=>{
 
 nEl.onclick=()=>{
   idx++;saveState();
-  idx<data.length?load():qEl.textContent="Quiz Completed";
+  if(idx<data.length){
+    load();
+  } else {
+    localStorage.setItem("correct", correctCount);
+    localStorage.setItem("total", totalCount);
+    location.href="results.html";
+  }
 };
 </script>
   <script>
