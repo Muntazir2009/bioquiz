@@ -10,7 +10,7 @@ const themeSwitcher = document.getElementById("themeSwitcher");
 
 /* ================= CONFIG ================= */
 
-const AI_WORKER_URL = "https://bioquiz-ai.killermunu.workers.dev";
+const AI_WORKER_URL = "https://ask-ai.killermunu.workers.dev";
 
 /* ================= STATE ================= */
 
@@ -149,7 +149,7 @@ async function executeAI() {
   aiBtn.textContent = "THINKING...";
 
   try {
-    const res = await fetch(https://bioquiz-ai.killermunu.workers.dev, {
+    const res = await fetch(AI_WORKER_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ query })
