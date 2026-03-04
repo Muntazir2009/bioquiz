@@ -149,7 +149,7 @@ async function executeAI() {
   aiBtn.textContent = "THINKING...";
 
   try {
-    const res = await fetch(AI_WORKER_URL, {
+    const res = await fetch(https://bioquiz-ai.killermunu.workers.dev, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ query })
