@@ -58,6 +58,7 @@ if (themeSwitcher) {
 searchBtn.addEventListener("click", execute);
 clearBtn.addEventListener("click",  () => { resultDiv.innerHTML = ""; });
 if (aiBtn) aiBtn.addEventListener("click", executeAI);
+compareBtn.addEventListener("click", executeCompare);
 
 queryInput.addEventListener("keypress", e => {
   if (e.key === "Enter") execute();
