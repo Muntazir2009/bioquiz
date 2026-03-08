@@ -5,126 +5,262 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Biology Quiz</title>
 
-<link rel="stylesheet" href="css/cell3d-button.css?v=9">
 <link rel="stylesheet" href="css/quiz-card.css?v=9">
 <link rel="stylesheet" href="css/timer.css?v=9">
-<link rel="stylesheet" href="css/organelles-button.css?v=9">
-<link rel="stylesheet" href="css/qa-button.css?v=9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Exo+2:wght@200;300;400;500&display=swap" rel="stylesheet">
+
 <style>
-*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+*{box-sizing:border-box}
 
 body{
   margin:0;min-height:100vh;color:#eaf1ff;
+  font-family:'Exo 2',system-ui,sans-serif;
   background:
-    radial-gradient(1200px 800px at 20% 10%, #101a3a 0%, transparent 60%),
-    radial-gradient(1000px 700px at 80% 90%, #0b2a3f 0%, transparent 55%),
+    radial-gradient(1200px 800px at 20% 10%,#101a3a 0%,transparent 60%),
+    radial-gradient(1000px 700px at 80% 90%,#0b2a3f 0%,transparent 55%),
     linear-gradient(180deg,#05070f,#04060c);
 }
 
+/* ── LOADING ── */
 .loading{
   position:fixed;inset:0;background:#05070f;
-  display:flex;align-items:center;justify-content:center;z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:999;gap:18px;
 }
-
 .loader{
   width:48px;height:48px;
-  border:3px solid rgba(255,255,255,.15);
+  border:3px solid rgba(255,255,255,.1);
   border-top-color:#4dd6ff;
   border-radius:50%;
   animation:spin 1s linear infinite;
 }
+.loading-text{
+  font-family:'Orbitron',monospace;
+  font-size:.6rem;letter-spacing:.3em;
+  color:rgba(77,214,255,.5);
+}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── TOP NAV ── */
+.topnav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px clamp(16px,4vw,40px);
+  background:linear-gradient(to bottom,rgba(4,6,12,.95),transparent);
+  backdrop-filter:blur(8px);
+}
+.nav-home{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'Orbitron',monospace;
+  font-size:.6rem;letter-spacing:.2em;
+  color:rgba(77,214,255,.6);
+  text-decoration:none;
+  border:1px solid rgba(77,214,255,.15);
+  padding:7px 14px;border-radius:8px;
+  background:rgba(77,214,255,.05);
+  transition:all .25s ease;
+}
+.nav-home:hover{
+  color:var(--cyan,#4dd6ff);
+  border-color:rgba(77,214,255,.4);
+  background:rgba(77,214,255,.1);
+}
+.nav-home svg{width:12px;height:12px;fill:currentColor}
+
+.nav-title{
+  font-family:'Orbitron',monospace;
+  font-size:.6rem;letter-spacing:.3em;
+  color:rgba(255,255,255,.25);
+}
+
+.nav-score{
+  font-family:'Orbitron',monospace;
+  font-size:.6rem;letter-spacing:.15em;
+  color:rgba(77,214,255,.5);
+  min-width:80px;text-align:right;
+}
+
+/* ── FEEDBACK ── */
 .feedback{
-  margin-top:18px;
-  padding:14px 18px;
+  margin-top:18px;padding:14px 18px;
   border-radius:12px;
   background:rgba(0,0,0,.45);
-  border:1px solid rgba(255,255,255,.15);
-  font-weight:600;
-  display:none;
+  border:1px solid rgba(255,255,255,.12);
+  font-weight:600;display:none;
+  font-size:.95rem;letter-spacing:.03em;
 }
-.feedback.correct{color:#6dffcc}
-.feedback.wrong{color:#ff8a8a}
+.feedback.correct{color:#6dffcc;border-color:rgba(109,255,204,.2)}
+.feedback.wrong  {color:#ff8a8a;border-color:rgba(255,138,138,.2)}
+
+/* ── QUIZ WRAPPER — adds top padding for fixed nav ── */
+.quiz-page{
+  padding-top:70px;
+  min-height:100vh;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar-wrap{
+  max-width:880px;margin:0 auto;
+  padding:0 clamp(14px,3vw,42px) 0;
+}
+.progress-bar-track{
+  height:2px;background:rgba(255,255,255,.06);
+  border-radius:2px;overflow:hidden;margin-bottom:0;
+}
+.progress-bar-fill{
+  height:100%;
+  background:linear-gradient(to right,#3b6cff,#4dd6ff);
+  border-radius:2px;
+  transition:width .5s ease;
+  box-shadow:0 0 8px rgba(77,214,255,.5);
+  width:0%;
+}
+
+/* ── META ROW ── */
+.meta{
+  display:flex;align-items:center;gap:14px;
+}
+.meta #progress{
+  font-family:'Orbitron',monospace;
+  font-size:.65rem;letter-spacing:.15em;
+  color:rgba(216,234,248,.5);
+}
+.meta #difficulty{
+  font-size:.6rem;letter-spacing:.15em;
+  color:rgba(77,214,255,.5);
+  border:1px solid rgba(77,214,255,.15);
+  padding:2px 8px;border-radius:4px;
+  text-transform:uppercase;
+}
+
+/* ── NEXT / SKIP BUTTONS ── */
+#next{
+  color:#fff;font-family:'Exo 2',sans-serif;
+  font-size:.85rem;font-weight:500;letter-spacing:.05em;
+}
+#skip{
+  color:#fff;font-family:'Exo 2',sans-serif;
+  font-size:.85rem;font-weight:500;letter-spacing:.05em;
+}
+
+/* ── OPTION LETTER BADGE ── */
+.option b{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(255,255,255,.08);
+  font-size:.7rem;margin-right:10px;
+  font-family:'Orbitron',monospace;
+  flex-shrink:0;vertical-align:middle;
+}
+
+/* ── CANVAS ── */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
 </style>
 </head>
 
 <body>
-  <canvas id="stars"></canvas>
+<canvas id="stars"></canvas>
 
 <div class="loading" id="loading">
   <div class="loader"></div>
+  <div class="loading-text">LOADING QUESTIONS</div>
 </div>
 
+<!-- TOP NAV -->
+<nav class="topnav">
+  <a href="index.html" class="nav-home">
+    <svg viewBox="0 0 16 16"><path d="M8 1L1 7h2v7h4v-4h2v4h4V7h2L8 1z"/></svg>
+    HOME
+  </a>
+  <div class="nav-title">BIOLOGY QUIZ</div>
+  <div class="nav-score" id="nav-score"></div>
+</nav>
 
-<div class="quiz" id="quiz">
-  <div class="header">
-    <div>Biology • Cell Quiz</div>
-    <div class="meta">
-      <span id="progress"></span>
-      <span id="difficulty"></span>
+<div class="quiz-page">
 
-      <div class="timer-wrap" id="timerWrap">
-        <svg class="timer-ring" width="56" height="56">
-          <circle cx="28" cy="28" r="22"></circle>
-        </svg>
-        <span id="timer">15</span>
-      </div>
+  <!-- PROGRESS BAR -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar"></div>
     </div>
   </div>
 
-  <div class="question" id="question"></div>
-  <div class="options" id="options"></div>
-  <div class="feedback" id="feedback"></div>
+  <div class="quiz" id="quiz">
+    <div class="header">
+      <div style="font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.2em;color:rgba(77,214,255,.7)">CELL BIOLOGY</div>
+      <div class="meta">
+        <span id="progress"></span>
+        <span id="difficulty"></span>
+        <div class="timer-wrap" id="timerWrap">
+          <svg class="timer-ring" width="56" height="56">
+            <circle cx="28" cy="28" r="22"></circle>
+          </svg>
+          <span id="timer">15</span>
+        </div>
+      </div>
+    </div>
 
-  <div class="actions">
-    <button id="skip">Skip</button>
-    <button id="next">Next</button>
+    <div class="question" id="question"></div>
+    <div class="options"  id="options"></div>
+    <div class="feedback" id="feedback"></div>
+
+    <div class="actions">
+      <button id="skip">Skip →</button>
+      <button id="next">Next →</button>
+    </div>
   </div>
+
 </div>
 
-<!-- ORGANELLES BUTTON -->
-<footer class="organelles-footer">
-  <a href="organelles.html" class="organelles-btn">
-    Explore Cell Organelles
-  </a>
-</footer>
-  <footer class="cell3d-footer">
-  <a href="cell-3d.html" class="cell3d-btn">
-    Explore 3D Cell
-  </a>
-  </footer>
-  <!-- SOLVED QUESTIONS BUTTON -->
-<footer class="qa-footer">
-  <a href="solutions.html" class="qa-btn">
-    <span>📘 Exercises Questions & Answers</span>
-  </a>
-</footer>
-
 <script>
+/* ================= STARFIELD ================= */
+const sc=document.getElementById("stars"),sx=sc.getContext("2d");
+let stars=[];
+function resizeStar(){
+  sc.width=window.innerWidth;sc.height=window.innerHeight;
+  stars=[];
+  const n=Math.floor(sc.width*sc.height/3500);
+  for(let i=0;i<n;i++) stars.push({
+    x:Math.random()*sc.width,y:Math.random()*sc.height,
+    r:Math.random()*1.3+.2,a:Math.random()*.7+.1,
+    tw:Math.random()*Math.PI*2,sp:Math.random()*.03+.008
+  });
+}
+function drawS(){
+  sx.clearRect(0,0,sc.width,sc.height);
+  stars.forEach(s=>{
+    s.tw+=s.sp;
+    sx.globalAlpha=s.a*(.5+.5*Math.sin(s.tw));
+    sx.beginPath();sx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    sx.fillStyle="#fff";sx.fill();
+  });
+  sx.globalAlpha=1;
+  requestAnimationFrame(drawS);
+}
+window.addEventListener("resize",resizeStar);
+resizeStar();drawS();
+
 /* ================= AUDIO ================= */
 const correctAudio=new Audio("sounds/correct.mp3");
-const wrongAudio=new Audio("sounds/wrong.mp3");
-const timerSound=new Audio("sounds/timer.mp3");
+const wrongAudio  =new Audio("sounds/wrong.mp3");
+const timerSound  =new Audio("sounds/timer.mp3");
 timerSound.loop=true;timerSound.volume=.4;
 
 /* ================= TIMER ================= */
 const TOTAL_TIME=15;
 let timeLeft=TOTAL_TIME,interval=null,running=false;
-
-const timerEl=document.getElementById("timer");
-const ring=document.querySelector(".timer-ring circle");
+const timerEl  =document.getElementById("timer");
+const ring     =document.querySelector(".timer-ring circle");
 const timerWrap=document.getElementById("timerWrap");
 const FULL=138;
 
 function resetTimer(){
-  clearInterval(interval);
-  running=false;
-  timeLeft=TOTAL_TIME;
-  timerEl.textContent=TOTAL_TIME;
-  ring.style.strokeDashoffset=0;
-  timerSound.pause();
-  timerSound.currentTime=0;
+  clearInterval(interval);running=false;timeLeft=TOTAL_TIME;
+  timerEl.textContent=TOTAL_TIME;ring.style.strokeDashoffset=0;
+  timerWrap.classList.remove("danger");
+  timerSound.pause();timerSound.currentTime=0;
 }
 
 timerWrap.onclick=()=>{
@@ -135,144 +271,133 @@ timerWrap.onclick=()=>{
     timeLeft--;
     timerEl.textContent=timeLeft;
     ring.style.strokeDashoffset=FULL-(timeLeft/TOTAL_TIME)*FULL;
+    if(timeLeft<=5) timerWrap.classList.add("danger");
     if(timeLeft<=0){
-      clearInterval(interval);
-      timerSound.pause();
-      running=false;
+      clearInterval(interval);timerSound.pause();running=false;
+      timerWrap.classList.remove("danger");
     }
   },1000);
 };
 
 /* ================= QUIZ ================= */
 const loading=document.getElementById("loading");
-const quiz=document.getElementById("quiz");
-const qEl=document.getElementById("question");
-const oEl=document.getElementById("options");
-const fEl=document.getElementById("feedback");
-const nEl=document.getElementById("next");
-const skipEl=document.getElementById("skip");
-const pEl=document.getElementById("progress");
-const dEl=document.getElementById("difficulty");
+const quiz   =document.getElementById("quiz");
+const qEl    =document.getElementById("question");
+const oEl    =document.getElementById("options");
+const fEl    =document.getElementById("feedback");
+const nEl    =document.getElementById("next");
+const skipEl =document.getElementById("skip");
+const pEl    =document.getElementById("progress");
+const dEl    =document.getElementById("difficulty");
+const barEl  =document.getElementById("progress-bar");
+const navScore=document.getElementById("nav-score");
 
 let data=[],idx=0,locked=false,correctCount=0,totalCount=0;
 
-/* 🔀 SHUFFLE */
 function shuffle(arr){
-  return arr.map(v=>({v,s:Math.random()}))
-            .sort((a,b)=>a.s-b.s)
-            .map(x=>x.v);
+  return arr.map(v=>({v,s:Math.random()})).sort((a,b)=>a.s-b.s).map(x=>x.v);
 }
 
-/* 🔒 LOAD FROM LOCALSTORAGE */
 const saved=localStorage.getItem("bioquiz_state");
 
 fetch("questions.json")
 .then(r=>r.json())
 .then(d=>{
-  if(saved){
-    const s=JSON.parse(saved);
-    data=s.data;
-    idx=s.idx;
-  }else{
-    data=shuffle(d);
-    saveState();
-  }
+  if(saved){const s=JSON.parse(saved);data=s.data;idx=s.idx;}
+  else{data=shuffle(d);saveState();}
   loading.style.display="none";
   quiz.style.display="block";
   load();
 });
 
-/* 💾 SAVE STATE */
 function saveState(){
   localStorage.setItem("bioquiz_state",JSON.stringify({data,idx}));
 }
 
-function load(){
-  resetTimer();
-  locked=false;
-  fEl.style.display="none";
-  nEl.style.display="none";
-  skipEl.style.display="inline-block";
+function updateBar(){
+  const pct=((idx)/data.length)*100;
+  barEl.style.width=pct+"%";
+}
 
+function updateNavScore(){
+  if(totalCount>0){
+    navScore.textContent=`${correctCount}/${totalCount}`;
+  }
+}
+
+function load(){
+  resetTimer();locked=false;
+  fEl.style.display="none";nEl.style.display="none";
+  skipEl.style.display="inline-block";
   const q=data[idx];
   qEl.textContent=q.question;
-  pEl.textContent=`Q ${idx+1}/${data.length}`;
+  pEl.textContent=`Q ${idx+1} / ${data.length}`;
   dEl.textContent=q.difficulty||"";
-
   oEl.innerHTML="";
-
+  updateBar();
   const opts=shuffle(q.options.map((t,i)=>({t,i})));
   opts.forEach((o,pos)=>{
     const div=document.createElement("div");
     div.className="option";
-    div.innerHTML=`<b>${"ABCD"[pos]}.</b> ${o.t}`;
-    div.onclick=()=>{
-      if(locked)return;
-      select(o.i,div);
-    };
+    div.innerHTML=`<b>${"ABCD"[pos]}</b> ${o.t}`;
+    div.onclick=()=>{if(locked)return;select(o.i,div);};
     oEl.appendChild(div);
   });
-
   saveState();
 }
 
 function select(ans,div){
-  locked=true;
-  resetTimer();
-
+  locked=true;resetTimer();
   const q=data[idx];
   [...oEl.children].forEach(o=>o.classList.add("disabled"));
-
   const correct=ans===q.answer;
-totalCount++;
-if(correct) correctCount++;
-
+  totalCount++;if(correct)correctCount++;
+  updateNavScore();
   if(correct){
     correctAudio.play().catch(()=>{});
     div.style.borderColor="#6dffcc";
+    div.style.background="rgba(109,255,204,.08)";
   }else{
     wrongAudio.play().catch(()=>{});
     div.style.borderColor="#ff8a8a";
+    div.style.background="rgba(255,138,138,.06)";
     [...oEl.children].forEach(o=>{
-      if(o.textContent.includes(q.options[q.answer])){
+      if(o.textContent.trim().includes(q.options[q.answer])){
         o.style.borderColor="#6dffcc";
+        o.style.background="rgba(109,255,204,.08)";
       }
     });
   }
-
-  fEl.textContent=correct?"Correct":"Incorrect";
+  fEl.textContent=correct?"✓ Correct":"✗ Incorrect";
   fEl.className="feedback "+(correct?"correct":"wrong");
   fEl.style.display="block";
-
   nEl.style.display="inline-block";
   skipEl.style.display="none";
 }
 
 skipEl.onclick=()=>{
   idx++;saveState();
-  idx<data.length?load():qEl.textContent="Quiz Completed";
+  idx<data.length?load():finish();
 };
 
 nEl.onclick=()=>{
   idx++;saveState();
-  if(idx<data.length){
-    load();
-  } else {
-    localStorage.setItem("correct", correctCount);
-    localStorage.setItem("total", totalCount);
-    location.href="results.html";
-  }
+  idx<data.length?load():finish();
 };
-</script>
-  <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
-  });
-}
-  </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+function finish(){
+  localStorage.setItem("correct",correctCount);
+  localStorage.setItem("total",totalCount);
+  location.href="results.html";
+}
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>r.unregister());});
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="three-space.js?v=2"></script>
 </body>
 </html>
