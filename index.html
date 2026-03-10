@@ -86,7 +86,12 @@ body{background:var(--void);color:var(--text);font-family:'Exo 2',sans-serif;min
 @keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 .tb-left{display:flex;align-items:center;gap:10px}
 .tb-logo-ic{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,rgba(0,229,255,.17),rgba(0,229,255,.05));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center}
-.tb-logo-ic svg{width:15px;height:15px;stroke:var(--cyan);fill:none;stroke-width:1.6}
+.tb-logo-ic svg{
+  width:15px;
+  height:15px;
+  stroke:var(--cyan);
+  filter:drop-shadow(0 0 6px var(--cyan));
+}
 .tb-name{font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:.22em;color:var(--cyan)}
 .tb-dot{width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 7px var(--cyan);animation:pulse 2.5s ease infinite}
 .tb-right{display:flex;align-items:center;gap:14px}
