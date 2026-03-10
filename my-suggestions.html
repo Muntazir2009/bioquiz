@@ -4,25 +4,241 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>All Suggestions • BioQuiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --void:#04030f;--deep:#080618;
+  --violet:#9b6dff;--pink:#f472b6;--teal:#2dd4bf;--amber:#fbbf24;--coral:#fb7185;--green:#34d399;
+  --text:#e8dff8;--text-dim:#9080b8;--label:#c4b0e8;--muted:#4a3d6a;
+  --border:rgba(155,109,255,.18);
+}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--text);font-family:'Exo 2',sans-serif;min-height:100vh;overflow-x:hidden}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 130% 60% at 50% -8%,rgba(100,40,255,.18) 0%,transparent 58%),
+    radial-gradient(ellipse 60% 60% at 95% 90%,rgba(244,114,182,.1) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 45% at 0% 70%,rgba(45,212,191,.07) 0%,transparent 50%);
+}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(155,109,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(155,109,255,.03) 1px,transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse 85% 85% at 50% 50%,black 0%,transparent 80%);
+}
+.scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.03) 3px,rgba(0,0,0,.03) 4px)}
 
-<!-- Orbitron Font -->
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:500;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(14px,4vw,52px);background:rgba(4,3,15,.88);backdrop-filter:blur(22px);border-bottom:1px solid rgba(155,109,255,.1);animation:fadeDown .6s ease .1s both}
+.tb-left{display:flex;align-items:center;gap:10px;text-decoration:none}
+.tb-ic{width:30px;height:30px;border-radius:8px;background:rgba(155,109,255,.12);border:1px solid rgba(155,109,255,.3);display:flex;align-items:center;justify-content:center}
+.tb-ic svg{width:14px;height:14px;stroke:var(--violet);fill:none;stroke-width:1.6}
+.tb-name{font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:.22em;color:var(--violet)}
+.tb-pulse{width:5px;height:5px;border-radius:50%;background:var(--violet);box-shadow:0 0 8px var(--violet);animation:pulse 2.5s ease infinite}
+.tb-right{display:flex;align-items:center;gap:9px}
+.tb-pill{display:flex;align-items:center;gap:6px;text-decoration:none;font-family:'Orbitron',monospace;font-size:.46rem;letter-spacing:.13em;padding:6px 14px;border-radius:20px;transition:all .2s;white-space:nowrap;cursor:pointer;border:none}
+.tb-pill.ghost{color:var(--text-dim);border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.tb-pill.ghost:hover{color:var(--violet);border-color:rgba(155,109,255,.35);background:rgba(155,109,255,.08)}
+.tb-pill.accent{color:var(--pink);border:1px solid rgba(244,114,182,.25);background:rgba(244,114,182,.06)}
+.tb-pill.accent:hover{background:rgba(244,114,182,.14);border-color:rgba(244,114,182,.45)}
+.tb-pill svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#count-badge{font-family:'Orbitron',monospace;font-size:.44rem;letter-spacing:.1em;color:var(--teal);padding:5px 12px;border-radius:20px;border:1px solid rgba(45,212,191,.22);background:rgba(45,212,191,.06);display:flex;align-items:center;gap:5px}
+#count-badge::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--teal);box-shadow:0 0 5px var(--teal);animation:pulse 2s ease infinite}
 
-<link rel="stylesheet" href="css/my-suggestions.css">
+/* WRAP */
+.wrap{position:relative;z-index:2;max-width:860px;margin:0 auto;padding:80px clamp(14px,4vw,40px) 60px}
+
+/* PAGE HEADER */
+.pg-head{text-align:center;padding:clamp(28px,5vh,52px) 0 36px;animation:fadeUp .7s ease .3s both;opacity:0}
+.pg-eyebrow{font-family:'Orbitron',monospace;font-size:.46rem;letter-spacing:.4em;color:var(--violet);opacity:.85;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:12px}
+.pg-eyebrow::before,.pg-eyebrow::after{content:'';flex:1;max-width:36px;height:1px;background:linear-gradient(to var(--d),rgba(155,109,255,.7),transparent);--d:right;opacity:.8}
+.pg-eyebrow::after{--d:left}
+.pg-title{font-family:'Orbitron',monospace;font-size:clamp(1.5rem,4vw,2.1rem);font-weight:900;letter-spacing:.04em;margin-bottom:8px;background:linear-gradient(135deg,#fff 30%,rgba(155,109,255,.9) 70%,rgba(244,114,182,.8) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pg-sub{font-size:.84rem;font-weight:300;color:var(--text-dim);letter-spacing:.03em}
+
+/* FILTERS */
+.filters{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;animation:fadeUp .7s ease .45s both;opacity:0}
+.filter-btn{font-family:'Orbitron',monospace;font-size:.44rem;letter-spacing:.1em;padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;transition:all .2s}
+.filter-btn:hover{border-color:rgba(155,109,255,.3);color:var(--label);background:rgba(155,109,255,.06)}
+.filter-btn.active[data-f="all"]{border-color:rgba(155,109,255,.45);background:rgba(155,109,255,.1);color:var(--violet)}
+.filter-btn.active[data-f="Feature Request"]{border-color:rgba(155,109,255,.45);background:rgba(155,109,255,.1);color:var(--violet)}
+.filter-btn.active[data-f="Bug Report"]{border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.1);color:var(--coral)}
+.filter-btn.active[data-f="Content Improvement"]{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.09);color:var(--amber)}
+.filter-btn.active[data-f="Other"]{border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.09);color:var(--teal)}
+
+/* LIST */
+#list{display:flex;flex-direction:column;gap:11px;animation:fadeUp .7s ease .55s both;opacity:0}
+
+/* SUGGESTION CARD */
+.s-card{
+  background:linear-gradient(150deg,rgba(12,8,30,.97),rgba(7,5,20,.98));
+  border:1px solid rgba(155,109,255,.12);
+  border-radius:16px;padding:20px 22px;
+  position:relative;overflow:hidden;
+  transition:border-color .25s,box-shadow .25s,transform .2s;
+}
+.s-card:hover{border-color:rgba(155,109,255,.28);box-shadow:0 0 40px rgba(155,109,255,.07);transform:translateY(-1px)}
+/* top accent line per type */
+.s-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.s-card[data-type="Feature Request"]::before{background:linear-gradient(to right,transparent,rgba(155,109,255,.7),transparent)}
+.s-card[data-type="Bug Report"]::before{background:linear-gradient(to right,transparent,rgba(251,113,133,.7),transparent)}
+.s-card[data-type="Content Improvement"]::before{background:linear-gradient(to right,transparent,rgba(251,191,36,.7),transparent)}
+.s-card[data-type="Other"]::before{background:linear-gradient(to right,transparent,rgba(45,212,191,.7),transparent)}
+
+.s-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.s-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.s-badge{font-family:'Orbitron',monospace;font-size:.38rem;letter-spacing:.1em;padding:3px 9px;border-radius:5px;border:1px solid;white-space:nowrap}
+.badge-feat{background:rgba(155,109,255,.1);color:var(--violet);border-color:rgba(155,109,255,.3)}
+.badge-bug{background:rgba(251,113,133,.09);color:var(--coral);border-color:rgba(251,113,133,.3)}
+.badge-cont{background:rgba(251,191,36,.08);color:var(--amber);border-color:rgba(251,191,36,.3)}
+.badge-oth{background:rgba(45,212,191,.08);color:var(--teal);border-color:rgba(45,212,191,.3)}
+.s-date{font-family:'Orbitron',monospace;font-size:.4rem;letter-spacing:.07em;color:var(--muted)}
+
+.s-text{font-size:.9rem;font-weight:300;color:rgba(232,223,248,.78);line-height:1.72;margin-bottom:13px}
+.s-author{font-family:'Orbitron',monospace;font-size:.42rem;letter-spacing:.1em;color:var(--muted)}
+
+.del-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;flex-shrink:0;border:1px solid rgba(251,113,133,.15);background:rgba(251,113,133,.04);color:rgba(251,113,133,.35);cursor:pointer;transition:all .2s}
+.del-btn:hover{border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.12);color:var(--coral)}
+.del-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* EMPTY / LOADING */
+.state-box{text-align:center;padding:70px 20px;font-family:'Orbitron',monospace;font-size:.56rem;letter-spacing:.18em;color:var(--muted);line-height:2}
+.state-ic{font-size:2.2rem;margin-bottom:16px;opacity:.25}
+
+/* TOAST */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.1em;padding:10px 24px;border-radius:20px;background:rgba(7,5,20,.95);backdrop-filter:blur(18px);border:1px solid rgba(155,109,255,.22);color:var(--violet);opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:900}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{border-color:rgba(251,113,133,.35);color:var(--coral)}
+#toast.ok{border-color:rgba(52,211,153,.28);color:var(--green)}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media(max-width:540px){.filters{gap:5px}.filter-btn{font-size:.4rem;padding:6px 11px}}
+</style>
 </head>
 <body>
+<canvas id="stars"></canvas>
+<div class="aurora"></div>
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
 
-<header class="top-header">
-  <h1>ALL SUGGESTIONS</h1>
-  <p>Community Feedback</p>
-</header>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-dna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3c0 6 16 6 16 9S4 15 4 21"/><path d="M20 3c0 6-16 6-16 9s16 3 16 9"/><line x1="7.5" y1="8.5" x2="16.5" y2="8.5"/><line x1="7.5" y1="15.5" x2="16.5" y2="15.5"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+</svg>
 
-<main class="wrap">
+<div class="topbar">
+  <a href="index.html" class="tb-left">
+    <div class="tb-ic"><svg><use href="#i-dna"/></svg></div>
+    <span class="tb-name">BIOQUIZ</span>
+    <div class="tb-pulse"></div>
+  </a>
+  <div class="tb-right">
+    <div id="count-badge">— SUGGESTIONS</div>
+    <a href="suggestions.html" class="tb-pill accent"><svg><use href="#i-plus"/></svg> ADD NEW</a>
+    <a href="index.html" class="tb-pill ghost"><svg><use href="#i-back"/></svg> BACK</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="pg-head">
+    <div class="pg-eyebrow">COMMUNITY FEEDBACK</div>
+    <div class="pg-title">ALL SUGGESTIONS</div>
+    <div class="pg-sub">Browse and manage submitted suggestions</div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-f="all" onclick="setFilter(this)">ALL</button>
+    <button class="filter-btn" data-f="Feature Request" onclick="setFilter(this)">FEATURES</button>
+    <button class="filter-btn" data-f="Bug Report" onclick="setFilter(this)">BUGS</button>
+    <button class="filter-btn" data-f="Content Improvement" onclick="setFilter(this)">CONTENT</button>
+    <button class="filter-btn" data-f="Other" onclick="setFilter(this)">OTHER</button>
+  </div>
+
   <div id="list"></div>
-</main>
+</div>
 
 <div id="toast"></div>
 
-<script src="js/my-suggestions.js"></script>
+<script>
+/* STARS */
+const cv=document.getElementById("stars"),cx=cv.getContext("2d");let ST=[];
+function resize(){cv.width=innerWidth;cv.height=innerHeight;ST=[];const n=Math.floor(cv.width*cv.height/2600);for(let i=0;i<n;i++)ST.push({x:Math.random()*cv.width,y:Math.random()*cv.height,r:Math.random()*1.4+.2,a:Math.random()*.7+.15,tw:Math.random()*Math.PI*2,sp:Math.random()*.028+.006,col:Math.random()>.88?"#c4aaff":Math.random()>.82?"#f0aacc":"#fff"})}
+function draw(){cx.clearRect(0,0,cv.width,cv.height);ST.forEach(s=>{s.tw+=s.sp;const a=s.a*(.35+.65*Math.sin(s.tw));cx.save();cx.globalAlpha=a;cx.beginPath();cx.arc(s.x,s.y,s.r,0,Math.PI*2);cx.fillStyle=s.col;cx.fill();cx.restore()});requestAnimationFrame(draw)}
+window.addEventListener("resize",resize);resize();draw();
+
+const API="https://bioquiz-suggestion.killermunu.workers.dev";
+let allData=[],adminPass=sessionStorage.getItem("adminPass")||null,activeFilter="all";
+
+function badgeClass(t){return t==="Feature Request"?"badge-feat":t==="Bug Report"?"badge-bug":t==="Content Improvement"?"badge-cont":"badge-oth"}
+
+async function load(){
+  document.getElementById("list").innerHTML=`<div class="state-box"><div class="state-ic">◌</div>LOADING...</div>`;
+  try{
+    const res=await fetch(API);
+    allData=await res.json();
+    document.getElementById("count-badge").textContent=allData.length+" SUGGESTION"+(allData.length!==1?"S":"");
+    render();
+  }catch{
+    document.getElementById("list").innerHTML=`<div class="state-box"><div class="state-ic">⚠</div>FAILED TO LOAD</div>`;
+  }
+}
+
+function render(){
+  const list=document.getElementById("list");
+  const filtered=activeFilter==="all"?allData:allData.filter(d=>d.type===activeFilter);
+  if(!filtered.length){list.innerHTML=`<div class="state-box"><div class="state-ic">◎</div>NO SUGGESTIONS YET</div>`;return}
+  list.innerHTML="";
+  filtered.forEach(item=>{
+    const date=item.time?new Date(item.time).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
+    const card=document.createElement("div");
+    card.className="s-card";card.dataset.type=item.type||"Other";
+    card.innerHTML=`
+      <div class="s-card-top">
+        <div class="s-meta">
+          <span class="s-badge ${badgeClass(item.type||"Other")}">${item.type||"Other"}</span>
+          <span class="s-date">${date}</span>
+        </div>
+        <button class="del-btn" data-id="${item.id}" title="Delete"><svg><use href="#i-trash"/></svg></button>
+      </div>
+      <div class="s-text">${escHtml(item.suggestion||"")}</div>
+      <div class="s-author">— ${escHtml(item.name||"Anonymous")}</div>
+    `;
+    list.appendChild(card);
+  });
+  attachDelete();
+}
+
+function setFilter(el){
+  document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+  el.classList.add("active");activeFilter=el.dataset.f;render();
+}
+
+function attachDelete(){
+  document.querySelectorAll(".del-btn").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      const id=btn.dataset.id;
+      if(!confirm("Delete this suggestion?"))return;
+      if(!adminPass){adminPass=prompt("Admin password:");if(!adminPass){toast("Password required","err");return}sessionStorage.setItem("adminPass",adminPass)}
+      try{
+        const res=await fetch(`${API}?id=${id}`,{method:"DELETE",headers:{"X-Admin-Password":adminPass}});
+        const r=await res.json();
+        if(r.success){toast("Suggestion deleted","ok");load()}
+        else{toast("Wrong password","err");adminPass=null;sessionStorage.removeItem("adminPass")}
+      }catch{toast("Delete failed","err")}
+    });
+  });
+}
+
+function toast(msg,type=""){const t=document.getElementById("toast");t.textContent=msg;t.className="show"+(type?" "+type:"");setTimeout(()=>t.className="",2600)}
+function escHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+load();
+</script>
 </body>
 </html>
