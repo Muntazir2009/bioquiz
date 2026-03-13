@@ -787,12 +787,24 @@ function setSrc(v) {
 /* ──────────────────────────────────
    STATUS
 ────────────────────────────────── */
+let _timerInterval = null;
 function setSt(txt, isErr) {
   const box = document.getElementById('stBox');
+  clearInterval(_timerInterval); _timerInterval = null;
   if (!txt) { box.classList.remove('show','err'); return; }
-  document.getElementById('stTxt').textContent = txt;
   box.classList.add('show');
   box.classList.toggle('err', !!isErr);
+  if (!isErr) {
+    const start = Date.now();
+    const update = () => {
+      const s = ((Date.now() - start) / 1000).toFixed(1);
+      document.getElementById('stTxt').textContent = txt + '  [' + s + 's]';
+    };
+    update();
+    _timerInterval = setInterval(update, 100);
+  } else {
+    document.getElementById('stTxt').textContent = txt;
+  }
 }
 
 /* ──────────────────────────────────
@@ -896,17 +908,40 @@ async function doGen() {
    WIKIPEDIA IMAGES
 ────────────────────────────────── */
 async function getWikiImgs(data) {
+  // Fetch all images in parallel with a 6s timeout per request
   const slides = await Promise.all(data.slides.map(async sl => {
     if (!sl.imageQuery) return sl;
     try {
+      // Strategy 1: pageimages on a direct title search (most reliable)
       const q = encodeURIComponent(sl.imageQuery);
-      const j = await (await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`
-      )).json();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      const res = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=3&prop=pageimages&pithumbsize=600&pilimit=3&format=json&origin=*`,
+        { signal: ctrl.signal }
+      );
+      clearTimeout(timer);
+      const j = await res.json();
       const pages = Object.values(j.query?.pages || {});
-      const img = pages.find(p => { const m = p.imageinfo?.[0]?.mime||''; return m.startsWith('image/')&&!m.includes('svg')&&!m.includes('gif'); });
+      const hit = pages.find(p => p.thumbnail?.source);
+      if (hit) {
+        sl.imageUrl = hit.thumbnail.source;
+        sl.imageCaption = hit.title || sl.imageQuery;
+        return sl;
+      }
+      // Strategy 2: fallback to file-namespace search
+      const ctrl2 = new AbortController();
+      const timer2 = setTimeout(() => ctrl2.abort(), 6000);
+      const res2 = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`,
+        { signal: ctrl2.signal }
+      );
+      clearTimeout(timer2);
+      const j2 = await res2.json();
+      const pages2 = Object.values(j2.query?.pages || {});
+      const img = pages2.find(p => { const m = p.imageinfo?.[0]?.mime||''; return m.startsWith('image/')&&!m.includes('svg')&&!m.includes('gif'); });
       if (img) { sl.imageUrl = img.imageinfo[0].thumburl||img.imageinfo[0].url; sl.imageCaption = sl.imageQuery; }
-    } catch(_) {}
+    } catch(_) { /* timeout or network error — skip image */ }
     return sl;
   }));
   return { ...data, slides };
