@@ -4,772 +4,719 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lesson Slides · BioQuiz</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08080c;
-  --bg2:#0d0d12;
-  --srf:#111117;
-  --srf2:#17171f;
-  --srf3:#1d1d27;
-  --rim:rgba(255,255,255,.1);
-  --rim2:rgba(255,255,255,.06);
-  --rim3:rgba(255,255,255,.03);
-  --w:#f0f0f8;
-  --wd:rgba(240,240,248,.5);
-  --wf:rgba(240,240,248,.06);
-  --wxf:rgba(240,240,248,.03);
-  --acc:#e8e8f0;
-  --acc2:rgba(232,232,240,.14);
-  --acc3:rgba(232,232,240,.06);
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --card: #13131a;
+  --card2: #1a1a24;
+  --border: rgba(255,255,255,.08);
+  --border2: rgba(255,255,255,.15);
+  --text: #ececf4;
+  --muted: rgba(236,236,244,.42);
+  --dim: rgba(236,236,244,.22);
+  --wb: #f0f0f8;
 }
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--w);font-family:'DM Sans',sans-serif}
-body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E")}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; -webkit-tap-highlight-color: transparent; }
 
-.screen{position:fixed;inset:0;display:flex;flex-direction:column;
-  transition:opacity .38s ease,transform .38s cubic-bezier(.4,0,.2,1)}
-.screen.hidden{opacity:0;pointer-events:none;transform:scale(.974)}
+/* PAGE SYSTEM — display:none/flex, no fixed stacking, no z-index wars */
+.page { display: none; flex-direction: column; min-height: 100dvh; }
+.page.active { display: flex; }
 
-/* ═══ MENU ═══ */
-#menuScreen{overflow-y:auto}
-#menuScreen::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 80% 55% at 50% -10%,rgba(255,255,255,.04) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 70% at 100% 80%,rgba(255,255,255,.02) 0%,transparent 55%),
-    radial-gradient(ellipse 40% 50% at 0% 50%,rgba(255,255,255,.02) 0%,transparent 55%)}
-#menuScreen::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:linear-gradient(var(--rim3) 1px,transparent 1px),linear-gradient(90deg,var(--rim3) 1px,transparent 1px);
-  background-size:54px 54px;
-  mask-image:radial-gradient(ellipse 88% 68% at 50% 28%,black 0%,transparent 80%)}
-
-.m-bar{position:sticky;top:0;z-index:100;height:54px;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(16px,4vw,48px);
-  background:rgba(8,8,12,.93);backdrop-filter:blur(22px);border-bottom:1px solid var(--rim2)}
-.m-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-.m-bic{width:30px;height:30px;border-radius:8px;
-  background:linear-gradient(150deg,var(--srf3),var(--srf));border:1px solid var(--rim);
-  box-shadow:0 2px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(0,0,0,.3);
-  display:flex;align-items:center;justify-content:center}
-.m-bic svg{width:13px;height:13px;stroke:var(--acc);fill:none;stroke-width:1.6}
-.m-bname{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;color:var(--wd)}
-.m-hbtn{display:flex;align-items:center;gap:6px;text-decoration:none;
-  font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.12em;
-  color:rgba(240,240,248,.28);padding:5px 12px;border-radius:6px;
-  border:1px solid var(--rim2);transition:all .18s}
-.m-hbtn:hover{color:var(--w);border-color:var(--rim);background:var(--wf)}
-.m-hbtn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-
-.m-body{position:relative;z-index:2;max-width:920px;margin:0 auto;
-  padding:clamp(32px,5vh,60px) clamp(16px,4vw,48px) 80px}
-.m-eye{font-family:'DM Mono',monospace;font-size:.48rem;letter-spacing:.3em;
-  color:rgba(240,240,248,.35);margin-bottom:11px;display:flex;align-items:center;gap:10px}
-.m-eye::after{content:'';flex:1;max-width:40px;height:1px;
-  background:linear-gradient(to right,rgba(240,240,248,.3),transparent)}
-.m-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.2rem,9vw,5.6rem);
-  line-height:.87;letter-spacing:.04em;margin-bottom:12px;color:var(--w);
-  text-shadow:0 0 80px rgba(255,255,255,.06)}
-.m-sub{font-size:.9rem;font-weight:300;color:rgba(240,240,248,.3);
-  max-width:400px;line-height:1.72;margin-bottom:46px}
-
-.gen-cta{position:relative;display:flex;align-items:center;gap:20px;
-  background:linear-gradient(165deg,#f8f8fc 0%,#e4e4ee 100%);
-  border-radius:16px;padding:22px 26px;cursor:pointer;margin-bottom:36px;
-  transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s;
-  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -3px 0 rgba(0,0,0,.22) inset,
-    0 10px 32px rgba(0,0,0,.6),0 20px 40px -12px rgba(0,0,0,.35)}
-.gen-cta:hover{transform:translateY(-5px) rotateX(3deg) rotateY(-1deg);
-  box-shadow:0 1px 0 rgba(255,255,255,.98) inset,0 -3px 0 rgba(0,0,0,.25) inset,
-    0 20px 56px rgba(0,0,0,.7),0 32px 60px -12px rgba(0,0,0,.45)}
-.gen-cta:active{transform:translateY(-1px) rotateX(0);box-shadow:0 4px 16px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.9) inset}
-.gen-ic{width:46px;height:46px;border-radius:12px;background:rgba(8,8,16,.08);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 6px rgba(0,0,0,.12);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.gen-ic svg{width:21px;height:21px;stroke:#0c0c1a;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.gen-txt{flex:1}
-.gen-ttl{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.07em;color:#0c0c1a;margin-bottom:2px}
-.gen-sub2{font-size:.78rem;color:rgba(12,12,26,.42)}
-.gen-arr{width:30px;height:30px;border-radius:8px;background:rgba(8,8,16,.08);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center}
-.gen-arr svg{width:13px;height:13px;stroke:#0c0c1a;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-
-.sec-hd{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-.sec-lbl{font-family:'DM Mono',monospace;font-size:.46rem;letter-spacing:.24em;color:rgba(240,240,248,.28);flex-shrink:0}
-.sec-ln{flex:1;height:1px;background:linear-gradient(to right,var(--rim),transparent)}
-
-.t-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:12px}
-.t-card{position:relative;background:linear-gradient(160deg,var(--srf2) 0%,var(--srf) 100%);
-  border:1px solid var(--rim);border-radius:14px;padding:20px 22px 18px;
-  cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:9px;
-  transition:transform .22s cubic-bezier(.4,0,.2,1),box-shadow .22s,border-color .22s;
-  box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 -1px 0 rgba(0,0,0,.4) inset,
-    0 4px 16px rgba(0,0,0,.4),0 1px 0 rgba(0,0,0,.5)}
-.t-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.10),transparent);z-index:1}
-.t-card::after{content:'';position:absolute;inset:0;border-radius:14px;
-  background:radial-gradient(ellipse 80% 60% at 50% 0%,var(--acc3),transparent);
-  opacity:0;transition:opacity .22s}
-.t-card:hover{border-color:rgba(255,255,255,.10);transform:translateY(-4px) rotateX(2deg);
-  box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 -1px 0 rgba(0,0,0,.45) inset,
-    0 16px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.07),0 -2px 0 rgba(255,255,255,.06)}
-.t-card:hover::after{opacity:1}
-.t-card:active{transform:translateY(-1px)}
-.tc-tag{font-family:'DM Mono',monospace;font-size:.4rem;letter-spacing:.15em;
-  color:var(--acc);opacity:.65;display:flex;align-items:center;gap:6px;position:relative;z-index:2}
-.tc-tag::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--acc);opacity:.7}
-.tc-head{font-family:'Bebas Neue',sans-serif;font-size:1.32rem;letter-spacing:.04em;
-  color:var(--w);line-height:1;position:relative;z-index:2}
-.tc-desc{font-size:.78rem;font-weight:300;color:rgba(240,240,248,.34);line-height:1.55;position:relative;z-index:2}
-.tc-foot{display:flex;align-items:center;margin-top:2px;position:relative;z-index:2}
-.tc-cnt{font-family:'DM Mono',monospace;font-size:.4rem;letter-spacing:.1em;color:rgba(240,240,248,.2)}
-.tc-arr{margin-left:auto;width:22px;height:22px;border-radius:6px;
-  border:1px solid var(--rim2);background:var(--wxf);
-  display:flex;align-items:center;justify-content:center;color:rgba(240,240,248,.22);transition:all .2s}
-.tc-arr svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.t-card:hover .tc-arr{border-color:var(--rim);color:var(--acc)}
-
-/* ═══ GENERATOR ═══ */
-#genScreen{align-items:center;justify-content:center;padding:24px;overflow-y:auto}
-.g-wrap{position:relative;z-index:2;width:100%;max-width:500px;animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both}
-.g-back{display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;
-  font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.14em;
-  color:rgba(240,240,248,.28);margin-bottom:28px;padding:0;transition:color .18s}
-.g-back:hover{color:var(--acc)}
-.g-back svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.g-title{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:.04em;
-  color:var(--w);margin-bottom:5px}
-.g-sub{font-size:.88rem;font-weight:300;color:rgba(240,240,248,.3);margin-bottom:24px;line-height:1.65}
-.t-in{width:100%;padding:13px 18px;
-  background:linear-gradient(160deg,var(--srf2),var(--srf));
-  border:1px solid var(--rim);border-radius:10px;color:var(--w);
-  font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;
-  transition:border-color .2s,box-shadow .2s;margin-bottom:13px;
-  box-shadow:inset 0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.10)}
-.t-in::placeholder{color:rgba(240,240,248,.18)}
-.t-in:focus{border-color:rgba(255,255,255,.10);box-shadow:0 0 0 3px rgba(255,255,255,.08),inset 0 2px 8px rgba(0,0,0,.3)}
-.opts{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap}
-.opt-g{display:flex;flex-direction:column;gap:5px;flex:1;min-width:128px}
-.opt-l{font-family:'DM Mono',monospace;font-size:.42rem;letter-spacing:.18em;color:rgba(240,240,248,.26)}
-.opt-s{padding:9px 12px;border:1px solid var(--rim);border-radius:8px;
-  color:var(--w);font-family:'DM Sans',sans-serif;font-size:.8rem;outline:none;cursor:pointer;
-  appearance:none;
-  background:linear-gradient(160deg,var(--srf2),var(--srf));
-  background-image:linear-gradient(160deg,var(--srf2),var(--srf)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,.10)' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat,no-repeat;background-position:0 0,right 10px center;padding-right:26px;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.10)}
-.opt-s option{background:#101024}
-.src-row{display:flex;gap:7px;margin-bottom:14px}
-.src-btn{flex:1;padding:9px 8px;border-radius:8px;cursor:pointer;
-  border:1px solid var(--rim2);background:linear-gradient(160deg,var(--srf2),var(--srf));
-  font-family:'DM Mono',monospace;font-size:.42rem;letter-spacing:.1em;
-  color:rgba(240,240,248,.28);transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  box-shadow:inset 0 1px 4px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.10)}
-.src-btn:hover{border-color:var(--rim);color:var(--wd)}
-.src-btn.on{border-color:rgba(255,255,255,.10);
-  background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.06));
-  color:var(--acc);box-shadow:0 0 0 1px rgba(255,255,255,.08),inset 0 1px 4px rgba(0,0,0,.2)}
-.src-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.go-btn{width:100%;padding:14px;border-radius:10px;cursor:pointer;
-  background:linear-gradient(165deg,#f8f8fc 0%,#e4e4ee 100%);border:none;color:#0c0c1a;
-  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.12em;
-  transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;gap:9px;
-  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -3px 0 rgba(0,0,0,.22) inset,
-    0 8px 24px rgba(0,0,0,.55),0 20px 40px -8px rgba(0,0,0,.3)}
-.go-btn:hover:not(:disabled){transform:translateY(-2px) rotateX(2deg);
-  box-shadow:0 1px 0 rgba(255,255,255,.98) inset,0 -3px 0 rgba(0,0,0,.25) inset,
-    0 14px 36px rgba(0,0,0,.65),0 24px 48px -8px rgba(0,0,0,.38)}
-.go-btn:active:not(:disabled){transform:translateY(0);box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(0,0,0,.15)}
-.go-btn:disabled{opacity:.28;cursor:not-allowed}
-.go-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.g-st{margin-top:13px;padding:12px 16px;border-radius:9px;
-  background:linear-gradient(160deg,var(--srf2),var(--srf));border:1px solid var(--rim);
-  font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;
-  color:rgba(240,240,248,.4);display:none;align-items:center;gap:10px;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
-.g-st.on{display:flex}
-.g-st.err{border-color:rgba(255,100,100,.22);color:#f87171;background:rgba(255,80,80,.05)}
-.sdot{width:5px;height:5px;border-radius:50%;background:var(--acc);opacity:.7;flex-shrink:0;animation:blink 1s ease infinite}
-@keyframes blink{0%,100%{opacity:.7}50%{opacity:.1}}
-
-/* ═══ SLIDES ═══ */
-#slideScreen{background:var(--bg)}
-#slideScreen::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 60% 40% at 50% 100%,rgba(255,255,255,.06) 0%,transparent 60%),
-    radial-gradient(ellipse 40% 30% at 10% 50%,rgba(255,255,255,.07) 0%,transparent 55%)}
-
-.s-bar{flex-shrink:0;height:52px;display:flex;align-items:center;justify-content:space-between;
-  padding:0 18px;background:rgba(8,8,12,.95);backdrop-filter:blur(22px);
-  border-bottom:1px solid var(--rim2);position:relative;z-index:100;
-  box-shadow:0 1px 0 rgba(255,255,255,.10)}
-.s-bL,.s-bR{display:flex;align-items:center;gap:8px}
-.tb{display:flex;align-items:center;gap:5px;
-  font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.11em;
-  color:rgba(240,240,248,.3);padding:5px 10px;border-radius:6px;
-  border:1px solid var(--rim2);background:linear-gradient(160deg,var(--srf2),var(--srf));
-  cursor:pointer;transition:all .18s;white-space:nowrap;text-decoration:none;
-  box-shadow:0 1px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.10)}
-.tb:hover{color:var(--acc);border-color:var(--rim);background:linear-gradient(160deg,var(--srf3),var(--srf2))}
-.tb svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.tb-div{width:1px;height:18px;background:var(--rim2)}
-.tb-topic{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.09em;
-  color:rgba(240,240,248,.35);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tb-ctr{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;color:rgba(240,240,248,.25)}
-.tb-ctr b{color:var(--w);font-weight:500}
-
-.prog{flex-shrink:0;height:2px;background:var(--rim2);position:relative;z-index:100}
-.prog-f{height:100%;background:linear-gradient(to right,var(--acc),rgba(255,255,255,.10));
-  transition:width .42s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(255,255,255,.10)}
-.dot-row{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
-.dot{width:5px;height:5px;border-radius:50%;background:rgba(240,240,248,.15);
-  cursor:pointer;transition:all .25s;transform:translateY(2.5px)}
-.dot.on{background:var(--acc);transform:translateY(2.5px) scale(1.4);box-shadow:0 0 6px rgba(255,255,255,.10)}
-.dot:hover:not(.on){background:rgba(240,240,248,.38)}
-
-.stage{flex:1;position:relative;overflow:hidden;z-index:2;perspective:1400px}
-
-.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  padding:clamp(18px,3vw,48px) clamp(18px,4vw,56px);
-  opacity:0;pointer-events:none;
-  transition:opacity .34s ease,transform .38s cubic-bezier(.4,0,.2,1);
-  transform:translateX(50px)}
-.slide.on{opacity:1;pointer-events:all;transform:translateX(0)}
-.slide.out-l{opacity:0;transform:translateX(-50px)}
-.s-in{width:100%;max-width:880px;display:grid;gap:clamp(18px,4vw,48px);align-items:center;
-  transform-style:preserve-3d}
-.s-in.split{grid-template-columns:1fr 1fr}
-.s-in.full{grid-template-columns:1fr;max-width:640px}
-@media(max-width:640px){.s-in.split{grid-template-columns:1fr}}
-
-.s-num{font-family:'DM Mono',monospace;font-size:.46rem;letter-spacing:.24em;
-  color:var(--acc);opacity:.45;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.s-num::after{content:'';width:24px;height:1px;background:linear-gradient(to right,var(--acc),transparent);opacity:.5}
-.s-head{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,4.5vw,3.5rem);
-  line-height:.92;letter-spacing:.03em;color:var(--w);margin-bottom:18px;
-  text-shadow:0 0 40px rgba(255,255,255,.07)}
-
-/* ── 3D plain card ── */
-.s-card{position:relative;
-  background:linear-gradient(160deg,var(--srf2) 0%,var(--srf) 100%);
-  border:1px solid var(--rim);border-radius:13px;padding:20px 22px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.10) inset,
-    0 -1px 0 rgba(0,0,0,.5) inset,
-    0 8px 28px rgba(0,0,0,.5),
-    0 1px 0 rgba(0,0,0,.6),
-    0 20px 48px -12px rgba(255,255,255,.06)}
-.s-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.10),transparent);
-  border-radius:13px 13px 0 0}
-.s-body{font-size:clamp(.8rem,1.45vw,.93rem);font-weight:300;line-height:1.82;color:rgba(240,240,248,.65)}
-.s-body b{color:var(--w);font-weight:600}
-.s-body ul,.s-body ol{padding-left:1.1em;margin-top:8px}
-.s-body li{margin-bottom:6px;padding-left:2px}
-.s-body ul li::marker{color:var(--acc);opacity:.4}
-.s-body ol li::marker{font-family:'DM Mono',monospace;font-size:.78em;color:rgba(240,240,248,.2)}
-.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.kf{font-family:'DM Mono',monospace;font-size:.42rem;letter-spacing:.08em;
-  padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.10);
-  background:rgba(255,255,255,.07);color:rgba(240,240,248,.36)}
-
-/* ══════════════════════════════════════════════════
-   REVEAL SYSTEM — DEFINITIVE FIX
-
-   Structure:
-     .rv-card   ← the entire clickable card. cursor:pointer.
-                  NO overflow:hidden. Receives ALL click events.
-       .rv-blur ← ONLY this element gets filter:blur applied.
-                  pointer-events:none so clicks bubble to .rv-card.
-       .rv-badge← pill floats on top. pointer-events:none.
-
-   When .rv-card gets class "open":
-     .rv-blur   → blur removed, full opacity
-     .rv-badge  → fades out
-
-   Clicking anywhere on the card (even on the blurred text) works
-   because .rv-blur has pointer-events:none → click lands on .rv-card.
-══════════════════════════════════════════════════ */
-.rv-card{
-  position:relative;
-  cursor:pointer;
-  background:linear-gradient(160deg,var(--srf2) 0%,var(--srf) 100%);
-  border:1px solid var(--rim);border-radius:13px;padding:20px 22px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.10) inset,
-    0 -1px 0 rgba(0,0,0,.5) inset,
-    0 8px 28px rgba(0,0,0,.5),
-    0 1px 0 rgba(0,0,0,.6),
-    0 20px 48px -12px rgba(255,255,255,.06);
-  transition:border-color .22s,box-shadow .22s;
+/* ── SHARED TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 52px; border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
 }
-.rv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.10),transparent);
-  border-radius:13px 13px 0 0;z-index:1;pointer-events:none}
-.rv-card:not(.open):hover{
-  border-color:rgba(255,255,255,.10);
-  box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 -1px 0 rgba(0,0,0,.5) inset,
-    0 12px 36px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.07)}
-
-/* content that blurs — pointer-events:none so clicks reach .rv-card */
-.rv-blur{
-  pointer-events:none;
-  user-select:none;
-  transition:filter .48s cubic-bezier(.4,0,.2,1),opacity .48s ease;
-  filter:blur(9px);
-  opacity:.18;
+.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.brand-ic {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--card2); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
 }
-/* when card is revealed */
-.rv-card.open .rv-blur{
-  filter:blur(0);
-  opacity:1;
-  pointer-events:auto;
-  user-select:auto;
+.brand-ic svg { width: 14px; height: 14px; stroke: var(--text); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.brand-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .16em; color: var(--muted); }
+.tb-link {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em;
+  color: var(--dim); text-decoration: none; padding: 6px 12px; border-radius: 6px;
+  border: 1px solid var(--border); transition: color .15s, border-color .15s;
+}
+.tb-link:hover { color: var(--text); border-color: var(--border2); }
+
+/* ══════════════════════════════════════════
+   MENU PAGE
+══════════════════════════════════════════ */
+#pg-menu { overflow-y: auto; }
+.menu-body { max-width: 860px; margin: 0 auto; padding: 44px 20px 80px; width: 100%; }
+.hero-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .26em; color: var(--dim); margin-bottom: 10px; }
+.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 8vw, 5rem); letter-spacing: .04em; line-height: .9; color: var(--text); margin-bottom: 10px; }
+.hero-sub { font-size: 14px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-bottom: 36px; }
+
+/* White CTA button */
+.gen-cta {
+  display: flex; align-items: center; gap: 16px; padding: 18px 20px;
+  background: var(--wb); border-radius: 13px; cursor: pointer; margin-bottom: 40px;
+  border: none; width: 100%; text-align: left;
+  box-shadow: 0 6px 22px rgba(0,0,0,.5);
+  transition: transform .15s, box-shadow .15s;
+}
+.gen-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.6); }
+.gen-cta:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+.cta-icon { width: 40px; height: 40px; border-radius: 9px; background: rgba(10,10,15,.09); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cta-icon svg { width: 18px; height: 18px; stroke: #0a0a0f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cta-text { flex: 1; }
+.cta-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: .06em; color: #0a0a0f; line-height: 1; }
+.cta-sub { font-size: 12px; color: rgba(10,10,15,.42); margin-top: 2px; }
+.cta-arr svg { width: 14px; height: 14px; stroke: rgba(10,10,15,.38); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.sec-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .2em; color: var(--dim); white-space: nowrap; }
+.sec-line { flex: 1; height: 1px; background: var(--border); }
+
+.topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
+.topic-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 11px;
+  padding: 16px 18px; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.topic-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+.topic-card:active { transform: translateY(0); }
+.tc-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .13em; color: var(--dim); }
+.tc-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: .04em; color: var(--text); line-height: 1; }
+.tc-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.5; }
+.tc-count { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--dim); margin-top: 2px; }
+
+/* ══════════════════════════════════════════
+   GENERATOR PAGE
+══════════════════════════════════════════ */
+#pg-gen { align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+.gen-wrap { width: 100%; max-width: 440px; }
+.gen-back {
+  display: flex; align-items: center; gap: 6px; background: none; border: none;
+  cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: .13em; color: var(--dim); margin-bottom: 28px; padding: 0; transition: color .15s;
+}
+.gen-back:hover { color: var(--text); }
+.gen-back svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.gen-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: .04em; color: var(--text); margin-bottom: 4px; }
+.gen-sub { font-size: 13px; font-weight: 300; color: var(--muted); margin-bottom: 24px; }
+
+.field { margin-bottom: 13px; }
+.field-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .15em; color: var(--dim); display: block; margin-bottom: 5px; }
+.field input, .field select {
+  width: 100%; padding: 11px 13px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px;
+  outline: none; transition: border-color .15s; -webkit-appearance: none; appearance: none;
+}
+.field input::placeholder { color: var(--dim); }
+.field input:focus, .field select:focus { border-color: var(--border2); }
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(236,236,244,0.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; cursor: pointer;
+}
+.field select option { background: #1a1a24; }
+
+.opts-row { display: flex; gap: 10px; margin-bottom: 13px; }
+.opts-row .field { flex: 1; margin-bottom: 0; }
+
+.src-row { display: flex; gap: 8px; margin-bottom: 20px; }
+.src-btn {
+  flex: 1; padding: 10px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em;
+  color: var(--dim); transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.src-btn:hover { border-color: var(--border2); color: var(--text); }
+.src-btn.on { border-color: var(--border2); color: var(--text); background: var(--card2); }
+.src-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.go-btn {
+  width: 100%; padding: 13px; border-radius: 9px; cursor: pointer;
+  background: var(--wb); border: none; color: #0a0a0f;
+  font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: .12em;
+  box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+}
+.go-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.55); }
+.go-btn:active:not(:disabled) { transform: translateY(0); }
+.go-btn:disabled { opacity: .28; cursor: not-allowed; }
+
+.status {
+  margin-top: 12px; padding: 11px 14px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);
+  display: none; align-items: center; gap: 8px;
+}
+.status.show { display: flex; }
+.status.err { border-color: rgba(255,80,80,.22); color: #f87171; }
+.sdot { width: 5px; height: 5px; border-radius: 50%; background: var(--text); flex-shrink: 0; animation: blink 1s ease infinite; }
+.status.err .sdot { background: #f87171; }
+@keyframes blink { 0%,100%{opacity:.7} 50%{opacity:.1} }
+
+/* ══════════════════════════════════════════
+   SLIDES PAGE
+══════════════════════════════════════════ */
+#pg-slides { overflow: hidden; height: 100dvh; }
+
+.slides-bar {
+  display: flex; align-items: center; height: 50px; padding: 0 14px;
+  border-bottom: 1px solid var(--border); background: var(--bg);
+  flex-shrink: 0; gap: 10px;
+}
+.sb-btn {
+  display: flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 7px;
+  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em;
+  transition: color .15s, border-color .15s; flex-shrink: 0; white-space: nowrap;
+}
+.sb-btn:hover { color: var(--text); border-color: var(--border2); }
+.sb-btn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sb-topic { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; }
+.sb-counter { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; }
+
+.prog { height: 2px; background: var(--border); flex-shrink: 0; }
+.prog-fill { height: 100%; background: var(--wb); transition: width .3s ease; width: 0; }
+
+/* Stage and slides */
+.stage { flex: 1; overflow: hidden; position: relative; }
+.slide { display: none; height: 100%; overflow-y: auto; padding: 24px 20px; }
+.slide.active { display: block; }
+.slide-inner { max-width: 740px; margin: 0 auto; padding-bottom: 20px; }
+
+.slide-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .2em; color: var(--dim); margin-bottom: 8px; }
+.slide-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: .04em; color: var(--text); line-height: 1; margin-bottom: 18px;
 }
 
-/* floating pill — centred, pointer-events:none so clicks go to card */
-.rv-badge{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  z-index:10;
-  pointer-events:none;
-  display:flex;align-items:center;gap:8px;
-  font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.13em;
-  color:rgba(240,240,248,.72);
-  background:rgba(8,8,12,.85);
-  border:1px solid rgba(255,255,255,.10);
-  padding:10px 20px;border-radius:30px;
-  backdrop-filter:blur(10px);
-  box-shadow:0 8px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.10),0 0 20px rgba(255,255,255,.07);
-  transition:opacity .35s ease,transform .35s cubic-bezier(.4,0,.2,1),border-color .2s,color .2s;
-  white-space:nowrap;
+.slide-layout { display: flex; gap: 20px; align-items: flex-start; }
+.slide-layout.has-img .content-col { flex: 1; min-width: 0; }
+.img-col { width: 260px; flex-shrink: 0; }
+.img-col img { width: 100%; border-radius: 10px; border: 1px solid var(--border); display: block; }
+.img-cap { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: var(--dim); margin-top: 5px; }
+
+/* Content card */
+.content-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 11px;
+  padding: 18px 20px; position: relative;
 }
-.rv-badge svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.rv-card.open .rv-badge{opacity:0;transform:translate(-50%,-50%) scale(.82);}
-.rv-card:not(.open):hover .rv-badge{color:var(--acc);border-color:rgba(255,255,255,.10);background:rgba(8,8,12,.92);box-shadow:0 8px 24px rgba(0,0,0,.55),0 0 24px rgba(255,255,255,.10);}
+.content-card.blurred { cursor: pointer; }
+.content-body {
+  font-size: 14px; font-weight: 300; line-height: 1.8; color: rgba(236,236,244,.7);
+  transition: filter .35s ease, opacity .35s ease;
+  pointer-events: auto;
+}
+.content-card.blurred .content-body { filter: blur(7px); opacity: .15; user-select: none; pointer-events: none; }
+.content-body b { color: var(--text); font-weight: 500; }
+.content-body ul, .content-body ol { padding-left: 18px; margin: 8px 0; }
+.content-body li { margin-bottom: 4px; }
 
-/* ── image column ── */
-.s-img-col{display:flex;flex-direction:column;gap:8px}
-.s-img-w{border-radius:12px;overflow:hidden;border:1px solid var(--rim);
-  background:linear-gradient(160deg,var(--srf2),var(--srf));width:100%;aspect-ratio:4/3;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 28px rgba(0,0,0,.45),0 1px 0 rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.10)}
-.s-img-w img{width:100%;height:100%;object-fit:cover;display:block}
-.s-img-cap{font-family:'DM Mono',monospace;font-size:.4rem;letter-spacing:.1em;color:rgba(240,240,248,.2);text-align:center}
-.img-ph{display:flex;flex-direction:column;align-items:center;gap:8px;color:rgba(240,240,248,.14);
-  font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.12em;padding:20px;text-align:center}
-.img-ph svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.3;opacity:.5}
+.kf-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
+.kf { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 5px 10px; border-radius: 18px; background: var(--card2); border: 1px solid var(--border); color: var(--muted); }
 
-/* ── nav ── */
-.s-nav{flex-shrink:0;height:54px;display:flex;align-items:center;justify-content:space-between;
-  padding:0 18px;gap:12px;background:rgba(8,8,12,.95);backdrop-filter:blur(22px);
-  border-top:1px solid var(--rim2);position:relative;z-index:100;box-shadow:0 -1px 0 rgba(255,255,255,.10)}
-.nav-b{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;
-  font-size:.52rem;letter-spacing:.13em;color:rgba(240,240,248,.3);
-  padding:7px 14px;border-radius:8px;border:1px solid var(--rim2);
-  background:linear-gradient(160deg,var(--srf2),var(--srf));
-  cursor:pointer;transition:all .2s;white-space:nowrap;
-  box-shadow:0 1px 4px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.10)}
-.nav-b:hover:not(:disabled){color:var(--acc);border-color:var(--rim);background:linear-gradient(160deg,var(--srf3),var(--srf2))}
-.nav-b:disabled{opacity:.14;cursor:not-allowed}
-.nav-b.pri{background:linear-gradient(165deg,#f8f8fc 0%,#e4e4ee 100%);
-  border-color:rgba(255,255,255,.15);color:#0c0c1a;font-weight:500;
-  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -3px 0 rgba(0,0,0,.22) inset,
-    0 6px 18px rgba(0,0,0,.5),0 14px 28px -6px rgba(0,0,0,.3)}
-.nav-b.pri:hover:not(:disabled){transform:translateY(-2px) rotateX(2deg);color:#0c0c1a;
-  box-shadow:0 1px 0 rgba(255,255,255,.98) inset,0 -3px 0 rgba(0,0,0,.25) inset,
-    0 10px 28px rgba(0,0,0,.6),0 20px 36px -6px rgba(0,0,0,.38)}
-.nav-b svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.nav-c{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'DM Mono',monospace;flex:1;min-width:0}
-.nav-t{font-size:.52rem;letter-spacing:.07em;color:rgba(240,240,248,.36);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav-p{font-size:.46rem;letter-spacing:.1em;color:rgba(240,240,248,.18)}
+.reveal-badge {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  background: rgba(10,10,15,.9); border: 1px solid var(--border2);
+  padding: 8px 16px; border-radius: 22px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--muted);
+  display: flex; align-items: center; gap: 7px; pointer-events: none;
+  white-space: nowrap; transition: opacity .3s ease;
+}
+.reveal-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.content-card:not(.blurred) .reveal-badge { opacity: 0; pointer-events: none; }
 
-/* ── toolbar ── */
-.s-tools{position:absolute;bottom:70px;right:18px;z-index:50;display:flex;flex-direction:column;gap:6px}
-.tool-b{width:34px;height:34px;border-radius:8px;cursor:pointer;
-  border:1px solid var(--rim2);background:linear-gradient(160deg,var(--srf2),var(--srf));
-  color:rgba(240,240,248,.26);display:flex;align-items:center;justify-content:center;
-  transition:all .18s;box-shadow:0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.10)}
-.tool-b:hover{border-color:var(--rim);background:linear-gradient(160deg,var(--srf3),var(--srf2));
-  color:var(--acc);box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.10)}
-.tool-b.lit{color:var(--acc);border-color:rgba(255,255,255,.10)}
-.tool-b svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Bottom nav */
+.slide-nav {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em;
+  transition: color .15s, border-color .15s; flex-shrink: 0;
+}
+.nav-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border2); }
+.nav-btn:disabled { opacity: .22; cursor: not-allowed; }
+.nav-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn.pri { background: var(--wb); border-color: transparent; color: #0a0a0f; box-shadow: 0 3px 12px rgba(0,0,0,.4); }
+.nav-btn.pri:hover:not(:disabled) { box-shadow: 0 5px 18px rgba(0,0,0,.5); }
 
-/* ── notes ── */
-.notes-pn{position:absolute;bottom:76px;right:60px;z-index:60;width:250px;
-  background:linear-gradient(160deg,var(--srf3),var(--srf2));border:1px solid var(--rim);
-  border-radius:12px;padding:14px;display:none;flex-direction:column;gap:9px;
-  box-shadow:0 16px 48px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.10) inset}
-.notes-pn.open{display:flex}
-.notes-lbl{font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.18em;color:var(--acc);opacity:.55}
-.notes-ta{width:100%;min-height:88px;background:linear-gradient(160deg,var(--srf2),var(--srf));
-  border:1px solid var(--rim);border-radius:8px;padding:9px 11px;
-  color:var(--w);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:300;line-height:1.65;
-  outline:none;resize:vertical;transition:border-color .2s;box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
-.notes-ta::placeholder{color:rgba(240,240,248,.18)}
-.notes-ta:focus{border-color:rgba(255,255,255,.10)}
-.notes-hint{font-family:'DM Mono',monospace;font-size:.4rem;letter-spacing:.08em;color:rgba(240,240,248,.2)}
+.dot-row { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; overflow: hidden; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); cursor: pointer; border: none; padding: 0; transition: background .15s, transform .15s; flex-shrink: 0; }
+.dot.on { background: var(--text); transform: scale(1.35); }
 
-/* ── overview ── */
-.ov{position:fixed;inset:0;z-index:300;background:rgba(8,8,12,.97);backdrop-filter:blur(20px);
-  display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .28s}
-.ov.open{opacity:1;pointer-events:all}
-.ov-h{display:flex;align-items:center;justify-content:space-between;
-  padding:18px 24px;border-bottom:1px solid var(--rim);flex-shrink:0}
-.ov-htxt .ov-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.08em;color:var(--w)}
-.ov-htxt .ov-sub{font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.16em;color:var(--acc);opacity:.45;margin-top:2px}
-.ov-x{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.48rem;
-  letter-spacing:.12em;color:rgba(240,240,248,.3);padding:6px 11px;border-radius:7px;
-  border:1px solid var(--rim);background:linear-gradient(160deg,var(--srf2),var(--srf));
-  cursor:pointer;transition:all .18s;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-.ov-x:hover{color:var(--acc);border-color:rgba(255,255,255,.10)}
-.ov-x svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:9px;padding:20px 24px;overflow-y:auto}
-.ov-card{background:linear-gradient(160deg,var(--srf2),var(--srf));border:1px solid var(--rim);
-  border-radius:10px;padding:14px 15px;cursor:pointer;transition:all .2s;
-  box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.10)}
-.ov-card:hover{border-color:rgba(255,255,255,.10);background:linear-gradient(160deg,var(--srf3),var(--srf2));transform:translateY(-1px)}
-.ov-card.cur{border-color:rgba(255,255,255,.10);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(0,140,110,.06));
-  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 2px 8px rgba(0,0,0,.35)}
-.ov-n{font-family:'DM Mono',monospace;font-size:.4rem;letter-spacing:.16em;color:var(--acc);opacity:.45;margin-bottom:6px}
-.ov-hd{font-family:'Bebas Neue',sans-serif;font-size:.93rem;letter-spacing:.04em;color:var(--w);line-height:1.1}
-.ov-rv{font-family:'DM Mono',monospace;font-size:.38rem;letter-spacing:.1em;color:var(--acc);opacity:.4;
-  margin-top:5px;display:flex;align-items:center;gap:4px}
-.ov-rv svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ══════════════════════════════════════════
+   OVERVIEW — full page overlay using display
+══════════════════════════════════════════ */
+.ov-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(10,10,15,.96);
+  display: none; flex-direction: column; overflow-y: auto;
+}
+.ov-overlay.open { display: flex; }
+.ov-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.ov-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: .04em; }
+.ov-close {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 7px;
+  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; transition: color .15s;
+}
+.ov-close:hover { color: var(--text); }
+.ov-close svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 9px; padding: 18px 20px; }
+.ov-card { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 13px 15px; cursor: pointer; transition: border-color .15s; }
+.ov-card:hover, .ov-card.cur { border-color: var(--border2); }
+.ov-card.cur { background: var(--card2); }
+.ov-num { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .13em; color: var(--dim); margin-bottom: 4px; }
+.ov-heading { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
 
-.kb{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);z-index:50;
-  font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.12em;
-  color:rgba(240,240,248,.13);display:flex;align-items:center;gap:6px;
-  pointer-events:none;animation:kbfade 8s ease 2.5s forwards}
-.kbk{padding:2px 6px;border:1px solid rgba(240,240,248,.1);border-radius:4px;background:rgba(240,240,248,.03)}
-@keyframes kbfade{0%{opacity:1}80%{opacity:.13}100%{opacity:0}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-body.fs-sm .s-body{font-size:.78rem!important}
-body.fs-lg .s-body{font-size:1.05rem!important}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(240,240,248,.08);border-radius:2px}
-@media(max-width:480px){.opts{flex-direction:column}.g-wrap{padding:0}}
+@media (max-width: 580px) {
+  .slide-layout.has-img { flex-direction: column; }
+  .img-col { width: 100%; }
+}
 </style>
 </head>
 <body>
-<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <symbol id="i-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="12,2 20.5,7 20.5,17 12,22 3.5,17 3.5,7"/>
-    <circle cx="12" cy="12" r="3.2"/>
-    <line x1="12" y1="8.8" x2="12" y2="7"/>
-    <line x1="12" y1="15.2" x2="12" y2="17"/>
-    <line x1="9.2" y1="10.4" x2="7.6" y2="9.5"/>
-    <line x1="14.8" y1="13.6" x2="16.4" y2="14.5"/>
-    <line x1="14.8" y1="10.4" x2="16.4" y2="9.5"/>
-    <line x1="9.2" y1="13.6" x2="7.6" y2="14.5"/>
-  </symbol>
-  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></symbol>
-  <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
-  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
-  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
-  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></symbol>
-  <symbol id="i-wiki" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
-  <symbol id="i-noimg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></symbol>
-  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></symbol>
-  <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
-</svg>
 
-<!-- MENU -->
-<div class="screen" id="menuScreen">
-  <div class="m-bar">
-    <a href="index.html" class="m-brand">
-      <div class="m-bic"><svg><use href="#i-logo"/></svg></div>
-      <span class="m-bname">BIOQUIZ</span>
+<!-- ══ MENU ══ -->
+<div class="page active" id="pg-menu">
+  <div class="topbar">
+    <a class="brand" href="#">
+      <div class="brand-ic">
+        <svg viewBox="0 0 24 24"><polygon points="12,3 20,8 20,16 12,21 4,16 4,8"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <span class="brand-name">BIOQUIZ</span>
     </a>
-    <a href="index.html" class="m-hbtn"><svg><use href="#i-home"/></svg> HOME</a>
+    <a class="tb-link" href="index.html">HOME</a>
   </div>
-  <div class="m-body">
-    <div class="m-eye">MODULE 005</div>
-    <div class="m-title">LESSON<br>SLIDES</div>
-    <div class="m-sub">Pick a saved topic or generate a custom deck on any biology subject using AI.</div>
-    <div class="gen-cta" onclick="showGen()">
-      <div class="gen-ic"><svg><use href="#i-spark"/></svg></div>
-      <div class="gen-txt">
-        <div class="gen-ttl">GENERATE ON ANY TOPIC</div>
-        <div class="gen-sub2">AI-powered · Wikipedia diagrams · Custom settings</div>
+  <div class="menu-body">
+    <div class="hero-label">BIOQUIZ · LESSON SLIDES</div>
+    <div class="hero-title">LESSON<br>SLIDES</div>
+    <div class="hero-sub">AI-powered biology slide decks with reveal cards.</div>
+
+    <button class="gen-cta" onclick="showPage('gen')">
+      <div class="cta-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
       </div>
-      <div class="gen-arr"><svg><use href="#i-arr"/></svg></div>
+      <div class="cta-text">
+        <div class="cta-title">GENERATE ON ANY TOPIC</div>
+        <div class="cta-sub">Type any biology topic and get instant slides</div>
+      </div>
+      <div class="cta-arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </button>
+
+    <div class="sec-head">
+      <span class="sec-label">SAVED TOPICS</span>
+      <div class="sec-line"></div>
     </div>
-    <div class="sec-hd"><div class="sec-lbl">SAVED TOPICS</div><div class="sec-ln"></div></div>
-    <div class="t-grid" id="tGrid"></div>
+    <div class="topic-grid" id="topicGrid"></div>
   </div>
 </div>
 
-<!-- GENERATOR -->
-<div class="screen hidden" id="genScreen">
-  <div class="g-wrap">
-    <button class="g-back" onclick="showMenu()"><svg><use href="#i-back"/></svg> BACK TO TOPICS</button>
-    <div class="g-title">GENERATE SLIDES</div>
-    <div class="g-sub">Enter any biology topic — AI builds a full slide deck with diagrams.</div>
-    <input class="t-in" id="topicIn" type="text" placeholder="e.g. Photosynthesis, Mitosis, Enzymes…" maxlength="80" autocomplete="off" onkeydown="if(event.key==='Enter')doGen()">
-    <div class="opts">
-      <div class="opt-g"><div class="opt-l">SLIDES</div>
-        <select class="opt-s" id="slideN"><option value="4">4 slides</option><option value="5" selected>5 slides</option><option value="6">6 slides</option><option value="8">8 slides</option></select>
+<!-- ══ GENERATOR ══ -->
+<div class="page" id="pg-gen">
+  <div class="gen-wrap">
+    <button class="gen-back" onclick="showPage('menu')">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      BACK
+    </button>
+    <div class="gen-title">GENERATE</div>
+    <div class="gen-sub">Enter a biology topic to create a slide deck</div>
+
+    <div class="field">
+      <label class="field-label" for="topicIn">TOPIC</label>
+      <input id="topicIn" type="text" placeholder="e.g. Meiosis, Enzymes, Heart…" autocomplete="off" onkeydown="if(event.key==='Enter')doGen()">
+    </div>
+
+    <div class="opts-row">
+      <div class="field">
+        <label class="field-label" for="slideN">SLIDES</label>
+        <select id="slideN">
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
       </div>
-      <div class="opt-g"><div class="opt-l">DETAIL</div>
-        <select class="opt-s" id="detailN"><option value="concise">Concise</option><option value="standard" selected>Standard</option><option value="detailed">Detailed</option></select>
+      <div class="field">
+        <label class="field-label" for="detailN">DETAIL</label>
+        <select id="detailN">
+          <option value="concise">Concise</option>
+          <option value="standard" selected>Standard</option>
+          <option value="detailed">Detailed</option>
+        </select>
       </div>
-      <div class="opt-g"><div class="opt-l">REVEAL</div>
-        <select class="opt-s" id="revealN"><option value="some" selected>Some slides</option><option value="all">All slides</option><option value="none">None</option></select>
+      <div class="field">
+        <label class="field-label" for="revealN">REVEAL</label>
+        <select id="revealN">
+          <option value="some" selected>Some</option>
+          <option value="all">All</option>
+          <option value="none">None</option>
+        </select>
       </div>
     </div>
-    <div class="opt-l" style="margin-bottom:8px">IMAGES</div>
-    <div class="src-row">
-      <button class="src-btn on" id="srcWiki" onclick="setSrc('wiki')"><svg><use href="#i-wiki"/></svg> WIKIPEDIA</button>
-      <button class="src-btn" id="srcNone" onclick="setSrc('none')"><svg><use href="#i-noimg"/></svg> NONE</button>
+
+    <div class="field">
+      <label class="field-label">IMAGES</label>
+      <div class="src-row">
+        <button class="src-btn on" id="srcWiki" onclick="setSrc('wiki')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          WIKIPEDIA
+        </button>
+        <button class="src-btn" id="srcNone" onclick="setSrc('none')">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          NONE
+        </button>
+      </div>
     </div>
-    <button class="go-btn" id="goBtn" onclick="doGen()"><svg><use href="#i-spark"/></svg> GENERATE</button>
-    <div class="g-st" id="gSt"><div class="sdot"></div><span id="gTxt">Generating…</span></div>
+
+    <button class="go-btn" id="goBtn" onclick="doGen()">GENERATE SLIDES</button>
+    <div class="status" id="stBox">
+      <span class="sdot"></span>
+      <span id="stTxt"></span>
+    </div>
   </div>
 </div>
 
-<!-- SLIDES -->
-<div class="screen hidden" id="slideScreen">
-  <div class="s-bar">
-    <div class="s-bL">
-      <button class="tb" onclick="goBack()"><svg><use href="#i-back"/></svg> BACK</button>
-      <div class="tb-div"></div>
-      <div class="tb-topic" id="tbTopic">—</div>
-    </div>
-    <div class="s-bR">
-      <div class="tb-ctr"><b id="curN">1</b> / <span id="totN">5</span></div>
-      <button class="tb" onclick="openOv()"><svg><use href="#i-grid"/></svg></button>
-      <a href="index.html" class="tb"><svg><use href="#i-home"/></svg></a>
-    </div>
+<!-- ══ SLIDES ══ -->
+<div class="page" id="pg-slides">
+  <div class="slides-bar">
+    <button class="sb-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      BACK
+    </button>
+    <div class="sb-topic" id="deckTitle"></div>
+    <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
+    <button class="sb-btn" onclick="openOv()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      ALL
+    </button>
   </div>
-  <div class="prog">
-    <div class="prog-f" id="pf" style="width:20%"></div>
+  <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+  <div class="stage" id="stage"></div>
+  <div class="slide-nav">
+    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      PREV
+    </button>
     <div class="dot-row" id="dotRow"></div>
+    <button class="nav-btn pri" id="nextBtn" onclick="nav(1)">
+      NEXT
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
-  <div class="stage" id="stage">
-    <div class="s-tools">
-      <button class="tool-b" id="notesBtn" onclick="toggleNotes()" title="Notes (N)"><svg><use href="#i-note"/></svg></button>
-      <button class="tool-b" id="fontBtn" onclick="cycleFont()" title="Font size">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="1" y="18" font-size="16" stroke="none" fill="currentColor" font-family="Georgia,serif" font-weight="bold">A</text><text x="13" y="14" font-size="10" stroke="none" fill="currentColor" font-family="Georgia,serif">a</text></svg>
-      </button>
-    </div>
-    <div class="notes-pn" id="notesPn">
-      <div class="notes-lbl">SLIDE NOTES</div>
-      <textarea class="notes-ta" id="notesTa" placeholder="Notes for this slide…" oninput="saveNote()"></textarea>
-      <div class="notes-hint">Auto-saved per slide</div>
-    </div>
-  </div>
-  <div class="s-nav">
-    <button class="nav-b" id="prevBtn" onclick="nav(-1)" disabled><svg><use href="#i-back"/></svg> PREV</button>
-    <div class="nav-c"><div class="nav-t" id="navT">—</div><div class="nav-p" id="navP">SLIDE 1</div></div>
-    <button class="nav-b pri" id="nextBtn" onclick="nav(1)">NEXT <svg><use href="#i-arr"/></svg></button>
-  </div>
-  <div class="kb"><span class="kbk">←</span><span class="kbk">→</span> NAVIGATE &nbsp;·&nbsp; <span class="kbk">G</span> OVERVIEW &nbsp;·&nbsp; <span class="kbk">N</span> NOTES &nbsp;·&nbsp; <span class="kbk">R</span> REVEAL</div>
 </div>
 
-<!-- OVERVIEW -->
-<div class="ov" id="ov">
-  <div class="ov-h">
-    <div class="ov-htxt"><div class="ov-title" id="ovTitle">SLIDES</div><div class="ov-sub">CLICK ANY SLIDE TO JUMP</div></div>
-    <button class="ov-x" onclick="closeOv()"><svg><use href="#i-x"/></svg> CLOSE</button>
+<!-- ══ OVERVIEW ══ -->
+<div class="ov-overlay" id="ovOverlay">
+  <div class="ov-head">
+    <div class="ov-title" id="ovTitle">OVERVIEW</div>
+    <button class="ov-close" onclick="closeOv()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      CLOSE
+    </button>
   </div>
   <div class="ov-grid" id="ovGrid"></div>
 </div>
 
 <script>
-const TOPICS=[
-  {id:'cell-wall',tag:'PLANT BIOLOGY',heading:'Cell Wall',desc:'Structure, composition and function of the plant cell wall.',slides:[
-    {heading:'What is a Cell Wall?',reveal:false,imageQuery:'plant cell wall diagram',content:`The <b>cell wall</b> is a rigid, non-living outer layer found outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength.<br><br>It also prevents the cell from bursting when excess water enters by osmosis.`,keyFacts:['Rigid, non-living layer','Plant cells only','Prevents osmotic lysis']},
-    {heading:'Composition',reveal:true,content:`The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul><br>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.`,keyFacts:['Cellulose = main component','Lignin adds extra rigidity','Pectin holds cells together']},
-    {heading:'Three Layers',reveal:true,imageQuery:'cell wall layers middle lamella',content:`Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>`,keyFacts:['Middle lamella = cement','Primary = flexible','Secondary = rigid']},
-    {heading:'Functions',reveal:true,content:`The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>`,keyFacts:['Shape + support','Protects from damage','Permeable to water']}
-  ]},
-  {id:'photosynthesis',tag:'PLANT PHYSIOLOGY',heading:'Photosynthesis',desc:'How plants convert sunlight into glucose using chlorophyll.',slides:[
-    {heading:'What is Photosynthesis?',reveal:false,imageQuery:'photosynthesis chloroplast diagram',content:`<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.`,keyFacts:['Light → Chemical energy','In chloroplasts','Releases oxygen']},
-    {heading:'The Equation',reveal:true,content:`<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment absorbing light energy required for this reaction.`,keyFacts:['CO₂ + H₂O → Glucose + O₂','Chlorophyll absorbs light','Energy stored in glucose bonds']},
-    {heading:'Light-Dependent Reactions',reveal:true,imageQuery:'thylakoid membrane light reactions',content:`Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>`,keyFacts:['In thylakoids','Photolysis splits water','ATP + NADPH produced']},
-    {heading:'Calvin Cycle',reveal:true,imageQuery:'Calvin cycle stroma diagram',content:`Occurs in the <b>stroma</b>:<ul><li>CO₂ fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> → glucose produced</li></ul>`,keyFacts:['In stroma','RuBisCO fixes CO₂','G3P → Glucose']},
-    {heading:'Limiting Factors',reveal:true,content:`Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO₂ concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40°C</li><li><b>Water availability</b></li></ul>`,keyFacts:['Light, CO₂, temp are key','Enzymes denature at high temp','Stomata close in drought']}
-  ]},
-  {id:'mitosis',tag:'CELL DIVISION',heading:'Mitosis',desc:'Division producing two genetically identical daughter cells.',slides:[
-    {heading:'What is Mitosis?',reveal:false,imageQuery:'mitosis phases diagram',content:`<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.`,keyFacts:['2 identical daughter cells','Same chromosome number','Growth + repair']},
-    {heading:'Interphase',reveal:true,content:`Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>`,keyFacts:['DNA replicated in S phase','Cell grows in G1 + G2','Not part of mitosis itself']},
-    {heading:'Prophase & Metaphase',reveal:true,imageQuery:'prophase metaphase spindle fibres',content:`<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the <b>metaphase plate</b>, spindle fibres attach to centromeres.`,keyFacts:['Chromosomes condense','Nuclear envelope dissolves','Align at equator']},
-    {heading:'Anaphase & Telophase',reveal:true,imageQuery:'anaphase telophase cytokinesis',content:`<b>Anaphase:</b> sister chromatids pulled to opposite poles, cell elongates.<br><br><b>Telophase + Cytokinesis:</b> nuclear envelopes reform, chromosomes decondense, cytoplasm divides.`,keyFacts:['Chromatids to poles','Nuclear envelopes reform','Cytokinesis splits cell']}
-  ]},
-  {id:'dna',tag:'MOLECULAR BIOLOGY',heading:'DNA Structure',desc:'Double helix, nucleotides, base pairing and replication.',slides:[
-    {heading:'The Double Helix',reveal:false,imageQuery:'DNA double helix Watson Crick',content:`<b>DNA</b> (Deoxyribonucleic acid) carries genetic information. Described by <b>Watson and Crick</b> in 1953 as a <b>double helix</b> — two strands coiled around each other.`,keyFacts:['Double helix shape','Watson & Crick, 1953','Carries genetic instructions']},
-    {heading:'Nucleotides',reveal:true,content:`Built from <b>nucleotides</b>. Each contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four bases: <b>A, T, G, C</b></li></ul>`,keyFacts:['Sugar + phosphate + base','4 bases: A T G C','Backbone = sugar-phosphate']},
-    {heading:'Base Pairing',reveal:true,imageQuery:'DNA base pairs hydrogen bonds',content:`Strands held by <b>hydrogen bonds</b>:<ul><li><b>A ↔ T</b> — 2 hydrogen bonds</li><li><b>G ↔ C</b> — 3 hydrogen bonds</li></ul><br>Known as <b>Chargaff's Rule</b>.`,keyFacts:["A pairs with T","G pairs with C","Chargaff's Rule"]},
-    {heading:'DNA Replication',reveal:true,imageQuery:'DNA replication semi-conservative',content:`<b>Semi-conservative</b> replication:<ol><li><b>Helicase</b> unzips the double helix</li><li>Free nucleotides bind to exposed bases</li><li><b>DNA Polymerase</b> joins new strand</li></ol>Each new molecule keeps one original strand.`,keyFacts:['Semi-conservative','Helicase unzips helix','DNA Polymerase builds strand']}
-  ]}
+/* ── DATA ── */
+const TOPICS = [
+  {
+    id:'cell-wall', tag:'PLANT BIOLOGY', title:'Cell Wall',
+    desc:'Structure, composition and function of the plant cell wall.',
+    slides:[
+      {heading:'What is a Cell Wall?',reveal:false,imageQuery:'plant cell wall diagram',
+       content:'The <b>cell wall</b> is a rigid, non-living outer layer found outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It also prevents the cell from bursting when excess water enters by osmosis.',
+       keyFacts:['Rigid, non-living layer','Plant cells only','Prevents osmotic lysis']},
+      {heading:'Composition',reveal:true,
+       content:'The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.',
+       keyFacts:['Cellulose = main component','Lignin adds extra rigidity','Pectin holds cells together']},
+      {heading:'Three Layers',reveal:true,imageQuery:'cell wall layers middle lamella',
+       content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>',
+       keyFacts:['Middle lamella = cement','Primary = flexible','Secondary = rigid']},
+      {heading:'Functions',reveal:true,
+       content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>',
+       keyFacts:['Shape + support','Protects from damage','Permeable to water']}
+    ]
+  },
+  {
+    id:'photosynthesis', tag:'PLANT PHYSIOLOGY', title:'Photosynthesis',
+    desc:'How plants convert sunlight into glucose using chlorophyll.',
+    slides:[
+      {heading:'What is Photosynthesis?',reveal:false,imageQuery:'photosynthesis chloroplast diagram',
+       content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
+       keyFacts:['Light → Chemical energy','In chloroplasts','Releases oxygen']},
+      {heading:'The Equation',reveal:true,
+       content:'<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment absorbing light energy required for this reaction.',
+       keyFacts:['CO₂ + H₂O → Glucose + O₂','Chlorophyll absorbs light','Energy stored in glucose bonds']},
+      {heading:'Light-Dependent Reactions',reveal:true,imageQuery:'thylakoid membrane light reactions',
+       content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>',
+       keyFacts:['In thylakoids','Photolysis splits water','ATP + NADPH produced']},
+      {heading:'Calvin Cycle',reveal:true,imageQuery:'Calvin cycle stroma diagram',
+       content:'Occurs in the <b>stroma</b>:<ul><li>CO₂ fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> → glucose produced</li></ul>',
+       keyFacts:['In stroma','RuBisCO fixes CO₂','G3P → Glucose']},
+      {heading:'Limiting Factors',reveal:true,
+       content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO₂ concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40°C</li><li><b>Water availability</b></li></ul>',
+       keyFacts:['Light, CO₂, temp are key','Enzymes denature at high temp','Stomata close in drought']}
+    ]
+  },
+  {
+    id:'mitosis', tag:'CELL DIVISION', title:'Mitosis',
+    desc:'Division producing two genetically identical daughter cells.',
+    slides:[
+      {heading:'What is Mitosis?',reveal:false,imageQuery:'mitosis phases diagram',
+       content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
+       keyFacts:['2 identical daughter cells','Same chromosome number','Growth + repair']},
+      {heading:'Interphase',reveal:true,
+       content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>',
+       keyFacts:['DNA replicated in S phase','Cell grows in G1 + G2','Not part of mitosis itself']},
+      {heading:'Prophase & Metaphase',reveal:true,imageQuery:'prophase metaphase spindle fibres',
+       content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the <b>metaphase plate</b>, spindle fibres attach to centromeres.',
+       keyFacts:['Chromosomes condense','Nuclear envelope dissolves','Align at equator']},
+      {heading:'Anaphase & Telophase',reveal:true,imageQuery:'anaphase telophase cytokinesis',
+       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles, cell elongates.<br><br><b>Telophase + Cytokinesis:</b> nuclear envelopes reform, chromosomes decondense, cytoplasm divides.',
+       keyFacts:['Chromatids to poles','Nuclear envelopes reform','Cytokinesis splits cell']}
+    ]
+  },
+  {
+    id:'dna', tag:'MOLECULAR BIOLOGY', title:'DNA Structure',
+    desc:'Double helix, nucleotides, base pairing and replication.',
+    slides:[
+      {heading:'The Double Helix',reveal:false,imageQuery:'DNA double helix Watson Crick',
+       content:'<b>DNA</b> (Deoxyribonucleic acid) carries genetic information. Described by <b>Watson and Crick</b> in 1953 as a <b>double helix</b> — two strands coiled around each other.',
+       keyFacts:['Double helix shape','Watson & Crick, 1953','Carries genetic instructions']},
+      {heading:'Nucleotides',reveal:true,
+       content:'Built from <b>nucleotides</b>. Each contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four bases: <b>A, T, G, C</b></li></ul>',
+       keyFacts:['Sugar + phosphate + base','4 bases: A T G C','Backbone = sugar-phosphate']},
+      {heading:'Base Pairing',reveal:true,imageQuery:'DNA base pairs hydrogen bonds',
+       content:'Strands held by <b>hydrogen bonds</b>:<ul><li><b>A ↔ T</b> — 2 hydrogen bonds</li><li><b>G ↔ C</b> — 3 hydrogen bonds</li></ul>Known as <b>Chargaff\'s Rule</b>.',
+       keyFacts:['A pairs with T','G pairs with C',"Chargaff's Rule"]},
+      {heading:'DNA Replication',reveal:true,imageQuery:'DNA replication semi-conservative',
+       content:'<b>Semi-conservative</b> replication:<ol><li><b>Helicase</b> unzips the double helix</li><li>Free nucleotides bind to exposed bases</li><li><b>DNA Polymerase</b> joins new strand</li></ol>Each new molecule keeps one original strand.',
+       keyFacts:['Semi-conservative','Helicase unzips helix','DNA Polymerase builds strand']}
+    ]
+  }
 ];
 
-/* BUILD MENU */
-const tGrid=document.getElementById('tGrid');
-TOPICS.forEach(t=>{
-  const el=document.createElement('div');el.className='t-card';
-  el.innerHTML=`<div class="tc-tag">${t.tag}</div><div class="tc-head">${t.heading}</div><div class="tc-desc">${t.desc}</div><div class="tc-foot"><div class="tc-cnt">${t.slides.length} SLIDES</div><div class="tc-arr"><svg><use href="#i-arr"/></svg></div></div>`;
-  el.onclick=()=>launchTopic(t);tGrid.appendChild(el);
-});
+/* ── PAGE MANAGEMENT ── */
+let prevPage = 'menu';
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + id).classList.add('active');
+}
+function goBack() {
+  closeOv();
+  showPage(prevPage);
+}
 
-/* SCREEN MANAGEMENT */
-let prevScr='menu';
-function showMenu(){['genScreen','slideScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('menuScreen').classList.remove('hidden');}
-function showGen(){prevScr='menu';document.getElementById('menuScreen').classList.add('hidden');document.getElementById('genScreen').classList.remove('hidden');setTimeout(()=>document.getElementById('topicIn').focus(),350);}
-function showSlides(){['menuScreen','genScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('slideScreen').classList.remove('hidden');}
-function goBack(){document.getElementById('slideScreen').classList.add('hidden');document.getElementById(prevScr==='gen'?'genScreen':'menuScreen').classList.remove('hidden');}
-function launchTopic(t){prevScr='menu';buildDeck({title:t.heading,slides:t.slides});showSlides();}
+/* ── MENU CARDS ── */
+document.getElementById('topicGrid').innerHTML = TOPICS.map((t,i) =>
+  `<div class="topic-card" onclick="launchTopic(${i})">
+    <div class="tc-tag">${t.tag}</div>
+    <div class="tc-title">${t.title}</div>
+    <div class="tc-desc">${t.desc}</div>
+    <div class="tc-count">${t.slides.length} SLIDES</div>
+  </div>`
+).join('');
 
-/* IMAGE SOURCE */
-let imgSrc='wiki';
-function setSrc(v){imgSrc=v;document.getElementById('srcWiki').classList.toggle('on',v==='wiki');document.getElementById('srcNone').classList.toggle('on',v==='none');}
+function launchTopic(i) {
+  prevPage = 'menu';
+  buildDeck({ title: TOPICS[i].title, slides: TOPICS[i].slides });
+  showPage('slides');
+}
 
-/* STATUS */
-function setSt(msg,type=''){const el=document.getElementById('gSt');if(!msg){el.className='g-st';return;}document.getElementById('gTxt').textContent=msg;el.className='g-st on'+(type?' '+type:'');}
+/* ── IMAGE SOURCE ── */
+let imgSrc = 'wiki';
+function setSrc(v) {
+  imgSrc = v;
+  document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
+  document.getElementById('srcNone').classList.toggle('on', v === 'none');
+}
 
-/* AI GENERATE */
-const AI_URL="https://ask-ai.killermunu.workers.dev";
-async function doGen(){
-  const topic=document.getElementById('topicIn').value.trim();
-  if(!topic){document.getElementById('topicIn').focus();return;}
-  const n=+document.getElementById('slideN').value,det=document.getElementById('detailN').value,rev=document.getElementById('revealN').value;
-  const dm={concise:'2-3 sentences',standard:'3-5 sentences',detailed:'5-7 sentences'};
-  document.getElementById('goBtn').disabled=true;setSt('Generating slides…');
-  const prompt=`Biology educator. Generate a ${n}-slide lesson on "${topic}". Return ONLY this exact JSON (no markdown): {"title":"Title","slides":[{"heading":"H","content":"HTML <b>terms</b> <ul><li>lists","keyFacts":["≤8 words","≤8 words"],"imageQuery":"specific wikipedia diagram search","reveal":true}]} Rules: content=${dm[det]}. keyFacts=2-3 items. reveal=${rev==='all'?'true for all':rev==='none'?'false for all':'false slide 1, true rest'}. imageQuery=specific enough for Wikipedia diagram. Return ONLY the JSON.`;
+/* ── STATUS ── */
+function setSt(msg, err) {
+  const b = document.getElementById('stBox');
+  if (!msg) { b.className = 'status'; return; }
+  document.getElementById('stTxt').textContent = msg;
+  b.className = 'status show' + (err ? ' err' : '');
+}
+
+/* ── AI GENERATION ── */
+async function doGen() {
+  const topic = document.getElementById('topicIn').value.trim();
+  if (!topic) { document.getElementById('topicIn').focus(); return; }
+  const n = document.getElementById('slideN').value;
+  const det = document.getElementById('detailN').value;
+  const rev = document.getElementById('revealN').value;
+  const detMap = { concise: '2-3 sentences', standard: '3-5 sentences', detailed: '5-7 sentences' };
+  const revRule = rev === 'all' ? 'true for all' : rev === 'none' ? 'false for all' : 'false for slide 1, true for the rest';
+  const prompt = `Biology educator. Create a ${n}-slide lesson on "${topic}". Return ONLY a JSON object, no markdown. Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"wikipedia image search","reveal":boolean}]}. Detail per slide: ${detMap[det]}. keyFacts: 2-3 items under 8 words each. reveal: ${revRule}. Return ONLY the JSON.`;
+
+  document.getElementById('goBtn').disabled = true;
+  setSt('Generating slides…');
+
   let data;
-  try{const r=await fetch(AI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});const j=await r.json();data=JSON.parse((j.response||j.content||'').replace(/```json|```/g,'').trim());}
-  catch{try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,messages:[{role:"user",content:prompt}]})});const j=await r.json();data=JSON.parse((j.content?.[0]?.text||'').replace(/```json|```/g,'').trim());}
-  catch{setSt('Generation failed — check your connection.','err');document.getElementById('goBtn').disabled=false;return;}}
-  if(imgSrc==='wiki'){setSt('Fetching Wikipedia images…');data=await getWikiImgs(data);}
-  setSt('');document.getElementById('goBtn').disabled=false;prevScr='gen';buildDeck(data);showSlides();
+  try {
+    const r = await fetch('https://ask-ai.killermunu.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const raw = j.response || j.content || j.text || j.result || '';
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('No JSON in response');
+    data = JSON.parse(m[0]);
+    if (!Array.isArray(data.slides) || !data.slides.length) throw new Error('Empty slides');
+  } catch (e) {
+    setSt('Failed: ' + e.message, true);
+    document.getElementById('goBtn').disabled = false;
+    return;
+  }
+
+  if (imgSrc === 'wiki') { setSt('Fetching images…'); data = await getWikiImgs(data); }
+  setSt('');
+  document.getElementById('goBtn').disabled = false;
+  prevPage = 'gen';
+  buildDeck(data);
+  showPage('slides');
 }
 
-/* WIKIPEDIA IMAGES */
-async function getWikiImgs(data){
-  const slides=await Promise.all(data.slides.map(async sl=>{
-    if(!sl.imageQuery)return sl;
-    try{const q=encodeURIComponent(sl.imageQuery);
-      const j=await(await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`)).json();
-      const pages=Object.values(j.query?.pages||{});
-      const img=pages.find(p=>{const m=p.imageinfo?.[0]?.mime||'';return m.startsWith('image/')&&!m.includes('svg')&&!m.includes('gif');});
-      if(img){sl.imageUrl=img.imageinfo[0].thumburl||img.imageinfo[0].url;sl.imageCaption=sl.imageQuery;}}
-    catch{}return sl;
+/* ── WIKIPEDIA IMAGES ── */
+async function getWikiImgs(data) {
+  const slides = await Promise.all(data.slides.map(async sl => {
+    if (!sl.imageQuery) return sl;
+    try {
+      const q = encodeURIComponent(sl.imageQuery);
+      const j = await (await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`)).json();
+      const pages = Object.values(j.query?.pages || {});
+      const img = pages.find(p => { const m = p.imageinfo?.[0]?.mime || ''; return m.startsWith('image/') && !m.includes('svg') && !m.includes('gif'); });
+      if (img) { sl.imageUrl = img.imageinfo[0].thumburl || img.imageinfo[0].url; sl.imageCaption = sl.imageQuery; }
+    } catch (_) {}
+    return sl;
   }));
-  return{...data,slides};
+  return { ...data, slides };
 }
 
-/* BUILD DECK */
-let cur=0,tot=0,slides=[],notes={};
-function buildDeck(data){
-  slides=data.slides;tot=slides.length;cur=0;notes={};
-  const stage=document.getElementById('stage');
-  stage.querySelectorAll('.slide').forEach(el=>el.remove());
-  document.getElementById('dotRow').innerHTML='';document.getElementById('ovGrid').innerHTML='';
-  document.getElementById('totN').textContent=tot;
-  document.getElementById('tbTopic').textContent=data.title||'';
-  document.getElementById('ovTitle').textContent=(data.title||'').toUpperCase();
+/* ── DECK STATE ── */
+let cur = 0, tot = 0, deck = [];
 
-  slides.forEach((sl,i)=>{
-    const div=document.createElement('div');
-    div.className='slide'+(i===0?' on':'');div.id='sl'+i;
-    const hasImg=!!sl.imageUrl;
-    const kf=sl.keyFacts?.length?`<div class="kf-row">${sl.keyFacts.map(f=>`<div class="kf">${f}</div>`).join('')}</div>`:'';
-    const imgCol=hasImg?`<div class="s-img-col"><div class="s-img-w"><img src="${sl.imageUrl}" alt="${sl.imageCaption||sl.heading}" onerror="this.parentElement.innerHTML='<div class=\\'img-ph\\'><svg><use href=\\'#i-img\\'/></svg><span>UNAVAILABLE</span></div>'"></div>${sl.imageCaption?`<div class="s-img-cap">${sl.imageCaption.toUpperCase()}</div>`:''}</div>`:'';
+function buildDeck(data) {
+  deck = data.slides;
+  tot = deck.length;
+  cur = 0;
 
-    /* REVEAL: .rv-card is the click target. .rv-blur has pointer-events:none so clicks always reach .rv-card */
-    const body=sl.reveal
-      ?`<div class="rv-card" id="rv${i}"><div class="rv-blur s-body">${sl.content}${kf}</div><div class="rv-badge"><svg><use href="#i-eye"/></svg> TAP TO REVEAL</div></div>`
-      :`<div class="s-card"><div class="s-body">${sl.content}${kf}</div></div>`;
+  const stage = document.getElementById('stage');
+  stage.innerHTML = '';
+  document.getElementById('dotRow').innerHTML = '';
+  document.getElementById('ovGrid').innerHTML = '';
+  document.getElementById('deckTitle').textContent = data.title || '';
+  document.getElementById('totN').textContent = tot;
+  document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
 
-    div.innerHTML=`<div class="s-in ${hasImg?'split':'full'}"><div><div class="s-num">SLIDE ${String(i+1).padStart(2,'0')}</div><div class="s-head">${sl.heading}</div>${body}</div>${imgCol}</div>`;
-    stage.insertBefore(div,stage.querySelector('.s-tools'));
+  deck.forEach((sl, i) => {
+    /* Slide */
+    const slide = document.createElement('div');
+    slide.className = 'slide' + (i === 0 ? ' active' : '');
+    slide.id = 'sl' + i;
 
-    /* THE FIX: listener on .rv-card. .rv-blur pointer-events:none means ALL clicks land here */
-    if(sl.reveal){
-      const card=div.querySelector('#rv'+i);
-      card.addEventListener('click',()=>card.classList.toggle('open'));
+    const hasImg = !!sl.imageUrl;
+    const kf = sl.keyFacts?.length ? `<div class="kf-row">${sl.keyFacts.map(f => `<span class="kf">${f}</span>`).join('')}</div>` : '';
+    const imgHtml = hasImg ? `<div class="img-col"><img src="${sl.imageUrl}" alt="" loading="lazy">${sl.imageCaption ? `<div class="img-cap">${sl.imageCaption}</div>` : ''}</div>` : '';
+    const blurred = sl.reveal === true;
+    const badge = blurred ? `<div class="reveal-badge"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>TAP TO REVEAL</div>` : '';
+
+    slide.innerHTML = `
+      <div class="slide-inner">
+        <div class="slide-num">SLIDE ${String(i+1).padStart(2,'0')}</div>
+        <div class="slide-heading">${sl.heading}</div>
+        <div class="slide-layout${hasImg ? ' has-img' : ''}">
+          <div class="content-col">
+            <div class="content-card${blurred ? ' blurred' : ''}" id="cc${i}">
+              <div class="content-body">${sl.content}${kf}</div>
+              ${badge}
+            </div>
+          </div>
+          ${imgHtml}
+        </div>
+      </div>`;
+
+    stage.appendChild(slide);
+
+    if (blurred) {
+      document.getElementById('cc' + i).addEventListener('click', function() {
+        this.classList.toggle('blurred');
+      });
     }
 
-    const dot=document.createElement('div');dot.className='dot'+(i===0?' on':'');dot.onclick=()=>goTo(i);document.getElementById('dotRow').appendChild(dot);
-    const ov=document.createElement('div');ov.className='ov-card'+(i===0?' cur':'');
-    ov.innerHTML=`<div class="ov-n">SLIDE ${String(i+1).padStart(2,'0')}</div><div class="ov-hd">${sl.heading}</div>${sl.reveal?'<div class="ov-rv"><svg><use href="#i-eye"/></svg> REVEAL</div>':''}`;
-    ov.onclick=()=>{goTo(i);closeOv();};document.getElementById('ovGrid').appendChild(ov);
+    /* Dot */
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' on' : '');
+    dot.onclick = () => goTo(i);
+    document.getElementById('dotRow').appendChild(dot);
+
+    /* Overview card */
+    const oc = document.createElement('div');
+    oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
+    oc.innerHTML = `<div class="ov-num">SLIDE ${String(i+1).padStart(2,'0')}</div><div class="ov-heading">${sl.heading}</div>`;
+    oc.onclick = () => { goTo(i); closeOv(); };
+    document.getElementById('ovGrid').appendChild(oc);
   });
+
   updateUI();
 }
 
-/* NAV */
-function goTo(n,dir){
-  if(n<0||n>=tot)return;
-  const going=dir!==undefined?dir:(n>cur?1:-1);
-  const old=document.getElementById('sl'+cur);
-  old.classList.remove('on');old.classList.add('out-l');
-  setTimeout(()=>old.classList.remove('out-l'),380);
-  cur=n;
-  const next=document.getElementById('sl'+cur);
-  next.style.transform=going>0?'translateX(50px)':'translateX(-50px)';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{next.style.transform='';next.classList.add('on');}));
+/* ── NAVIGATION ── */
+function goTo(n) {
+  if (n < 0 || n >= tot) return;
+  document.getElementById('sl' + cur).classList.remove('active');
+  cur = n;
+  const next = document.getElementById('sl' + cur);
+  next.classList.add('active');
+  next.scrollTop = 0;
   updateUI();
 }
-function nav(dir){goTo(cur+dir,dir);}
-function updateUI(){
-  document.getElementById('pf').style.width=((cur+1)/tot*100)+'%';
-  document.getElementById('curN').textContent=cur+1;
-  document.getElementById('navT').textContent=slides[cur]?.heading||'';
-  document.getElementById('navP').textContent=`SLIDE ${cur+1} OF ${tot}`;
-  document.getElementById('prevBtn').disabled=cur===0;
-  const nb=document.getElementById('nextBtn');
-  if(cur===tot-1){nb.innerHTML='DONE';nb.classList.remove('pri');}
-  else{nb.innerHTML='NEXT <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><use href="#i-arr"/></svg>';nb.classList.add('pri');}
-  nb.disabled=false;
-  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
-  document.querySelectorAll('.ov-card').forEach((c,i)=>c.classList.toggle('cur',i===cur));
-  document.getElementById('notesTa').value=notes[cur]||'';
-}
-function openOv(){document.getElementById('ov').classList.add('open');}
-function closeOv(){document.getElementById('ov').classList.remove('open');}
-function toggleNotes(){const p=document.getElementById('notesPn');const open=p.classList.toggle('open');document.getElementById('notesBtn').classList.toggle('lit',open);if(open)document.getElementById('notesTa').focus();}
-function saveNote(){notes[cur]=document.getElementById('notesTa').value;}
-const fsC=['','fs-sm','fs-lg'];let fsI=0;
-function cycleFont(){document.body.classList.remove(...fsC.filter(Boolean));fsI=(fsI+1)%3;if(fsC[fsI])document.body.classList.add(fsC[fsI]);}
-document.addEventListener('keydown',e=>{
-  if(document.getElementById('ov').classList.contains('open')){if(e.key==='Escape')closeOv();return;}
-  if(document.getElementById('notesTa')===document.activeElement)return;
-  if(!document.getElementById('slideScreen').classList.contains('hidden')){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();nav(1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();nav(-1);}
-    if(e.key==='g'||e.key==='G'||e.key==='Escape')openOv();
-    if(e.key==='n'||e.key==='N')toggleNotes();
-    if(e.key==='r'||e.key==='R'){const rv=document.querySelector('#sl'+cur+' .rv-card');if(rv)rv.classList.toggle('open');}
+function nav(dir) { goTo(cur + dir); }
+
+function updateUI() {
+  document.getElementById('curN').textContent = cur + 1;
+  document.getElementById('progFill').style.width = ((cur + 1) / tot * 100) + '%';
+  document.getElementById('prevBtn').disabled = cur === 0;
+  const nb = document.getElementById('nextBtn');
+  if (cur === tot - 1) {
+    nb.textContent = 'DONE';
+    nb.classList.remove('pri');
+    nb.disabled = false;
+  } else {
+    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="9 18 15 12 9 6"/></svg>';
+    nb.classList.add('pri');
+    nb.disabled = false;
   }
-});
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === cur));
+  document.querySelectorAll('.ov-card').forEach((c, i) => c.classList.toggle('cur', i === cur));
+}
 
-/* 3D card tilt on mouse move */
-document.getElementById('stage').addEventListener('mousemove',e=>{
-  const slide=document.getElementById('sl'+cur);
-  if(!slide)return;
-  const card=slide.querySelector('.s-card,.rv-card');
-  if(!card)return;
-  const rect=card.getBoundingClientRect();
-  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-  const dx=(e.clientX-cx)/rect.width,dy=(e.clientY-cy)/rect.height;
-  card.style.transform=`perspective(800px) rotateX(${-dy*5}deg) rotateY(${dx*6}deg) translateZ(4px)`;
-  card.style.transition='transform .1s ease';
-});
-document.getElementById('stage').addEventListener('mouseleave',()=>{
-  const slide=document.getElementById('sl'+cur);
-  if(!slide)return;
-  const card=slide.querySelector('.s-card,.rv-card');
-  if(!card)return;
-  card.style.transform='perspective(800px) rotateX(0) rotateY(0) translateZ(0)';
-  card.style.transition='transform .5s cubic-bezier(.4,0,.2,1)';
+/* ── OVERVIEW ── */
+function openOv() { document.getElementById('ovOverlay').classList.add('open'); }
+function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  const onSlides = document.getElementById('pg-slides').classList.contains('active');
+  if (!onSlides) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+  if (e.key === 'g' || e.key === 'G') openOv();
+  if (e.key === 'Escape') { document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack(); }
+  if (e.key === 'r' || e.key === 'R') { const cc = document.getElementById('cc' + cur); if (cc) cc.classList.toggle('blurred'); }
 });
 </script>
 </body>
