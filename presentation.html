@@ -4,608 +4,873 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lesson Slides · BioQuiz</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0f;
-  --card: #13131a;
-  --card2: #1a1a24;
-  --border: rgba(255,255,255,.08);
-  --border2: rgba(255,255,255,.15);
-  --text: #ececf4;
-  --muted: rgba(236,236,244,.42);
-  --dim: rgba(236,236,244,.22);
-  --wb: #f0f0f8;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#000;
+  --dark:#0a0a0a;
+  --dark2:#111;
+  --dark3:#181818;
+  --dark4:#222;
+  --white:#fff;
+  --off:#e8e8e8;
+  --dim:rgba(255,255,255,.5);
+  --faint:rgba(255,255,255,.2);
+  --ghost:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.1);
+  --border2:rgba(255,255,255,.25);
+  --accent:#e8e8e8;
+  --font:'Arial Black',Arial,sans-serif;
+  --font-body:Arial,sans-serif;
 }
-html, body { height: 100%; }
-body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; -webkit-tap-highlight-color: transparent; }
+html,body{height:100%;background:var(--black)}
+body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 
-/* PAGE SYSTEM — display:none/flex, no fixed stacking, no z-index wars */
-.page { display: none; flex-direction: column; min-height: 100dvh; }
-.page.active { display: flex; }
+/* ── PAGE SYSTEM ── */
+.page{display:none;flex-direction:column;min-height:100dvh}
+.page.active{display:flex}
 
-/* ── SHARED TOPBAR ── */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; height: 52px; border-bottom: 1px solid var(--border);
-  background: var(--bg); flex-shrink: 0;
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,52px);height:58px;flex-shrink:0;
+  background:var(--black);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
 }
-.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; }
-.brand-ic {
-  width: 28px; height: 28px; border-radius: 7px;
-  background: var(--card2); border: 1px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+/* PS5-style logo: sharp geometric mark */
+.brand-mark{
+  width:32px;height:32px;position:relative;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
 }
-.brand-ic svg { width: 14px; height: 14px; stroke: var(--text); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.brand-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .16em; color: var(--muted); }
-.tb-link {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em;
-  color: var(--dim); text-decoration: none; padding: 6px 12px; border-radius: 6px;
-  border: 1px solid var(--border); transition: color .15s, border-color .15s;
+.brand-mark svg{width:32px;height:32px}
+.brand-name{
+  font-family:var(--font);font-size:.72rem;letter-spacing:.28em;color:var(--white);
+  font-weight:900;
 }
-.tb-link:hover { color: var(--text); border-color: var(--border2); }
+.brand-sep{width:1px;height:16px;background:var(--border)}
+.brand-module{
+  font-family:var(--font-body);font-size:.65rem;letter-spacing:.12em;
+  color:var(--dim);font-weight:bold;
+}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--font);font-size:.52rem;letter-spacing:.14em;font-weight:900;
+  padding:8px 16px;background:none;color:var(--dim);
+  border:1px solid var(--border);transition:all .15s;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.tb-btn:hover{color:var(--white);border-color:var(--border2);background:var(--ghost)}
+.tb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.tb-btn.wh{background:var(--white);color:var(--black);border-color:var(--white);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.tb-btn.wh:hover{background:var(--off)}
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    MENU PAGE
-══════════════════════════════════════════ */
-#pg-menu { overflow-y: auto; }
-.menu-body { max-width: 860px; margin: 0 auto; padding: 44px 20px 80px; width: 100%; }
-.hero-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .26em; color: var(--dim); margin-bottom: 10px; }
-.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 8vw, 5rem); letter-spacing: .04em; line-height: .9; color: var(--text); margin-bottom: 10px; }
-.hero-sub { font-size: 14px; font-weight: 300; color: var(--muted); line-height: 1.7; margin-bottom: 36px; }
+══════════════════════════════════ */
+#pg-menu{overflow-y:auto;background:var(--black)}
 
-/* White CTA button */
-.gen-cta {
-  display: flex; align-items: center; gap: 16px; padding: 18px 20px;
-  background: var(--wb); border-radius: 13px; cursor: pointer; margin-bottom: 40px;
-  border: none; width: 100%; text-align: left;
-  box-shadow: 0 6px 22px rgba(0,0,0,.5);
-  transition: transform .15s, box-shadow .15s;
+/* Large geometric bg text */
+.menu-bg-text{
+  position:fixed;bottom:-4vw;left:-2vw;z-index:0;pointer-events:none;
+  font-family:var(--font);font-size:min(28vw,340px);font-weight:900;letter-spacing:-.04em;
+  color:rgba(255,255,255,.025);line-height:1;user-select:none;
 }
-.gen-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.6); }
-.gen-cta:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(0,0,0,.4); }
-.cta-icon { width: 40px; height: 40px; border-radius: 9px; background: rgba(10,10,15,.09); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.cta-icon svg { width: 18px; height: 18px; stroke: #0a0a0f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.cta-text { flex: 1; }
-.cta-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: .06em; color: #0a0a0f; line-height: 1; }
-.cta-sub { font-size: 12px; color: rgba(10,10,15,.42); margin-top: 2px; }
-.cta-arr svg { width: 14px; height: 14px; stroke: rgba(10,10,15,.38); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.sec-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .2em; color: var(--dim); white-space: nowrap; }
-.sec-line { flex: 1; height: 1px; background: var(--border); }
+.menu-wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:clamp(28px,5vh,60px) clamp(16px,4vw,52px) 80px}
 
-.topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; }
-.topic-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 11px;
-  padding: 16px 18px; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
-  transition: border-color .15s, transform .15s, box-shadow .15s;
+/* Hero */
+.menu-hero{margin-bottom:48px;animation:fadeUp .5s ease both}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font);font-size:.48rem;letter-spacing:.4em;font-weight:900;
+  color:var(--black);background:var(--white);padding:5px 12px;
+  margin-bottom:20px;
 }
-.topic-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
-.topic-card:active { transform: translateY(0); }
-.tc-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .13em; color: var(--dim); }
-.tc-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: .04em; color: var(--text); line-height: 1; }
-.tc-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.5; }
-.tc-count { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--dim); margin-top: 2px; }
+.hero-title{
+  font-family:var(--font);font-size:clamp(3rem,8vw,6rem);font-weight:900;
+  line-height:.88;letter-spacing:-.02em;color:var(--white);margin-bottom:14px;
+}
+.hero-title .stroke{
+  -webkit-text-stroke:2px var(--white);color:transparent;
+}
+.hero-sub{font-size:.95rem;color:var(--dim);line-height:1.65;max-width:440px;font-weight:400}
 
-/* ══════════════════════════════════════════
+/* Sharp divider */
+.sharp-div{
+  height:1px;background:var(--border2);margin:32px 0;
+  position:relative;
+}
+.sharp-div::before{
+  content:'';position:absolute;left:0;top:-1px;width:60px;height:3px;background:var(--white);
+}
+
+/* AI CTA card */
+.gen-cta{
+  display:flex;align-items:center;gap:18px;
+  padding:22px 26px;cursor:pointer;
+  background:var(--white);border:none;
+  width:100%;text-align:left;margin-bottom:40px;
+  transition:transform .12s,box-shadow .12s;
+  animation:fadeUp .5s ease .1s both;opacity:0;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+}
+.gen-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,255,255,.12)}
+.gen-cta:active{transform:translateY(0)}
+.cta-ic{
+  width:44px;height:44px;border:2px solid var(--black);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
+}
+.cta-ic svg{width:20px;height:20px;stroke:var(--black);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cta-body{flex:1}
+.cta-title{font-family:var(--font);font-size:.85rem;font-weight:900;letter-spacing:.1em;color:var(--black);line-height:1}
+.cta-sub{font-size:.78rem;color:rgba(0,0,0,.55);margin-top:3px;font-weight:400}
+.cta-arr{font-family:var(--font);font-size:1.2rem;font-weight:900;color:var(--black)}
+
+/* Section label */
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;animation:fadeUp .5s ease .2s both;opacity:0}
+.sec-label{font-family:var(--font);font-size:.46rem;letter-spacing:.3em;font-weight:900;color:var(--dim);white-space:nowrap}
+.sec-line{flex:1;height:1px;background:var(--border)}
+
+/* Topic grid */
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px;animation:fadeUp .5s ease .25s both;opacity:0}
+.topic-card{
+  background:var(--dark2);
+  padding:20px 20px;cursor:pointer;
+  display:flex;flex-direction:column;gap:7px;
+  border:1px solid transparent;
+  transition:background .15s,border-color .15s;
+  position:relative;
+}
+.topic-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--white);
+  transition:height .2s ease;
+}
+.topic-card:hover{background:var(--dark3);border-color:var(--border)}
+.topic-card:hover::before{height:100%}
+.tc-tag{font-family:var(--font);font-size:.38rem;letter-spacing:.2em;font-weight:900;color:var(--faint)}
+.tc-title{font-family:var(--font);font-size:.9rem;font-weight:900;letter-spacing:.03em;color:var(--white);line-height:1.05}
+.tc-desc{font-size:.72rem;color:var(--dim);line-height:1.5;font-weight:400}
+.tc-count{font-family:var(--font);font-size:.37rem;letter-spacing:.12em;font-weight:900;color:rgba(255,255,255,.25);margin-top:2px}
+
+/* ══════════════════════════════════
    GENERATOR PAGE
-══════════════════════════════════════════ */
-#pg-gen { align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
-.gen-wrap { width: 100%; max-width: 440px; }
-.gen-back {
-  display: flex; align-items: center; gap: 6px; background: none; border: none;
-  cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px;
-  letter-spacing: .13em; color: var(--dim); margin-bottom: 28px; padding: 0; transition: color .15s;
+══════════════════════════════════ */
+#pg-gen{align-items:center;justify-content:center;padding:24px;overflow-y:auto;background:var(--black)}
+.gen-wrap{width:100%;max-width:480px}
+.gen-back{
+  display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;
+  font-family:var(--font);font-size:.48rem;letter-spacing:.18em;font-weight:900;
+  color:var(--dim);margin-bottom:30px;padding:0;transition:color .15s;
 }
-.gen-back:hover { color: var(--text); }
-.gen-back svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.gen-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: .04em; color: var(--text); margin-bottom: 4px; }
-.gen-sub { font-size: 13px; font-weight: 300; color: var(--muted); margin-bottom: 24px; }
+.gen-back:hover{color:var(--white)}
+.gen-back svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
-.field { margin-bottom: 13px; }
-.field-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .15em; color: var(--dim); display: block; margin-bottom: 5px; }
-.field input, .field select {
-  width: 100%; padding: 11px 13px; background: var(--card); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px;
-  outline: none; transition: border-color .15s; -webkit-appearance: none; appearance: none;
+.gen-header{margin-bottom:26px}
+.gen-tag{
+  display:inline-block;font-family:var(--font);font-size:.42rem;letter-spacing:.3em;font-weight:900;
+  color:var(--black);background:var(--white);padding:4px 10px;margin-bottom:12px;
 }
-.field input::placeholder { color: var(--dim); }
-.field input:focus, .field select:focus { border-color: var(--border2); }
-.field select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(236,236,244,0.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; cursor: pointer;
+.gen-title{font-family:var(--font);font-size:2.2rem;font-weight:900;letter-spacing:-.01em;color:var(--white);margin-bottom:4px;line-height:1}
+.gen-sub{font-size:.8rem;color:var(--dim);font-weight:400}
+
+/* Form card */
+.gen-form{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  padding:24px;
 }
-.field select option { background: #1a1a24; }
-
-.opts-row { display: flex; gap: 10px; margin-bottom: 13px; }
-.opts-row .field { flex: 1; margin-bottom: 0; }
-
-.src-row { display: flex; gap: 8px; margin-bottom: 20px; }
-.src-btn {
-  flex: 1; padding: 10px 8px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--border); background: var(--card);
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em;
-  color: var(--dim); transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+.f-label{
+  display:block;font-family:var(--font);font-size:.44rem;letter-spacing:.22em;font-weight:900;
+  color:var(--dim);margin-bottom:7px;
 }
-.src-btn:hover { border-color: var(--border2); color: var(--text); }
-.src-btn.on { border-color: var(--border2); color: var(--text); background: var(--card2); }
-.src-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-.go-btn {
-  width: 100%; padding: 13px; border-radius: 9px; cursor: pointer;
-  background: var(--wb); border: none; color: #0a0a0f;
-  font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: .12em;
-  box-shadow: 0 4px 18px rgba(0,0,0,.45);
-  transition: transform .15s, box-shadow .15s, opacity .15s;
+.f-group{margin-bottom:14px}
+.f-group input,.f-group select{
+  width:100%;padding:11px 14px;
+  background:var(--black);border:1px solid var(--border);
+  color:var(--white);font-family:Arial,sans-serif;font-size:.9rem;font-weight:700;
+  outline:none;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
 }
-.go-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.55); }
-.go-btn:active:not(:disabled) { transform: translateY(0); }
-.go-btn:disabled { opacity: .28; cursor: not-allowed; }
-
-.status {
-  margin-top: 12px; padding: 11px 14px; border-radius: 8px;
-  background: var(--card); border: 1px solid var(--border);
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);
-  display: none; align-items: center; gap: 8px;
+.f-group input::placeholder{color:rgba(255,255,255,.2);font-weight:400}
+.f-group input:focus,.f-group select:focus{border-color:var(--border2)}
+.f-group select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;
 }
-.status.show { display: flex; }
-.status.err { border-color: rgba(255,80,80,.22); color: #f87171; }
-.sdot { width: 5px; height: 5px; border-radius: 50%; background: var(--text); flex-shrink: 0; animation: blink 1s ease infinite; }
-.status.err .sdot { background: #f87171; }
-@keyframes blink { 0%,100%{opacity:.7} 50%{opacity:.1} }
+.f-group select option{background:#111}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* ══════════════════════════════════════════
+.src-row{display:flex;gap:2px;margin-bottom:16px}
+.src-btn{
+  flex:1;padding:10px 8px;cursor:pointer;
+  border:1px solid var(--border);background:var(--black);
+  font-family:var(--font);font-size:.42rem;letter-spacing:.1em;font-weight:900;
+  color:var(--faint);transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.src-btn:hover{border-color:var(--border2);color:var(--white)}
+.src-btn.on{border-color:var(--white);color:var(--white);background:var(--dark3)}
+.src-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.go-btn{
+  width:100%;padding:14px;cursor:pointer;
+  background:var(--white);border:none;color:var(--black);
+  font-family:var(--font);font-size:.7rem;font-weight:900;letter-spacing:.18em;
+  transition:opacity .15s,transform .12s;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+}
+.go-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.go-btn:disabled{opacity:.25;cursor:not-allowed}
+
+.status{
+  margin-top:10px;padding:11px 14px;
+  background:var(--dark3);border-left:3px solid var(--white);
+  font-family:var(--font);font-size:.48rem;letter-spacing:.08em;font-weight:900;color:var(--dim);
+  display:none;align-items:center;gap:9px;
+}
+.status.show{display:flex}
+.status.err{border-left-color:#ff4444;color:#ff9999}
+.sdot{width:6px;height:6px;background:var(--white);flex-shrink:0;animation:blink 1s step-end infinite}
+.status.err .sdot{background:#ff4444;animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════
    SLIDES PAGE
-══════════════════════════════════════════ */
-#pg-slides { overflow: hidden; height: 100dvh; }
-
-.slides-bar {
-  display: flex; align-items: center; height: 50px; padding: 0 14px;
-  border-bottom: 1px solid var(--border); background: var(--bg);
-  flex-shrink: 0; gap: 10px;
+══════════════════════════════════ */
+#pg-slides{overflow:hidden;background:var(--dark)}
+.slides-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 clamp(12px,3vw,36px);height:52px;flex-shrink:0;
+  background:var(--black);border-bottom:1px solid var(--border);
 }
-.sb-btn {
-  display: flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 7px;
-  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
-  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em;
-  transition: color .15s, border-color .15s; flex-shrink: 0; white-space: nowrap;
+.sb-btn{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:var(--font);font-size:.44rem;letter-spacing:.14em;font-weight:900;
+  background:none;border:1px solid var(--border);
+  padding:6px 13px;color:var(--dim);transition:all .15s;
 }
-.sb-btn:hover { color: var(--text); border-color: var(--border2); }
-.sb-btn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.sb-topic { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; }
-.sb-counter { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; }
-
-.prog { height: 2px; background: var(--border); flex-shrink: 0; }
-.prog-fill { height: 100%; background: var(--wb); transition: width .3s ease; width: 0; }
-
-/* Stage and slides */
-.stage { flex: 1; overflow: hidden; position: relative; }
-.slide { display: none; height: 100%; overflow-y: auto; padding: 24px 20px; }
-.slide.active { display: block; }
-.slide-inner { max-width: 740px; margin: 0 auto; padding-bottom: 20px; }
-
-.slide-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .2em; color: var(--dim); margin-bottom: 8px; }
-.slide-heading {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2rem, 5vw, 3rem);
-  letter-spacing: .04em; color: var(--text); line-height: 1; margin-bottom: 18px;
+.sb-btn:hover{color:var(--white);border-color:var(--border2)}
+.sb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.sb-topic{
+  font-family:var(--font);font-size:.58rem;font-weight:900;letter-spacing:.1em;
+  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;
+}
+.sb-counter{
+  font-family:var(--font);font-size:.46rem;letter-spacing:.1em;font-weight:900;
+  color:var(--black);background:var(--white);padding:4px 11px;
+  white-space:nowrap;
 }
 
-.slide-layout { display: flex; gap: 20px; align-items: flex-start; }
-.slide-layout.has-img .content-col { flex: 1; min-width: 0; }
-.img-col { width: 260px; flex-shrink: 0; }
-.img-col img { width: 100%; border-radius: 10px; border: 1px solid var(--border); display: block; }
-.img-cap { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .1em; color: var(--dim); margin-top: 5px; }
+/* Progress */
+.prog{height:3px;background:var(--dark4);flex-shrink:0}
+.prog-fill{height:100%;background:var(--white);transition:width .3s ease}
 
-/* Content card */
-.content-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 11px;
-  padding: 18px 20px; position: relative;
+/* Stage */
+.stage{flex:1;overflow:hidden;position:relative;display:flex}
+.slide{
+  position:absolute;inset:0;display:none;overflow-y:auto;
+  padding:clamp(24px,4vw,52px) clamp(16px,4vw,60px);
 }
-.content-card.blurred { cursor: pointer; }
-.content-body {
-  font-size: 14px; font-weight: 300; line-height: 1.8; color: rgba(236,236,244,.7);
-  transition: filter .35s ease, opacity .35s ease;
-  pointer-events: auto;
-}
-.content-card.blurred .content-body { filter: blur(7px); opacity: .15; user-select: none; pointer-events: none; }
-.content-body b { color: var(--text); font-weight: 500; }
-.content-body ul, .content-body ol { padding-left: 18px; margin: 8px 0; }
-.content-body li { margin-bottom: 4px; }
+.slide.active{display:block;animation:slideIn .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 
-.kf-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
-.kf { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 5px 10px; border-radius: 18px; background: var(--card2); border: 1px solid var(--border); color: var(--muted); }
-
-.reveal-badge {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  background: rgba(10,10,15,.9); border: 1px solid var(--border2);
-  padding: 8px 16px; border-radius: 22px;
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--muted);
-  display: flex; align-items: center; gap: 7px; pointer-events: none;
-  white-space: nowrap; transition: opacity .3s ease;
+.slide-inner{max-width:820px;margin:0 auto}
+.slide-num{
+  font-family:var(--font);font-size:.4rem;letter-spacing:.32em;font-weight:900;
+  color:rgba(255,255,255,.25);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
 }
-.reveal-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.content-card:not(.blurred) .reveal-badge { opacity: 0; pointer-events: none; }
+.slide-num::after{content:'';flex:1;max-width:48px;height:1px;background:var(--border)}
+
+.slide-heading{
+  font-family:var(--font);
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  font-weight:900;letter-spacing:-.01em;
+  color:var(--white);line-height:.95;margin-bottom:24px;
+}
+
+/* Layout */
+.slide-layout{display:grid;grid-template-columns:1fr;gap:16px}
+.slide-layout.has-img{grid-template-columns:1fr 300px}
+
+/* Content card — PS5 style */
+.content-card{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--white);
+  padding:24px 26px;
+  position:relative;
+  cursor:pointer;
+  user-select:none;
+  transition:border-color .2s;
+}
+.content-card:hover{border-color:var(--border2);border-left-color:var(--white)}
+
+/* BLUR STATE — applied to ALL slides by default, toggled on click */
+.content-card.blurred .content-body{
+  filter:blur(7px);
+  pointer-events:none;
+}
+.content-card.blurred .kf-row{
+  filter:blur(7px);
+}
+
+/* Reveal overlay badge */
+.reveal-badge{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  pointer-events:none;
+}
+.reveal-badge-inner{
+  display:flex;align-items:center;gap:10px;
+  background:var(--black);border:1px solid var(--border2);padding:10px 18px;
+}
+.reveal-badge-inner svg{width:18px;height:18px;stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.reveal-badge-inner span{font-family:var(--font);font-size:.5rem;letter-spacing:.22em;font-weight:900;color:var(--white)}
+
+/* Content body */
+.content-body{
+  font-family:Arial,sans-serif;
+  font-size:clamp(.88rem,1.5vw,1.02rem);
+  font-weight:400;
+  line-height:1.78;
+  color:var(--off);
+  transition:filter .3s;
+}
+.content-body b{color:var(--white);font-weight:700}
+.content-body ul,.content-body ol{padding-left:1.4em;margin:8px 0}
+.content-body li{margin-bottom:5px}
+
+/* Key facts */
+.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);transition:filter .3s}
+.kf{
+  font-family:var(--font);font-size:.4rem;letter-spacing:.1em;font-weight:900;
+  padding:4px 10px;background:var(--dark4);border:1px solid var(--border);color:var(--off);
+}
+
+/* Image column */
+.img-col{display:flex;flex-direction:column;gap:8px}
+.img-col img{width:100%;object-fit:cover;max-height:240px;border:1px solid var(--border)}
+.img-cap{font-family:var(--font);font-size:.36rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.22);text-align:center}
 
 /* Bottom nav */
-.slide-nav {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+.slide-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px clamp(12px,3vw,36px);
+  border-top:1px solid var(--border);background:var(--black);flex-shrink:0;
 }
-.nav-btn {
-  display: flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px;
-  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em;
-  transition: color .15s, border-color .15s; flex-shrink: 0;
+.nav-btn{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font);font-size:.5rem;letter-spacing:.14em;font-weight:900;
+  padding:10px 20px;cursor:pointer;transition:all .15s;
+  border:1px solid var(--border);background:none;color:var(--dim);
 }
-.nav-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border2); }
-.nav-btn:disabled { opacity: .22; cursor: not-allowed; }
-.nav-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.nav-btn.pri { background: var(--wb); border-color: transparent; color: #0a0a0f; box-shadow: 0 3px 12px rgba(0,0,0,.4); }
-.nav-btn.pri:hover:not(:disabled) { box-shadow: 0 5px 18px rgba(0,0,0,.5); }
+.nav-btn:hover:not(:disabled){color:var(--white);border-color:var(--border2)}
+.nav-btn:disabled{opacity:.2;cursor:not-allowed}
+.nav-btn.pri{background:var(--white);color:var(--black);border-color:var(--white);
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.nav-btn.pri:hover:not(:disabled){background:var(--off)}
+.nav-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
 
-.dot-row { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; overflow: hidden; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); cursor: pointer; border: none; padding: 0; transition: background .15s, transform .15s; flex-shrink: 0; }
-.dot.on { background: var(--text); transform: scale(1.35); }
+/* Dots */
+.dot-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;max-width:200px}
+.dot{width:5px;height:5px;background:var(--dark4);border:1px solid var(--border);cursor:pointer;padding:0;transition:all .2s}
+.dot.on{background:var(--white);border-color:var(--white);width:20px}
 
-/* ══════════════════════════════════════════
-   OVERVIEW — full page overlay using display
-══════════════════════════════════════════ */
-.ov-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(10,10,15,.96);
-  display: none; flex-direction: column; overflow-y: auto;
+/* ══════════════════════════════════
+   OVERVIEW OVERLAY
+══════════════════════════════════ */
+.ov-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.96);
+  display:none;flex-direction:column;
 }
-.ov-overlay.open { display: flex; }
-.ov-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.ov-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: .04em; }
-.ov-close {
-  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 7px;
-  border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer;
-  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; transition: color .15s;
+.ov-overlay.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.ov-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,52px);height:56px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.ov-close:hover { color: var(--text); }
-.ov-close svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 9px; padding: 18px 20px; }
-.ov-card { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 13px 15px; cursor: pointer; transition: border-color .15s; }
-.ov-card:hover, .ov-card.cur { border-color: var(--border2); }
-.ov-card.cur { background: var(--card2); }
-.ov-num { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .13em; color: var(--dim); margin-bottom: 4px; }
-.ov-heading { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.ov-title{font-family:var(--font);font-size:.6rem;font-weight:900;letter-spacing:.28em;color:var(--white)}
+.ov-close{
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--font);font-size:.46rem;letter-spacing:.14em;font-weight:900;
+  background:none;border:1px solid var(--border);
+  padding:6px 13px;color:var(--dim);transition:all .15s;
+}
+.ov-close:hover{color:var(--white);border-color:var(--border2)}
+.ov-close svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ov-grid{
+  flex:1;overflow-y:auto;padding:20px clamp(16px,4vw,52px);
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;align-content:start;
+}
+.ov-card{
+  background:var(--dark2);border:1px solid transparent;
+  padding:14px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;
+}
+.ov-card:hover,.ov-card.cur{background:var(--dark3);border-color:var(--border);border-left-color:var(--white)}
+.ov-num{font-family:var(--font);font-size:.37rem;letter-spacing:.18em;font-weight:900;color:rgba(255,255,255,.25);margin-bottom:6px}
+.ov-heading{font-family:var(--font);font-size:.65rem;font-weight:900;color:var(--white);line-height:1.2}
 
-@media (max-width: 580px) {
-  .slide-layout.has-img { flex-direction: column; }
-  .img-col { width: 100%; }
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .slide-layout.has-img{grid-template-columns:1fr}
+  .img-col{display:none}
+  .f-row{grid-template-columns:1fr}
+  .hero-title{font-size:clamp(2.2rem,12vw,4rem)}
+}
+@media(max-width:480px){
+  .dot-row{max-width:140px}
+  .nav-btn{padding:8px 14px;font-size:.44rem}
 }
 </style>
 </head>
 <body>
 
-<!-- ══ MENU ══ -->
+<!-- SVG SPRITE -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <!-- BioQuiz logo mark: stylised 'B' with cell motif -->
+  <symbol id="i-logo" viewBox="0 0 32 32">
+    <rect x="2" y="2" width="28" height="28" fill="white"/>
+    <!-- Stylised B letterform -->
+    <path d="M9 7h8c2.5 0 4.5 1.8 4.5 4s-2 4-4.5 4H9V7z" fill="black"/>
+    <path d="M9 15h9c2.8 0 5 2 5 4.5S20.8 24 18 24H9V15z" fill="black"/>
+    <rect x="9" y="7" width="2" height="17" fill="black"/>
+    <!-- small circle detail -->
+    <circle cx="23" cy="9" r="1.5" fill="black"/>
+  </symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
+    <path d="M8 12h8M12 8v8"/>
+    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+  </symbol>
+  <symbol id="i-wiki" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </symbol>
+</svg>
+
+<!-- ══════════════════════════════════
+     MENU PAGE
+══════════════════════════════════ -->
 <div class="page active" id="pg-menu">
+  <div class="menu-bg-text">BIO</div>
+
   <div class="topbar">
-    <a class="brand" href="#">
-      <div class="brand-ic">
-        <svg viewBox="0 0 24 24"><polygon points="12,3 20,8 20,16 12,21 4,16 4,8"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><svg><use href="#i-logo"/></svg></div>
       <span class="brand-name">BIOQUIZ</span>
+      <div class="brand-sep"></div>
+      <span class="brand-module">SLIDES</span>
     </a>
-    <a class="tb-link" href="index.html">HOME</a>
+    <div class="tb-right">
+      <a href="index.html" class="tb-btn"><svg><use href="#i-back"/></svg> HOME</a>
+    </div>
   </div>
-  <div class="menu-body">
-    <div class="hero-label">BIOQUIZ · LESSON SLIDES</div>
-    <div class="hero-title">LESSON<br>SLIDES</div>
-    <div class="hero-sub">AI-powered biology slide decks with reveal cards.</div>
+
+  <div class="menu-wrap">
+    <div class="menu-hero">
+      <div class="hero-tag">MODULE 005</div>
+      <div class="hero-title">
+        LESSON<br>
+        <span class="stroke">SLIDES</span>
+      </div>
+      <p class="hero-sub">Pick a pre-built topic or generate custom slides with AI. Click any slide to reveal its content.</p>
+    </div>
 
     <button class="gen-cta" onclick="showPage('gen')">
-      <div class="cta-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <div class="cta-ic"><svg><use href="#i-ai"/></svg></div>
+      <div class="cta-body">
+        <div class="cta-title">AI SLIDE GENERATOR</div>
+        <div class="cta-sub">Enter any biology topic — Cloudflare AI builds your deck instantly</div>
       </div>
-      <div class="cta-text">
-        <div class="cta-title">GENERATE ON ANY TOPIC</div>
-        <div class="cta-sub">Type any biology topic and get instant slides</div>
-      </div>
-      <div class="cta-arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="cta-arr">›</div>
     </button>
 
     <div class="sec-head">
-      <span class="sec-label">SAVED TOPICS</span>
+      <div class="sec-label">PRE-BUILT TOPICS</div>
       <div class="sec-line"></div>
     </div>
     <div class="topic-grid" id="topicGrid"></div>
   </div>
 </div>
 
-<!-- ══ GENERATOR ══ -->
+<!-- ══════════════════════════════════
+     GENERATOR PAGE
+══════════════════════════════════ -->
 <div class="page" id="pg-gen">
-  <div class="gen-wrap">
-    <button class="gen-back" onclick="showPage('menu')">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      BACK
-    </button>
-    <div class="gen-title">GENERATE</div>
-    <div class="gen-sub">Enter a biology topic to create a slide deck</div>
-
-    <div class="field">
-      <label class="field-label" for="topicIn">TOPIC</label>
-      <input id="topicIn" type="text" placeholder="e.g. Meiosis, Enzymes, Heart…" autocomplete="off" onkeydown="if(event.key==='Enter')doGen()">
+  <div class="topbar">
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><svg><use href="#i-logo"/></svg></div>
+      <span class="brand-name">BIOQUIZ</span>
+      <div class="brand-sep"></div>
+      <span class="brand-module">AI GENERATOR</span>
+    </a>
+    <div class="tb-right">
+      <button class="tb-btn" onclick="showPage('menu')"><svg><use href="#i-back"/></svg> TOPICS</button>
     </div>
+  </div>
 
-    <div class="opts-row">
-      <div class="field">
-        <label class="field-label" for="slideN">SLIDES</label>
-        <select id="slideN">
-          <option value="4">4</option>
-          <option value="5" selected>5</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-        </select>
+  <div style="display:flex;align-items:center;justify-content:center;flex:1;padding:24px;overflow-y:auto">
+    <div class="gen-wrap">
+      <div class="gen-header">
+        <div class="gen-tag">AI POWERED</div>
+        <div class="gen-title">GENERATE<br>SLIDES</div>
+        <div class="gen-sub">Cloudflare AI creates a biology lesson deck from any topic you enter</div>
       </div>
-      <div class="field">
-        <label class="field-label" for="detailN">DETAIL</label>
-        <select id="detailN">
-          <option value="concise">Concise</option>
-          <option value="standard" selected>Standard</option>
-          <option value="detailed">Detailed</option>
-        </select>
-      </div>
-      <div class="field">
-        <label class="field-label" for="revealN">REVEAL</label>
-        <select id="revealN">
-          <option value="some" selected>Some</option>
-          <option value="all">All</option>
-          <option value="none">None</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="field">
-      <label class="field-label">IMAGES</label>
-      <div class="src-row">
-        <button class="src-btn on" id="srcWiki" onclick="setSrc('wiki')">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          WIKIPEDIA
-        </button>
-        <button class="src-btn" id="srcNone" onclick="setSrc('none')">
-          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          NONE
-        </button>
-      </div>
-    </div>
+      <div class="gen-form">
+        <div class="f-group">
+          <label class="f-label">BIOLOGY TOPIC</label>
+          <input type="text" id="topicIn" placeholder="e.g. Mitochondria, DNA Replication, Osmosis…" maxlength="80" autocomplete="off">
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">SLIDE COUNT</label>
+            <select id="slideN">
+              <option value="3">3 slides</option>
+              <option value="4">4 slides</option>
+              <option value="5" selected>5 slides</option>
+              <option value="6">6 slides</option>
+              <option value="7">7 slides</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label class="f-label">DETAIL LEVEL</label>
+            <select id="detailN">
+              <option value="concise">Concise</option>
+              <option value="standard" selected>Standard</option>
+              <option value="detailed">Detailed</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-group">
+          <label class="f-label">IMAGES</label>
+          <div class="src-row">
+            <button class="src-btn on" id="srcNone" onclick="setSrc('none')">
+              <svg><use href="#i-eye-off"/></svg> NONE
+            </button>
+            <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')">
+              <svg><use href="#i-wiki"/></svg> WIKIPEDIA
+            </button>
+          </div>
+        </div>
 
-    <button class="go-btn" id="goBtn" onclick="doGen()">GENERATE SLIDES</button>
-    <div class="status" id="stBox">
-      <span class="sdot"></span>
-      <span id="stTxt"></span>
+        <button class="go-btn" id="goBtn" onclick="doGen()">GENERATE SLIDES</button>
+        <div class="status" id="stBox">
+          <div class="sdot"></div>
+          <span id="stTxt"></span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ══ SLIDES ══ -->
+<!-- ══════════════════════════════════
+     SLIDES PAGE
+══════════════════════════════════ -->
 <div class="page" id="pg-slides">
   <div class="slides-bar">
     <button class="sb-btn" onclick="goBack()">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      BACK
+      <svg><use href="#i-back"/></svg> BACK
     </button>
     <div class="sb-topic" id="deckTitle"></div>
-    <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
-    <button class="sb-btn" onclick="openOv()">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-      ALL
-    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
+      <button class="sb-btn" onclick="openOv()">
+        <svg><use href="#i-grid"/></svg> ALL
+      </button>
+    </div>
   </div>
   <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+
+  <!-- Hint strip -->
+  <div style="background:var(--dark2);border-bottom:1px solid var(--border);padding:7px clamp(16px,4vw,60px);
+    font-family:var(--font);font-size:.38rem;letter-spacing:.16em;font-weight:900;color:rgba(255,255,255,.28);
+    display:flex;align-items:center;gap:10px;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    CLICK ANY SLIDE TO REVEAL · PRESS R TO TOGGLE CURRENT · ARROW KEYS TO NAVIGATE
+  </div>
+
   <div class="stage" id="stage"></div>
   <div class="slide-nav">
     <button class="nav-btn" id="prevBtn" onclick="nav(-1)">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      PREV
+      <svg><use href="#i-back"/></svg> PREV
     </button>
     <div class="dot-row" id="dotRow"></div>
     <button class="nav-btn pri" id="nextBtn" onclick="nav(1)">
-      NEXT
-      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
     </button>
   </div>
 </div>
 
-<!-- ══ OVERVIEW ══ -->
+<!-- ══════════════════════════════════
+     OVERVIEW OVERLAY
+══════════════════════════════════ -->
 <div class="ov-overlay" id="ovOverlay">
   <div class="ov-head">
     <div class="ov-title" id="ovTitle">OVERVIEW</div>
     <button class="ov-close" onclick="closeOv()">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      CLOSE
+      <svg><use href="#i-close"/></svg> CLOSE
     </button>
   </div>
   <div class="ov-grid" id="ovGrid"></div>
 </div>
 
 <script>
-/* ── DATA ── */
+/* ──────────────────────────────────
+   PRE-BUILT TOPICS DATA
+────────────────────────────────── */
 const TOPICS = [
   {
-    id:'cell-wall', tag:'PLANT BIOLOGY', title:'Cell Wall',
+    id:'cell-wall',tag:'PLANT BIOLOGY',title:'Cell Wall',
     desc:'Structure, composition and function of the plant cell wall.',
     slides:[
-      {heading:'What is a Cell Wall?',reveal:false,imageQuery:'plant cell wall diagram',
+      {heading:'What is a Cell Wall?',imageQuery:'plant cell wall diagram',
        content:'The <b>cell wall</b> is a rigid, non-living outer layer found outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It also prevents the cell from bursting when excess water enters by osmosis.',
        keyFacts:['Rigid, non-living layer','Plant cells only','Prevents osmotic lysis']},
-      {heading:'Composition',reveal:true,
+      {heading:'Composition',
        content:'The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.',
        keyFacts:['Cellulose = main component','Lignin adds extra rigidity','Pectin holds cells together']},
-      {heading:'Three Layers',reveal:true,imageQuery:'cell wall layers middle lamella',
+      {heading:'Three Layers',imageQuery:'cell wall layers middle lamella',
        content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>',
        keyFacts:['Middle lamella = cement','Primary = flexible','Secondary = rigid']},
-      {heading:'Functions',reveal:true,
+      {heading:'Functions',
        content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>',
        keyFacts:['Shape + support','Protects from damage','Permeable to water']}
     ]
   },
   {
-    id:'photosynthesis', tag:'PLANT PHYSIOLOGY', title:'Photosynthesis',
+    id:'photosynthesis',tag:'PLANT PHYSIOLOGY',title:'Photosynthesis',
     desc:'How plants convert sunlight into glucose using chlorophyll.',
     slides:[
-      {heading:'What is Photosynthesis?',reveal:false,imageQuery:'photosynthesis chloroplast diagram',
+      {heading:'What is Photosynthesis?',imageQuery:'photosynthesis chloroplast diagram',
        content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
        keyFacts:['Light → Chemical energy','In chloroplasts','Releases oxygen']},
-      {heading:'The Equation',reveal:true,
-       content:'<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment absorbing light energy required for this reaction.',
+      {heading:'The Equation',
+       content:'<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy required for this reaction.',
        keyFacts:['CO₂ + H₂O → Glucose + O₂','Chlorophyll absorbs light','Energy stored in glucose bonds']},
-      {heading:'Light-Dependent Reactions',reveal:true,imageQuery:'thylakoid membrane light reactions',
+      {heading:'Light-Dependent Reactions',imageQuery:'thylakoid membrane light reactions',
        content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>',
        keyFacts:['In thylakoids','Photolysis splits water','ATP + NADPH produced']},
-      {heading:'Calvin Cycle',reveal:true,imageQuery:'Calvin cycle stroma diagram',
+      {heading:'Calvin Cycle',imageQuery:'Calvin cycle stroma diagram',
        content:'Occurs in the <b>stroma</b>:<ul><li>CO₂ fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> → glucose produced</li></ul>',
        keyFacts:['In stroma','RuBisCO fixes CO₂','G3P → Glucose']},
-      {heading:'Limiting Factors',reveal:true,
+      {heading:'Limiting Factors',
        content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO₂ concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40°C</li><li><b>Water availability</b></li></ul>',
-       keyFacts:['Light, CO₂, temp are key','Enzymes denature at high temp','Stomata close in drought']}
+       keyFacts:['Light, CO₂, temp key','Enzymes denature at high temp','Stomata close in drought']}
     ]
   },
   {
-    id:'mitosis', tag:'CELL DIVISION', title:'Mitosis',
+    id:'mitosis',tag:'CELL DIVISION',title:'Mitosis',
     desc:'Division producing two genetically identical daughter cells.',
     slides:[
-      {heading:'What is Mitosis?',reveal:false,imageQuery:'mitosis phases diagram',
+      {heading:'What is Mitosis?',imageQuery:'mitosis phases diagram',
        content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
        keyFacts:['2 identical daughter cells','Same chromosome number','Growth + repair']},
-      {heading:'Interphase',reveal:true,
+      {heading:'Interphase',
        content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>',
        keyFacts:['DNA replicated in S phase','Cell grows in G1 + G2','Not part of mitosis itself']},
-      {heading:'Prophase & Metaphase',reveal:true,imageQuery:'prophase metaphase spindle fibres',
-       content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the <b>metaphase plate</b>, spindle fibres attach to centromeres.',
-       keyFacts:['Chromosomes condense','Nuclear envelope dissolves','Align at equator']},
-      {heading:'Anaphase & Telophase',reveal:true,imageQuery:'anaphase telophase cytokinesis',
-       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles, cell elongates.<br><br><b>Telophase + Cytokinesis:</b> nuclear envelopes reform, chromosomes decondense, cytoplasm divides.',
-       keyFacts:['Chromatids to poles','Nuclear envelopes reform','Cytokinesis splits cell']}
+      {heading:'Prophase & Metaphase',imageQuery:'prophase metaphase spindle fibres',
+       content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the equatorial plate; spindle fibres attach to centromeres.',
+       keyFacts:['Chromosomes condense','Nuclear envelope breaks','Chromosomes align at equator']},
+      {heading:'Anaphase & Telophase',imageQuery:'anaphase telophase cell division',
+       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles.<br><br><b>Telophase:</b> nuclear envelopes reform, chromosomes decondense, <b>cytokinesis</b> divides the cytoplasm.',
+       keyFacts:['Chromatids pulled apart','Nuclear envelopes reform','Cytokinesis = cytoplasm division']}
     ]
   },
   {
-    id:'dna', tag:'MOLECULAR BIOLOGY', title:'DNA Structure',
-    desc:'Double helix, nucleotides, base pairing and replication.',
+    id:'osmosis',tag:'TRANSPORT',title:'Osmosis',
+    desc:'Movement of water across semi-permeable membranes.',
     slides:[
-      {heading:'The Double Helix',reveal:false,imageQuery:'DNA double helix Watson Crick',
-       content:'<b>DNA</b> (Deoxyribonucleic acid) carries genetic information. Described by <b>Watson and Crick</b> in 1953 as a <b>double helix</b> — two strands coiled around each other.',
-       keyFacts:['Double helix shape','Watson & Crick, 1953','Carries genetic instructions']},
-      {heading:'Nucleotides',reveal:true,
-       content:'Built from <b>nucleotides</b>. Each contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four bases: <b>A, T, G, C</b></li></ul>',
-       keyFacts:['Sugar + phosphate + base','4 bases: A T G C','Backbone = sugar-phosphate']},
-      {heading:'Base Pairing',reveal:true,imageQuery:'DNA base pairs hydrogen bonds',
-       content:'Strands held by <b>hydrogen bonds</b>:<ul><li><b>A ↔ T</b> — 2 hydrogen bonds</li><li><b>G ↔ C</b> — 3 hydrogen bonds</li></ul>Known as <b>Chargaff\'s Rule</b>.',
-       keyFacts:['A pairs with T','G pairs with C',"Chargaff's Rule"]},
-      {heading:'DNA Replication',reveal:true,imageQuery:'DNA replication semi-conservative',
-       content:'<b>Semi-conservative</b> replication:<ol><li><b>Helicase</b> unzips the double helix</li><li>Free nucleotides bind to exposed bases</li><li><b>DNA Polymerase</b> joins new strand</li></ol>Each new molecule keeps one original strand.',
-       keyFacts:['Semi-conservative','Helicase unzips helix','DNA Polymerase builds strand']}
+      {heading:'What is Osmosis?',imageQuery:'osmosis semi permeable membrane diagram',
+       content:'<b>Osmosis</b> is the movement of water molecules from a region of <b>high water potential</b> to a region of <b>low water potential</b> through a <b>semi-permeable membrane</b>.',
+       keyFacts:['Water moves via osmosis','High → Low water potential','Needs semi-permeable membrane']},
+      {heading:'Water Potential',
+       content:'<b>Water potential (Ψ)</b> measures the tendency of water to move. <b>Pure water = 0 Ψ</b>. Adding solutes <b>lowers</b> water potential. Water always moves from less negative to more negative Ψ.',
+       keyFacts:['Pure water Ψ = 0','Solutes lower Ψ','Movement: 0 → negative']},
+      {heading:'Plant Cell Responses',imageQuery:'turgid plasmolysed plant cell osmosis',
+       content:'In <b>hypotonic</b> (dilute) solution: water enters → cell becomes <b>turgid</b>.<br>In <b>hypertonic</b> (concentrated) solution: water leaves → cell becomes <b>plasmolysed</b>.',
+       keyFacts:['Dilute = turgid','Concentrated = plasmolysed','Cell wall prevents bursting']}
+    ]
+  },
+  {
+    id:'dna',tag:'MOLECULAR BIOLOGY',title:'DNA Structure',
+    desc:'The double helix and genetic information storage.',
+    slides:[
+      {heading:'The Double Helix',imageQuery:'DNA double helix structure diagram',
+       content:'<b>DNA</b> is a <b>double helix</b> formed by two antiparallel strands. Each strand is a polymer of <b>nucleotides</b> held by a sugar-phosphate backbone. The strands are joined by <b>hydrogen bonds</b> between complementary bases.',
+       keyFacts:['Double helix shape','Antiparallel strands','Hydrogen bonds hold bases']},
+      {heading:'Nucleotide Structure',
+       content:'Each nucleotide contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four <b>nitrogenous bases</b>: Adenine, Thymine, Guanine, Cytosine</li></ul>',
+       keyFacts:['Sugar + Phosphate + Base','4 bases: A, T, G, C','Backbone = sugar-phosphate']},
+      {heading:'Base Pairing Rules',imageQuery:'DNA base pairing adenine thymine guanine cytosine',
+       content:'<b>Complementary base pairing</b>:<ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
+       keyFacts:['A–T: 2 H-bonds','G–C: 3 H-bonds','Complementary pairing']}
+    ]
+  },
+  {
+    id:'enzymes',tag:'BIOCHEMISTRY',title:'Enzymes',
+    desc:'Biological catalysts, active sites, and reaction kinetics.',
+    slides:[
+      {heading:'What are Enzymes?',imageQuery:'enzyme active site substrate diagram',
+       content:'<b>Enzymes</b> are biological <b>catalysts</b> — they speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a specific 3D shape. Each has an <b>active site</b> that binds to a specific substrate.',
+       keyFacts:['Biological catalysts','Globular proteins','Active site = specific shape']},
+      {heading:'Lock and Key Model',
+       content:'The substrate fits exactly into the active site like a key into a lock. The enzyme\'s active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily.',
+       keyFacts:['Exact fit required','Complementary shapes','ES complex forms briefly']},
+      {heading:'Factors Affecting Activity',imageQuery:'enzyme activity temperature pH graph',
+       content:'Enzyme activity is affected by:<ul><li><b>Temperature</b> – increases rate until <b>denaturation</b> above optimum</li><li><b>pH</b> – each enzyme has an optimum pH</li><li><b>Substrate concentration</b> – increases rate until Vmax</li></ul>',
+       keyFacts:['Optimum temp ~37°C (humans)','pH changes active site shape','Substrate concentration → Vmax']}
     ]
   }
 ];
 
-/* ── PAGE MANAGEMENT ── */
+/* ──────────────────────────────────
+   PAGE ROUTING
+────────────────────────────────── */
 let prevPage = 'menu';
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('pg-' + id).classList.add('active');
 }
-function goBack() {
-  closeOv();
-  showPage(prevPage);
-}
 
-/* ── MENU CARDS ── */
-document.getElementById('topicGrid').innerHTML = TOPICS.map((t,i) =>
-  `<div class="topic-card" onclick="launchTopic(${i})">
-    <div class="tc-tag">${t.tag}</div>
-    <div class="tc-title">${t.title}</div>
-    <div class="tc-desc">${t.desc}</div>
-    <div class="tc-count">${t.slides.length} SLIDES</div>
-  </div>`
-).join('');
+/* ──────────────────────────────────
+   RENDER TOPIC GRID
+────────────────────────────────── */
+(function() {
+  const grid = document.getElementById('topicGrid');
+  TOPICS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'topic-card';
+    card.innerHTML = `
+      <div class="tc-tag">${t.tag}</div>
+      <div class="tc-title">${t.title}</div>
+      <div class="tc-desc">${t.desc}</div>
+      <div class="tc-count">${t.slides.length} SLIDES</div>`;
+    card.onclick = () => { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
+    grid.appendChild(card);
+  });
+})();
 
-function launchTopic(i) {
-  prevPage = 'menu';
-  buildDeck({ title: TOPICS[i].title, slides: TOPICS[i].slides });
-  showPage('slides');
-}
-
-/* ── IMAGE SOURCE ── */
-let imgSrc = 'wiki';
+/* ──────────────────────────────────
+   IMAGE SOURCE TOGGLE
+────────────────────────────────── */
+let imgSrc = 'none';
 function setSrc(v) {
   imgSrc = v;
-  document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
   document.getElementById('srcNone').classList.toggle('on', v === 'none');
+  document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
 }
 
-/* ── STATUS ── */
-function setSt(msg, err) {
-  const b = document.getElementById('stBox');
-  if (!msg) { b.className = 'status'; return; }
-  document.getElementById('stTxt').textContent = msg;
-  b.className = 'status show' + (err ? ' err' : '');
+/* ──────────────────────────────────
+   STATUS
+────────────────────────────────── */
+function setSt(txt, isErr) {
+  const box = document.getElementById('stBox');
+  if (!txt) { box.classList.remove('show','err'); return; }
+  document.getElementById('stTxt').textContent = txt;
+  box.classList.add('show');
+  box.classList.toggle('err', !!isErr);
 }
 
-/* ── AI GENERATION ── */
+/* ──────────────────────────────────
+   AI GENERATOR
+   Worker: { query: "..." } → { answer: "..." }
+────────────────────────────────── */
 async function doGen() {
   const topic = document.getElementById('topicIn').value.trim();
   if (!topic) { document.getElementById('topicIn').focus(); return; }
-  const n = document.getElementById('slideN').value;
-  const det = document.getElementById('detailN').value;
-  const rev = document.getElementById('revealN').value;
-  const detMap = { concise: '2-3 sentences', standard: '3-5 sentences', detailed: '5-7 sentences' };
-  const revRule = rev === 'all' ? 'true for all' : rev === 'none' ? 'false for all' : 'false for slide 1, true for the rest';
-  const prompt = `Biology educator. Create a ${n}-slide lesson on "${topic}". Return ONLY a JSON object, no markdown. Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"wikipedia image search","reveal":boolean}]}. Detail per slide: ${detMap[det]}. keyFacts: 2-3 items under 8 words each. reveal: ${revRule}. Return ONLY the JSON.`;
 
-  document.getElementById('goBtn').disabled = true;
-  setSt('Generating slides…');
+  const n   = document.getElementById('slideN').value;
+  const det = document.getElementById('detailN').value;
+  const detMap = { concise:'2-3 sentences', standard:'3-5 sentences', detailed:'5-7 sentences' };
+
+  const prompt = `You are a biology educator. Create a ${n}-slide lesson on "${topic}". ` +
+    `Return ONLY a valid JSON object, no markdown, no extra text. ` +
+    `Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"short image search string"}]}. ` +
+    `Detail per slide: ${detMap[det]}. keyFacts: 2-3 items each under 8 words. Return ONLY the JSON.`;
+
+  const btn = document.getElementById('goBtn');
+  btn.disabled = true;
+  setSt('Generating slides via Cloudflare AI…');
 
   let data;
   try {
     const r = await fetch('https://ask-ai.killermunu.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: prompt })
+      body: JSON.stringify({ query: prompt })
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      throw new Error(`HTTP ${r.status}${errText ? ': ' + errText.slice(0,100) : ''}`);
+    }
     const j = await r.json();
-    const raw = j.response || j.content || j.text || j.result || '';
+    const raw = j.answer || j.response || j.content || j.text || j.result || '';
+    if (!raw) throw new Error('Empty AI response');
     const m = raw.match(/\{[\s\S]*\}/);
     if (!m) throw new Error('No JSON in response');
     data = JSON.parse(m[0]);
-    if (!Array.isArray(data.slides) || !data.slides.length) throw new Error('Empty slides');
+    if (!Array.isArray(data.slides) || !data.slides.length) throw new Error('No slides in response');
   } catch (e) {
     setSt('Failed: ' + e.message, true);
-    document.getElementById('goBtn').disabled = false;
+    btn.disabled = false;
     return;
   }
 
-  if (imgSrc === 'wiki') { setSt('Fetching images…'); data = await getWikiImgs(data); }
+  if (imgSrc === 'wiki') { setSt('Fetching Wikipedia images…'); data = await getWikiImgs(data); }
   setSt('');
-  document.getElementById('goBtn').disabled = false;
+  btn.disabled = false;
   prevPage = 'gen';
   buildDeck(data);
   showPage('slides');
 }
 
-/* ── WIKIPEDIA IMAGES ── */
+/* ──────────────────────────────────
+   WIKIPEDIA IMAGES
+────────────────────────────────── */
 async function getWikiImgs(data) {
   const slides = await Promise.all(data.slides.map(async sl => {
     if (!sl.imageQuery) return sl;
     try {
       const q = encodeURIComponent(sl.imageQuery);
-      const j = await (await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`)).json();
+      const j = await (await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`
+      )).json();
       const pages = Object.values(j.query?.pages || {});
-      const img = pages.find(p => { const m = p.imageinfo?.[0]?.mime || ''; return m.startsWith('image/') && !m.includes('svg') && !m.includes('gif'); });
-      if (img) { sl.imageUrl = img.imageinfo[0].thumburl || img.imageinfo[0].url; sl.imageCaption = sl.imageQuery; }
-    } catch (_) {}
+      const img = pages.find(p => { const m = p.imageinfo?.[0]?.mime||''; return m.startsWith('image/')&&!m.includes('svg')&&!m.includes('gif'); });
+      if (img) { sl.imageUrl = img.imageinfo[0].thumburl||img.imageinfo[0].url; sl.imageCaption = sl.imageQuery; }
+    } catch(_) {}
     return sl;
   }));
   return { ...data, slides };
 }
 
-/* ── DECK STATE ── */
+/* ──────────────────────────────────
+   DECK STATE
+────────────────────────────────── */
 let cur = 0, tot = 0, deck = [];
 
 function buildDeck(data) {
@@ -622,39 +887,47 @@ function buildDeck(data) {
   document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
 
   deck.forEach((sl, i) => {
-    /* Slide */
+    const hasImg = !!sl.imageUrl;
+    const kf = sl.keyFacts?.length
+      ? `<div class="kf-row">${sl.keyFacts.map(f => `<span class="kf">${f}</span>`).join('')}</div>` : '';
+    const imgHtml = hasImg
+      ? `<div class="img-col"><img src="${sl.imageUrl}" alt="" loading="lazy">${sl.imageCaption?`<div class="img-cap">${sl.imageCaption}</div>`:''}</div>` : '';
+
+    // ALL slides start blurred — user clicks to reveal
     const slide = document.createElement('div');
     slide.className = 'slide' + (i === 0 ? ' active' : '');
     slide.id = 'sl' + i;
-
-    const hasImg = !!sl.imageUrl;
-    const kf = sl.keyFacts?.length ? `<div class="kf-row">${sl.keyFacts.map(f => `<span class="kf">${f}</span>`).join('')}</div>` : '';
-    const imgHtml = hasImg ? `<div class="img-col"><img src="${sl.imageUrl}" alt="" loading="lazy">${sl.imageCaption ? `<div class="img-cap">${sl.imageCaption}</div>` : ''}</div>` : '';
-    const blurred = sl.reveal === true;
-    const badge = blurred ? `<div class="reveal-badge"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>TAP TO REVEAL</div>` : '';
-
     slide.innerHTML = `
       <div class="slide-inner">
         <div class="slide-num">SLIDE ${String(i+1).padStart(2,'0')}</div>
         <div class="slide-heading">${sl.heading}</div>
         <div class="slide-layout${hasImg ? ' has-img' : ''}">
           <div class="content-col">
-            <div class="content-card${blurred ? ' blurred' : ''}" id="cc${i}">
+            <div class="content-card blurred" id="cc${i}">
               <div class="content-body">${sl.content}${kf}</div>
-              ${badge}
+              <div class="reveal-badge" id="badge${i}">
+                <div class="reveal-badge-inner">
+                  <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>CLICK TO REVEAL</span>
+                </div>
+              </div>
             </div>
           </div>
           ${imgHtml}
         </div>
       </div>`;
-
     stage.appendChild(slide);
 
-    if (blurred) {
-      document.getElementById('cc' + i).addEventListener('click', function() {
-        this.classList.toggle('blurred');
-      });
-    }
+    // *** CLICK HANDLER ON EVERY CARD — toggles blur on/off ***
+    const card = document.getElementById('cc' + i);
+    const badge = document.getElementById('badge' + i);
+    card.addEventListener('click', function() {
+      const isBlurred = this.classList.toggle('blurred');
+      // hide/show badge
+      badge.style.display = isBlurred ? '' : 'none';
+    });
+    // start hidden since it starts blurred
+    badge.style.display = '';
 
     /* Dot */
     const dot = document.createElement('button');
@@ -673,7 +946,9 @@ function buildDeck(data) {
   updateUI();
 }
 
-/* ── NAVIGATION ── */
+/* ──────────────────────────────────
+   NAVIGATION
+────────────────────────────────── */
 function goTo(n) {
   if (n < 0 || n >= tot) return;
   document.getElementById('sl' + cur).classList.remove('active');
@@ -684,39 +959,54 @@ function goTo(n) {
   updateUI();
 }
 function nav(dir) { goTo(cur + dir); }
+function goBack() { showPage(prevPage || 'menu'); }
 
 function updateUI() {
   document.getElementById('curN').textContent = cur + 1;
   document.getElementById('progFill').style.width = ((cur + 1) / tot * 100) + '%';
   document.getElementById('prevBtn').disabled = cur === 0;
+
   const nb = document.getElementById('nextBtn');
   if (cur === tot - 1) {
     nb.textContent = 'DONE';
     nb.classList.remove('pri');
-    nb.disabled = false;
   } else {
-    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="9 18 15 12 9 6"/></svg>';
+    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>';
     nb.classList.add('pri');
-    nb.disabled = false;
   }
-  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === cur));
-  document.querySelectorAll('.ov-card').forEach((c, i) => c.classList.toggle('cur', i === cur));
+  nb.disabled = false;
+
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('on', i === cur));
+  document.querySelectorAll('.ov-card').forEach((c,i) => c.classList.toggle('cur', i === cur));
 }
 
-/* ── OVERVIEW ── */
-function openOv() { document.getElementById('ovOverlay').classList.add('open'); }
+/* ──────────────────────────────────
+   OVERVIEW
+────────────────────────────────── */
+function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
 function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
 
-/* ── KEYBOARD ── */
+/* ──────────────────────────────────
+   KEYBOARD
+────────────────────────────────── */
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   const onSlides = document.getElementById('pg-slides').classList.contains('active');
   if (!onSlides) return;
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
-  if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
   if (e.key === 'g' || e.key === 'G') openOv();
-  if (e.key === 'Escape') { document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack(); }
-  if (e.key === 'r' || e.key === 'R') { const cc = document.getElementById('cc' + cur); if (cc) cc.classList.toggle('blurred'); }
+  if (e.key === 'Escape') {
+    document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack();
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    const card = document.getElementById('cc' + cur);
+    const badge = document.getElementById('badge' + cur);
+    if (card) {
+      const isBlurred = card.classList.toggle('blurred');
+      if (badge) badge.style.display = isBlurred ? '' : 'none';
+    }
+  }
 });
 </script>
 </body>
