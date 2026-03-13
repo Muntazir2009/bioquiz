@@ -830,10 +830,54 @@ async function doGen() {
     const j = await r.json();
     const raw = j.answer || j.response || j.content || j.text || j.result || '';
     if (!raw) throw new Error('Empty AI response');
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('No JSON in response');
-    data = JSON.parse(m[0]);
+
+    // Strip markdown fences if present
+    let cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+    // Extract outermost { ... }
+    const start = cleaned.indexOf('{');
+    if (start === -1) throw new Error('No JSON object in response');
+    cleaned = cleaned.slice(start);
+
+    // Find the matching closing brace by counting depth
+    let depth = 0, endIdx = -1;
+    for (let i = 0; i < cleaned.length; i++) {
+      if (cleaned[i] === '{') depth++;
+      else if (cleaned[i] === '}') { depth--; if (depth === 0) { endIdx = i; break; } }
+    }
+    if (endIdx !== -1) cleaned = cleaned.slice(0, endIdx + 1);
+
+    // Attempt to fix truncated JSON: remove trailing incomplete items
+    // Try parsing as-is first, then progressively fix
+    let parseErr;
+    try {
+      data = JSON.parse(cleaned);
+    } catch (e) {
+      parseErr = e;
+      // Try repairing: remove last incomplete slide object
+      // Find last complete }, in slides array
+      const lastGood = cleaned.lastIndexOf('},\n');
+      const lastGood2 = cleaned.lastIndexOf('},' );
+      const fix = Math.max(lastGood, lastGood2);
+      if (fix > 0) {
+        let repaired = cleaned.slice(0, fix + 1) + ']}';
+        try { data = JSON.parse(repaired); }
+        catch(_) {
+          // Last resort: try adding missing closing brackets
+          const open = (cleaned.match(/\[/g)||[]).length;
+          const close = (cleaned.match(/\]/g)||[]).length;
+          const missing = ']'.repeat(open - close) + '}';
+          try { data = JSON.parse(cleaned + missing); }
+          catch(__) { throw new Error('Malformed JSON from AI: ' + parseErr.message); }
+        }
+      } else {
+        throw new Error('Malformed JSON from AI: ' + e.message);
+      }
+    }
+
     if (!Array.isArray(data.slides) || !data.slides.length) throw new Error('No slides in response');
+    // Filter out any incomplete slide objects missing heading or content
+    data.slides = data.slides.filter(s => s && s.heading && s.content);
   } catch (e) {
     setSt('Failed: ' + e.message, true);
     btn.disabled = false;
