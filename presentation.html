@@ -422,7 +422,8 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 /* ── RESPONSIVE ── */
 @media(max-width:700px){
   .slide-layout.has-img{grid-template-columns:1fr}
-  .img-col{display:none}
+  .img-col{max-height:180px;overflow:hidden}
+  .img-col img{max-height:180px}
   .f-row{grid-template-columns:1fr}
   .hero-title{font-size:clamp(2.2rem,12vw,4rem)}
 }
@@ -788,20 +789,26 @@ function setSrc(v) {
    STATUS
 ────────────────────────────────── */
 let _timerInterval = null;
-function setSt(txt, isErr) {
+function setSt(txt, isErr, estimateSecs) {
   const box = document.getElementById('stBox');
   clearInterval(_timerInterval); _timerInterval = null;
   if (!txt) { box.classList.remove('show','err'); return; }
   box.classList.add('show');
   box.classList.toggle('err', !!isErr);
-  if (!isErr) {
+  if (!isErr && estimateSecs) {
     const start = Date.now();
+    const total = estimateSecs * 1000;
     const update = () => {
-      const s = ((Date.now() - start) / 1000).toFixed(1);
-      document.getElementById('stTxt').textContent = txt + '  [' + s + 's]';
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, (total - elapsed) / 1000);
+      const pct = Math.min(100, Math.round(elapsed / total * 100));
+      document.getElementById('stTxt').textContent =
+        txt + '  ~' + remaining.toFixed(0) + 's remaining  [' + pct + '%]';
     };
     update();
-    _timerInterval = setInterval(update, 100);
+    _timerInterval = setInterval(update, 250);
+  } else if (!isErr) {
+    document.getElementById('stTxt').textContent = txt;
   } else {
     document.getElementById('stTxt').textContent = txt;
   }
@@ -826,7 +833,7 @@ async function doGen() {
 
   const btn = document.getElementById('goBtn');
   btn.disabled = true;
-  setSt('Generating slides via Cloudflare AI…');
+  setSt('Generating slides via Cloudflare AI…', false, 30);
 
   let data;
   try {
@@ -896,7 +903,7 @@ async function doGen() {
     return;
   }
 
-  if (imgSrc === 'wiki') { setSt('Fetching Wikipedia images…'); data = await getWikiImgs(data); }
+  if (imgSrc === 'wiki') { setSt('Fetching Wikipedia images…', false, 8); data = await getWikiImgs(data); }
   setSt('');
   btn.disabled = false;
   prevPage = 'gen';
@@ -908,44 +915,47 @@ async function doGen() {
    WIKIPEDIA IMAGES
 ────────────────────────────────── */
 async function getWikiImgs(data) {
-  // Fetch all images in parallel with a 6s timeout per request
-  const slides = await Promise.all(data.slides.map(async sl => {
-    if (!sl.imageQuery) return sl;
+  // Use Wikipedia opensearch to find the best matching article title,
+  // then grab its main thumbnail via pageimages — much more reliable
+  async function fetchImg(query) {
     try {
-      // Strategy 1: pageimages on a direct title search (most reliable)
-      const q = encodeURIComponent(sl.imageQuery);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 6000);
-      const res = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=3&prop=pageimages&pithumbsize=600&pilimit=3&format=json&origin=*`,
-        { signal: ctrl.signal }
+      // Step 1: opensearch to get best article title match
+      const q = encodeURIComponent(query);
+      const ctrl1 = new AbortController();
+      setTimeout(() => ctrl1.abort(), 5000);
+      const sr = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=opensearch&search=${q}&limit=1&format=json&origin=*`,
+        { signal: ctrl1.signal }
       );
-      clearTimeout(timer);
-      const j = await res.json();
-      const pages = Object.values(j.query?.pages || {});
-      const hit = pages.find(p => p.thumbnail?.source);
-      if (hit) {
-        sl.imageUrl = hit.thumbnail.source;
-        sl.imageCaption = hit.title || sl.imageQuery;
-        return sl;
-      }
-      // Strategy 2: fallback to file-namespace search
+      const [, titles] = await sr.json();
+      if (!titles || !titles[0]) return null;
+
+      // Step 2: pageimages for that exact title
+      const title = encodeURIComponent(titles[0]);
       const ctrl2 = new AbortController();
-      const timer2 = setTimeout(() => ctrl2.abort(), 6000);
-      const res2 = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=600&format=json&origin=*&gsrlimit=5`,
+      setTimeout(() => ctrl2.abort(), 5000);
+      const pr = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=600&format=json&origin=*`,
         { signal: ctrl2.signal }
       );
-      clearTimeout(timer2);
-      const j2 = await res2.json();
-      const pages2 = Object.values(j2.query?.pages || {});
-      const img = pages2.find(p => { const m = p.imageinfo?.[0]?.mime||''; return m.startsWith('image/')&&!m.includes('svg')&&!m.includes('gif'); });
-      if (img) { sl.imageUrl = img.imageinfo[0].thumburl||img.imageinfo[0].url; sl.imageCaption = sl.imageQuery; }
-    } catch(_) { /* timeout or network error — skip image */ }
+      const pj = await pr.json();
+      const page = Object.values(pj.query?.pages || {})[0];
+      if (page?.thumbnail?.source) {
+        return { url: page.thumbnail.source, caption: titles[0] };
+      }
+    } catch(_) {}
+    return null;
+  }
+
+  const slides = await Promise.all(data.slides.map(async sl => {
+    if (!sl.imageQuery) return sl;
+    const img = await fetchImg(sl.imageQuery);
+    if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
     return sl;
   }));
   return { ...data, slides };
 }
+
 
 /* ──────────────────────────────────
    DECK STATE
