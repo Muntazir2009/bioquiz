@@ -818,92 +818,111 @@ function setSt(txt, isErr, estimateSecs) {
    AI GENERATOR
    Worker: { query: "..." } → { answer: "..." }
 ────────────────────────────────── */
+/* ──────────────────────────────────
+   FETCH ONE BATCH FROM WORKER
+────────────────────────────────── */
+async function fetchSlides(topic, slideNumbers, det) {
+  const detMap = { concise:'2-3 sentences', standard:'3-5 sentences', detailed:'4-6 sentences' };
+  const count = slideNumbers.length;
+  const headings = slideNumbers.map(n => `Slide ${n}`).join(', ');
+
+  const prompt =
+    `Biology educator. Create exactly ${count} slides (${headings}) for a lesson on "${topic}". ` +
+    `IMPORTANT: You MUST output all ${count} slides. ` +
+    `Return ONLY raw JSON, no markdown, no explanation. ` +
+    `Format: {"title":"string","slides":[{"heading":"string","content":"HTML with <b> bold and <ul><li> lists","keyFacts":["short fact","short fact"],"imageQuery":"2-3 word wikipedia search"}]} ` +
+    `Each slide content: ${detMap[det]}. keyFacts: exactly 2 items, max 6 words each. ` +
+    `Do NOT stop early. Output ALL ${count} slides then close the JSON.`;
+
+  const r = await fetch('https://ask-ai.killermunu.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: prompt })
+  });
+  if (!r.ok) {
+    const t = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}${t ? ': ' + t.slice(0,80) : ''}`);
+  }
+  const j = await r.json();
+  const raw = j.answer || j.response || j.content || j.text || j.result || '';
+  if (!raw) throw new Error('Empty AI response');
+  return parseSlideJSON(raw);
+}
+
+function parseSlideJSON(raw) {
+  let s = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const start = s.indexOf('{');
+  if (start === -1) throw new Error('No JSON in response');
+  s = s.slice(start);
+  // match closing brace by depth
+  let depth = 0, end = -1;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end !== -1) s = s.slice(0, end + 1);
+  // try parse, then repair
+  try { return JSON.parse(s); } catch(e) {
+    // remove last incomplete slide
+    const cuts = [s.lastIndexOf('},
+'), s.lastIndexOf('},')];
+    const cut = Math.max(...cuts);
+    if (cut > 0) {
+      try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(_) {}
+    }
+    // add missing brackets
+    const open = (s.match(/\[/g)||[]).length, close = (s.match(/\]/g)||[]).length;
+    try { return JSON.parse(s + ']'.repeat(Math.max(0, open-close)) + '}'); } catch(_) {}
+    throw new Error('Malformed JSON: ' + e.message);
+  }
+}
+
+/* ──────────────────────────────────
+   AI GENERATOR — BATCHED
+────────────────────────────────── */
 async function doGen() {
   const topic = document.getElementById('topicIn').value.trim();
   if (!topic) { document.getElementById('topicIn').focus(); return; }
-
-  const n   = document.getElementById('slideN').value;
+  const n   = parseInt(document.getElementById('slideN').value);
   const det = document.getElementById('detailN').value;
-  const detMap = { concise:'2-3 sentences', standard:'3-5 sentences', detailed:'5-7 sentences' };
-
-  const prompt = `You are a biology educator. Create a ${n}-slide lesson on "${topic}". ` +
-    `Return ONLY a valid JSON object, no markdown, no extra text. ` +
-    `Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"short image search string"}]}. ` +
-    `Detail per slide: ${detMap[det]}. keyFacts: 2-3 items each under 8 words. Return ONLY the JSON.`;
 
   const btn = document.getElementById('goBtn');
   btn.disabled = true;
-  setSt('Generating slides via Cloudflare AI…', false, 30);
 
-  let data;
+  // Split into batches of max 4 to stay within worker token limit
+  const BATCH = 4;
+  const batches = [];
+  for (let i = 0; i < n; i += BATCH) {
+    batches.push(Array.from({length: Math.min(BATCH, n - i)}, (_, k) => i + k + 1));
+  }
+
+  let allSlides = [], title = '';
   try {
-    const r = await fetch('https://ask-ai.killermunu.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: prompt })
-    });
-    if (!r.ok) {
-      const errText = await r.text().catch(() => '');
-      throw new Error(`HTTP ${r.status}${errText ? ': ' + errText.slice(0,100) : ''}`);
+    for (let b = 0; b < batches.length; b++) {
+      const estSecs = det === 'detailed' ? 35 : 25;
+      setSt(`Generating slides ${batches[b][0]}–${batches[b][batches[b].length-1]} of ${n}…`, false, estSecs);
+      const result = await fetchSlides(topic, batches[b], det);
+      if (!result.slides?.length) throw new Error(`Batch ${b+1} returned no slides`);
+      if (!title) title = result.title || topic;
+      allSlides = allSlides.concat(result.slides);
     }
-    const j = await r.json();
-    const raw = j.answer || j.response || j.content || j.text || j.result || '';
-    if (!raw) throw new Error('Empty AI response');
-
-    // Strip markdown fences if present
-    let cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-    // Extract outermost { ... }
-    const start = cleaned.indexOf('{');
-    if (start === -1) throw new Error('No JSON object in response');
-    cleaned = cleaned.slice(start);
-
-    // Find the matching closing brace by counting depth
-    let depth = 0, endIdx = -1;
-    for (let i = 0; i < cleaned.length; i++) {
-      if (cleaned[i] === '{') depth++;
-      else if (cleaned[i] === '}') { depth--; if (depth === 0) { endIdx = i; break; } }
-    }
-    if (endIdx !== -1) cleaned = cleaned.slice(0, endIdx + 1);
-
-    // Attempt to fix truncated JSON: remove trailing incomplete items
-    // Try parsing as-is first, then progressively fix
-    let parseErr;
-    try {
-      data = JSON.parse(cleaned);
-    } catch (e) {
-      parseErr = e;
-      // Try repairing: remove last incomplete slide object
-      // Find last complete }, in slides array
-      const lastGood = cleaned.lastIndexOf('},\n');
-      const lastGood2 = cleaned.lastIndexOf('},' );
-      const fix = Math.max(lastGood, lastGood2);
-      if (fix > 0) {
-        let repaired = cleaned.slice(0, fix + 1) + ']}';
-        try { data = JSON.parse(repaired); }
-        catch(_) {
-          // Last resort: try adding missing closing brackets
-          const open = (cleaned.match(/\[/g)||[]).length;
-          const close = (cleaned.match(/\]/g)||[]).length;
-          const missing = ']'.repeat(open - close) + '}';
-          try { data = JSON.parse(cleaned + missing); }
-          catch(__) { throw new Error('Malformed JSON from AI: ' + parseErr.message); }
-        }
-      } else {
-        throw new Error('Malformed JSON from AI: ' + e.message);
-      }
-    }
-
-    if (!Array.isArray(data.slides) || !data.slides.length) throw new Error('No slides in response');
-    // Filter out any incomplete slide objects missing heading or content
-    data.slides = data.slides.filter(s => s && s.heading && s.content);
-  } catch (e) {
+  } catch(e) {
     setSt('Failed: ' + e.message, true);
     btn.disabled = false;
     return;
   }
 
-  if (imgSrc === 'wiki') { setSt('Fetching Wikipedia images…', false, 8); data = await getWikiImgs(data); }
+  // Filter incomplete slides
+  allSlides = allSlides.filter(s => s && s.heading && s.content).slice(0, n);
+  if (!allSlides.length) { setSt('Failed: No valid slides returned', true); btn.disabled = false; return; }
+
+  let data = { title, slides: allSlides };
+
+  if (imgSrc === 'wiki') {
+    setSt('Fetching Wikipedia images…', false, 8);
+    data = await getWikiImgs(data);
+  }
+
   setSt('');
   btn.disabled = false;
   prevPage = 'gen';
@@ -911,39 +930,35 @@ async function doGen() {
   showPage('slides');
 }
 
+
 /* ──────────────────────────────────
    WIKIPEDIA IMAGES
 ────────────────────────────────── */
 async function getWikiImgs(data) {
-  // Use Wikipedia opensearch to find the best matching article title,
-  // then grab its main thumbnail via pageimages — much more reliable
   async function fetchImg(query) {
-    try {
-      // Step 1: opensearch to get best article title match
-      const q = encodeURIComponent(query);
-      const ctrl1 = new AbortController();
-      setTimeout(() => ctrl1.abort(), 5000);
-      const sr = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=opensearch&search=${q}&limit=1&format=json&origin=*`,
-        { signal: ctrl1.signal }
-      );
-      const [, titles] = await sr.json();
-      if (!titles || !titles[0]) return null;
-
-      // Step 2: pageimages for that exact title
-      const title = encodeURIComponent(titles[0]);
-      const ctrl2 = new AbortController();
-      setTimeout(() => ctrl2.abort(), 5000);
-      const pr = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&titles=${title}&prop=pageimages&pithumbsize=600&format=json&origin=*`,
-        { signal: ctrl2.signal }
-      );
-      const pj = await pr.json();
-      const page = Object.values(pj.query?.pages || {})[0];
-      if (page?.thumbnail?.source) {
-        return { url: page.thumbnail.source, caption: titles[0] };
-      }
-    } catch(_) {}
+    // Use 2-3 word simplified query for better wiki hits
+    const shortQ = query.split(' ').slice(0, 3).join(' ');
+    const urls = [
+      // Method A: pageimages via search
+      `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(shortQ)}&gsrlimit=5&prop=pageimages&pithumbsize=600&format=json&origin=*`,
+      // Method B: pageimages via direct title
+      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(shortQ)}&prop=pageimages&pithumbsize=600&format=json&origin=*`
+    ];
+    for (const url of urls) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(t);
+        const j = await r.json();
+        const pages = Object.values(j.query?.pages || {});
+        for (const p of pages) {
+          if (p.thumbnail?.source) {
+            return { url: p.thumbnail.source, caption: p.title || query };
+          }
+        }
+      } catch(_) {}
+    }
     return null;
   }
 
