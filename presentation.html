@@ -220,11 +220,12 @@ body{
 }
 
 /* ════════════════════════════════════════
-   REAL MOON
+   MOON
 ════════════════════════════════════════ */
 .moon-wrap{
-  position:fixed;top:70px;right:clamp(20px,7vw,110px);z-index:0;
+  position:fixed;top:72px;right:clamp(20px,7vw,110px);z-index:0;
   pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
   animation:moonRise 2.2s cubic-bezier(.16,1,.3,1) .6s both;
 }
 @keyframes moonRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
@@ -240,8 +241,7 @@ body{
 .moon-img-wrap img{
   width:100%;height:100%;object-fit:cover;
   border-radius:50%;
-  /* slight sepia to reduce harsh colours against dark bg */
-  filter:brightness(.92) contrast(1.06) saturate(.7);
+  filter:brightness(.92) contrast(1.06) saturate(.65);
   display:block;
 }
 /* atmospheric halo */
@@ -250,6 +250,12 @@ body{
   background:radial-gradient(circle,rgba(220,218,200,.07) 0%,transparent 65%);
   pointer-events:none;
 }
+/* gentle float */
+@keyframes moonFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-7px)}
+}
+.moon-img-wrap{animation:moonFloat 7s ease-in-out infinite}
 
 /* ════════════════════════════════════════
    PILL NAVBAR
@@ -589,7 +595,7 @@ body{
 ════════════════════════════════════════ */
 @media(max-width:640px){
   .moon-wrap{top:66px;right:8px}
-  .moon-img-wrap{width:65px;height:65px}
+  .moon-img-wrap{width:62px;height:62px}
 
   .topbar{padding:0 14px}
   .tb-status{display:none}
@@ -666,16 +672,11 @@ body{
 <div class="bg-grid"></div>
 <div class="scanlines"></div>
 
-<!-- REAL MOON PHOTO -->
+<!-- MOON -->
 <div class="moon-wrap">
   <div class="moon-halo"></div>
   <div class="moon-img-wrap">
-    <img
-      src="images/moon.png"
-      alt="Full Moon"
-      loading="lazy"
-      decoding="async"
-    >
+    <img src="images/moon.png" alt="Moon" loading="lazy" decoding="async">
   </div>
 </div>
 
@@ -1093,7 +1094,6 @@ document.addEventListener("click",e=>{
   if(!e.target.closest(".nav-item"))document.querySelectorAll(".nav-item").forEach(i=>{i.classList.remove("open");i.querySelector(".nav-btn").classList.remove("active")});
 });
 
-/* ═══ QUOTES ═══ */
 const QQ=[
   {t:"The good thing about science is that it's true whether or not you believe in it.",a:"Neil deGrasse Tyson"},
   {t:"Nothing in life is to be feared, it is only to be understood.",a:"Marie Curie"},
