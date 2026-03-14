@@ -45,27 +45,48 @@ body{
 /* site title on loader */
 .ld-title{
   font-family:'Rajdhani',sans-serif;font-weight:900;
-  font-size:clamp(2.2rem,8vw,5rem);
-  letter-spacing:.35em;color:var(--white);
+  font-size:clamp(2.8rem,10vw,6.5rem);
+  letter-spacing:.42em;
+  background:linear-gradient(135deg,#fff 0%,#c8d8f0 35%,#fff 55%,#8ab4e8 75%,#fff 100%);
+  background-size:300%;
+  background-clip:text;-webkit-background-clip:text;color:transparent;
   opacity:0;
-  animation:ldTitleIn 1s cubic-bezier(.16,1,.3,1) .2s forwards;
-  margin-bottom:clamp(28px,5vh,52px);
+  animation:ldTitleIn .8s cubic-bezier(.16,1,.3,1) .15s forwards, titleSheen 3s ease 1s infinite;
+  margin-bottom:clamp(20px,4vh,44px);
   position:relative;
+  text-shadow:none;
+  filter:drop-shadow(0 0 28px rgba(150,190,255,.25));
+}
+.ld-title::before{
+  content:'BIOQUIZ';
+  position:absolute;inset:0;
+  font-family:'Rajdhani',sans-serif;font-weight:900;
+  font-size:inherit;letter-spacing:inherit;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(255,255,255,.08);
+  transform:scale(1.02) translateY(2px);
+  filter:blur(8px);
+  opacity:.6;
+  z-index:-1;
 }
 .ld-title::after{
-  content:'';position:absolute;bottom:-10px;left:10%;width:80%;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.4),transparent);
+  content:'';position:absolute;bottom:-12px;left:5%;width:90%;height:1px;
+  background:linear-gradient(to right,transparent,rgba(255,255,255,.35),transparent);
 }
 @keyframes ldTitleIn{
-  from{opacity:0;letter-spacing:.6em;filter:blur(8px)}
-  to{opacity:1;letter-spacing:.35em;filter:blur(0)}
+  from{opacity:0;letter-spacing:.7em;filter:blur(12px) drop-shadow(0 0 0px rgba(150,190,255,0))}
+  to{opacity:1;letter-spacing:.42em;filter:blur(0) drop-shadow(0 0 28px rgba(150,190,255,.25))}
+}
+@keyframes titleSheen{
+  0%{background-position:0%}
+  50%{background-position:100%}
+  100%{background-position:0%}
 }
 
 /* police seal "MADE BY MUNTAZIR" */
 .ld-seal{
   display:flex;align-items:center;justify-content:center;
-  gap:0;margin-bottom:clamp(36px,6vh,64px);
-  /* letters added by JS */
+  gap:0;margin-bottom:clamp(28px,5vh,52px);
 }
 .ld-letter{
   display:inline-block;
@@ -76,50 +97,85 @@ body{
   -webkit-text-stroke:1px rgba(255,255,255,.7);
   text-transform:uppercase;
   opacity:0;
-  /* each animated via JS inline style */
 }
 .ld-letter.space{width:.6em;display:inline-block}
-/* stamp keyframe */
+
+/* MUNTAZIR letters — gold gradient via CSS var */
+.muntazir-letter{
+  -webkit-text-stroke:1px color-mix(in srgb,var(--mc,#fbbf24) 80%,transparent);
+}
+
+/* white stamp */
 @keyframes stamp{
-  0%  {opacity:0;transform:scale(4) translateY(-10px);filter:blur(6px);-webkit-text-stroke:2px rgba(255,255,255,.2)}
-  40% {opacity:1;transform:scale(.88) translateY(2px);filter:blur(0);-webkit-text-stroke:1px rgba(255,255,255,.9)}
-  60% {transform:scale(1.06);color:rgba(255,255,255,.15)}
-  80% {transform:scale(.97)}
-  100%{opacity:1;transform:scale(1);color:rgba(255,255,255,.08);-webkit-text-stroke:1px rgba(255,255,255,.55)}
+  0%  {opacity:0;transform:scale(3.5) translateY(-8px);filter:blur(5px);-webkit-text-stroke:2px rgba(255,255,255,.15)}
+  40% {opacity:1;transform:scale(.9) translateY(2px);filter:blur(0);-webkit-text-stroke:1px rgba(255,255,255,.9)}
+  60% {transform:scale(1.05);color:rgba(255,255,255,.12)}
+  80% {transform:scale(.98)}
+  100%{opacity:1;transform:scale(1);color:rgba(255,255,255,.06);-webkit-text-stroke:1px rgba(255,255,255,.52)}
+}
+
+/* gold stamp for MUNTAZIR */
+@keyframes stampColor{
+  0%  {opacity:0;transform:scale(3.5) translateY(-8px);filter:blur(5px);color:transparent;-webkit-text-stroke:2px rgba(251,191,36,.1)}
+  40% {opacity:1;transform:scale(.9) translateY(2px);filter:blur(0);color:var(--mc,#fbbf24);-webkit-text-stroke:0px transparent;text-shadow:0 0 20px var(--mc,#fbbf24),0 0 40px rgba(251,191,36,.4)}
+  60% {transform:scale(1.06);color:var(--mc,#fbbf24);text-shadow:0 0 30px var(--mc,#fbbf24)}
+  80% {transform:scale(.98)}
+  100%{opacity:1;transform:scale(1);color:var(--mc,#fbbf24);-webkit-text-stroke:0px transparent;text-shadow:0 0 12px rgba(251,191,36,.5)}
 }
 
 /* sub-label under seal */
 .ld-sub{
-  font-family:'Rajdhani',sans-serif;font-size:.56rem;letter-spacing:.44em;
-  color:rgba(255,255,255,.28);text-transform:uppercase;
-  opacity:0;animation:ldSubIn .6s ease 2.6s forwards;
-  margin-bottom:clamp(32px,5vh,56px);
+  font-family:'Rajdhani',sans-serif;font-size:.54rem;letter-spacing:.44em;
+  color:rgba(255,255,255,.26);text-transform:uppercase;
+  opacity:0;animation:ldSubIn .5s ease 1.85s forwards;
+  margin-bottom:clamp(28px,4vh,48px);
 }
-@keyframes ldSubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ldSubIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
 /* scan line sweep on loader */
 .ld-scan{
   position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(to right,transparent,rgba(255,255,255,.25),transparent);
-  animation:ldScan 2s ease infinite;
+  animation:ldScan 1.6s ease infinite;
 }
 @keyframes ldScan{
   0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}
 }
 
-/* loading bar */
-.ld-bar-wrap{width:clamp(180px,38vw,320px);height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;position:relative}
-.ld-bar-fill{height:100%;width:0%;background:rgba(255,255,255,.7);border-radius:2px;transition:width .1s linear}
-.ld-bar-glow{
-  position:absolute;inset:0;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.4),transparent);
-  transform:translateX(-100%);
-  animation:barGlow 1.8s ease infinite .8s;
+/* loading bar — richer, taller, segmented feel */
+.ld-bar-wrap{
+  width:clamp(200px,44vw,380px);height:5px;
+  background:rgba(255,255,255,.06);
+  border-radius:3px;overflow:hidden;position:relative;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 0 12px rgba(0,0,0,.4) inset;
 }
-@keyframes barGlow{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+.ld-bar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.9) 50%,rgba(200,220,255,.7) 100%);
+  border-radius:3px;
+  box-shadow:0 0 10px rgba(255,255,255,.4),0 0 20px rgba(150,190,255,.2);
+  transition:width .08s linear;
+  position:relative;
+}
+/* animated shimmer on the fill */
+.ld-bar-fill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.6) 50%,transparent 100%);
+  background-size:60px 100%;
+  animation:barShimmer .8s linear infinite;
+}
+@keyframes barShimmer{from{background-position:-60px 0}to{background-position:120px 0}}
+/* tick marks on the bar track */
+.ld-bar-wrap::before{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent,transparent calc(10% - 1px),rgba(0,0,0,.25) calc(10% - 1px),rgba(0,0,0,.25) 10%);
+}
+.ld-bar-glow{display:none}/* replaced by fill shimmer */
 .ld-pct{
-  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.2em;
-  color:rgba(255,255,255,.3);margin-top:10px;text-align:center;
+  font-family:'Rajdhani',sans-serif;font-size:.52rem;letter-spacing:.22em;
+  color:rgba(255,255,255,.4);margin-top:11px;text-align:center;
+  font-weight:600;
 }
 
 /* ════════════════════════════════════════
@@ -593,7 +649,7 @@ body{
   <div class="moon-halo"></div>
   <div class="moon-img-wrap">
     <img
-      src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/800px-FullMoon2010.jpg"
+      src="images/moon.png"
       alt="Full Moon"
       loading="lazy"
       decoding="async"
@@ -859,23 +915,34 @@ body{
   const bar    = document.getElementById("ldBar");
   const pct    = document.getElementById("ldPct");
 
-  /* Build stamped letters */
+  /* Build stamped letters — "MUNTAZIR" gets a gold gradient color */
+  const MUNTAZIR_START = PHRASE.indexOf("MUNTAZIR");
+  const MUNTAZIR_END   = MUNTAZIR_START + "MUNTAZIR".length;
+  const MUNTAZIR_COLORS = ["#f59e0b","#fbbf24","#fde68a","#fcd34d","#f59e0b","#fbbf24","#fde68a","#fcd34d"];
+
   [...PHRASE].forEach((ch, i) => {
     const el = document.createElement("span");
     if(ch === " "){
       el.className = "ld-letter space";
     } else {
-      el.className = "ld-letter";
+      const isMuntazir = i >= MUNTAZIR_START && i < MUNTAZIR_END;
+      el.className = "ld-letter" + (isMuntazir ? " muntazir-letter" : "");
       el.textContent = ch;
-      /* stagger delay: first letter at 0.9s, then every 120ms */
-      const delay = 0.9 + i * 0.12;
-      el.style.animation = `stamp 0.55s cubic-bezier(.22,1,.36,1) ${delay}s forwards`;
+      /* faster stagger: first letter at 0.55s, every 80ms */
+      const delay = 0.55 + i * 0.08;
+      if(isMuntazir){
+        const ci = i - MUNTAZIR_START;
+        el.style.setProperty("--mc", MUNTAZIR_COLORS[ci]);
+        el.style.animation = `stampColor 0.5s cubic-bezier(.22,1,.36,1) ${delay}s forwards`;
+      } else {
+        el.style.animation = `stamp 0.5s cubic-bezier(.22,1,.36,1) ${delay}s forwards`;
+      }
     }
     seal.appendChild(el);
   });
 
   /* Loading bar progress */
-  const totalDuration = 3600; /* ms total loader time */
+  const totalDuration = 2200; /* ms total loader time */
   const startTime = performance.now();
   function updateBar(now){
     const elapsed = now - startTime;
