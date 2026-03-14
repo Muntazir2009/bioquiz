@@ -3,1120 +3,1104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BioQuiz — Learn. Explore. Master.</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700;900&family=Barlow+Condensed:ital,wght@0,200;0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<title>Lesson Slides · BioQuiz</title>
 <style>
-/* ════════════════════════════════════════
-   RESET & TOKENS
-════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080808;--white:#fff;
-  --white-80:rgba(255,255,255,.8);--white-50:rgba(255,255,255,.5);
-  --white-20:rgba(255,255,255,.2);--white-10:rgba(255,255,255,.1);
-  --white-06:rgba(255,255,255,.06);
-  --blue:#003791;--blue-light:#0070d1;--blue-glow:rgba(0,112,209,.4);
-  --border:rgba(255,255,255,.09);--border-strong:rgba(255,255,255,.18);
-  --muted:rgba(255,255,255,.3);
-  --c-cyan:#00c2ff;--c-violet:#a78bfa;--c-green:#34d399;
-  --c-teal:#2dd4bf;--c-amber:#fbbf24;--c-coral:#f87171;--c-pink:#f472b6;
+  --black:#000;
+  --dark:#0a0a0a;
+  --dark2:#111;
+  --dark3:#181818;
+  --dark4:#222;
+  --white:#fff;
+  --off:#e8e8e8;
+  --dim:rgba(255,255,255,.5);
+  --faint:rgba(255,255,255,.2);
+  --ghost:rgba(255,255,255,.07);
+  --border:rgba(255,255,255,.1);
+  --border2:rgba(255,255,255,.25);
+  --accent:#e8e8e8;
+  --font:'Arial Black',Arial,sans-serif;
+  --font-body:Arial,sans-serif;
 }
-html{scroll-behavior:smooth}
-body{
-  background:var(--bg);color:var(--white-80);
-  font-family:'Barlow Condensed',sans-serif;
-  min-height:100vh;overflow-x:hidden;
-}
+html,body{height:100%;background:var(--black)}
+body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 
-/* ════════════════════════════════════════
-   LOADING SCREEN
-════════════════════════════════════════ */
-#loader{
-  position:fixed;inset:0;z-index:9999;
-  background:#000;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:0;
-  transition:opacity .7s ease;
-}
-#loader.hide{opacity:0;pointer-events:none}
+/* ── PAGE SYSTEM ── */
+.page{display:none;flex-direction:column;min-height:100dvh}
+.page.active{display:flex}
 
-/* content wrapper that zooms in on exit */
-.ld-content{
-  display:flex;flex-direction:column;align-items:center;
-  transition:transform .75s cubic-bezier(.4,0,.2,1), filter .75s ease, opacity .75s ease;
-  will-change:transform;
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,52px);height:58px;flex-shrink:0;
+  background:var(--black);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
 }
-.ld-content.zoom{
-  transform:scale(1.18) translateY(-8px);
-  filter:blur(3px) brightness(1.4);
-  opacity:0;
-}
-
-/* site title on loader */
-.ld-title{
-  font-family:'Rajdhani',sans-serif;font-weight:900;
-  font-size:clamp(2.8rem,10vw,6.5rem);
-  letter-spacing:.42em;
-  background:linear-gradient(135deg,#fff 0%,#c8d8f0 35%,#fff 55%,#8ab4e8 75%,#fff 100%);
-  background-size:300%;
-  background-clip:text;-webkit-background-clip:text;color:transparent;
-  opacity:0;
-  animation:ldTitleIn .8s cubic-bezier(.16,1,.3,1) .15s forwards, titleSheen 3s ease 1s infinite;
-  margin-bottom:clamp(20px,4vh,44px);
-  position:relative;
-  text-shadow:none;
-  filter:drop-shadow(0 0 28px rgba(150,190,255,.25));
-}
-.ld-title::before{
-  content:'BIOQUIZ';
-  position:absolute;inset:0;
-  font-family:'Rajdhani',sans-serif;font-weight:900;
-  font-size:inherit;letter-spacing:inherit;
-  color:transparent;
-  -webkit-text-stroke:1px rgba(255,255,255,.08);
-  transform:scale(1.02) translateY(2px);
-  filter:blur(8px);
-  opacity:.6;
-  z-index:-1;
-}
-.ld-title::after{
-  content:'';position:absolute;bottom:-12px;left:5%;width:90%;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.35),transparent);
-}
-@keyframes ldTitleIn{
-  from{opacity:0;letter-spacing:.7em;filter:blur(12px) drop-shadow(0 0 0px rgba(150,190,255,0))}
-  to{opacity:1;letter-spacing:.42em;filter:blur(0) drop-shadow(0 0 28px rgba(150,190,255,.25))}
-}
-@keyframes titleSheen{
-  0%{background-position:0%}
-  50%{background-position:100%}
-  100%{background-position:0%}
-}
-
-/* police seal — two line layout */
-.ld-seal-madeby{
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+/* PS5-style logo: sharp geometric mark */
+.brand-mark{
+  width:32px;height:32px;position:relative;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  gap:0;margin-bottom:10px;
 }
-.ld-seal-name{
-  display:flex;align-items:center;justify-content:center;
-  gap:0;margin-bottom:clamp(28px,5vh,52px);
+.brand-mark svg{width:32px;height:32px}
+.brand-name{
+  font-family:var(--font);font-size:.72rem;letter-spacing:.28em;color:var(--white);
+  font-weight:900;
 }
-.ld-letter{
-  display:inline-block;
-  font-family:'Rajdhani',sans-serif;font-weight:900;
-  font-size:clamp(1rem,3.5vw,1.8rem);
-  letter-spacing:.12em;
-  color:transparent;
-  -webkit-text-stroke:1px rgba(255,255,255,.65);
-  text-transform:uppercase;
-  opacity:0;
+.brand-sep{width:1px;height:16px;background:var(--border)}
+.brand-module{
+  font-family:var(--font-body);font-size:.65rem;letter-spacing:.12em;
+  color:var(--dim);font-weight:bold;
 }
-.ld-letter.space{width:.5em;display:inline-block}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--font);font-size:.52rem;letter-spacing:.14em;font-weight:900;
+  padding:8px 16px;background:none;color:var(--dim);
+  border:1px solid var(--border);transition:all .15s;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.tb-btn:hover{color:var(--white);border-color:var(--border2);background:var(--ghost)}
+.tb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.tb-btn.wh{background:var(--white);color:var(--black);border-color:var(--white);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.tb-btn.wh:hover{background:var(--off)}
 
-/* MUNTAZIR letters — cyan */
-.muntazir-letter{
-  font-size:clamp(2rem,7vw,4rem);
-  letter-spacing:.18em;
-  -webkit-text-stroke:0px transparent;
-}
+/* ══════════════════════════════════
+   MENU PAGE
+══════════════════════════════════ */
+#pg-menu{overflow-y:auto;background:var(--black)}
 
-/* white stamp (MADE BY) */
-@keyframes stamp{
-  0%  {opacity:0;transform:scale(3) translateY(-6px);filter:blur(5px);-webkit-text-stroke:2px rgba(255,255,255,.1)}
-  40% {opacity:1;transform:scale(.92) translateY(1px);filter:blur(0);-webkit-text-stroke:1px rgba(255,255,255,.85)}
-  60% {transform:scale(1.04)}
-  80% {transform:scale(.98)}
-  100%{opacity:1;transform:scale(1);color:rgba(255,255,255,.05);-webkit-text-stroke:1px rgba(255,255,255,.5)}
-}
-
-/* cyan stamp for MUNTAZIR */
-@keyframes stampCyan{
-  0%  {opacity:0;transform:scale(3.2) translateY(-10px);filter:blur(7px);color:transparent}
-  35% {opacity:1;transform:scale(.9) translateY(3px);filter:blur(0);color:#00e5ff;text-shadow:0 0 30px #00e5ff,0 0 60px rgba(0,229,255,.5),0 0 100px rgba(0,229,255,.2)}
-  55% {transform:scale(1.06);text-shadow:0 0 40px #00e5ff,0 0 80px rgba(0,229,255,.4)}
-  75% {transform:scale(.97)}
-  100%{opacity:1;transform:scale(1);color:#00e5ff;text-shadow:0 0 14px rgba(0,229,255,.7),0 0 30px rgba(0,229,255,.3)}
+/* Large geometric bg text */
+.menu-bg-text{
+  position:fixed;bottom:-4vw;left:-2vw;z-index:0;pointer-events:none;
+  font-family:var(--font);font-size:min(28vw,340px);font-weight:900;letter-spacing:-.04em;
+  color:rgba(255,255,255,.025);line-height:1;user-select:none;
 }
 
-/* sub-label under seal */
-.ld-sub{
-  font-family:'Rajdhani',sans-serif;font-size:.54rem;letter-spacing:.44em;
-  color:rgba(255,255,255,.26);text-transform:uppercase;
-  opacity:0;animation:ldSubIn .5s ease 2.2s forwards;
-  margin-bottom:clamp(28px,4vh,48px);
-}
-@keyframes ldSubIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.menu-wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:clamp(28px,5vh,60px) clamp(16px,4vw,52px) 80px}
 
-/* scan line sweep on loader */
-.ld-scan{
-  position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.25),transparent);
-  animation:ldScan 1.6s ease infinite;
+/* Hero */
+.menu-hero{margin-bottom:48px;animation:fadeUp .5s ease both}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font);font-size:.48rem;letter-spacing:.4em;font-weight:900;
+  color:var(--black);background:var(--white);padding:5px 12px;
+  margin-bottom:20px;
 }
-@keyframes ldScan{
-  0%{top:-2px;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}
+.hero-title{
+  font-family:var(--font);font-size:clamp(3rem,8vw,6rem);font-weight:900;
+  line-height:.88;letter-spacing:-.02em;color:var(--white);margin-bottom:14px;
 }
+.hero-title .stroke{
+  -webkit-text-stroke:2px var(--white);color:transparent;
+}
+.hero-sub{font-size:.95rem;color:var(--dim);line-height:1.65;max-width:440px;font-weight:400}
 
-/* loading bar — richer, taller, segmented feel */
-.ld-bar-wrap{
-  width:clamp(200px,44vw,380px);height:5px;
-  background:rgba(255,255,255,.06);
-  border-radius:3px;overflow:hidden;position:relative;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 0 12px rgba(0,0,0,.4) inset;
-}
-.ld-bar-fill{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.9) 50%,rgba(200,220,255,.7) 100%);
-  border-radius:3px;
-  box-shadow:0 0 10px rgba(255,255,255,.4),0 0 20px rgba(150,190,255,.2);
-  transition:width .08s linear;
+/* Sharp divider */
+.sharp-div{
+  height:1px;background:var(--border2);margin:32px 0;
   position:relative;
 }
-/* animated shimmer on the fill */
-.ld-bar-fill::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.6) 50%,transparent 100%);
-  background-size:60px 100%;
-  animation:barShimmer .8s linear infinite;
-}
-@keyframes barShimmer{from{background-position:-60px 0}to{background-position:120px 0}}
-/* tick marks on the bar track */
-.ld-bar-wrap::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:repeating-linear-gradient(90deg,transparent,transparent calc(10% - 1px),rgba(0,0,0,.25) calc(10% - 1px),rgba(0,0,0,.25) 10%);
-}
-.ld-bar-glow{display:none}/* replaced by fill shimmer */
-.ld-pct{
-  font-family:'Rajdhani',sans-serif;font-size:.52rem;letter-spacing:.22em;
-  color:rgba(255,255,255,.4);margin-top:11px;text-align:center;
-  font-weight:600;
+.sharp-div::before{
+  content:'';position:absolute;left:0;top:-1px;width:60px;height:3px;background:var(--white);
 }
 
-/* ════════════════════════════════════════
-   BACKGROUNDS
-════════════════════════════════════════ */
-.bg-gradient{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% -5%,rgba(0,55,145,.18) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 35% at 100% 100%,rgba(0,55,145,.1) 0%,transparent 55%),
-    radial-gradient(ellipse 60% 50% at -10% 60%,rgba(0,112,209,.07) 0%,transparent 55%);
+/* AI CTA card */
+.gen-cta{
+  display:flex;align-items:center;gap:18px;
+  padding:22px 26px;cursor:pointer;
+  background:var(--white);border:none;
+  width:100%;text-align:left;margin-bottom:40px;
+  transition:transform .12s,box-shadow .12s;
+  animation:fadeUp .5s ease .1s both;opacity:0;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
 }
-.bg-grid{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
-  background-size:60px 60px;
-  mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 0%,transparent 85%);
+.gen-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,255,255,.12)}
+.gen-cta:active{transform:translateY(0)}
+.cta-ic{
+  width:44px;height:44px;border:2px solid var(--black);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
 }
-.scanlines{
-  position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 3px);
-}
+.cta-ic svg{width:20px;height:20px;stroke:var(--black);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cta-body{flex:1}
+.cta-title{font-family:var(--font);font-size:.85rem;font-weight:900;letter-spacing:.1em;color:var(--black);line-height:1}
+.cta-sub{font-size:.78rem;color:rgba(0,0,0,.55);margin-top:3px;font-weight:400}
+.cta-arr{font-family:var(--font);font-size:1.2rem;font-weight:900;color:var(--black)}
 
-/* ════════════════════════════════════════
-   MOON
-════════════════════════════════════════ */
-.moon-wrap{
-  position:fixed;top:72px;right:clamp(20px,7vw,110px);z-index:0;
-  pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  animation:moonRise 2.2s cubic-bezier(.16,1,.3,1) .6s both;
-}
-@keyframes moonRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+/* Section label */
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;animation:fadeUp .5s ease .2s both;opacity:0}
+.sec-label{font-family:var(--font);font-size:.46rem;letter-spacing:.3em;font-weight:900;color:var(--dim);white-space:nowrap}
+.sec-line{flex:1;height:1px;background:var(--border)}
 
-.moon-img-wrap{
-  width:clamp(80px,10vw,130px);height:clamp(80px,10vw,130px);
-  border-radius:50%;overflow:hidden;position:relative;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.07),
-    0 0 50px rgba(255,255,255,.09),
-    0 0 100px rgba(255,255,255,.04);
+/* Topic grid */
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px;animation:fadeUp .5s ease .25s both;opacity:0}
+.topic-card{
+  background:var(--dark2);
+  padding:20px 20px;cursor:pointer;
+  display:flex;flex-direction:column;gap:7px;
+  border:1px solid transparent;
+  transition:background .15s,border-color .15s;
+  position:relative;
 }
-.moon-img-wrap img{
-  width:100%;height:100%;object-fit:cover;
-  border-radius:50%;
-  filter:brightness(.92) contrast(1.06) saturate(.65);
-  display:block;
+.topic-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--white);
+  transition:height .2s ease;
 }
-/* atmospheric halo */
-.moon-halo{
-  position:absolute;inset:-45%;border-radius:50%;
-  background:radial-gradient(circle,rgba(220,218,200,.07) 0%,transparent 65%);
-  pointer-events:none;
-}
-/* gentle float */
-@keyframes moonFloat{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-7px)}
-}
-.moon-img-wrap{animation:moonFloat 7s ease-in-out infinite}
+.topic-card:hover{background:var(--dark3);border-color:var(--border)}
+.topic-card:hover::before{height:100%}
+.tc-tag{font-family:var(--font);font-size:.38rem;letter-spacing:.2em;font-weight:900;color:var(--faint)}
+.tc-title{font-family:var(--font);font-size:.9rem;font-weight:900;letter-spacing:.03em;color:var(--white);line-height:1.05}
+.tc-desc{font-size:.72rem;color:var(--dim);line-height:1.5;font-weight:400}
+.tc-count{font-family:var(--font);font-size:.37rem;letter-spacing:.12em;font-weight:900;color:rgba(255,255,255,.25);margin-top:2px}
 
-/* ════════════════════════════════════════
-   PILL NAVBAR
-════════════════════════════════════════ */
-.navbar{
-  position:fixed;top:20px;right:24px;z-index:1000;
-  display:flex;align-items:center;gap:2px;
-  background:rgba(8,8,8,.92);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
-  border:1px solid var(--border-strong);border-radius:50px;padding:5px 7px;
-  box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;
-  animation:navDrop .6s cubic-bezier(.16,1,.3,1) .1s both;white-space:nowrap;
+/* ══════════════════════════════════
+   GENERATOR PAGE
+══════════════════════════════════ */
+#pg-gen{align-items:center;justify-content:center;padding:24px;overflow-y:auto;background:var(--black)}
+.gen-wrap{width:100%;max-width:480px}
+.gen-back{
+  display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;
+  font-family:var(--font);font-size:.48rem;letter-spacing:.18em;font-weight:900;
+  color:var(--dim);margin-bottom:30px;padding:0;transition:color .15s;
 }
-.navbar::before{
-  content:'';position:absolute;top:0;left:10%;width:80%;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.22),transparent);
-  border-radius:50px;
-}
-@keyframes navDrop{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+.gen-back:hover{color:var(--white)}
+.gen-back svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
-.nav-brand{
-  font-family:'Rajdhani',sans-serif;font-size:.62rem;font-weight:700;
-  letter-spacing:.22em;color:var(--white);
-  padding:6px 14px;display:flex;align-items:center;gap:8px;
-  border-right:1px solid var(--border);margin-right:4px;
+.gen-header{margin-bottom:26px}
+.gen-tag{
+  display:inline-block;font-family:var(--font);font-size:.42rem;letter-spacing:.3em;font-weight:900;
+  color:var(--black);background:var(--white);padding:4px 10px;margin-bottom:12px;
 }
-.nav-brand-dot{width:5px;height:5px;border-radius:50%;background:var(--blue-light);box-shadow:0 0 8px var(--blue-glow);animation:pulse 2.5s ease infinite}
+.gen-title{font-family:var(--font);font-size:2.2rem;font-weight:900;letter-spacing:-.01em;color:var(--white);margin-bottom:4px;line-height:1}
+.gen-sub{font-size:.8rem;color:var(--dim);font-weight:400}
 
-.nav-item{position:relative}
-.nav-btn{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:'Rajdhani',sans-serif;font-size:.58rem;letter-spacing:.12em;font-weight:600;
-  color:var(--white-50);background:transparent;border:none;cursor:pointer;
-  padding:7px 13px;border-radius:40px;transition:color .2s,background .2s;
+/* Form card */
+.gen-form{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  padding:24px;
 }
-.nav-btn:hover,.nav-btn.active{color:var(--white);background:var(--white-10)}
-.caret{display:inline-block;transition:transform .25s ease}
-.nav-btn.active .caret{transform:rotate(180deg)}
+.f-label{
+  display:block;font-family:var(--font);font-size:.44rem;letter-spacing:.22em;font-weight:900;
+  color:var(--dim);margin-bottom:7px;
+}
+.f-group{margin-bottom:14px}
+.f-group input,.f-group select{
+  width:100%;padding:11px 14px;
+  background:var(--black);border:1px solid var(--border);
+  color:var(--white);font-family:Arial,sans-serif;font-size:.9rem;font-weight:700;
+  outline:none;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.f-group input::placeholder{color:rgba(255,255,255,.2);font-weight:400}
+.f-group input:focus,.f-group select:focus{border-color:var(--border2)}
+.f-group select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;
+}
+.f-group select option{background:#111}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* ── DROPDOWN — wider, more breathing room ── */
-.dropdown{
-  position:absolute;top:calc(100% + 14px);right:0;
-  background:rgba(10,10,10,.98);backdrop-filter:blur(30px);
-  border:1px solid var(--border-strong);border-radius:18px;
-  padding:8px;min-width:420px;max-width:440px;
-  box-shadow:0 28px 70px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.04) inset;
-  opacity:0;visibility:hidden;transform:translateY(10px);
-  transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .22s cubic-bezier(.16,1,.3,1),visibility .22s;
-  pointer-events:none;
-  white-space:normal;word-break:break-word;
-}
-.dropdown::before{
-  content:'';position:absolute;top:-5px;right:28px;
-  border-left:6px solid transparent;border-right:6px solid transparent;
-  border-bottom:6px solid var(--border-strong);
-}
-.nav-item.open .dropdown{opacity:1;visibility:visible;transform:translateY(0);pointer-events:all}
-
-.dd-head{
-  font-family:'Rajdhani',sans-serif;font-size:.46rem;letter-spacing:.32em;
-  color:var(--muted);padding:11px 16px 7px;
-  border-bottom:1px solid var(--border);margin-bottom:4px;
-}
-
-/* What's New rows */
-.wn-list{display:flex;flex-direction:column;gap:2px;padding:6px 0}
-.wn-row{
-  display:flex;align-items:flex-start;gap:12px;padding:10px 16px;
-  border-radius:10px;transition:background .18s;cursor:default;
-}
-.wn-row:hover{background:var(--white-06)}
-.wn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.wn-dot.n{background:#e2e2e2}.wn-dot.f{background:#34d399}.wn-dot.u{background:#a0a0a0}
-.wn-body{display:flex;flex-direction:column;gap:3px;flex:1}
-.wn-t{font-size:.82rem;font-weight:500;color:var(--white-80)}.wn-d{font-size:.68rem;color:var(--muted);line-height:1.5}
-.wn-tag{
-  font-family:'Rajdhani',sans-serif;font-size:.38rem;letter-spacing:.14em;
-  padding:2px 8px;border-radius:3px;display:inline-block;margin-top:3px;font-weight:600;
-}
-/* clean minimal tags — no colour, just white tones */
-.wn-tag.n{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.14)}
-.wn-tag.f{background:rgba(52,211,153,.07);color:#34d399;border:1px solid rgba(52,211,153,.16)}
-.wn-tag.u{background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1)}
-
-/* Quote dropdown */
-.quote-box{padding:14px 18px 12px}
-.quote-mark{color:rgba(255,255,255,.15);margin-bottom:8px}
-.quote-mark svg{width:20px;height:20px;fill:currentColor}
-.quote-text{font-size:.86rem;line-height:1.75;color:var(--white-50);font-style:italic;margin-bottom:10px;white-space:normal;word-break:break-word}
-.quote-author{font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.18em;color:var(--muted)}
-.quote-btn{
-  width:100%;margin-top:12px;
-  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.14em;font-weight:600;
-  padding:9px;border-radius:9px;
-  background:var(--white-06);border:1px solid var(--border);color:var(--white-50);
-  cursor:pointer;transition:background .2s,color .2s,border-color .2s;
+.src-row{display:flex;gap:2px;margin-bottom:16px}
+.src-btn{
+  flex:1;padding:10px 8px;cursor:pointer;
+  border:1px solid var(--border);background:var(--black);
+  font-family:var(--font);font-size:.42rem;letter-spacing:.1em;font-weight:900;
+  color:var(--faint);transition:all .15s;
   display:flex;align-items:center;justify-content:center;gap:6px;
 }
-.quote-btn:hover{background:var(--white-10);color:var(--white);border-color:var(--border-strong)}
-.quote-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2}
-.dd-view-all{
-  display:block;text-align:center;margin-top:10px;padding:8px;
-  font-family:'Rajdhani',sans-serif;font-size:.46rem;letter-spacing:.16em;
-  color:var(--blue-light);text-decoration:none;
-  border:1px solid rgba(0,112,209,.2);border-radius:8px;
-  background:rgba(0,112,209,.04);
-  transition:background .2s,border-color .2s;
+.src-btn:hover{border-color:var(--border2);color:var(--white)}
+.src-btn.on{border-color:var(--white);color:var(--white);background:var(--dark3)}
+.src-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.go-btn{
+  width:100%;padding:14px;cursor:pointer;
+  background:var(--white);border:none;color:var(--black);
+  font-family:var(--font);font-size:.7rem;font-weight:900;letter-spacing:.18em;
+  transition:opacity .15s,transform .12s;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
 }
-.dd-view-all:hover{background:rgba(0,112,209,.1);border-color:rgba(0,112,209,.35)}
+.go-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.go-btn:disabled{opacity:.25;cursor:not-allowed}
 
-/* ════════════════════════════════════════
-   TOPBAR
-════════════════════════════════════════ */
-.topbar{
-  position:fixed;top:0;left:0;right:0;z-index:400;height:62px;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(16px,4vw,52px);
-  background:rgba(8,8,8,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--border);
-  animation:slideDown .5s ease .1s both;
+.status{
+  margin-top:10px;padding:11px 14px;
+  background:var(--dark3);border-left:3px solid var(--white);
+  font-family:var(--font);font-size:.48rem;letter-spacing:.08em;font-weight:900;color:var(--dim);
+  display:none;align-items:center;gap:9px;
 }
-@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.tb-left{display:flex;align-items:center;gap:11px}
-.tb-logo{height:30px;width:auto;object-fit:contain}
-.tb-sep{width:1px;height:22px;background:var(--border)}
-.tb-name{font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.24em;color:var(--white)}
-.tb-dot{width:5px;height:5px;border-radius:50%;background:var(--blue-light);box-shadow:0 0 8px var(--blue-glow);animation:pulse 2.5s ease infinite}
-.tb-right{display:flex;align-items:center;gap:12px}
-.tb-status{
-  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.18em;
-  color:#34d399;border:1px solid rgba(52,211,153,.2);padding:4px 11px;
-  border-radius:4px;background:rgba(52,211,153,.05);display:flex;align-items:center;gap:6px;
+.status.show{display:flex}
+.status.err{border-left-color:#ff4444;color:#ff9999}
+.sdot{width:6px;height:6px;background:var(--white);flex-shrink:0;animation:blink 1s step-end infinite}
+.status.err .sdot{background:#ff4444;animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════
+   SLIDES PAGE
+══════════════════════════════════ */
+#pg-slides{overflow:hidden;background:var(--dark)}
+.slides-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 clamp(12px,3vw,36px);height:52px;flex-shrink:0;
+  background:var(--black);border-bottom:1px solid var(--border);
 }
-.tb-status::before{content:'';width:4px;height:4px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399;animation:pulse 2s ease infinite}
-#clock{font-family:'Rajdhani',sans-serif;font-size:.6rem;letter-spacing:.12em;color:var(--muted);min-width:72px;text-align:right}
-.streak-pill{
-  font-family:'Rajdhani',sans-serif;font-size:.48rem;letter-spacing:.14em;
-  color:#fbbf24;border:1px solid rgba(251,191,36,.22);
-  padding:4px 10px;border-radius:4px;background:rgba(251,191,36,.06);
-  display:flex;align-items:center;gap:5px;cursor:default;
+.sb-btn{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:var(--font);font-size:.44rem;letter-spacing:.14em;font-weight:900;
+  background:none;border:1px solid var(--border);
+  padding:6px 13px;color:var(--dim);transition:all .15s;
+}
+.sb-btn:hover{color:var(--white);border-color:var(--border2)}
+.sb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.sb-topic{
+  font-family:var(--font);font-size:.58rem;font-weight:900;letter-spacing:.1em;
+  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;
+}
+.sb-counter{
+  font-family:var(--font);font-size:.46rem;letter-spacing:.1em;font-weight:900;
+  color:var(--black);background:var(--white);padding:4px 11px;
+  white-space:nowrap;
 }
 
-/* ════════════════════════════════════════
-   MAIN WRAP
-════════════════════════════════════════ */
-.wrap{position:relative;z-index:2;min-height:100vh;padding:80px clamp(16px,4.5vw,60px) 60px;max-width:1320px;margin:0 auto}
+/* Progress */
+.prog{height:3px;background:var(--dark4);flex-shrink:0}
+.prog-fill{height:100%;background:var(--white);transition:width .3s ease}
 
-/* ════════════════════════════════════════
-   HERO
-════════════════════════════════════════ */
-.hero{padding:clamp(40px,7vh,90px) 0 clamp(24px,4vh,48px);display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
-.hero-left{opacity:0;animation:slideUp .8s cubic-bezier(.16,1,.3,1) .3s forwards}
-
-.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px}
-.eyebrow-line{width:28px;height:1px;background:linear-gradient(to right,rgba(0,112,209,.7),transparent)}
-.eyebrow-text{
-  font-family:'Rajdhani',sans-serif;font-size:.54rem;letter-spacing:.38em;font-weight:700;
-  background:linear-gradient(90deg,#4fa8e8 0%,#a8d4f8 30%,#fff 50%,#a8d4f8 70%,#4fa8e8 100%);
-  background-size:250%;background-clip:text;-webkit-background-clip:text;color:transparent;
-  animation:gradShift 5s ease infinite;white-space:nowrap;position:relative;
+/* Stage */
+.stage{flex:1;overflow:hidden;position:relative;display:flex}
+.slide{
+  position:absolute;inset:0;display:none;overflow-y:auto;
+  padding:clamp(24px,4vw,52px) clamp(16px,4vw,60px);
 }
-.eyebrow-text::after{
-  content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px;
-  background:linear-gradient(to right,transparent,rgba(79,168,232,.4),transparent);
+.slide.active{display:block;animation:slideIn .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+
+.slide-inner{max-width:820px;margin:0 auto}
+.slide-num{
+  font-family:var(--font);font-size:.4rem;letter-spacing:.32em;font-weight:900;
+  color:rgba(255,255,255,.25);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
 }
-@keyframes gradShift{0%{background-position:0%}50%{background-position:100%}100%{background-position:0%}}
+.slide-num::after{content:'';flex:1;max-width:48px;height:1px;background:var(--border)}
 
-.hero-title{font-family:'Rajdhani',sans-serif;font-size:clamp(3rem,5.8vw,6rem);font-weight:700;line-height:.92;letter-spacing:-.01em;margin-bottom:22px}
-.l1{color:var(--white)}.l2{color:rgba(255,255,255,.22);-webkit-text-stroke:1px rgba(255,255,255,.38)}.l3{color:var(--white);text-shadow:0 0 60px rgba(255,255,255,.15),0 0 120px rgba(0,112,209,.2)}
-.hero-desc{font-size:1rem;font-weight:300;color:var(--white-50);line-height:1.8;max-width:430px;margin-bottom:32px;letter-spacing:.02em}
-.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
-.btn-launch{display:inline-flex;align-items:center;gap:8px;background:var(--white);color:#080808;font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.14em;padding:13px 26px;border-radius:8px;text-decoration:none;transition:all .3s cubic-bezier(.34,1.2,.64,1);box-shadow:0 0 32px rgba(255,255,255,.12)}
-.btn-launch:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 0 48px rgba(255,255,255,.22),0 14px 34px rgba(0,0,0,.5)}
-.btn-launch svg{width:13px;height:13px;fill:none;stroke:#080808;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--white-80);font-family:'Rajdhani',sans-serif;font-size:.72rem;letter-spacing:.1em;padding:13px 22px;border-radius:8px;text-decoration:none;border:1px solid var(--border-strong);transition:all .25s}
-.btn-outline:hover{border-color:var(--white-50);background:var(--white-10);color:var(--white)}
-.btn-outline svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-
-.hero-right{opacity:0;animation:slideUp .8s cubic-bezier(.16,1,.3,1) .5s forwards;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
-.stat-card{width:100%;max-width:270px;border:1px solid var(--border);border-radius:12px;padding:15px 18px;background:linear-gradient(135deg,rgba(24,24,24,.95),rgba(12,12,12,.98));display:flex;align-items:center;gap:14px;transition:all .35s cubic-bezier(.34,1.2,.64,1)}
-.stat-card:hover{border-color:var(--border-strong);transform:translateX(-6px);box-shadow:0 0 30px rgba(255,255,255,.04)}
-.stat-ic{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--white-06);border:1px solid var(--border)}
-.stat-ic svg{width:17px;height:17px;stroke:var(--white-80);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.stat-val{font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--white)}
-.stat-lbl{font-size:.65rem;font-weight:300;color:var(--muted);letter-spacing:.1em;margin-top:2px}
-
-/* ════════════════════════════════════════
-   BIO FACT STRIP
-════════════════════════════════════════ */
-.fact-strip{
-  width:100%;border:1px solid rgba(0,112,209,.2);border-radius:10px;
-  padding:13px 20px;margin-bottom:28px;
-  background:rgba(0,55,145,.06);display:flex;align-items:center;gap:14px;
-  opacity:0;animation:slideUp .7s ease .65s forwards;
-  transition:border-color .3s;
+.slide-heading{
+  font-family:var(--font);
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  font-weight:900;letter-spacing:-.01em;
+  color:var(--white);line-height:.95;margin-bottom:24px;
 }
-.fact-strip:hover{border-color:rgba(0,112,209,.32)}
-.fact-badge{
-  font-family:'Rajdhani',sans-serif;font-size:.44rem;letter-spacing:.2em;font-weight:700;
-  color:var(--blue-light);background:rgba(0,112,209,.1);border:1px solid rgba(0,112,209,.22);
-  padding:4px 10px;border-radius:4px;white-space:nowrap;flex-shrink:0;
+
+/* Layout */
+.slide-layout{display:grid;grid-template-columns:1fr;gap:16px}
+.slide-layout.has-img{grid-template-columns:1fr 300px}
+
+/* Content card — PS5 style */
+.content-card{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--white);
+  padding:24px 26px;
+  position:relative;
+  cursor:pointer;
+  user-select:none;
+  transition:border-color .2s;
 }
-.fact-text{font-size:.84rem;color:var(--white-50);line-height:1.5;flex:1;transition:opacity .35s}
-.fact-next{
-  background:transparent;border:1px solid var(--border);color:var(--muted);
-  width:28px;height:28px;border-radius:7px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:all .22s;flex-shrink:0;
-}
-.fact-next:hover{border-color:var(--border-strong);color:var(--white);background:var(--white-06);transform:translateX(2px)}
-.fact-next svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.content-card:hover{border-color:var(--border2);border-left-color:var(--white)}
 
-/* ════════════════════════════════════════
-   DIVIDER & SECTION
-════════════════════════════════════════ */
-.divider{height:1px;background:linear-gradient(to right,transparent,var(--white-20),transparent);margin:10px 0 32px;position:relative}
-.divider::before,.divider::after{content:'';position:absolute;top:50%;transform:translateY(-50%);width:4px;height:4px;border-radius:50%;background:var(--white);opacity:.2}
-.divider::before{left:0}.divider::after{right:0}
-.section-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;opacity:0;animation:slideUp .6s ease .78s forwards}
-.section-label{font-family:'Rajdhani',sans-serif;font-size:.55rem;letter-spacing:.36em;color:var(--white-50);display:flex;align-items:center;gap:8px;white-space:nowrap}
-.section-label svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
-.section-bar{flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent)}
-.section-count{font-family:'Rajdhani',sans-serif;font-size:.44rem;letter-spacing:.16em;color:var(--muted);white-space:nowrap}
-
-/* ════════════════════════════════════════
-   GRID & CARDS
-════════════════════════════════════════ */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.card{
-  position:relative;border:1px solid rgba(255,255,255,.07);border-radius:14px;
-  padding:24px 20px 18px;
-  background:linear-gradient(148deg,rgba(20,20,20,.98),rgba(10,10,10,.99));
-  text-decoration:none;color:inherit;display:flex;flex-direction:column;
-  overflow:hidden;opacity:0;
-  transition:transform .35s cubic-bezier(.34,1.2,.64,1),border-color .3s,box-shadow .3s;
-  -webkit-tap-highlight-color:transparent;
-}
-.card.hidden{display:none}
-.card:hover{transform:translateY(-7px) scale(1.015);border-color:color-mix(in srgb,var(--c) 42%,transparent);box-shadow:0 0 44px color-mix(in srgb,var(--c) 14%,transparent),0 22px 52px rgba(0,0,0,.68)}
-.card::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--c) 9%,transparent),transparent 55%);opacity:0;transition:opacity .38s;pointer-events:none}
-.card:hover::before{opacity:1}
-.card::after{content:'';position:absolute;top:0;left:6%;width:88%;height:1px;background:linear-gradient(to right,transparent,var(--c),transparent);opacity:0;transition:opacity .3s}
-.card:hover::after{opacity:.45}
-
-.card-num{position:absolute;bottom:-12px;right:6px;font-family:'Rajdhani',sans-serif;font-size:7rem;font-weight:700;color:rgba(255,255,255,.018);line-height:1;pointer-events:none;user-select:none;transition:color .3s}
-.card:hover .card-num{color:color-mix(in srgb,var(--c) 5%,transparent)}
-.card-id{font-family:'Rajdhani',sans-serif;font-size:.46rem;letter-spacing:.24em;color:var(--c);margin-bottom:12px;display:flex;align-items:center;gap:7px;opacity:.8}
-.card-id::before{content:'';width:16px;height:1px;background:var(--c);opacity:.5}
-.card-icon-box{width:52px;height:52px;border-radius:12px;flex-shrink:0;margin-bottom:15px;border:1px solid color-mix(in srgb,var(--c) 28%,transparent);background:color-mix(in srgb,var(--c) 7%,transparent);display:flex;align-items:center;justify-content:center;transition:transform .3s cubic-bezier(.34,1.4,.64,1),box-shadow .28s}
-.card-icon-box svg{width:24px;height:24px;stroke:var(--c);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.card:hover .card-icon-box{transform:scale(1.1) rotate(-2deg);box-shadow:0 0 24px color-mix(in srgb,var(--c) 30%,transparent)}
-.card-title{font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;color:var(--white);letter-spacing:.05em;line-height:1.2;margin-bottom:9px}
-.card-desc{font-size:.8rem;font-weight:300;color:rgba(255,255,255,.42);line-height:1.65;letter-spacing:.02em;flex:1;margin-bottom:16px}
-.card-launch{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-radius:8px;border:1px solid color-mix(in srgb,var(--c) 18%,transparent);background:color-mix(in srgb,var(--c) 4%,transparent);transition:background .24s,border-color .24s,box-shadow .24s;margin-top:auto}
-.card:hover .card-launch{background:color-mix(in srgb,var(--c) 11%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 16%,transparent)}
-.launch-left{display:flex;align-items:center;gap:7px}
-.launch-dot{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 5px var(--c);animation:pulse 2s ease infinite}
-.launch-text{font-family:'Rajdhani',sans-serif;font-size:.46rem;letter-spacing:.14em;color:var(--c)}
-.launch-box{width:26px;height:26px;border-radius:6px;border:1px solid color-mix(in srgb,var(--c) 30%,transparent);background:color-mix(in srgb,var(--c) 8%,transparent);display:flex;align-items:center;justify-content:center;transition:transform .25s cubic-bezier(.34,1.4,.64,1),background .22s}
-.launch-box svg{width:11px;height:11px;stroke:var(--c);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.card:hover .launch-box{transform:translate(3px,-3px);background:color-mix(in srgb,var(--c) 18%,transparent)}
-.c-cyan{--c:var(--c-cyan)}.c-violet{--c:var(--c-violet)}.c-green{--c:var(--c-green)}.c-teal{--c:var(--c-teal)}.c-amber{--c:var(--c-amber)}.c-coral{--c:var(--c-coral)}.c-pink{--c:var(--c-pink)}
-.card-wide{grid-column:1/-1;flex-direction:row;align-items:center;gap:28px;padding:28px 30px}
-.card-wide .card-icon-box{width:60px;height:60px;border-radius:14px;margin-bottom:0;flex-shrink:0}
-.card-wide .card-icon-box svg{width:28px;height:28px}
-.card-wide .card-body{flex:1;display:flex;flex-direction:column}
-.card-wide .card-id{margin-bottom:6px}.card-wide .card-title{font-size:1.2rem;margin-bottom:7px}
-.card-wide .card-desc{font-size:.88rem;max-width:480px;margin-bottom:14px}.card-wide .card-launch{max-width:200px}
-.card-shortcut{position:absolute;top:10px;right:12px;font-family:'Rajdhani',sans-serif;font-size:.38rem;letter-spacing:.1em;color:var(--muted);background:var(--white-06);border:1px solid var(--border);padding:2px 6px;border-radius:3px;opacity:0;transition:opacity .2s}
-.card:hover .card-shortcut{opacity:1}
-.card:nth-child(1){animation:slideUp .65s cubic-bezier(.16,1,.3,1) .82s forwards}
-.card:nth-child(2){animation:slideUp .65s cubic-bezier(.16,1,.3,1) .92s forwards}
-.card:nth-child(3){animation:slideUp .65s cubic-bezier(.16,1,.3,1) 1.02s forwards}
-.card:nth-child(4){animation:slideUp .65s cubic-bezier(.16,1,.3,1) 1.12s forwards}
-.card:nth-child(5){animation:slideUp .65s cubic-bezier(.16,1,.3,1) 1.22s forwards}
-.card:nth-child(6){animation:slideUp .65s cubic-bezier(.16,1,.3,1) 1.30s forwards}
-.card:nth-child(7){animation:slideUp .65s cubic-bezier(.16,1,.3,1) 1.38s forwards}
-
-/* ════════════════════════════════════════
-   KEYBOARD HINTS
-════════════════════════════════════════ */
-.kbd-bar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px;opacity:0;animation:slideUp .5s ease 1.7s forwards}
-.kbd-item{display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:.44rem;letter-spacing:.1em;color:var(--muted)}
-.kbd{font-family:'Rajdhani',sans-serif;font-size:.4rem;background:rgba(255,255,255,.06);border:1px solid var(--border);border-bottom:2px solid rgba(255,255,255,.14);padding:2px 7px;border-radius:4px;color:var(--white-50)}
-
-/* ════════════════════════════════════════
-   FOOTER
-════════════════════════════════════════ */
-.footer{margin-top:44px;border-top:1px solid var(--border);padding-top:22px;display:flex;justify-content:center;align-items:center;gap:18px;opacity:0;animation:slideUp .6s ease 1.75s forwards;flex-wrap:wrap}
-.footer-copy{font-family:'Rajdhani',sans-serif;font-size:.48rem;letter-spacing:.22em;color:var(--muted);text-align:center}
-.footer-quote-link{font-family:'Rajdhani',sans-serif;font-size:.48rem;letter-spacing:.18em;color:var(--blue-light);text-decoration:none;border:1px solid rgba(0,112,209,.25);padding:4px 12px;border-radius:4px;background:rgba(0,112,209,.06);transition:background .2s,border-color .2s}
-.footer-quote-link:hover{background:rgba(0,112,209,.12);border-color:rgba(0,112,209,.4)}
-
-/* ════════════════════════════════════════
-   TOAST
-════════════════════════════════════════ */
-.toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);z-index:2000;
-  font-family:'Rajdhani',sans-serif;font-size:.6rem;letter-spacing:.14em;
-  color:var(--white-80);background:rgba(12,12,12,.95);
-  border:1px solid var(--border-strong);padding:10px 22px;border-radius:40px;
-  backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.6);
-  pointer-events:none;transition:transform .35s cubic-bezier(.34,1.2,.64,1),opacity .3s;opacity:0;white-space:nowrap;
-}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-
-@keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.28}}
-
-/* ════════════════════════════════════════
-   RIPPLE EFFECT ON CARD CLICK
-════════════════════════════════════════ */
-.ripple{
-  position:absolute;border-radius:50%;
-  background:rgba(255,255,255,.12);
-  transform:scale(0);animation:rippleAnim .55s ease-out;
+/* BLUR STATE — applied to ALL slides by default, toggled on click */
+.content-card.blurred .content-body{
+  filter:blur(7px);
   pointer-events:none;
 }
-@keyframes rippleAnim{to{transform:scale(4);opacity:0}}
-
-/* ════════════════════════════════════════
-   TABLET ≤1024px
-════════════════════════════════════════ */
-@media(max-width:1024px){
-  .moon-wrap{top:70px;right:12px}
-  .hero{grid-template-columns:1fr}
-  .hero-right{align-items:flex-start;flex-direction:row;flex-wrap:wrap;gap:10px}
-  .stat-card{max-width:calc(50% - 5px);min-width:180px}
-  .grid{grid-template-columns:repeat(2,1fr)}
-  .card-wide{flex-direction:column;gap:14px;padding:22px 20px}
-  .card-wide .card-launch{max-width:100%}
-  .navbar{top:14px;right:14px}
-  .nav-brand{display:none}
-  .dropdown{min-width:380px}
+.content-card.blurred .kf-row{
+  filter:blur(7px);
 }
 
-/* ════════════════════════════════════════
-   MOBILE ≤640px
-════════════════════════════════════════ */
-@media(max-width:640px){
-  .moon-wrap{top:66px;right:8px}
-  .moon-img-wrap{width:62px;height:62px}
+/* Reveal overlay badge */
+.reveal-badge{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  pointer-events:none;
+}
+.reveal-badge-inner{
+  display:flex;align-items:center;gap:10px;
+  background:var(--black);border:1px solid var(--border2);padding:10px 18px;
+}
+.reveal-badge-inner svg{width:18px;height:18px;stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.reveal-badge-inner span{font-family:var(--font);font-size:.5rem;letter-spacing:.22em;font-weight:900;color:var(--white)}
 
-  .topbar{padding:0 14px}
-  .tb-status{display:none}
-  #clock{min-width:auto;font-size:.54rem}
-  .streak-pill{display:none}
+/* Content body */
+.content-body{
+  font-family:Arial,sans-serif;
+  font-size:clamp(.88rem,1.5vw,1.02rem);
+  font-weight:400;
+  line-height:1.78;
+  color:var(--off);
+  transition:filter .3s;
+}
+.content-body b{color:var(--white);font-weight:700}
+.content-body ul,.content-body ol{padding-left:1.4em;margin:8px 0}
+.content-body li{margin-bottom:5px}
 
-  /* navbar bottom-center */
-  .navbar{
-    top:auto;bottom:18px;left:50%;right:auto;
-    transform:translateX(-50%);
-    max-width:calc(100vw - 28px);
-    padding:5px 6px;gap:1px;
-    animation:navUp .6s cubic-bezier(.16,1,.3,1) .1s both;
-  }
-  @keyframes navUp{from{opacity:0;transform:translateX(-50%) translateY(14px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-  .nav-brand{display:none}
-  .nav-btn{padding:8px 14px;font-size:.58rem;letter-spacing:.09em}
+/* Key facts */
+.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);transition:filter .3s}
+.kf{
+  font-family:var(--font);font-size:.4rem;letter-spacing:.1em;font-weight:900;
+  padding:4px 10px;background:var(--dark4);border:1px solid var(--border);color:var(--off);
+}
 
-  /* dropdowns: fixed, full-width, open upward */
-  .dropdown{
-    position:fixed;
-    bottom:76px;left:14px;right:14px;
-    top:auto;width:auto;min-width:0;
-    transform:translateY(10px);
-    border-radius:16px;
-    max-height:72vh;overflow-y:auto;
-  }
-  .dropdown::before{display:none}
-  .nav-item.open .dropdown{transform:translateY(0)}
+/* Image column */
+.img-col{display:flex;flex-direction:column;gap:8px}
+.img-col img{width:100%;object-fit:cover;max-height:240px;border:1px solid var(--border)}
+.img-cap{font-family:var(--font);font-size:.36rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.22);text-align:center}
 
-  .wrap{padding:76px 14px 92px}
-  .hero{padding-top:26px;gap:22px}
-  .hero-title{font-size:clamp(2.4rem,11vw,3.2rem)}
-  .hero-desc{font-size:.9rem;max-width:100%}
-  .hero-btns{flex-direction:column;gap:9px}
-  .btn-launch,.btn-outline{width:100%;justify-content:center;padding:14px 20px}
-  .hero-right{display:none}
+/* Bottom nav */
+.slide-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px clamp(12px,3vw,36px);
+  border-top:1px solid var(--border);background:var(--black);flex-shrink:0;
+}
+.nav-btn{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font);font-size:.5rem;letter-spacing:.14em;font-weight:900;
+  padding:10px 20px;cursor:pointer;transition:all .15s;
+  border:1px solid var(--border);background:none;color:var(--dim);
+}
+.nav-btn:hover:not(:disabled){color:var(--white);border-color:var(--border2)}
+.nav-btn:disabled{opacity:.2;cursor:not-allowed}
+.nav-btn.pri{background:var(--white);color:var(--black);border-color:var(--white);
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.nav-btn.pri:hover:not(:disabled){background:var(--off)}
+.nav-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
 
-  .fact-strip{padding:10px 13px}
-  .fact-badge{display:none}
+/* Dots */
+.dot-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;max-width:200px}
+.dot{width:5px;height:5px;background:var(--dark4);border:1px solid var(--border);cursor:pointer;padding:0;transition:all .2s}
+.dot.on{background:var(--white);border-color:var(--white);width:20px}
 
-  .grid{grid-template-columns:1fr;gap:10px}
-  .card-wide{grid-column:auto;flex-direction:column;gap:12px;padding:20px 16px}
-  .card-wide .card-launch{max-width:100%}
-  .card-shortcut{display:none}
+/* ══════════════════════════════════
+   OVERVIEW OVERLAY
+══════════════════════════════════ */
+.ov-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.96);
+  display:none;flex-direction:column;
+}
+.ov-overlay.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.ov-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,52px);height:56px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ov-title{font-family:var(--font);font-size:.6rem;font-weight:900;letter-spacing:.28em;color:var(--white)}
+.ov-close{
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-family:var(--font);font-size:.46rem;letter-spacing:.14em;font-weight:900;
+  background:none;border:1px solid var(--border);
+  padding:6px 13px;color:var(--dim);transition:all .15s;
+}
+.ov-close:hover{color:var(--white);border-color:var(--border2)}
+.ov-close svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ov-grid{
+  flex:1;overflow-y:auto;padding:20px clamp(16px,4vw,52px);
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;align-content:start;
+}
+.ov-card{
+  background:var(--dark2);border:1px solid transparent;
+  padding:14px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;
+}
+.ov-card:hover,.ov-card.cur{background:var(--dark3);border-color:var(--border);border-left-color:var(--white)}
+.ov-num{font-family:var(--font);font-size:.37rem;letter-spacing:.18em;font-weight:900;color:rgba(255,255,255,.25);margin-bottom:6px}
+.ov-heading{font-family:var(--font);font-size:.65rem;font-weight:900;color:var(--white);line-height:1.2}
 
-  .footer{flex-direction:column;gap:10px;margin-top:32px}
-  .kbd-bar{display:none}
-  .toast{bottom:86px}
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .slide-layout.has-img{grid-template-columns:1fr}
+  .img-col{max-height:180px;overflow:hidden}
+  .img-col img{max-height:180px}
+  .f-row{grid-template-columns:1fr}
+  .hero-title{font-size:clamp(2.2rem,12vw,4rem)}
+}
+@media(max-width:480px){
+  .dot-row{max-width:140px}
+  .nav-btn{padding:8px 14px;font-size:.44rem}
 }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════
-     LOADING SCREEN
-════════════════════════════════════ -->
-<div id="loader">
-  <div class="ld-scan"></div>
-  <div class="ld-content" id="ldContent">
-    <div class="ld-title">BIOQUIZ</div>
-    <div class="ld-seal-madeby" id="ldMadeBy"></div>
-    <div class="ld-seal-name" id="ldName"></div>
-    <div class="ld-sub">INTERACTIVE BIOLOGY LEARNING PLATFORM</div>
-    <div class="ld-bar-wrap">
-      <div class="ld-bar-fill" id="ldBar"></div>
-      <div class="ld-bar-glow"></div>
-    </div>
-    <div class="ld-pct" id="ldPct">0%</div>
-  </div>
-</div>
-
-<div class="bg-gradient"></div>
-<div class="bg-grid"></div>
-<div class="scanlines"></div>
-
-<!-- MOON -->
-<div class="moon-wrap">
-  <div class="moon-halo"></div>
-  <div class="moon-img-wrap">
-    <img src="images/moon.png" alt="Moon" loading="lazy" decoding="async">
-  </div>
-</div>
-
 <!-- SVG SPRITE -->
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <symbol id="i-quiz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="4" rx="1.5"/><path d="M5 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"/><polyline points="9,12 11,14 15,10"/><line x1="9" y1="17" x2="15" y2="17"/></symbol>
-  <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><circle cx="4.5" cy="7" r="1.5"/><circle cx="19.5" cy="7" r="1.5"/><circle cx="4.5" cy="17" r="1.5"/><circle cx="19.5" cy="17" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="21" r="1.5"/><line x1="5.9" y1="7.7" x2="9.7" y2="10.5"/><line x1="18.1" y1="7.7" x2="14.3" y2="10.5"/><line x1="5.9" y1="16.3" x2="9.7" y2="13.5"/><line x1="18.1" y1="16.3" x2="14.3" y2="13.5"/><line x1="12" y1="4.5" x2="12" y2="9.5"/><line x1="12" y1="14.5" x2="12" y2="19.5"/></symbol>
-  <symbol id="i-cell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="7"/><ellipse cx="10.5" cy="12" rx="2.8" ry="2.2"/><circle cx="17" cy="9" r=".9"/><circle cx="17" cy="15" r=".9"/><circle cx="5.5" cy="9.5" r=".7"/><circle cx="5.5" cy="14.5" r=".7"/><path d="M13.5 9.5 Q15.5 7.5 17 9" stroke-width="1.2"/></symbol>
-  <symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 7v10l10 5V12"/><path d="M22 7v10l-10 5"/></symbol>
-  <symbol id="i-slides" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="13" rx="1.5"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><rect x="6" y="9.5" width="2.5" height="3.5" rx=".5"/><rect x="10.75" y="7.5" width="2.5" height="5.5" rx=".5"/><rect x="15.5" y="10.5" width="2.5" height="2.5" rx=".5"/></symbol>
-  <symbol id="i-solutions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/><polyline points="14.5,10.5 16.2,12.5 19.5,9" stroke-width="1.8"/></symbol>
-  <symbol id="i-suggest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M10 8.5a2 2 0 0 1 4 0c0 1.4-2 1.8-2 3"/><circle cx="12" cy="14" r=".6" fill="currentColor"/></symbol>
-  <symbol id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
-  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5,3 19,12 5,21"/></symbol>
-  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
-  <symbol id="i-quote" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></symbol>
-  <symbol id="i-q" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
-  <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
-  <symbol id="i-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></symbol>
-  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
+  <!-- BioQuiz logo mark: stylised 'B' with cell motif -->
+  <symbol id="i-logo" viewBox="0 0 32 32">
+    <rect x="2" y="2" width="28" height="28" fill="white"/>
+    <!-- Stylised B letterform -->
+    <path d="M9 7h8c2.5 0 4.5 1.8 4.5 4s-2 4-4.5 4H9V7z" fill="black"/>
+    <path d="M9 15h9c2.8 0 5 2 5 4.5S20.8 24 18 24H9V15z" fill="black"/>
+    <rect x="9" y="7" width="2" height="17" fill="black"/>
+    <!-- small circle detail -->
+    <circle cx="23" cy="9" r="1.5" fill="black"/>
+  </symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
+    <path d="M8 12h8M12 8v8"/>
+    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+  </symbol>
+  <symbol id="i-wiki" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </symbol>
 </svg>
 
-<!-- PILL NAVBAR -->
-<nav class="navbar" id="navbar">
-  <div class="nav-brand"><div class="nav-brand-dot"></div>BIOQUIZ</div>
+<!-- ══════════════════════════════════
+     MENU PAGE
+══════════════════════════════════ -->
+<div class="page active" id="pg-menu">
+  <div class="menu-bg-text">BIO</div>
 
-  <div class="nav-item" id="ni-new">
-    <button class="nav-btn" onclick="toggleNav('ni-new')">
-      WHAT'S NEW <svg class="caret" width="10" height="10"><use href="#i-caret"/></svg>
-    </button>
-    <div class="dropdown">
-      <div class="dd-head">RECENT UPDATES</div>
-      <div class="wn-list">
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">New Refreshed Minimal Design</div>
-            <div class="wn-d">Clean black &amp; white aesthetic — every component rebuilt from scratch for clarity and elegance</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Real Moon Photography</div>
-            <div class="wn-d">Replaced placeholder with an actual lunar photograph in the background</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Loading Screen</div>
-            <div class="wn-d">"Made by Muntazir" — cinematic police-seal stamp intro on every page load</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Quotes Page</div>
-            <div class="wn-d">Dedicated rotating quotes experience with auto-advance and shuffle</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Study Streak &amp; Bio Facts</div>
-            <div class="wn-d">Daily streak tracker and rotating biology facts panel added to the hub</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot f"></div>
-          <div class="wn-body">
-            <div class="wn-t">Mobile Dropdowns Fixed</div>
-            <div class="wn-d">Dropdowns now open upward, fully visible on all screen sizes</div>
-            <span class="wn-tag f">FIX</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot u"></div>
-          <div class="wn-body">
-            <div class="wn-t">Keyboard Navigation</div>
-            <div class="wn-d">Press Q, A, O, 3, L, S, F to jump instantly to any module</div>
-            <span class="wn-tag u">UPDATE</span>
-          </div>
-        </div>
-      </div>
+  <div class="topbar">
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><svg><use href="#i-logo"/></svg></div>
+      <span class="brand-name">BIOQUIZ</span>
+      <div class="brand-sep"></div>
+      <span class="brand-module">SLIDES</span>
+    </a>
+    <div class="tb-right">
+      <a href="index.html" class="tb-btn"><svg><use href="#i-back"/></svg> HOME</a>
     </div>
   </div>
 
-  <div class="nav-item" id="ni-quote">
-    <button class="nav-btn" onclick="toggleNav('ni-quote')">
-      QUOTE <svg class="caret" width="10" height="10"><use href="#i-caret"/></svg>
-    </button>
-    <div class="dropdown">
-      <div class="dd-head">QUOTE OF THE DAY</div>
-      <div class="quote-box">
-        <div class="quote-mark"><svg><use href="#i-quote"/></svg></div>
-        <div class="quote-text" id="quoteText">Loading...</div>
-        <div class="quote-author" id="quoteAuthor">— ...</div>
-        <button class="quote-btn" onclick="newQuote()"><svg><use href="#i-refresh"/></svg> NEW QUOTE</button>
-        <a href="quotes.html" class="dd-view-all">VIEW ALL QUOTES →</a>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="tb-left">
-    <img src="images/logo.png" alt="BioQuiz Logo" class="tb-logo">
-    <div class="tb-sep"></div>
-    <span class="tb-name">BIOQUIZ</span>
-    <div class="tb-dot"></div>
-  </div>
-  <div class="tb-right">
-    <div class="streak-pill" id="streakPill">🔥 <span id="streakNum">1</span> DAY STREAK</div>
-    <div class="tb-status">ALL SYSTEMS NOMINAL</div>
-    <div id="clock">--:--:--</div>
-  </div>
-</div>
-
-<!-- PAGE -->
-<div class="wrap">
-  <div class="hero">
-    <div class="hero-left">
-      <div class="hero-eyebrow">
-        <div class="eyebrow-line"></div>
-        <span class="eyebrow-text">INTERACTIVE LEARNING PLATFORM</span>
-      </div>
+  <div class="menu-wrap">
+    <div class="menu-hero">
+      <div class="hero-tag">MODULE 005</div>
       <div class="hero-title">
-        <div class="l1">LEARN</div>
-        <div class="l2">EXPLORE</div>
-        <div class="l3">BIOLOGY</div>
+        LESSON<br>
+        <span class="stroke">SLIDES</span>
       </div>
-      <p class="hero-desc">Seven powerful modules. Quizzes, AI research, 3D cell viewer, organelle explorer, slides, solutions and suggestions — built to make biology click.</p>
-      <div class="hero-btns">
-        <a href="quiz.html" class="btn-launch"><svg><use href="#i-play"/></svg> START QUIZ</a>
-        <a href="ask.html" class="btn-outline"><svg><use href="#i-ai"/></svg> ASK PANEL</a>
-      </div>
+      <p class="hero-sub">Pick a pre-built topic or generate custom slides with AI. Click any slide to reveal its content.</p>
     </div>
-    <div class="hero-right">
-      <div class="stat-card"><div class="stat-ic"><svg><use href="#i-q"/></svg></div><div><div class="stat-val">100+</div><div class="stat-lbl">QUIZ QUESTIONS</div></div></div>
-      <div class="stat-card"><div class="stat-ic"><svg><use href="#i-ai"/></svg></div><div><div class="stat-val">AI</div><div class="stat-lbl">POWERED RESEARCH</div></div></div>
-      <div class="stat-card"><div class="stat-ic"><svg><use href="#i-3d"/></svg></div><div><div class="stat-val">3D</div><div class="stat-lbl">CELL VIEWER</div></div></div>
-      <div class="stat-card"><div class="stat-ic"><svg><use href="#i-cube"/></svg></div><div><div class="stat-val">7</div><div class="stat-lbl">MODULES</div></div></div>
-    </div>
-  </div>
 
-  <!-- BIO FACT STRIP -->
-  <div class="fact-strip">
-    <div class="fact-badge">BIO FACT</div>
-    <div class="fact-text" id="factText">Loading...</div>
-    <button class="fact-next" onclick="nextFact()" title="Next fact"><svg><use href="#i-chev"/></svg></button>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="section-head">
-    <div class="section-label"><svg><use href="#i-cube"/></svg> MODULES</div>
-    <div class="section-bar"></div>
-    <div class="section-count">7 MODULES</div>
-  </div>
-
-  <div class="grid" id="moduleGrid">
-    <a href="quiz.html" class="card card-wide c-cyan" data-keys="quiz biology questions timed">
-      <div class="card-icon-box"><svg><use href="#i-quiz"/></svg></div>
-      <div class="card-body">
-        <div class="card-id">MODULE 001</div>
-        <div class="card-title">BIOLOGY QUIZ</div>
-        <div class="card-desc">Timed challenges across all cell biology topics — organelles, membranes, molecular processes. Real-time score tracking and instant feedback.</div>
-        <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY TO LAUNCH</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
+    <button class="gen-cta" onclick="showPage('gen')">
+      <div class="cta-ic"><svg><use href="#i-ai"/></svg></div>
+      <div class="cta-body">
+        <div class="cta-title">AI SLIDE GENERATOR</div>
+        <div class="cta-sub">Enter any biology topic — Cloudflare AI builds your deck instantly</div>
       </div>
-      <div class="card-num">01</div>
-      <div class="card-shortcut">Q</div>
-    </a>
+      <div class="cta-arr">›</div>
+    </button>
 
-    <a href="ask.html" class="card c-violet" data-keys="ask ai panel research wikipedia">
-      <div class="card-num">02</div><div class="card-id">MODULE 002</div>
-      <div class="card-icon-box"><svg><use href="#i-ai"/></svg></div>
-      <div class="card-title">ASK PANEL</div>
-      <div class="card-desc">AI-powered research terminal. Ask anything, get instant explanations with Wikipedia and Cloudflare AI.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">AI ONLINE</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">A</div>
-    </a>
-
-    <a href="organelles.html" class="card c-green" data-keys="organelle explorer cell membrane structure">
-      <div class="card-num">03</div><div class="card-id">MODULE 003</div>
-      <div class="card-icon-box"><svg><use href="#i-cell"/></svg></div>
-      <div class="card-title">ORGANELLE EXPLORER</div>
-      <div class="card-desc">Deep-dive visual cards for every organelle. Diagrams, functions, and key facts for each structure.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">O</div>
-    </a>
-
-    <a href="cell-3d.html" class="card c-teal" data-keys="3d cell viewer rotate zoom interactive model">
-      <div class="card-num">04</div><div class="card-id">MODULE 004</div>
-      <div class="card-icon-box"><svg><use href="#i-3d"/></svg></div>
-      <div class="card-title">3D CELL VIEWER</div>
-      <div class="card-desc">Interactive three-dimensional cell model. Rotate, zoom, and explore cell structure in real-time 3D.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">3D ACTIVE</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">3</div>
-    </a>
-
-    <a href="presentation.html" class="card c-amber" data-keys="lesson slides presentation study revision exam">
-      <div class="card-num">05</div><div class="card-id">MODULE 005</div>
-      <div class="card-icon-box"><svg><use href="#i-slides"/></svg></div>
-      <div class="card-title">LESSON SLIDES</div>
-      <div class="card-desc">Structured biology lesson slides covering all major topics. Perfect for study sessions and exam revision.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">L</div>
-    </a>
-
-    <a href="solutions.html" class="card c-coral" data-keys="solutions answers qa exercise explanation">
-      <div class="card-num">06</div><div class="card-id">MODULE 006</div>
-      <div class="card-icon-box"><svg><use href="#i-solutions"/></svg></div>
-      <div class="card-title">Q&amp;A SOLUTIONS</div>
-      <div class="card-desc">Complete exercise answers with detailed explanations. Review and reinforce every key concept.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">S</div>
-    </a>
-
-    <a href="suggestions.html" class="card c-pink" data-keys="suggestions ideas feedback report feature request">
-      <div class="card-num">07</div><div class="card-id">MODULE 007</div>
-      <div class="card-icon-box"><svg><use href="#i-suggest"/></svg></div>
-      <div class="card-title">SUGGESTIONS</div>
-      <div class="card-desc">Share ideas, report issues, or suggest new features. Help shape the future of BioQuiz directly.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">OPEN</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">F</div>
-    </a>
-  </div>
-
-  <div class="kbd-bar">
-    <div class="kbd-item"><span class="kbd">Q</span> Quiz</div>
-    <div class="kbd-item"><span class="kbd">A</span> Ask</div>
-    <div class="kbd-item"><span class="kbd">O</span> Organelles</div>
-    <div class="kbd-item"><span class="kbd">3</span> 3D Cell</div>
-    <div class="kbd-item"><span class="kbd">L</span> Slides</div>
-    <div class="kbd-item"><span class="kbd">S</span> Solutions</div>
-    <div class="kbd-item"><span class="kbd">F</span> Feedback</div>
-  </div>
-
-  <div class="footer">
-    <div class="footer-copy">© BIOQUIZ &nbsp;·&nbsp; ALL SYSTEMS NOMINAL &nbsp;·&nbsp; <span id="footer-clock">--:--:--</span></div>
-    <a href="quotes.html" class="footer-quote-link">✦ DAILY QUOTES</a>
+    <div class="sec-head">
+      <div class="sec-label">PRE-BUILT TOPICS</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="topic-grid" id="topicGrid"></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ══════════════════════════════════
+     GENERATOR PAGE
+══════════════════════════════════ -->
+<div class="page" id="pg-gen">
+  <div class="topbar">
+    <a href="index.html" class="brand">
+      <div class="brand-mark"><svg><use href="#i-logo"/></svg></div>
+      <span class="brand-name">BIOQUIZ</span>
+      <div class="brand-sep"></div>
+      <span class="brand-module">AI GENERATOR</span>
+    </a>
+    <div class="tb-right">
+      <button class="tb-btn" onclick="showPage('menu')"><svg><use href="#i-back"/></svg> TOPICS</button>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:center;flex:1;padding:24px;overflow-y:auto">
+    <div class="gen-wrap">
+      <div class="gen-header">
+        <div class="gen-tag">AI POWERED</div>
+        <div class="gen-title">GENERATE<br>SLIDES</div>
+        <div class="gen-sub">Cloudflare AI creates a biology lesson deck from any topic you enter</div>
+      </div>
+
+      <div class="gen-form">
+        <div class="f-group">
+          <label class="f-label">BIOLOGY TOPIC</label>
+          <input type="text" id="topicIn" placeholder="e.g. Mitochondria, DNA Replication, Osmosis…" maxlength="80" autocomplete="off">
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">SLIDE COUNT</label>
+            <select id="slideN">
+              <option value="3">3 slides</option>
+              <option value="4">4 slides</option>
+              <option value="5" selected>5 slides</option>
+              <option value="6">6 slides</option>
+              <option value="7">7 slides</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label class="f-label">DETAIL LEVEL</label>
+            <select id="detailN">
+              <option value="concise">Concise</option>
+              <option value="standard" selected>Standard</option>
+              <option value="detailed">Detailed</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-group">
+          <label class="f-label">IMAGES</label>
+          <div class="src-row">
+            <button class="src-btn on" id="srcNone" onclick="setSrc('none')">
+              <svg><use href="#i-eye-off"/></svg> NONE
+            </button>
+            <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')">
+              <svg><use href="#i-wiki"/></svg> WIKIPEDIA
+            </button>
+          </div>
+        </div>
+
+        <button class="go-btn" id="goBtn" onclick="doGen()">GENERATE SLIDES</button>
+        <div class="status" id="stBox">
+          <div class="sdot"></div>
+          <span id="stTxt"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SLIDES PAGE
+══════════════════════════════════ -->
+<div class="page" id="pg-slides">
+  <div class="slides-bar">
+    <button class="sb-btn" onclick="goBack()">
+      <svg><use href="#i-back"/></svg> BACK
+    </button>
+    <div class="sb-topic" id="deckTitle"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
+      <button class="sb-btn" onclick="openOv()">
+        <svg><use href="#i-grid"/></svg> ALL
+      </button>
+    </div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+
+  <!-- Hint strip -->
+  <div style="background:var(--dark2);border-bottom:1px solid var(--border);padding:7px clamp(16px,4vw,60px);
+    font-family:var(--font);font-size:.38rem;letter-spacing:.16em;font-weight:900;color:rgba(255,255,255,.28);
+    display:flex;align-items:center;gap:10px;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    CLICK ANY SLIDE TO REVEAL · PRESS R TO TOGGLE CURRENT · ARROW KEYS TO NAVIGATE
+  </div>
+
+  <div class="stage" id="stage"></div>
+  <div class="slide-nav">
+    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">
+      <svg><use href="#i-back"/></svg> PREV
+    </button>
+    <div class="dot-row" id="dotRow"></div>
+    <button class="nav-btn pri" id="nextBtn" onclick="nav(1)">
+      NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     OVERVIEW OVERLAY
+══════════════════════════════════ -->
+<div class="ov-overlay" id="ovOverlay">
+  <div class="ov-head">
+    <div class="ov-title" id="ovTitle">OVERVIEW</div>
+    <button class="ov-close" onclick="closeOv()">
+      <svg><use href="#i-close"/></svg> CLOSE
+    </button>
+  </div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
 
 <script>
-/* ═══ LOADING SCREEN ═══ */
-(function(){
-  const bar    = document.getElementById("ldBar");
-  const pct    = document.getElementById("ldPct");
-
-  const MADEBY   = "MADE  BY";
-  const NAME     = "MUNTAZIR";
-  const madeByEl = document.getElementById("ldMadeBy");
-  const nameEl   = document.getElementById("ldName");
-
-  /* Stamp "MADE BY" — small white letters */
-  [...MADEBY].forEach((ch, i) => {
-    const el = document.createElement("span");
-    if(ch === " "){
-      el.className = "ld-letter space";
-    } else {
-      el.className = "ld-letter";
-      el.textContent = ch;
-      const delay = 0.5 + i * 0.07;
-      el.style.animation = `stamp 0.45s cubic-bezier(.22,1,.36,1) ${delay}s forwards`;
-    }
-    madeByEl.appendChild(el);
-  });
-
-  /* Stamp "MUNTAZIR" — bigger cyan letters, starts after MADE BY */
-  const nameStartDelay = 0.5 + MADEBY.length * 0.07 + 0.15;
-  [...NAME].forEach((ch, i) => {
-    const el = document.createElement("span");
-    el.className = "ld-letter muntazir-letter";
-    el.textContent = ch;
-    const delay = nameStartDelay + i * 0.09;
-    el.style.animation = `stampCyan 0.5s cubic-bezier(.22,1,.36,1) ${delay}s forwards`;
-    nameEl.appendChild(el);
-  });
-
-  /* Loading bar progress */
-  const totalDuration = 4800; /* ms total loader time */
-  const startTime = performance.now();
-  function updateBar(now){
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / totalDuration * 100, 100);
-    bar.style.width = progress + "%";
-    pct.textContent = Math.round(progress) + "%";
-    if(progress < 100){
-      requestAnimationFrame(updateBar);
-    } else {
-      /* zoom content toward viewer, then fade whole loader */
-      document.getElementById("ldContent").classList.add("zoom");
-      setTimeout(()=>{
-        document.getElementById("loader").classList.add("hide");
-        setTimeout(()=>document.getElementById("loader")?.remove(), 800);
-      }, 650);
-    }
+/* ── TOPICS DATA ── */
+const TOPICS = [
+  {
+    id:'cell-wall',tag:'PLANT BIOLOGY',title:'Cell Wall',
+    desc:'Structure, composition and function of the plant cell wall.',
+    slides:[
+      {heading:'What is a Cell Wall?',imageQuery:'plant cell wall',
+       content:'The <b>cell wall</b> is a rigid, non-living outer layer outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It prevents the cell from bursting when excess water enters by osmosis.',
+       keyFacts:['Rigid, non-living layer','Plant cells only']},
+      {heading:'Composition',imageQuery:'cellulose microfibrils',
+       content:'The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.',
+       keyFacts:['Cellulose = main component','Lignin adds extra rigidity']},
+      {heading:'Three Layers',imageQuery:'middle lamella cell wall',
+       content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>',
+       keyFacts:['Middle lamella = cement','Primary = flexible']},
+      {heading:'Functions',imageQuery:'plant cell turgor',
+       content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>',
+       keyFacts:['Shape and mechanical support','Prevents osmotic bursting']}
+    ]
+  },
+  {
+    id:'photosynthesis',tag:'PLANT PHYSIOLOGY',title:'Photosynthesis',
+    desc:'How plants convert sunlight into glucose using chlorophyll.',
+    slides:[
+      {heading:'What is Photosynthesis?',imageQuery:'chloroplast structure',
+       content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
+       keyFacts:['Light to chemical energy','Occurs in chloroplasts']},
+      {heading:'The Equation',imageQuery:'photosynthesis diagram',
+       content:'<b>6CO&#8322; + 6H&#8322;O + light &rarr; C&#8326;H&#8321;&#8322;O&#8326; + 6O&#8322;</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy required for this reaction.',
+       keyFacts:['CO2 + H2O gives glucose and O2','Chlorophyll absorbs light']},
+      {heading:'Light-Dependent Reactions',imageQuery:'thylakoid membrane',
+       content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>',
+       keyFacts:['Photolysis splits water','ATP and NADPH produced']},
+      {heading:'Calvin Cycle',imageQuery:'Calvin cycle stroma',
+       content:'Occurs in the <b>stroma</b>:<ul><li>CO&#8322; fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> produced, leading to glucose</li></ul>',
+       keyFacts:['RuBisCO fixes CO2','G3P leads to glucose']},
+      {heading:'Limiting Factors',imageQuery:'leaf stomata',
+       content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO&#8322; concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40&#176;C</li><li><b>Water availability</b></li></ul>',
+       keyFacts:['Light, CO2 and temp are key','Stomata close in drought']}
+    ]
+  },
+  {
+    id:'mitosis',tag:'CELL DIVISION',title:'Mitosis',
+    desc:'Division producing two genetically identical daughter cells.',
+    slides:[
+      {heading:'What is Mitosis?',imageQuery:'mitosis diagram',
+       content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
+       keyFacts:['2 identical daughter cells','Used for growth and repair']},
+      {heading:'Interphase',imageQuery:'cell cycle interphase',
+       content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>',
+       keyFacts:['DNA replicated in S phase','Not part of mitosis itself']},
+      {heading:'Prophase and Metaphase',imageQuery:'mitosis prophase metaphase',
+       content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the equatorial plate; spindle fibres attach to centromeres.',
+       keyFacts:['Chromosomes condense in prophase','Chromosomes align in metaphase']},
+      {heading:'Anaphase and Telophase',imageQuery:'mitosis anaphase telophase',
+       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles.<br><br><b>Telophase:</b> nuclear envelopes reform, chromosomes decondense, <b>cytokinesis</b> divides the cytoplasm.',
+       keyFacts:['Chromatids pulled apart','Cytokinesis divides cytoplasm']}
+    ]
+  },
+  {
+    id:'osmosis',tag:'TRANSPORT',title:'Osmosis',
+    desc:'Movement of water across semi-permeable membranes.',
+    slides:[
+      {heading:'What is Osmosis?',imageQuery:'osmosis membrane',
+       content:'<b>Osmosis</b> is the movement of water molecules from a region of <b>high water potential</b> to a region of <b>low water potential</b> through a <b>semi-permeable membrane</b>.',
+       keyFacts:['Water moves high to low potential','Needs semi-permeable membrane']},
+      {heading:'Water Potential',imageQuery:'water potential diagram',
+       content:'<b>Water potential (&#936;)</b> measures the tendency of water to move. <b>Pure water = 0 &#936;</b>. Adding solutes <b>lowers</b> water potential. Water always moves from less negative to more negative &#936;.',
+       keyFacts:['Pure water potential = 0','Solutes lower water potential']},
+      {heading:'Plant Cell Responses',imageQuery:'turgid plasmolysed cell',
+       content:'In <b>hypotonic</b> (dilute) solution: water enters &rarr; cell becomes <b>turgid</b>.<br>In <b>hypertonic</b> (concentrated) solution: water leaves &rarr; cell becomes <b>plasmolysed</b>.',
+       keyFacts:['Dilute solution makes cell turgid','Concentrated solution plasmolyses cell']}
+    ]
+  },
+  {
+    id:'dna',tag:'MOLECULAR BIOLOGY',title:'DNA Structure',
+    desc:'The double helix and genetic information storage.',
+    slides:[
+      {heading:'The Double Helix',imageQuery:'DNA double helix',
+       content:'<b>DNA</b> is a <b>double helix</b> formed by two antiparallel strands. Each strand is a polymer of <b>nucleotides</b> held by a sugar-phosphate backbone. The strands are joined by <b>hydrogen bonds</b> between complementary bases.',
+       keyFacts:['Two antiparallel strands','Hydrogen bonds join bases']},
+      {heading:'Nucleotide Structure',imageQuery:'nucleotide structure DNA',
+       content:'Each nucleotide contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four <b>nitrogenous bases</b>: Adenine, Thymine, Guanine, Cytosine</li></ul>',
+       keyFacts:['Sugar, phosphate and base','Four bases: A T G C']},
+      {heading:'Base Pairing Rules',imageQuery:'DNA base pairing',
+       content:'<b>Complementary base pairing:</b><ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
+       keyFacts:['A pairs with T (2 bonds)','G pairs with C (3 bonds)']}
+    ]
+  },
+  {
+    id:'enzymes',tag:'BIOCHEMISTRY',title:'Enzymes',
+    desc:'Biological catalysts, active sites, and reaction kinetics.',
+    slides:[
+      {heading:'What are Enzymes?',imageQuery:'enzyme active site',
+       content:'<b>Enzymes</b> are biological <b>catalysts</b> that speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a specific 3D shape. Each has an <b>active site</b> that binds to a specific substrate.',
+       keyFacts:['Biological catalysts','Active site is substrate-specific']},
+      {heading:'Lock and Key Model',imageQuery:'enzyme substrate complex',
+       content:'The substrate fits exactly into the active site like a key into a lock. The active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily.',
+       keyFacts:['Exact fit required','ES complex forms briefly']},
+      {heading:'Factors Affecting Activity',imageQuery:'enzyme activity graph',
+       content:'Enzyme activity is affected by:<ul><li><b>Temperature</b> – increases rate until <b>denaturation</b> above optimum</li><li><b>pH</b> – each enzyme has an optimum pH</li><li><b>Substrate concentration</b> – increases rate until Vmax</li></ul>',
+       keyFacts:['Optimum temp ~37C in humans','pH alters active site shape']}
+    ]
   }
-  requestAnimationFrame(updateBar);
+];
+
+/* ── PAGE ROUTING ── */
+let prevPage = 'menu';
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + id).classList.add('active');
+}
+
+/* ── RENDER TOPIC GRID ── */
+(function() {
+  const grid = document.getElementById('topicGrid');
+  TOPICS.forEach(function(t) {
+    const card = document.createElement('div');
+    card.className = 'topic-card';
+    card.innerHTML =
+      '<div class="tc-tag">' + t.tag + '</div>' +
+      '<div class="tc-title">' + t.title + '</div>' +
+      '<div class="tc-desc">' + t.desc + '</div>' +
+      '<div class="tc-count">' + t.slides.length + ' SLIDES</div>';
+    card.onclick = function() { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
+    grid.appendChild(card);
+  });
 })();
 
-/* ═══ CLOCK ═══ */
-function tick(){
-  const t=new Date().toLocaleTimeString("en-US",{hour12:false});
-  document.getElementById("clock").textContent=t;
-  document.getElementById("footer-clock").textContent=t;
+/* ── IMAGE SOURCE TOGGLE ── */
+let imgSrc = 'none';
+function setSrc(v) {
+  imgSrc = v;
+  document.getElementById('srcNone').classList.toggle('on', v === 'none');
+  document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
 }
-tick();setInterval(tick,1000);
 
-/* ═══ STUDY STREAK ═══ */
-(function(){
-  const KEY="bq_streak",LAST="bq_last";
-  const today=new Date().toDateString();
-  const last=localStorage.getItem(LAST);
-  let streak=parseInt(localStorage.getItem(KEY)||"0");
-  const yesterday=new Date(Date.now()-864e5).toDateString();
-  if(last===today){/* same day */}
-  else if(last===yesterday){streak++}
-  else{streak=1}
-  localStorage.setItem(KEY,streak);localStorage.setItem(LAST,today);
-  document.getElementById("streakNum").textContent=streak;
-  document.getElementById("streakPill").title=streak===1?"First day — keep going!":streak+"-day streak! Keep it up!";
-})();
-
-/* ═══ BIO FACTS ═══ */
-const FACTS=[
-  "The human body contains approximately 37.2 trillion cells — each one a self-contained unit of life.",
-  "Mitochondria have their own DNA, supporting the endosymbiotic theory that they were once free-living bacteria.",
-  "A single strand of DNA, if stretched out, would be about 2 metres long — yet fits inside a nucleus just 6 μm wide.",
-  "The cell membrane is a phospholipid bilayer — hydrophobic tails face inward, shielded from water on both sides.",
-  "Ribosomes are the only organelles found in both prokaryotic and eukaryotic cells.",
-  "The nucleus contains about 3 billion base pairs of DNA — enough to fill roughly 1,000 textbooks.",
-  "Cells communicate using chemical signals called ligands, which bind to specific receptor proteins on the cell surface.",
-  "The Golgi apparatus was discovered in 1898 by Camillo Golgi using a silver staining technique.",
-  "Lysosomes act as the cell's recycling centre, digesting worn-out organelles through autophagy.",
-  "Chloroplasts contain their own circular DNA — relics of the bacterial ancestors they once were.",
-  "Active transport uses ATP to move molecules against their concentration gradient — like pushing uphill.",
-  "A typical human cell completes mitosis in roughly 1–2 hours, duplicating all 46 chromosomes precisely.",
-];
-let factIdx=Math.floor(Math.random()*FACTS.length);
-function showFact(i){
-  const el=document.getElementById("factText");
-  el.style.opacity="0";
-  setTimeout(()=>{
-    factIdx=((i%FACTS.length)+FACTS.length)%FACTS.length;
-    el.textContent=FACTS[factIdx];
-    el.style.opacity="1";
-  },200);
+/* ── STATUS + COUNTDOWN TIMER ── */
+let _timerInt = null;
+function setSt(txt, isErr, estimateSecs) {
+  const box = document.getElementById('stBox');
+  const txEl = document.getElementById('stTxt');
+  clearInterval(_timerInt); _timerInt = null;
+  if (!txt) { box.classList.remove('show', 'err'); return; }
+  box.classList.add('show');
+  box.classList.toggle('err', !!isErr);
+  if (!isErr && estimateSecs) {
+    const start = Date.now();
+    const total = estimateSecs * 1000;
+    function update() {
+      const elapsed = Date.now() - start;
+      const rem = Math.max(0, Math.round((total - elapsed) / 1000));
+      const pct = Math.min(100, Math.round(elapsed / total * 100));
+      txEl.textContent = txt + '  ~' + rem + 's remaining  [' + pct + '%]';
+    }
+    update();
+    _timerInt = setInterval(update, 300);
+  } else {
+    txEl.textContent = txt;
+  }
 }
-function nextFact(){showFact(factIdx+1)}
-showFact(factIdx);
 
-/* ═══ KEYBOARD SHORTCUTS ═══ */
-const SHORTCUTS={q:"quiz.html",a:"ask.html",o:"organelles.html","3":"cell-3d.html",l:"presentation.html",s:"solutions.html",f:"suggestions.html"};
-function showToast(msg,dur=2200){
-  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),dur);
+/* ── PARSE SLIDE JSON (ROBUST) ── */
+function parseSlideJSON(raw) {
+  var s = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+  var start = s.indexOf('{');
+  if (start === -1) throw new Error('No JSON object in response');
+  s = s.slice(start);
+  // walk to matching closing brace
+  var depth = 0, end = -1;
+  for (var i = 0; i < s.length; i++) {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end !== -1) s = s.slice(0, end + 1);
+  // try parse as-is
+  try { return JSON.parse(s); } catch(e1) {
+    // remove last incomplete object: find last },
+    var cut = s.lastIndexOf('},');
+    if (cut > 0) {
+      try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(e2) {}
+    }
+    // add missing closing brackets
+    var opens = (s.match(/\[/g) || []).length;
+    var closes = (s.match(/\]/g) || []).length;
+    var missing = '';
+    for (var j = 0; j < opens - closes; j++) missing += ']';
+    missing += '}';
+    try { return JSON.parse(s + missing); } catch(e3) {}
+    throw new Error('Malformed JSON: ' + e1.message);
+  }
 }
-document.addEventListener("keydown",e=>{
-  if(document.activeElement.tagName==="INPUT"||document.activeElement.tagName==="TEXTAREA")return;
-  const k=e.key.toLowerCase();
-  if(SHORTCUTS[k]){
-    const url=SHORTCUTS[k];
-    const card=[...document.querySelectorAll(".card")].find(c=>c.href?.includes(url));
-    const title=card?.querySelector(".card-title")?.textContent||url;
-    showToast("↗ OPENING "+title);
-    setTimeout(()=>window.location.href=url,320);
+
+/* ── FETCH ONE BATCH FROM AI WORKER ── */
+async function fetchSlides(topic, count, startNum, det) {
+  var detMap = { concise: '2-3 sentences', standard: '3-5 sentences', detailed: '4-6 sentences' };
+  var prompt =
+    'You are a biology educator. Generate exactly ' + count + ' lesson slides (numbered ' +
+    startNum + ' to ' + (startNum + count - 1) + ') on the topic "' + topic + '". ' +
+    'Return ONLY a JSON object with no markdown, no extra text. ' +
+    'Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"2-3 words"}]}. ' +
+    'Each slide content: ' + (detMap[det] || '3-5 sentences') + '. ' +
+    'keyFacts: exactly 2 short items under 6 words each. ' +
+    'imageQuery: 2-3 word Wikipedia-friendly search term. ' +
+    'You MUST output all ' + count + ' slides. Return ONLY the JSON.';
+
+  var r = await fetch('https://ask-ai.killermunu.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: prompt })
+  });
+  if (!r.ok) {
+    var errT = await r.text().catch(function() { return ''; });
+    throw new Error('HTTP ' + r.status + (errT ? ': ' + errT.slice(0, 80) : ''));
+  }
+  var j = await r.json();
+  var raw = j.answer || j.response || j.content || j.text || j.result || '';
+  if (!raw) throw new Error('Empty AI response');
+  return parseSlideJSON(raw);
+}
+
+/* ── AI GENERATOR (BATCHED) ── */
+async function doGen() {
+  var topicEl = document.getElementById('topicIn');
+  var topic = topicEl.value.trim();
+  if (!topic) { topicEl.focus(); return; }
+  var n = parseInt(document.getElementById('slideN').value, 10);
+  var det = document.getElementById('detailN').value;
+  var btn = document.getElementById('goBtn');
+  btn.disabled = true;
+
+  // batch into groups of 4 to avoid token limit
+  var BATCH = 4;
+  var allSlides = [], title = '';
+  try {
+    for (var i = 0; i < n; i += BATCH) {
+      var batchCount = Math.min(BATCH, n - i);
+      var startNum = i + 1;
+      var endNum = i + batchCount;
+      var estSecs = det === 'detailed' ? 40 : 28;
+      setSt('Generating slides ' + startNum + '\u2013' + endNum + ' of ' + n + '\u2026', false, estSecs);
+      var result = await fetchSlides(topic, batchCount, startNum, det);
+      if (!result.slides || !result.slides.length) throw new Error('Batch returned no slides');
+      if (!title) title = result.title || topic;
+      allSlides = allSlides.concat(result.slides);
+    }
+  } catch(e) {
+    setSt('Failed: ' + e.message, true);
+    btn.disabled = false;
+    return;
+  }
+
+  allSlides = allSlides.filter(function(s) { return s && s.heading && s.content; }).slice(0, n);
+  if (!allSlides.length) {
+    setSt('Failed: No valid slides returned', true);
+    btn.disabled = false;
+    return;
+  }
+
+  var data = { title: title, slides: allSlides };
+
+  if (imgSrc === 'wiki') {
+    setSt('Fetching Wikipedia images\u2026', false, 10);
+    data = await getWikiImgs(data);
+  }
+
+  setSt('');
+  btn.disabled = false;
+  prevPage = 'gen';
+  buildDeck(data);
+  showPage('slides');
+}
+
+/* ── WIKIPEDIA IMAGES ── */
+async function getWikiImgs(data) {
+  async function fetchImg(query) {
+    // Use first 3 words for cleaner search
+    var q = encodeURIComponent(query.split(' ').slice(0, 3).join(' '));
+    // Method A: search-based pageimages
+    try {
+      var ctrl = new AbortController();
+      setTimeout(function() { ctrl.abort(); }, 6000);
+      var r = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q +
+        '&gsrlimit=5&prop=pageimages&pithumbsize=600&format=json&origin=*',
+        { signal: ctrl.signal }
+      );
+      var j = await r.json();
+      var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
+      for (var p of pages) {
+        if (p.thumbnail && p.thumbnail.source) {
+          return { url: p.thumbnail.source, caption: p.title || query };
+        }
+      }
+    } catch(e1) {}
+    // Method B: direct title lookup
+    try {
+      var ctrl2 = new AbortController();
+      setTimeout(function() { ctrl2.abort(); }, 6000);
+      var r2 = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&titles=' + q +
+        '&prop=pageimages&pithumbsize=600&format=json&origin=*',
+        { signal: ctrl2.signal }
+      );
+      var j2 = await r2.json();
+      var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
+      for (var p2 of pages2) {
+        if (p2.thumbnail && p2.thumbnail.source) {
+          return { url: p2.thumbnail.source, caption: p2.title || query };
+        }
+      }
+    } catch(e2) {}
+    return null;
+  }
+
+  var slides = await Promise.all(data.slides.map(async function(sl) {
+    if (!sl.imageQuery) return sl;
+    var img = await fetchImg(sl.imageQuery);
+    if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
+    return sl;
+  }));
+  return { title: data.title, slides: slides };
+}
+
+/* ── BUILD DECK ── */
+var cur = 0, tot = 0, deck = [];
+
+function buildDeck(data) {
+  deck = data.slides;
+  tot = deck.length;
+  cur = 0;
+
+  var stage = document.getElementById('stage');
+  stage.innerHTML = '';
+  document.getElementById('dotRow').innerHTML = '';
+  document.getElementById('ovGrid').innerHTML = '';
+  document.getElementById('deckTitle').textContent = data.title || '';
+  document.getElementById('totN').textContent = tot;
+  document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
+
+  deck.forEach(function(sl, i) {
+    var hasImg = !!sl.imageUrl;
+    var kfHtml = '';
+    if (sl.keyFacts && sl.keyFacts.length) {
+      kfHtml = '<div class="kf-row">' +
+        sl.keyFacts.map(function(f) { return '<span class="kf">' + f + '</span>'; }).join('') +
+        '</div>';
+    }
+    var imgHtml = '';
+    if (hasImg) {
+      imgHtml = '<div class="img-col"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
+        (sl.imageCaption ? '<div class="img-cap">' + sl.imageCaption + '</div>' : '') +
+        '</div>';
+    }
+
+    // Build slide element
+    var slide = document.createElement('div');
+    slide.className = 'slide' + (i === 0 ? ' active' : '');
+    slide.id = 'sl' + i;
+    slide.innerHTML =
+      '<div class="slide-inner">' +
+        '<div class="slide-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
+        '<div class="slide-heading">' + sl.heading + '</div>' +
+        '<div class="slide-layout' + (hasImg ? ' has-img' : '') + '">' +
+          '<div class="content-col">' +
+            '<div class="content-card blurred" id="cc' + i + '">' +
+              '<div class="content-body">' + sl.content + kfHtml + '</div>' +
+              '<div class="reveal-badge" id="badge' + i + '">' +
+                '<div class="reveal-badge-inner">' +
+                  '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                  '<span>CLICK TO REVEAL</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          imgHtml +
+        '</div>' +
+      '</div>';
+    stage.appendChild(slide);
+
+    // Click to toggle blur on every slide
+    (function(idx) {
+      var card = document.getElementById('cc' + idx);
+      var badge = document.getElementById('badge' + idx);
+      card.addEventListener('click', function() {
+        var nowBlurred = this.classList.toggle('blurred');
+        badge.style.display = nowBlurred ? '' : 'none';
+      });
+    })(i);
+
+    // Dot
+    var dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' on' : '');
+    dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
+    document.getElementById('dotRow').appendChild(dot);
+
+    // Overview card
+    var oc = document.createElement('div');
+    oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
+    oc.innerHTML =
+      '<div class="ov-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
+      '<div class="ov-heading">' + sl.heading + '</div>';
+    oc.onclick = (function(idx) { return function() { goTo(idx); closeOv(); }; })(i);
+    document.getElementById('ovGrid').appendChild(oc);
+  });
+
+  updateUI();
+}
+
+/* ── NAVIGATION ── */
+function goTo(n) {
+  if (n < 0 || n >= tot) return;
+  document.getElementById('sl' + cur).classList.remove('active');
+  cur = n;
+  document.getElementById('sl' + cur).classList.add('active');
+  document.getElementById('sl' + cur).scrollTop = 0;
+  updateUI();
+}
+function nav(dir) { goTo(cur + dir); }
+function goBack() { showPage(prevPage || 'menu'); }
+
+function updateUI() {
+  document.getElementById('curN').textContent = cur + 1;
+  document.getElementById('progFill').style.width = ((cur + 1) / tot * 100) + '%';
+  document.getElementById('prevBtn').disabled = cur === 0;
+  var nb = document.getElementById('nextBtn');
+  if (cur === tot - 1) {
+    nb.textContent = 'DONE';
+    nb.classList.remove('pri');
+  } else {
+    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>';
+    nb.classList.add('pri');
+  }
+  nb.disabled = false;
+  document.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('on', i === cur); });
+  document.querySelectorAll('.ov-card').forEach(function(c, i) { c.classList.toggle('cur', i === cur); });
+}
+
+/* ── OVERVIEW ── */
+function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
+function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (!document.getElementById('pg-slides').classList.contains('active')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+  if (e.key === 'g' || e.key === 'G') openOv();
+  if (e.key === 'Escape') {
+    document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack();
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    var card = document.getElementById('cc' + cur);
+    var badge = document.getElementById('badge' + cur);
+    if (card) {
+      var nowBlurred = card.classList.toggle('blurred');
+      if (badge) badge.style.display = nowBlurred ? '' : 'none';
+    }
   }
 });
-
-/* ═══ CARD RIPPLE ═══ */
-document.querySelectorAll(".card").forEach(card=>{
-  card.addEventListener("pointerdown",e=>{
-    const r=card.getBoundingClientRect();
-    const size=Math.max(r.width,r.height)*1.6;
-    const rip=document.createElement("span");
-    rip.className="ripple";
-    rip.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
-    card.appendChild(rip);
-    rip.addEventListener("animationend",()=>rip.remove());
-  });
-});
-
-/* ═══ CARD 3D TILT (desktop) ═══ */
-if(window.matchMedia("(pointer:fine)").matches){
-  document.querySelectorAll(".card").forEach(card=>{
-    card.addEventListener("mousemove",e=>{
-      const r=card.getBoundingClientRect();
-      const px=(e.clientX-r.left)/r.width-.5;
-      const py=(e.clientY-r.top)/r.height-.5;
-      card.style.transform=`translateY(-7px) scale(1.015) rotateX(${-py*4}deg) rotateY(${px*4}deg)`;
-      card.style.transformStyle="preserve-3d";
-    });
-    card.addEventListener("mouseleave",()=>{card.style.transform=""});
-  });
-}
-
-/* ═══ NAV DROPDOWNS ═══ */
-function toggleNav(id){
-  const item=document.getElementById(id);const was=item.classList.contains("open");
-  document.querySelectorAll(".nav-item").forEach(i=>{i.classList.remove("open");i.querySelector(".nav-btn").classList.remove("active")});
-  if(!was){item.classList.add("open");item.querySelector(".nav-btn").classList.add("active")}
-}
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".nav-item"))document.querySelectorAll(".nav-item").forEach(i=>{i.classList.remove("open");i.querySelector(".nav-btn").classList.remove("active")});
-});
-
-const QQ=[
-  {t:"The good thing about science is that it's true whether or not you believe in it.",a:"Neil deGrasse Tyson"},
-  {t:"Nothing in life is to be feared, it is only to be understood.",a:"Marie Curie"},
-  {t:"Science is a way of thinking much more than it is a body of knowledge.",a:"Carl Sagan"},
-  {t:"The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge.",a:"Stephen Hawking"},
-  {t:"The important thing is to not stop questioning.",a:"Albert Einstein"},
-  {t:"An investment in knowledge pays the best interest.",a:"Benjamin Franklin"},
-  {t:"Look deep into nature, and then you will understand everything better.",a:"Albert Einstein"},
-  {t:"Biology is the study of complicated things that have the appearance of having been designed with a purpose.",a:"Richard Dawkins"},
-  {t:"Somewhere, something incredible is waiting to be known.",a:"Sharon Begley"},
-  {t:"The science of today is the technology of tomorrow.",a:"Edward Teller"},
-  {t:"Research is to see what everybody else has seen, and to think what nobody else has thought.",a:"Albert Szent-Györgyi"},
-  {t:"In science, there are no shortcuts to truth.",a:"Karl Popper"}
-];
-let lastQ=new Date().getDate()%QQ.length;
-function setQ(i){document.getElementById("quoteText").textContent=QQ[i].t;document.getElementById("quoteAuthor").textContent="— "+QQ[i].a}
-setQ(lastQ);
-function newQuote(){
-  let i;do{i=Math.floor(Math.random()*QQ.length)}while(i===lastQ);lastQ=i;
-  const t=document.getElementById("quoteText"),a=document.getElementById("quoteAuthor");
-  t.style.opacity=a.style.opacity="0";
-  setTimeout(()=>{setQ(i);t.style.transition=a.style.transition="opacity .3s";t.style.opacity=a.style.opacity="1"},160);
-}
 </script>
 </body>
 </html>
