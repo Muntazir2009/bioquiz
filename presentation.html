@@ -640,144 +640,136 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 </div>
 
 <script>
-/* ──────────────────────────────────
-   PRE-BUILT TOPICS DATA
-────────────────────────────────── */
+/* ── TOPICS DATA ── */
 const TOPICS = [
   {
     id:'cell-wall',tag:'PLANT BIOLOGY',title:'Cell Wall',
     desc:'Structure, composition and function of the plant cell wall.',
     slides:[
-      {heading:'What is a Cell Wall?',imageQuery:'plant cell wall diagram',
-       content:'The <b>cell wall</b> is a rigid, non-living outer layer found outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It also prevents the cell from bursting when excess water enters by osmosis.',
-       keyFacts:['Rigid, non-living layer','Plant cells only','Prevents osmotic lysis']},
-      {heading:'Composition',
+      {heading:'What is a Cell Wall?',imageQuery:'plant cell wall',
+       content:'The <b>cell wall</b> is a rigid, non-living outer layer outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It prevents the cell from bursting when excess water enters by osmosis.',
+       keyFacts:['Rigid, non-living layer','Plant cells only']},
+      {heading:'Composition',imageQuery:'cellulose microfibrils',
        content:'The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.',
-       keyFacts:['Cellulose = main component','Lignin adds extra rigidity','Pectin holds cells together']},
-      {heading:'Three Layers',imageQuery:'cell wall layers middle lamella',
+       keyFacts:['Cellulose = main component','Lignin adds extra rigidity']},
+      {heading:'Three Layers',imageQuery:'middle lamella cell wall',
        content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>',
-       keyFacts:['Middle lamella = cement','Primary = flexible','Secondary = rigid']},
-      {heading:'Functions',
+       keyFacts:['Middle lamella = cement','Primary = flexible']},
+      {heading:'Functions',imageQuery:'plant cell turgor',
        content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>',
-       keyFacts:['Shape + support','Protects from damage','Permeable to water']}
+       keyFacts:['Shape and mechanical support','Prevents osmotic bursting']}
     ]
   },
   {
     id:'photosynthesis',tag:'PLANT PHYSIOLOGY',title:'Photosynthesis',
     desc:'How plants convert sunlight into glucose using chlorophyll.',
     slides:[
-      {heading:'What is Photosynthesis?',imageQuery:'photosynthesis chloroplast diagram',
+      {heading:'What is Photosynthesis?',imageQuery:'chloroplast structure',
        content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
-       keyFacts:['Light → Chemical energy','In chloroplasts','Releases oxygen']},
-      {heading:'The Equation',
-       content:'<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy required for this reaction.',
-       keyFacts:['CO₂ + H₂O → Glucose + O₂','Chlorophyll absorbs light','Energy stored in glucose bonds']},
-      {heading:'Light-Dependent Reactions',imageQuery:'thylakoid membrane light reactions',
+       keyFacts:['Light to chemical energy','Occurs in chloroplasts']},
+      {heading:'The Equation',imageQuery:'photosynthesis diagram',
+       content:'<b>6CO&#8322; + 6H&#8322;O + light &rarr; C&#8326;H&#8321;&#8322;O&#8326; + 6O&#8322;</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy required for this reaction.',
+       keyFacts:['CO2 + H2O gives glucose and O2','Chlorophyll absorbs light']},
+      {heading:'Light-Dependent Reactions',imageQuery:'thylakoid membrane',
        content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>',
-       keyFacts:['In thylakoids','Photolysis splits water','ATP + NADPH produced']},
-      {heading:'Calvin Cycle',imageQuery:'Calvin cycle stroma diagram',
-       content:'Occurs in the <b>stroma</b>:<ul><li>CO₂ fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> → glucose produced</li></ul>',
-       keyFacts:['In stroma','RuBisCO fixes CO₂','G3P → Glucose']},
-      {heading:'Limiting Factors',
-       content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO₂ concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40°C</li><li><b>Water availability</b></li></ul>',
-       keyFacts:['Light, CO₂, temp key','Enzymes denature at high temp','Stomata close in drought']}
+       keyFacts:['Photolysis splits water','ATP and NADPH produced']},
+      {heading:'Calvin Cycle',imageQuery:'Calvin cycle stroma',
+       content:'Occurs in the <b>stroma</b>:<ul><li>CO&#8322; fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> produced, leading to glucose</li></ul>',
+       keyFacts:['RuBisCO fixes CO2','G3P leads to glucose']},
+      {heading:'Limiting Factors',imageQuery:'leaf stomata',
+       content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO&#8322; concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40&#176;C</li><li><b>Water availability</b></li></ul>',
+       keyFacts:['Light, CO2 and temp are key','Stomata close in drought']}
     ]
   },
   {
     id:'mitosis',tag:'CELL DIVISION',title:'Mitosis',
     desc:'Division producing two genetically identical daughter cells.',
     slides:[
-      {heading:'What is Mitosis?',imageQuery:'mitosis phases diagram',
+      {heading:'What is Mitosis?',imageQuery:'mitosis diagram',
        content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
-       keyFacts:['2 identical daughter cells','Same chromosome number','Growth + repair']},
-      {heading:'Interphase',
+       keyFacts:['2 identical daughter cells','Used for growth and repair']},
+      {heading:'Interphase',imageQuery:'cell cycle interphase',
        content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>',
-       keyFacts:['DNA replicated in S phase','Cell grows in G1 + G2','Not part of mitosis itself']},
-      {heading:'Prophase & Metaphase',imageQuery:'prophase metaphase spindle fibres',
+       keyFacts:['DNA replicated in S phase','Not part of mitosis itself']},
+      {heading:'Prophase and Metaphase',imageQuery:'mitosis prophase metaphase',
        content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the equatorial plate; spindle fibres attach to centromeres.',
-       keyFacts:['Chromosomes condense','Nuclear envelope breaks','Chromosomes align at equator']},
-      {heading:'Anaphase & Telophase',imageQuery:'anaphase telophase cell division',
+       keyFacts:['Chromosomes condense in prophase','Chromosomes align in metaphase']},
+      {heading:'Anaphase and Telophase',imageQuery:'mitosis anaphase telophase',
        content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles.<br><br><b>Telophase:</b> nuclear envelopes reform, chromosomes decondense, <b>cytokinesis</b> divides the cytoplasm.',
-       keyFacts:['Chromatids pulled apart','Nuclear envelopes reform','Cytokinesis = cytoplasm division']}
+       keyFacts:['Chromatids pulled apart','Cytokinesis divides cytoplasm']}
     ]
   },
   {
     id:'osmosis',tag:'TRANSPORT',title:'Osmosis',
     desc:'Movement of water across semi-permeable membranes.',
     slides:[
-      {heading:'What is Osmosis?',imageQuery:'osmosis semi permeable membrane diagram',
+      {heading:'What is Osmosis?',imageQuery:'osmosis membrane',
        content:'<b>Osmosis</b> is the movement of water molecules from a region of <b>high water potential</b> to a region of <b>low water potential</b> through a <b>semi-permeable membrane</b>.',
-       keyFacts:['Water moves via osmosis','High → Low water potential','Needs semi-permeable membrane']},
-      {heading:'Water Potential',
-       content:'<b>Water potential (Ψ)</b> measures the tendency of water to move. <b>Pure water = 0 Ψ</b>. Adding solutes <b>lowers</b> water potential. Water always moves from less negative to more negative Ψ.',
-       keyFacts:['Pure water Ψ = 0','Solutes lower Ψ','Movement: 0 → negative']},
-      {heading:'Plant Cell Responses',imageQuery:'turgid plasmolysed plant cell osmosis',
-       content:'In <b>hypotonic</b> (dilute) solution: water enters → cell becomes <b>turgid</b>.<br>In <b>hypertonic</b> (concentrated) solution: water leaves → cell becomes <b>plasmolysed</b>.',
-       keyFacts:['Dilute = turgid','Concentrated = plasmolysed','Cell wall prevents bursting']}
+       keyFacts:['Water moves high to low potential','Needs semi-permeable membrane']},
+      {heading:'Water Potential',imageQuery:'water potential diagram',
+       content:'<b>Water potential (&#936;)</b> measures the tendency of water to move. <b>Pure water = 0 &#936;</b>. Adding solutes <b>lowers</b> water potential. Water always moves from less negative to more negative &#936;.',
+       keyFacts:['Pure water potential = 0','Solutes lower water potential']},
+      {heading:'Plant Cell Responses',imageQuery:'turgid plasmolysed cell',
+       content:'In <b>hypotonic</b> (dilute) solution: water enters &rarr; cell becomes <b>turgid</b>.<br>In <b>hypertonic</b> (concentrated) solution: water leaves &rarr; cell becomes <b>plasmolysed</b>.',
+       keyFacts:['Dilute solution makes cell turgid','Concentrated solution plasmolyses cell']}
     ]
   },
   {
     id:'dna',tag:'MOLECULAR BIOLOGY',title:'DNA Structure',
     desc:'The double helix and genetic information storage.',
     slides:[
-      {heading:'The Double Helix',imageQuery:'DNA double helix structure diagram',
+      {heading:'The Double Helix',imageQuery:'DNA double helix',
        content:'<b>DNA</b> is a <b>double helix</b> formed by two antiparallel strands. Each strand is a polymer of <b>nucleotides</b> held by a sugar-phosphate backbone. The strands are joined by <b>hydrogen bonds</b> between complementary bases.',
-       keyFacts:['Double helix shape','Antiparallel strands','Hydrogen bonds hold bases']},
-      {heading:'Nucleotide Structure',
+       keyFacts:['Two antiparallel strands','Hydrogen bonds join bases']},
+      {heading:'Nucleotide Structure',imageQuery:'nucleotide structure DNA',
        content:'Each nucleotide contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four <b>nitrogenous bases</b>: Adenine, Thymine, Guanine, Cytosine</li></ul>',
-       keyFacts:['Sugar + Phosphate + Base','4 bases: A, T, G, C','Backbone = sugar-phosphate']},
-      {heading:'Base Pairing Rules',imageQuery:'DNA base pairing adenine thymine guanine cytosine',
-       content:'<b>Complementary base pairing</b>:<ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
-       keyFacts:['A–T: 2 H-bonds','G–C: 3 H-bonds','Complementary pairing']}
+       keyFacts:['Sugar, phosphate and base','Four bases: A T G C']},
+      {heading:'Base Pairing Rules',imageQuery:'DNA base pairing',
+       content:'<b>Complementary base pairing:</b><ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
+       keyFacts:['A pairs with T (2 bonds)','G pairs with C (3 bonds)']}
     ]
   },
   {
     id:'enzymes',tag:'BIOCHEMISTRY',title:'Enzymes',
     desc:'Biological catalysts, active sites, and reaction kinetics.',
     slides:[
-      {heading:'What are Enzymes?',imageQuery:'enzyme active site substrate diagram',
-       content:'<b>Enzymes</b> are biological <b>catalysts</b> — they speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a specific 3D shape. Each has an <b>active site</b> that binds to a specific substrate.',
-       keyFacts:['Biological catalysts','Globular proteins','Active site = specific shape']},
-      {heading:'Lock and Key Model',
-       content:'The substrate fits exactly into the active site like a key into a lock. The enzyme\'s active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily.',
-       keyFacts:['Exact fit required','Complementary shapes','ES complex forms briefly']},
-      {heading:'Factors Affecting Activity',imageQuery:'enzyme activity temperature pH graph',
+      {heading:'What are Enzymes?',imageQuery:'enzyme active site',
+       content:'<b>Enzymes</b> are biological <b>catalysts</b> that speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a specific 3D shape. Each has an <b>active site</b> that binds to a specific substrate.',
+       keyFacts:['Biological catalysts','Active site is substrate-specific']},
+      {heading:'Lock and Key Model',imageQuery:'enzyme substrate complex',
+       content:'The substrate fits exactly into the active site like a key into a lock. The active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily.',
+       keyFacts:['Exact fit required','ES complex forms briefly']},
+      {heading:'Factors Affecting Activity',imageQuery:'enzyme activity graph',
        content:'Enzyme activity is affected by:<ul><li><b>Temperature</b> – increases rate until <b>denaturation</b> above optimum</li><li><b>pH</b> – each enzyme has an optimum pH</li><li><b>Substrate concentration</b> – increases rate until Vmax</li></ul>',
-       keyFacts:['Optimum temp ~37°C (humans)','pH changes active site shape','Substrate concentration → Vmax']}
+       keyFacts:['Optimum temp ~37C in humans','pH alters active site shape']}
     ]
   }
 ];
 
-/* ──────────────────────────────────
-   PAGE ROUTING
-────────────────────────────────── */
+/* ── PAGE ROUTING ── */
 let prevPage = 'menu';
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('pg-' + id).classList.add('active');
 }
 
-/* ──────────────────────────────────
-   RENDER TOPIC GRID
-────────────────────────────────── */
+/* ── RENDER TOPIC GRID ── */
 (function() {
   const grid = document.getElementById('topicGrid');
-  TOPICS.forEach(t => {
+  TOPICS.forEach(function(t) {
     const card = document.createElement('div');
     card.className = 'topic-card';
-    card.innerHTML = `
-      <div class="tc-tag">${t.tag}</div>
-      <div class="tc-title">${t.title}</div>
-      <div class="tc-desc">${t.desc}</div>
-      <div class="tc-count">${t.slides.length} SLIDES</div>`;
-    card.onclick = () => { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
+    card.innerHTML =
+      '<div class="tc-tag">' + t.tag + '</div>' +
+      '<div class="tc-title">' + t.title + '</div>' +
+      '<div class="tc-desc">' + t.desc + '</div>' +
+      '<div class="tc-count">' + t.slides.length + ' SLIDES</div>';
+    card.onclick = function() { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
     grid.appendChild(card);
   });
 })();
 
-/* ──────────────────────────────────
-   IMAGE SOURCE TOGGLE
-────────────────────────────────── */
+/* ── IMAGE SOURCE TOGGLE ── */
 let imgSrc = 'none';
 function setSrc(v) {
   imgSrc = v;
@@ -785,124 +777,112 @@ function setSrc(v) {
   document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
 }
 
-/* ──────────────────────────────────
-   STATUS
-────────────────────────────────── */
-let _timerInterval = null;
+/* ── STATUS + COUNTDOWN TIMER ── */
+let _timerInt = null;
 function setSt(txt, isErr, estimateSecs) {
   const box = document.getElementById('stBox');
-  clearInterval(_timerInterval); _timerInterval = null;
-  if (!txt) { box.classList.remove('show','err'); return; }
+  const txEl = document.getElementById('stTxt');
+  clearInterval(_timerInt); _timerInt = null;
+  if (!txt) { box.classList.remove('show', 'err'); return; }
   box.classList.add('show');
   box.classList.toggle('err', !!isErr);
   if (!isErr && estimateSecs) {
     const start = Date.now();
     const total = estimateSecs * 1000;
-    const update = () => {
+    function update() {
       const elapsed = Date.now() - start;
-      const remaining = Math.max(0, (total - elapsed) / 1000);
+      const rem = Math.max(0, Math.round((total - elapsed) / 1000));
       const pct = Math.min(100, Math.round(elapsed / total * 100));
-      document.getElementById('stTxt').textContent =
-        txt + '  ~' + remaining.toFixed(0) + 's remaining  [' + pct + '%]';
-    };
+      txEl.textContent = txt + '  ~' + rem + 's remaining  [' + pct + '%]';
+    }
     update();
-    _timerInterval = setInterval(update, 250);
-  } else if (!isErr) {
-    document.getElementById('stTxt').textContent = txt;
+    _timerInt = setInterval(update, 300);
   } else {
-    document.getElementById('stTxt').textContent = txt;
+    txEl.textContent = txt;
   }
 }
 
-/* ──────────────────────────────────
-   AI GENERATOR
-   Worker: { query: "..." } → { answer: "..." }
-────────────────────────────────── */
-/* ──────────────────────────────────
-   FETCH ONE BATCH FROM WORKER
-────────────────────────────────── */
-async function fetchSlides(topic, slideNumbers, det) {
-  const detMap = { concise:'2-3 sentences', standard:'3-5 sentences', detailed:'4-6 sentences' };
-  const count = slideNumbers.length;
-  const headings = slideNumbers.map(n => `Slide ${n}`).join(', ');
+/* ── PARSE SLIDE JSON (ROBUST) ── */
+function parseSlideJSON(raw) {
+  var s = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+  var start = s.indexOf('{');
+  if (start === -1) throw new Error('No JSON object in response');
+  s = s.slice(start);
+  // walk to matching closing brace
+  var depth = 0, end = -1;
+  for (var i = 0; i < s.length; i++) {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end !== -1) s = s.slice(0, end + 1);
+  // try parse as-is
+  try { return JSON.parse(s); } catch(e1) {
+    // remove last incomplete object: find last },
+    var cut = s.lastIndexOf('},');
+    if (cut > 0) {
+      try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(e2) {}
+    }
+    // add missing closing brackets
+    var opens = (s.match(/\[/g) || []).length;
+    var closes = (s.match(/\]/g) || []).length;
+    var missing = '';
+    for (var j = 0; j < opens - closes; j++) missing += ']';
+    missing += '}';
+    try { return JSON.parse(s + missing); } catch(e3) {}
+    throw new Error('Malformed JSON: ' + e1.message);
+  }
+}
 
-  const prompt =
-    `Biology educator. Create exactly ${count} slides (${headings}) for a lesson on "${topic}". ` +
-    `IMPORTANT: You MUST output all ${count} slides. ` +
-    `Return ONLY raw JSON, no markdown, no explanation. ` +
-    `Format: {"title":"string","slides":[{"heading":"string","content":"HTML with <b> bold and <ul><li> lists","keyFacts":["short fact","short fact"],"imageQuery":"2-3 word wikipedia search"}]} ` +
-    `Each slide content: ${detMap[det]}. keyFacts: exactly 2 items, max 6 words each. ` +
-    `Do NOT stop early. Output ALL ${count} slides then close the JSON.`;
+/* ── FETCH ONE BATCH FROM AI WORKER ── */
+async function fetchSlides(topic, count, startNum, det) {
+  var detMap = { concise: '2-3 sentences', standard: '3-5 sentences', detailed: '4-6 sentences' };
+  var prompt =
+    'You are a biology educator. Generate exactly ' + count + ' lesson slides (numbered ' +
+    startNum + ' to ' + (startNum + count - 1) + ') on the topic "' + topic + '". ' +
+    'Return ONLY a JSON object with no markdown, no extra text. ' +
+    'Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"2-3 words"}]}. ' +
+    'Each slide content: ' + (detMap[det] || '3-5 sentences') + '. ' +
+    'keyFacts: exactly 2 short items under 6 words each. ' +
+    'imageQuery: 2-3 word Wikipedia-friendly search term. ' +
+    'You MUST output all ' + count + ' slides. Return ONLY the JSON.';
 
-  const r = await fetch('https://ask-ai.killermunu.workers.dev', {
+  var r = await fetch('https://ask-ai.killermunu.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: prompt })
   });
   if (!r.ok) {
-    const t = await r.text().catch(() => '');
-    throw new Error(`HTTP ${r.status}${t ? ': ' + t.slice(0,80) : ''}`);
+    var errT = await r.text().catch(function() { return ''; });
+    throw new Error('HTTP ' + r.status + (errT ? ': ' + errT.slice(0, 80) : ''));
   }
-  const j = await r.json();
-  const raw = j.answer || j.response || j.content || j.text || j.result || '';
+  var j = await r.json();
+  var raw = j.answer || j.response || j.content || j.text || j.result || '';
   if (!raw) throw new Error('Empty AI response');
   return parseSlideJSON(raw);
 }
 
-function parseSlideJSON(raw) {
-  let s = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-  const start = s.indexOf('{');
-  if (start === -1) throw new Error('No JSON in response');
-  s = s.slice(start);
-  // match closing brace by depth
-  let depth = 0, end = -1;
-  for (let i = 0; i < s.length; i++) {
-    if (s[i] === '{') depth++;
-    else if (s[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-  }
-  if (end !== -1) s = s.slice(0, end + 1);
-  // try parse, then repair
-  try { return JSON.parse(s); } catch(e) {
-    // remove last incomplete slide
-    const cuts = [s.lastIndexOf('},
-'), s.lastIndexOf('},')];
-    const cut = Math.max(...cuts);
-    if (cut > 0) {
-      try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(_) {}
-    }
-    // add missing brackets
-    const open = (s.match(/\[/g)||[]).length, close = (s.match(/\]/g)||[]).length;
-    try { return JSON.parse(s + ']'.repeat(Math.max(0, open-close)) + '}'); } catch(_) {}
-    throw new Error('Malformed JSON: ' + e.message);
-  }
-}
-
-/* ──────────────────────────────────
-   AI GENERATOR — BATCHED
-────────────────────────────────── */
+/* ── AI GENERATOR (BATCHED) ── */
 async function doGen() {
-  const topic = document.getElementById('topicIn').value.trim();
-  if (!topic) { document.getElementById('topicIn').focus(); return; }
-  const n   = parseInt(document.getElementById('slideN').value);
-  const det = document.getElementById('detailN').value;
-
-  const btn = document.getElementById('goBtn');
+  var topicEl = document.getElementById('topicIn');
+  var topic = topicEl.value.trim();
+  if (!topic) { topicEl.focus(); return; }
+  var n = parseInt(document.getElementById('slideN').value, 10);
+  var det = document.getElementById('detailN').value;
+  var btn = document.getElementById('goBtn');
   btn.disabled = true;
 
-  // Split into batches of max 4 to stay within worker token limit
-  const BATCH = 4;
-  const batches = [];
-  for (let i = 0; i < n; i += BATCH) {
-    batches.push(Array.from({length: Math.min(BATCH, n - i)}, (_, k) => i + k + 1));
-  }
-
-  let allSlides = [], title = '';
+  // batch into groups of 4 to avoid token limit
+  var BATCH = 4;
+  var allSlides = [], title = '';
   try {
-    for (let b = 0; b < batches.length; b++) {
-      const estSecs = det === 'detailed' ? 35 : 25;
-      setSt(`Generating slides ${batches[b][0]}–${batches[b][batches[b].length-1]} of ${n}…`, false, estSecs);
-      const result = await fetchSlides(topic, batches[b], det);
-      if (!result.slides?.length) throw new Error(`Batch ${b+1} returned no slides`);
+    for (var i = 0; i < n; i += BATCH) {
+      var batchCount = Math.min(BATCH, n - i);
+      var startNum = i + 1;
+      var endNum = i + batchCount;
+      var estSecs = det === 'detailed' ? 40 : 28;
+      setSt('Generating slides ' + startNum + '\u2013' + endNum + ' of ' + n + '\u2026', false, estSecs);
+      var result = await fetchSlides(topic, batchCount, startNum, det);
+      if (!result.slides || !result.slides.length) throw new Error('Batch returned no slides');
       if (!title) title = result.title || topic;
       allSlides = allSlides.concat(result.slides);
     }
@@ -912,14 +892,17 @@ async function doGen() {
     return;
   }
 
-  // Filter incomplete slides
-  allSlides = allSlides.filter(s => s && s.heading && s.content).slice(0, n);
-  if (!allSlides.length) { setSt('Failed: No valid slides returned', true); btn.disabled = false; return; }
+  allSlides = allSlides.filter(function(s) { return s && s.heading && s.content; }).slice(0, n);
+  if (!allSlides.length) {
+    setSt('Failed: No valid slides returned', true);
+    btn.disabled = false;
+    return;
+  }
 
-  let data = { title, slides: allSlides };
+  var data = { title: title, slides: allSlides };
 
   if (imgSrc === 'wiki') {
-    setSt('Fetching Wikipedia images…', false, 8);
+    setSt('Fetching Wikipedia images\u2026', false, 10);
     data = await getWikiImgs(data);
   }
 
@@ -930,59 +913,66 @@ async function doGen() {
   showPage('slides');
 }
 
-
-/* ──────────────────────────────────
-   WIKIPEDIA IMAGES
-────────────────────────────────── */
+/* ── WIKIPEDIA IMAGES ── */
 async function getWikiImgs(data) {
   async function fetchImg(query) {
-    // Use 2-3 word simplified query for better wiki hits
-    const shortQ = query.split(' ').slice(0, 3).join(' ');
-    const urls = [
-      // Method A: pageimages via search
-      `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(shortQ)}&gsrlimit=5&prop=pageimages&pithumbsize=600&format=json&origin=*`,
-      // Method B: pageimages via direct title
-      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(shortQ)}&prop=pageimages&pithumbsize=600&format=json&origin=*`
-    ];
-    for (const url of urls) {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 6000);
-        const r = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(t);
-        const j = await r.json();
-        const pages = Object.values(j.query?.pages || {});
-        for (const p of pages) {
-          if (p.thumbnail?.source) {
-            return { url: p.thumbnail.source, caption: p.title || query };
-          }
+    // Use first 3 words for cleaner search
+    var q = encodeURIComponent(query.split(' ').slice(0, 3).join(' '));
+    // Method A: search-based pageimages
+    try {
+      var ctrl = new AbortController();
+      setTimeout(function() { ctrl.abort(); }, 6000);
+      var r = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q +
+        '&gsrlimit=5&prop=pageimages&pithumbsize=600&format=json&origin=*',
+        { signal: ctrl.signal }
+      );
+      var j = await r.json();
+      var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
+      for (var p of pages) {
+        if (p.thumbnail && p.thumbnail.source) {
+          return { url: p.thumbnail.source, caption: p.title || query };
         }
-      } catch(_) {}
-    }
+      }
+    } catch(e1) {}
+    // Method B: direct title lookup
+    try {
+      var ctrl2 = new AbortController();
+      setTimeout(function() { ctrl2.abort(); }, 6000);
+      var r2 = await fetch(
+        'https://en.wikipedia.org/w/api.php?action=query&titles=' + q +
+        '&prop=pageimages&pithumbsize=600&format=json&origin=*',
+        { signal: ctrl2.signal }
+      );
+      var j2 = await r2.json();
+      var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
+      for (var p2 of pages2) {
+        if (p2.thumbnail && p2.thumbnail.source) {
+          return { url: p2.thumbnail.source, caption: p2.title || query };
+        }
+      }
+    } catch(e2) {}
     return null;
   }
 
-  const slides = await Promise.all(data.slides.map(async sl => {
+  var slides = await Promise.all(data.slides.map(async function(sl) {
     if (!sl.imageQuery) return sl;
-    const img = await fetchImg(sl.imageQuery);
+    var img = await fetchImg(sl.imageQuery);
     if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
     return sl;
   }));
-  return { ...data, slides };
+  return { title: data.title, slides: slides };
 }
 
-
-/* ──────────────────────────────────
-   DECK STATE
-────────────────────────────────── */
-let cur = 0, tot = 0, deck = [];
+/* ── BUILD DECK ── */
+var cur = 0, tot = 0, deck = [];
 
 function buildDeck(data) {
   deck = data.slides;
   tot = deck.length;
   cur = 0;
 
-  const stage = document.getElementById('stage');
+  var stage = document.getElementById('stage');
   stage.innerHTML = '';
   document.getElementById('dotRow').innerHTML = '';
   document.getElementById('ovGrid').innerHTML = '';
@@ -990,76 +980,82 @@ function buildDeck(data) {
   document.getElementById('totN').textContent = tot;
   document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
 
-  deck.forEach((sl, i) => {
-    const hasImg = !!sl.imageUrl;
-    const kf = sl.keyFacts?.length
-      ? `<div class="kf-row">${sl.keyFacts.map(f => `<span class="kf">${f}</span>`).join('')}</div>` : '';
-    const imgHtml = hasImg
-      ? `<div class="img-col"><img src="${sl.imageUrl}" alt="" loading="lazy">${sl.imageCaption?`<div class="img-cap">${sl.imageCaption}</div>`:''}</div>` : '';
+  deck.forEach(function(sl, i) {
+    var hasImg = !!sl.imageUrl;
+    var kfHtml = '';
+    if (sl.keyFacts && sl.keyFacts.length) {
+      kfHtml = '<div class="kf-row">' +
+        sl.keyFacts.map(function(f) { return '<span class="kf">' + f + '</span>'; }).join('') +
+        '</div>';
+    }
+    var imgHtml = '';
+    if (hasImg) {
+      imgHtml = '<div class="img-col"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
+        (sl.imageCaption ? '<div class="img-cap">' + sl.imageCaption + '</div>' : '') +
+        '</div>';
+    }
 
-    // ALL slides start blurred — user clicks to reveal
-    const slide = document.createElement('div');
+    // Build slide element
+    var slide = document.createElement('div');
     slide.className = 'slide' + (i === 0 ? ' active' : '');
     slide.id = 'sl' + i;
-    slide.innerHTML = `
-      <div class="slide-inner">
-        <div class="slide-num">SLIDE ${String(i+1).padStart(2,'0')}</div>
-        <div class="slide-heading">${sl.heading}</div>
-        <div class="slide-layout${hasImg ? ' has-img' : ''}">
-          <div class="content-col">
-            <div class="content-card blurred" id="cc${i}">
-              <div class="content-body">${sl.content}${kf}</div>
-              <div class="reveal-badge" id="badge${i}">
-                <div class="reveal-badge-inner">
-                  <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <span>CLICK TO REVEAL</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          ${imgHtml}
-        </div>
-      </div>`;
+    slide.innerHTML =
+      '<div class="slide-inner">' +
+        '<div class="slide-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
+        '<div class="slide-heading">' + sl.heading + '</div>' +
+        '<div class="slide-layout' + (hasImg ? ' has-img' : '') + '">' +
+          '<div class="content-col">' +
+            '<div class="content-card blurred" id="cc' + i + '">' +
+              '<div class="content-body">' + sl.content + kfHtml + '</div>' +
+              '<div class="reveal-badge" id="badge' + i + '">' +
+                '<div class="reveal-badge-inner">' +
+                  '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                  '<span>CLICK TO REVEAL</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          imgHtml +
+        '</div>' +
+      '</div>';
     stage.appendChild(slide);
 
-    // *** CLICK HANDLER ON EVERY CARD — toggles blur on/off ***
-    const card = document.getElementById('cc' + i);
-    const badge = document.getElementById('badge' + i);
-    card.addEventListener('click', function() {
-      const isBlurred = this.classList.toggle('blurred');
-      // hide/show badge
-      badge.style.display = isBlurred ? '' : 'none';
-    });
-    // start hidden since it starts blurred
-    badge.style.display = '';
+    // Click to toggle blur on every slide
+    (function(idx) {
+      var card = document.getElementById('cc' + idx);
+      var badge = document.getElementById('badge' + idx);
+      card.addEventListener('click', function() {
+        var nowBlurred = this.classList.toggle('blurred');
+        badge.style.display = nowBlurred ? '' : 'none';
+      });
+    })(i);
 
-    /* Dot */
-    const dot = document.createElement('button');
+    // Dot
+    var dot = document.createElement('button');
     dot.className = 'dot' + (i === 0 ? ' on' : '');
-    dot.onclick = () => goTo(i);
+    dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
     document.getElementById('dotRow').appendChild(dot);
 
-    /* Overview card */
-    const oc = document.createElement('div');
+    // Overview card
+    var oc = document.createElement('div');
     oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
-    oc.innerHTML = `<div class="ov-num">SLIDE ${String(i+1).padStart(2,'0')}</div><div class="ov-heading">${sl.heading}</div>`;
-    oc.onclick = () => { goTo(i); closeOv(); };
+    oc.innerHTML =
+      '<div class="ov-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
+      '<div class="ov-heading">' + sl.heading + '</div>';
+    oc.onclick = (function(idx) { return function() { goTo(idx); closeOv(); }; })(i);
     document.getElementById('ovGrid').appendChild(oc);
   });
 
   updateUI();
 }
 
-/* ──────────────────────────────────
-   NAVIGATION
-────────────────────────────────── */
+/* ── NAVIGATION ── */
 function goTo(n) {
   if (n < 0 || n >= tot) return;
   document.getElementById('sl' + cur).classList.remove('active');
   cur = n;
-  const next = document.getElementById('sl' + cur);
-  next.classList.add('active');
-  next.scrollTop = 0;
+  document.getElementById('sl' + cur).classList.add('active');
+  document.getElementById('sl' + cur).scrollTop = 0;
   updateUI();
 }
 function nav(dir) { goTo(cur + dir); }
@@ -1069,8 +1065,7 @@ function updateUI() {
   document.getElementById('curN').textContent = cur + 1;
   document.getElementById('progFill').style.width = ((cur + 1) / tot * 100) + '%';
   document.getElementById('prevBtn').disabled = cur === 0;
-
-  const nb = document.getElementById('nextBtn');
+  var nb = document.getElementById('nextBtn');
   if (cur === tot - 1) {
     nb.textContent = 'DONE';
     nb.classList.remove('pri');
@@ -1079,36 +1074,30 @@ function updateUI() {
     nb.classList.add('pri');
   }
   nb.disabled = false;
-
-  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('on', i === cur));
-  document.querySelectorAll('.ov-card').forEach((c,i) => c.classList.toggle('cur', i === cur));
+  document.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('on', i === cur); });
+  document.querySelectorAll('.ov-card').forEach(function(c, i) { c.classList.toggle('cur', i === cur); });
 }
 
-/* ──────────────────────────────────
-   OVERVIEW
-────────────────────────────────── */
+/* ── OVERVIEW ── */
 function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
 function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
 
-/* ──────────────────────────────────
-   KEYBOARD
-────────────────────────────────── */
-document.addEventListener('keydown', e => {
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  const onSlides = document.getElementById('pg-slides').classList.contains('active');
-  if (!onSlides) return;
+  if (!document.getElementById('pg-slides').classList.contains('active')) return;
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
-  if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
   if (e.key === 'g' || e.key === 'G') openOv();
   if (e.key === 'Escape') {
     document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack();
   }
   if (e.key === 'r' || e.key === 'R') {
-    const card = document.getElementById('cc' + cur);
-    const badge = document.getElementById('badge' + cur);
+    var card = document.getElementById('cc' + cur);
+    var badge = document.getElementById('badge' + cur);
     if (card) {
-      const isBlurred = card.classList.toggle('blurred');
-      if (badge) badge.style.display = isBlurred ? '' : 'none';
+      var nowBlurred = card.classList.toggle('blurred');
+      if (badge) badge.style.display = nowBlurred ? '' : 'none';
     }
   }
 });
