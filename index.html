@@ -701,11 +701,87 @@ body{
 <div class="bg-grid"></div>
 <div class="scanlines"></div>
 
-<!-- MOON -->
+<!-- CUSTOM ORB (replaces moon.png) -->
 <div class="moon-wrap">
   <div class="moon-halo"></div>
   <div class="moon-img-wrap">
-    <img src="images/moon.png" alt="Moon" loading="lazy" decoding="async">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" style="display:block;border-radius:50%">
+      <defs>
+        <radialGradient id="sphere" cx="38%" cy="35%" r="62%">
+          <stop offset="0%"   stop-color="#1a2a4a"/>
+          <stop offset="40%"  stop-color="#0d1a30"/>
+          <stop offset="75%"  stop-color="#060e1e"/>
+          <stop offset="100%" stop-color="#020609"/>
+        </radialGradient>
+        <radialGradient id="iglow" cx="38%" cy="35%" r="55%">
+          <stop offset="0%"   stop-color="#1e4d8c" stop-opacity=".55"/>
+          <stop offset="50%"  stop-color="#0a2a5e" stop-opacity=".25"/>
+          <stop offset="100%" stop-color="#000"    stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="ishine" cx="32%" cy="28%" r="30%">
+          <stop offset="0%"   stop-color="#fff" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="og" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="sb"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <filter id="tb"><feGaussianBlur stdDeviation=".6"/></filter>
+        <clipPath id="cc"><circle cx="100" cy="100" r="96"/></clipPath>
+      </defs>
+      <!-- halo rings -->
+      <circle cx="100" cy="100" r="99" fill="none" stroke="rgba(0,112,209,.18)" stroke-width="3"  filter="url(#sb)"/>
+      <circle cx="100" cy="100" r="97" fill="none" stroke="rgba(0,80,160,.1)"   stroke-width="8"  filter="url(#sb)"/>
+      <!-- sphere base -->
+      <circle cx="100" cy="100" r="96" fill="url(#sphere)" filter="url(#og)"/>
+      <circle cx="100" cy="100" r="96" fill="url(#iglow)"/>
+      <g clip-path="url(#cc)">
+        <!-- grid -->
+        <g stroke="rgba(0,112,209,.07)" stroke-width=".6" fill="none">
+          <line x1="0"   y1="60"  x2="200" y2="60"/><line x1="0"   y1="100" x2="200" y2="100"/>
+          <line x1="0"   y1="140" x2="200" y2="140"/><line x1="60"  y1="0"   x2="60"  y2="200"/>
+          <line x1="100" y1="0"   x2="100" y2="200"/><line x1="140" y1="0"   x2="140" y2="200"/>
+        </g>
+        <!-- DNA strands -->
+        <g fill="none" stroke-linecap="round">
+          <path d="M62 20 C68 35,55 50,62 65 C69 80,55 95,62 110 C69 125,55 140,62 155 C69 170,55 185,62 200" stroke="rgba(0,180,255,.55)" stroke-width="1.4" filter="url(#tb)"/>
+          <path d="M78 20 C72 35,85 50,78 65 C71 80,85 95,78 110 C71 125,85 140,78 155 C71 170,85 185,78 200" stroke="rgba(100,220,255,.4)"  stroke-width="1.4" filter="url(#tb)"/>
+          <line x1="62" y1="38"  x2="78" y2="38"  stroke="rgba(0,200,255,.45)" stroke-width="1"/>
+          <line x1="62" y1="57"  x2="78" y2="57"  stroke="rgba(0,200,255,.3)"  stroke-width="1"/>
+          <line x1="62" y1="75"  x2="78" y2="75"  stroke="rgba(0,200,255,.45)" stroke-width="1"/>
+          <line x1="62" y1="94"  x2="78" y2="94"  stroke="rgba(0,200,255,.3)"  stroke-width="1"/>
+          <line x1="62" y1="112" x2="78" y2="112" stroke="rgba(0,200,255,.45)" stroke-width="1"/>
+          <line x1="62" y1="131" x2="78" y2="131" stroke="rgba(0,200,255,.3)"  stroke-width="1"/>
+          <line x1="62" y1="149" x2="78" y2="149" stroke="rgba(0,200,255,.45)" stroke-width="1"/>
+          <line x1="62" y1="168" x2="78" y2="168" stroke="rgba(0,200,255,.3)"  stroke-width="1"/>
+        </g>
+        <!-- nucleus -->
+        <circle cx="130" cy="105" r="28" fill="none" stroke="rgba(0,140,255,.22)" stroke-width="1.2" filter="url(#sb)"/>
+        <circle cx="130" cy="105" r="22" fill="rgba(0,60,140,.18)"/>
+        <circle cx="130" cy="105" r="16" fill="rgba(0,90,200,.12)" filter="url(#tb)"/>
+        <circle cx="130" cy="105" r="6"  fill="rgba(80,160,255,.35)" filter="url(#sb)"/>
+        <circle cx="128" cy="103" r="3"  fill="rgba(180,220,255,.5)"/>
+        <!-- orbit rings -->
+        <ellipse cx="130" cy="105" rx="34" ry="12" fill="none" stroke="rgba(0,160,255,.18)" stroke-width=".8" transform="rotate(-30 130 105)"/>
+        <ellipse cx="130" cy="105" rx="34" ry="12" fill="none" stroke="rgba(0,160,255,.12)" stroke-width=".8" transform="rotate(50 130 105)"/>
+        <!-- glow particles -->
+        <circle cx="108" cy="68"  r="1.8" fill="rgba(100,200,255,.7)" filter="url(#tb)"/>
+        <circle cx="152" cy="78"  r="1.2" fill="rgba(80,180,255,.6)"  filter="url(#tb)"/>
+        <circle cx="158" cy="130" r="1.5" fill="rgba(60,160,255,.65)" filter="url(#tb)"/>
+        <circle cx="115" cy="148" r="1.0" fill="rgba(120,210,255,.5)" filter="url(#tb)"/>
+        <circle cx="100" cy="88"  r="1.3" fill="rgba(140,220,255,.6)" filter="url(#tb)"/>
+        <circle cx="145" cy="55"  r="1.0" fill="rgba(80,180,255,.5)"  filter="url(#tb)"/>
+        <!-- molecule connectors -->
+        <line x1="108" y1="68"  x2="130" y2="83"  stroke="rgba(0,160,255,.15)" stroke-width=".7"/>
+        <line x1="152" y1="78"  x2="130" y2="83"  stroke="rgba(0,160,255,.12)" stroke-width=".7"/>
+        <line x1="158" y1="130" x2="130" y2="127" stroke="rgba(0,160,255,.15)" stroke-width=".7"/>
+      </g>
+      <!-- specular + border -->
+      <circle cx="100" cy="100" r="96" fill="url(#ishine)"/>
+      <circle cx="100" cy="100" r="96" fill="none" stroke="rgba(0,100,200,.3)"   stroke-width="1"/>
+      <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(255,255,255,.07)" stroke-width=".5"/>
+    </svg>
   </div>
 </div>
 
