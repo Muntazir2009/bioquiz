@@ -293,8 +293,8 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 }
 
 /* Layout */
-.slide-layout{display:grid;grid-template-columns:1fr;gap:16px}
-.slide-layout.has-img{grid-template-columns:1fr 300px}
+.slide-layout{display:grid;grid-template-columns:1fr;gap:20px}
+.slide-layout.has-img{grid-template-columns:1fr;gap:20px}
 
 /* Content card — PS5 style */
 .content-card{
@@ -352,8 +352,8 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 }
 
 /* Image column */
-.img-col{display:flex;flex-direction:column;gap:8px}
-.img-col img{width:100%;object-fit:cover;max-height:240px;border:1px solid var(--border)}
+.img-col{display:flex;flex-direction:column;gap:8px;width:100%}
+.img-col img{width:100%;max-width:560px;height:auto;max-height:420px;object-fit:contain;border:1px solid var(--border);display:block;margin:0 auto;background:var(--dark3)}
 .img-cap{font-family:var(--font);font-size:.38rem;letter-spacing:.08em;font-weight:700;color:rgba(255,255,255,.65);text-align:center;padding-top:4px}
 
 /* Bottom nav */
