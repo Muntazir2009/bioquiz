@@ -155,14 +155,40 @@ resultDiv.innerHTML = `<h2 style="color:var(--accent);margin:0 0 10px">${escapeH
     const res = await fetch(AI_WORKER_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ query })
+      body:    JSON.stringify({ query, stream: true })
     });
 
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    if (!res.ok) throw new Error("HTTP " + res.status);
 
-    aiCache.set(query, data.answer);
-    typewriter(aiTextEl, data.answer, () => appendAIActions(aiBlock, query));
+    // Read SSE stream and render tokens as they arrive
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = "";
+    aiTextEl.textContent = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      // SSE lines look like: data: {"response":"word","p":"..."}
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") break;
+        try {
+          const parsed = JSON.parse(payload);
+          const token = parsed.response || "";
+          fullText += token;
+          aiTextEl.textContent = fullText;
+        } catch(_) {}
+      }
+    }
+
+    if (!fullText) throw new Error("Empty response");
+    aiCache.set(query, fullText);
+    appendAIActions(aiBlock, query);
 
   } catch(err) {
     aiTextEl.innerHTML = `<span style="color:#ff8a8a">AI request failed: ${err.message}</span>`;
