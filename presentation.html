@@ -354,7 +354,7 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 /* Image column */
 .img-col{display:flex;flex-direction:column;gap:8px}
 .img-col img{width:100%;object-fit:cover;max-height:240px;border:1px solid var(--border)}
-.img-cap{font-family:var(--font);font-size:.36rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.22);text-align:center}
+.img-cap{font-family:var(--font);font-size:.38rem;letter-spacing:.08em;font-weight:700;color:rgba(255,255,255,.65);text-align:center;padding-top:4px}
 
 /* Bottom nav */
 .slide-nav{
@@ -915,52 +915,75 @@ async function doGen() {
 
 /* ── WIKIPEDIA IMAGES ── */
 async function getWikiImgs(data) {
+  var usedUrls = new Set(); // track used images to prevent duplicates across slides
+
   async function fetchImg(query) {
-    // Use first 3 words for cleaner search
-    var q = encodeURIComponent(query.split(' ').slice(0, 3).join(' '));
-    // Method A: search-based pageimages
-    try {
-      var ctrl = new AbortController();
-      setTimeout(function() { ctrl.abort(); }, 6000);
-      var r = await fetch(
-        'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q +
-        '&gsrlimit=5&prop=pageimages&pithumbsize=600&format=json&origin=*',
-        { signal: ctrl.signal }
-      );
-      var j = await r.json();
-      var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
-      for (var p of pages) {
-        if (p.thumbnail && p.thumbnail.source) {
-          return { url: p.thumbnail.source, caption: p.title || query };
+    // Try progressively shorter queries to get diverse results
+    var words = query.split(' ').filter(function(w) { return w.length > 2; });
+    var queries = [
+      words.slice(0, 3).join(' '),   // e.g. "plant cell wall"
+      words.slice(0, 2).join(' '),   // e.g. "plant cell"
+      words[0] || query              // e.g. "plant"
+    ];
+
+    for (var qi = 0; qi < queries.length; qi++) {
+      var q = encodeURIComponent(queries[qi]);
+
+      // Method A: search-based pageimages — fetch more results to find unique ones
+      try {
+        var ctrl = new AbortController();
+        setTimeout(function() { ctrl.abort(); }, 6000);
+        var r = await fetch(
+          'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q +
+          '&gsrlimit=8&prop=pageimages&pithumbsize=600&format=json&origin=*',
+          { signal: ctrl.signal }
+        );
+        var j = await r.json();
+        var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
+        // Sort by page ID so results are deterministic
+        pages.sort(function(a, b) { return (a.index || 0) - (b.index || 0); });
+        for (var i = 0; i < pages.length; i++) {
+          var p = pages[i];
+          if (p.thumbnail && p.thumbnail.source && !usedUrls.has(p.thumbnail.source)) {
+            usedUrls.add(p.thumbnail.source);
+            return { url: p.thumbnail.source, caption: p.title || query };
+          }
         }
-      }
-    } catch(e1) {}
-    // Method B: direct title lookup
-    try {
-      var ctrl2 = new AbortController();
-      setTimeout(function() { ctrl2.abort(); }, 6000);
-      var r2 = await fetch(
-        'https://en.wikipedia.org/w/api.php?action=query&titles=' + q +
-        '&prop=pageimages&pithumbsize=600&format=json&origin=*',
-        { signal: ctrl2.signal }
-      );
-      var j2 = await r2.json();
-      var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
-      for (var p2 of pages2) {
-        if (p2.thumbnail && p2.thumbnail.source) {
-          return { url: p2.thumbnail.source, caption: p2.title || query };
+      } catch(e1) {}
+
+      // Method B: direct title lookup
+      try {
+        var ctrl2 = new AbortController();
+        setTimeout(function() { ctrl2.abort(); }, 6000);
+        var r2 = await fetch(
+          'https://en.wikipedia.org/w/api.php?action=query&titles=' + q +
+          '&prop=pageimages&pithumbsize=600&format=json&origin=*',
+          { signal: ctrl2.signal }
+        );
+        var j2 = await r2.json();
+        var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
+        for (var i2 = 0; i2 < pages2.length; i2++) {
+          var p2 = pages2[i2];
+          if (p2.thumbnail && p2.thumbnail.source && !usedUrls.has(p2.thumbnail.source)) {
+            usedUrls.add(p2.thumbnail.source);
+            return { url: p2.thumbnail.source, caption: p2.title || query };
+          }
         }
-      }
-    } catch(e2) {}
+      } catch(e2) {}
+    }
     return null;
   }
 
-  var slides = await Promise.all(data.slides.map(async function(sl) {
-    if (!sl.imageQuery) return sl;
-    var img = await fetchImg(sl.imageQuery);
-    if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
-    return sl;
-  }));
+  // Fetch sequentially so usedUrls is checked in order (parallel would race)
+  var slides = [];
+  for (var i = 0; i < data.slides.length; i++) {
+    var sl = data.slides[i];
+    if (sl.imageQuery) {
+      var img = await fetchImg(sl.imageQuery);
+      if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
+    }
+    slides.push(sl);
+  }
   return { title: data.title, slides: slides };
 }
 
