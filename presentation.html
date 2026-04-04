@@ -3,199 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lesson Slides · BioQuiz</title>
+<title>Presentation · BioQuiz</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --black:#000;
-  --dark:#0a0a0a;
-  --dark2:#111;
-  --dark3:#181818;
-  --dark4:#222;
-  --white:#fff;
-  --off:#e8e8e8;
-  --dim:rgba(255,255,255,.5);
-  --faint:rgba(255,255,255,.2);
-  --ghost:rgba(255,255,255,.07);
-  --border:rgba(255,255,255,.1);
-  --border2:rgba(255,255,255,.25);
-  --accent:#e8e8e8;
-  --font:'Arial Black',Arial,sans-serif;
-  --font-body:Arial,sans-serif;
+  --black:#000;--dark:#0a0a0a;--dark2:#111;--dark3:#181818;--dark4:#222;--dark5:#2a2a2a;
+  --white:#fff;--off:#e8e8e8;--muted:#aaa;--faint:rgba(255,255,255,.18);--ghost:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.22);
+  --font:'Arial Black',Arial,sans-serif;--body:Arial,sans-serif;
 }
-html,body{height:100%;background:var(--black)}
-body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
+html,body{height:100%;background:var(--black);-webkit-font-smoothing:antialiased}
+body{color:var(--white);font-family:var(--body);overflow-x:hidden}
 
-/* ── PAGE SYSTEM ── */
+/* ── PAGES ── */
 .page{display:none;flex-direction:column;min-height:100dvh}
 .page.active{display:flex}
 
 /* ── TOPBAR ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(16px,4vw,52px);height:58px;flex-shrink:0;
+  padding:0 clamp(14px,3.5vw,48px);height:54px;flex-shrink:0;
   background:var(--black);border-bottom:1px solid var(--border);
   position:sticky;top:0;z-index:100;
 }
-.brand{display:flex;align-items:center;gap:11px;text-decoration:none}
-/* PS5-style logo: sharp geometric mark */
-.brand-mark{
-  width:32px;height:32px;position:relative;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-}
-.brand-mark svg{width:32px;height:32px}
-.brand-name{
-  font-family:var(--font);font-size:.72rem;letter-spacing:.28em;color:var(--white);
-  font-weight:900;
-}
-.brand-sep{width:1px;height:16px;background:var(--border)}
-.brand-module{
-  font-family:var(--font-body);font-size:.65rem;letter-spacing:.12em;
-  color:var(--dim);font-weight:bold;
-}
-.tb-right{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand-mark{width:30px;height:30px;flex-shrink:0}
+.brand-mark svg{width:30px;height:30px}
+.brand-name{font-family:var(--font);font-size:.68rem;letter-spacing:.26em;color:var(--white);font-weight:900}
+.brand-sep{width:1px;height:14px;background:var(--border)}
+.brand-module{font-family:var(--body);font-size:.62rem;letter-spacing:.1em;color:var(--muted);font-weight:bold}
+.tb-right{display:flex;align-items:center;gap:7px}
 .tb-btn{
-  display:flex;align-items:center;gap:6px;cursor:pointer;
-  font-family:var(--font);font-size:.52rem;letter-spacing:.14em;font-weight:900;
-  padding:8px 16px;background:none;color:var(--dim);
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:var(--font);font-size:.46rem;letter-spacing:.12em;font-weight:900;
+  padding:7px 14px;background:none;color:var(--muted);
   border:1px solid var(--border);transition:all .15s;
-  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
 }
-.tb-btn:hover{color:var(--white);border-color:var(--border2);background:var(--ghost)}
+.tb-btn:hover{color:var(--white);border-color:var(--border2)}
 .tb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.tb-btn.wh{background:var(--white);color:var(--black);border-color:var(--white);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.tb-btn.wh{background:var(--white);color:var(--black);border-color:var(--white)}
 .tb-btn.wh:hover{background:var(--off)}
 
 /* ══════════════════════════════════
    MENU PAGE
 ══════════════════════════════════ */
 #pg-menu{overflow-y:auto;background:var(--black)}
-
-/* Large geometric bg text */
 .menu-bg-text{
   position:fixed;bottom:-4vw;left:-2vw;z-index:0;pointer-events:none;
-  font-family:var(--font);font-size:min(28vw,340px);font-weight:900;letter-spacing:-.04em;
-  color:rgba(255,255,255,.025);line-height:1;user-select:none;
+  font-family:var(--font);font-size:min(28vw,300px);font-weight:900;
+  color:rgba(255,255,255,.022);line-height:1;user-select:none;
 }
+.menu-wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:clamp(24px,4vh,52px) clamp(14px,4vw,52px) 80px}
 
-.menu-wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:clamp(28px,5vh,60px) clamp(16px,4vw,52px) 80px}
-
-/* Hero */
-.menu-hero{margin-bottom:48px;animation:fadeUp .5s ease both}
+.menu-hero{margin-bottom:40px;animation:fadeUp .5s ease both}
 .hero-tag{
   display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--font);font-size:.48rem;letter-spacing:.4em;font-weight:900;
-  color:var(--black);background:var(--white);padding:5px 12px;
-  margin-bottom:20px;
+  font-family:var(--font);font-size:.46rem;letter-spacing:.38em;font-weight:900;
+  color:var(--black);background:var(--white);padding:5px 12px;margin-bottom:18px;
 }
 .hero-title{
-  font-family:var(--font);font-size:clamp(3rem,8vw,6rem);font-weight:900;
-  line-height:.88;letter-spacing:-.02em;color:var(--white);margin-bottom:14px;
+  font-family:var(--font);font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;
+  line-height:.88;letter-spacing:-.02em;color:var(--white);margin-bottom:12px;
 }
-.hero-title .stroke{
-  -webkit-text-stroke:2px var(--white);color:transparent;
-}
-.hero-sub{font-size:.95rem;color:var(--dim);line-height:1.65;max-width:440px;font-weight:400}
+.hero-title .stroke{-webkit-text-stroke:2px var(--white);color:transparent}
+.hero-sub{font-size:.92rem;color:var(--muted);line-height:1.65;max-width:420px}
 
-/* Sharp divider */
-.sharp-div{
-  height:1px;background:var(--border2);margin:32px 0;
-  position:relative;
-}
-.sharp-div::before{
-  content:'';position:absolute;left:0;top:-1px;width:60px;height:3px;background:var(--white);
-}
+.sharp-div{height:1px;background:var(--border2);margin:28px 0;position:relative}
+.sharp-div::before{content:'';position:absolute;left:0;top:-1px;width:48px;height:3px;background:var(--white)}
 
-/* AI CTA card */
+/* AI CTA */
 .gen-cta{
-  display:flex;align-items:center;gap:18px;
-  padding:22px 26px;cursor:pointer;
-  background:var(--white);border:none;
-  width:100%;text-align:left;margin-bottom:40px;
+  display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;
+  background:var(--white);border:none;width:100%;text-align:left;margin-bottom:36px;
   transition:transform .12s,box-shadow .12s;
   animation:fadeUp .5s ease .1s both;opacity:0;
-  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
 }
-.gen-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,255,255,.12)}
+.gen-cta:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(255,255,255,.1)}
 .gen-cta:active{transform:translateY(0)}
 .cta-ic{
-  width:44px;height:44px;border:2px solid var(--black);flex-shrink:0;
+  width:42px;height:42px;border:2px solid var(--black);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
 }
 .cta-ic svg{width:20px;height:20px;stroke:var(--black);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cta-body{flex:1}
-.cta-title{font-family:var(--font);font-size:.85rem;font-weight:900;letter-spacing:.1em;color:var(--black);line-height:1}
-.cta-sub{font-size:.78rem;color:rgba(0,0,0,.55);margin-top:3px;font-weight:400}
-.cta-arr{font-family:var(--font);font-size:1.2rem;font-weight:900;color:var(--black)}
+.cta-title{font-family:var(--font);font-size:.82rem;font-weight:900;letter-spacing:.08em;color:var(--black)}
+.cta-sub{font-size:.76rem;color:rgba(0,0,0,.5);margin-top:3px}
+.cta-arr{font-family:var(--font);font-size:1.3rem;font-weight:900;color:var(--black)}
 
-/* Section label */
-.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;animation:fadeUp .5s ease .2s both;opacity:0}
-.sec-label{font-family:var(--font);font-size:.46rem;letter-spacing:.3em;font-weight:900;color:var(--dim);white-space:nowrap}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;animation:fadeUp .5s ease .2s both;opacity:0}
+.sec-label{font-family:var(--font);font-size:.44rem;letter-spacing:.28em;font-weight:900;color:rgba(255,255,255,.3);white-space:nowrap}
 .sec-line{flex:1;height:1px;background:var(--border)}
 
 /* Topic grid */
-.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px;animation:fadeUp .5s ease .25s both;opacity:0}
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px;animation:fadeUp .5s ease .25s both;opacity:0}
 .topic-card{
-  background:var(--dark2);
-  padding:20px 20px;cursor:pointer;
-  display:flex;flex-direction:column;gap:7px;
-  border:1px solid transparent;
-  transition:background .15s,border-color .15s;
-  position:relative;
+  background:var(--dark2);padding:18px 20px;cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;
+  border:1px solid transparent;transition:background .15s,border-color .15s;position:relative;
 }
-.topic-card::before{
-  content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--white);
-  transition:height .2s ease;
-}
+.topic-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--white);transition:height .2s}
 .topic-card:hover{background:var(--dark3);border-color:var(--border)}
 .topic-card:hover::before{height:100%}
-.tc-tag{font-family:var(--font);font-size:.38rem;letter-spacing:.2em;font-weight:900;color:var(--faint)}
-.tc-title{font-family:var(--font);font-size:.9rem;font-weight:900;letter-spacing:.03em;color:var(--white);line-height:1.05}
-.tc-desc{font-size:.72rem;color:var(--dim);line-height:1.5;font-weight:400}
-.tc-count{font-family:var(--font);font-size:.37rem;letter-spacing:.12em;font-weight:900;color:rgba(255,255,255,.25);margin-top:2px}
+.tc-tag{font-family:var(--font);font-size:.36rem;letter-spacing:.18em;font-weight:900;color:rgba(255,255,255,.28)}
+.tc-title{font-family:var(--font);font-size:.88rem;font-weight:900;color:var(--white);line-height:1.05}
+.tc-desc{font-size:.72rem;color:var(--muted);line-height:1.5}
+.tc-count{font-family:var(--font);font-size:.36rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.22)}
 
 /* ══════════════════════════════════
-   GENERATOR PAGE
+   GENERATOR PAGE — with Q&A flow
 ══════════════════════════════════ */
 #pg-gen{align-items:center;justify-content:center;padding:24px;overflow-y:auto;background:var(--black)}
-.gen-wrap{width:100%;max-width:480px}
+.gen-wrap{width:100%;max-width:500px}
 .gen-back{
   display:flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;
-  font-family:var(--font);font-size:.48rem;letter-spacing:.18em;font-weight:900;
-  color:var(--dim);margin-bottom:30px;padding:0;transition:color .15s;
+  font-family:var(--font);font-size:.46rem;letter-spacing:.16em;font-weight:900;
+  color:var(--muted);margin-bottom:28px;padding:0;transition:color .15s;
 }
 .gen-back:hover{color:var(--white)}
 .gen-back svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-
-.gen-header{margin-bottom:26px}
 .gen-tag{
-  display:inline-block;font-family:var(--font);font-size:.42rem;letter-spacing:.3em;font-weight:900;
-  color:var(--black);background:var(--white);padding:4px 10px;margin-bottom:12px;
+  display:inline-block;font-family:var(--font);font-size:.42rem;letter-spacing:.28em;
+  font-weight:900;color:var(--black);background:var(--white);padding:4px 10px;margin-bottom:12px;
 }
-.gen-title{font-family:var(--font);font-size:2.2rem;font-weight:900;letter-spacing:-.01em;color:var(--white);margin-bottom:4px;line-height:1}
-.gen-sub{font-size:.8rem;color:var(--dim);font-weight:400}
+.gen-title{font-family:var(--font);font-size:2rem;font-weight:900;color:var(--white);margin-bottom:4px;line-height:1}
+.gen-sub{font-size:.8rem;color:var(--muted);margin-bottom:22px}
 
-/* Form card */
-.gen-form{
-  background:var(--dark2);
-  border:1px solid var(--border);
-  padding:24px;
-}
-.f-label{
-  display:block;font-family:var(--font);font-size:.44rem;letter-spacing:.22em;font-weight:900;
-  color:var(--dim);margin-bottom:7px;
-}
-.f-group{margin-bottom:14px}
-.f-group input,.f-group select{
-  width:100%;padding:11px 14px;
+.gen-form{background:var(--dark2);border:1px solid var(--border);padding:22px}
+.f-label{display:block;font-family:var(--font);font-size:.42rem;letter-spacing:.2em;font-weight:900;color:var(--muted);margin-bottom:6px}
+.f-group{margin-bottom:13px}
+.f-group input,.f-group select,.f-group textarea{
+  width:100%;padding:10px 13px;
   background:var(--black);border:1px solid var(--border);
-  color:var(--white);font-family:Arial,sans-serif;font-size:.9rem;font-weight:700;
-  outline:none;transition:border-color .15s;
+  color:var(--white);font-family:var(--body);font-size:.88rem;font-weight:700;
+  outline:none;transition:border-color .15s;resize:none;
   -webkit-appearance:none;appearance:none;
 }
-.f-group input::placeholder{color:rgba(255,255,255,.2);font-weight:400}
-.f-group input:focus,.f-group select:focus{border-color:var(--border2)}
+.f-group input::placeholder,.f-group textarea::placeholder{color:rgba(255,255,255,.2);font-weight:400}
+.f-group input:focus,.f-group select:focus,.f-group textarea:focus{border-color:var(--border2)}
 .f-group select{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;cursor:pointer;
@@ -203,32 +148,31 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 .f-group select option{background:#111}
 .f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-.src-row{display:flex;gap:2px;margin-bottom:16px}
+/* Q&A step */
+.src-row{display:flex;gap:2px;margin-bottom:14px}
 .src-btn{
-  flex:1;padding:10px 8px;cursor:pointer;
+  flex:1;padding:9px 8px;cursor:pointer;
   border:1px solid var(--border);background:var(--black);
-  font-family:var(--font);font-size:.42rem;letter-spacing:.1em;font-weight:900;
-  color:var(--faint);transition:all .15s;
-  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-family:var(--font);font-size:.4rem;letter-spacing:.08em;font-weight:900;
+  color:var(--muted);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;
 }
 .src-btn:hover{border-color:var(--border2);color:var(--white)}
 .src-btn.on{border-color:var(--white);color:var(--white);background:var(--dark3)}
-.src-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.src-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 .go-btn{
-  width:100%;padding:14px;cursor:pointer;
+  width:100%;padding:13px;cursor:pointer;
   background:var(--white);border:none;color:var(--black);
-  font-family:var(--font);font-size:.7rem;font-weight:900;letter-spacing:.18em;
+  font-family:var(--font);font-size:.68rem;font-weight:900;letter-spacing:.16em;
   transition:opacity .15s,transform .12s;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
 }
 .go-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
-.go-btn:disabled{opacity:.25;cursor:not-allowed}
+.go-btn:disabled{opacity:.22;cursor:not-allowed}
 
 .status{
-  margin-top:10px;padding:11px 14px;
-  background:var(--dark3);border-left:3px solid var(--white);
-  font-family:var(--font);font-size:.48rem;letter-spacing:.08em;font-weight:900;color:var(--dim);
+  margin-top:10px;padding:11px 14px;background:var(--dark3);border-left:3px solid var(--white);
+  font-family:var(--font);font-size:.46rem;letter-spacing:.06em;font-weight:900;color:var(--muted);
   display:none;align-items:center;gap:9px;
 }
 .status.show{display:flex}
@@ -242,273 +186,194 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 ══════════════════════════════════ */
 #pg-slides{overflow:hidden;background:var(--dark)}
 .slides-bar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:0 clamp(12px,3vw,36px);height:52px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:0 clamp(12px,3vw,36px);height:50px;flex-shrink:0;
   background:var(--black);border-bottom:1px solid var(--border);
 }
 .sb-btn{
   display:flex;align-items:center;gap:5px;cursor:pointer;
-  font-family:var(--font);font-size:.44rem;letter-spacing:.14em;font-weight:900;
-  background:none;border:1px solid var(--border);
-  padding:6px 13px;color:var(--dim);transition:all .15s;
+  font-family:var(--font);font-size:.42rem;letter-spacing:.12em;font-weight:900;
+  background:none;border:1px solid var(--border);padding:5px 11px;color:var(--muted);transition:all .15s;
 }
 .sb-btn:hover{color:var(--white);border-color:var(--border2)}
 .sb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .sb-topic{
-  font-family:var(--font);font-size:.58rem;font-weight:900;letter-spacing:.1em;
-  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;
+  font-family:var(--font);font-size:.55rem;font-weight:900;letter-spacing:.08em;
+  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 10px;
 }
-.sb-counter{
-  font-family:var(--font);font-size:.46rem;letter-spacing:.1em;font-weight:900;
-  color:var(--black);background:var(--white);padding:4px 11px;
-  white-space:nowrap;
-}
+.sb-counter{font-family:var(--font);font-size:.44rem;letter-spacing:.1em;font-weight:900;color:var(--black);background:var(--white);padding:4px 10px;white-space:nowrap}
 
-/* Progress */
 .prog{height:3px;background:var(--dark4);flex-shrink:0}
 .prog-fill{height:100%;background:var(--white);transition:width .3s ease}
 
 /* Stage */
 .stage{flex:1;overflow:hidden;position:relative;display:flex}
-.slide{
-  position:absolute;inset:0;display:none;overflow-y:auto;
-  padding:clamp(24px,4vw,52px) clamp(16px,4vw,60px);
-}
-.slide.active{display:block;animation:slideIn .3s cubic-bezier(.22,1,.36,1) both}
-@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+.slide{position:absolute;inset:0;display:none;overflow-y:auto;padding:clamp(20px,3vw,40px) clamp(14px,3.5vw,52px)}
+.slide.active{display:block;animation:slideIn .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
-.slide-inner{max-width:820px;margin:0 auto}
+.slide-inner{max-width:900px;margin:0 auto}
 .slide-num{
-  font-family:var(--font);font-size:.4rem;letter-spacing:.32em;font-weight:900;
-  color:rgba(255,255,255,.25);margin-bottom:12px;
-  display:flex;align-items:center;gap:10px;
+  font-family:var(--font);font-size:.38rem;letter-spacing:.3em;font-weight:900;
+  color:rgba(255,255,255,.22);margin-bottom:10px;display:flex;align-items:center;gap:9px;
 }
-.slide-num::after{content:'';flex:1;max-width:48px;height:1px;background:var(--border)}
-
+.slide-num::after{content:'';width:36px;height:1px;background:var(--border)}
 .slide-heading{
-  font-family:var(--font);
-  font-size:clamp(1.6rem,4vw,2.6rem);
-  font-weight:900;letter-spacing:-.01em;
-  color:var(--white);line-height:.95;margin-bottom:24px;
+  font-family:var(--font);font-size:clamp(1.4rem,3.5vw,2.2rem);font-weight:900;
+  color:var(--white);line-height:.95;margin-bottom:20px;letter-spacing:-.01em;
 }
 
-/* Layout */
-.slide-layout{display:grid;grid-template-columns:1fr;gap:20px}
-.slide-layout.has-img{grid-template-columns:1fr;gap:20px}
+/* Slide layout: content left, diagram right */
+.slide-layout{display:grid;grid-template-columns:1fr;gap:18px}
+.slide-layout.has-diagram{grid-template-columns:1fr 340px;align-items:start}
+.slide-layout.has-img{grid-template-columns:1fr;gap:18px}
 
-/* Content card — PS5 style */
+/* Content card */
 .content-card{
-  background:var(--dark2);
-  border:1px solid var(--border);
-  border-left:3px solid var(--white);
-  padding:24px 26px;
-  position:relative;
-  cursor:pointer;
-  user-select:none;
-  transition:border-color .2s;
+  background:var(--dark2);border:1px solid var(--border);border-left:3px solid var(--white);
+  padding:22px 24px;position:relative;cursor:pointer;user-select:none;transition:border-color .2s;
 }
 .content-card:hover{border-color:var(--border2);border-left-color:var(--white)}
+.content-card.blurred .content-body{filter:blur(7px);pointer-events:none}
+.content-card.blurred .kf-row{filter:blur(7px)}
 
-/* BLUR STATE — applied to ALL slides by default, toggled on click */
-.content-card.blurred .content-body{
-  filter:blur(7px);
-  pointer-events:none;
-}
-.content-card.blurred .kf-row{
-  filter:blur(7px);
-}
-
-/* Reveal overlay badge */
 .reveal-badge{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   pointer-events:none;
 }
 .reveal-badge-inner{
-  display:flex;align-items:center;gap:10px;
-  background:var(--black);border:1px solid var(--border2);padding:10px 18px;
+  display:flex;align-items:center;gap:10px;background:var(--black);border:1px solid var(--border2);padding:10px 18px;
 }
-.reveal-badge-inner svg{width:18px;height:18px;stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.reveal-badge-inner span{font-family:var(--font);font-size:.5rem;letter-spacing:.22em;font-weight:900;color:var(--white)}
+.reveal-badge-inner svg{width:16px;height:16px;stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.reveal-badge-inner span{font-family:var(--font);font-size:.48rem;letter-spacing:.2em;font-weight:900;color:var(--white)}
 
-/* Content body */
-.content-body{
-  font-family:Arial,sans-serif;
-  font-size:clamp(.88rem,1.5vw,1.02rem);
-  font-weight:400;
-  line-height:1.78;
-  color:var(--off);
-  transition:filter .3s;
-}
+.content-body{font-family:var(--body);font-size:clamp(.88rem,1.5vw,1rem);line-height:1.78;color:var(--off);transition:filter .3s}
 .content-body b{color:var(--white);font-weight:700}
 .content-body ul,.content-body ol{padding-left:1.4em;margin:8px 0}
 .content-body li{margin-bottom:5px}
 
-/* Key facts */
-.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);transition:filter .3s}
-.kf{
-  font-family:var(--font);font-size:.4rem;letter-spacing:.1em;font-weight:900;
-  padding:4px 10px;background:var(--dark4);border:1px solid var(--border);color:var(--off);
-}
+.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border);transition:filter .3s}
+.kf{font-family:var(--font);font-size:.38rem;letter-spacing:.08em;font-weight:900;padding:4px 10px;background:var(--dark4);border:1px solid var(--border);color:var(--off)}
 
-/* Image column */
-.img-col{display:flex;flex-direction:column;gap:8px;width:100%}
-.img-col img{width:100%;max-width:560px;height:auto;max-height:420px;object-fit:contain;border:1px solid var(--border);display:block;margin:0 auto;background:var(--dark3)}
-.img-cap{font-family:var(--font);font-size:.38rem;letter-spacing:.08em;font-weight:700;color:rgba(255,255,255,.65);text-align:center;padding-top:4px}
+/* Diagram panel */
+.diagram-panel{
+  background:var(--dark2);border:1px solid var(--border);padding:16px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  position:sticky;top:20px;
+}
+.diagram-panel svg{width:100%;height:auto;display:block}
+.diagram-label{font-family:var(--font);font-size:.38rem;letter-spacing:.12em;font-weight:900;color:var(--muted);text-align:center}
+
+/* Image panel */
+.img-panel{background:var(--dark2);border:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:8px}
+.img-panel img{width:100%;max-height:360px;object-fit:contain;display:block;margin:0 auto;background:var(--dark3)}
+.img-cap{font-family:var(--font);font-size:.38rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.55);text-align:center;padding-top:4px}
 
 /* Bottom nav */
 .slide-nav{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:12px clamp(12px,3vw,36px);
-  border-top:1px solid var(--border);background:var(--black);flex-shrink:0;
+  padding:11px clamp(12px,3vw,36px);border-top:1px solid var(--border);
+  background:var(--black);flex-shrink:0;
 }
 .nav-btn{
-  display:flex;align-items:center;gap:7px;
-  font-family:var(--font);font-size:.5rem;letter-spacing:.14em;font-weight:900;
-  padding:10px 20px;cursor:pointer;transition:all .15s;
-  border:1px solid var(--border);background:none;color:var(--dim);
+  display:flex;align-items:center;gap:6px;font-family:var(--font);font-size:.48rem;
+  letter-spacing:.12em;font-weight:900;padding:9px 18px;cursor:pointer;
+  border:1px solid var(--border);background:none;color:var(--muted);transition:all .15s;
 }
 .nav-btn:hover:not(:disabled){color:var(--white);border-color:var(--border2)}
 .nav-btn:disabled{opacity:.2;cursor:not-allowed}
-.nav-btn.pri{background:var(--white);color:var(--black);border-color:var(--white);
-  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.nav-btn.pri{background:var(--white);color:var(--black);border-color:var(--white);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
 .nav-btn.pri:hover:not(:disabled){background:var(--off)}
 .nav-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
-
-/* Dots */
-.dot-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;max-width:200px}
+.dot-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;max-width:180px}
 .dot{width:5px;height:5px;background:var(--dark4);border:1px solid var(--border);cursor:pointer;padding:0;transition:all .2s}
-.dot.on{background:var(--white);border-color:var(--white);width:20px}
+.dot.on{background:var(--white);border-color:var(--white);width:18px}
 
 /* ══════════════════════════════════
    OVERVIEW OVERLAY
 ══════════════════════════════════ */
-.ov-overlay{
-  position:fixed;inset:0;z-index:200;
-  background:rgba(0,0,0,.96);
-  display:none;flex-direction:column;
-}
+.ov-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.96);display:none;flex-direction:column}
 .ov-overlay.open{display:flex;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .ov-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(16px,4vw,52px);height:56px;
-  border-bottom:1px solid var(--border);flex-shrink:0;
+  padding:0 clamp(14px,4vw,48px);height:54px;border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.ov-title{font-family:var(--font);font-size:.6rem;font-weight:900;letter-spacing:.28em;color:var(--white)}
+.ov-title{font-family:var(--font);font-size:.58rem;font-weight:900;letter-spacing:.24em;color:var(--white)}
 .ov-close{
-  display:flex;align-items:center;gap:6px;cursor:pointer;
-  font-family:var(--font);font-size:.46rem;letter-spacing:.14em;font-weight:900;
-  background:none;border:1px solid var(--border);
-  padding:6px 13px;color:var(--dim);transition:all .15s;
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-family:var(--font);font-size:.44rem;letter-spacing:.12em;font-weight:900;
+  background:none;border:1px solid var(--border);padding:5px 12px;color:var(--muted);transition:all .15s;
 }
 .ov-close:hover{color:var(--white);border-color:var(--border2)}
 .ov-close svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.ov-grid{
-  flex:1;overflow-y:auto;padding:20px clamp(16px,4vw,52px);
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;align-content:start;
-}
-.ov-card{
-  background:var(--dark2);border:1px solid transparent;
-  padding:14px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;
-}
+.ov-grid{flex:1;overflow-y:auto;padding:18px clamp(14px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;align-content:start}
+.ov-card{background:var(--dark2);border:1px solid transparent;padding:14px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
 .ov-card:hover,.ov-card.cur{background:var(--dark3);border-color:var(--border);border-left-color:var(--white)}
-.ov-num{font-family:var(--font);font-size:.37rem;letter-spacing:.18em;font-weight:900;color:rgba(255,255,255,.25);margin-bottom:6px}
-.ov-heading{font-family:var(--font);font-size:.65rem;font-weight:900;color:var(--white);line-height:1.2}
+.ov-num{font-family:var(--font);font-size:.36rem;letter-spacing:.16em;font-weight:900;color:rgba(255,255,255,.25);margin-bottom:5px}
+.ov-heading{font-family:var(--font);font-size:.62rem;font-weight:900;color:var(--white);line-height:1.2}
 
-/* ── ANIMATIONS ── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── RESPONSIVE ── */
-@media(max-width:700px){
-  .slide-layout.has-img{grid-template-columns:1fr}
-  .img-col{max-height:180px;overflow:hidden}
-  .img-col img{max-height:180px}
+@media(max-width:680px){
+  .slide-layout.has-diagram{grid-template-columns:1fr}
+  .diagram-panel{position:static}
   .f-row{grid-template-columns:1fr}
-  .hero-title{font-size:clamp(2.2rem,12vw,4rem)}
 }
 @media(max-width:480px){
-  .dot-row{max-width:140px}
-  .nav-btn{padding:8px 14px;font-size:.44rem}
+  .dot-row{max-width:130px}
+  .nav-btn{padding:8px 12px;font-size:.42rem}
+  .annot-bar{height:auto;padding:8px 12px}
 }
 </style>
 </head>
 <body>
 
-<!-- SVG SPRITE -->
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <!-- BioQuiz logo mark: stylised 'B' with cell motif -->
-  <symbol id="i-logo" viewBox="0 0 32 32">
-    <rect x="2" y="2" width="28" height="28" fill="white"/>
-    <!-- Stylised B letterform -->
-    <path d="M9 7h8c2.5 0 4.5 1.8 4.5 4s-2 4-4.5 4H9V7z" fill="black"/>
-    <path d="M9 15h9c2.8 0 5 2 5 4.5S20.8 24 18 24H9V15z" fill="black"/>
-    <rect x="9" y="7" width="2" height="17" fill="black"/>
-    <!-- small circle detail -->
-    <circle cx="23" cy="9" r="1.5" fill="black"/>
+  <symbol id="i-logo" viewBox="0 0 30 30">
+    <rect x="0" y="0" width="30" height="30" fill="white"/>
+    <path d="M8 6h9c2.5 0 4 1.6 4 3.8s-1.5 3.7-4 3.7H8V6z" fill="black"/>
+    <path d="M8 14.5h9.5c2.8 0 4.5 1.8 4.5 4.2S20.3 23 17.5 23H8v-8.5z" fill="black"/>
+    <rect x="8" y="6" width="2" height="17" fill="black"/>
   </symbol>
   <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
-  <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
-    <path d="M8 12h8M12 8v8"/>
-    <circle cx="12" cy="12" r="2" fill="currentColor"/>
-  </symbol>
-  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-  </symbol>
-  <symbol id="i-wiki" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>
-  </symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+  <symbol id="i-wiki" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
-  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-  </symbol>
   <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
-  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
 </svg>
 
-<!-- ══════════════════════════════════
-     MENU PAGE
-══════════════════════════════════ -->
+<!-- ══════════════════════════════════ MENU PAGE ══════════════════════════════════ -->
 <div class="page active" id="pg-menu">
   <div class="menu-bg-text">BIO</div>
-
   <div class="topbar">
     <a href="index.html" class="brand">
       <div class="brand-mark"><svg><use href="#i-logo"/></svg></div>
       <span class="brand-name">BIOQUIZ</span>
       <div class="brand-sep"></div>
-      <span class="brand-module">SLIDES</span>
+      <span class="brand-module">PRESENTATION</span>
     </a>
     <div class="tb-right">
       <a href="index.html" class="tb-btn"><svg><use href="#i-back"/></svg> HOME</a>
     </div>
   </div>
-
   <div class="menu-wrap">
     <div class="menu-hero">
       <div class="hero-tag">MODULE 005</div>
-      <div class="hero-title">
-        LESSON<br>
-        <span class="stroke">SLIDES</span>
-      </div>
-      <p class="hero-sub">Pick a pre-built topic or generate custom slides with AI. Click any slide to reveal its content.</p>
+      <div class="hero-title">PRESEN<span class="stroke">TATION</span></div>
+      <p class="hero-sub">Pick a pre-built topic with detailed diagrams, or generate a custom deck using AI.</p>
     </div>
-
+    <div class="sharp-div"></div>
     <button class="gen-cta" onclick="showPage('gen')">
       <div class="cta-ic"><svg><use href="#i-ai"/></svg></div>
       <div class="cta-body">
         <div class="cta-title">AI SLIDE GENERATOR</div>
-        <div class="cta-sub">Enter any biology topic — Cloudflare AI builds your deck instantly</div>
+        <div class="cta-sub">AI asks you questions first, then builds a precise deck on your topic</div>
       </div>
       <div class="cta-arr">›</div>
     </button>
-
     <div class="sec-head">
       <div class="sec-label">PRE-BUILT TOPICS</div>
       <div class="sec-line"></div>
@@ -517,9 +382,7 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
   </div>
 </div>
 
-<!-- ══════════════════════════════════
-     GENERATOR PAGE
-══════════════════════════════════ -->
+<!-- ══════════════════════════════════ GENERATOR PAGE ══════════════════════════════════ -->
 <div class="page" id="pg-gen">
   <div class="topbar">
     <a href="index.html" class="brand">
@@ -532,19 +395,16 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
       <button class="tb-btn" onclick="showPage('menu')"><svg><use href="#i-back"/></svg> TOPICS</button>
     </div>
   </div>
-
   <div style="display:flex;align-items:center;justify-content:center;flex:1;padding:24px;overflow-y:auto">
     <div class="gen-wrap">
-      <div class="gen-header">
-        <div class="gen-tag">AI POWERED</div>
-        <div class="gen-title">GENERATE<br>SLIDES</div>
-        <div class="gen-sub">Cloudflare AI creates a biology lesson deck from any topic you enter</div>
-      </div>
 
+      <div class="gen-tag">AI POWERED</div>
+      <div class="gen-title">GENERATE SLIDES</div>
+      <div class="gen-sub">Cloudflare AI builds a precise biology lesson deck</div>
       <div class="gen-form">
         <div class="f-group">
           <label class="f-label">BIOLOGY TOPIC</label>
-          <input type="text" id="topicIn" placeholder="e.g. Mitochondria, DNA Replication, Osmosis…" maxlength="80" autocomplete="off">
+          <input type="text" id="topicIn" placeholder="e.g. Mitochondria, DNA Replication, Osmosis…" maxlength="100" autocomplete="off">
         </div>
         <div class="f-row">
           <div class="f-group">
@@ -569,195 +429,777 @@ body{color:var(--white);font-family:var(--font-body);overflow-x:hidden}
         <div class="f-group">
           <label class="f-label">IMAGES</label>
           <div class="src-row">
-            <button class="src-btn on" id="srcNone" onclick="setSrc('none')">
-              <svg><use href="#i-eye-off"/></svg> NONE
-            </button>
-            <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')">
-              <svg><use href="#i-wiki"/></svg> WIKIPEDIA
-            </button>
+            <button class="src-btn on" id="srcNone" onclick="setSrc('none')"><svg><use href="#i-eye-off"/></svg> NONE</button>
+            <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')"><svg><use href="#i-wiki"/></svg> WIKIPEDIA</button>
           </div>
         </div>
-
-        <button class="go-btn" id="goBtn" onclick="doGen()">GENERATE SLIDES</button>
-        <div class="status" id="stBox">
-          <div class="sdot"></div>
-          <span id="stTxt"></span>
-        </div>
+        <button class="go-btn" id="generateBtn" onclick="doGen()">GENERATE SLIDES</button>
+        <div class="status" id="stBox"><div class="sdot"></div><span id="stTxt"></span></div>
       </div>
+          <div class="f-row">
+            <div class="f-group">
+              <label class="f-label">SLIDE COUNT</label>
+              <select id="slideN">
+                <option value="3">3 slides</option>
+                <option value="4">4 slides</option>
+                <option value="5" selected>5 slides</option>
+                <option value="6">6 slides</option>
+                <option value="7">7 slides</option>
+              </select>
+            </div>
+            <div class="f-group">
+              <label class="f-label">DETAIL LEVEL</label>
+              <select id="detailN">
+                <option value="concise">Concise</option>
+                <option value="standard" selected>Standard</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+          </div>
+          <div class="f-group">
+            <label class="f-label">IMAGES</label>
+            <div class="src-row">
+              <button class="src-btn on" id="srcNone" onclick="setSrc('none')"><svg><use href="#i-eye-off"/></svg> NONE</button>
+              <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')"><svg><use href="#i-wiki"/></svg> WIKIPEDIA</button>
+            </div>
+          </div>
+          <button class="go-btn" id="generateBtn" onclick="doGen()">GENERATE SLIDES</button>
+          <div class="status" id="stBox"><div class="sdot"></div><span id="stTxt"></span></div>
+        </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════
-     SLIDES PAGE
-══════════════════════════════════ -->
+<!-- ══════════════════════════════════ SLIDES PAGE ══════════════════════════════════ -->
 <div class="page" id="pg-slides">
   <div class="slides-bar">
-    <button class="sb-btn" onclick="goBack()">
-      <svg><use href="#i-back"/></svg> BACK
-    </button>
+    <button class="sb-btn" onclick="goBack()"><svg><use href="#i-back"/></svg> BACK</button>
     <div class="sb-topic" id="deckTitle"></div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:center;gap:7px">
       <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
-      <button class="sb-btn" onclick="openOv()">
-        <svg><use href="#i-grid"/></svg> ALL
+      <button class="sb-btn" onclick="openOv()"><svg><use href="#i-grid"/></svg> ALL</button>
+      <button class="sb-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen (F)">
+        <svg id="fsIcon" viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        FS
       </button>
     </div>
   </div>
   <div class="prog"><div class="prog-fill" id="progFill"></div></div>
-
-  <!-- Hint strip -->
-  <div style="background:var(--dark2);border-bottom:1px solid var(--border);padding:7px clamp(16px,4vw,60px);
-    font-family:var(--font);font-size:.38rem;letter-spacing:.16em;font-weight:900;color:rgba(255,255,255,.28);
-    display:flex;align-items:center;gap:10px;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-    CLICK ANY SLIDE TO REVEAL · PRESS R TO TOGGLE CURRENT · ARROW KEYS TO NAVIGATE
-  </div>
-
   <div class="stage" id="stage"></div>
   <div class="slide-nav">
-    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">
-      <svg><use href="#i-back"/></svg> PREV
-    </button>
+    <button class="nav-btn" id="prevBtn" onclick="nav(-1)"><svg><use href="#i-back"/></svg> PREV</button>
     <div class="dot-row" id="dotRow"></div>
-    <button class="nav-btn pri" id="nextBtn" onclick="nav(1)">
+    <button class="nav-btn pri" id="nextBtn" onclick="navNext()">
       NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
     </button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════
-     OVERVIEW OVERLAY
-══════════════════════════════════ -->
+<!-- ══════════════════════════════════ OVERVIEW OVERLAY ══════════════════════════════════ -->
 <div class="ov-overlay" id="ovOverlay">
   <div class="ov-head">
     <div class="ov-title" id="ovTitle">OVERVIEW</div>
-    <button class="ov-close" onclick="closeOv()">
-      <svg><use href="#i-close"/></svg> CLOSE
-    </button>
+    <button class="ov-close" onclick="closeOv()"><svg><use href="#i-close"/></svg> CLOSE</button>
   </div>
   <div class="ov-grid" id="ovGrid"></div>
 </div>
 
 <script>
-/* ── TOPICS DATA ── */
+/* ══════════════════════════════════
+   SVG DIAGRAMS
+══════════════════════════════════ */
+const DIAGRAMS = {
+  'cell-wall-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="10" width="240" height="180" rx="4" fill="#1a1a1a" stroke="#444" stroke-width="1"/>
+    <!-- Cell wall layers -->
+    <rect x="20" y="20" width="220" height="160" rx="2" fill="none" stroke="#888" stroke-width="8" opacity=".5"/>
+    <rect x="36" y="36" width="188" height="128" rx="2" fill="none" stroke="#bbb" stroke-width="5" opacity=".7"/>
+    <rect x="48" y="48" width="164" height="104" rx="2" fill="#222" stroke="#fff" stroke-width="2"/>
+    <!-- Plasma membrane -->
+    <rect x="58" y="58" width="144" height="84" rx="20" fill="#1a1a1a" stroke="#888" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <!-- Nucleus -->
+    <ellipse cx="130" cy="100" rx="28" ry="22" fill="#2a2a2a" stroke="#666" stroke-width="1.5"/>
+    <ellipse cx="130" cy="100" rx="14" ry="11" fill="#333" stroke="#888" stroke-width="1"/>
+    <!-- Labels -->
+    <text x="130" y="16" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELL WALL LAYERS</text>
+    <line x1="24" y1="100" x2="50" y2="100" stroke="#888" stroke-width=".8"/>
+    <text x="4" y="88" fill="#888" font-size="5.5" font-family="Arial">Secondary</text>
+    <text x="4" y="95" fill="#888" font-size="5.5" font-family="Arial">Wall</text>
+    <line x1="38" y1="130" x2="56" y2="130" stroke="#bbb" stroke-width=".8"/>
+    <text x="4" y="133" fill="#bbb" font-size="5.5" font-family="Arial">Primary</text>
+    <text x="4" y="140" fill="#bbb" font-size="5.5" font-family="Arial">Wall</text>
+    <line x1="50" y1="155" x2="64" y2="155" stroke="#fff" stroke-width=".8"/>
+    <text x="4" y="158" fill="#fff" font-size="5.5" font-family="Arial">Plasma</text>
+    <text x="4" y="165" fill="#fff" font-size="5.5" font-family="Arial">Membrane</text>
+    <text x="130" y="104" text-anchor="middle" fill="#666" font-size="6" font-family="Arial">NUCLEUS</text>
+  </svg>`,
+
+  'cell-wall-composition': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="16" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELLULOSE MICROFIBRILS</text>
+    <!-- Horizontal microfibrils -->
+    ${[30,50,70,90,110,130,150].map((y,i) => 
+      `<line x1="20" y1="${y}" x2="240" y2="${y}" stroke="${i%2===0?'#fff':'#888'}" stroke-width="${i%2===0?2:1.2}" opacity="${i%2===0?1:.7}"/>`
+    ).join('')}
+    <!-- Cross-linking -->
+    ${[40,70,100,130,160,190,220].map(x => 
+      `<line x1="${x}" y1="25" x2="${x}" y2="155" stroke="#555" stroke-width=".8" stroke-dasharray="3,2"/>`
+    ).join('')}
+    <!-- Bar chart: composition -->
+    <text x="130" y="172" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">COMPOSITION %</text>
+    <rect x="30" y="158" width="40" height="10" fill="#fff"/><text x="50" y="167" text-anchor="middle" fill="#000" font-size="5" font-family="Arial Black">CELLULOSE 45%</text>
+    <rect x="90" y="161" width="30" height="7" fill="#888"/><text x="105" y="167" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">HEMI 25%</text>
+    <rect x="138" y="163" width="22" height="5" fill="#555"/><text x="149" y="167" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">PECTIN</text>
+    <rect x="175" y="163" width="18" height="5" fill="#333" stroke="#888" stroke-width=".5"/><text x="184" y="167" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">LIGNIN</text>
+  </svg>`,
+
+  'cell-wall-layers': `<svg viewBox="0 0 260 210" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="210" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">THREE LAYERS</text>
+    <!-- Layer blocks -->
+    <rect x="20" y="22" width="220" height="44" fill="#1a1a1a" stroke="#444" stroke-width="1"/>
+    <rect x="20" y="76" width="220" height="44" fill="#222" stroke="#666" stroke-width="1"/>
+    <rect x="20" y="130" width="220" height="44" fill="#2a2a2a" stroke="#fff" stroke-width="1.5"/>
+    <!-- Layer labels -->
+    <text x="130" y="40" text-anchor="middle" fill="#888" font-size="7" font-family="Arial Black">MIDDLE LAMELLA</text>
+    <text x="130" y="52" text-anchor="middle" fill="#666" font-size="6" font-family="Arial">Pectin — cements adjacent cells</text>
+    <text x="130" y="94" text-anchor="middle" fill="#bbb" font-size="7" font-family="Arial Black">PRIMARY CELL WALL</text>
+    <text x="130" y="106" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Cellulose — thin, elastic, allows growth</text>
+    <text x="130" y="148" text-anchor="middle" fill="#fff" font-size="7" font-family="Arial Black">SECONDARY CELL WALL</text>
+    <text x="130" y="160" text-anchor="middle" fill="#bbb" font-size="6" font-family="Arial">Lignin — thick, rigid, mature cells</text>
+    <!-- Arrow between cells -->
+    <text x="130" y="190" text-anchor="middle" fill="#444" font-size="6" font-family="Arial">◄ CELL A ──────── CELL B ►</text>
+  </svg>`,
+
+  'cell-wall-functions': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELL WALL FUNCTIONS</text>
+    <!-- Spider/radar chart style -->
+    <circle cx="130" cy="105" r="70" fill="none" stroke="#222" stroke-width="1"/>
+    <circle cx="130" cy="105" r="50" fill="none" stroke="#222" stroke-width="1"/>
+    <circle cx="130" cy="105" r="30" fill="none" stroke="#222" stroke-width="1"/>
+    <!-- Axes -->
+    <line x1="130" y1="35" x2="130" y2="175" stroke="#333" stroke-width="1"/>
+    <line x1="60" y1="105" x2="200" y2="105" stroke="#333" stroke-width="1"/>
+    <line x1="80" y1="55" x2="180" y2="155" stroke="#333" stroke-width="1"/>
+    <line x1="80" y1="155" x2="180" y2="55" stroke="#333" stroke-width="1"/>
+    <!-- Labels -->
+    <text x="130" y="30" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">SHAPE</text>
+    <text x="130" y="184" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">SUPPORT</text>
+    <text x="58" y="108" text-anchor="end" fill="#fff" font-size="6.5" font-family="Arial Black">OSMOSIS</text>
+    <text x="202" y="108" fill="#fff" font-size="6.5" font-family="Arial Black">PERMEABILITY</text>
+    <text x="78" y="53" text-anchor="middle" fill="#bbb" font-size="5.5" font-family="Arial Black">PROTECTION</text>
+    <text x="182" y="53" text-anchor="middle" fill="#bbb" font-size="5.5" font-family="Arial Black">RIGIDITY</text>
+    <!-- Data polygon -->
+    <polygon points="130,45 190,85 175,155 85,155 70,85" fill="rgba(255,255,255,.08)" stroke="#fff" stroke-width="1.5"/>
+  </svg>`,
+
+  'photo-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PHOTOSYNTHESIS OVERVIEW</text>
+    <!-- Sun -->
+    <circle cx="40" cy="40" r="18" fill="#ffcc00" opacity=".9"/>
+    <text x="40" y="44" text-anchor="middle" fill="#111" font-size="7" font-family="Arial Black">SUN</text>
+    <!-- Arrows: inputs -->
+    <path d="M58 40 L90 70" stroke="#ffcc00" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+    <text x="62" y="52" fill="#ffcc00" font-size="5.5" font-family="Arial">Light</text>
+    <!-- Water arrow -->
+    <path d="M40 160 L90 130" stroke="#44aaff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+    <text x="30" y="160" fill="#44aaff" font-size="5.5" font-family="Arial">H₂O</text>
+    <!-- CO2 arrow -->
+    <path d="M220 80 L175 95" stroke="#888" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+    <text x="222" y="83" fill="#888" font-size="5.5" font-family="Arial">CO₂</text>
+    <!-- Chloroplast -->
+    <ellipse cx="130" cy="105" rx="48" ry="32" fill="#1a2e1a" stroke="#4a8" stroke-width="2"/>
+    <ellipse cx="125" cy="100" rx="28" ry="18" fill="#224422" stroke="#4a8" stroke-width="1"/>
+    <text x="130" y="103" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">CHLORO-</text>
+    <text x="130" y="112" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">PLAST</text>
+    <!-- Outputs -->
+    <path d="M170 85 L210 55" stroke="#44ff88" stroke-width="2" fill="none"/>
+    <text x="212" y="55" fill="#44ff88" font-size="5.5" font-family="Arial">O₂</text>
+    <path d="M170 120 L210 145" stroke="#fff" stroke-width="2" fill="none"/>
+    <text x="212" y="148" fill="#fff" font-size="5.5" font-family="Arial">Glucose</text>
+    <!-- Arrow marker -->
+    <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#888"/></marker></defs>
+    <text x="130" y="190" text-anchor="middle" fill="#555" font-size="6" font-family="Arial">6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</text>
+  </svg>`,
+
+  'photo-equation': `<svg viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="180" fill="#111"/>
+    <text x="130" y="18" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">THE EQUATION</text>
+    <!-- Equation boxes -->
+    <rect x="10" y="30" width="60" height="40" fill="#1a1a2e" stroke="#44aaff" stroke-width="1.5"/>
+    <text x="40" y="48" text-anchor="middle" fill="#44aaff" font-size="9" font-family="Arial Black">6CO₂</text>
+    <text x="40" y="62" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Carbon dioxide</text>
+    <text x="76" y="53" fill="#fff" font-size="14" font-family="Arial Black">+</text>
+    <rect x="88" y="30" width="60" height="40" fill="#1a2030" stroke="#44aaff" stroke-width="1.5"/>
+    <text x="118" y="48" text-anchor="middle" fill="#44aaff" font-size="9" font-family="Arial Black">6H₂O</text>
+    <text x="118" y="62" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Water</text>
+    <text x="154" y="53" fill="#fff" font-size="14" font-family="Arial Black">+</text>
+    <rect x="166" y="30" width="60" height="40" fill="#2e2a10" stroke="#ffcc00" stroke-width="1.5"/>
+    <text x="196" y="48" text-anchor="middle" fill="#ffcc00" font-size="8" font-family="Arial Black">LIGHT</text>
+    <text x="196" y="62" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Solar energy</text>
+    <!-- Arrow -->
+    <text x="130" y="90" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial">↓</text>
+    <!-- Products -->
+    <rect x="30" y="100" width="80" height="40" fill="#1a301a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="70" y="118" text-anchor="middle" fill="#44ff88" font-size="9" font-family="Arial Black">C₆H₁₂O₆</text>
+    <text x="70" y="132" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Glucose (stored energy)</text>
+    <text x="116" y="123" fill="#fff" font-size="14" font-family="Arial Black">+</text>
+    <rect x="130" y="100" width="70" height="40" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="165" y="118" text-anchor="middle" fill="#44ff88" font-size="9" font-family="Arial Black">6O₂</text>
+    <text x="165" y="132" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Oxygen released</text>
+    <!-- Chlorophyll note -->
+    <text x="130" y="165" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Chlorophyll absorbs light — green pigment in thylakoids</text>
+  </svg>`,
+
+  'photo-light': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">LIGHT-DEPENDENT REACTIONS</text>
+    <!-- Thylakoid membrane -->
+    <rect x="20" y="60" width="220" height="80" rx="4" fill="#1a2e1a" stroke="#4a8" stroke-width="2"/>
+    <text x="130" y="78" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">THYLAKOID MEMBRANE</text>
+    <!-- Photolysis -->
+    <circle cx="60" cy="110" r="18" fill="#224422" stroke="#4a8" stroke-width="1.5"/>
+    <text x="60" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">PHOTO-</text>
+    <text x="60" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">LYSIS</text>
+    <!-- ETC -->
+    <rect x="100" y="95" width="60" height="30" fill="#1a3a1a" stroke="#4a8" stroke-width="1"/>
+    <text x="130" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">ELECTRON</text>
+    <text x="130" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">TRANSPORT</text>
+    <!-- ATP synthase -->
+    <circle cx="200" cy="110" r="18" fill="#224422" stroke="#4a8" stroke-width="1.5"/>
+    <text x="200" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">ATP</text>
+    <text x="200" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">SYNTH</text>
+    <!-- Light input -->
+    <path d="M30 35 L55 92" stroke="#ffcc00" stroke-width="2" stroke-dasharray="4,2"/>
+    <text x="15" y="32" fill="#ffcc00" font-size="6.5" font-family="Arial Black">LIGHT</text>
+    <!-- Water split -->
+    <text x="18" y="155" fill="#44aaff" font-size="6" font-family="Arial">H₂O → 2H⁺ + ½O₂</text>
+    <!-- Outputs -->
+    <text x="180" y="155" fill="#44ff88" font-size="6" font-family="Arial">ATP + NADPH</text>
+    <!-- O2 -->
+    <path d="M60 92 L40 55" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="15" y="52" fill="#44ff88" font-size="6" font-family="Arial">O₂ ↑</text>
+    <!-- Arrows -->
+    <path d="M78 110 L100 110" stroke="#8f8" stroke-width="1.5" marker-end="url(#garr)"/>
+    <path d="M160 110 L182 110" stroke="#8f8" stroke-width="1.5" marker-end="url(#garr)"/>
+    <defs><marker id="garr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#8f8"/></marker></defs>
+  </svg>`,
+
+  'photo-calvin': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CALVIN CYCLE (STROMA)</text>
+    <!-- Cycle circle -->
+    <circle cx="130" cy="108" r="65" fill="none" stroke="#333" stroke-width="1.5"/>
+    <!-- RuBisCO -->
+    <ellipse cx="130" cy="52" rx="30" ry="16" fill="#2a2a1a" stroke="#ffcc00" stroke-width="1.5"/>
+    <text x="130" y="50" text-anchor="middle" fill="#ffcc00" font-size="6" font-family="Arial Black">RuBisCO</text>
+    <text x="130" y="60" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">CO₂ fixation</text>
+    <!-- G3P -->
+    <ellipse cx="195" cy="120" rx="28" ry="16" fill="#1a2a1a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="195" y="118" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">G3P</text>
+    <text x="195" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">3-carbon</text>
+    <!-- RuBP -->
+    <ellipse cx="65" cy="120" rx="28" ry="16" fill="#1a1a2a" stroke="#44aaff" stroke-width="1.5"/>
+    <text x="65" y="118" text-anchor="middle" fill="#44aaff" font-size="6.5" font-family="Arial Black">RuBP</text>
+    <text x="65" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">5-carbon</text>
+    <!-- Glucose output -->
+    <rect x="100" y="155" width="60" height="22" fill="#1a301a" stroke="#44ff88" stroke-width="1"/>
+    <text x="130" y="169" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">GLUCOSE</text>
+    <!-- Cycle arrows -->
+    <path d="M150 62 C185 70 210 95 205 115" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
+    <path d="M175 130 L150 155" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
+    <path d="M93 155 L85 135" stroke="#fff" stroke-width="1.5" fill="none"/>
+    <path d="M55 105 C50 80 80 60 110 53" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
+    <!-- Inputs -->
+    <text x="245" y="95" fill="#44aaff" font-size="5.5" font-family="Arial">ATP</text>
+    <text x="245" y="103" fill="#44aaff" font-size="5.5" font-family="Arial">NADPH</text>
+    <path d="M240 98 L220 110" stroke="#44aaff" stroke-width="1" stroke-dasharray="3,1"/>
+    <text x="5" y="90" fill="#888" font-size="5.5" font-family="Arial">CO₂</text>
+    <path d="M22" y1="88" x2="105" y2="55" stroke="#888" stroke-width="1" stroke-dasharray="3,1"/>
+    <defs><marker id="warr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
+  </svg>`,
+
+  'mitosis-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">MITOSIS OVERVIEW</text>
+    <!-- Parent cell -->
+    <ellipse cx="130" cy="60" rx="45" ry="35" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
+    <text x="130" y="56" text-anchor="middle" fill="#bbb" font-size="6" font-family="Arial Black">PARENT CELL</text>
+    <text x="130" y="67" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">2n chromosomes</text>
+    <!-- Arrow down -->
+    <path d="M130 95 L130 120" stroke="#fff" stroke-width="2" marker-end="url(#marr)"/>
+    <text x="140" y="112" fill="#888" font-size="5.5" font-family="Arial">MITOSIS</text>
+    <defs><marker id="marr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#fff"/></marker></defs>
+    <!-- Daughter cells -->
+    <ellipse cx="70" cy="160" rx="42" ry="28" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="70" y="157" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">DAUGHTER 1</text>
+    <text x="70" y="167" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">identical 2n</text>
+    <ellipse cx="190" cy="160" rx="42" ry="28" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="190" y="157" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">DAUGHTER 2</text>
+    <text x="190" y="167" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">identical 2n</text>
+    <!-- Split lines -->
+    <path d="M112 120 L80 132" stroke="#fff" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <path d="M148 120 L175 132" stroke="#fff" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <!-- Use label -->
+    <text x="10" y="195" fill="#444" font-size="5.5" font-family="Arial">Uses: Growth · Repair · Asexual reproduction</text>
+  </svg>`,
+
+  'mitosis-prophase': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PROPHASE &amp; METAPHASE</text>
+    <!-- Prophase cell -->
+    <ellipse cx="65" cy="100" rx="52" ry="70" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
+    <text x="65" y="30" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">PROPHASE</text>
+    <!-- Condensed chromosomes -->
+    ${[[55,70],[75,70],[55,95],[75,95],[55,120],[75,120],[55,145],[75,145]].map(([x,y]) =>
+      `<ellipse cx="${x}" cy="${y}" rx="7" ry="10" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".8"/>`
+    ).join('')}
+    <!-- Spindle forming -->
+    <line x1="65" y1="40" x2="65" y2="165" stroke="#888" stroke-width=".8" stroke-dasharray="3,2"/>
+    <!-- Metaphase cell -->
+    <ellipse cx="195" cy="100" rx="52" ry="70" fill="#1a1a2e" stroke="#fff" stroke-width="1.5"/>
+    <text x="195" y="30" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">METAPHASE</text>
+    <!-- Aligned chromosomes at equator -->
+    ${[[188,90],[198,90],[188,105],[198,105],[188,120],[198,120]].map(([x,y]) =>
+      `<ellipse cx="${x}" cy="${y}" rx="7" ry="9" fill="#4444ff" stroke="#88f" stroke-width="1"/>`
+    ).join('')}
+    <!-- Equatorial plate -->
+    <line x1="195" y1="45" x2="195" y2="160" stroke="#fff" stroke-width="1.5"/>
+    <!-- Spindle fibres -->
+    <line x1="195" y1="40" x2="185" y2="95" stroke="#888" stroke-width=".8"/>
+    <line x1="195" y1="40" x2="200" y2="95" stroke="#888" stroke-width=".8"/>
+    <line x1="195" y1="165" x2="185" y2="120" stroke="#888" stroke-width=".8"/>
+    <line x1="195" y1="165" x2="200" y2="120" stroke="#888" stroke-width=".8"/>
+    <!-- Arrow between -->
+    <path d="M118 100 L140 100" stroke="#fff" stroke-width="2" marker-end="url(#parr)"/>
+    <defs><marker id="parr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
+  </svg>`,
+
+  'mitosis-anaphase': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ANAPHASE &amp; TELOPHASE</text>
+    <!-- Anaphase cell -->
+    <ellipse cx="65" cy="105" rx="52" ry="72" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
+    <text x="65" y="30" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">ANAPHASE</text>
+    <!-- Chromatids pulling apart -->
+    ${[[58,60],[72,60],[58,75],[72,75]].map(([x,y]) =>
+      `<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`
+    ).join('')}
+    ${[[58,140],[72,140],[58,155],[72,155]].map(([x,y]) =>
+      `<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`
+    ).join('')}
+    <!-- Spindle arrows -->
+    <path d="M65 95 L65 72" stroke="#fff" stroke-width="1.5" marker-end="url(#aarrU)"/>
+    <path d="M65 115 L65 138" stroke="#fff" stroke-width="1.5" marker-end="url(#aarrD)"/>
+    <defs>
+      <marker id="aarrU" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,5 L2.5,0 L5,5 Z" fill="#fff"/></marker>
+      <marker id="aarrD" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L2.5,5 L5,0 Z" fill="#fff"/></marker>
+    </defs>
+    <!-- Telophase cell -->
+    <ellipse cx="195" cy="105" rx="52" ry="72" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
+    <text x="195" y="30" text-anchor="middle" fill="#8f8" font-size="6.5" font-family="Arial Black">TELOPHASE</text>
+    <!-- Two nuclei reforming -->
+    <ellipse cx="195" cy="72" rx="28" ry="18" fill="#1a1a2e" stroke="#88f" stroke-width="1.5"/>
+    <text x="195" y="75" text-anchor="middle" fill="#88f" font-size="5" font-family="Arial">Nucleus</text>
+    <ellipse cx="195" cy="140" rx="28" ry="18" fill="#1a1a2e" stroke="#88f" stroke-width="1.5"/>
+    <text x="195" y="143" text-anchor="middle" fill="#88f" font-size="5" font-family="Arial">Nucleus</text>
+    <!-- Cleavage furrow -->
+    <line x1="148" y1="105" x2="242" y2="105" stroke="#44ff88" stroke-width="2" stroke-dasharray="5,2"/>
+    <text x="195" y="103" text-anchor="middle" fill="#44ff88" font-size="5" font-family="Arial Black">CYTOKINESIS</text>
+    <!-- Arrow -->
+    <path d="M118 105 L140 105" stroke="#fff" stroke-width="2"/>
+  </svg>`,
+
+  'osmosis-intro': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="190" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">OSMOSIS</text>
+    <!-- Membrane -->
+    <rect x="122" y="25" width="16" height="150" fill="#333" stroke="#666" stroke-width="1"/>
+    <text x="130" y="185" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Semi-permeable membrane</text>
+    <!-- Left side: dilute -->
+    <rect x="10" y="25" width="112" height="150" fill="#1a1a2e" opacity=".8"/>
+    <text x="66" y="42" text-anchor="middle" fill="#88aaff" font-size="6.5" font-family="Arial Black">DILUTE</text>
+    <text x="66" y="52" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">High water potential</text>
+    <!-- Water molecules left (more) -->
+    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y]) =>
+      `<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.5)" stroke="#44aaff" stroke-width=".8"/>`
+    ).join('')}
+    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y]) =>
+      `<text x="${x}" y="${y+2}" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">W</text>`
+    ).join('')}
+    <!-- Right side: concentrated -->
+    <rect x="138" y="25" width="112" height="150" fill="#1a1a1a" opacity=".8"/>
+    <text x="194" y="42" text-anchor="middle" fill="#ff8844" font-size="6.5" font-family="Arial Black">CONCENTRATED</text>
+    <text x="194" y="52" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">Low water potential</text>
+    <!-- Fewer water, more solute -->
+    ${[[150,85],[170,115],[200,90],[225,130],[210,75],[240,105]].map(([x,y]) =>
+      `<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.3)" stroke="#44aaff" stroke-width=".6"/>`
+    ).join('')}
+    ${[[160,100],[185,125],[215,105],[235,80],[155,140],[230,145]].map(([x,y]) =>
+      `<circle cx="${x}" cy="${y}" r="8" fill="rgba(255,136,68,.25)" stroke="#f84" stroke-width=".8"/><text x="${x}" y="${y+2}" text-anchor="middle" fill="#f84" font-size="6">S</text>`
+    ).join('')}
+    <!-- Osmosis arrows -->
+    <path d="M108 90 L125 90" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
+    <path d="M108 105 L125 105" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
+    <path d="M108 120 L125 120" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
+    <defs><marker id="oarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#44aaff"/></marker></defs>
+  </svg>`,
+
+  'osmosis-potential': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="190" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">WATER POTENTIAL SCALE</text>
+    <!-- Scale bar -->
+    <rect x="30" y="30" width="200" height="24" rx="2" fill="url(#wpGrad)"/>
+    <defs><linearGradient id="wpGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#44aaff"/><stop offset="100%" stop-color="#111"/></linearGradient></defs>
+    <text x="30" y="27" fill="#44aaff" font-size="6.5" font-family="Arial Black">0 Ψ</text>
+    <text x="200" y="27" fill="#666" font-size="6.5" font-family="Arial Black">−∞</text>
+    <text x="130" y="27" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">Pure water</text>
+    <!-- Arrow -->
+    <path d="M230 42 L30 42" stroke="#44aaff" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="130" y="68" text-anchor="middle" fill="#44aaff" font-size="6" font-family="Arial">Water moves this direction →</text>
+    <!-- Examples -->
+    <rect x="20" y="80" width="70" height="50" fill="#1a1a2e" stroke="#44aaff" stroke-width="1.5"/>
+    <text x="55" y="95" text-anchor="middle" fill="#44aaff" font-size="6" font-family="Arial Black">PURE WATER</text>
+    <text x="55" y="108" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">Ψ = 0</text>
+    <text x="55" y="122" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">Highest potential</text>
+    <rect x="100" y="80" width="70" height="50" fill="#1a2030" stroke="#888" stroke-width="1.5"/>
+    <text x="135" y="95" text-anchor="middle" fill="#bbb" font-size="6" font-family="Arial Black">CELL SAP</text>
+    <text x="135" y="108" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">Ψ = −8</text>
+    <text x="135" y="122" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">Moderate solutes</text>
+    <rect x="180" y="80" width="70" height="50" fill="#1a1010" stroke="#ff4444" stroke-width="1.5"/>
+    <text x="215" y="95" text-anchor="middle" fill="#f88" font-size="6" font-family="Arial Black">SEAWATER</text>
+    <text x="215" y="108" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">Ψ = −27</text>
+    <text x="215" y="122" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">High solutes</text>
+    <!-- Rule -->
+    <text x="130" y="150" text-anchor="middle" fill="#fff" font-size="7" font-family="Arial Black">Water always moves: HIGH Ψ → LOW Ψ</text>
+    <text x="130" y="165" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">( less negative → more negative )</text>
+  </svg>`,
+
+  'osmosis-cells': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="190" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PLANT CELL RESPONSES</text>
+    <!-- Turgid cell -->
+    <rect x="15" y="25" width="105" height="145" rx="3" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
+    <text x="67" y="40" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">HYPOTONIC</text>
+    <text x="67" y="50" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">(dilute solution)</text>
+    <!-- Turgid cell shape -->
+    <rect x="28" y="58" width="80" height="95" rx="4" fill="#224422" stroke="#44ff88" stroke-width="2"/>
+    <ellipse cx="68" cy="105" rx="30" ry="35" fill="#1a2e1a" stroke="#4a8" stroke-width="1.5"/>
+    <text x="68" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial">TURGID</text>
+    <!-- Water arrows in -->
+    <path d="M28 90 L38 90" stroke="#44aaff" stroke-width="2" marker-end="url(#tarr)"/>
+    <path d="M28 115 L38 115" stroke="#44aaff" stroke-width="2" marker-end="url(#tarr)"/>
+    <text x="22" y="103" fill="#44aaff" font-size="5" font-family="Arial">H₂O</text>
+    <text x="22" y="110" fill="#44aaff" font-size="5" font-family="Arial">→</text>
+    <!-- Plasmolysed cell -->
+    <rect x="140" y="25" width="110" height="145" rx="3" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
+    <text x="195" y="40" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">HYPERTONIC</text>
+    <text x="195" y="50" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">(concentrated)</text>
+    <!-- Plasmolysed -->
+    <rect x="153" y="58" width="84" height="95" rx="4" fill="#222" stroke="#ff8844" stroke-width="2"/>
+    <ellipse cx="195" cy="105" rx="16" ry="20" fill="#1a1a0a" stroke="#f84" stroke-width="1.5"/>
+    <text x="195" y="108" text-anchor="middle" fill="#f84" font-size="4.5" font-family="Arial">PLASMO-</text>
+    <text x="195" y="115" text-anchor="middle" fill="#f84" font-size="4.5" font-family="Arial">LYSED</text>
+    <!-- Gap between wall and membrane -->
+    <text x="195" y="84" text-anchor="middle" fill="#555" font-size="4.5" font-family="Arial">gap</text>
+    <!-- Water arrows out -->
+    <path d="M222 90 L232 90" stroke="#ff4444" stroke-width="2" marker-end="url(#rarr)"/>
+    <path d="M222 115 L232 115" stroke="#ff4444" stroke-width="2" marker-end="url(#rarr)"/>
+    <text x="234" y="103" fill="#f44" font-size="5" font-family="Arial">H₂O</text>
+    <text x="234" y="110" fill="#f44" font-size="5" font-family="Arial">→</text>
+    <defs>
+      <marker id="tarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#44aaff"/></marker>
+      <marker id="rarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#ff4444"/></marker>
+    </defs>
+  </svg>`,
+
+  'dna-helix': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">DNA DOUBLE HELIX</text>
+    <!-- Draw helix strands -->
+    ${Array.from({length:12},(_,i)=>{
+      const y = 25 + i*14;
+      const amp = 35;
+      const cx = 130;
+      const x1 = cx + amp*Math.sin(i*0.6);
+      const x2 = cx - amp*Math.sin(i*0.6);
+      return `<circle cx="${x1}" cy="${y}" r="5" fill="#44aaff" stroke="#88ccff" stroke-width="1"/>
+              <circle cx="${x2}" cy="${y}" r="5" fill="#ff4444" stroke="#ff8888" stroke-width="1"/>
+              <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#888" stroke-width="1.2"/>`;
+    }).join('')}
+    <!-- Labels -->
+    <text x="50" y="100" text-anchor="end" fill="#44aaff" font-size="6.5" font-family="Arial Black">5' end</text>
+    <text x="210" y="100" fill="#ff4444" font-size="6.5" font-family="Arial Black">3' end</text>
+    <text x="130" y="190" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Sugar-phosphate backbone · Hydrogen bond rungs</text>
+    <!-- Backbone lines -->
+    <path d="M95,25 Q85,60 95,95 Q105,130 95,165" fill="none" stroke="#44aaff" stroke-width="2.5" opacity=".6"/>
+    <path d="M165,25 Q175,60 165,95 Q155,130 165,165" fill="none" stroke="#ff4444" stroke-width="2.5" opacity=".6"/>
+    <!-- Base pair legend -->
+    <rect x="10" y="175" width="8" height="8" fill="#44aaff"/>
+    <text x="22" y="183" fill="#44aaff" font-size="5.5" font-family="Arial">A–T (2 bonds)</text>
+    <rect x="100" y="175" width="8" height="8" fill="#ff4444"/>
+    <text x="112" y="183" fill="#ff4444" font-size="5.5" font-family="Arial">G–C (3 bonds)</text>
+  </svg>`,
+
+  'dna-nucleotide': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">NUCLEOTIDE STRUCTURE</text>
+    <!-- Single nucleotide -->
+    <!-- Phosphate -->
+    <circle cx="130" cy="50" r="22" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
+    <text x="130" y="47" text-anchor="middle" fill="#44aaff" font-size="6.5" font-family="Arial Black">PHOSPHATE</text>
+    <text x="130" y="58" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">PO₄³⁻</text>
+    <!-- Sugar -->
+    <rect x="100" y="85" width="60" height="40" rx="4" fill="#1a301a" stroke="#44ff88" stroke-width="2"/>
+    <text x="130" y="102" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">DEOXYRIBOSE</text>
+    <text x="130" y="114" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">5-carbon sugar</text>
+    <!-- Base -->
+    <rect x="100" y="140" width="60" height="40" rx="4" fill="#2e1a1a" stroke="#ff8844" stroke-width="2"/>
+    <text x="130" y="157" text-anchor="middle" fill="#ff8844" font-size="6.5" font-family="Arial Black">NITROGENOUS</text>
+    <text x="130" y="168" text-anchor="middle" fill="#ff8844" font-size="6" font-family="Arial Black">BASE</text>
+    <!-- Connections -->
+    <line x1="130" y1="72" x2="130" y2="85" stroke="#fff" stroke-width="1.5"/>
+    <line x1="130" y1="125" x2="130" y2="140" stroke="#fff" stroke-width="1.5"/>
+    <!-- 4 bases legend -->
+    <rect x="10" y="150" width="8" height="8" fill="#44aaff"/><text x="22" y="158" fill="#44aaff" font-size="5.5" font-family="Arial">Adenine (A)</text>
+    <rect x="10" y="162" width="8" height="8" fill="#44ff88"/><text x="22" y="170" fill="#44ff88" font-size="5.5" font-family="Arial">Guanine (G)</text>
+    <rect x="80" y="150" width="8" height="8" fill="#ff4444"/><text x="92" y="158" fill="#ff4444" font-size="5.5" font-family="Arial">Thymine (T)</text>
+    <rect x="80" y="162" width="8" height="8" fill="#ffcc00"/><text x="92" y="170" fill="#ffcc00" font-size="5.5" font-family="Arial">Cytosine (C)</text>
+  </svg>`,
+
+  'dna-bases': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="190" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">BASE PAIRING RULES</text>
+    <!-- A-T pair -->
+    <rect x="20" y="28" width="50" height="30" rx="3" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
+    <text x="45" y="47" text-anchor="middle" fill="#44aaff" font-size="11" font-family="Arial Black">A</text>
+    <!-- H bonds -->
+    <line x1="70" y1="38" x2="90" y2="38" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="70" y1="48" x2="90" y2="48" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="80" y="60" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">2 H-bonds</text>
+    <rect x="90" y="28" width="50" height="30" rx="3" fill="#2e1a1a" stroke="#ff4444" stroke-width="2"/>
+    <text x="115" y="47" text-anchor="middle" fill="#ff4444" font-size="11" font-family="Arial Black">T</text>
+    <!-- G-C pair -->
+    <rect x="20" y="90" width="50" height="30" rx="3" fill="#1a301a" stroke="#44ff88" stroke-width="2"/>
+    <text x="45" y="109" text-anchor="middle" fill="#44ff88" font-size="11" font-family="Arial Black">G</text>
+    <line x1="70" y1="97" x2="90" y2="97" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="70" y1="105" x2="90" y2="105" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="70" y1="113" x2="90" y2="113" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="80" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">3 H-bonds</text>
+    <rect x="90" y="90" width="50" height="30" rx="3" fill="#1a1a30" stroke="#ffcc00" stroke-width="2"/>
+    <text x="115" y="109" text-anchor="middle" fill="#ffcc00" font-size="11" font-family="Arial Black">C</text>
+    <!-- Backbone lines -->
+    <rect x="10" y="28" width="10" height="92" fill="#333" stroke="#555" stroke-width="1"/>
+    <rect x="140" y="28" width="10" height="92" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="8" y="78" text-anchor="middle" transform="rotate(-90,8,78)" fill="#888" font-size="5.5" font-family="Arial">5'→3'</text>
+    <text x="155" y="78" text-anchor="middle" transform="rotate(90,155,78)" fill="#888" font-size="5.5" font-family="Arial">3'→5'</text>
+    <!-- Rule text -->
+    <text x="130" y="148" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">CHARGAFF'S RULES</text>
+    <text x="130" y="162" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">%A = %T in any DNA molecule</text>
+    <text x="130" y="174" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">%G = %C in any DNA molecule</text>
+  </svg>`,
+
+  'enzyme-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ENZYME STRUCTURE</text>
+    <!-- Enzyme body -->
+    <path d="M50,80 Q50,40 90,35 Q130,30 160,40 Q200,50 200,80 Q210,120 190,140 Q160,160 130,155 Q90,160 70,140 Q40,120 50,80 Z" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
+    <text x="110" y="90" fill="#44aaff" font-size="8" font-family="Arial Black">ENZYME</text>
+    <text x="110" y="102" fill="#888" font-size="5.5" font-family="Arial">(globular protein)</text>
+    <!-- Active site -->
+    <path d="M110,110 Q120,130 140,130 Q160,130 165,110" fill="#111" stroke="#fff" stroke-width="2"/>
+    <text x="137" y="125" text-anchor="middle" fill="#fff" font-size="5.5" font-family="Arial Black">ACTIVE SITE</text>
+    <!-- Substrate approaching -->
+    <rect x="190" y="100" width="55" height="30" rx="4" fill="#2e1a1a" stroke="#ff8844" stroke-width="1.5"/>
+    <text x="217" y="118" text-anchor="middle" fill="#f84" font-size="6.5" font-family="Arial Black">SUBSTRATE</text>
+    <path d="M190 115 L170 118" stroke="#f84" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#earr)"/>
+    <defs><marker id="earr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#f84"/></marker></defs>
+    <!-- Specificity label -->
+    <text x="130" y="175" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Specific 3D shape · Active site = substrate-specific</text>
+  </svg>`,
+
+  'enzyme-lock': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="190" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">LOCK AND KEY MODEL</text>
+    <!-- Step 1 -->
+    <text x="40" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">1. FREE</text>
+    <path d="M15,45 Q15,38 25,36 Q50,32 65,38 Q75,45 75,52 Q80,65 70,72 Q55,78 40,75 Q20,72 15,60 Q12,52 15,45 Z" fill="#1a2030" stroke="#44aaff" stroke-width="1.5"/>
+    <path d="M38,62 Q43,72 50,72 Q58,72 60,62" fill="#111" stroke="#44aaff" stroke-width="1.5"/>
+    <rect x="82" y="52" width="32" height="20" rx="3" fill="#2e1a1a" stroke="#f84" stroke-width="1.5"/>
+    <text x="98" y="65" text-anchor="middle" fill="#f84" font-size="5.5" font-family="Arial Black">SUB</text>
+    <!-- Step 2 -->
+    <text x="130" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">2. BINDING</text>
+    <path d="M105,45 Q105,38 115,36 Q140,32 155,38 Q165,45 165,52 Q170,65 160,72 Q145,78 130,75 Q110,72 105,60 Q102,52 105,45 Z" fill="#1a2030" stroke="#44aaff" stroke-width="1.5"/>
+    <path d="M128,62 Q133,72 140,72 Q148,72 150,62" fill="#2e1a1a" stroke="#44aaff" stroke-width="1.5"/>
+    <rect x="128" y="60" width="24" height="14" rx="2" fill="#2e1a1a" stroke="#f84" stroke-width="1"/>
+    <text x="140" y="70" text-anchor="middle" fill="#f84" font-size="5" font-family="Arial Black">FIT</text>
+    <!-- Step 3 -->
+    <text x="220" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">3. PRODUCTS</text>
+    <path d="M195,45 Q195,38 205,36 Q230,32 245,38 Q255,45 255,52 Q260,65 250,72 Q235,78 220,75 Q200,72 195,60 Q192,52 195,45 Z" fill="#1a2030" stroke="#44ff88" stroke-width="1.5"/>
+    <path d="M218,62 Q223,72 230,72 Q238,72 240,62" fill="#111" stroke="#44ff88" stroke-width="1.5"/>
+    <rect x="210" y="80" width="18" height="12" rx="2" fill="#1a301a" stroke="#44ff88" stroke-width="1"/>
+    <rect x="232" y="80" width="18" height="12" rx="2" fill="#1a301a" stroke="#44ff88" stroke-width="1"/>
+    <text x="219" y="89" text-anchor="middle" fill="#4f8" font-size="5">P1</text>
+    <text x="241" y="89" text-anchor="middle" fill="#4f8" font-size="5">P2</text>
+    <!-- Arrows -->
+    <path d="M80 60 L102 60" stroke="#fff" stroke-width="1.5" marker-end="url(#larr)"/>
+    <path d="M167 60 L192 60" stroke="#fff" stroke-width="1.5" marker-end="url(#larr)"/>
+    <defs><marker id="larr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
+    <!-- Labels -->
+    <text x="130" y="110" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">ENZYME-SUBSTRATE COMPLEX</text>
+    <!-- Graph -->
+    <text x="130" y="130" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Enzyme is UNCHANGED after reaction — reused</text>
+  </svg>`,
+
+  'enzyme-factors': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#111"/>
+    <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ENZYME ACTIVITY GRAPH</text>
+    <!-- Axes -->
+    <line x1="30" y1="155" x2="240" y2="155" stroke="#555" stroke-width="1.5"/>
+    <line x1="30" y1="155" x2="30" y2="25" stroke="#555" stroke-width="1.5"/>
+    <text x="135" y="172" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Temperature (°C)</text>
+    <text x="14" y="90" text-anchor="middle" fill="#888" font-size="6" font-family="Arial" transform="rotate(-90,14,90)">Rate of reaction</text>
+    <!-- Curve -->
+    <path d="M30,155 Q60,150 80,130 Q100,110 110,85 Q118,65 125,55 Q132,65 138,85 Q148,110 165,140 Q185,155 240,158" fill="none" stroke="#44aaff" stroke-width="2.5"/>
+    <!-- Optimum marker -->
+    <line x1="125" y1="55" x2="125" y2="155" stroke="#fff" stroke-width="1" stroke-dasharray="4,2"/>
+    <text x="125" y="50" text-anchor="middle" fill="#fff" font-size="6" font-family="Arial Black">OPTIMUM ~37°C</text>
+    <!-- Labels on curve -->
+    <text x="75" y="125" fill="#44ff88" font-size="5.5" font-family="Arial">Increasing</text>
+    <text x="160" y="130" fill="#ff4444" font-size="5.5" font-family="Arial">Denatured</text>
+    <!-- Denaturation zone -->
+    <rect x="145" y="25" width="90" height="130" fill="rgba(255,68,68,.05)" stroke="rgba(255,68,68,.2)" stroke-width="1"/>
+    <text x="190" y="40" text-anchor="middle" fill="#f44" font-size="5.5" font-family="Arial Black">DENATURATION</text>
+    <text x="190" y="50" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">Active site changes shape</text>
+    <!-- x-axis labels -->
+    <text x="30" y="168" text-anchor="middle" fill="#666" font-size="5.5">0</text>
+    <text x="80" y="168" text-anchor="middle" fill="#666" font-size="5.5">20</text>
+    <text x="125" y="168" text-anchor="middle" fill="#fff" font-size="5.5">37</text>
+    <text x="170" y="168" text-anchor="middle" fill="#666" font-size="5.5">50</text>
+    <text x="220" y="168" text-anchor="middle" fill="#666" font-size="5.5">70+</text>
+  </svg>`
+};
+
+/* ══════════════════════════════════
+   TOPICS DATA — with diagram keys
+══════════════════════════════════ */
 const TOPICS = [
   {
-    id:'cell-wall',tag:'PLANT BIOLOGY',title:'Cell Wall',
-    desc:'Structure, composition and function of the plant cell wall.',
+    id:'cell-wall', tag:'PLANT BIOLOGY', title:'Cell Wall', desc:'Structure, composition and function of the plant cell wall.',
     slides:[
-      {heading:'What is a Cell Wall?',imageQuery:'plant cell wall',
+      {heading:'What is a Cell Wall?', diagramKey:'cell-wall-intro', diagramLabel:'Cell wall layers',
        content:'The <b>cell wall</b> is a rigid, non-living outer layer outside the plasma membrane of plant cells. It provides a definite shape, protection, and mechanical strength. It prevents the cell from bursting when excess water enters by osmosis.',
        keyFacts:['Rigid, non-living layer','Plant cells only']},
-      {heading:'Composition',imageQuery:'cellulose microfibrils',
+      {heading:'Composition', diagramKey:'cell-wall-composition', diagramLabel:'Cellulose microfibrils',
        content:'The plant cell wall is mainly composed of:<ul><li><b>Cellulose</b> – provides tensile strength</li><li><b>Hemicellulose</b> – binds cellulose fibres</li><li><b>Pectin</b> – provides flexibility and porosity</li></ul>Some cells also contain <b>lignin</b>, increasing rigidity in xylem cells.',
        keyFacts:['Cellulose = main component','Lignin adds extra rigidity']},
-      {heading:'Three Layers',imageQuery:'middle lamella cell wall',
-       content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, fully developed</li></ol>',
-       keyFacts:['Middle lamella = cement','Primary = flexible']},
-      {heading:'Functions',imageQuery:'plant cell turgor',
-       content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b></li><li>Allows free movement of water and gases</li></ul>',
+      {heading:'Three Layers', diagramKey:'cell-wall-layers', diagramLabel:'Middle lamella → Primary → Secondary',
+       content:'Three distinct layers:<ol><li><b>Middle Lamella</b> – cements adjacent cells together using pectin</li><li><b>Primary Cell Wall</b> – thin, elastic, allows growth</li><li><b>Secondary Cell Wall</b> – thick, rigid, found in mature cells</li></ol>',
+       keyFacts:['Middle lamella = cement','Primary = flexible, Secondary = rigid']},
+      {heading:'Functions', diagramKey:'cell-wall-functions', diagramLabel:'Functions radar',
+       content:'The cell wall performs vital functions:<ul><li>Gives a <b>definite shape</b> to the cell</li><li>Provides <b>mechanical support</b> and rigidity</li><li>Protects from physical damage</li><li><b>Prevents osmotic bursting</b> (lysis)</li><li>Permeable — allows free movement of water and gases</li></ul>',
        keyFacts:['Shape and mechanical support','Prevents osmotic bursting']}
     ]
   },
   {
-    id:'photosynthesis',tag:'PLANT PHYSIOLOGY',title:'Photosynthesis',
-    desc:'How plants convert sunlight into glucose using chlorophyll.',
+    id:'photosynthesis', tag:'PLANT PHYSIOLOGY', title:'Photosynthesis', desc:'How plants convert sunlight into glucose using chlorophyll.',
     slides:[
-      {heading:'What is Photosynthesis?',imageQuery:'chloroplast structure',
-       content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
+      {heading:'What is Photosynthesis?', diagramKey:'photo-intro', diagramLabel:'Photosynthesis overview',
+       content:'<b>Photosynthesis</b> converts <b>light energy</b> into <b>chemical energy</b> stored as glucose. It occurs in the <b>chloroplasts</b> of leaf cells and requires sunlight, water, and carbon dioxide.',
        keyFacts:['Light to chemical energy','Occurs in chloroplasts']},
-      {heading:'The Equation',imageQuery:'photosynthesis diagram',
-       content:'<b>6CO&#8322; + 6H&#8322;O + light &rarr; C&#8326;H&#8321;&#8322;O&#8326; + 6O&#8322;</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy required for this reaction.',
-       keyFacts:['CO2 + H2O gives glucose and O2','Chlorophyll absorbs light']},
-      {heading:'Light-Dependent Reactions',imageQuery:'thylakoid membrane',
-       content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules</li><li><b>ATP</b> and <b>NADPH</b> produced</li><li>Oxygen released as by-product</li></ul>',
-       keyFacts:['Photolysis splits water','ATP and NADPH produced']},
-      {heading:'Calvin Cycle',imageQuery:'Calvin cycle stroma',
-       content:'Occurs in the <b>stroma</b>:<ul><li>CO&#8322; fixed by <b>RuBisCO</b></li><li>ATP and NADPH consumed</li><li><b>G3P</b> produced, leading to glucose</li></ul>',
-       keyFacts:['RuBisCO fixes CO2','G3P leads to glucose']},
-      {heading:'Limiting Factors',imageQuery:'leaf stomata',
-       content:'Rate controlled by:<ul><li><b>Light intensity</b></li><li><b>CO&#8322; concentration</b></li><li><b>Temperature</b> – enzymes denature above ~40&#176;C</li><li><b>Water availability</b></li></ul>',
-       keyFacts:['Light, CO2 and temp are key','Stomata close in drought']}
+      {heading:'The Equation', diagramKey:'photo-equation', diagramLabel:'Reactants and products',
+       content:'<b>6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</b><br><br><b>Chlorophyll</b> is the green pigment that absorbs light energy. It is found in the thylakoid membranes of chloroplasts.',
+       keyFacts:['CO₂ + H₂O → Glucose + O₂','Chlorophyll absorbs light']},
+      {heading:'Light-Dependent Reactions', diagramKey:'photo-light', diagramLabel:'Thylakoid membrane reactions',
+       content:'Occur in <b>thylakoid membranes</b>:<ul><li><b>Photolysis</b> – light splits water molecules: 2H₂O → 4H⁺ + 4e⁻ + O₂</li><li><b>ATP</b> produced via photophosphorylation</li><li><b>NADPH</b> produced for Calvin cycle</li><li>Oxygen released as by-product</li></ul>',
+       keyFacts:['Photolysis splits water','ATP + NADPH produced']},
+      {heading:'Calvin Cycle', diagramKey:'photo-calvin', diagramLabel:'Calvin cycle — stroma',
+       content:'Occurs in the <b>stroma</b>:<ul><li>CO₂ fixed by <b>RuBisCO</b> enzyme onto RuBP</li><li>ATP and NADPH consumed from light reactions</li><li><b>G3P</b> (glyceraldehyde-3-phosphate) produced</li><li>G3P used to synthesise glucose</li></ul>',
+       keyFacts:['RuBisCO fixes CO₂','G3P leads to glucose']},
+      {heading:'Limiting Factors', diagramKey:'photo-intro', diagramLabel:'Rate factors',
+       content:'Rate controlled by:<ul><li><b>Light intensity</b> – more light → faster rate (up to a point)</li><li><b>CO₂ concentration</b> – more CO₂ → faster rate</li><li><b>Temperature</b> – enzymes denature above ~40°C</li><li><b>Water availability</b> – stomata close in drought</li></ul>',
+       keyFacts:['Light, CO₂ and temperature','Stomata close in drought']}
     ]
   },
   {
-    id:'mitosis',tag:'CELL DIVISION',title:'Mitosis',
-    desc:'Division producing two genetically identical daughter cells.',
+    id:'mitosis', tag:'CELL DIVISION', title:'Mitosis', desc:'Division producing two genetically identical daughter cells.',
     slides:[
-      {heading:'What is Mitosis?',imageQuery:'mitosis diagram',
-       content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. Used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
+      {heading:'What is Mitosis?', diagramKey:'mitosis-intro', diagramLabel:'Parent → 2 daughters',
+       content:'<b>Mitosis</b> produces <b>two genetically identical daughter cells</b> with the same chromosome number as the parent. It is used for <b>growth, repair</b> and <b>asexual reproduction</b>.',
        keyFacts:['2 identical daughter cells','Used for growth and repair']},
-      {heading:'Interphase',imageQuery:'cell cycle interphase',
-       content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b></li><li><b>G2</b> – organelles prepared</li></ul>',
+      {heading:'Interphase', diagramKey:'mitosis-intro', diagramLabel:'Cell cycle preparation',
+       content:'Preparation before mitosis:<ul><li><b>G1</b> – cell grows, synthesises proteins</li><li><b>S phase</b> – DNA <b>replicated</b> (chromosome number doubles)</li><li><b>G2</b> – organelles duplicated, cell prepares for division</li></ul>',
        keyFacts:['DNA replicated in S phase','Not part of mitosis itself']},
-      {heading:'Prophase and Metaphase',imageQuery:'mitosis prophase metaphase',
+      {heading:'Prophase & Metaphase', diagramKey:'mitosis-prophase', diagramLabel:'Chromosomes condense and align',
        content:'<b>Prophase:</b> chromosomes condense, spindle forms, nuclear envelope breaks down.<br><br><b>Metaphase:</b> chromosomes align along the equatorial plate; spindle fibres attach to centromeres.',
        keyFacts:['Chromosomes condense in prophase','Chromosomes align in metaphase']},
-      {heading:'Anaphase and Telophase',imageQuery:'mitosis anaphase telophase',
-       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles.<br><br><b>Telophase:</b> nuclear envelopes reform, chromosomes decondense, <b>cytokinesis</b> divides the cytoplasm.',
+      {heading:'Anaphase & Telophase', diagramKey:'mitosis-anaphase', diagramLabel:'Chromatids separate → cytokinesis',
+       content:'<b>Anaphase:</b> sister chromatids pulled to opposite poles by spindle fibres.<br><br><b>Telophase:</b> nuclear envelopes reform, chromosomes decondense, <b>cytokinesis</b> divides the cytoplasm producing two cells.',
        keyFacts:['Chromatids pulled apart','Cytokinesis divides cytoplasm']}
     ]
   },
   {
-    id:'osmosis',tag:'TRANSPORT',title:'Osmosis',
-    desc:'Movement of water across semi-permeable membranes.',
+    id:'osmosis', tag:'TRANSPORT', title:'Osmosis', desc:'Movement of water across semi-permeable membranes.',
     slides:[
-      {heading:'What is Osmosis?',imageQuery:'osmosis membrane',
+      {heading:'What is Osmosis?', diagramKey:'osmosis-intro', diagramLabel:'Water movement across membrane',
        content:'<b>Osmosis</b> is the movement of water molecules from a region of <b>high water potential</b> to a region of <b>low water potential</b> through a <b>semi-permeable membrane</b>.',
-       keyFacts:['Water moves high to low potential','Needs semi-permeable membrane']},
-      {heading:'Water Potential',imageQuery:'water potential diagram',
-       content:'<b>Water potential (&#936;)</b> measures the tendency of water to move. <b>Pure water = 0 &#936;</b>. Adding solutes <b>lowers</b> water potential. Water always moves from less negative to more negative &#936;.',
-       keyFacts:['Pure water potential = 0','Solutes lower water potential']},
-      {heading:'Plant Cell Responses',imageQuery:'turgid plasmolysed cell',
-       content:'In <b>hypotonic</b> (dilute) solution: water enters &rarr; cell becomes <b>turgid</b>.<br>In <b>hypertonic</b> (concentrated) solution: water leaves &rarr; cell becomes <b>plasmolysed</b>.',
-       keyFacts:['Dilute solution makes cell turgid','Concentrated solution plasmolyses cell']}
+       keyFacts:['Water moves high → low potential','Needs semi-permeable membrane']},
+      {heading:'Water Potential', diagramKey:'osmosis-potential', diagramLabel:'Water potential scale',
+       content:'<b>Water potential (Ψ)</b> measures the tendency of water to move. <b>Pure water = 0 Ψ</b>. Adding solutes <b>lowers</b> water potential (makes it more negative). Water always moves from less negative to more negative Ψ.',
+       keyFacts:['Pure water Ψ = 0','Solutes lower water potential']},
+      {heading:'Plant Cell Responses', diagramKey:'osmosis-cells', diagramLabel:'Turgid vs plasmolysed cell',
+       content:'In <b>hypotonic</b> (dilute) solution: water enters → cell becomes <b>turgid</b> (cell wall prevents bursting).<br>In <b>hypertonic</b> (concentrated) solution: water leaves → cell becomes <b>plasmolysed</b> (membrane pulls away from wall).',
+       keyFacts:['Dilute solution → turgid','Concentrated → plasmolysed']}
     ]
   },
   {
-    id:'dna',tag:'MOLECULAR BIOLOGY',title:'DNA Structure',
-    desc:'The double helix and genetic information storage.',
+    id:'dna', tag:'MOLECULAR BIOLOGY', title:'DNA Structure', desc:'The double helix and genetic information storage.',
     slides:[
-      {heading:'The Double Helix',imageQuery:'DNA double helix',
-       content:'<b>DNA</b> is a <b>double helix</b> formed by two antiparallel strands. Each strand is a polymer of <b>nucleotides</b> held by a sugar-phosphate backbone. The strands are joined by <b>hydrogen bonds</b> between complementary bases.',
+      {heading:'The Double Helix', diagramKey:'dna-helix', diagramLabel:'DNA double helix structure',
+       content:'<b>DNA</b> is a <b>double helix</b> formed by two antiparallel strands. Each strand is a polymer of <b>nucleotides</b> held by a sugar-phosphate backbone. The two strands are joined by <b>hydrogen bonds</b> between complementary bases.',
        keyFacts:['Two antiparallel strands','Hydrogen bonds join bases']},
-      {heading:'Nucleotide Structure',imageQuery:'nucleotide structure DNA',
-       content:'Each nucleotide contains:<ul><li>A <b>deoxyribose sugar</b></li><li>A <b>phosphate group</b></li><li>One of four <b>nitrogenous bases</b>: Adenine, Thymine, Guanine, Cytosine</li></ul>',
-       keyFacts:['Sugar, phosphate and base','Four bases: A T G C']},
-      {heading:'Base Pairing Rules',imageQuery:'DNA base pairing',
-       content:'<b>Complementary base pairing:</b><ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
+      {heading:'Nucleotide Structure', diagramKey:'dna-nucleotide', diagramLabel:'Nucleotide components',
+       content:'Each nucleotide contains:<ul><li>A <b>deoxyribose sugar</b> (5-carbon)</li><li>A <b>phosphate group</b></li><li>One of four <b>nitrogenous bases</b>: Adenine, Thymine, Guanine, Cytosine</li></ul>',
+       keyFacts:['Sugar + Phosphate + Base','Four bases: A T G C']},
+      {heading:'Base Pairing Rules', diagramKey:'dna-bases', diagramLabel:'Complementary base pairs',
+       content:'<b>Complementary base pairing (Chargaff\'s rules):</b><ul><li><b>Adenine (A)</b> pairs with <b>Thymine (T)</b> – 2 hydrogen bonds</li><li><b>Guanine (G)</b> pairs with <b>Cytosine (C)</b> – 3 hydrogen bonds</li></ul>',
        keyFacts:['A pairs with T (2 bonds)','G pairs with C (3 bonds)']}
     ]
   },
   {
-    id:'enzymes',tag:'BIOCHEMISTRY',title:'Enzymes',
-    desc:'Biological catalysts, active sites, and reaction kinetics.',
+    id:'enzymes', tag:'BIOCHEMISTRY', title:'Enzymes', desc:'Biological catalysts, active sites, and reaction kinetics.',
     slides:[
-      {heading:'What are Enzymes?',imageQuery:'enzyme active site',
-       content:'<b>Enzymes</b> are biological <b>catalysts</b> that speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a specific 3D shape. Each has an <b>active site</b> that binds to a specific substrate.',
-       keyFacts:['Biological catalysts','Active site is substrate-specific']},
-      {heading:'Lock and Key Model',imageQuery:'enzyme substrate complex',
-       content:'The substrate fits exactly into the active site like a key into a lock. The active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily.',
-       keyFacts:['Exact fit required','ES complex forms briefly']},
-      {heading:'Factors Affecting Activity',imageQuery:'enzyme activity graph',
-       content:'Enzyme activity is affected by:<ul><li><b>Temperature</b> – increases rate until <b>denaturation</b> above optimum</li><li><b>pH</b> – each enzyme has an optimum pH</li><li><b>Substrate concentration</b> – increases rate until Vmax</li></ul>',
-       keyFacts:['Optimum temp ~37C in humans','pH alters active site shape']}
+      {heading:'What are Enzymes?', diagramKey:'enzyme-intro', diagramLabel:'Enzyme with active site',
+       content:'<b>Enzymes</b> are biological <b>catalysts</b> that speed up metabolic reactions without being consumed. They are <b>globular proteins</b> with a unique 3D shape. Each enzyme has an <b>active site</b> that is complementary to a specific substrate.',
+       keyFacts:['Biological catalysts','Active site = substrate-specific']},
+      {heading:'Lock and Key Model', diagramKey:'enzyme-lock', diagramLabel:'Lock and key mechanism',
+       content:'The substrate fits exactly into the active site like a key into a lock. The enzyme\'s active site has a <b>complementary shape</b> to the substrate. An <b>enzyme-substrate complex</b> forms temporarily, then products are released and the enzyme is unchanged.',
+       keyFacts:['Exact complementary fit','Enzyme reused after reaction']},
+      {heading:'Factors Affecting Activity', diagramKey:'enzyme-factors', diagramLabel:'Rate vs temperature graph',
+       content:'Enzyme activity is affected by:<ul><li><b>Temperature</b> – increases rate until <b>denaturation</b> above optimum (~37°C in humans)</li><li><b>pH</b> – each enzyme has an optimum pH (pepsin ~2, amylase ~7)</li><li><b>Substrate concentration</b> – increases rate until Vmax is reached</li></ul>',
+       keyFacts:['Optimum temp ~37°C in humans','pH alters active site shape']}
     ]
   }
 ];
 
-/* ── PAGE ROUTING ── */
-let prevPage = 'menu';
+/* ══════════════════════════════════
+   PAGE ROUTING
+══════════════════════════════════ */
+var prevPage = 'menu';
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('pg-' + id).classList.add('active');
 }
 
-/* ── RENDER TOPIC GRID ── */
+/* ══════════════════════════════════
+   RENDER TOPIC GRID
+══════════════════════════════════ */
 (function() {
-  const grid = document.getElementById('topicGrid');
+  var grid = document.getElementById('topicGrid');
   TOPICS.forEach(function(t) {
-    const card = document.createElement('div');
+    var card = document.createElement('div');
     card.className = 'topic-card';
     card.innerHTML =
       '<div class="tc-tag">' + t.tag + '</div>' +
@@ -769,81 +1211,76 @@ function showPage(id) {
   });
 })();
 
-/* ── IMAGE SOURCE TOGGLE ── */
-let imgSrc = 'none';
+/* ══════════════════════════════════
+   IMAGE SOURCE
+══════════════════════════════════ */
+var imgSrc = 'none';
 function setSrc(v) {
   imgSrc = v;
   document.getElementById('srcNone').classList.toggle('on', v === 'none');
   document.getElementById('srcWiki').classList.toggle('on', v === 'wiki');
 }
 
-/* ── STATUS + COUNTDOWN TIMER ── */
-let _timerInt = null;
-function setSt(txt, isErr, estimateSecs) {
-  const box = document.getElementById('stBox');
-  const txEl = document.getElementById('stTxt');
+/* ══════════════════════════════════
+   STATUS + COUNTDOWN TIMER
+══════════════════════════════════ */
+var _timerInt = null;
+function setSt(txt, isErr, estSecs) {
+  var box = document.getElementById('stBox');
+  var txEl = document.getElementById('stTxt');
   clearInterval(_timerInt); _timerInt = null;
   if (!txt) { box.classList.remove('show', 'err'); return; }
   box.classList.add('show');
   box.classList.toggle('err', !!isErr);
-  if (!isErr && estimateSecs) {
-    const start = Date.now();
-    const total = estimateSecs * 1000;
+  if (!isErr && estSecs) {
+    var start = Date.now();
+    var total = estSecs * 1000;
     function update() {
-      const elapsed = Date.now() - start;
-      const rem = Math.max(0, Math.round((total - elapsed) / 1000));
-      const pct = Math.min(100, Math.round(elapsed / total * 100));
-      txEl.textContent = txt + '  ~' + rem + 's remaining  [' + pct + '%]';
+      var rem = Math.max(0, Math.round((total - (Date.now() - start)) / 1000));
+      var pct = Math.min(100, Math.round((Date.now() - start) / total * 100));
+      txEl.textContent = txt + '  ~' + rem + 's  [' + pct + '%]';
     }
-    update();
-    _timerInt = setInterval(update, 300);
-  } else {
-    txEl.textContent = txt;
-  }
+    update(); _timerInt = setInterval(update, 300);
+  } else { txEl.textContent = txt; }
 }
 
-/* ── PARSE SLIDE JSON (ROBUST) ── */
+/* ══════════════════════════════════
+   PARSE JSON (ROBUST)
+══════════════════════════════════ */
 function parseSlideJSON(raw) {
   var s = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
   var start = s.indexOf('{');
   if (start === -1) throw new Error('No JSON object in response');
   s = s.slice(start);
-  // walk to matching closing brace
   var depth = 0, end = -1;
   for (var i = 0; i < s.length; i++) {
     if (s[i] === '{') depth++;
     else if (s[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
   }
   if (end !== -1) s = s.slice(0, end + 1);
-  // try parse as-is
   try { return JSON.parse(s); } catch(e1) {
-    // remove last incomplete object: find last },
     var cut = s.lastIndexOf('},');
-    if (cut > 0) {
-      try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(e2) {}
-    }
-    // add missing closing brackets
-    var opens = (s.match(/\[/g) || []).length;
-    var closes = (s.match(/\]/g) || []).length;
-    var missing = '';
-    for (var j = 0; j < opens - closes; j++) missing += ']';
-    missing += '}';
-    try { return JSON.parse(s + missing); } catch(e3) {}
+    if (cut > 0) { try { return JSON.parse(s.slice(0, cut + 1) + ']}'); } catch(e2) {} }
+    var opens = (s.match(/\[/g) || []).length, closes = (s.match(/\]/g) || []).length;
+    var miss = ''; for (var j = 0; j < opens - closes; j++) miss += ']'; miss += '}';
+    try { return JSON.parse(s + miss); } catch(e3) {}
     throw new Error('Malformed JSON: ' + e1.message);
   }
 }
 
-/* ── FETCH ONE BATCH FROM AI WORKER ── */
+/* ══════════════════════════════════
+   FETCH ONE BATCH
+══════════════════════════════════ */
 async function fetchSlides(topic, count, startNum, det) {
   var detMap = { concise: '2-3 sentences', standard: '3-5 sentences', detailed: '4-6 sentences' };
   var prompt =
-    'You are a biology educator. Generate exactly ' + count + ' lesson slides (numbered ' +
+    'You are a biology educator. Generate exactly ' + count + ' lesson slides (slides ' +
     startNum + ' to ' + (startNum + count - 1) + ') on the topic "' + topic + '". ' +
     'Return ONLY a JSON object with no markdown, no extra text. ' +
     'Schema: {"title":"string","slides":[{"heading":"string","content":"HTML using <b> and <ul><li>","keyFacts":["fact","fact"],"imageQuery":"2-3 words"}]}. ' +
     'Each slide content: ' + (detMap[det] || '3-5 sentences') + '. ' +
     'keyFacts: exactly 2 short items under 6 words each. ' +
-    'imageQuery: 2-3 word Wikipedia-friendly search term. ' +
+    'imageQuery: 2-3 word Wikipedia search. ' +
     'You MUST output all ' + count + ' slides. Return ONLY the JSON.';
 
   var r = await fetch('https://ask-ai.killermunu.workers.dev', {
@@ -851,37 +1288,31 @@ async function fetchSlides(topic, count, startNum, det) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: prompt })
   });
-  if (!r.ok) {
-    var errT = await r.text().catch(function() { return ''; });
-    throw new Error('HTTP ' + r.status + (errT ? ': ' + errT.slice(0, 80) : ''));
-  }
+  if (!r.ok) { var t = await r.text().catch(function(){return '';}); throw new Error('HTTP ' + r.status + (t ? ': ' + t.slice(0,80) : '')); }
   var j = await r.json();
   var raw = j.answer || j.response || j.content || j.text || j.result || '';
   if (!raw) throw new Error('Empty AI response');
   return parseSlideJSON(raw);
 }
 
-/* ── AI GENERATOR (BATCHED) ── */
+/* ══════════════════════════════════
+   AI GENERATOR — BATCHED
+══════════════════════════════════ */
 async function doGen() {
-  var topicEl = document.getElementById('topicIn');
-  var topic = topicEl.value.trim();
-  if (!topic) { topicEl.focus(); return; }
+  var topic = document.getElementById('topicIn').value.trim();
+  if (!topic) { document.getElementById('topicIn').focus(); return; }
   var n = parseInt(document.getElementById('slideN').value, 10);
   var det = document.getElementById('detailN').value;
-  var btn = document.getElementById('goBtn');
+  var btn = document.getElementById('generateBtn');
   btn.disabled = true;
 
-  // batch into groups of 4 to avoid token limit
-  var BATCH = 4;
-  var allSlides = [], title = '';
+  var BATCH = 4, allSlides = [], title = '';
   try {
     for (var i = 0; i < n; i += BATCH) {
-      var batchCount = Math.min(BATCH, n - i);
-      var startNum = i + 1;
-      var endNum = i + batchCount;
-      var estSecs = det === 'detailed' ? 40 : 28;
-      setSt('Generating slides ' + startNum + '\u2013' + endNum + ' of ' + n + '\u2026', false, estSecs);
-      var result = await fetchSlides(topic, batchCount, startNum, det);
+      var bc = Math.min(BATCH, n - i);
+      var sn = i + 1;
+      setSt('Generating slides ' + sn + '\u2013' + (i + bc) + ' of ' + n + '\u2026', false, det === 'detailed' ? 42 : 28);
+      var result = await fetchSlides(topic, bc, sn, det);
       if (!result.slides || !result.slides.length) throw new Error('Batch returned no slides');
       if (!title) title = result.title || topic;
       allSlides = allSlides.concat(result.slides);
@@ -893,11 +1324,7 @@ async function doGen() {
   }
 
   allSlides = allSlides.filter(function(s) { return s && s.heading && s.content; }).slice(0, n);
-  if (!allSlides.length) {
-    setSt('Failed: No valid slides returned', true);
-    btn.disabled = false;
-    return;
-  }
+  if (!allSlides.length) { setSt('Failed: No valid slides returned', true); btn.disabled = false; return; }
 
   var data = { title: title, slides: allSlides };
 
@@ -911,90 +1338,64 @@ async function doGen() {
   prevPage = 'gen';
   buildDeck(data);
   showPage('slides');
+
+
 }
 
-/* ── WIKIPEDIA IMAGES ── */
+/* ══════════════════════════════════
+   WIKIPEDIA IMAGES
+══════════════════════════════════ */
 async function getWikiImgs(data) {
-  var usedUrls = new Set(); // track used images to prevent duplicates across slides
-
+  var usedUrls = new Set();
   async function fetchImg(query) {
-    // Try progressively shorter queries to get diverse results
     var words = query.split(' ').filter(function(w) { return w.length > 2; });
-    var queries = [
-      words.slice(0, 3).join(' '),   // e.g. "plant cell wall"
-      words.slice(0, 2).join(' '),   // e.g. "plant cell"
-      words[0] || query              // e.g. "plant"
-    ];
-
+    var queries = [words.slice(0,3).join(' '), words.slice(0,2).join(' '), words[0] || query];
     for (var qi = 0; qi < queries.length; qi++) {
       var q = encodeURIComponent(queries[qi]);
-
-      // Method A: search-based pageimages — fetch more results to find unique ones
       try {
-        var ctrl = new AbortController();
-        setTimeout(function() { ctrl.abort(); }, 6000);
-        var r = await fetch(
-          'https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q +
-          '&gsrlimit=8&prop=pageimages&pithumbsize=600&format=json&origin=*',
-          { signal: ctrl.signal }
-        );
+        var ctrl = new AbortController(); setTimeout(function(){ctrl.abort();}, 6000);
+        var r = await fetch('https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + q + '&gsrlimit=8&prop=pageimages&pithumbsize=600&format=json&origin=*', {signal: ctrl.signal});
         var j = await r.json();
         var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
-        // Sort by page ID so results are deterministic
-        pages.sort(function(a, b) { return (a.index || 0) - (b.index || 0); });
+        pages.sort(function(a,b){return (a.index||0)-(b.index||0);});
         for (var i = 0; i < pages.length; i++) {
-          var p = pages[i];
-          if (p.thumbnail && p.thumbnail.source && !usedUrls.has(p.thumbnail.source)) {
-            usedUrls.add(p.thumbnail.source);
-            return { url: p.thumbnail.source, caption: p.title || query };
+          if (pages[i].thumbnail && pages[i].thumbnail.source && !usedUrls.has(pages[i].thumbnail.source)) {
+            usedUrls.add(pages[i].thumbnail.source);
+            return {url: pages[i].thumbnail.source, caption: pages[i].title || query};
           }
         }
       } catch(e1) {}
-
-      // Method B: direct title lookup
       try {
-        var ctrl2 = new AbortController();
-        setTimeout(function() { ctrl2.abort(); }, 6000);
-        var r2 = await fetch(
-          'https://en.wikipedia.org/w/api.php?action=query&titles=' + q +
-          '&prop=pageimages&pithumbsize=600&format=json&origin=*',
-          { signal: ctrl2.signal }
-        );
+        var ctrl2 = new AbortController(); setTimeout(function(){ctrl2.abort();}, 6000);
+        var r2 = await fetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + q + '&prop=pageimages&pithumbsize=600&format=json&origin=*', {signal: ctrl2.signal});
         var j2 = await r2.json();
         var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
         for (var i2 = 0; i2 < pages2.length; i2++) {
-          var p2 = pages2[i2];
-          if (p2.thumbnail && p2.thumbnail.source && !usedUrls.has(p2.thumbnail.source)) {
-            usedUrls.add(p2.thumbnail.source);
-            return { url: p2.thumbnail.source, caption: p2.title || query };
+          if (pages2[i2].thumbnail && pages2[i2].thumbnail.source && !usedUrls.has(pages2[i2].thumbnail.source)) {
+            usedUrls.add(pages2[i2].thumbnail.source);
+            return {url: pages2[i2].thumbnail.source, caption: pages2[i2].title || query};
           }
         }
       } catch(e2) {}
     }
     return null;
   }
-
-  // Fetch sequentially so usedUrls is checked in order (parallel would race)
   var slides = [];
   for (var i = 0; i < data.slides.length; i++) {
     var sl = data.slides[i];
-    if (sl.imageQuery) {
-      var img = await fetchImg(sl.imageQuery);
-      if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; }
-    }
+    if (sl.imageQuery) { var img = await fetchImg(sl.imageQuery); if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; } }
     slides.push(sl);
   }
-  return { title: data.title, slides: slides };
+  return {title: data.title, slides: slides};
 }
 
-/* ── BUILD DECK ── */
+/* ══════════════════════════════════
+   BUILD DECK
+══════════════════════════════════ */
 var cur = 0, tot = 0, deck = [];
 
 function buildDeck(data) {
-  deck = data.slides;
-  tot = deck.length;
-  cur = 0;
-
+  deck = data.slides; tot = deck.length; cur = 0;
   var stage = document.getElementById('stage');
   stage.innerHTML = '';
   document.getElementById('dotRow').innerHTML = '';
@@ -1004,46 +1405,46 @@ function buildDeck(data) {
   document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
 
   deck.forEach(function(sl, i) {
+    var hasDiagram = !!(sl.diagramKey && DIAGRAMS[sl.diagramKey]);
     var hasImg = !!sl.imageUrl;
-    var kfHtml = '';
-    if (sl.keyFacts && sl.keyFacts.length) {
-      kfHtml = '<div class="kf-row">' +
-        sl.keyFacts.map(function(f) { return '<span class="kf">' + f + '</span>'; }).join('') +
-        '</div>';
-    }
-    var imgHtml = '';
-    if (hasImg) {
-      imgHtml = '<div class="img-col"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
-        (sl.imageCaption ? '<div class="img-cap">' + sl.imageCaption + '</div>' : '') +
-        '</div>';
+    var hasSide = hasDiagram || hasImg;
+
+    var kfHtml = sl.keyFacts && sl.keyFacts.length
+      ? '<div class="kf-row">' + sl.keyFacts.map(function(f){return '<span class="kf">'+f+'</span>';}).join('') + '</div>' : '';
+
+    var sideHtml = '';
+    if (hasDiagram) {
+      sideHtml = '<div class="diagram-panel">' + DIAGRAMS[sl.diagramKey] +
+        '<div class="diagram-label">' + (sl.diagramLabel || '') + '</div></div>';
+    } else if (hasImg) {
+      sideHtml = '<div class="img-panel"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
+        (sl.imageCaption ? '<div class="img-cap">' + sl.imageCaption + '</div>' : '') + '</div>';
     }
 
-    // Build slide element
     var slide = document.createElement('div');
     slide.className = 'slide' + (i === 0 ? ' active' : '');
     slide.id = 'sl' + i;
     slide.innerHTML =
       '<div class="slide-inner">' +
-        '<div class="slide-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
+        '<div class="slide-num">SLIDE ' + String(i+1).padStart(2,'0') + '</div>' +
         '<div class="slide-heading">' + sl.heading + '</div>' +
-        '<div class="slide-layout' + (hasImg ? ' has-img' : '') + '">' +
+        '<div class="slide-layout' + (hasSide ? ' has-diagram' : '') + '">' +
           '<div class="content-col">' +
-            '<div class="content-card blurred" id="cc' + i + '">' +
+            '<div class="content-card blurred" id="cc'+i+'">' +
               '<div class="content-body">' + sl.content + kfHtml + '</div>' +
-              '<div class="reveal-badge" id="badge' + i + '">' +
+              '<div class="reveal-badge" id="badge'+i+'">' +
                 '<div class="reveal-badge-inner">' +
-                  '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                  '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
                   '<span>CLICK TO REVEAL</span>' +
                 '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
-          imgHtml +
+          sideHtml +
         '</div>' +
       '</div>';
     stage.appendChild(slide);
 
-    // Click to toggle blur on every slide
     (function(idx) {
       var card = document.getElementById('cc' + idx);
       var badge = document.getElementById('badge' + idx);
@@ -1053,75 +1454,122 @@ function buildDeck(data) {
       });
     })(i);
 
-    // Dot
     var dot = document.createElement('button');
     dot.className = 'dot' + (i === 0 ? ' on' : '');
-    dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
+    dot.onclick = (function(idx){return function(){goTo(idx);};})(i);
     document.getElementById('dotRow').appendChild(dot);
 
-    // Overview card
     var oc = document.createElement('div');
     oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
-    oc.innerHTML =
-      '<div class="ov-num">SLIDE ' + String(i + 1).padStart(2, '0') + '</div>' +
-      '<div class="ov-heading">' + sl.heading + '</div>';
-    oc.onclick = (function(idx) { return function() { goTo(idx); closeOv(); }; })(i);
+    oc.innerHTML = '<div class="ov-num">SLIDE ' + String(i+1).padStart(2,'0') + '</div><div class="ov-heading">' + sl.heading + '</div>';
+    oc.onclick = (function(idx){return function(){goTo(idx);closeOv();};})(i);
     document.getElementById('ovGrid').appendChild(oc);
   });
 
   updateUI();
 }
 
-/* ── NAVIGATION ── */
+/* ══════════════════════════════════
+   NAVIGATION
+══════════════════════════════════ */
 function goTo(n) {
   if (n < 0 || n >= tot) return;
-  document.getElementById('sl' + cur).classList.remove('active');
+  document.getElementById('sl'+cur).classList.remove('active');
   cur = n;
-  document.getElementById('sl' + cur).classList.add('active');
-  document.getElementById('sl' + cur).scrollTop = 0;
+  document.getElementById('sl'+cur).classList.add('active');
+  document.getElementById('sl'+cur).scrollTop = 0;
   updateUI();
 }
 function nav(dir) { goTo(cur + dir); }
 function goBack() { showPage(prevPage || 'menu'); }
+function navNext() { if (cur === tot - 1) { goBack(); } else { nav(1); } }
+
 
 function updateUI() {
   document.getElementById('curN').textContent = cur + 1;
-  document.getElementById('progFill').style.width = ((cur + 1) / tot * 100) + '%';
+  document.getElementById('progFill').style.width = ((cur+1)/tot*100) + '%';
   document.getElementById('prevBtn').disabled = cur === 0;
   var nb = document.getElementById('nextBtn');
   if (cur === tot - 1) {
     nb.textContent = 'DONE';
     nb.classList.remove('pri');
+    nb.disabled = false;
   } else {
     nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>';
     nb.classList.add('pri');
   }
   nb.disabled = false;
-  document.querySelectorAll('.dot').forEach(function(d, i) { d.classList.toggle('on', i === cur); });
-  document.querySelectorAll('.ov-card').forEach(function(c, i) { c.classList.toggle('cur', i === cur); });
+  document.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
+  document.querySelectorAll('.ov-card').forEach(function(c,i){c.classList.toggle('cur',i===cur);});
 }
 
-/* ── OVERVIEW ── */
 function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
 function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
 
-/* ── KEYBOARD ── */
+/* ══════════════════════════════════
+   FULLSCREEN
+══════════════════════════════════ */
+function toggleFullscreen() {
+  var el = document.getElementById('pg-slides');
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if (req) req.call(el);
+  } else {
+    var ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+    if (ex) ex.call(document);
+  }
+}
+document.addEventListener('fullscreenchange', updateFsIcon);
+document.addEventListener('webkitfullscreenchange', updateFsIcon);
+function updateFsIcon() {
+  var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  var icon = document.getElementById('fsIcon');
+  if (!icon) return;
+  icon.innerHTML = inFs
+    ? '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'
+    : '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+}
+
+/* ══════════════════════════════════
+   FULLSCREEN
+══════════════════════════════════ */
+function toggleFullscreen() {
+  var el = document.getElementById('pg-slides');
+  if (!document.fullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+  }
+}
+document.addEventListener('fullscreenchange', updateFsIcon);
+document.addEventListener('webkitfullscreenchange', updateFsIcon);
+function updateFsIcon() {
+  var isFs = !!document.fullscreenElement;
+  document.getElementById('fsIcon').innerHTML = isFs
+    ? '<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>'
+    : '<polyline points="15,3 21,3 21,9"/><polyline points="9,21 3,21 3,15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+}
+
+/* ══════════════════════════════════
+   KEYBOARD
+══════════════════════════════════ */
 document.addEventListener('keydown', function(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (!document.getElementById('pg-slides').classList.contains('active')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  var onSlides = document.getElementById('pg-slides').classList.contains('active');
+  if (!onSlides) return;
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
-  if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
   if (e.key === 'g' || e.key === 'G') openOv();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
   if (e.key === 'Escape') {
-    document.getElementById('ovOverlay').classList.contains('open') ? closeOv() : goBack();
+    if (document.getElementById('ovOverlay').classList.contains('open')) closeOv();
+    else goBack();
   }
   if (e.key === 'r' || e.key === 'R') {
     var card = document.getElementById('cc' + cur);
     var badge = document.getElementById('badge' + cur);
-    if (card) {
-      var nowBlurred = card.classList.toggle('blurred');
-      if (badge) badge.style.display = nowBlurred ? '' : 'none';
-    }
+    if (card) { var nb2 = card.classList.toggle('blurred'); if (badge) badge.style.display = nb2 ? '' : 'none'; }
   }
 });
 </script>
