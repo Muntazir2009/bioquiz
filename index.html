@@ -37,192 +37,103 @@ body{
   background:#000;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  gap:0;
-  transition:opacity .7s ease;
+  transition:opacity .6s ease;
 }
 #loader.hide{opacity:0;pointer-events:none}
 
-/* content wrapper that zooms in on exit */
+/* zoom-out exit — transform+opacity only */
 .ld-content{
   display:flex;flex-direction:column;align-items:center;
-  transition:transform .75s cubic-bezier(.4,0,.2,1), filter .75s ease, opacity .75s ease;
-  will-change:transform;
+  will-change:transform,opacity;
+  transition:transform .7s cubic-bezier(.4,0,.2,1),opacity .7s ease;
 }
-.ld-content.zoom{
-  transform:scale(1.18) translateY(-8px);
-  filter:blur(3px) brightness(1.4);
-  opacity:0;
-}
+.ld-content.zoom{transform:scale(1.14) translateY(-6px);opacity:0}
 
-/* site title on loader */
+/* BIOQUIZ title — simple fade+slide, no blur */
 .ld-title{
   font-family:'Rajdhani',sans-serif;font-weight:900;
   font-size:clamp(2.8rem,10vw,6.5rem);
   letter-spacing:.42em;
-  background:linear-gradient(135deg,#fff 0%,#c8d8f0 35%,#fff 55%,#8ab4e8 75%,#fff 100%);
-  background-size:300%;
-  background-clip:text;-webkit-background-clip:text;color:transparent;
+  color:#fff;
   opacity:0;
-  animation:ldTitleIn .8s cubic-bezier(.16,1,.3,1) .15s forwards, titleSheen 3s ease 1s infinite;
+  will-change:opacity,transform;
+  animation:ldTitleIn .7s ease .15s forwards;
   margin-bottom:clamp(20px,4vh,44px);
   position:relative;
-  text-shadow:none;
-  filter:drop-shadow(0 0 28px rgba(150,190,255,.25));
-}
-.ld-title::before{
-  content:'BIOQUIZ';
-  position:absolute;inset:0;
-  font-family:'Rajdhani',sans-serif;font-weight:900;
-  font-size:inherit;letter-spacing:inherit;
-  color:transparent;
-  -webkit-text-stroke:1px rgba(255,255,255,.08);
-  transform:scale(1.02) translateY(2px);
-  filter:blur(8px);
-  opacity:.6;
-  z-index:-1;
 }
 .ld-title::after{
   content:'';position:absolute;bottom:-12px;left:5%;width:90%;height:1px;
-  background:linear-gradient(to right,transparent,rgba(255,255,255,.35),transparent);
+  background:linear-gradient(to right,transparent,rgba(255,255,255,.3),transparent);
 }
 @keyframes ldTitleIn{
-  from{opacity:0;letter-spacing:.7em;filter:blur(12px) drop-shadow(0 0 0px rgba(150,190,255,0))}
-  to{opacity:1;letter-spacing:.42em;filter:blur(0) drop-shadow(0 0 28px rgba(150,190,255,.25))}
-}
-@keyframes titleSheen{
-  0%{background-position:0%}
-  50%{background-position:100%}
-  100%{background-position:0%}
+  from{opacity:0;transform:translateY(-10px)}
+  to  {opacity:1;transform:translateY(0)}
 }
 
-/* police seal — two line layout */
-.ld-seal-madeby{
-  display:flex;align-items:center;justify-content:center;
-  gap:0;margin-bottom:10px;
-}
-.ld-seal-name{
-  display:flex;align-items:center;justify-content:center;
-  gap:0;margin-bottom:clamp(28px,5vh,52px);
-}
+/* MADE BY / MUNTAZIR layout */
+.ld-seal-madeby{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:10px}
+.ld-seal-name  {display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:clamp(28px,5vh,52px)}
+
 .ld-letter{
   display:inline-block;
   font-family:'Rajdhani',sans-serif;font-weight:900;
   font-size:clamp(1rem,3.5vw,1.8rem);
   letter-spacing:.12em;
-  color:transparent;
-  -webkit-text-stroke:1px rgba(255,255,255,.65);
+  color:rgba(255,255,255,.7);
   text-transform:uppercase;
   opacity:0;
+  will-change:opacity,transform;
 }
 .ld-letter.space{width:.5em;display:inline-block}
+.muntazir-letter{font-size:clamp(2rem,7vw,4rem);letter-spacing:.18em;color:#00e5ff}
 
-/* MUNTAZIR letters — cyan */
-.muntazir-letter{
-  font-size:clamp(2rem,7vw,4rem);
-  letter-spacing:.18em;
-  -webkit-text-stroke:0px transparent;
-}
-
-/* white stamp (MADE BY) */
+/* stamp — transform+opacity only, no blur/filter */
 @keyframes stamp{
-  0%  {opacity:0;transform:scale(3) translateY(-6px);filter:blur(5px);-webkit-text-stroke:2px rgba(255,255,255,.1)}
-  40% {opacity:1;transform:scale(.92) translateY(1px);filter:blur(0);-webkit-text-stroke:1px rgba(255,255,255,.85)}
-  60% {transform:scale(1.04)}
-  80% {transform:scale(.98)}
-  100%{opacity:1;transform:scale(1);color:rgba(255,255,255,.05);-webkit-text-stroke:1px rgba(255,255,255,.5)}
+  0%  {opacity:0;transform:scale(2.6) translateY(-8px)}
+  45% {opacity:1;transform:scale(.93) translateY(1px)}
+  65% {transform:scale(1.04)}
+  82% {transform:scale(.98)}
+  100%{opacity:1;transform:scale(1)}
 }
-
-/* cyan stamp for MUNTAZIR */
 @keyframes stampCyan{
-  0%  {opacity:0;transform:scale(3.2) translateY(-10px);filter:blur(7px);color:transparent}
-  35% {opacity:1;transform:scale(.9) translateY(3px);filter:blur(0);color:#00e5ff;text-shadow:0 0 30px #00e5ff,0 0 60px rgba(0,229,255,.5),0 0 100px rgba(0,229,255,.2)}
-  55% {transform:scale(1.06);text-shadow:0 0 40px #00e5ff,0 0 80px rgba(0,229,255,.4)}
-  75% {transform:scale(.97)}
-  100%{opacity:1;transform:scale(1);color:#00e5ff;text-shadow:0 0 14px rgba(0,229,255,.7),0 0 30px rgba(0,229,255,.3)}
+  0%  {opacity:0;transform:scale(2.8) translateY(-10px)}
+  40% {opacity:1;transform:scale(.92) translateY(2px)}
+  60% {transform:scale(1.06)}
+  78% {transform:scale(.97)}
+  100%{opacity:1;transform:scale(1)}
 }
 
-/* sub-label under seal */
+/* sub-label */
 .ld-sub{
   font-family:'Rajdhani',sans-serif;font-size:.54rem;letter-spacing:.44em;
   color:rgba(255,255,255,.26);text-transform:uppercase;
-  opacity:0;animation:ldSubIn .5s ease 2.2s forwards;
+  opacity:0;will-change:opacity,transform;
+  animation:ldSubIn .4s ease 2.2s forwards;
   margin-bottom:clamp(28px,4vh,48px);
 }
-@keyframes ldSubIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ldSubIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* loader scan lines — replaced with lively corner brackets + sweeps */
-/* ── LOADER SCAN LINE ── */
-.ld-meteors{display:none}
-.ld-corners{display:none}
+/* scan line — REMOVED */
+.ld-scanline{display:none}
+.ld-meteors {display:none}
+.ld-corners {display:none}
 
-.ld-scanline{
-  position:absolute;left:0;right:0;height:3px;top:0;
-  background:linear-gradient(to right,
-    transparent 0%,
-    rgba(255,255,255,.04) 10%,
-    rgba(255,255,255,.55) 40%,
-    rgba(255,255,255,.9)  50%,
-    rgba(255,255,255,.55) 60%,
-    rgba(255,255,255,.04) 90%,
-    transparent 100%
-  );
-  filter:blur(.6px);
-  will-change:transform;
-  animation:scanDown 2.2s cubic-bezier(.4,0,.2,1) infinite;
-}
-/* trailing glow behind the line */
-.ld-scanline::after{
-  content:'';position:absolute;inset:0;top:-6px;height:12px;
-  background:linear-gradient(to right,
-    transparent 20%,
-    rgba(255,255,255,.06) 40%,
-    rgba(255,255,255,.18) 50%,
-    rgba(255,255,255,.06) 60%,
-    transparent 80%
-  );
-  filter:blur(4px);
-}
-@keyframes scanDown{
-  0%  {transform:translateY(-4px);  opacity:0}
-  3%  {opacity:1}
-  97% {opacity:1}
-  100%{transform:translateY(100vh); opacity:0}
-}
-
-/* loading bar — richer, taller, segmented feel */
+/* loading bar — simple, no shimmer, no glow */
 .ld-bar-wrap{
-  width:clamp(200px,44vw,380px);height:5px;
-  background:rgba(255,255,255,.06);
-  border-radius:3px;overflow:hidden;position:relative;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 0 12px rgba(0,0,0,.4) inset;
+  width:clamp(200px,44vw,380px);height:3px;
+  background:rgba(255,255,255,.1);
+  border-radius:2px;overflow:hidden;
 }
 .ld-bar-fill{
   height:100%;width:0%;
-  background:linear-gradient(90deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.9) 50%,rgba(200,220,255,.7) 100%);
-  border-radius:3px;
-  box-shadow:0 0 10px rgba(255,255,255,.4),0 0 20px rgba(150,190,255,.2);
+  background:rgba(255,255,255,.85);
+  border-radius:2px;
   transition:width .08s linear;
-  position:relative;
 }
-/* animated shimmer on the fill */
-.ld-bar-fill::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.6) 50%,transparent 100%);
-  background-size:60px 100%;
-  animation:barShimmer .8s linear infinite;
-}
-@keyframes barShimmer{from{background-position:-60px 0}to{background-position:120px 0}}
-/* tick marks on the bar track */
-.ld-bar-wrap::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:repeating-linear-gradient(90deg,transparent,transparent calc(10% - 1px),rgba(0,0,0,.25) calc(10% - 1px),rgba(0,0,0,.25) 10%);
-}
-.ld-bar-glow{display:none}/* replaced by fill shimmer */
+.ld-bar-glow{display:none}
 .ld-pct{
-  font-family:'Rajdhani',sans-serif;font-size:.52rem;letter-spacing:.22em;
-  color:rgba(255,255,255,.4);margin-top:11px;text-align:center;
-  font-weight:600;
+  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.2em;
+  color:rgba(255,255,255,.35);margin-top:10px;text-align:center;
 }
 
 /* ════════════════════════════════════════
@@ -290,7 +201,7 @@ body{
    PILL NAVBAR
 ════════════════════════════════════════ */
 .navbar{
-  position:fixed;top:20px;right:24px;z-index:1000;
+  position:fixed;top:68px;right:24px;z-index:1000;
   display:flex;align-items:center;gap:2px;
   background:rgba(8,8,8,.92);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
   border:1px solid var(--border-strong);border-radius:50px;padding:5px 7px;
@@ -328,7 +239,7 @@ body{
   position:absolute;top:calc(100% + 14px);right:0;
   background:rgba(10,10,10,.98);backdrop-filter:blur(30px);
   border:1px solid var(--border-strong);border-radius:18px;
-  padding:8px;width:520px;
+  padding:8px;width:580px;
   box-shadow:0 28px 70px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.04) inset;
   opacity:0;visibility:hidden;transform:translateY(10px);
   transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .22s cubic-bezier(.16,1,.3,1),visibility .22s;
@@ -369,11 +280,24 @@ body{
 .wn-tag.u{background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1)}
 
 /* Quote dropdown */
-.quote-box{padding:14px 18px 12px}
-.quote-mark{color:rgba(255,255,255,.15);margin-bottom:8px}
-.quote-mark svg{width:20px;height:20px;fill:currentColor}
-.quote-text{font-size:.86rem;line-height:1.75;color:var(--white-50);font-style:italic;margin-bottom:10px;white-space:normal;word-break:break-word}
-.quote-author{font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.18em;color:var(--muted)}
+.quote-box{padding:22px 24px 16px;text-align:center}
+.quote-mark{color:rgba(255,255,255,.12);margin-bottom:14px}
+.quote-mark svg{width:26px;height:26px;fill:currentColor}
+.quote-text{
+  font-size:1rem;line-height:1.8;
+  color:rgba(255,255,255,.72);
+  font-style:italic;margin-bottom:14px;
+  white-space:normal;word-break:break-word;
+}
+.quote-author{
+  font-family:'Rajdhani',sans-serif;font-size:.52rem;
+  letter-spacing:.22em;color:var(--muted);margin-bottom:4px;
+}
+.quote-ref{
+  font-family:'Rajdhani',sans-serif;font-size:.46rem;
+  letter-spacing:.18em;color:rgba(255,255,255,.2);
+  font-style:normal;
+}
 .quote-btn{
   width:100%;margin-top:12px;
   font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.14em;font-weight:600;
@@ -397,8 +321,62 @@ body{
 /* ════════════════════════════════════════
    TOPBAR
 ════════════════════════════════════════ */
+/* ── ALERT BANNER ── */
+.alert-banner{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:0 clamp(16px,4vw,52px);
+  height:48px;
+  background:rgba(8,8,8,.95);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  animation:slideDown .5s ease .05s both;
+  transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s ease;
+}
+.alert-banner.dismissed{
+  transform:translateY(-100%);opacity:0;pointer-events:none;
+}
+.alert-left{display:flex;align-items:center;justify-content:center;flex:1}
+.alert-pill{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:'Rajdhani',sans-serif;font-size:.78rem;
+  letter-spacing:.14em;font-weight:600;
+  color:rgba(255,255,255,.8);
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+  padding:9px 20px 9px 14px;
+  border-radius:40px;
+  text-decoration:none;
+  transition:background .2s,border-color .2s,color .2s;
+  white-space:nowrap;
+}
+.alert-pill:hover{
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.32);
+  color:#fff;
+}
+.alert-pill svg{width:13px;height:13px;opacity:.6;flex-shrink:0;transition:opacity .2s,transform .2s}
+.alert-pill:hover svg{opacity:1;transform:translate(2px,-2px)}
+.alert-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:#f87171;
+  box-shadow:0 0 8px rgba(248,113,113,.8);
+  animation:pulse 1.8s ease infinite;
+}
+.alert-pill-text{line-height:1}
+.alert-close{
+  position:absolute;right:clamp(16px,4vw,52px);
+  background:transparent;border:none;cursor:pointer;
+  color:rgba(255,255,255,.3);padding:6px 8px;border-radius:4px;
+  font-size:1rem;line-height:1;
+  transition:color .2s;
+}
+.alert-close:hover{color:rgba(255,255,255,.75)}
+.alert-label{display:none}
+.alert-text{display:none}
+
 .topbar{
-  position:fixed;top:0;left:0;right:0;z-index:400;height:62px;
+  position:fixed;top:48px;left:0;right:0;z-index:400;height:62px;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 clamp(16px,4vw,52px);
   background:rgba(8,8,8,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
@@ -429,7 +407,11 @@ body{
 /* ════════════════════════════════════════
    MAIN WRAP
 ════════════════════════════════════════ */
-.wrap{position:relative;z-index:2;min-height:100vh;padding:80px clamp(16px,4.5vw,60px) 60px;max-width:1320px;margin:0 auto}
+.wrap{position:relative;z-index:2;min-height:100vh;padding:110px clamp(16px,4.5vw,60px) 60px;max-width:1320px;margin:0 auto}
+/* when banner dismissed, topbar goes back to top:0 and wrap padding shrinks */
+body.no-alert .topbar{top:0}
+body.no-alert .wrap{padding-top:80px}
+body.no-alert .navbar{top:20px}
 
 /* ════════════════════════════════════════
    HERO
@@ -545,6 +527,27 @@ body{
 .launch-box svg{width:11px;height:11px;stroke:var(--c);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .card:hover .launch-box{transform:translate(3px,-3px);background:color-mix(in srgb,var(--c) 18%,transparent)}
 .c-cyan{--c:var(--c-cyan)}.c-violet{--c:var(--c-violet)}.c-green{--c:var(--c-green)}.c-teal{--c:var(--c-teal)}.c-amber{--c:var(--c-amber)}.c-coral{--c:var(--c-coral)}.c-pink{--c:var(--c-pink)}
+/* fiery presentation card */
+.c-fire{--c:#ff6b1a}
+.c-fire{
+  background:linear-gradient(148deg,rgba(40,12,4,.98),rgba(20,5,2,.99));
+  border-color:rgba(255,80,0,.18);
+}
+.c-fire::before{background:radial-gradient(circle at 20% 20%,rgba(255,80,0,.14),transparent 55%)}
+.c-fire:hover{border-color:rgba(255,100,20,.55);box-shadow:0 0 50px rgba(255,80,0,.22),0 0 100px rgba(255,40,0,.08),0 22px 52px rgba(0,0,0,.7)}
+.c-fire .card-id{color:#ff6b1a}
+.c-fire .card-id::before{background:#ff6b1a}
+.c-fire .card-icon-box{border-color:rgba(255,80,0,.35);background:rgba(255,60,0,.1)}
+.c-fire .card-icon-box svg{stroke:#ff6b1a}
+.c-fire:hover .card-icon-box{box-shadow:0 0 24px rgba(255,80,0,.4)}
+.c-fire .launch-dot{background:#ff6b1a;box-shadow:0 0 6px #ff6b1a}
+.c-fire .launch-text{color:#ff6b1a}
+.c-fire .card-launch{border-color:rgba(255,80,0,.2);background:rgba(255,60,0,.06)}
+.c-fire:hover .card-launch{background:rgba(255,60,0,.14);border-color:rgba(255,80,0,.45);box-shadow:0 0 14px rgba(255,80,0,.18)}
+.c-fire .launch-box{border-color:rgba(255,80,0,.35);background:rgba(255,60,0,.1)}
+.c-fire .launch-box svg{stroke:#ff6b1a}
+.c-fire:hover .launch-box{background:rgba(255,60,0,.2)}
+.c-fire .card-num{color:rgba(255,60,0,.03)}
 .card-wide{grid-column:1/-1;flex-direction:row;align-items:center;gap:28px;padding:28px 30px}
 .card-wide .card-icon-box{width:60px;height:60px;border-radius:14px;margin-bottom:0;flex-shrink:0}
 .card-wide .card-icon-box svg{width:28px;height:28px}
@@ -623,7 +626,9 @@ body{
    MOBILE ≤640px
 ════════════════════════════════════════ */
 @media(max-width:640px){
-  .moon-wrap{top:66px;right:8px}
+  .alert-text{font-size:.5rem}
+  .alert-label{display:none}
+  .moon-wrap{top:102px;right:8px}
   .moon-img-wrap{width:62px;height:62px}
 
   .topbar{padding:0 14px}
@@ -808,106 +813,35 @@ body{
 <nav class="navbar" id="navbar">
   <div class="nav-brand"><div class="nav-brand-dot"></div>BIOQUIZ</div>
 
-  <div class="nav-item" id="ni-new">
-    <button class="nav-btn" onclick="toggleNav('ni-new')">
-      WHAT'S NEW <svg class="caret" width="10" height="10"><use href="#i-caret"/></svg>
-    </button>
-    <div class="dropdown">
-      <div class="dd-head">RECENT UPDATES</div>
-      <div class="wn-list">
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Wider Dropdowns</div>
-            <div class="wn-d">What's New &amp; Quote panels are now wider with full text wrapping — no more overflow</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Lively Loader Effects</div>
-            <div class="wn-d">Loading screen now has corner targeting brackets, three horizontal sweeps, a vertical ping, and flicker dots</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">BIOQUIZ Title Enhanced</div>
-            <div class="wn-d">Shimmering silver-to-blue gradient with ghost blur layer and continuous sheen animation</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Loader Zoom-Out Exit</div>
-            <div class="wn-d">When loading finishes, content scales up and blurs like a camera rushing through the title</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">New Refreshed Minimal Design</div>
-            <div class="wn-d">Clean black &amp; white aesthetic — every component rebuilt from scratch for clarity and elegance</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot n"></div>
-          <div class="wn-body">
-            <div class="wn-t">Study Streak &amp; Bio Facts</div>
-            <div class="wn-d">Daily streak tracker in topbar and rotating biology facts panel on the hub</div>
-            <span class="wn-tag n">NEW</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot f"></div>
-          <div class="wn-body">
-            <div class="wn-t">Mobile Dropdowns Fixed</div>
-            <div class="wn-d">Dropdowns open upward fixed to viewport — fully visible on all screen sizes</div>
-            <span class="wn-tag f">FIX</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot u"></div>
-          <div class="wn-body">
-            <div class="wn-t">Click Outside to Close</div>
-            <div class="wn-d">Clicking anywhere outside a dropdown now closes it instantly</div>
-            <span class="wn-tag u">UPDATE</span>
-          </div>
-        </div>
-        <div class="wn-row">
-          <div class="wn-dot u"></div>
-          <div class="wn-body">
-            <div class="wn-t">Keyboard Navigation</div>
-            <div class="wn-d">Press Q, A, O, 3, L, S, F to jump instantly to any module</div>
-            <span class="wn-tag u">UPDATE</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="nav-item" id="ni-quote">
     <button class="nav-btn" onclick="toggleNav('ni-quote')">
       QUOTE <svg class="caret" width="10" height="10"><use href="#i-caret"/></svg>
     </button>
     <div class="dropdown">
-      <div class="dd-head">QUOTE OF THE DAY</div>
+      <div class="dd-head">QUOTE</div>
       <div class="quote-box">
         <div class="quote-mark"><svg><use href="#i-quote"/></svg></div>
         <div class="quote-text" id="quoteText">Loading...</div>
         <div class="quote-author" id="quoteAuthor">— ...</div>
+        <div class="quote-ref" id="quoteRef"></div>
         <button class="quote-btn" onclick="newQuote()"><svg><use href="#i-refresh"/></svg> NEW QUOTE</button>
         <a href="quotes.html" class="dd-view-all">VIEW ALL QUOTES →</a>
       </div>
     </div>
   </div>
 </nav>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner">
+  <div class="alert-left">
+    <a href="presentation.html" class="alert-pill">
+      <div class="alert-dot"></div>
+      <span class="alert-pill-text">Strait of Hormuz — Presentation here</span>
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </a>
+  </div>
+  <button class="alert-close" onclick="dismissAlert()" aria-label="Dismiss">✕</button>
+</div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -939,7 +873,8 @@ body{
       </div>
       <p class="hero-desc">Seven powerful modules. Quizzes, AI research, 3D cell viewer, organelle explorer, slides, solutions and suggestions — built to make biology click.</p>
       <div class="hero-btns">
-        <a href="quiz.html" class="btn-launch"><svg><use href="#i-play"/></svg> START QUIZ</a>
+        <a href="presentation.html" class="btn-launch"><svg><use href="#i-slides"/></svg> PRESENTATION</a>
+        <a href="quiz.html" class="btn-outline"><svg><use href="#i-play"/></svg> START QUIZ</a>
         <a href="ask.html" class="btn-outline"><svg><use href="#i-ai"/></svg> ASK PANEL</a>
       </div>
     </div>
@@ -951,12 +886,6 @@ body{
     </div>
   </div>
 
-  <!-- BIO FACT STRIP -->
-  <div class="fact-strip">
-    <div class="fact-badge">BIO FACT</div>
-    <div class="fact-text" id="factText">Loading...</div>
-    <button class="fact-next" onclick="nextFact()" title="Next fact"><svg><use href="#i-chev"/></svg></button>
-  </div>
 
   <div class="divider"></div>
 
@@ -967,20 +896,31 @@ body{
   </div>
 
   <div class="grid" id="moduleGrid">
-    <a href="quiz.html" class="card card-wide c-cyan" data-keys="quiz biology questions timed">
-      <div class="card-icon-box"><svg><use href="#i-quiz"/></svg></div>
+
+    <!-- PRESENTATION — pinned top, full-width -->
+    <a href="presentation.html" class="card card-wide c-fire" data-keys="presentation slides study revision exam">
+      <div class="card-icon-box"><svg><use href="#i-slides"/></svg></div>
       <div class="card-body">
         <div class="card-id">MODULE 001</div>
-        <div class="card-title">BIOLOGY QUIZ</div>
-        <div class="card-desc">Timed challenges across all cell biology topics — organelles, membranes, molecular processes. Real-time score tracking and instant feedback.</div>
+        <div class="card-title">PRESENTATION</div>
+        <div class="card-desc">Structured biology lesson slides covering all major topics. Perfect for study sessions and exam revision.</div>
         <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY TO LAUNCH</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
       </div>
       <div class="card-num">01</div>
+      <div class="card-shortcut">P</div>
+    </a>
+
+    <a href="quiz.html" class="card c-cyan" data-keys="quiz biology questions timed">
+      <div class="card-num">02</div><div class="card-id">MODULE 002</div>
+      <div class="card-icon-box"><svg><use href="#i-quiz"/></svg></div>
+      <div class="card-title">BIOLOGY QUIZ</div>
+      <div class="card-desc">Timed challenges across all cell biology topics — organelles, membranes, molecular processes. Real-time score tracking and instant feedback.</div>
+      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY TO LAUNCH</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
       <div class="card-shortcut">Q</div>
     </a>
 
     <a href="ask.html" class="card c-violet" data-keys="ask ai panel research wikipedia">
-      <div class="card-num">02</div><div class="card-id">MODULE 002</div>
+      <div class="card-num">03</div><div class="card-id">MODULE 003</div>
       <div class="card-icon-box"><svg><use href="#i-ai"/></svg></div>
       <div class="card-title">ASK PANEL</div>
       <div class="card-desc">AI-powered research terminal. Ask anything, get instant explanations with Wikipedia and Cloudflare AI.</div>
@@ -989,7 +929,7 @@ body{
     </a>
 
     <a href="organelles.html" class="card c-green" data-keys="organelle explorer cell membrane structure">
-      <div class="card-num">03</div><div class="card-id">MODULE 003</div>
+      <div class="card-num">04</div><div class="card-id">MODULE 004</div>
       <div class="card-icon-box"><svg><use href="#i-cell"/></svg></div>
       <div class="card-title">ORGANELLE EXPLORER</div>
       <div class="card-desc">Deep-dive visual cards for every organelle. Diagrams, functions, and key facts for each structure.</div>
@@ -998,21 +938,12 @@ body{
     </a>
 
     <a href="cell-3d.html" class="card c-teal" data-keys="3d cell viewer rotate zoom interactive model">
-      <div class="card-num">04</div><div class="card-id">MODULE 004</div>
+      <div class="card-num">05</div><div class="card-id">MODULE 005</div>
       <div class="card-icon-box"><svg><use href="#i-3d"/></svg></div>
       <div class="card-title">3D CELL VIEWER</div>
       <div class="card-desc">Interactive three-dimensional cell model. Rotate, zoom, and explore cell structure in real-time 3D.</div>
       <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">3D ACTIVE</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
       <div class="card-shortcut">3</div>
-    </a>
-
-    <a href="presentation.html" class="card c-amber" data-keys="lesson slides presentation study revision exam">
-      <div class="card-num">05</div><div class="card-id">MODULE 005</div>
-      <div class="card-icon-box"><svg><use href="#i-slides"/></svg></div>
-      <div class="card-title">LESSON SLIDES</div>
-      <div class="card-desc">Structured biology lesson slides covering all major topics. Perfect for study sessions and exam revision.</div>
-      <div class="card-launch"><div class="launch-left"><div class="launch-dot"></div><div class="launch-text">READY</div></div><div class="launch-box"><svg><use href="#i-ext"/></svg></div></div>
-      <div class="card-shortcut">L</div>
     </a>
 
     <a href="solutions.html" class="card c-coral" data-keys="solutions answers qa exercise explanation">
@@ -1110,7 +1041,22 @@ body{
   requestAnimationFrame(updateBar);
 })();
 
-/* ═══ CLOCK ═══ */
+/* ═══ ALERT BANNER ═══ */
+function dismissAlert(){
+  document.getElementById("alertBanner").classList.add("dismissed");
+  document.body.classList.add("no-alert");
+}
+/* restore if previously dismissed this session */
+if(sessionStorage.getItem("alertDismissed")){
+  document.getElementById("alertBanner").classList.add("dismissed");
+  document.body.classList.add("no-alert");
+}
+document.getElementById("alertBanner").addEventListener("transitionend", ()=>{
+  if(document.body.classList.contains("no-alert"))
+    sessionStorage.setItem("alertDismissed","1");
+});
+
+
 function tick(){
   const t=new Date().toLocaleTimeString("en-US",{hour12:false});
   document.getElementById("clock").textContent=t;
@@ -1162,7 +1108,7 @@ function nextFact(){showFact(factIdx+1)}
 showFact(factIdx);
 
 /* ═══ KEYBOARD SHORTCUTS ═══ */
-const SHORTCUTS={q:"quiz.html",a:"ask.html",o:"organelles.html","3":"cell-3d.html",l:"presentation.html",s:"solutions.html",f:"suggestions.html"};
+const SHORTCUTS={p:"presentation.html",q:"quiz.html",a:"ask.html",o:"organelles.html","3":"cell-3d.html",s:"solutions.html",f:"suggestions.html"};
 function showToast(msg,dur=2200){
   const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),dur);
@@ -1226,27 +1172,36 @@ document.addEventListener("click",   e=>{ if(!e.target.closest(".navbar")) close
 document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) closeAllNav(); },{passive:true});
 
 const QQ=[
-  {t:"The good thing about science is that it's true whether or not you believe in it.",a:"Neil deGrasse Tyson"},
-  {t:"Nothing in life is to be feared, it is only to be understood.",a:"Marie Curie"},
-  {t:"Science is a way of thinking much more than it is a body of knowledge.",a:"Carl Sagan"},
-  {t:"The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge.",a:"Stephen Hawking"},
-  {t:"The important thing is to not stop questioning.",a:"Albert Einstein"},
-  {t:"An investment in knowledge pays the best interest.",a:"Benjamin Franklin"},
-  {t:"Look deep into nature, and then you will understand everything better.",a:"Albert Einstein"},
-  {t:"Biology is the study of complicated things that have the appearance of having been designed with a purpose.",a:"Richard Dawkins"},
-  {t:"Somewhere, something incredible is waiting to be known.",a:"Sharon Begley"},
-  {t:"The science of today is the technology of tomorrow.",a:"Edward Teller"},
-  {t:"Research is to see what everybody else has seen, and to think what nobody else has thought.",a:"Albert Szent-Györgyi"},
-  {t:"In science, there are no shortcuts to truth.",a:"Karl Popper"}
+  /* Science & knowledge */
+  {t:"The good thing about science is that it's true whether or not you believe in it.",a:"Neil deGrasse Tyson",r:""},
+  {t:"Nothing in life is to be feared, it is only to be understood.",a:"Marie Curie",r:""},
+  {t:"The important thing is to not stop questioning.",a:"Albert Einstein",r:""},
+  {t:"Look deep into nature, and then you will understand everything better.",a:"Albert Einstein",r:""},
+  {t:"Biology is the study of complicated things that have the appearance of having been designed with a purpose.",a:"Richard Dawkins",r:""},
+  {t:"In science, there are no shortcuts to truth.",a:"Karl Popper",r:""},
+  /* Quran */
+  {t:"And it is He who spread the earth and placed therein firmly set mountains and rivers; and from all of the fruits He made therein two mates.",a:"Quran",r:"13:3"},
+  {t:"Do they not look at the camels — how they are created? And at the sky — how it is raised?",a:"Quran",r:"88:17–18"},
+  {t:"And We created from water every living thing.",a:"Quran",r:"21:30"},
+  {t:"He created man from a clot of congealed blood.",a:"Quran",r:"96:2"},
+  {t:"Indeed, in the creation of the heavens and the earth and the alternation of the night and the day are signs for those of understanding.",a:"Quran",r:"3:190"},
+  {t:"And He taught Adam the names of all things.",a:"Quran",r:"2:31"},
+  {t:"Say: Travel through the earth and observe how He began creation.",a:"Quran",r:"29:20"},
+  {t:"And of His signs is that He created for you from yourselves mates that you may find tranquility in them.",a:"Quran",r:"30:21"},
 ];
-let lastQ=new Date().getDate()%QQ.length;
-function setQ(i){document.getElementById("quoteText").textContent=QQ[i].t;document.getElementById("quoteAuthor").textContent="— "+QQ[i].a}
+let lastQ = new Date().getDate() % QQ.length;
+function setQ(i){
+  document.getElementById("quoteText").textContent  = QQ[i].t;
+  document.getElementById("quoteAuthor").textContent = "— " + QQ[i].a;
+  const ref = document.getElementById("quoteRef");
+  ref.textContent = QQ[i].r ? "Surah " + QQ[i].r : "";
+}
 setQ(lastQ);
 function newQuote(){
   let i;do{i=Math.floor(Math.random()*QQ.length)}while(i===lastQ);lastQ=i;
-  const t=document.getElementById("quoteText"),a=document.getElementById("quoteAuthor");
-  t.style.opacity=a.style.opacity="0";
-  setTimeout(()=>{setQ(i);t.style.transition=a.style.transition="opacity .3s";t.style.opacity=a.style.opacity="1"},160);
+  const t=document.getElementById("quoteText"),a=document.getElementById("quoteAuthor"),r=document.getElementById("quoteRef");
+  t.style.opacity=a.style.opacity=r.style.opacity="0";
+  setTimeout(()=>{setQ(i);t.style.transition=a.style.transition=r.style.transition="opacity .3s";t.style.opacity=a.style.opacity=r.style.opacity="1"},160);
 }
 </script>
 </body>
