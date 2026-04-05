@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presentation · BioQuiz</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -11,6 +13,9 @@
   --white:#fff;--off:#e8e8e8;--muted:#aaa;--faint:rgba(255,255,255,.18);--ghost:rgba(255,255,255,.06);
   --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.22);
   --font:'Arial Black',Arial,sans-serif;--body:Arial,sans-serif;
+  --gold:#e8e8e8;--gold-dim:rgba(232,232,232,.1);--gold-glow:rgba(255,255,255,.08);
+  --hz:#fff;--hz-bright:#fff;--hz-dim:rgba(255,255,255,.06);
+  --hz-border:rgba(255,255,255,.16);--hz-card:#0f0f0f;--hz-bg:#000;
 }
 html,body{height:100%;background:var(--black);-webkit-font-smoothing:antialiased}
 body{color:var(--white);font-family:var(--body);overflow-x:hidden}
@@ -22,69 +27,185 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
 /* ── TOPBAR ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(14px,3.5vw,48px);height:54px;flex-shrink:0;
-  background:var(--black);border-bottom:1px solid var(--border);
+  padding:0 clamp(14px,3.5vw,48px);height:58px;flex-shrink:0;
+  background:rgba(0,0,0,.8);border-bottom:1px solid var(--border);
   position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-.brand-mark{width:30px;height:30px;flex-shrink:0}
-.brand-mark svg{width:30px;height:30px}
-.brand-name{font-family:var(--font);font-size:.68rem;letter-spacing:.26em;color:var(--white);font-weight:900}
-.brand-sep{width:1px;height:14px;background:var(--border)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;transition:opacity .2s}
+.brand:hover{opacity:.85}
+.brand-mark{width:32px;height:32px;flex-shrink:0;transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.brand:hover .brand-mark{transform:scale(1.05)}
+.brand-mark svg{width:32px;height:32px}
+.brand-name{font-family:var(--font);font-size:.7rem;letter-spacing:.26em;color:var(--white);font-weight:900}
+.brand-sep{width:1px;height:16px;background:var(--border)}
 .brand-module{font-family:var(--body);font-size:.62rem;letter-spacing:.1em;color:var(--muted);font-weight:bold}
-.tb-right{display:flex;align-items:center;gap:7px}
+.tb-right{display:flex;align-items:center;gap:8px}
 .tb-btn{
-  display:flex;align-items:center;gap:5px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
   font-family:var(--font);font-size:.46rem;letter-spacing:.12em;font-weight:900;
-  padding:7px 14px;background:none;color:var(--muted);
-  border:1px solid var(--border);transition:all .15s;
+  padding:8px 16px;background:none;color:var(--muted);
+  border:1px solid var(--border);border-radius:4px;
+  transition:all .3s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;
 }
-.tb-btn:hover{color:var(--white);border-color:var(--border2)}
-.tb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.tb-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  transform:translateX(-100%);transition:transform .4s ease;
+}
+.tb-btn:hover::before{transform:translateX(100%)}
+.tb-btn:hover{color:var(--white);border-color:var(--border2);transform:translateY(-1px)}
+.tb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.tb-btn:hover svg{transform:translateX(-2px)}
 .tb-btn.wh{background:var(--white);color:var(--black);border-color:var(--white)}
-.tb-btn.wh:hover{background:var(--off)}
+.tb-btn.wh:hover{background:var(--off);transform:translateY(-1px)}
 
 /* ══════════════════════════════════
    MENU PAGE
 ══════════════════════════════════ */
-#pg-menu{overflow-y:auto;background:var(--black)}
+#pg-menu{overflow-y:auto;background:linear-gradient(180deg, #000 0%, #050508 100%);position:relative}
+/* Ambient glow for menu */
+.menu-glow{
+  position:fixed;pointer-events:none;border-radius:50%;filter:blur(100px);
+  animation:menuGlowPulse 8s ease-in-out infinite;
+}
+.menu-glow-1{width:500px;height:500px;background:rgba(100,149,237,.04);top:-150px;right:-100px;animation-delay:0s}
+.menu-glow-2{width:400px;height:400px;background:rgba(212,160,23,.03);bottom:10%;left:-100px;animation-delay:3s}
+@keyframes menuGlowPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.8;transform:scale(1.15)}}
+/* Subtle grid overlay */
+.menu-grid{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 30%, black 0%, transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 30%, black 0%, transparent 70%);
+}
 .menu-bg-text{
   position:fixed;bottom:-4vw;left:-2vw;z-index:0;pointer-events:none;
   font-family:var(--font);font-size:min(28vw,300px);font-weight:900;
-  color:rgba(255,255,255,.022);line-height:1;user-select:none;
+  color:rgba(255,255,255,.018);line-height:1;user-select:none;
+  text-shadow:0 0 80px rgba(255,255,255,.02);
 }
 .menu-wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:clamp(24px,4vh,52px) clamp(14px,4vw,52px) 80px}
 
-.menu-hero{margin-bottom:40px;animation:fadeUp .5s ease both}
+.menu-hero{margin-bottom:40px;animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both}
 .hero-tag{
   display:inline-flex;align-items:center;gap:8px;
   font-family:var(--font);font-size:.46rem;letter-spacing:.38em;font-weight:900;
-  color:var(--black);background:var(--white);padding:5px 12px;margin-bottom:18px;
+  color:var(--black);background:var(--white);padding:6px 14px;margin-bottom:20px;
+  border-radius:2px;position:relative;overflow:hidden;
 }
+.hero-tag::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+  transform:translateX(-100%);animation:tagShine 3s ease-in-out infinite;
+}
+@keyframes tagShine{0%,100%{transform:translateX(-100%)}50%{transform:translateX(100%)}}
 .hero-title{
   font-family:var(--font);font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;
-  line-height:.88;letter-spacing:-.02em;color:var(--white);margin-bottom:12px;
+  line-height:.88;letter-spacing:.03em;margin-bottom:18px;
+  color:transparent;
+  background:linear-gradient(180deg, #fff 0%, rgba(255,255,255,.7) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  position:relative;
+  filter:drop-shadow(0 4px 20px rgba(255,255,255,.15));
 }
-.hero-title .stroke{-webkit-text-stroke:2px var(--white);color:transparent}
-.hero-sub{font-size:.92rem;color:var(--muted);line-height:1.65;max-width:420px}
+.hero-sub{font-size:.92rem;color:var(--muted);line-height:1.7;max-width:440px}
 
-.sharp-div{height:1px;background:var(--border2);margin:28px 0;position:relative}
-.sharp-div::before{content:'';position:absolute;left:0;top:-1px;width:48px;height:3px;background:var(--white)}
+.sharp-div{height:1px;background:linear-gradient(90deg, var(--border2), transparent);margin:32px 0;position:relative}
+.sharp-div::before{content:'';position:absolute;left:0;top:-1px;width:60px;height:3px;background:linear-gradient(90deg, var(--white), transparent);border-radius:2px}
+.sharp-div::after{display:none}
+
+/* ──── PINNED CARD ──── */
+.pinned-section{margin-bottom:40px;animation:fadeUp .6s cubic-bezier(.16,1,.3,1) .15s both;opacity:0}
+.pinned-card{
+  position:relative;cursor:pointer;overflow:hidden;
+  background:linear-gradient(135deg,#12100a 0%,#1a1508 40%,#0f0d08 100%);
+  border:1px solid rgba(212,160,23,.4);border-radius:8px;
+  transition:all .4s cubic-bezier(.16,1,.3,1);
+}
+.pinned-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 50% at 20% 20%, rgba(212,160,23,.06) 0%, transparent 60%);
+  pointer-events:none;transition:opacity .4s;
+}
+.pinned-card::after{
+  content:'';position:absolute;inset:-1px;border-radius:8px;
+  background:linear-gradient(135deg, rgba(212,160,23,.3), transparent 50%, rgba(212,160,23,.1));
+  z-index:-1;opacity:0;transition:opacity .4s;
+}
+.pinned-card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(212,160,23,.1), 0 8px 24px rgba(0,0,0,.4);border-color:rgba(212,160,23,.6)}
+.pinned-card:hover::before{opacity:1.5}
+.pinned-card:hover::after{opacity:1}
+.pinned-card:active{transform:translateY(-2px)}
+.pinned-badge{
+  position:absolute;top:0;left:0;
+  background:var(--gold);color:#000;
+  font-family:var(--font);font-size:.36rem;letter-spacing:.28em;font-weight:900;
+  padding:5px 14px;
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%);
+}
+.pinned-inner{
+  display:grid;grid-template-columns:1fr auto;
+  align-items:center;padding:28px 28px 22px;gap:20px;
+}
+.pinned-body{padding-top:18px}
+.pinned-eyebrow{
+  font-family:var(--font);font-size:.4rem;letter-spacing:.3em;font-weight:900;
+  color:var(--gold);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.pinned-eyebrow::before{content:'';width:20px;height:2px;background:var(--gold)}
+.pinned-title{
+  font-family:var(--font);font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;
+  color:var(--white);line-height:.9;letter-spacing:-.01em;margin-bottom:10px;
+}
+.pinned-title .gold-stroke{-webkit-text-stroke:2px var(--gold);color:transparent}
+.pinned-desc{font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.65;max-width:500px}
+.pinned-meta{
+  display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:12px;
+  border-top:1px solid rgba(212,160,23,.2);
+}
+.pinned-slides-count{font-family:var(--font);font-size:.38rem;letter-spacing:.14em;font-weight:900;color:var(--gold)}
+.pinned-tag-chip{
+  font-family:var(--font);font-size:.34rem;letter-spacing:.18em;font-weight:900;
+  padding:3px 8px;border:1px solid rgba(212,160,23,.4);color:rgba(212,160,23,.7);
+}
+.pinned-arr{font-size:2.2rem;color:var(--gold);font-family:var(--font);font-weight:900;flex-shrink:0;line-height:1}
+.pinned-scan-line{
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  animation:scanline 3s linear infinite;
+}
+@keyframes scanline{0%{transform:scaleX(0);opacity:1}50%{transform:scaleX(1);opacity:.8}100%{transform:scaleX(0);opacity:0}}
 
 /* AI CTA */
 .gen-cta{
-  display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;
-  background:var(--white);border:none;width:100%;text-align:left;margin-bottom:36px;
-  transition:transform .12s,box-shadow .12s;
-  animation:fadeUp .5s ease .1s both;opacity:0;
-  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+  display:flex;align-items:center;gap:18px;padding:22px 28px;cursor:pointer;
+  background:linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+  border:none;width:100%;text-align:left;margin-bottom:40px;border-radius:8px;
+  transition:all .4s cubic-bezier(.16,1,.3,1);
+  animation:fadeUp .6s cubic-bezier(.16,1,.3,1) .1s both;opacity:0;
+  position:relative;overflow:hidden;
 }
-.gen-cta:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(255,255,255,.1)}
-.gen-cta:active{transform:translateY(0)}
+.gen-cta::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.8) 50%, transparent 100%);
+  transform:translateX(-100%);transition:transform .6s ease;
+}
+.gen-cta:hover::before{transform:translateX(100%)}
+.gen-cta:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(255,255,255,.12), 0 4px 16px rgba(0,0,0,.2)}
+.gen-cta:active{transform:translateY(-1px)}
 .cta-ic{
-  width:42px;height:42px;border:2px solid var(--black);flex-shrink:0;
+  width:46px;height:46px;border:2px solid var(--black);flex-shrink:0;border-radius:6px;
   display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
 }
+.cta-ic svg{stroke:#fff}
+.gen-cta:hover .cta-ic{transform:scale(1.05) rotate(5deg)}
 .cta-ic svg{width:20px;height:20px;stroke:var(--black);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cta-body{flex:1}
 .cta-title{font-family:var(--font);font-size:.82rem;font-weight:900;letter-spacing:.08em;color:var(--black)}
@@ -148,7 +269,6 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
 .f-group select option{background:#111}
 .f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* Q&A step */
 .src-row{display:flex;gap:2px;margin-bottom:14px}
 .src-btn{
   flex:1;padding:9px 8px;cursor:pointer;
@@ -182,112 +302,248 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 /* ══════════════════════════════════
-   SLIDES PAGE
+   SLIDES PAGE — GOLD THEME FOR HORMUZ
 ══════════════════════════════════ */
-#pg-slides{overflow:hidden;background:var(--dark)}
+#pg-slides{overflow:hidden;background:linear-gradient(180deg, #0a0a0a 0%, #050508 100%);position:relative}
+/* Slide page ambient effects */
+.slide-glow{
+  position:fixed;pointer-events:none;border-radius:50%;filter:blur(120px);z-index:0;
+}
+.slide-glow-1{width:400px;height:400px;background:rgba(212,160,23,.04);top:10%;right:-100px}
+.slide-glow-2{width:300px;height:300px;background:rgba(100,149,237,.03);bottom:10%;left:-80px}
 .slides-bar{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:0 clamp(12px,3vw,36px);height:50px;flex-shrink:0;
-  background:var(--black);border-bottom:1px solid var(--border);
+  padding:0 clamp(12px,3vw,36px);height:54px;flex-shrink:0;
+  background:rgba(0,0,0,.85);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  position:relative;z-index:10;
 }
+.slides-bar.hormuz-deck{border-bottom-color:rgba(212,160,23,.3)}
 .sb-btn{
-  display:flex;align-items:center;gap:5px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
   font-family:var(--font);font-size:.42rem;letter-spacing:.12em;font-weight:900;
-  background:none;border:1px solid var(--border);padding:5px 11px;color:var(--muted);transition:all .15s;
+  background:none;border:1px solid var(--border);border-radius:4px;
+  padding:6px 14px;color:var(--muted);transition:all .3s cubic-bezier(.16,1,.3,1);
 }
-.sb-btn:hover{color:var(--white);border-color:var(--border2)}
-.sb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.sb-btn:hover{color:var(--white);border-color:var(--border2);transform:translateY(-1px)}
+.sb-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.sb-btn:hover svg{transform:translateX(-2px)}
 .sb-topic{
   font-family:var(--font);font-size:.55rem;font-weight:900;letter-spacing:.08em;
-  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 10px;
+  color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;
 }
-.sb-counter{font-family:var(--font);font-size:.44rem;letter-spacing:.1em;font-weight:900;color:var(--black);background:var(--white);padding:4px 10px;white-space:nowrap}
+.sb-topic.hormuz-title{color:var(--gold);text-shadow:0 0 20px rgba(212,160,23,.2)}
+.sb-counter{
+  font-family:var(--font);font-size:.44rem;letter-spacing:.1em;font-weight:900;
+  color:var(--black);background:var(--white);padding:6px 14px;white-space:nowrap;border-radius:4px;
+  transition:all .3s cubic-bezier(.16,1,.3,1);
+  display:flex;align-items:center;gap:4px;
+}
+.sb-counter:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(255,255,255,.15)}
+.sb-counter #curN{
+  display:inline-block;min-width:1.2em;text-align:right;
+  transition:transform .2s;
+}
+.sb-counter.hormuz-counter{
+  background:linear-gradient(135deg, #d4a017 0%, #b8860b 100%);color:#000;
+  box-shadow:0 2px 10px rgba(212,160,23,.2);
+}
+.sb-counter.hormuz-counter:hover{box-shadow:0 4px 16px rgba(212,160,23,.3)}
 
-.prog{height:3px;background:var(--dark4);flex-shrink:0}
-.prog-fill{height:100%;background:var(--white);transition:width .3s ease}
+/* Sleek slide indicator - minimal dots */
+.slide-indicator{
+  display:none; /* Hidden - we use the dot-row in nav instead */
+}
 
 /* Stage */
 .stage{flex:1;overflow:hidden;position:relative;display:flex}
-.slide{position:absolute;inset:0;display:none;overflow-y:auto;padding:clamp(20px,3vw,40px) clamp(14px,3.5vw,52px)}
-.slide.active{display:block;animation:slideIn .28s cubic-bezier(.22,1,.36,1) both}
-@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.slide{position:absolute;inset:0;display:none;overflow-y:auto;padding:clamp(16px,2.5vw,32px) clamp(12px,3vw,40px)}
+.slide.active{display:block;animation:slideIn .35s cubic-bezier(.16,1,.3,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 
-.slide-inner{max-width:900px;margin:0 auto}
+.slide-inner{max-width:1000px;margin:0 auto;position:relative;z-index:1}
 .slide-num{
-  font-family:var(--font);font-size:.38rem;letter-spacing:.3em;font-weight:900;
-  color:rgba(255,255,255,.22);margin-bottom:10px;display:flex;align-items:center;gap:9px;
+  font-family:var(--font);font-size:.4rem;letter-spacing:.3em;font-weight:900;
+  color:rgba(255,255,255,.25);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+  animation:fadeInNum .4s ease .1s both;opacity:0;
 }
-.slide-num::after{content:'';width:36px;height:1px;background:var(--border)}
+@keyframes fadeInNum{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.slide-num::after{content:'';width:40px;height:1px;background:linear-gradient(90deg, var(--border), transparent)}
+.slide-num.hormuz-num{color:rgba(212,160,23,.55)}
+.slide-num.hormuz-num::after{background:linear-gradient(90deg, rgba(212,160,23,.4), transparent)}
 .slide-heading{
-  font-family:var(--font);font-size:clamp(1.4rem,3.5vw,2.2rem);font-weight:900;
-  color:var(--white);line-height:.95;margin-bottom:20px;letter-spacing:-.01em;
+  font-family:var(--font);font-size:clamp(1.2rem,3vw,1.9rem);font-weight:900;
+  color:var(--white);line-height:.95;margin-bottom:18px;letter-spacing:-.01em;
+  animation:fadeInHeading .5s cubic-bezier(.16,1,.3,1) .15s both;opacity:0;
+}
+@keyframes fadeInHeading{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.slide-heading.hormuz-heading{color:var(--white);text-shadow:0 2px 20px rgba(0,0,0,.3)}
+.slide-heading.hormuz-heading::after{
+  content:'';display:block;width:50px;height:3px;
+  background:linear-gradient(90deg, var(--gold), transparent);margin-top:10px;border-radius:2px;
 }
 
-/* Slide layout: content left, diagram right */
+/* Slide layout */
 .slide-layout{display:grid;grid-template-columns:1fr;gap:18px}
 .slide-layout.has-diagram{grid-template-columns:1fr 340px;align-items:start}
-.slide-layout.has-img{grid-template-columns:1fr;gap:18px}
 
 /* Content card */
 .content-card{
   background:var(--dark2);border:1px solid var(--border);border-left:3px solid var(--white);
-  padding:22px 24px;position:relative;cursor:pointer;user-select:none;transition:border-color .2s;
+  padding:clamp(12px, 2vw, 20px) clamp(14px, 2.5vw, 22px);position:relative;
+  transition:all .35s cubic-bezier(.16,1,.3,1);
+  border-radius:4px;
 }
-.content-card:hover{border-color:var(--border2);border-left-color:var(--white)}
-.content-card.blurred .content-body{filter:blur(7px);pointer-events:none}
-.content-card.blurred .kf-row{filter:blur(7px)}
+.content-card.hormuz-card{
+  border-left-color:var(--gold);background:linear-gradient(135deg, #0e0c00 0%, #0a0800 100%);
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.content-card:hover{
+  border-color:var(--border2);border-left-color:var(--white);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.content-card.hormuz-card:hover{
+  border-color:rgba(212,160,23,.4);border-left-color:var(--gold);
+  box-shadow:0 8px 30px rgba(212,160,23,.08), 0 4px 16px rgba(0,0,0,.4);
+}
+.content-card.blurred{cursor:pointer;user-select:none}
+.content-card.blurred .content-body{filter:blur(7px);pointer-events:none;transition:filter .4s ease}
+.content-card.blurred .kf-row{filter:blur(7px);transition:filter .4s ease}
+.content-card:not(.blurred) .content-body{transition:filter .4s ease;user-select:text;cursor:text}
+.content-card:not(.blurred) .kf-row{transition:filter .4s ease}
+/* When revealed, card is not a button - only text selection */
+.content-card:not(.blurred){cursor:default;user-select:text}
+/* Text selection highlight */
+.content-card ::selection{background:rgba(212,160,23,.4);color:#fff}
+.content-card::-moz-selection{background:rgba(212,160,23,.4);color:#fff}
 
 .reveal-badge{
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   pointer-events:none;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,.2) 0%, transparent 70%);
 }
 .reveal-badge-inner{
-  display:flex;align-items:center;gap:10px;background:var(--black);border:1px solid var(--border2);padding:10px 18px;
+  display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.85);
+  border:1px solid var(--border2);padding:12px 20px;border-radius:4px;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  animation:revealPulse 2s ease-in-out infinite;
+}
+@keyframes revealPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.1)}
+  50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}
+}
+.hormuz-card .reveal-badge-inner{
+  border-color:rgba(212,160,23,.5);
+  animation:revealPulseGold 2s ease-in-out infinite;
+}
+@keyframes revealPulseGold{
+  0%,100%{box-shadow:0 0 0 0 rgba(212,160,23,.2)}
+  50%{box-shadow:0 0 0 8px rgba(212,160,23,0)}
 }
 .reveal-badge-inner svg{width:16px;height:16px;stroke:var(--white);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .reveal-badge-inner span{font-family:var(--font);font-size:.48rem;letter-spacing:.2em;font-weight:900;color:var(--white)}
 
-.content-body{font-family:var(--body);font-size:clamp(.88rem,1.5vw,1rem);line-height:1.78;color:var(--off);transition:filter .3s}
+.content-body{font-family:var(--body);font-size:clamp(.78rem,1.3vw,.92rem);line-height:1.7;color:var(--off);transition:filter .3s}
 .content-body b{color:var(--white);font-weight:700}
 .content-body ul,.content-body ol{padding-left:1.4em;margin:8px 0}
 .content-body li{margin-bottom:5px}
+.hormuz-card .content-body b{color:var(--gold)}
 
-.kf-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border);transition:filter .3s}
-.kf{font-family:var(--font);font-size:.38rem;letter-spacing:.08em;font-weight:900;padding:4px 10px;background:var(--dark4);border:1px solid var(--border);color:var(--off)}
+.kf-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);transition:filter .3s}
+  .kf{font-family:var(--font);font-size:.32rem;letter-spacing:.06em;font-weight:900;padding:3px 8px;background:var(--dark4);border:1px solid var(--border);color:var(--off)}
+.hormuz-card .kf{border-color:rgba(212,160,23,.3);color:var(--gold);background:#1a1400}
 
 /* Diagram panel */
 .diagram-panel{
-  background:var(--dark2);border:1px solid var(--border);padding:16px;
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  position:sticky;top:20px;
+  background:var(--dark2);border:1px solid var(--border);padding:12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  position:sticky;top:16px;min-height:200px;
 }
+.hormuz-diag{background:#0a0d1a;border-color:rgba(212,160,23,.25)}
 .diagram-panel svg{width:100%;height:auto;display:block}
 .diagram-label{font-family:var(--font);font-size:.38rem;letter-spacing:.12em;font-weight:900;color:var(--muted);text-align:center}
+.hormuz-diag .diagram-label{color:rgba(212,160,23,.6)}
 
-/* Image panel */
-.img-panel{background:var(--dark2);border:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:8px}
-.img-panel img{width:100%;max-height:360px;object-fit:contain;display:block;margin:0 auto;background:var(--dark3)}
-.img-cap{font-family:var(--font);font-size:.38rem;letter-spacing:.1em;font-weight:900;color:rgba(255,255,255,.55);text-align:center;padding-top:4px}
-
-/* Bottom nav */
-.slide-nav{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:11px clamp(12px,3vw,36px);border-top:1px solid var(--border);
-  background:var(--black);flex-shrink:0;
+/* Auto-hide controls after 3s inactivity */
+.slides-bar,.slide-nav{
+  transition:opacity .4s ease, transform .4s ease;
 }
+.slides-bar.auto-hidden{
+  opacity:0;transform:translateY(-100%);pointer-events:none;
+}
+.slide-nav.auto-hidden{
+  opacity:0;transform:translateY(100%);pointer-events:none;
+}
+
+/* Bottom nav - sleek minimal design */
+.slide-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:12px clamp(16px,3vw,44px);
+  background:transparent;flex-shrink:0;
+  position:relative;
+}
+/* Sleek top border with gradient */
+.slide-nav::before{
+  content:'';position:absolute;top:0;left:5%;right:5%;height:1px;
+  background:linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.slide-nav.hormuz-nav::before{
+  background:linear-gradient(90deg, transparent, rgba(212,160,23,.3), transparent);
+}
+
+/* Progress line removed */
+.nav-progress{display:none!important}
+
+/* Keyboard hints removed */
+.kb-hint{display:none!important}
 .nav-btn{
   display:flex;align-items:center;gap:6px;font-family:var(--font);font-size:.48rem;
   letter-spacing:.12em;font-weight:900;padding:9px 18px;cursor:pointer;
-  border:1px solid var(--border);background:none;color:var(--muted);transition:all .15s;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  transition:all .3s cubic-bezier(.16,1,.3,1);border-radius:4px;
+  position:relative;overflow:hidden;
 }
-.nav-btn:hover:not(:disabled){color:var(--white);border-color:var(--border2)}
+.nav-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.03), transparent);
+  transform:translateX(-100%);transition:transform .4s ease;
+}
+.nav-btn:hover:not(:disabled)::before{transform:translateX(100%)}
+.nav-btn:hover:not(:disabled){
+  color:var(--white);border-color:var(--border2);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+.nav-btn:active:not(:disabled){transform:translateY(0);box-shadow:none}
 .nav-btn:disabled{opacity:.2;cursor:not-allowed}
-.nav-btn.pri{background:var(--white);color:var(--black);border-color:var(--white);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
-.nav-btn.pri:hover:not(:disabled){background:var(--off)}
-.nav-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
-.dot-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;max-width:180px}
-.dot{width:5px;height:5px;background:var(--dark4);border:1px solid var(--border);cursor:pointer;padding:0;transition:all .2s}
-.dot.on{background:var(--white);border-color:var(--white);width:18px}
+.nav-btn.pri{
+  background:linear-gradient(135deg, #fff 0%, #f0f0f0 100%);color:var(--black);
+  border-color:var(--white);border-radius:6px;
+  box-shadow:0 2px 8px rgba(255,255,255,.1);
+}
+.nav-btn.pri:hover:not(:disabled){
+  background:linear-gradient(135deg, #fff 0%, #e8e8e8 100%);
+  box-shadow:0 4px 16px rgba(255,255,255,.15);
+}
+.nav-btn.pri.hormuz-next{
+  background:linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+  border-color:#d4a017;color:#000;
+  box-shadow:0 2px 12px rgba(212,160,23,.2);
+}
+.nav-btn.pri.hormuz-next:hover:not(:disabled){
+  background:linear-gradient(135deg, #e8b422 0%, #d4a017 100%);
+  box-shadow:0 4px 20px rgba(212,160,23,.3);
+}
+.dot-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;max-width:200px}
+  .dot{
+    width:6px;height:6px;background:var(--dark4);border:1px solid var(--border);
+    cursor:pointer;padding:0;border-radius:50%;
+    transition:all .3s cubic-bezier(.16,1,.3,1);
+  }
+  .dot:hover{background:var(--border2);transform:scale(1.3)}
+  .dot.on{background:var(--white);border-color:var(--white);width:20px;border-radius:10px;box-shadow:0 0 8px rgba(255,255,255,.3)}
+.hormuz-dots .dot.on{background:var(--gold);border-color:var(--gold)}
 
 /* ══════════════════════════════════
    OVERVIEW OVERLAY
@@ -319,22 +575,389 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
   .slide-layout.has-diagram{grid-template-columns:1fr}
   .diagram-panel{position:static}
   .f-row{grid-template-columns:1fr}
+  .pinned-inner{grid-template-columns:1fr}
+  .pinned-arr{display:none}
 }
 @media(max-width:480px){
   .dot-row{max-width:130px}
   .nav-btn{padding:8px 12px;font-size:.42rem}
-  .annot-bar{height:auto;padding:8px 12px}
 }
+
+/* ══════════════════════════════════
+   FULLSCREEN — CSS-based, works everywhere
+══════════════════════════════════ */
+#pg-slides.fs-mode,#pg-thanks.fs-mode{
+  position:fixed!important;inset:0!important;z-index:9000!important;
+  width:100vw!important;height:100dvh!important;
+  display:flex!important;flex-direction:column!important;
+  background:#000!important;overflow:hidden!important;
+}
+body.fs-body{overflow:hidden!important}
+
+/* ══════════════════════════════════
+   SLIDE DIRECTIONAL ANIMATIONS (swipe)
+══════════════════════════════════ */
+@keyframes slideFromRight{
+  from{opacity:0;transform:translateX(60px) scale(.98)}
+  to{opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes slideFromLeft{
+  from{opacity:0;transform:translateX(-60px) scale(.98)}
+  to{opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(24px)}
+  to{opacity:1;transform:translateX(0)}
+}
+.slide.active{display:block}
+.slide.dir-next{animation:slideFromRight .4s cubic-bezier(.16,1,.3,1) both}
+.slide.dir-prev{animation:slideFromLeft .4s cubic-bezier(.16,1,.3,1) both}
+
+/* Content stagger animation */
+.slide.active .content-card{animation:cardFadeIn .5s cubic-bezier(.16,1,.3,1) both}
+.slide.active .content-card:nth-child(1){animation-delay:.1s}
+.slide.active .content-card:nth-child(2){animation-delay:.2s}
+.slide.active .content-card:nth-child(3){animation-delay:.3s}
+@keyframes cardFadeIn{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ══════════════════════════════════
+   FIX ALL ARROW SVGS
+══════════════════════════════════ */
+.nav-btn svg,.sb-btn svg,.tb-btn svg,.ov-close svg,.gen-back svg{
+  width:11px!important;height:11px!important;flex-shrink:0;pointer-events:none;
+}
+
+/* ═══════════���══════════════════════
+   STRAIT OF HORMUZ — special editorial typography
+══════════════════════════════════ */
+.hormuz-brand{display:flex;flex-direction:column;gap:2px}
+.hormuz-strait-of{
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(.65rem,1.4vw,.9rem);
+  font-weight:400;font-style:italic;
+  letter-spacing:.45em;
+  color:rgba(255,255,255,.45);
+  text-transform:uppercase;
+  line-height:1;
+}
+.hormuz-word{
+  font-family:'Arial Black',Arial,sans-serif;
+  font-size:clamp(2rem,5vw,3.6rem);
+  font-weight:900;
+  letter-spacing:.04em;
+  line-height:.85;
+  color:#fff;
+  text-transform:uppercase;
+}
+/* Heading in slides */
+.slide-heading.hormuz-heading{
+  display:flex;flex-direction:column;gap:4px;
+  font-size:clamp(1.4rem,3.5vw,2.2rem)!important;
+}
+
+/* ══════════════════════════════════
+   PS5 MONOCHROME — HORMUZ THEME
+══════════════════════════════════ */
+/* Pinned card */
+.pinned-card{
+  background:#0d0d0d!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  clip-path:none!important;
+}
+.pinned-card::before{display:none!important}
+.pinned-card:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:0 10px 40px rgba(255,255,255,.06)!important;
+  border-color:rgba(255,255,255,.32)!important;
+}
+.pinned-badge{background:#fff!important;color:#000!important;font-size:.33rem!important;letter-spacing:.22em!important;}
+.pinned-eyebrow{color:rgba(255,255,255,.4)!important}
+.pinned-eyebrow::before{background:rgba(255,255,255,.25)!important}
+.pinned-title{margin-bottom:12px!important}
+.pinned-slides-count{color:rgba(255,255,255,.5)!important}
+.pinned-tag-chip{border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.45)!important;}
+.pinned-arr{color:rgba(255,255,255,.25)!important}
+.pinned-meta{border-top-color:rgba(255,255,255,.08)!important}
+.pinned-scan-line{display:none!important}
+
+/* Slides bar */
+.slides-bar.hormuz-deck{border-bottom-color:rgba(255,255,255,.1)!important}
+.sb-topic.hormuz-title{color:#fff!important;letter-spacing:.12em}
+  .sb-counter.hormuz-counter{background:#fff!important;color:#000!important}
+  .nav-progress.hormuz-prog{background:#fff!important;box-shadow:0 0 8px rgba(255,255,255,.4)!important}
+  .slide-nav.hormuz-nav::before{background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent)!important}
+.hormuz-dots .dot.on{background:#fff!important;border-color:#fff!important}
+.nav-btn.pri.hormuz-next{background:#fff!important;border-color:#fff!important;color:#000!important;}
+.nav-btn.pri.hormuz-next:hover:not(:disabled){background:#e0e0e0!important}
+.slide-num.hormuz-num{color:rgba(255,255,255,.22)!important}
+.slide-num.hormuz-num::after{background:rgba(255,255,255,.1)!important}
+.slide-heading.hormuz-heading::after{background:#fff!important;width:32px!important;height:2px!important;opacity:.3;margin-top:10px!important}
+
+/* Content card */
+.content-card.hormuz-card{
+  background:#0f0f0f!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-left:2px solid #fff!important;
+  border-radius:0!important;
+}
+.content-card.hormuz-card:hover{border-color:rgba(255,255,255,.2)!important;border-left-color:#fff!important;}
+.hormuz-card .content-body{
+  font-size:clamp(.9rem,1.5vw,1rem)!important;
+  line-height:1.84!important;color:#c8c8c8!important;
+}
+.hormuz-card .content-body b{
+  color:#fff!important;font-weight:700!important;
+  text-decoration:underline!important;
+  text-decoration-color:rgba(255,255,255,.28)!important;
+  text-underline-offset:3px!important;
+  text-decoration-thickness:1px!important;
+}
+.hormuz-card .content-body ul,.hormuz-card .content-body ol{padding-left:0!important;margin:10px 0!important;list-style:none!important;}
+.hormuz-card .content-body li{
+  margin-bottom:7px!important;padding:7px 12px!important;
+  border-left:2px solid rgba(255,255,255,.18)!important;
+  background:rgba(255,255,255,.02)!important;line-height:1.6!important;
+}
+.hormuz-card .kf{background:#151515!important;border:1px solid rgba(255,255,255,.12)!important;color:#fff!important;padding:5px 12px!important;font-size:.38rem!important;}
+.kf-row{border-top:1px solid rgba(255,255,255,.09)!important;margin-top:14px!important;padding-top:12px!important;}
+.hormuz-card .reveal-badge-inner{background:rgba(0,0,0,.92)!important;border:1px solid rgba(255,255,255,.18)!important;}
+
+/* Image panel */
+.img-panel{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.1);
+  overflow:hidden;display:flex;flex-direction:column;position:sticky;top:20px;
+}
+.img-panel img{
+  width:100%;height:clamp(180px,22vw,260px);
+  object-fit:cover;display:block;filter:brightness(.88)contrast(1.06);
+}
+.img-cap{
+  padding:8px 12px;font-size:.35rem;font-family:'Arial Black',Arial,sans-serif;
+  letter-spacing:.1em;color:rgba(255,255,255,.28);text-align:center;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+
+/* ══════════════════════════════════
+   THANK YOU PAGE - Responsive for all devices
+══════════════════════════════════ */
+#pg-thanks{
+  background:linear-gradient(145deg, #0a0a0a 0%, #000 50%, #050510 100%);
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;min-height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+/* Ambient glow effects - scaled for smaller screens */
+.ty-glow{
+  position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;
+  animation:tyGlowPulse 6s ease-in-out infinite;
+}
+.ty-glow-1{
+  width:min(400px, 80vw);height:min(400px, 80vw);background:rgba(212,160,23,.08);
+  top:-50px;left:-50px;animation-delay:0s;
+}
+.ty-glow-2{
+  width:min(300px, 60vw);height:min(300px, 60vw);background:rgba(100,149,237,.06);
+  bottom:-30px;right:-30px;animation-delay:2s;
+}
+@keyframes tyGlowPulse{
+  0%,100%{opacity:.5;transform:scale(1)}
+  50%{opacity:.8;transform:scale(1.1)}
+}
+/* Floating particles */
+.ty-particles{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.ty-particle{
+  position:absolute;width:2px;height:2px;background:rgba(255,255,255,.3);
+  border-radius:50%;animation:tyFloat 8s ease-in-out infinite;
+}
+.ty-particle:nth-child(1){left:10%;top:20%;animation-delay:0s;animation-duration:7s}
+.ty-particle:nth-child(2){left:25%;top:60%;animation-delay:1s;animation-duration:9s}
+.ty-particle:nth-child(3){left:40%;top:30%;animation-delay:2s;animation-duration:6s}
+.ty-particle:nth-child(4){left:55%;top:70%;animation-delay:3s;animation-duration:8s}
+.ty-particle:nth-child(5){left:70%;top:40%;animation-delay:4s;animation-duration:10s}
+.ty-particle:nth-child(6){left:85%;top:55%;animation-delay:2.5s;animation-duration:7.5s}
+.ty-particle:nth-child(7){left:15%;top:80%;animation-delay:1.5s;animation-duration:8.5s}
+.ty-particle:nth-child(8){left:90%;top:25%;animation-delay:3.5s;animation-duration:6.5s}
+@keyframes tyFloat{
+  0%,100%{transform:translateY(0) translateX(0);opacity:.2}
+  25%{transform:translateY(-30px) translateX(10px);opacity:.6}
+  50%{transform:translateY(-15px) translateX(-10px);opacity:.4}
+  75%{transform:translateY(-40px) translateX(5px);opacity:.5}
+}
+/* Subtle grid lines */
+.ty-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+}
+.ty-center{
+  position:relative;z-index:2;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  padding:clamp(20px, 5vw, 40px);
+  width:100%;max-width:100vw;box-sizing:border-box;
+}
+.ty-eyebrow{
+  font-family:'Arial Black',Arial,sans-serif;
+  font-size:clamp(.32rem, 1.5vw, .42rem);letter-spacing:clamp(.25em, 2vw, .5em);font-weight:900;
+  color:rgba(255,255,255,.4);margin-bottom:clamp(16px, 4vw, 32px);
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .3s both;opacity:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+  padding:clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 20px);border-radius:2px;
+  white-space:nowrap;
+}
+.ty-main-text{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .5s both;opacity:0;
+}
+.ty-word1,.ty-word2{
+  font-family:'Arial Black',Arial,sans-serif;
+  font-size:clamp(2.5rem, 12vw, 10rem);
+  font-weight:900;line-height:.85;letter-spacing:-.02em;
+  display:block;
+}
+.ty-word1{
+  color:rgba(255,255,255,.15);
+  text-shadow:0 0 60px rgba(255,255,255,.1);
+}
+.ty-word2{
+  color:#fff;
+  text-shadow:0 4px 30px rgba(255,255,255,.15), 0 0 60px rgba(212,160,23,.1);
+}
+.ty-divider{
+  width:clamp(50px, 15vw, 80px);height:2px;margin:clamp(16px, 4vw, 32px) auto;
+  background:linear-gradient(90deg, transparent, rgba(212,160,23,.6), transparent);
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .8s both;opacity:0;
+  border-radius:2px;
+}
+.ty-subtitle{
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(.7rem, 2vw, 1.1rem);
+  font-style:italic;letter-spacing:clamp(.12em, 1vw, .25em);
+  color:rgba(212,160,23,.7);
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .95s both;opacity:0;
+  padding:0 10px;
+}
+.ty-sub2{
+  font-family:'Arial Black',Arial,sans-serif;
+  font-size:clamp(.32rem, 1vw, .4rem);letter-spacing:clamp(.14em, 1vw, .28em);
+  color:rgba(255,255,255,.25);margin-top:clamp(6px, 1.5vw, 10px);
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.1s both;opacity:0;
+  padding:0 10px;word-spacing:.1em;
+}
+.ty-back{
+  margin-top:clamp(24px, 5vw, 48px);
+  display:inline-flex;align-items:center;gap:clamp(8px, 2vw, 12px);
+  font-family:'Arial Black',Arial,sans-serif;
+  font-size:clamp(.38rem, 1.2vw, .48rem);letter-spacing:clamp(.1em, 1vw, .18em);font-weight:900;
+  color:rgba(255,255,255,.7);background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.15);
+  padding:clamp(10px, 2.5vw, 14px) clamp(18px, 4vw, 28px);cursor:pointer;
+  transition:all .3s cubic-bezier(.16,1,.3,1);
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.3s both;opacity:0;
+  border-radius:4px;
+  position:relative;overflow:hidden;
+  white-space:nowrap;
+}
+.ty-back::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+  transform:translateX(-100%);transition:transform .4s ease;
+}
+.ty-back:hover::before{transform:translateX(100%)}
+.ty-back:hover{
+  color:#fff;border-color:rgba(212,160,23,.5);
+  background:rgba(212,160,23,.08);
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(0,0,0,.3), 0 0 20px rgba(212,160,23,.1);
+}
+.ty-back svg{
+  width:clamp(10px, 2vw, 14px);height:clamp(10px, 2vw, 14px);transition:transform .3s ease;flex-shrink:0;
+}
+.ty-back:hover svg{transform:translateX(-4px)}
+@keyframes tyFadeUp{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+/* Thank you page mobile adjustments */
+@media(max-width:480px){
+  .ty-eyebrow{letter-spacing:.2em;font-size:.3rem}
+  .ty-sub2{letter-spacing:.12em;word-spacing:0}
+}
+@media(max-height:500px){
+  .ty-center{padding:12px}
+  .ty-eyebrow{margin-bottom:12px}
+  .ty-divider{margin:12px auto}
+  .ty-back{margin-top:16px}
+}
+
+/* Swipe hint - removed */
+.swipe-hint{display:none!important}
+
+/* Interactive map styles */
+.interactive-map-container{width:100%;position:relative}
+.map-legend{
+  display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;
+  font-family:Arial,sans-serif;font-size:11px;color:rgba(255,255,255,.7);
+}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#hormuz-leaflet-map .leaflet-control-attribution{font-size:8px;background:rgba(0,0,0,.6);color:#888}
+#hormuz-leaflet-map .leaflet-control-zoom a{background:rgba(10,10,10,.9);color:#d4a017;border-color:rgba(212,160,23,.3)}
+#hormuz-leaflet-map .leaflet-control-zoom a:hover{background:#d4a017;color:#000}
+
+/* Interactive chart styles */
+.interactive-chart{
+  width:100%;min-height:180px;background:rgba(10,16,26,.8);
+  border:1px solid rgba(212,160,23,.2);border-radius:6px;padding:12px;
+  position:relative;
+}
+.chart-bar-container{display:flex;align-items:flex-end;justify-content:space-around;height:120px;padding:0 10px}
+.chart-bar{
+  width:28px;background:linear-gradient(180deg, #d4a017, #8b6914);
+  border-radius:3px 3px 0 0;transition:height .6s ease, background .3s;cursor:pointer;
+  position:relative;
+}
+.chart-bar:hover{background:linear-gradient(180deg, #e8c547, #d4a017)}
+.chart-bar::after{
+  content:attr(data-value);position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+  font-family:Arial Black,sans-serif;font-size:10px;color:#d4a017;white-space:nowrap;
+  opacity:0;transition:opacity .3s;
+}
+.chart-bar:hover::after{opacity:1}
+.chart-label{
+  text-align:center;font-family:Arial,sans-serif;font-size:9px;color:rgba(255,255,255,.6);
+  margin-top:6px;
+}
+.chart-title{
+  text-align:center;font-family:Arial Black,sans-serif;font-size:11px;
+  color:#d4a017;letter-spacing:.1em;margin-bottom:10px;
+}
+.chart-col{display:flex;flex-direction:column;align-items:center}
+
 </style>
 </head>
 <body>
 
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
   <symbol id="i-logo" viewBox="0 0 30 30">
-    <rect x="0" y="0" width="30" height="30" fill="white"/>
-    <path d="M8 6h9c2.5 0 4 1.6 4 3.8s-1.5 3.7-4 3.7H8V6z" fill="black"/>
-    <path d="M8 14.5h9.5c2.8 0 4.5 1.8 4.5 4.2S20.3 23 17.5 23H8v-8.5z" fill="black"/>
-    <rect x="8" y="6" width="2" height="17" fill="black"/>
+    <defs>
+      <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#fff"/>
+        <stop offset="100%" style="stop-color:#ccc"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="30" height="30" rx="4" fill="url(#logoGrad)"/>
+    <path d="M9 8h7c2 0 3.5 1.2 3.5 3s-1.5 3-3.5 3H9V8z" fill="#000"/>
+    <path d="M9 15h8c2.2 0 4 1.4 4 3.5S19.2 22 17 22H9v-7z" fill="#000"/>
+    <circle cx="22" cy="8" r="2.5" fill="#000"/>
   </symbol>
   <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></symbol>
   <symbol id="i-ai" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></symbol>
@@ -343,10 +966,14 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
   <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
   <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></symbol>
 </svg>
 
 <!-- ══════════════════════════════════ MENU PAGE ══════════════════════════════════ -->
 <div class="page active" id="pg-menu">
+  <div class="menu-glow menu-glow-1"></div>
+  <div class="menu-glow menu-glow-2"></div>
+  <div class="menu-grid"></div>
   <div class="menu-bg-text">BIO</div>
   <div class="topbar">
     <a href="index.html" class="brand">
@@ -362,10 +989,14 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
   <div class="menu-wrap">
     <div class="menu-hero">
       <div class="hero-tag">MODULE 005</div>
-      <div class="hero-title">PRESEN<span class="stroke">TATION</span></div>
+      <div class="hero-title">PRESENTATION</div>
       <p class="hero-sub">Pick a pre-built topic with detailed diagrams, or generate a custom deck using AI.</p>
     </div>
     <div class="sharp-div"></div>
+
+    <!-- PINNED FEATURED DECK -->
+    <div class="pinned-section" id="pinnedSection"></div>
+
     <button class="gen-cta" onclick="showPage('gen')">
       <div class="cta-ic"><svg><use href="#i-ai"/></svg></div>
       <div class="cta-body">
@@ -374,11 +1005,8 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
       </div>
       <div class="cta-arr">›</div>
     </button>
-    <div class="sec-head">
-      <div class="sec-label">PRE-BUILT TOPICS</div>
-      <div class="sec-line"></div>
-    </div>
-    <div class="topic-grid" id="topicGrid"></div>
+    <!-- PRE-BUILT TOPICS HIDDEN -->
+    <div id="topicGrid" style="display:none"></div>
   </div>
 </div>
 
@@ -397,7 +1025,6 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
   </div>
   <div style="display:flex;align-items:center;justify-content:center;flex:1;padding:24px;overflow-y:auto">
     <div class="gen-wrap">
-
       <div class="gen-tag">AI POWERED</div>
       <div class="gen-title">GENERATE SLIDES</div>
       <div class="gen-sub">Cloudflare AI builds a precise biology lesson deck</div>
@@ -436,47 +1063,19 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
         <button class="go-btn" id="generateBtn" onclick="doGen()">GENERATE SLIDES</button>
         <div class="status" id="stBox"><div class="sdot"></div><span id="stTxt"></span></div>
       </div>
-          <div class="f-row">
-            <div class="f-group">
-              <label class="f-label">SLIDE COUNT</label>
-              <select id="slideN">
-                <option value="3">3 slides</option>
-                <option value="4">4 slides</option>
-                <option value="5" selected>5 slides</option>
-                <option value="6">6 slides</option>
-                <option value="7">7 slides</option>
-              </select>
-            </div>
-            <div class="f-group">
-              <label class="f-label">DETAIL LEVEL</label>
-              <select id="detailN">
-                <option value="concise">Concise</option>
-                <option value="standard" selected>Standard</option>
-                <option value="detailed">Detailed</option>
-              </select>
-            </div>
-          </div>
-          <div class="f-group">
-            <label class="f-label">IMAGES</label>
-            <div class="src-row">
-              <button class="src-btn on" id="srcNone" onclick="setSrc('none')"><svg><use href="#i-eye-off"/></svg> NONE</button>
-              <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')"><svg><use href="#i-wiki"/></svg> WIKIPEDIA</button>
-            </div>
-          </div>
-          <button class="go-btn" id="generateBtn" onclick="doGen()">GENERATE SLIDES</button>
-          <div class="status" id="stBox"><div class="sdot"></div><span id="stTxt"></span></div>
-        </div>
     </div>
   </div>
 </div>
 
 <!-- ══════════════════════════════════ SLIDES PAGE ══════════════════════════════════ -->
 <div class="page" id="pg-slides">
-  <div class="slides-bar">
-    <button class="sb-btn" onclick="goBack()"><svg><use href="#i-back"/></svg> BACK</button>
+  <div class="slide-glow slide-glow-1"></div>
+  <div class="slide-glow slide-glow-2"></div>
+  <div class="slides-bar" id="slidesBar">
+    <button class="sb-btn" onclick="goBack()">← BACK</button>
     <div class="sb-topic" id="deckTitle"></div>
     <div style="display:flex;align-items:center;gap:7px">
-      <div class="sb-counter"><span id="curN">1</span>/<span id="totN">1</span></div>
+      <div class="sb-counter" id="slideCounter"><span id="curN">1</span>/<span id="totN">1</span></div>
       <button class="sb-btn" onclick="openOv()"><svg><use href="#i-grid"/></svg> ALL</button>
       <button class="sb-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen (F)">
         <svg id="fsIcon" viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -484,10 +1083,18 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
       </button>
     </div>
   </div>
-  <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+  
   <div class="stage" id="stage"></div>
-  <div class="slide-nav">
-    <button class="nav-btn" id="prevBtn" onclick="nav(-1)"><svg><use href="#i-back"/></svg> PREV</button>
+  <div class="swipe-hint" id="swipeHint">← swipe to navigate →</div>
+  <div class="slide-nav" id="slideNav">
+    <div class="nav-progress" id="navProgress"></div>
+    <div class="kb-hint">
+      <span><kbd>←</kbd> <kbd>→</kbd> Navigate</span>
+      <span><kbd>F</kbd> Fullscreen</span>
+      <span><kbd>G</kbd> Grid</span>
+      <span><kbd>Esc</kbd> Exit</span>
+    </div>
+    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">‹ PREV</button>
     <div class="dot-row" id="dotRow"></div>
     <button class="nav-btn pri" id="nextBtn" onclick="navNext()">
       NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
@@ -504,23 +1111,49 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
   <div class="ov-grid" id="ovGrid"></div>
 </div>
 
+<!-- ══════════════════════════════════ THANK YOU PAGE ══════════════════════════════════ -->
+<div class="page" id="pg-thanks">
+  <div class="ty-glow ty-glow-1"></div>
+  <div class="ty-glow ty-glow-2"></div>
+  <div class="ty-grid"></div>
+  <div class="ty-particles">
+    <div class="ty-particle"></div><div class="ty-particle"></div>
+    <div class="ty-particle"></div><div class="ty-particle"></div>
+    <div class="ty-particle"></div><div class="ty-particle"></div>
+    <div class="ty-particle"></div><div class="ty-particle"></div>
+  </div>
+  <div class="ty-center">
+    <div class="ty-eyebrow">END OF PRESENTATION</div>
+    <div class="ty-main-text">
+      <span class="ty-word1">THANK</span>
+      <span class="ty-word2">YOU</span>
+    </div>
+    <div class="ty-divider"></div>
+    <div class="ty-subtitle">Strait of Hormuz</div>
+    <div class="ty-sub2">GEOPOLITICS · GEOGRAPHY · GLOBAL TRADE</div>
+    <button class="ty-back" onclick="showPage('menu');_isCssFs=false;document.getElementById('pg-thanks').classList.remove('fs-mode');document.body.classList.remove('fs-body')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      RETURN TO MENU
+    </button>
+  </div>
+</div>
+
 <script>
 /* ══════════════════════════════════
    SVG DIAGRAMS
 ══════════════════════════════════ */
 const DIAGRAMS = {
+  /* ─── BIOLOGY DIAGRAMS (unchanged) ─── */
   'cell-wall-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="10" y="10" width="240" height="180" rx="4" fill="#1a1a1a" stroke="#444" stroke-width="1"/>
-    <!-- Cell wall layers -->
     <rect x="20" y="20" width="220" height="160" rx="2" fill="none" stroke="#888" stroke-width="8" opacity=".5"/>
     <rect x="36" y="36" width="188" height="128" rx="2" fill="none" stroke="#bbb" stroke-width="5" opacity=".7"/>
     <rect x="48" y="48" width="164" height="104" rx="2" fill="#222" stroke="#fff" stroke-width="2"/>
-    <!-- Plasma membrane -->
     <rect x="58" y="58" width="144" height="84" rx="20" fill="#1a1a1a" stroke="#888" stroke-width="1.5" stroke-dasharray="4,2"/>
-    <!-- Nucleus -->
     <ellipse cx="130" cy="100" rx="28" ry="22" fill="#2a2a2a" stroke="#666" stroke-width="1.5"/>
     <ellipse cx="130" cy="100" rx="14" ry="11" fill="#333" stroke="#888" stroke-width="1"/>
-    <!-- Labels -->
     <text x="130" y="16" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELL WALL LAYERS</text>
     <line x1="24" y1="100" x2="50" y2="100" stroke="#888" stroke-width=".8"/>
     <text x="4" y="88" fill="#888" font-size="5.5" font-family="Arial">Secondary</text>
@@ -533,101 +1166,74 @@ const DIAGRAMS = {
     <text x="4" y="165" fill="#fff" font-size="5.5" font-family="Arial">Membrane</text>
     <text x="130" y="104" text-anchor="middle" fill="#666" font-size="6" font-family="Arial">NUCLEUS</text>
   </svg>`,
-
   'cell-wall-composition': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="16" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELLULOSE MICROFIBRILS</text>
-    <!-- Horizontal microfibrils -->
-    ${[30,50,70,90,110,130,150].map((y,i) => 
-      `<line x1="20" y1="${y}" x2="240" y2="${y}" stroke="${i%2===0?'#fff':'#888'}" stroke-width="${i%2===0?2:1.2}" opacity="${i%2===0?1:.7}"/>`
-    ).join('')}
-    <!-- Cross-linking -->
-    ${[40,70,100,130,160,190,220].map(x => 
-      `<line x1="${x}" y1="25" x2="${x}" y2="155" stroke="#555" stroke-width=".8" stroke-dasharray="3,2"/>`
-    ).join('')}
-    <!-- Bar chart: composition -->
+    ${[30,50,70,90,110,130,150].map((y,i)=>`<line x1="20" y1="${y}" x2="240" y2="${y}" stroke="${i%2===0?'#fff':'#888'}" stroke-width="${i%2===0?2:1.2}" opacity="${i%2===0?1:.7}"/>`).join('')}
+    ${[40,70,100,130,160,190,220].map(x=>`<line x1="${x}" y1="25" x2="${x}" y2="155" stroke="#555" stroke-width=".8" stroke-dasharray="3,2"/>`).join('')}
     <text x="130" y="172" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">COMPOSITION %</text>
     <rect x="30" y="158" width="40" height="10" fill="#fff"/><text x="50" y="167" text-anchor="middle" fill="#000" font-size="5" font-family="Arial Black">CELLULOSE 45%</text>
     <rect x="90" y="161" width="30" height="7" fill="#888"/><text x="105" y="167" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">HEMI 25%</text>
     <rect x="138" y="163" width="22" height="5" fill="#555"/><text x="149" y="167" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">PECTIN</text>
     <rect x="175" y="163" width="18" height="5" fill="#333" stroke="#888" stroke-width=".5"/><text x="184" y="167" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">LIGNIN</text>
   </svg>`,
-
   'cell-wall-layers': `<svg viewBox="0 0 260 210" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="210" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">THREE LAYERS</text>
-    <!-- Layer blocks -->
     <rect x="20" y="22" width="220" height="44" fill="#1a1a1a" stroke="#444" stroke-width="1"/>
     <rect x="20" y="76" width="220" height="44" fill="#222" stroke="#666" stroke-width="1"/>
     <rect x="20" y="130" width="220" height="44" fill="#2a2a2a" stroke="#fff" stroke-width="1.5"/>
-    <!-- Layer labels -->
     <text x="130" y="40" text-anchor="middle" fill="#888" font-size="7" font-family="Arial Black">MIDDLE LAMELLA</text>
     <text x="130" y="52" text-anchor="middle" fill="#666" font-size="6" font-family="Arial">Pectin — cements adjacent cells</text>
     <text x="130" y="94" text-anchor="middle" fill="#bbb" font-size="7" font-family="Arial Black">PRIMARY CELL WALL</text>
     <text x="130" y="106" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Cellulose — thin, elastic, allows growth</text>
     <text x="130" y="148" text-anchor="middle" fill="#fff" font-size="7" font-family="Arial Black">SECONDARY CELL WALL</text>
     <text x="130" y="160" text-anchor="middle" fill="#bbb" font-size="6" font-family="Arial">Lignin — thick, rigid, mature cells</text>
-    <!-- Arrow between cells -->
     <text x="130" y="190" text-anchor="middle" fill="#444" font-size="6" font-family="Arial">◄ CELL A ──────── CELL B ►</text>
   </svg>`,
-
   'cell-wall-functions': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELL WALL FUNCTIONS</text>
-    <!-- Spider/radar chart style -->
     <circle cx="130" cy="105" r="70" fill="none" stroke="#222" stroke-width="1"/>
     <circle cx="130" cy="105" r="50" fill="none" stroke="#222" stroke-width="1"/>
     <circle cx="130" cy="105" r="30" fill="none" stroke="#222" stroke-width="1"/>
-    <!-- Axes -->
     <line x1="130" y1="35" x2="130" y2="175" stroke="#333" stroke-width="1"/>
     <line x1="60" y1="105" x2="200" y2="105" stroke="#333" stroke-width="1"/>
     <line x1="80" y1="55" x2="180" y2="155" stroke="#333" stroke-width="1"/>
     <line x1="80" y1="155" x2="180" y2="55" stroke="#333" stroke-width="1"/>
-    <!-- Labels -->
     <text x="130" y="30" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">SHAPE</text>
     <text x="130" y="184" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">SUPPORT</text>
     <text x="58" y="108" text-anchor="end" fill="#fff" font-size="6.5" font-family="Arial Black">OSMOSIS</text>
     <text x="202" y="108" fill="#fff" font-size="6.5" font-family="Arial Black">PERMEABILITY</text>
     <text x="78" y="53" text-anchor="middle" fill="#bbb" font-size="5.5" font-family="Arial Black">PROTECTION</text>
     <text x="182" y="53" text-anchor="middle" fill="#bbb" font-size="5.5" font-family="Arial Black">RIGIDITY</text>
-    <!-- Data polygon -->
     <polygon points="130,45 190,85 175,155 85,155 70,85" fill="rgba(255,255,255,.08)" stroke="#fff" stroke-width="1.5"/>
   </svg>`,
-
   'photo-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PHOTOSYNTHESIS OVERVIEW</text>
-    <!-- Sun -->
     <circle cx="40" cy="40" r="18" fill="#ffcc00" opacity=".9"/>
     <text x="40" y="44" text-anchor="middle" fill="#111" font-size="7" font-family="Arial Black">SUN</text>
-    <!-- Arrows: inputs -->
     <path d="M58 40 L90 70" stroke="#ffcc00" stroke-width="2" fill="none" marker-end="url(#arr)"/>
     <text x="62" y="52" fill="#ffcc00" font-size="5.5" font-family="Arial">Light</text>
-    <!-- Water arrow -->
     <path d="M40 160 L90 130" stroke="#44aaff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
     <text x="30" y="160" fill="#44aaff" font-size="5.5" font-family="Arial">H₂O</text>
-    <!-- CO2 arrow -->
     <path d="M220 80 L175 95" stroke="#888" stroke-width="2" fill="none" marker-end="url(#arr)"/>
     <text x="222" y="83" fill="#888" font-size="5.5" font-family="Arial">CO₂</text>
-    <!-- Chloroplast -->
     <ellipse cx="130" cy="105" rx="48" ry="32" fill="#1a2e1a" stroke="#4a8" stroke-width="2"/>
     <ellipse cx="125" cy="100" rx="28" ry="18" fill="#224422" stroke="#4a8" stroke-width="1"/>
     <text x="130" y="103" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">CHLORO-</text>
     <text x="130" y="112" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">PLAST</text>
-    <!-- Outputs -->
     <path d="M170 85 L210 55" stroke="#44ff88" stroke-width="2" fill="none"/>
     <text x="212" y="55" fill="#44ff88" font-size="5.5" font-family="Arial">O₂</text>
     <path d="M170 120 L210 145" stroke="#fff" stroke-width="2" fill="none"/>
     <text x="212" y="148" fill="#fff" font-size="5.5" font-family="Arial">Glucose</text>
-    <!-- Arrow marker -->
     <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#888"/></marker></defs>
     <text x="130" y="190" text-anchor="middle" fill="#555" font-size="6" font-family="Arial">6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂</text>
   </svg>`,
-
   'photo-equation': `<svg viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="180" fill="#111"/>
     <text x="130" y="18" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">THE EQUATION</text>
-    <!-- Equation boxes -->
     <rect x="10" y="30" width="60" height="40" fill="#1a1a2e" stroke="#44aaff" stroke-width="1.5"/>
     <text x="40" y="48" text-anchor="middle" fill="#44aaff" font-size="9" font-family="Arial Black">6CO₂</text>
     <text x="40" y="62" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Carbon dioxide</text>
@@ -639,9 +1245,7 @@ const DIAGRAMS = {
     <rect x="166" y="30" width="60" height="40" fill="#2e2a10" stroke="#ffcc00" stroke-width="1.5"/>
     <text x="196" y="48" text-anchor="middle" fill="#ffcc00" font-size="8" font-family="Arial Black">LIGHT</text>
     <text x="196" y="62" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Solar energy</text>
-    <!-- Arrow -->
     <text x="130" y="90" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial">↓</text>
-    <!-- Products -->
     <rect x="30" y="100" width="80" height="40" fill="#1a301a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="70" y="118" text-anchor="middle" fill="#44ff88" font-size="9" font-family="Arial Black">C₆H₁₂O₆</text>
     <text x="70" y="132" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Glucose (stored energy)</text>
@@ -649,217 +1253,145 @@ const DIAGRAMS = {
     <rect x="130" y="100" width="70" height="40" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="165" y="118" text-anchor="middle" fill="#44ff88" font-size="9" font-family="Arial Black">6O₂</text>
     <text x="165" y="132" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Oxygen released</text>
-    <!-- Chlorophyll note -->
     <text x="130" y="165" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Chlorophyll absorbs light — green pigment in thylakoids</text>
   </svg>`,
-
   'photo-light': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">LIGHT-DEPENDENT REACTIONS</text>
-    <!-- Thylakoid membrane -->
     <rect x="20" y="60" width="220" height="80" rx="4" fill="#1a2e1a" stroke="#4a8" stroke-width="2"/>
     <text x="130" y="78" text-anchor="middle" fill="#8f8" font-size="7" font-family="Arial Black">THYLAKOID MEMBRANE</text>
-    <!-- Photolysis -->
     <circle cx="60" cy="110" r="18" fill="#224422" stroke="#4a8" stroke-width="1.5"/>
     <text x="60" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">PHOTO-</text>
     <text x="60" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">LYSIS</text>
-    <!-- ETC -->
     <rect x="100" y="95" width="60" height="30" fill="#1a3a1a" stroke="#4a8" stroke-width="1"/>
     <text x="130" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">ELECTRON</text>
     <text x="130" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">TRANSPORT</text>
-    <!-- ATP synthase -->
     <circle cx="200" cy="110" r="18" fill="#224422" stroke="#4a8" stroke-width="1.5"/>
     <text x="200" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">ATP</text>
     <text x="200" y="117" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">SYNTH</text>
-    <!-- Light input -->
     <path d="M30 35 L55 92" stroke="#ffcc00" stroke-width="2" stroke-dasharray="4,2"/>
     <text x="15" y="32" fill="#ffcc00" font-size="6.5" font-family="Arial Black">LIGHT</text>
-    <!-- Water split -->
     <text x="18" y="155" fill="#44aaff" font-size="6" font-family="Arial">H₂O → 2H⁺ + ½O₂</text>
-    <!-- Outputs -->
     <text x="180" y="155" fill="#44ff88" font-size="6" font-family="Arial">ATP + NADPH</text>
-    <!-- O2 -->
     <path d="M60 92 L40 55" stroke="#44ff88" stroke-width="1.5"/>
     <text x="15" y="52" fill="#44ff88" font-size="6" font-family="Arial">O₂ ↑</text>
-    <!-- Arrows -->
     <path d="M78 110 L100 110" stroke="#8f8" stroke-width="1.5" marker-end="url(#garr)"/>
     <path d="M160 110 L182 110" stroke="#8f8" stroke-width="1.5" marker-end="url(#garr)"/>
     <defs><marker id="garr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#8f8"/></marker></defs>
   </svg>`,
-
   'photo-calvin': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CALVIN CYCLE (STROMA)</text>
-    <!-- Cycle circle -->
     <circle cx="130" cy="108" r="65" fill="none" stroke="#333" stroke-width="1.5"/>
-    <!-- RuBisCO -->
     <ellipse cx="130" cy="52" rx="30" ry="16" fill="#2a2a1a" stroke="#ffcc00" stroke-width="1.5"/>
     <text x="130" y="50" text-anchor="middle" fill="#ffcc00" font-size="6" font-family="Arial Black">RuBisCO</text>
     <text x="130" y="60" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">CO₂ fixation</text>
-    <!-- G3P -->
     <ellipse cx="195" cy="120" rx="28" ry="16" fill="#1a2a1a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="195" y="118" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">G3P</text>
     <text x="195" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">3-carbon</text>
-    <!-- RuBP -->
     <ellipse cx="65" cy="120" rx="28" ry="16" fill="#1a1a2a" stroke="#44aaff" stroke-width="1.5"/>
     <text x="65" y="118" text-anchor="middle" fill="#44aaff" font-size="6.5" font-family="Arial Black">RuBP</text>
     <text x="65" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">5-carbon</text>
-    <!-- Glucose output -->
     <rect x="100" y="155" width="60" height="22" fill="#1a301a" stroke="#44ff88" stroke-width="1"/>
     <text x="130" y="169" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">GLUCOSE</text>
-    <!-- Cycle arrows -->
     <path d="M150 62 C185 70 210 95 205 115" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
     <path d="M175 130 L150 155" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
-    <path d="M93 155 L85 135" stroke="#fff" stroke-width="1.5" fill="none"/>
     <path d="M55 105 C50 80 80 60 110 53" stroke="#fff" stroke-width="1.5" fill="none" marker-end="url(#warr)"/>
-    <!-- Inputs -->
     <text x="245" y="95" fill="#44aaff" font-size="5.5" font-family="Arial">ATP</text>
     <text x="245" y="103" fill="#44aaff" font-size="5.5" font-family="Arial">NADPH</text>
     <path d="M240 98 L220 110" stroke="#44aaff" stroke-width="1" stroke-dasharray="3,1"/>
-    <text x="5" y="90" fill="#888" font-size="5.5" font-family="Arial">CO₂</text>
-    <path d="M22" y1="88" x2="105" y2="55" stroke="#888" stroke-width="1" stroke-dasharray="3,1"/>
     <defs><marker id="warr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
   </svg>`,
-
   'mitosis-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">MITOSIS OVERVIEW</text>
-    <!-- Parent cell -->
     <ellipse cx="130" cy="60" rx="45" ry="35" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
     <text x="130" y="56" text-anchor="middle" fill="#bbb" font-size="6" font-family="Arial Black">PARENT CELL</text>
     <text x="130" y="67" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">2n chromosomes</text>
-    <!-- Arrow down -->
     <path d="M130 95 L130 120" stroke="#fff" stroke-width="2" marker-end="url(#marr)"/>
     <text x="140" y="112" fill="#888" font-size="5.5" font-family="Arial">MITOSIS</text>
     <defs><marker id="marr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#fff"/></marker></defs>
-    <!-- Daughter cells -->
     <ellipse cx="70" cy="160" rx="42" ry="28" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="70" y="157" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">DAUGHTER 1</text>
     <text x="70" y="167" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">identical 2n</text>
     <ellipse cx="190" cy="160" rx="42" ry="28" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="190" y="157" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial Black">DAUGHTER 2</text>
     <text x="190" y="167" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">identical 2n</text>
-    <!-- Split lines -->
     <path d="M112 120 L80 132" stroke="#fff" stroke-width="1.5" stroke-dasharray="3,2"/>
     <path d="M148 120 L175 132" stroke="#fff" stroke-width="1.5" stroke-dasharray="3,2"/>
-    <!-- Use label -->
     <text x="10" y="195" fill="#444" font-size="5.5" font-family="Arial">Uses: Growth · Repair · Asexual reproduction</text>
   </svg>`,
-
   'mitosis-prophase': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PROPHASE &amp; METAPHASE</text>
-    <!-- Prophase cell -->
     <ellipse cx="65" cy="100" rx="52" ry="70" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
     <text x="65" y="30" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">PROPHASE</text>
-    <!-- Condensed chromosomes -->
-    ${[[55,70],[75,70],[55,95],[75,95],[55,120],[75,120],[55,145],[75,145]].map(([x,y]) =>
-      `<ellipse cx="${x}" cy="${y}" rx="7" ry="10" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".8"/>`
-    ).join('')}
-    <!-- Spindle forming -->
+    ${[[55,70],[75,70],[55,95],[75,95],[55,120],[75,120],[55,145],[75,145]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="7" ry="10" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".8"/>`).join('')}
     <line x1="65" y1="40" x2="65" y2="165" stroke="#888" stroke-width=".8" stroke-dasharray="3,2"/>
-    <!-- Metaphase cell -->
     <ellipse cx="195" cy="100" rx="52" ry="70" fill="#1a1a2e" stroke="#fff" stroke-width="1.5"/>
     <text x="195" y="30" text-anchor="middle" fill="#fff" font-size="6.5" font-family="Arial Black">METAPHASE</text>
-    <!-- Aligned chromosomes at equator -->
-    ${[[188,90],[198,90],[188,105],[198,105],[188,120],[198,120]].map(([x,y]) =>
-      `<ellipse cx="${x}" cy="${y}" rx="7" ry="9" fill="#4444ff" stroke="#88f" stroke-width="1"/>`
-    ).join('')}
-    <!-- Equatorial plate -->
+    ${[[188,90],[198,90],[188,105],[198,105],[188,120],[198,120]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="7" ry="9" fill="#4444ff" stroke="#88f" stroke-width="1"/>`).join('')}
     <line x1="195" y1="45" x2="195" y2="160" stroke="#fff" stroke-width="1.5"/>
-    <!-- Spindle fibres -->
     <line x1="195" y1="40" x2="185" y2="95" stroke="#888" stroke-width=".8"/>
     <line x1="195" y1="40" x2="200" y2="95" stroke="#888" stroke-width=".8"/>
     <line x1="195" y1="165" x2="185" y2="120" stroke="#888" stroke-width=".8"/>
     <line x1="195" y1="165" x2="200" y2="120" stroke="#888" stroke-width=".8"/>
-    <!-- Arrow between -->
     <path d="M118 100 L140 100" stroke="#fff" stroke-width="2" marker-end="url(#parr)"/>
     <defs><marker id="parr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
   </svg>`,
-
   'mitosis-anaphase': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ANAPHASE &amp; TELOPHASE</text>
-    <!-- Anaphase cell -->
     <ellipse cx="65" cy="105" rx="52" ry="72" fill="#1a1a2e" stroke="#888" stroke-width="1.5"/>
     <text x="65" y="30" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">ANAPHASE</text>
-    <!-- Chromatids pulling apart -->
-    ${[[58,60],[72,60],[58,75],[72,75]].map(([x,y]) =>
-      `<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`
-    ).join('')}
-    ${[[58,140],[72,140],[58,155],[72,155]].map(([x,y]) =>
-      `<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`
-    ).join('')}
-    <!-- Spindle arrows -->
+    ${[[58,60],[72,60],[58,75],[72,75]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`).join('')}
+    ${[[58,140],[72,140],[58,155],[72,155]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="6" ry="8" fill="#4444ff" stroke="#88f" stroke-width="1" opacity=".9"/>`).join('')}
     <path d="M65 95 L65 72" stroke="#fff" stroke-width="1.5" marker-end="url(#aarrU)"/>
     <path d="M65 115 L65 138" stroke="#fff" stroke-width="1.5" marker-end="url(#aarrD)"/>
     <defs>
       <marker id="aarrU" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,5 L2.5,0 L5,5 Z" fill="#fff"/></marker>
       <marker id="aarrD" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L2.5,5 L5,0 Z" fill="#fff"/></marker>
     </defs>
-    <!-- Telophase cell -->
     <ellipse cx="195" cy="105" rx="52" ry="72" fill="#1a2e1a" stroke="#44ff88" stroke-width="1.5"/>
     <text x="195" y="30" text-anchor="middle" fill="#8f8" font-size="6.5" font-family="Arial Black">TELOPHASE</text>
-    <!-- Two nuclei reforming -->
     <ellipse cx="195" cy="72" rx="28" ry="18" fill="#1a1a2e" stroke="#88f" stroke-width="1.5"/>
     <text x="195" y="75" text-anchor="middle" fill="#88f" font-size="5" font-family="Arial">Nucleus</text>
     <ellipse cx="195" cy="140" rx="28" ry="18" fill="#1a1a2e" stroke="#88f" stroke-width="1.5"/>
     <text x="195" y="143" text-anchor="middle" fill="#88f" font-size="5" font-family="Arial">Nucleus</text>
-    <!-- Cleavage furrow -->
     <line x1="148" y1="105" x2="242" y2="105" stroke="#44ff88" stroke-width="2" stroke-dasharray="5,2"/>
     <text x="195" y="103" text-anchor="middle" fill="#44ff88" font-size="5" font-family="Arial Black">CYTOKINESIS</text>
-    <!-- Arrow -->
     <path d="M118 105 L140 105" stroke="#fff" stroke-width="2"/>
   </svg>`,
-
   'osmosis-intro': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="190" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">OSMOSIS</text>
-    <!-- Membrane -->
     <rect x="122" y="25" width="16" height="150" fill="#333" stroke="#666" stroke-width="1"/>
     <text x="130" y="185" text-anchor="middle" fill="#666" font-size="5.5" font-family="Arial">Semi-permeable membrane</text>
-    <!-- Left side: dilute -->
     <rect x="10" y="25" width="112" height="150" fill="#1a1a2e" opacity=".8"/>
     <text x="66" y="42" text-anchor="middle" fill="#88aaff" font-size="6.5" font-family="Arial Black">DILUTE</text>
     <text x="66" y="52" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">High water potential</text>
-    <!-- Water molecules left (more) -->
-    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y]) =>
-      `<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.5)" stroke="#44aaff" stroke-width=".8"/>`
-    ).join('')}
-    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y]) =>
-      `<text x="${x}" y="${y+2}" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">W</text>`
-    ).join('')}
-    <!-- Right side: concentrated -->
+    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.5)" stroke="#44aaff" stroke-width=".8"/>`).join('')}
+    ${[[30,80],[50,70],[70,90],[40,110],[60,120],[80,75],[35,140],[65,105]].map(([x,y])=>`<text x="${x}" y="${y+2}" text-anchor="middle" fill="#fff" font-size="5" font-family="Arial">W</text>`).join('')}
     <rect x="138" y="25" width="112" height="150" fill="#1a1a1a" opacity=".8"/>
     <text x="194" y="42" text-anchor="middle" fill="#ff8844" font-size="6.5" font-family="Arial Black">CONCENTRATED</text>
     <text x="194" y="52" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">Low water potential</text>
-    <!-- Fewer water, more solute -->
-    ${[[150,85],[170,115],[200,90],[225,130],[210,75],[240,105]].map(([x,y]) =>
-      `<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.3)" stroke="#44aaff" stroke-width=".6"/>`
-    ).join('')}
-    ${[[160,100],[185,125],[215,105],[235,80],[155,140],[230,145]].map(([x,y]) =>
-      `<circle cx="${x}" cy="${y}" r="8" fill="rgba(255,136,68,.25)" stroke="#f84" stroke-width=".8"/><text x="${x}" y="${y+2}" text-anchor="middle" fill="#f84" font-size="6">S</text>`
-    ).join('')}
-    <!-- Osmosis arrows -->
+    ${[[150,85],[170,115],[200,90],[225,130],[210,75],[240,105]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6" fill="rgba(68,170,255,.3)" stroke="#44aaff" stroke-width=".6"/>`).join('')}
+    ${[[160,100],[185,125],[215,105],[235,80],[155,140],[230,145]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8" fill="rgba(255,136,68,.25)" stroke="#f84" stroke-width=".8"/><text x="${x}" y="${y+2}" text-anchor="middle" fill="#f84" font-size="6">S</text>`).join('')}
     <path d="M108 90 L125 90" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
     <path d="M108 105 L125 105" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
     <path d="M108 120 L125 120" stroke="#44aaff" stroke-width="2.5" marker-end="url(#oarr)"/>
     <defs><marker id="oarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#44aaff"/></marker></defs>
   </svg>`,
-
   'osmosis-potential': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="190" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">WATER POTENTIAL SCALE</text>
-    <!-- Scale bar -->
     <rect x="30" y="30" width="200" height="24" rx="2" fill="url(#wpGrad)"/>
     <defs><linearGradient id="wpGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#44aaff"/><stop offset="100%" stop-color="#111"/></linearGradient></defs>
     <text x="30" y="27" fill="#44aaff" font-size="6.5" font-family="Arial Black">0 Ψ</text>
     <text x="200" y="27" fill="#666" font-size="6.5" font-family="Arial Black">−∞</text>
     <text x="130" y="27" text-anchor="middle" fill="#888" font-size="5.5" font-family="Arial">Pure water</text>
-    <!-- Arrow -->
     <path d="M230 42 L30 42" stroke="#44aaff" stroke-width="1.5" stroke-dasharray="4,2"/>
     <text x="130" y="68" text-anchor="middle" fill="#44aaff" font-size="6" font-family="Arial">Water moves this direction →</text>
-    <!-- Examples -->
     <rect x="20" y="80" width="70" height="50" fill="#1a1a2e" stroke="#44aaff" stroke-width="1.5"/>
     <text x="55" y="95" text-anchor="middle" fill="#44aaff" font-size="6" font-family="Arial Black">PURE WATER</text>
     <text x="55" y="108" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">Ψ = 0</text>
@@ -872,39 +1404,30 @@ const DIAGRAMS = {
     <text x="215" y="95" text-anchor="middle" fill="#f88" font-size="6" font-family="Arial Black">SEAWATER</text>
     <text x="215" y="108" text-anchor="middle" fill="#fff" font-size="9" font-family="Arial Black">Ψ = −27</text>
     <text x="215" y="122" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">High solutes</text>
-    <!-- Rule -->
     <text x="130" y="150" text-anchor="middle" fill="#fff" font-size="7" font-family="Arial Black">Water always moves: HIGH Ψ → LOW Ψ</text>
     <text x="130" y="165" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">( less negative → more negative )</text>
   </svg>`,
-
   'osmosis-cells': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="190" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">PLANT CELL RESPONSES</text>
-    <!-- Turgid cell -->
     <rect x="15" y="25" width="105" height="145" rx="3" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
     <text x="67" y="40" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">HYPOTONIC</text>
     <text x="67" y="50" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">(dilute solution)</text>
-    <!-- Turgid cell shape -->
     <rect x="28" y="58" width="80" height="95" rx="4" fill="#224422" stroke="#44ff88" stroke-width="2"/>
     <ellipse cx="68" cy="105" rx="30" ry="35" fill="#1a2e1a" stroke="#4a8" stroke-width="1.5"/>
     <text x="68" y="108" text-anchor="middle" fill="#8f8" font-size="5.5" font-family="Arial">TURGID</text>
-    <!-- Water arrows in -->
     <path d="M28 90 L38 90" stroke="#44aaff" stroke-width="2" marker-end="url(#tarr)"/>
     <path d="M28 115 L38 115" stroke="#44aaff" stroke-width="2" marker-end="url(#tarr)"/>
     <text x="22" y="103" fill="#44aaff" font-size="5" font-family="Arial">H₂O</text>
     <text x="22" y="110" fill="#44aaff" font-size="5" font-family="Arial">→</text>
-    <!-- Plasmolysed cell -->
     <rect x="140" y="25" width="110" height="145" rx="3" fill="#1a1a2e" stroke="#666" stroke-width="1"/>
     <text x="195" y="40" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">HYPERTONIC</text>
     <text x="195" y="50" text-anchor="middle" fill="#666" font-size="5" font-family="Arial">(concentrated)</text>
-    <!-- Plasmolysed -->
     <rect x="153" y="58" width="84" height="95" rx="4" fill="#222" stroke="#ff8844" stroke-width="2"/>
     <ellipse cx="195" cy="105" rx="16" ry="20" fill="#1a1a0a" stroke="#f84" stroke-width="1.5"/>
     <text x="195" y="108" text-anchor="middle" fill="#f84" font-size="4.5" font-family="Arial">PLASMO-</text>
     <text x="195" y="115" text-anchor="middle" fill="#f84" font-size="4.5" font-family="Arial">LYSED</text>
-    <!-- Gap between wall and membrane -->
     <text x="195" y="84" text-anchor="middle" fill="#555" font-size="4.5" font-family="Arial">gap</text>
-    <!-- Water arrows out -->
     <path d="M222 90 L232 90" stroke="#ff4444" stroke-width="2" marker-end="url(#rarr)"/>
     <path d="M222 115 L232 115" stroke="#ff4444" stroke-width="2" marker-end="url(#rarr)"/>
     <text x="234" y="103" fill="#f44" font-size="5" font-family="Arial">H₂O</text>
@@ -914,74 +1437,49 @@ const DIAGRAMS = {
       <marker id="rarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#ff4444"/></marker>
     </defs>
   </svg>`,
-
   'dna-helix': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">DNA DOUBLE HELIX</text>
-    <!-- Draw helix strands -->
-    ${Array.from({length:12},(_,i)=>{
-      const y = 25 + i*14;
-      const amp = 35;
-      const cx = 130;
-      const x1 = cx + amp*Math.sin(i*0.6);
-      const x2 = cx - amp*Math.sin(i*0.6);
-      return `<circle cx="${x1}" cy="${y}" r="5" fill="#44aaff" stroke="#88ccff" stroke-width="1"/>
-              <circle cx="${x2}" cy="${y}" r="5" fill="#ff4444" stroke="#ff8888" stroke-width="1"/>
-              <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#888" stroke-width="1.2"/>`;
-    }).join('')}
-    <!-- Labels -->
+    ${Array.from({length:12},(_,i)=>{const y=25+i*14,amp=35,cx=130,x1=cx+amp*Math.sin(i*0.6),x2=cx-amp*Math.sin(i*0.6);return`<circle cx="${x1}" cy="${y}" r="5" fill="#44aaff" stroke="#88ccff" stroke-width="1"/><circle cx="${x2}" cy="${y}" r="5" fill="#ff4444" stroke="#ff8888" stroke-width="1"/><line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#888" stroke-width="1.2"/>`;}).join('')}
     <text x="50" y="100" text-anchor="end" fill="#44aaff" font-size="6.5" font-family="Arial Black">5' end</text>
     <text x="210" y="100" fill="#ff4444" font-size="6.5" font-family="Arial Black">3' end</text>
     <text x="130" y="190" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Sugar-phosphate backbone · Hydrogen bond rungs</text>
-    <!-- Backbone lines -->
     <path d="M95,25 Q85,60 95,95 Q105,130 95,165" fill="none" stroke="#44aaff" stroke-width="2.5" opacity=".6"/>
     <path d="M165,25 Q175,60 165,95 Q155,130 165,165" fill="none" stroke="#ff4444" stroke-width="2.5" opacity=".6"/>
-    <!-- Base pair legend -->
     <rect x="10" y="175" width="8" height="8" fill="#44aaff"/>
     <text x="22" y="183" fill="#44aaff" font-size="5.5" font-family="Arial">A–T (2 bonds)</text>
     <rect x="100" y="175" width="8" height="8" fill="#ff4444"/>
     <text x="112" y="183" fill="#ff4444" font-size="5.5" font-family="Arial">G–C (3 bonds)</text>
   </svg>`,
-
   'dna-nucleotide': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">NUCLEOTIDE STRUCTURE</text>
-    <!-- Single nucleotide -->
-    <!-- Phosphate -->
     <circle cx="130" cy="50" r="22" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
     <text x="130" y="47" text-anchor="middle" fill="#44aaff" font-size="6.5" font-family="Arial Black">PHOSPHATE</text>
     <text x="130" y="58" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">PO₄³⁻</text>
-    <!-- Sugar -->
     <rect x="100" y="85" width="60" height="40" rx="4" fill="#1a301a" stroke="#44ff88" stroke-width="2"/>
     <text x="130" y="102" text-anchor="middle" fill="#44ff88" font-size="6.5" font-family="Arial Black">DEOXYRIBOSE</text>
     <text x="130" y="114" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">5-carbon sugar</text>
-    <!-- Base -->
     <rect x="100" y="140" width="60" height="40" rx="4" fill="#2e1a1a" stroke="#ff8844" stroke-width="2"/>
     <text x="130" y="157" text-anchor="middle" fill="#ff8844" font-size="6.5" font-family="Arial Black">NITROGENOUS</text>
     <text x="130" y="168" text-anchor="middle" fill="#ff8844" font-size="6" font-family="Arial Black">BASE</text>
-    <!-- Connections -->
     <line x1="130" y1="72" x2="130" y2="85" stroke="#fff" stroke-width="1.5"/>
     <line x1="130" y1="125" x2="130" y2="140" stroke="#fff" stroke-width="1.5"/>
-    <!-- 4 bases legend -->
     <rect x="10" y="150" width="8" height="8" fill="#44aaff"/><text x="22" y="158" fill="#44aaff" font-size="5.5" font-family="Arial">Adenine (A)</text>
     <rect x="10" y="162" width="8" height="8" fill="#44ff88"/><text x="22" y="170" fill="#44ff88" font-size="5.5" font-family="Arial">Guanine (G)</text>
     <rect x="80" y="150" width="8" height="8" fill="#ff4444"/><text x="92" y="158" fill="#ff4444" font-size="5.5" font-family="Arial">Thymine (T)</text>
     <rect x="80" y="162" width="8" height="8" fill="#ffcc00"/><text x="92" y="170" fill="#ffcc00" font-size="5.5" font-family="Arial">Cytosine (C)</text>
   </svg>`,
-
   'dna-bases': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="190" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">BASE PAIRING RULES</text>
-    <!-- A-T pair -->
     <rect x="20" y="28" width="50" height="30" rx="3" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
     <text x="45" y="47" text-anchor="middle" fill="#44aaff" font-size="11" font-family="Arial Black">A</text>
-    <!-- H bonds -->
     <line x1="70" y1="38" x2="90" y2="38" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
     <line x1="70" y1="48" x2="90" y2="48" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
     <text x="80" y="60" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">2 H-bonds</text>
     <rect x="90" y="28" width="50" height="30" rx="3" fill="#2e1a1a" stroke="#ff4444" stroke-width="2"/>
     <text x="115" y="47" text-anchor="middle" fill="#ff4444" font-size="11" font-family="Arial Black">T</text>
-    <!-- G-C pair -->
     <rect x="20" y="90" width="50" height="30" rx="3" fill="#1a301a" stroke="#44ff88" stroke-width="2"/>
     <text x="45" y="109" text-anchor="middle" fill="#44ff88" font-size="11" font-family="Arial Black">G</text>
     <line x1="70" y1="97" x2="90" y2="97" stroke="#fff" stroke-width="1" stroke-dasharray="3,2"/>
@@ -990,52 +1488,41 @@ const DIAGRAMS = {
     <text x="80" y="128" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">3 H-bonds</text>
     <rect x="90" y="90" width="50" height="30" rx="3" fill="#1a1a30" stroke="#ffcc00" stroke-width="2"/>
     <text x="115" y="109" text-anchor="middle" fill="#ffcc00" font-size="11" font-family="Arial Black">C</text>
-    <!-- Backbone lines -->
     <rect x="10" y="28" width="10" height="92" fill="#333" stroke="#555" stroke-width="1"/>
     <rect x="140" y="28" width="10" height="92" fill="#333" stroke="#555" stroke-width="1"/>
     <text x="8" y="78" text-anchor="middle" transform="rotate(-90,8,78)" fill="#888" font-size="5.5" font-family="Arial">5'→3'</text>
     <text x="155" y="78" text-anchor="middle" transform="rotate(90,155,78)" fill="#888" font-size="5.5" font-family="Arial">3'→5'</text>
-    <!-- Rule text -->
     <text x="130" y="148" text-anchor="middle" fill="#bbb" font-size="6.5" font-family="Arial Black">CHARGAFF'S RULES</text>
     <text x="130" y="162" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">%A = %T in any DNA molecule</text>
     <text x="130" y="174" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">%G = %C in any DNA molecule</text>
   </svg>`,
-
   'enzyme-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ENZYME STRUCTURE</text>
-    <!-- Enzyme body -->
     <path d="M50,80 Q50,40 90,35 Q130,30 160,40 Q200,50 200,80 Q210,120 190,140 Q160,160 130,155 Q90,160 70,140 Q40,120 50,80 Z" fill="#1a2030" stroke="#44aaff" stroke-width="2"/>
     <text x="110" y="90" fill="#44aaff" font-size="8" font-family="Arial Black">ENZYME</text>
     <text x="110" y="102" fill="#888" font-size="5.5" font-family="Arial">(globular protein)</text>
-    <!-- Active site -->
     <path d="M110,110 Q120,130 140,130 Q160,130 165,110" fill="#111" stroke="#fff" stroke-width="2"/>
     <text x="137" y="125" text-anchor="middle" fill="#fff" font-size="5.5" font-family="Arial Black">ACTIVE SITE</text>
-    <!-- Substrate approaching -->
     <rect x="190" y="100" width="55" height="30" rx="4" fill="#2e1a1a" stroke="#ff8844" stroke-width="1.5"/>
     <text x="217" y="118" text-anchor="middle" fill="#f84" font-size="6.5" font-family="Arial Black">SUBSTRATE</text>
     <path d="M190 115 L170 118" stroke="#f84" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#earr)"/>
     <defs><marker id="earr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#f84"/></marker></defs>
-    <!-- Specificity label -->
     <text x="130" y="175" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Specific 3D shape · Active site = substrate-specific</text>
   </svg>`,
-
   'enzyme-lock': `<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="190" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">LOCK AND KEY MODEL</text>
-    <!-- Step 1 -->
     <text x="40" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">1. FREE</text>
     <path d="M15,45 Q15,38 25,36 Q50,32 65,38 Q75,45 75,52 Q80,65 70,72 Q55,78 40,75 Q20,72 15,60 Q12,52 15,45 Z" fill="#1a2030" stroke="#44aaff" stroke-width="1.5"/>
     <path d="M38,62 Q43,72 50,72 Q58,72 60,62" fill="#111" stroke="#44aaff" stroke-width="1.5"/>
     <rect x="82" y="52" width="32" height="20" rx="3" fill="#2e1a1a" stroke="#f84" stroke-width="1.5"/>
     <text x="98" y="65" text-anchor="middle" fill="#f84" font-size="5.5" font-family="Arial Black">SUB</text>
-    <!-- Step 2 -->
     <text x="130" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">2. BINDING</text>
     <path d="M105,45 Q105,38 115,36 Q140,32 155,38 Q165,45 165,52 Q170,65 160,72 Q145,78 130,75 Q110,72 105,60 Q102,52 105,45 Z" fill="#1a2030" stroke="#44aaff" stroke-width="1.5"/>
     <path d="M128,62 Q133,72 140,72 Q148,72 150,62" fill="#2e1a1a" stroke="#44aaff" stroke-width="1.5"/>
     <rect x="128" y="60" width="24" height="14" rx="2" fill="#2e1a1a" stroke="#f84" stroke-width="1"/>
     <text x="140" y="70" text-anchor="middle" fill="#f84" font-size="5" font-family="Arial Black">FIT</text>
-    <!-- Step 3 -->
     <text x="220" y="30" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">3. PRODUCTS</text>
     <path d="M195,45 Q195,38 205,36 Q230,32 245,38 Q255,45 255,52 Q260,65 250,72 Q235,78 220,75 Q200,72 195,60 Q192,52 195,45 Z" fill="#1a2030" stroke="#44ff88" stroke-width="1.5"/>
     <path d="M218,62 Q223,72 230,72 Q238,72 240,62" fill="#111" stroke="#44ff88" stroke-width="1.5"/>
@@ -1043,49 +1530,335 @@ const DIAGRAMS = {
     <rect x="232" y="80" width="18" height="12" rx="2" fill="#1a301a" stroke="#44ff88" stroke-width="1"/>
     <text x="219" y="89" text-anchor="middle" fill="#4f8" font-size="5">P1</text>
     <text x="241" y="89" text-anchor="middle" fill="#4f8" font-size="5">P2</text>
-    <!-- Arrows -->
     <path d="M80 60 L102 60" stroke="#fff" stroke-width="1.5" marker-end="url(#larr)"/>
     <path d="M167 60 L192 60" stroke="#fff" stroke-width="1.5" marker-end="url(#larr)"/>
     <defs><marker id="larr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#fff"/></marker></defs>
-    <!-- Labels -->
     <text x="130" y="110" text-anchor="middle" fill="#888" font-size="6" font-family="Arial Black">ENZYME-SUBSTRATE COMPLEX</text>
-    <!-- Graph -->
     <text x="130" y="130" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Enzyme is UNCHANGED after reaction — reused</text>
   </svg>`,
-
   'enzyme-factors': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="260" height="200" fill="#111"/>
     <text x="130" y="14" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">ENZYME ACTIVITY GRAPH</text>
-    <!-- Axes -->
     <line x1="30" y1="155" x2="240" y2="155" stroke="#555" stroke-width="1.5"/>
     <line x1="30" y1="155" x2="30" y2="25" stroke="#555" stroke-width="1.5"/>
     <text x="135" y="172" text-anchor="middle" fill="#888" font-size="6" font-family="Arial">Temperature (°C)</text>
     <text x="14" y="90" text-anchor="middle" fill="#888" font-size="6" font-family="Arial" transform="rotate(-90,14,90)">Rate of reaction</text>
-    <!-- Curve -->
     <path d="M30,155 Q60,150 80,130 Q100,110 110,85 Q118,65 125,55 Q132,65 138,85 Q148,110 165,140 Q185,155 240,158" fill="none" stroke="#44aaff" stroke-width="2.5"/>
-    <!-- Optimum marker -->
     <line x1="125" y1="55" x2="125" y2="155" stroke="#fff" stroke-width="1" stroke-dasharray="4,2"/>
     <text x="125" y="50" text-anchor="middle" fill="#fff" font-size="6" font-family="Arial Black">OPTIMUM ~37°C</text>
-    <!-- Labels on curve -->
     <text x="75" y="125" fill="#44ff88" font-size="5.5" font-family="Arial">Increasing</text>
     <text x="160" y="130" fill="#ff4444" font-size="5.5" font-family="Arial">Denatured</text>
-    <!-- Denaturation zone -->
     <rect x="145" y="25" width="90" height="130" fill="rgba(255,68,68,.05)" stroke="rgba(255,68,68,.2)" stroke-width="1"/>
     <text x="190" y="40" text-anchor="middle" fill="#f44" font-size="5.5" font-family="Arial Black">DENATURATION</text>
     <text x="190" y="50" text-anchor="middle" fill="#888" font-size="5" font-family="Arial">Active site changes shape</text>
-    <!-- x-axis labels -->
     <text x="30" y="168" text-anchor="middle" fill="#666" font-size="5.5">0</text>
     <text x="80" y="168" text-anchor="middle" fill="#666" font-size="5.5">20</text>
     <text x="125" y="168" text-anchor="middle" fill="#fff" font-size="5.5">37</text>
     <text x="170" y="168" text-anchor="middle" fill="#666" font-size="5.5">50</text>
     <text x="220" y="168" text-anchor="middle" fill="#666" font-size="5.5">70+</text>
+  </svg>`,
+
+  /* ─────────────────────────────────────────────
+     HORMUZ DIAGRAMS  (gold / navy palette)
+  ───────────────────────────────────────────── */
+
+  'hormuz-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="hbg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a1020"/>
+        <stop offset="100%" stop-color="#060c16"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="260" height="200" fill="url(#hbg)"/>
+    <!-- Globe outline -->
+    <circle cx="130" cy="105" r="70" fill="none" stroke="rgba(212,160,23,.2)" stroke-width="1"/>
+    <circle cx="130" cy="105" r="50" fill="none" stroke="rgba(212,160,23,.12)" stroke-width="1"/>
+    <!-- Horizontal lines (parallels) -->
+    ${[70,90,105,120,140].map(y=>`<line x1="62" y1="${y}" x2="198" y2="${y}" stroke="rgba(212,160,23,.08)" stroke-width="1"/>`).join('')}
+    <!-- Vertical lines (meridians) -->
+    ${[80,105,130,155,180].map(x=>`<line x1="${x}" y1="38" x2="${x}" y2="172" stroke="rgba(212,160,23,.08)" stroke-width="1"/>`).join('')}
+    <!-- Hot spot marker -->
+    <circle cx="130" cy="105" r="6" fill="#d4a017" opacity=".9"/>
+    <circle cx="130" cy="105" r="12" fill="none" stroke="#d4a017" stroke-width="1.5" opacity=".6"/>
+    <circle cx="130" cy="105" r="22" fill="none" stroke="#d4a017" stroke-width="1" opacity=".3"/>
+    <!-- Title -->
+    <text x="130" y="18" text-anchor="middle" fill="#d4a017" font-size="8" font-family="Arial Black">STRAIT OF HORMUZ</text>
+    <text x="130" y="29" text-anchor="middle" fill="rgba(212,160,23,.5)" font-size="5.5" font-family="Arial">WORLD'S MOST CRITICAL CHOKEPOINT</text>
+    <!-- Stats boxes -->
+    <rect x="14" y="148" width="66" height="40" fill="rgba(212,160,23,.08)" stroke="rgba(212,160,23,.3)" stroke-width="1"/>
+    <text x="47" y="163" text-anchor="middle" fill="#d4a017" font-size="11" font-family="Arial Black">20%</text>
+    <text x="47" y="174" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">World oil</text>
+    <text x="47" y="182" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">trade</text>
+    <rect x="97" y="148" width="66" height="40" fill="rgba(212,160,23,.08)" stroke="rgba(212,160,23,.3)" stroke-width="1"/>
+    <text x="130" y="163" text-anchor="middle" fill="#d4a017" font-size="11" font-family="Arial Black">33km</text>
+    <text x="130" y="174" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">Narrowest</text>
+    <text x="130" y="182" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">width</text>
+    <rect x="180" y="148" width="66" height="40" fill="rgba(212,160,23,.08)" stroke="rgba(212,160,23,.3)" stroke-width="1"/>
+    <text x="213" y="163" text-anchor="middle" fill="#d4a017" font-size="10" font-family="Arial Black">100s</text>
+    <text x="213" y="174" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">Tankers</text>
+    <text x="213" y="182" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="5" font-family="Arial">daily</text>
+  </svg>`,
+
+  'hormuz-map': `<div class="interactive-map-container">
+    <div id="hormuz-leaflet-map" style="width:100%;height:200px;border-radius:6px;border:1px solid rgba(212,160,23,.3)"></div>
+    <div class="map-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#d4a017"></span> Strait of Hormuz (26.5°N, 56.3°E)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#44aaff"></span> Shipping Lane</span>
+    </div>
+  </div>`,
+
+  'hormuz-importance': `<div class="interactive-chart" id="oil-share-chart">
+    <div class="chart-title">DAILY OIL EXPORTS VIA HORMUZ (Million Barrels)</div>
+    <div class="chart-bar-container">
+      <div class="chart-col">
+        <div class="chart-bar" style="height:100px" data-value="6.3M bbl/day"></div>
+        <div class="chart-label">Saudi<br>Arabia</div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-bar" style="height:65px" data-value="4.0M bbl/day"></div>
+        <div class="chart-label">Iraq</div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-bar" style="height:52px" data-value="3.2M bbl/day"></div>
+        <div class="chart-label">UAE</div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-bar" style="height:38px" data-value="2.4M bbl/day"></div>
+        <div class="chart-label">Kuwait</div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-bar" style="height:25px" data-value="1.5M bbl/day"></div>
+        <div class="chart-label">Qatar</div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-bar" style="height:18px" data-value="1.1M bbl/day"></div>
+        <div class="chart-label">Iran</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:#d4a017;font-family:Arial Black">
+      TOTAL: ~17-18 Million Barrels/Day (20% of global oil trade)
+    </div>
+    <div style="text-align:center;font-size:9px;color:rgba(255,255,255,.4);margin-top:4px">
+      Source: EIA 2024 estimates | Hover bars for details
+    </div>
+  </div>`,
+
+  'hormuz-strategic': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#080e18"/>
+    <text x="130" y="14" text-anchor="middle" fill="#d4a017" font-size="7.5" font-family="Arial Black">STRATEGIC IMPORTANCE</text>
+    <!-- Center chokepoint icon -->
+    <circle cx="130" cy="95" r="32" fill="rgba(212,160,23,.06)" stroke="#d4a017" stroke-width="1.5"/>
+    <text x="130" y="90" text-anchor="middle" fill="#d4a017" font-size="7" font-family="Arial Black">CHOKEPOINT</text>
+    <text x="130" y="101" text-anchor="middle" fill="rgba(212,160,23,.7)" font-size="5.5" font-family="Arial">Controlled by Iran</text>
+    <!-- Surrounding factors -->
+    <!-- Top: Military -->
+    <rect x="95" y="22" width="70" height="24" rx="2" fill="#0d1a0d" stroke="#44aa44" stroke-width="1.2"/>
+    <text x="130" y="32" text-anchor="middle" fill="#44aa44" font-size="6" font-family="Arial Black">⚓ MILITARY</text>
+    <text x="130" y="41" text-anchor="middle" fill="rgba(68,170,68,.7)" font-size="4.8" font-family="Arial">Naval presence &amp; warships</text>
+    <line x1="130" y1="46" x2="130" y2="63" stroke="rgba(68,170,68,.4)" stroke-width="1" stroke-dasharray="3,2"/>
+    <!-- Bottom: Oil prices -->
+    <rect x="95" y="150" width="70" height="24" rx="2" fill="#1a0d00" stroke="#ff8844" stroke-width="1.2"/>
+    <text x="130" y="160" text-anchor="middle" fill="#ff8844" font-size="6" font-family="Arial Black">📈 OIL PRICES</text>
+    <text x="130" y="169" text-anchor="middle" fill="rgba(255,136,68,.7)" font-size="4.8" font-family="Arial">Tension = price spike</text>
+    <line x1="130" y1="127" x2="130" y2="150" stroke="rgba(255,136,68,.4)" stroke-width="1" stroke-dasharray="3,2"/>
+    <!-- Left: Tensions -->
+    <rect x="8" y="83" width="62" height="24" rx="2" fill="#1a0000" stroke="#ff4444" stroke-width="1.2"/>
+    <text x="39" y="93" text-anchor="middle" fill="#ff4444" font-size="6" font-family="Arial Black">⚡ TENSIONS</text>
+    <text x="39" y="102" text-anchor="middle" fill="rgba(255,68,68,.7)" font-size="4.8" font-family="Arial">Conflict risk</text>
+    <line x1="70" y1="95" x2="98" y2="95" stroke="rgba(255,68,68,.4)" stroke-width="1" stroke-dasharray="3,2"/>
+    <!-- Right: Global news -->
+    <rect x="190" y="83" width="62" height="24" rx="2" fill="#001a1a" stroke="#44cccc" stroke-width="1.2"/>
+    <text x="221" y="93" text-anchor="middle" fill="#44cccc" font-size="6" font-family="Arial Black">📡 GLOBAL</text>
+    <text x="221" y="102" text-anchor="middle" fill="rgba(68,204,204,.7)" font-size="4.8" font-family="Arial">In news daily</text>
+    <line x1="162" y1="95" x2="190" y2="95" stroke="rgba(68,204,204,.4)" stroke-width="1" stroke-dasharray="3,2"/>
+    <!-- Iran flag indicator -->
+    <text x="130" y="190" text-anchor="middle" fill="rgba(255,255,255,.3)" font-size="5.5" font-family="Arial">Even minor conflicts trigger worldwide economic impact</text>
+  </svg>`,
+
+  'hormuz-traffic': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#060f1c"/>
+    <text x="130" y="14" text-anchor="middle" fill="#d4a017" font-size="7.5" font-family="Arial Black">DAILY SHIPPING TRAFFIC</text>
+    <!-- Sea background -->
+    <rect x="0" y="20" width="260" height="165" fill="#0a1e35"/>
+    <!-- Lane divider -->
+    <line x1="0" y1="102" x2="260" y2="102" stroke="rgba(212,160,23,.4)" stroke-width="1.5" stroke-dasharray="8,4"/>
+    <text x="130" y="100" text-anchor="middle" fill="rgba(212,160,23,.6)" font-size="5" font-family="Arial Black">TRAFFIC SEPARATION ZONE</text>
+    <!-- Inbound lane label -->
+    <text x="8" y="78" fill="rgba(255,255,255,.4)" font-size="5.5" font-family="Arial Black">← INBOUND</text>
+    <text x="8" y="88" fill="rgba(255,255,255,.3)" font-size="5" font-family="Arial">2–3 km lane</text>
+    <!-- Outbound lane label -->
+    <text x="8" y="122" fill="rgba(255,255,255,.4)" font-size="5.5" font-family="Arial Black">OUTBOUND →</text>
+    <text x="8" y="132" fill="rgba(255,255,255,.3)" font-size="5" font-family="Arial">2–3 km lane</text>
+    <!-- Inbound tankers (going left) -->
+    ${[200,145,88,35].map((x,i)=>`
+      <rect x="${x-18}" y="68" width="36" height="14" rx="3" fill="#1a2840" stroke="#4488bb" stroke-width="1.2"/>
+      <rect x="${x-12}" y="62" width="14" height="6" rx="1" fill="#152030"/>
+      <rect x="${x-6}" y="59" width="4" height="9" fill="#0f1820"/>
+      <line x1="${x-18}" y1="75" x2="${x-22}" y2="75" stroke="#4488bb" stroke-width="1"/>
+    `).join('')}
+    <!-- Outbound tankers (going right) -->
+    ${[30,90,148,210].map((x,i)=>`
+      <rect x="${x-18}" y="112" width="36" height="14" rx="3" fill="#1a2840" stroke="#88bb44" stroke-width="1.2"/>
+      <rect x="${x-2}" y="106" width="14" height="6" rx="1" fill="#152030"/>
+      <rect x="${x+2}" y="103" width="4" height="9" fill="#0f1820"/>
+      <line x1="${x+18}" y1="119" x2="${x+22}" y2="119" stroke="#88bb44" stroke-width="1"/>
+    `).join('')}
+    <!-- Arrow overlays -->
+    <path d="M240,75 L20,75" stroke="rgba(68,136,187,.3)" stroke-width="1.5" marker-end="url(#inarr)"/>
+    <path d="M20,120 L240,120" stroke="rgba(136,187,68,.3)" stroke-width="1.5" marker-end="url(#outarr)"/>
+    <defs>
+      <marker id="inarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="rgba(68,136,187,.6)"/></marker>
+      <marker id="outarr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="rgba(136,187,68,.6)"/></marker>
+    </defs>
+    <!-- Stats -->
+    <rect x="0" y="155" width="260" height="35" fill="rgba(0,0,0,.4)"/>
+    <text x="65" y="168" text-anchor="middle" fill="#d4a017" font-size="9" font-family="Arial Black">100s</text>
+    <text x="65" y="180" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="5.5" font-family="Arial">Tankers per day</text>
+    <line x1="130" y1="158" x2="130" y2="186" stroke="rgba(212,160,23,.2)" stroke-width="1"/>
+    <text x="195" y="168" text-anchor="middle" fill="#d4a017" font-size="9" font-family="Arial Black">~17M</text>
+    <text x="195" y="180" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="5.5" font-family="Arial">Barrels per day</text>
+  </svg>`,
+
+  'hormuz-impact': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#080a0e"/>
+    <text x="130" y="14" text-anchor="middle" fill="#d4a017" font-size="7.5" font-family="Arial Black">GLOBAL IMPACT IF BLOCKED</text>
+    <!-- Cascade chain -->
+    <!-- Block 1: Strait blocked -->
+    <rect x="90" y="22" width="80" height="28" rx="2" fill="#1a0a00" stroke="#d4a017" stroke-width="2"/>
+    <text x="130" y="34" text-anchor="middle" fill="#d4a017" font-size="6.5" font-family="Arial Black">STRAIT BLOCKED</text>
+    <text x="130" y="44" text-anchor="middle" fill="rgba(212,160,23,.6)" font-size="4.8" font-family="Arial">Access denied</text>
+    <!-- Arrow -->
+    <path d="M130 50 L130 64" stroke="#d4a017" stroke-width="1.5" marker-end="url(#domino)"/>
+    <defs><marker id="domino" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#d4a017"/></marker></defs>
+    <!-- Block 2: Supply drops -->
+    <rect x="90" y="65" width="80" height="28" rx="2" fill="#1a1000" stroke="#ff8844" stroke-width="1.5"/>
+    <text x="130" y="77" text-anchor="middle" fill="#ff8844" font-size="6.5" font-family="Arial Black">OIL SUPPLY ↓</text>
+    <text x="130" y="87" text-anchor="middle" fill="rgba(255,136,68,.6)" font-size="4.8" font-family="Arial">Tankers rerouted / halted</text>
+    <!-- Arrow -->
+    <path d="M130 93 L130 107" stroke="#ff8844" stroke-width="1.5" marker-end="url(#dom2)"/>
+    <defs><marker id="dom2" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#ff8844"/></marker></defs>
+    <!-- Block 3: Fuel prices -->
+    <rect x="90" y="108" width="80" height="28" rx="2" fill="#1a1500" stroke="#ffcc00" stroke-width="1.5"/>
+    <text x="130" y="120" text-anchor="middle" fill="#ffcc00" font-size="6.5" font-family="Arial Black">FUEL PRICES ↑↑</text>
+    <text x="130" y="130" text-anchor="middle" fill="rgba(255,204,0,.6)" font-size="4.8" font-family="Arial">Global fuel cost spikes</text>
+    <!-- Arrow -->
+    <path d="M130 136 L130 150" stroke="#ffcc00" stroke-width="1.5" marker-end="url(#dom3)"/>
+    <defs><marker id="dom3" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#ffcc00"/></marker></defs>
+    <!-- Block 4: Economic crisis -->
+    <rect x="90" y="151" width="80" height="28" rx="2" fill="#0a001a" stroke="#ff4444" stroke-width="2"/>
+    <text x="130" y="163" text-anchor="middle" fill="#ff4444" font-size="6.5" font-family="Arial Black">ECONOMIC CRISIS</text>
+    <text x="130" y="173" text-anchor="middle" fill="rgba(255,68,68,.6)" font-size="4.8" font-family="Arial">Trade slowdown worldwide</text>
+    <!-- Side notes -->
+    <text x="10" y="100" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">India</text>
+    <text x="10" y="108" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">directly</text>
+    <text x="10" y="116" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">affected</text>
+    <line x1="38" y1="108" x2="90" y2="108" stroke="rgba(255,136,68,.3)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="182" y="100" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">Europe</text>
+    <text x="182" y="108" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">Asia</text>
+    <text x="182" y="116" fill="rgba(255,136,68,.5)" font-size="5" font-family="Arial">Americas</text>
+    <line x1="170" y1="108" x2="175" y2="108" stroke="rgba(255,136,68,.3)" stroke-width="1" stroke-dasharray="3,2"/>
+  </svg>`,
+
+  'hormuz-fact': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="260" height="200" fill="#060c18"/>
+    <text x="130" y="14" text-anchor="middle" fill="#d4a017" font-size="7.5" font-family="Arial Black">INTERESTING FACTS</text>
+    <!-- Island graphic -->
+    <ellipse cx="85" cy="90" rx="38" ry="26" fill="#2a3a1a" stroke="#4a6030" stroke-width="1.5"/>
+    <ellipse cx="85" cy="85" rx="18" ry="14" fill="#3a4a2a" stroke="#5a7040" stroke-width="1"/>
+    <text x="85" y="90" text-anchor="middle" fill="#c8d8a8" font-size="7" font-family="Arial Black">HORMUZ</text>
+    <text x="85" y="100" text-anchor="middle" fill="rgba(200,216,168,.6)" font-size="5.5" font-family="Arial">ISLAND</text>
+    <!-- Sea around island -->
+    <ellipse cx="85" cy="90" rx="55" ry="38" fill="none" stroke="#0d2545" stroke-width="12" opacity=".7"/>
+    <!-- Facts list -->
+    <rect x="140" y="30" width="112" height="155" fill="rgba(212,160,23,.04)" stroke="rgba(212,160,23,.15)" stroke-width="1" rx="2"/>
+    <text x="196" y="46" text-anchor="middle" fill="#d4a017" font-size="6" font-family="Arial Black">KEY FACTS</text>
+    <!-- Fact items -->
+    <circle cx="152" cy="62" r="3" fill="#d4a017"/>
+    <text x="160" y="65" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Named after</text>
+    <text x="160" y="73" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Hormuz Island</text>
+    <circle cx="152" cy="88" r="3" fill="#d4a017"/>
+    <text x="160" y="91" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Most monitored</text>
+    <text x="160" y="99" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">waterway globally</text>
+    <circle cx="152" cy="114" r="3" fill="#d4a017"/>
+    <text x="160" y="117" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Controlled by</text>
+    <text x="160" y="125" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Iran on north side</text>
+    <circle cx="152" cy="140" r="3" fill="#d4a017"/>
+    <text x="160" y="143" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Oman controls</text>
+    <text x="160" y="151" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">southern shore</text>
+    <circle cx="152" cy="166" r="3" fill="#d4a017"/>
+    <text x="160" y="169" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Connects Persian</text>
+    <text x="160" y="177" fill="rgba(255,255,255,.8)" font-size="5.5" font-family="Arial">Gulf → Gulf of Oman</text>
+    <!-- Wave detail -->
+    ${[130,140,150,160,170,180].map((y,i)=>`<path d="M${20+i*3},${y} Q${30+i*3},${y-5} ${40+i*3},${y}" fill="none" stroke="rgba(68,136,187,.2)" stroke-width="1"/>`).join('')}
+  </svg>`,
+
+  'hormuz-conclusion': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hglow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(212,160,23,.15)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+      </radialGradient>
+    </defs>
+    <rect x="0" y="0" width="260" height="200" fill="#050810"/>
+    <ellipse cx="130" cy="105" rx="90" ry="70" fill="url(#hglow)"/>
+    <!-- Concentric rings -->
+    <circle cx="130" cy="105" r="80" fill="none" stroke="rgba(212,160,23,.08)" stroke-width="1"/>
+    <circle cx="130" cy="105" r="60" fill="none" stroke="rgba(212,160,23,.12)" stroke-width="1"/>
+    <circle cx="130" cy="105" r="40" fill="none" stroke="rgba(212,160,23,.18)" stroke-width="1"/>
+    <circle cx="130" cy="105" r="22" fill="rgba(212,160,23,.1)" stroke="#d4a017" stroke-width="1.5"/>
+    <!-- Power symbol in center -->
+    <text x="130" y="112" text-anchor="middle" fill="#d4a017" font-size="18" font-family="Arial Black">⚓</text>
+    <!-- Title -->
+    <text x="130" y="22" text-anchor="middle" fill="#fff" font-size="7.5" font-family="Arial Black">SMALL ON THE MAP,</text>
+    <text x="130" y="33" text-anchor="middle" fill="#d4a017" font-size="7.5" font-family="Arial Black">ENORMOUS IN IMPACT</text>
+    <!-- Bottom quote -->
+    <rect x="20" y="155" width="220" height="36" fill="rgba(212,160,23,.06)" stroke="rgba(212,160,23,.2)" stroke-width="1"/>
+    <text x="130" y="167" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="5.8" font-family="Arial">"Geography controls global economics"</text>
+    <text x="130" y="180" text-anchor="middle" fill="rgba(212,160,23,.6)" font-size="5.5" font-family="Arial">— The Strait of Hormuz Principle</text>
+    <!-- Radiating lines -->
+    ${Array.from({length:12},(_,i)=>{
+      const a=i*30*Math.PI/180;
+      const x1=130+25*Math.cos(a), y1=105+25*Math.sin(a);
+      const x2=130+75*Math.cos(a), y2=105+75*Math.sin(a);
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(212,160,23,.1)" stroke-width="1"/>`;
+    }).join('')}
   </svg>`
 };
 
-/* ══════════════════════════════════
-   TOPICS DATA — with diagram keys
+/* ═══════════════════════════════��══
+   TOPICS DATA
 ══════════════════════════════════ */
 const TOPICS = [
+  {
+    id:'hormuz', tag:'GEOPOLITICS', title:'Strait of Hormuz', pinned:true,
+    desc:"The world's most critical oil chokepoint — geography, trade, and global power in 33 km.",
+    slides:[
+      {heading:'Introduction', imageUrl:'images/hormuz-1.jpg', imageCaption:'Aerial view — Strait of Hormuz',
+       content:'Imagine a <b>narrow water passage</b> so important that if it closes, the <b>whole world feels the impact</b>.<br><br>That is the <b>Strait of Hormuz</b> — the lifeline of global oil trade. Around <b>20% of the world\'s entire oil supply</b> passes through this single chokepoint every day, making it one of the most strategically vital locations on Earth.',
+       keyFacts:['20% of world\'s oil flows here','Disruption = global crisis']},
+      {heading:'Location & Geography', imageUrl:'images/hormuz-2.jpg', imageCaption:'Persian Gulf to Gulf of Oman',
+       content:'The Strait of Hormuz lies between <b>Iran (north)</b> and <b>Oman (south)</b>. It connects the <b>Persian Gulf</b> to the <b>Gulf of Oman</b>, and then to the Arabian Sea.<br><br>At its narrowest point it is only about <b>33 km wide</b>, yet despite this tiny width it carries a <b>massive proportion of global trade</b>. The shipping lanes are each just 2–3 km wide — extraordinarily narrow for such enormous cargo volumes.',
+       keyFacts:['Iran (N) & Oman (S) borders','Only ~33 km at narrowest']},
+      {heading:'Why is it So Important?', imageUrl:'images/hormuz-3.jpg', imageCaption:'~20% of global oil passes here daily',
+       content:'Approximately <b>20% of the world\'s oil</b> passes through this strait every day. It is the primary export route for oil from:<ul><li><b>Saudi Arabia</b> — the world\'s largest oil exporter</li><li><b>Iraq</b></li><li><b>United Arab Emirates</b></li><li><b>Kuwait</b> and <b>Qatar</b></li></ul>This is why it is called a <b>"global energy artery"</b> — clog this passage and the world\'s economic bloodstream slows.',
+       keyFacts:['~17 million barrels per day','"Global energy artery"']},
+      {heading:'Strategic & Political Importance', imageUrl:'images/hormuz-4.jpg', imageCaption:'Naval presence in the strait',
+       content:'The Strait is one of the world\'s biggest <b>chokepoints</b>, controlled mainly by <b>Iran</b> on its northern shore. It is <b>frequently in global news</b> due to:<ul><li>Military tensions and naval confrontations</li><li>Threats of closure by Iran during conflicts</li><li>International military presence and monitoring</li></ul>Even a <b>small conflict</b> here can trigger <b>worldwide oil price spikes</b>, affecting every country that relies on imported energy.',
+       keyFacts:['Iran controls northern shore','Tensions trigger price spikes']},
+      {heading:'Daily Traffic Activity', imageUrl:'images/hormuz-5.jpg', imageCaption:'Oil tankers transiting the strait',
+       content:'<b>Hundreds of oil tankers</b> pass through the Strait every single day, moving in <b>narrow, strictly separated lanes</b>:<ul><li>Lanes are only <b>2–3 km wide</b> in each direction</li><li>Ships follow a <b>Traffic Separation Scheme (TSS)</b></li><li>Roughly <b>17 million barrels of oil</b> flow through daily</li></ul>The traffic density is extraordinary — it is one of the busiest and most closely monitored waterways in the world.',
+       keyFacts:['Hundreds of tankers daily','2–3 km wide shipping lanes']},
+      {heading:'Global Impact of a Blockage', imageUrl:'images/hormuz-6.jpg', imageCaption:'Global supply chain impact',
+       content:'If the Strait were blocked or severely disrupted:<ul><li><b>Fuel prices rise globally</b> — within days, not weeks</li><li><b>Trade slows down</b> across all sectors dependent on oil</li><li><b>Economic crises</b> can cascade worldwide</li><li>Countries like <b>India</b>, which imports a large share of its oil from the Persian Gulf, are <b>directly and immediately affected</b></li></ul>Alternative routes (around Africa\'s Cape of Good Hope) add weeks and enormous costs to shipments.',
+       keyFacts:['Fuel prices spike worldwide','India directly impacted']},
+      {heading:'Interesting Facts', imageUrl:'images/hormuz-7.jpg', imageCaption:'Hormuz Island, Persian Gulf',
+       content:'The strait is <b>named after Hormuz Island</b>, an island located nearby in the Persian Gulf. Some fascinating details:<ul><li>It is one of the <b>most heavily monitored waterways</b> in the world — by navies, satellites, and intelligence agencies</li><li>The <b>US Navy\'s 5th Fleet</b> is permanently stationed in the region to protect passage</li><li>Iran has repeatedly threatened to close the strait during periods of conflict or sanctions</li><li>The strait has been a <b>flashpoint</b> in multiple international crises</li></ul>',
+       keyFacts:['Named after Hormuz Island','US 5th Fleet stationed nearby']},
+      {heading:'Conclusion', imageUrl:'images/hormuz-8.jpg', imageCaption:'Small on the map, enormous in impact',
+       content:'The <b>Strait of Hormuz may look small on the map</b> — just a thin sliver of water between two nations — but in reality it is one of the <b>most powerful and sensitive locations on Earth</b>.<br><br>It is a place where <b>geography controls global economics</b>. Control of this strait means leverage over the world\'s energy supply, making it the subject of intense military, political, and diplomatic attention every single day.',
+       keyFacts:['Geography = global economic power','Most sensitive location on Earth']}
+    ]
+  },
   {
     id:'cell-wall', tag:'PLANT BIOLOGY', title:'Cell Wall', desc:'Structure, composition and function of the plant cell wall.',
     slides:[
@@ -1188,26 +1961,90 @@ const TOPICS = [
    PAGE ROUTING
 ══════════════════════════════════ */
 var prevPage = 'menu';
+var currentIsHormuz = false;
+
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.getElementById('pg-' + id).classList.add('active');
-}
+  var currentPage = document.querySelector('.page.active');
+  var nextPage = document.getElementById('pg-' + id);
+  
+  if (currentPage && currentPage !== nextPage) {
+    // Add exit animation
+    currentPage.style.opacity = '0';
+    currentPage.style.transform = 'translateY(10px)';
+    currentPage.style.transition = 'opacity .25s ease, transform .25s ease';
+    
+    setTimeout(function() {
+      document.querySelectorAll('.page').forEach(function(p) { 
+        p.classList.remove('active');
+        p.style.opacity = '';
+        p.style.transform = '';
+        p.style.transition = '';
+      });
+      nextPage.classList.add('active');
+      nextPage.style.opacity = '0';
+      nextPage.style.transform = 'translateY(-10px)';
+      
+      // Trigger reflow
+      void nextPage.offsetWidth;
+      
+      nextPage.style.transition = 'opacity .3s ease, transform .3s ease';
+      nextPage.style.opacity = '1';
+      nextPage.style.transform = 'translateY(0)';
+    }, 200);
+  } else {
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    nextPage.classList.add('active');
+  }
+  }
 
 /* ══════════════════════════════════
-   RENDER TOPIC GRID
+   RENDER PINNED + TOPIC GRID
 ══════════════════════════════════ */
 (function() {
+  var pinnedSection = document.getElementById('pinnedSection');
   var grid = document.getElementById('topicGrid');
-  TOPICS.forEach(function(t) {
-    var card = document.createElement('div');
-    card.className = 'topic-card';
-    card.innerHTML =
-      '<div class="tc-tag">' + t.tag + '</div>' +
-      '<div class="tc-title">' + t.title + '</div>' +
-      '<div class="tc-desc">' + t.desc + '</div>' +
-      '<div class="tc-count">' + t.slides.length + ' SLIDES</div>';
-    card.onclick = function() { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
-    grid.appendChild(card);
+
+  TOPICS.slice(0,1).forEach(function(t) {
+    if (t.pinned) {
+      // Build the special pinned card
+      var sec = document.createElement('div');
+      sec.className = 'sec-head';
+      sec.style.cssText = 'animation:fadeUp .5s ease .12s both;opacity:0';
+      sec.innerHTML = '<div class="sec-label" style="color:rgba(212,160,23,.6)">📍 FEATURED DECK</div><div class="sec-line" style="background:rgba(212,160,23,.2)"></div>';
+      pinnedSection.appendChild(sec);
+
+      var card = document.createElement('div');
+      card.className = 'pinned-card';
+      card.innerHTML =
+        '<div class="pinned-badge">📍 PINNED</div>' +
+        '<div class="pinned-inner">' +
+          '<div class="pinned-body">' +
+            '<div class="pinned-eyebrow">' + t.tag + '</div>' +
+            '<div class="pinned-title hormuz-brand"><span class="hormuz-strait-of">Strait of</span><span class="hormuz-word">HORMUZ</span></div>' +
+            '<div class="pinned-desc">' + t.desc + '</div>' +
+            '<div class="pinned-meta">' +
+              '<div class="pinned-slides-count">▶ ' + t.slides.length + ' SLIDES</div>' +
+              '<div class="pinned-tag-chip">GEOPOLITICS</div>' +
+              '<div class="pinned-tag-chip">GEOGRAPHY</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="pinned-arr">›</div>' +
+        '</div>' +
+        '<div class="pinned-scan-line"></div>';
+      card.onclick = function() { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
+      pinnedSection.appendChild(card);
+
+    } else {
+      var card2 = document.createElement('div');
+      card2.className = 'topic-card';
+      card2.innerHTML =
+        '<div class="tc-tag">' + t.tag + '</div>' +
+        '<div class="tc-title">' + t.title + '</div>' +
+        '<div class="tc-desc">' + t.desc + '</div>' +
+        '<div class="tc-count">' + t.slides.length + ' SLIDES</div>';
+      card2.onclick = function() { prevPage = 'menu'; buildDeck(t); showPage('slides'); };
+      grid.appendChild(card2);
+    }
   });
 })();
 
@@ -1338,8 +2175,6 @@ async function doGen() {
   prevPage = 'gen';
   buildDeck(data);
   showPage('slides');
-
-
 }
 
 /* ══════════════════════════════════
@@ -1365,18 +2200,6 @@ async function getWikiImgs(data) {
           }
         }
       } catch(e1) {}
-      try {
-        var ctrl2 = new AbortController(); setTimeout(function(){ctrl2.abort();}, 6000);
-        var r2 = await fetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + q + '&prop=pageimages&pithumbsize=600&format=json&origin=*', {signal: ctrl2.signal});
-        var j2 = await r2.json();
-        var pages2 = Object.values(j2.query && j2.query.pages ? j2.query.pages : {});
-        for (var i2 = 0; i2 < pages2.length; i2++) {
-          if (pages2[i2].thumbnail && pages2[i2].thumbnail.source && !usedUrls.has(pages2[i2].thumbnail.source)) {
-            usedUrls.add(pages2[i2].thumbnail.source);
-            return {url: pages2[i2].thumbnail.source, caption: pages2[i2].title || query};
-          }
-        }
-      } catch(e2) {}
     }
     return null;
   }
@@ -1396,11 +2219,42 @@ var cur = 0, tot = 0, deck = [];
 
 function buildDeck(data) {
   deck = data.slides; tot = deck.length; cur = 0;
+  var isHormuz = !!(data.id === 'hormuz' || (data.slides[0] && data.slides[0].diagramKey && data.slides[0].diagramKey.indexOf('hormuz') === 0));
+  currentIsHormuz = isHormuz;
+
   var stage = document.getElementById('stage');
   stage.innerHTML = '';
   document.getElementById('dotRow').innerHTML = '';
   document.getElementById('ovGrid').innerHTML = '';
-  document.getElementById('deckTitle').textContent = data.title || '';
+
+  // Apply hormuz theming to chrome elements
+  var slidesBar = document.getElementById('slidesBar');
+  var deckTitleEl = document.getElementById('deckTitle');
+  var slideCounter = document.getElementById('slideCounter');
+  var navProgress = document.getElementById('navProgress');
+  var slideNav = document.getElementById('slideNav');
+  var dotRow = document.getElementById('dotRow');
+  var nextBtn = document.getElementById('nextBtn');
+
+  if (isHormuz) {
+slidesBar.classList.add('hormuz-deck');
+  deckTitleEl.classList.add('hormuz-title');
+  slideCounter.classList.add('hormuz-counter');
+  navProgress.classList.add('hormuz-prog');
+  slideNav.classList.add('hormuz-nav');
+    dotRow.classList.add('hormuz-dots');
+    nextBtn.classList.add('hormuz-next');
+  } else {
+slidesBar.classList.remove('hormuz-deck');
+  deckTitleEl.classList.remove('hormuz-title');
+  slideCounter.classList.remove('hormuz-counter');
+  navProgress.classList.remove('hormuz-prog');
+  slideNav.classList.remove('hormuz-nav');
+    dotRow.classList.remove('hormuz-dots');
+    nextBtn.classList.remove('hormuz-next');
+  }
+
+  deckTitleEl.textContent = data.title || '';
   document.getElementById('totN').textContent = tot;
   document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
 
@@ -1408,13 +2262,15 @@ function buildDeck(data) {
     var hasDiagram = !!(sl.diagramKey && DIAGRAMS[sl.diagramKey]);
     var hasImg = !!sl.imageUrl;
     var hasSide = hasDiagram || hasImg;
+    var slIsHormuz = hasDiagram && sl.diagramKey && sl.diagramKey.indexOf('hormuz') === 0;
 
     var kfHtml = sl.keyFacts && sl.keyFacts.length
       ? '<div class="kf-row">' + sl.keyFacts.map(function(f){return '<span class="kf">'+f+'</span>';}).join('') + '</div>' : '';
 
     var sideHtml = '';
     if (hasDiagram) {
-      sideHtml = '<div class="diagram-panel">' + DIAGRAMS[sl.diagramKey] +
+      sideHtml = '<div class="diagram-panel' + (slIsHormuz ? ' hormuz-diag' : '') + '">' +
+        DIAGRAMS[sl.diagramKey] +
         '<div class="diagram-label">' + (sl.diagramLabel || '') + '</div></div>';
     } else if (hasImg) {
       sideHtml = '<div class="img-panel"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
@@ -1426,16 +2282,16 @@ function buildDeck(data) {
     slide.id = 'sl' + i;
     slide.innerHTML =
       '<div class="slide-inner">' +
-        '<div class="slide-num">SLIDE ' + String(i+1).padStart(2,'0') + '</div>' +
-        '<div class="slide-heading">' + sl.heading + '</div>' +
+        '<div class="slide-num' + (slIsHormuz ? ' hormuz-num' : '') + '">SLIDE ' + String(i+1).padStart(2,'0') + '</div>' +
+        '<div class="slide-heading' + (slIsHormuz ? ' hormuz-heading' : '') + '">' + sl.heading + '</div>' +
         '<div class="slide-layout' + (hasSide ? ' has-diagram' : '') + '">' +
           '<div class="content-col">' +
-            '<div class="content-card blurred" id="cc'+i+'">' +
+            '<div class="content-card' + (slIsHormuz ? ' hormuz-card' : '') + ' blurred" id="cc'+i+'">' +
               '<div class="content-body">' + sl.content + kfHtml + '</div>' +
               '<div class="reveal-badge" id="badge'+i+'">' +
                 '<div class="reveal-badge-inner">' +
-                  '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-                  '<span>CLICK TO REVEAL</span>' +
+                  '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:' + (slIsHormuz ? '#d4a017' : 'white') + ';fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                  '<span style="color:' + (slIsHormuz ? '#d4a017' : 'white') + '">CLICK TO REVEAL</span>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -1449,8 +2305,11 @@ function buildDeck(data) {
       var card = document.getElementById('cc' + idx);
       var badge = document.getElementById('badge' + idx);
       card.addEventListener('click', function() {
-        var nowBlurred = this.classList.toggle('blurred');
-        badge.style.display = nowBlurred ? '' : 'none';
+        // Only allow unblurring - can only re-blur when switching slides
+        if (this.classList.contains('blurred')) {
+          this.classList.remove('blurred');
+          badge.style.display = 'none';
+        }
       });
     })(i);
 
@@ -1474,20 +2333,64 @@ function buildDeck(data) {
 ══════════════════════════════════ */
 function goTo(n) {
   if (n < 0 || n >= tot) return;
-  document.getElementById('sl'+cur).classList.remove('active');
+  var dir = n > cur ? 'next' : 'prev';
+  var prevSlide = document.getElementById('sl'+cur);
+  prevSlide.classList.remove('active','dir-next','dir-prev');
+  
+  // Re-blur the previous slide's card when leaving
+  var prevCard = document.getElementById('cc' + cur);
+  var prevBadge = document.getElementById('badge' + cur);
+  if (prevCard) {
+    prevCard.classList.add('blurred');
+    if (prevBadge) prevBadge.style.display = '';
+  }
+  
   cur = n;
-  document.getElementById('sl'+cur).classList.add('active');
-  document.getElementById('sl'+cur).scrollTop = 0;
+  var nextSlide = document.getElementById('sl'+cur);
+  nextSlide.classList.remove('dir-next','dir-prev');
+  // Force reflow so animation replays
+  void nextSlide.offsetWidth;
+  nextSlide.classList.add('active', dir === 'next' ? 'dir-next' : 'dir-prev');
+  nextSlide.scrollTop = 0;
   updateUI();
 }
 function nav(dir) { goTo(cur + dir); }
-function goBack() { showPage(prevPage || 'menu'); }
-function navNext() { if (cur === tot - 1) { goBack(); } else { nav(1); } }
+function goBack() {
+  _isCssFs=false;
+  document.getElementById('pg-slides').classList.remove('fs-mode');
+  document.body.classList.remove('fs-body');
+  showPage(prevPage || 'menu');
+}
+function navNext() {
+  if (cur === tot - 1) {
+    // Show thank you page in fullscreen
+    showPage('thanks');
+    document.getElementById('pg-thanks').classList.add('fs-mode');
+    document.body.classList.add('fs-body');
+  } else { nav(1); }
+}
 
+/* ── SWIPE GESTURES ── */
+(function(){
+  var stage = document.getElementById('stage');
+  var tx = 0, ty = 0;
+  stage.addEventListener('touchstart', function(e){
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
+  }, {passive:true});
+  stage.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    var dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+      if (dx < 0) navNext();
+      else nav(-1);
+    }
+  }, {passive:true});
+})();
 
 function updateUI() {
   document.getElementById('curN').textContent = cur + 1;
-  document.getElementById('progFill').style.width = ((cur+1)/tot*100) + '%';
+  document.getElementById('navProgress').style.width = ((cur+1)/tot*90) + '%';
   document.getElementById('prevBtn').disabled = cur === 0;
   var nb = document.getElementById('nextBtn');
   if (cur === tot - 1) {
@@ -1509,45 +2412,76 @@ function closeOv() { document.getElementById('ovOverlay').classList.remove('open
 /* ══════════════════════════════════
    FULLSCREEN
 ══════════════════════════════════ */
-function toggleFullscreen() {
-  var el = document.getElementById('pg-slides');
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-    if (req) req.call(el);
-  } else {
-    var ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-    if (ex) ex.call(document);
-  }
-}
-document.addEventListener('fullscreenchange', updateFsIcon);
-document.addEventListener('webkitfullscreenchange', updateFsIcon);
-function updateFsIcon() {
-  var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  var icon = document.getElementById('fsIcon');
-  if (!icon) return;
-  icon.innerHTML = inFs
-    ? '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'
-    : '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+/* ── FULLSCREEN: uses browser Fullscreen API with CSS fallback ── */
+var _isCssFs = false;
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
 }
 
-/* ══════════════════════════════════
-   FULLSCREEN
-══════════════════════════════════ */
 function toggleFullscreen() {
-  var el = document.getElementById('pg-slides');
-  if (!document.fullscreenElement) {
-    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen).call(el);
+  var slides = document.getElementById('pg-slides');
+  
+  if (!isFullscreen()) {
+    // Enter fullscreen
+    var elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(function(err) {
+        // Fullscreen API failed (e.g., in iframe without permission), use CSS fallback
+        _isCssFs = true;
+        slides.classList.add('fs-mode');
+        document.body.classList.add('fs-body');
+        updateFsIcon();
+      });
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen();
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    } else {
+      // No Fullscreen API support, use CSS fallback
+      _isCssFs = true;
+      slides.classList.add('fs-mode');
+      document.body.classList.add('fs-body');
+      updateFsIcon();
+    }
   } else {
-    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+    // Exit fullscreen
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
   }
 }
-document.addEventListener('fullscreenchange', updateFsIcon);
-document.addEventListener('webkitfullscreenchange', updateFsIcon);
+
+// Listen for fullscreen change events to update icon and CSS state
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+function handleFullscreenChange() {
+  var slides = document.getElementById('pg-slides');
+  _isCssFs = isFullscreen();
+  slides.classList.toggle('fs-mode', _isCssFs);
+  document.body.classList.toggle('fs-body', _isCssFs);
+  updateFsIcon();
+}
+
 function updateFsIcon() {
-  var isFs = !!document.fullscreenElement;
-  document.getElementById('fsIcon').innerHTML = isFs
-    ? '<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>'
-    : '<polyline points="15,3 21,3 21,9"/><polyline points="9,21 3,21 3,15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+  var btn = document.getElementById('fsBtn');
+  if (!btn) return;
+  if (_isCssFs || isFullscreen()) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/></svg> EXIT';
+  } else {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> FS';
+  }
 }
 
 /* ══════════════════════════════════
@@ -1557,21 +2491,199 @@ document.addEventListener('keydown', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
   var onSlides = document.getElementById('pg-slides').classList.contains('active');
   if (!onSlides) return;
+  showControls(); // Show controls on any key press
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
   if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
   if (e.key === 'g' || e.key === 'G') openOv();
   if (e.key === 'f' || e.key === 'F') toggleFullscreen();
-  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
   if (e.key === 'Escape') {
     if (document.getElementById('ovOverlay').classList.contains('open')) closeOv();
+    else if (_isCssFs) toggleFullscreen();
     else goBack();
   }
   if (e.key === 'r' || e.key === 'R') {
+    // R key only reveals (unblurs), doesn't toggle back
     var card = document.getElementById('cc' + cur);
     var badge = document.getElementById('badge' + cur);
-    if (card) { var nb2 = card.classList.toggle('blurred'); if (badge) badge.style.display = nb2 ? '' : 'none'; }
+    if (card && card.classList.contains('blurred')) {
+      card.classList.remove('blurred');
+      if (badge) badge.style.display = 'none';
+    }
   }
 });
+
+/* ══════════════════════════════════
+   AUTO-HIDE CONTROLS (3 seconds)
+══════════════════════════════════ */
+var autoHideTimer = null;
+var controlsHidden = false;
+
+function showControls() {
+  var slidesBar = document.getElementById('slidesBar');
+  var slideNav = document.getElementById('slideNav');
+  if (!slidesBar || !slideNav) return;
+  
+  slidesBar.classList.remove('auto-hidden');
+  slideNav.classList.remove('auto-hidden');
+  controlsHidden = false;
+  
+  // Reset timer
+  clearTimeout(autoHideTimer);
+  autoHideTimer = setTimeout(hideControls, 3000);
+}
+
+function hideControls() {
+  var onSlides = document.getElementById('pg-slides').classList.contains('active');
+  if (!onSlides) return;
+  
+  var slidesBar = document.getElementById('slidesBar');
+  var slideNav = document.getElementById('slideNav');
+  if (!slidesBar || !slideNav) return;
+  
+  slidesBar.classList.add('auto-hidden');
+  slideNav.classList.add('auto-hidden');
+  controlsHidden = true;
+}
+
+// Show controls on mouse/touch activity
+document.getElementById('pg-slides').addEventListener('mousemove', showControls);
+document.getElementById('pg-slides').addEventListener('touchstart', showControls, {passive: true});
+document.getElementById('pg-slides').addEventListener('click', function(e) {
+  // Show controls when clicking on sides (left/right 15% of screen)
+  var rect = this.getBoundingClientRect();
+  var x = e.clientX - rect.left;
+  var width = rect.width;
+  if (x < width * 0.15 || x > width * 0.85) {
+    showControls();
+  }
+});
+
+// Start auto-hide timer when entering slides page
+var origShowPage = showPage;
+showPage = function(id) {
+  origShowPage(id);
+  if (id === 'slides') {
+    showControls(); // Start the timer
+  } else {
+    clearTimeout(autoHideTimer);
+  }
+};
+
+/* ══════════════════════════════════
+   INTERACTIVE LEAFLET MAP FOR HORMUZ
+══════════════════════════════════ */
+var hormuzMap = null;
+var mapInitialized = false;
+
+function initHormuzMap() {
+  if (mapInitialized || !document.getElementById('hormuz-leaflet-map')) return;
+  
+  // Strait of Hormuz coordinates
+  var straitCenter = [26.5667, 56.2500];
+  
+  hormuzMap = L.map('hormuz-leaflet-map', {
+    center: straitCenter,
+    zoom: 7,
+    zoomControl: true,
+    scrollWheelZoom: false
+  });
+  
+  // Dark themed map tiles
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 12,
+    minZoom: 5
+  }).addTo(hormuzMap);
+  
+  // Custom gold marker for Hormuz
+  var goldIcon = L.divIcon({
+    className: 'hormuz-marker',
+    html: '<div style="width:16px;height:16px;background:#d4a017;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(212,160,23,.6)"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+  
+  // Add marker for strait
+  L.marker(straitCenter, {icon: goldIcon})
+    .addTo(hormuzMap)
+    .bindPopup('<b style="color:#d4a017">Strait of Hormuz</b><br>Width: ~33 km<br>Depth: 60-90 m<br>Daily Traffic: 100+ tankers');
+  
+  // Add shipping lane polyline (approximate real shipping lane)
+  var shippingLane = [
+    [26.8, 54.5], // Persian Gulf side
+    [26.6, 55.5],
+    [26.5, 56.25], // Strait center
+    [26.4, 57.0],
+    [26.2, 58.5]  // Gulf of Oman side
+  ];
+  
+  L.polyline(shippingLane, {
+    color: '#44aaff',
+    weight: 3,
+    opacity: 0.7,
+    dashArray: '10, 8'
+  }).addTo(hormuzMap).bindPopup('International Shipping Lane<br>~17M barrels of oil daily');
+  
+  // Add circle to highlight strait area
+  L.circle(straitCenter, {
+    radius: 30000,
+    color: '#d4a017',
+    fillColor: '#d4a017',
+    fillOpacity: 0.1,
+    weight: 2,
+    dashArray: '5, 5'
+  }).addTo(hormuzMap);
+  
+  // Country labels
+  L.marker([27.5, 55.5], {
+    icon: L.divIcon({
+      className: 'country-label',
+      html: '<div style="font-family:Arial Black;font-size:11px;color:#bbb;text-shadow:0 0 4px #000">IRAN</div>',
+      iconSize: [50, 20]
+    })
+  }).addTo(hormuzMap);
+  
+  L.marker([25.5, 55.5], {
+    icon: L.divIcon({
+      className: 'country-label',
+      html: '<div style="font-family:Arial Black;font-size:10px;color:#bbb;text-shadow:0 0 4px #000">UAE / OMAN</div>',
+      iconSize: [80, 20]
+    })
+  }).addTo(hormuzMap);
+  
+  mapInitialized = true;
+}
+
+// Initialize map when slide with map is shown
+var origGoTo = goTo;
+goTo = function(n) {
+  origGoTo(n);
+  // Check if current slide has the map and initialize if needed
+  setTimeout(function() {
+    if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) {
+      initHormuzMap();
+    }
+    // Invalidate map size in case container was hidden
+    if (hormuzMap) {
+      hormuzMap.invalidateSize();
+    }
+  }, 100);
+};
+
+// Also check on page show
+var origShowPage2 = showPage;
+showPage = function(id) {
+  origShowPage2(id);
+  if (id === 'slides') {
+    setTimeout(function() {
+      if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) {
+        initHormuzMap();
+      }
+      if (hormuzMap) hormuzMap.invalidateSize();
+    }, 200);
+  }
+};
 </script>
 </body>
 </html>
