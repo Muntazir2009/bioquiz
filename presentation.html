@@ -687,11 +687,6 @@ body.fs-body{overflow:hidden!important}
 .slides-bar.hormuz-deck{border-bottom-color:rgba(255,255,255,.1)!important}
 .sb-topic.hormuz-title{color:#fff!important;letter-spacing:.12em}
   .sb-counter.hormuz-counter{background:#fff!important;color:#000!important}
-  .nav-progress.hormuz-prog{background:#fff!important;box-shadow:0 0 8px rgba(255,255,255,.4)!important}
-  .slide-nav.hormuz-nav::before{background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent)!important}
-.hormuz-dots .dot.on{background:#fff!important;border-color:#fff!important}
-.nav-btn.pri.hormuz-next{background:#fff!important;border-color:#fff!important;color:#000!important;}
-.nav-btn.pri.hormuz-next:hover:not(:disabled){background:#e0e0e0!important}
 .slide-num.hormuz-num{color:rgba(255,255,255,.22)!important}
 .slide-num.hormuz-num::after{background:rgba(255,255,255,.1)!important}
 .slide-heading.hormuz-heading::after{background:#fff!important;width:32px!important;height:2px!important;opacity:.3;margin-top:10px!important}
@@ -853,7 +848,7 @@ body.fs-body{overflow:hidden!important}
   padding:0 10px;word-spacing:.1em;
 }
 .ty-back{
-  margin-top:clamp(24px, 5vw, 48px);
+  margin-top:clamp(6px, 2vw, 12px);
   display:inline-flex;align-items:center;gap:clamp(8px, 2vw, 12px);
   font-family:'Arial Black',Arial,sans-serif;
   font-size:clamp(.38rem, 1.2vw, .48rem);letter-spacing:clamp(.1em, 1vw, .18em);font-weight:900;
@@ -882,6 +877,29 @@ body.fs-body{overflow:hidden!important}
   width:clamp(10px, 2vw, 14px);height:clamp(10px, 2vw, 14px);transition:transform .3s ease;flex-shrink:0;
 }
 .ty-back:hover svg{transform:translateX(-4px)}
+.ty-note{
+  max-width:min(680px,92vw);margin-top:18px;
+  color:rgba(255,255,255,.5);font-size:clamp(.62rem,1.2vw,.8rem);line-height:1.6;
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.2s both;opacity:0;
+}
+.ty-actions{
+  margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.35s both;opacity:0;
+}
+.ty-btn{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  font-family:'Arial Black',Arial,sans-serif;font-size:clamp(.36rem,1vw,.45rem);
+  letter-spacing:.14em;color:rgba(255,255,255,.78);background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.18);padding:10px 14px;border-radius:4px;
+  transition:all .25s ease;
+}
+.ty-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ty-btn:hover{color:#fff;border-color:rgba(255,255,255,.35);transform:translateY(-2px)}
+.ty-btn.pri{
+  background:linear-gradient(135deg,#fff 0%,#ececec 100%);
+  color:#000;border-color:#fff;
+}
+.ty-btn.pri:hover{background:#fff;color:#000}
 @keyframes tyFadeUp{
   from{opacity:0;transform:translateY(30px)}
   to{opacity:1;transform:translateY(0)}
@@ -1076,6 +1094,8 @@ body.fs-body{overflow:hidden!important}
     <div class="sb-topic" id="deckTitle"></div>
     <div style="display:flex;align-items:center;gap:7px">
       <div class="sb-counter" id="slideCounter"><span id="curN">1</span>/<span id="totN">1</span></div>
+      <button class="sb-btn" id="revealBtn" onclick="revealCurrent()">REVEAL</button>
+      <button class="sb-btn" id="autoBtn" onclick="toggleAutoPlay()">AUTO</button>
       <button class="sb-btn" onclick="openOv()"><svg><use href="#i-grid"/></svg> ALL</button>
       <button class="sb-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen (F)">
         <svg id="fsIcon" viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1085,21 +1105,6 @@ body.fs-body{overflow:hidden!important}
   </div>
   
   <div class="stage" id="stage"></div>
-  <div class="swipe-hint" id="swipeHint">← swipe to navigate →</div>
-  <div class="slide-nav" id="slideNav">
-    <div class="nav-progress" id="navProgress"></div>
-    <div class="kb-hint">
-      <span><kbd>←</kbd> <kbd>→</kbd> Navigate</span>
-      <span><kbd>F</kbd> Fullscreen</span>
-      <span><kbd>G</kbd> Grid</span>
-      <span><kbd>Esc</kbd> Exit</span>
-    </div>
-    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">‹ PREV</button>
-    <div class="dot-row" id="dotRow"></div>
-    <button class="nav-btn pri" id="nextBtn" onclick="navNext()">
-      NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
-    </button>
-  </div>
 </div>
 
 <!-- ══════════════════════════════════ OVERVIEW OVERLAY ══════════════════════════════════ -->
@@ -1131,12 +1136,23 @@ body.fs-body{overflow:hidden!important}
     <div class="ty-divider"></div>
     <div class="ty-subtitle">Strait of Hormuz</div>
     <div class="ty-sub2">GEOPOLITICS · GEOGRAPHY · GLOBAL TRADE</div>
-    <button class="ty-back" onclick="showPage('menu');_isCssFs=false;document.getElementById('pg-thanks').classList.remove('fs-mode');document.body.classList.remove('fs-body')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      RETURN TO MENU
-    </button>
+    <div class="ty-note">You’ve reached the end. Use the actions below to replay or jump directly to an overview.</div>
+    <div class="ty-actions">
+      <button class="ty-btn pri" onclick="restartDeck()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+        RESTART DECK
+      </button>
+      <button class="ty-btn" onclick="showPage('slides');openOv();">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        OPEN OVERVIEW
+      </button>
+      <button class="ty-back" onclick="showPage('menu');_isCssFs=false;document.getElementById('pg-thanks').classList.remove('fs-mode');document.body.classList.remove('fs-body')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        RETURN TO MENU
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2216,6 +2232,8 @@ async function getWikiImgs(data) {
    BUILD DECK
 ══════════════════════════════════ */
 var cur = 0, tot = 0, deck = [];
+var autoPlayTimer = null;
+var autoPlayOn = false;
 
 function buildDeck(data) {
   deck = data.slides; tot = deck.length; cur = 0;
@@ -2224,34 +2242,22 @@ function buildDeck(data) {
 
   var stage = document.getElementById('stage');
   stage.innerHTML = '';
-  document.getElementById('dotRow').innerHTML = '';
   document.getElementById('ovGrid').innerHTML = '';
+  stopAutoPlay();
 
   // Apply hormuz theming to chrome elements
   var slidesBar = document.getElementById('slidesBar');
   var deckTitleEl = document.getElementById('deckTitle');
   var slideCounter = document.getElementById('slideCounter');
-  var navProgress = document.getElementById('navProgress');
-  var slideNav = document.getElementById('slideNav');
-  var dotRow = document.getElementById('dotRow');
-  var nextBtn = document.getElementById('nextBtn');
 
   if (isHormuz) {
 slidesBar.classList.add('hormuz-deck');
   deckTitleEl.classList.add('hormuz-title');
   slideCounter.classList.add('hormuz-counter');
-  navProgress.classList.add('hormuz-prog');
-  slideNav.classList.add('hormuz-nav');
-    dotRow.classList.add('hormuz-dots');
-    nextBtn.classList.add('hormuz-next');
   } else {
 slidesBar.classList.remove('hormuz-deck');
   deckTitleEl.classList.remove('hormuz-title');
   slideCounter.classList.remove('hormuz-counter');
-  navProgress.classList.remove('hormuz-prog');
-  slideNav.classList.remove('hormuz-nav');
-    dotRow.classList.remove('hormuz-dots');
-    nextBtn.classList.remove('hormuz-next');
   }
 
   deckTitleEl.textContent = data.title || '';
@@ -2313,11 +2319,6 @@ slidesBar.classList.remove('hormuz-deck');
       });
     })(i);
 
-    var dot = document.createElement('button');
-    dot.className = 'dot' + (i === 0 ? ' on' : '');
-    dot.onclick = (function(idx){return function(){goTo(idx);};})(i);
-    document.getElementById('dotRow').appendChild(dot);
-
     var oc = document.createElement('div');
     oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
     oc.innerHTML = '<div class="ov-num">SLIDE ' + String(i+1).padStart(2,'0') + '</div><div class="ov-heading">' + sl.heading + '</div>';
@@ -2363,6 +2364,7 @@ function goBack() {
 }
 function navNext() {
   if (cur === tot - 1) {
+    stopAutoPlay();
     // Show thank you page in fullscreen
     showPage('thanks');
     document.getElementById('pg-thanks').classList.add('fs-mode');
@@ -2370,10 +2372,12 @@ function navNext() {
   } else { nav(1); }
 }
 
-/* ── SWIPE GESTURES ── */
+/* ── GESTURES: touch + pointer drag + wheel ── */
 (function(){
   var stage = document.getElementById('stage');
   var tx = 0, ty = 0;
+  var px = 0, py = 0;
+  var wheelLock = false;
   stage.addEventListener('touchstart', function(e){
     tx = e.touches[0].clientX;
     ty = e.touches[0].clientY;
@@ -2386,24 +2390,68 @@ function navNext() {
       else nav(-1);
     }
   }, {passive:true});
+
+  stage.addEventListener('pointerdown', function(e){
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    px = e.clientX; py = e.clientY;
+  });
+  stage.addEventListener('pointerup', function(e){
+    var dx = e.clientX - px;
+    var dy = e.clientY - py;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
+      if (dx < 0) navNext();
+      else nav(-1);
+    }
+  });
+  stage.addEventListener('wheel', function(e){
+    if (wheelLock || Math.abs(e.deltaX) < 20) return;
+    wheelLock = true;
+    if (e.deltaX > 0) navNext();
+    else nav(-1);
+    setTimeout(function(){ wheelLock = false; }, 280);
+  }, {passive:true});
 })();
 
 function updateUI() {
   document.getElementById('curN').textContent = cur + 1;
-  document.getElementById('navProgress').style.width = ((cur+1)/tot*90) + '%';
-  document.getElementById('prevBtn').disabled = cur === 0;
-  var nb = document.getElementById('nextBtn');
-  if (cur === tot - 1) {
-    nb.textContent = 'DONE';
-    nb.classList.remove('pri');
-    nb.disabled = false;
-  } else {
-    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>';
-    nb.classList.add('pri');
-  }
-  nb.disabled = false;
-  document.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
   document.querySelectorAll('.ov-card').forEach(function(c,i){c.classList.toggle('cur',i===cur);});
+}
+
+function revealCurrent() {
+  var card = document.getElementById('cc' + cur);
+  var badge = document.getElementById('badge' + cur);
+  if (card && card.classList.contains('blurred')) {
+    card.classList.remove('blurred');
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+function stopAutoPlay() {
+  autoPlayOn = false;
+  clearInterval(autoPlayTimer);
+  autoPlayTimer = null;
+  var autoBtn = document.getElementById('autoBtn');
+  if (autoBtn) autoBtn.classList.remove('on');
+}
+
+function toggleAutoPlay() {
+  if (autoPlayOn) { stopAutoPlay(); return; }
+  autoPlayOn = true;
+  var autoBtn = document.getElementById('autoBtn');
+  if (autoBtn) autoBtn.classList.add('on');
+  autoPlayTimer = setInterval(function(){
+    if (!document.getElementById('pg-slides').classList.contains('active')) return;
+    if (cur >= tot - 1) { navNext(); return; }
+    navNext();
+  }, 9000);
+}
+
+function restartDeck() {
+  showPage('slides');
+  document.getElementById('pg-thanks').classList.remove('fs-mode');
+  document.body.classList.remove('fs-body');
+  goTo(0);
+  showControls();
 }
 
 function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
@@ -2492,23 +2540,19 @@ document.addEventListener('keydown', function(e) {
   var onSlides = document.getElementById('pg-slides').classList.contains('active');
   if (!onSlides) return;
   showControls(); // Show controls on any key press
-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navNext(); }
   if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
   if (e.key === 'g' || e.key === 'G') openOv();
   if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'a' || e.key === 'A') toggleAutoPlay();
+  if (e.key === 'Enter') revealCurrent();
   if (e.key === 'Escape') {
     if (document.getElementById('ovOverlay').classList.contains('open')) closeOv();
     else if (_isCssFs) toggleFullscreen();
     else goBack();
   }
   if (e.key === 'r' || e.key === 'R') {
-    // R key only reveals (unblurs), doesn't toggle back
-    var card = document.getElementById('cc' + cur);
-    var badge = document.getElementById('badge' + cur);
-    if (card && card.classList.contains('blurred')) {
-      card.classList.remove('blurred');
-      if (badge) badge.style.display = 'none';
-    }
+    revealCurrent();
   }
 });
 
@@ -2520,11 +2564,9 @@ var controlsHidden = false;
 
 function showControls() {
   var slidesBar = document.getElementById('slidesBar');
-  var slideNav = document.getElementById('slideNav');
-  if (!slidesBar || !slideNav) return;
+  if (!slidesBar) return;
   
   slidesBar.classList.remove('auto-hidden');
-  slideNav.classList.remove('auto-hidden');
   controlsHidden = false;
   
   // Reset timer
@@ -2537,11 +2579,9 @@ function hideControls() {
   if (!onSlides) return;
   
   var slidesBar = document.getElementById('slidesBar');
-  var slideNav = document.getElementById('slideNav');
-  if (!slidesBar || !slideNav) return;
+  if (!slidesBar) return;
   
   slidesBar.classList.add('auto-hidden');
-  slideNav.classList.add('auto-hidden');
   controlsHidden = true;
 }
 
@@ -2549,11 +2589,15 @@ function hideControls() {
 document.getElementById('pg-slides').addEventListener('mousemove', showControls);
 document.getElementById('pg-slides').addEventListener('touchstart', showControls, {passive: true});
 document.getElementById('pg-slides').addEventListener('click', function(e) {
-  // Show controls when clicking on sides (left/right 15% of screen)
+  // Tap/click side zones for quick navigation
   var rect = this.getBoundingClientRect();
   var x = e.clientX - rect.left;
   var width = rect.width;
-  if (x < width * 0.15 || x > width * 0.85) {
+  if (x < width * 0.18) {
+    nav(-1);
+    showControls();
+  } else if (x > width * 0.82) {
+    navNext();
     showControls();
   }
 });
@@ -2565,6 +2609,7 @@ showPage = function(id) {
   if (id === 'slides') {
     showControls(); // Start the timer
   } else {
+    stopAutoPlay();
     clearTimeout(autoHideTimer);
   }
 };
