@@ -1,8 +1,13 @@
 diff --git a/presentation.html b/presentation.html
-index e70bda7a270b3e044a33074ad8500e126e4164cc..2cbed952ad5c1d30da3c5fbbff90a866a798d8fe 100644
+index e70bda7a270b3e044a33074ad8500e126e4164cc..579a499bb02aa491da035fa19db70552307cd4e2 100644
 --- a/presentation.html
 +++ b/presentation.html
-@@ -335,84 +335,84 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
+@@ -330,89 +330,89 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
+ .sb-btn:hover svg{transform:translateX(-2px)}
+ .sb-topic{
+   font-family:var(--font);font-size:.55rem;font-weight:900;letter-spacing:.08em;
+   color:var(--white);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;
+ }
  .sb-topic.hormuz-title{color:var(--gold);text-shadow:0 0 20px rgba(212,160,23,.2)}
  .sb-counter{
    font-family:var(--font);font-size:.44rem;letter-spacing:.1em;font-weight:900;
@@ -23,7 +28,8 @@ index e70bda7a270b3e044a33074ad8500e126e4164cc..2cbed952ad5c1d30da3c5fbbff90a866
  
  /* Sleek slide indicator - minimal dots */
  .slide-indicator{
-   display:none; /* Hidden - we use the dot-row in nav instead */
+-  display:none; /* Hidden - we use the dot-row in nav instead */
++  display:none;
  }
  
  /* Stage */
@@ -93,7 +99,7 @@ index e70bda7a270b3e044a33074ad8500e126e4164cc..2cbed952ad5c1d30da3c5fbbff90a866
  .content-card:not(.blurred){cursor:default;user-select:text}
  /* Text selection highlight */
  .content-card ::selection{background:rgba(212,160,23,.4);color:#fff}
-@@ -422,58 +422,58 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
+@@ -422,233 +422,161 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
    pointer-events:none;
    background:radial-gradient(ellipse at center, rgba(0,0,0,.2) 0%, transparent 70%);
@@ -143,15 +149,919 @@ index e70bda7a270b3e044a33074ad8500e126e4164cc..2cbed952ad5c1d30da3c5fbbff90a866
  .diagram-label{font-family:var(--font);font-size:.38rem;letter-spacing:.12em;font-weight:900;color:var(--muted);text-align:center}
  .hormuz-diag .diagram-label{color:rgba(212,160,23,.6)}
  
- /* Auto-hide controls after 3s inactivity */
- .slides-bar,.slide-nav{
-   transition:opacity .4s ease, transform .4s ease;
- }
+-/* Auto-hide controls after 3s inactivity */
+-.slides-bar,.slide-nav{
+-  transition:opacity .4s ease, transform .4s ease;
+-}
++/* Auto-hide controls after inactivity */
++.slides-bar{transition:opacity .4s ease, transform .4s ease}
  .slides-bar.auto-hidden{
    opacity:0;transform:translateY(-100%);pointer-events:none;
  }
- .slide-nav.auto-hidden{
-   opacity:0;transform:translateY(100%);pointer-events:none;
+-.slide-nav.auto-hidden{
+-  opacity:0;transform:translateY(100%);pointer-events:none;
+-}
+-
+-/* Bottom nav - sleek minimal design */
+-.slide-nav{
+-  display:flex;align-items:center;justify-content:space-between;gap:16px;
+-  padding:12px clamp(16px,3vw,44px);
+-  background:transparent;flex-shrink:0;
+-  position:relative;
+-}
+-/* Sleek top border with gradient */
+-.slide-nav::before{
+-  content:'';position:absolute;top:0;left:5%;right:5%;height:1px;
+-  background:linear-gradient(90deg, transparent, var(--border), transparent);
+-}
+-.slide-nav.hormuz-nav::before{
+-  background:linear-gradient(90deg, transparent, rgba(212,160,23,.3), transparent);
+-}
+ 
+-/* Progress line removed */
+-.nav-progress{display:none!important}
+-
+-/* Keyboard hints removed */
+-.kb-hint{display:none!important}
+-.nav-btn{
+-  display:flex;align-items:center;gap:6px;font-family:var(--font);font-size:.48rem;
+-  letter-spacing:.12em;font-weight:900;padding:9px 18px;cursor:pointer;
+-  border:1px solid var(--border);background:none;color:var(--muted);
+-  transition:all .3s cubic-bezier(.16,1,.3,1);border-radius:4px;
+-  position:relative;overflow:hidden;
+-}
+-.nav-btn::before{
+-  content:'';position:absolute;inset:0;
+-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.03), transparent);
+-  transform:translateX(-100%);transition:transform .4s ease;
+-}
+-.nav-btn:hover:not(:disabled)::before{transform:translateX(100%)}
+-.nav-btn:hover:not(:disabled){
+-  color:var(--white);border-color:var(--border2);
+-  transform:translateY(-1px);
+-  box-shadow:0 4px 12px rgba(0,0,0,.3);
+-}
+-.nav-btn:active:not(:disabled){transform:translateY(0);box-shadow:none}
+-.nav-btn:disabled{opacity:.2;cursor:not-allowed}
+-.nav-btn.pri{
+-  background:linear-gradient(135deg, #fff 0%, #f0f0f0 100%);color:var(--black);
+-  border-color:var(--white);border-radius:6px;
+-  box-shadow:0 2px 8px rgba(255,255,255,.1);
+-}
+-.nav-btn.pri:hover:not(:disabled){
+-  background:linear-gradient(135deg, #fff 0%, #e8e8e8 100%);
+-  box-shadow:0 4px 16px rgba(255,255,255,.15);
+-}
+-.nav-btn.pri.hormuz-next{
+-  background:linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+-  border-color:#d4a017;color:#000;
+-  box-shadow:0 2px 12px rgba(212,160,23,.2);
+-}
+-.nav-btn.pri.hormuz-next:hover:not(:disabled){
+-  background:linear-gradient(135deg, #e8b422 0%, #d4a017 100%);
+-  box-shadow:0 4px 20px rgba(212,160,23,.3);
+-}
+-.dot-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;max-width:200px}
+-  .dot{
+-    width:6px;height:6px;background:var(--dark4);border:1px solid var(--border);
+-    cursor:pointer;padding:0;border-radius:50%;
+-    transition:all .3s cubic-bezier(.16,1,.3,1);
+-  }
+-  .dot:hover{background:var(--border2);transform:scale(1.3)}
+-  .dot.on{background:var(--white);border-color:var(--white);width:20px;border-radius:10px;box-shadow:0 0 8px rgba(255,255,255,.3)}
+-.hormuz-dots .dot.on{background:var(--gold);border-color:var(--gold)}
++#autoBtn.on{background:var(--white);color:#000;border-color:var(--white)}
++#autoBtn.on:hover{background:var(--off);color:#000}
+ 
+ /* ══════════════════════════════════
+    OVERVIEW OVERLAY
+ ══════════════════════════════════ */
+ .ov-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.96);display:none;flex-direction:column}
+ .ov-overlay.open{display:flex;animation:fadeIn .2s ease}
+ @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+ .ov-head{
+   display:flex;align-items:center;justify-content:space-between;
+   padding:0 clamp(14px,4vw,48px);height:54px;border-bottom:1px solid var(--border);flex-shrink:0;
+ }
+ .ov-title{font-family:var(--font);font-size:.58rem;font-weight:900;letter-spacing:.24em;color:var(--white)}
+ .ov-close{
+   display:flex;align-items:center;gap:5px;cursor:pointer;
+   font-family:var(--font);font-size:.44rem;letter-spacing:.12em;font-weight:900;
+   background:none;border:1px solid var(--border);padding:5px 12px;color:var(--muted);transition:all .15s;
+ }
+ .ov-close:hover{color:var(--white);border-color:var(--border2)}
+ .ov-close svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+ .ov-grid{flex:1;overflow-y:auto;padding:18px clamp(14px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px;align-content:start}
+ .ov-card{background:var(--dark2);border:1px solid transparent;padding:14px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+ .ov-card:hover,.ov-card.cur{background:var(--dark3);border-color:var(--border);border-left-color:var(--white)}
+ .ov-num{font-family:var(--font);font-size:.36rem;letter-spacing:.16em;font-weight:900;color:rgba(255,255,255,.25);margin-bottom:5px}
+ .ov-heading{font-family:var(--font);font-size:.62rem;font-weight:900;color:var(--white);line-height:1.2}
+ 
+ @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+ 
+ @media(max-width:680px){
+   .slide-layout.has-diagram{grid-template-columns:1fr}
+   .diagram-panel{position:static}
+   .f-row{grid-template-columns:1fr}
+   .pinned-inner{grid-template-columns:1fr}
+   .pinned-arr{display:none}
+ }
+ @media(max-width:480px){
+-  .dot-row{max-width:130px}
+-  .nav-btn{padding:8px 12px;font-size:.42rem}
++  .sb-btn{padding:8px 12px;font-size:.42rem}
  }
  
- /* Bottom nav - sleek minimal design */
+ /* ══════════════════════════════════
+    FULLSCREEN — CSS-based, works everywhere
+ ══════════════════════════════════ */
+ #pg-slides.fs-mode,#pg-thanks.fs-mode{
+   position:fixed!important;inset:0!important;z-index:9000!important;
+   width:100vw!important;height:100dvh!important;
+   display:flex!important;flex-direction:column!important;
+   background:#000!important;overflow:hidden!important;
+ }
+ body.fs-body{overflow:hidden!important}
+ 
+ /* ══════════════════════════════════
+    SLIDE DIRECTIONAL ANIMATIONS (swipe)
+ ══════════════════════════════════ */
+ @keyframes slideFromRight{
+   from{opacity:0;transform:translateX(60px) scale(.98)}
+   to{opacity:1;transform:translateX(0) scale(1)}
+ }
+ @keyframes slideFromLeft{
+   from{opacity:0;transform:translateX(-60px) scale(.98)}
+   to{opacity:1;transform:translateX(0) scale(1)}
+ }
+ @keyframes slideIn{
+   from{opacity:0;transform:translateX(24px)}
+   to{opacity:1;transform:translateX(0)}
+ }
+ .slide.active{display:block}
+ .slide.dir-next{animation:slideFromRight .4s cubic-bezier(.16,1,.3,1) both}
+ .slide.dir-prev{animation:slideFromLeft .4s cubic-bezier(.16,1,.3,1) both}
+ 
+ /* Content stagger animation */
+ .slide.active .content-card{animation:cardFadeIn .5s cubic-bezier(.16,1,.3,1) both}
+ .slide.active .content-card:nth-child(1){animation-delay:.1s}
+ .slide.active .content-card:nth-child(2){animation-delay:.2s}
+ .slide.active .content-card:nth-child(3){animation-delay:.3s}
+ @keyframes cardFadeIn{
+   from{opacity:0;transform:translateY(16px)}
+   to{opacity:1;transform:translateY(0)}
+ }
+ 
+ /* ══════════════════════════════════
+    FIX ALL ARROW SVGS
+ ══════════════════════════════════ */
+-.nav-btn svg,.sb-btn svg,.tb-btn svg,.ov-close svg,.gen-back svg{
++.sb-btn svg,.tb-btn svg,.ov-close svg,.gen-back svg{
+   width:11px!important;height:11px!important;flex-shrink:0;pointer-events:none;
+ }
+ 
+ /* ═══════════���══════════════════════
+    STRAIT OF HORMUZ — special editorial typography
+ ══════════════════════════════════ */
+ .hormuz-brand{display:flex;flex-direction:column;gap:2px}
+ .hormuz-strait-of{
+   font-family:Georgia,'Times New Roman',serif;
+   font-size:clamp(.65rem,1.4vw,.9rem);
+   font-weight:400;font-style:italic;
+   letter-spacing:.45em;
+   color:rgba(255,255,255,.45);
+   text-transform:uppercase;
+   line-height:1;
+ }
+ .hormuz-word{
+   font-family:'Arial Black',Arial,sans-serif;
+   font-size:clamp(2rem,5vw,3.6rem);
+   font-weight:900;
+   letter-spacing:.04em;
+   line-height:.85;
+   color:#fff;
+   text-transform:uppercase;
+ }
+@@ -665,55 +593,50 @@ body.fs-body{overflow:hidden!important}
+ .pinned-card{
+   background:#0d0d0d!important;
+   border:1px solid rgba(255,255,255,.15)!important;
+   clip-path:none!important;
+ }
+ .pinned-card::before{display:none!important}
+ .pinned-card:hover{
+   transform:translateY(-2px)!important;
+   box-shadow:0 10px 40px rgba(255,255,255,.06)!important;
+   border-color:rgba(255,255,255,.32)!important;
+ }
+ .pinned-badge{background:#fff!important;color:#000!important;font-size:.33rem!important;letter-spacing:.22em!important;}
+ .pinned-eyebrow{color:rgba(255,255,255,.4)!important}
+ .pinned-eyebrow::before{background:rgba(255,255,255,.25)!important}
+ .pinned-title{margin-bottom:12px!important}
+ .pinned-slides-count{color:rgba(255,255,255,.5)!important}
+ .pinned-tag-chip{border-color:rgba(255,255,255,.18)!important;color:rgba(255,255,255,.45)!important;}
+ .pinned-arr{color:rgba(255,255,255,.25)!important}
+ .pinned-meta{border-top-color:rgba(255,255,255,.08)!important}
+ .pinned-scan-line{display:none!important}
+ 
+ /* Slides bar */
+ .slides-bar.hormuz-deck{border-bottom-color:rgba(255,255,255,.1)!important}
+ .sb-topic.hormuz-title{color:#fff!important;letter-spacing:.12em}
+   .sb-counter.hormuz-counter{background:#fff!important;color:#000!important}
+-  .nav-progress.hormuz-prog{background:#fff!important;box-shadow:0 0 8px rgba(255,255,255,.4)!important}
+-  .slide-nav.hormuz-nav::before{background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent)!important}
+-.hormuz-dots .dot.on{background:#fff!important;border-color:#fff!important}
+-.nav-btn.pri.hormuz-next{background:#fff!important;border-color:#fff!important;color:#000!important;}
+-.nav-btn.pri.hormuz-next:hover:not(:disabled){background:#e0e0e0!important}
+ .slide-num.hormuz-num{color:rgba(255,255,255,.22)!important}
+ .slide-num.hormuz-num::after{background:rgba(255,255,255,.1)!important}
+ .slide-heading.hormuz-heading::after{background:#fff!important;width:32px!important;height:2px!important;opacity:.3;margin-top:10px!important}
+ 
+ /* Content card */
+ .content-card.hormuz-card{
+   background:#0f0f0f!important;
+   border:1px solid rgba(255,255,255,.1)!important;
+   border-left:2px solid #fff!important;
+   border-radius:0!important;
+ }
+ .content-card.hormuz-card:hover{border-color:rgba(255,255,255,.2)!important;border-left-color:#fff!important;}
+ .hormuz-card .content-body{
+   font-size:clamp(.9rem,1.5vw,1rem)!important;
+   line-height:1.84!important;color:#c8c8c8!important;
+ }
+ .hormuz-card .content-body b{
+   color:#fff!important;font-weight:700!important;
+   text-decoration:underline!important;
+   text-decoration-color:rgba(255,255,255,.28)!important;
+   text-underline-offset:3px!important;
+   text-decoration-thickness:1px!important;
+ }
+ .hormuz-card .content-body ul,.hormuz-card .content-body ol{padding-left:0!important;margin:10px 0!important;list-style:none!important;}
+ .hormuz-card .content-body li{
+@@ -831,79 +754,102 @@ body.fs-body{overflow:hidden!important}
+   color:#fff;
+   text-shadow:0 4px 30px rgba(255,255,255,.15), 0 0 60px rgba(212,160,23,.1);
+ }
+ .ty-divider{
+   width:clamp(50px, 15vw, 80px);height:2px;margin:clamp(16px, 4vw, 32px) auto;
+   background:linear-gradient(90deg, transparent, rgba(212,160,23,.6), transparent);
+   animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .8s both;opacity:0;
+   border-radius:2px;
+ }
+ .ty-subtitle{
+   font-family:Georgia,'Times New Roman',serif;
+   font-size:clamp(.7rem, 2vw, 1.1rem);
+   font-style:italic;letter-spacing:clamp(.12em, 1vw, .25em);
+   color:rgba(212,160,23,.7);
+   animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) .95s both;opacity:0;
+   padding:0 10px;
+ }
+ .ty-sub2{
+   font-family:'Arial Black',Arial,sans-serif;
+   font-size:clamp(.32rem, 1vw, .4rem);letter-spacing:clamp(.14em, 1vw, .28em);
+   color:rgba(255,255,255,.25);margin-top:clamp(6px, 1.5vw, 10px);
+   animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.1s both;opacity:0;
+   padding:0 10px;word-spacing:.1em;
+ }
+ .ty-back{
+-  margin-top:clamp(24px, 5vw, 48px);
++  margin-top:clamp(6px, 2vw, 12px);
+   display:inline-flex;align-items:center;gap:clamp(8px, 2vw, 12px);
+   font-family:'Arial Black',Arial,sans-serif;
+   font-size:clamp(.38rem, 1.2vw, .48rem);letter-spacing:clamp(.1em, 1vw, .18em);font-weight:900;
+   color:rgba(255,255,255,.7);background:rgba(255,255,255,.03);
+   border:1px solid rgba(255,255,255,.15);
+   padding:clamp(10px, 2.5vw, 14px) clamp(18px, 4vw, 28px);cursor:pointer;
+   transition:all .3s cubic-bezier(.16,1,.3,1);
+   animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.3s both;opacity:0;
+   border-radius:4px;
+   position:relative;overflow:hidden;
+   white-space:nowrap;
+ }
+ .ty-back::before{
+   content:'';position:absolute;inset:0;
+   background:linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+   transform:translateX(-100%);transition:transform .4s ease;
+ }
+ .ty-back:hover::before{transform:translateX(100%)}
+ .ty-back:hover{
+   color:#fff;border-color:rgba(212,160,23,.5);
+   background:rgba(212,160,23,.08);
+   transform:translateY(-2px);
+   box-shadow:0 8px 30px rgba(0,0,0,.3), 0 0 20px rgba(212,160,23,.1);
+ }
+ .ty-back svg{
+   width:clamp(10px, 2vw, 14px);height:clamp(10px, 2vw, 14px);transition:transform .3s ease;flex-shrink:0;
+ }
+ .ty-back:hover svg{transform:translateX(-4px)}
++.ty-note{
++  max-width:min(680px,92vw);margin-top:18px;
++  color:rgba(255,255,255,.5);font-size:clamp(.62rem,1.2vw,.8rem);line-height:1.6;
++  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.2s both;opacity:0;
++}
++.ty-actions{
++  margin-top:20px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
++  animation:tyFadeUp .8s cubic-bezier(.16,1,.3,1) 1.35s both;opacity:0;
++}
++.ty-btn{
++  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
++  font-family:'Arial Black',Arial,sans-serif;font-size:clamp(.36rem,1vw,.45rem);
++  letter-spacing:.14em;color:rgba(255,255,255,.78);background:rgba(255,255,255,.03);
++  border:1px solid rgba(255,255,255,.18);padding:10px 14px;border-radius:4px;
++  transition:all .25s ease;
++}
++.ty-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
++.ty-btn:hover{color:#fff;border-color:rgba(255,255,255,.35);transform:translateY(-2px)}
++.ty-btn.pri{
++  background:linear-gradient(135deg,#fff 0%,#ececec 100%);
++  color:#000;border-color:#fff;
++}
++.ty-btn.pri:hover{background:#fff;color:#000}
+ @keyframes tyFadeUp{
+   from{opacity:0;transform:translateY(30px)}
+   to{opacity:1;transform:translateY(0)}
+ }
+ /* Thank you page mobile adjustments */
+ @media(max-width:480px){
+   .ty-eyebrow{letter-spacing:.2em;font-size:.3rem}
+   .ty-sub2{letter-spacing:.12em;word-spacing:0}
+ }
+ @media(max-height:500px){
+   .ty-center{padding:12px}
+   .ty-eyebrow{margin-bottom:12px}
+   .ty-divider{margin:12px auto}
+   .ty-back{margin-top:16px}
+ }
+ 
+ /* Swipe hint - removed */
+ .swipe-hint{display:none!important}
+ 
+ /* Interactive map styles */
+ .interactive-map-container{width:100%;position:relative}
+ .map-legend{
+   display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;
+   font-family:Arial,sans-serif;font-size:11px;color:rgba(255,255,255,.7);
+ }
+@@ -1054,111 +1000,109 @@ body.fs-body{overflow:hidden!important}
+           </div>
+         </div>
+         <div class="f-group">
+           <label class="f-label">IMAGES</label>
+           <div class="src-row">
+             <button class="src-btn on" id="srcNone" onclick="setSrc('none')"><svg><use href="#i-eye-off"/></svg> NONE</button>
+             <button class="src-btn" id="srcWiki" onclick="setSrc('wiki')"><svg><use href="#i-wiki"/></svg> WIKIPEDIA</button>
+           </div>
+         </div>
+         <button class="go-btn" id="generateBtn" onclick="doGen()">GENERATE SLIDES</button>
+         <div class="status" id="stBox"><div class="sdot"></div><span id="stTxt"></span></div>
+       </div>
+     </div>
+   </div>
+ </div>
+ 
+ <!-- ══════════════════════════════════ SLIDES PAGE ══════════════════════════════════ -->
+ <div class="page" id="pg-slides">
+   <div class="slide-glow slide-glow-1"></div>
+   <div class="slide-glow slide-glow-2"></div>
+   <div class="slides-bar" id="slidesBar">
+     <button class="sb-btn" onclick="goBack()">← BACK</button>
+     <div class="sb-topic" id="deckTitle"></div>
+     <div style="display:flex;align-items:center;gap:7px">
+       <div class="sb-counter" id="slideCounter"><span id="curN">1</span>/<span id="totN">1</span></div>
++      <button class="sb-btn" id="revealBtn" onclick="revealCurrent()">REVEAL</button>
++      <button class="sb-btn" id="autoBtn" onclick="toggleAutoPlay()">AUTO</button>
+       <button class="sb-btn" onclick="openOv()"><svg><use href="#i-grid"/></svg> ALL</button>
+       <button class="sb-btn" id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen (F)">
+         <svg id="fsIcon" viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+         FS
+       </button>
+     </div>
+   </div>
+   
+   <div class="stage" id="stage"></div>
+-  <div class="swipe-hint" id="swipeHint">← swipe to navigate →</div>
+-  <div class="slide-nav" id="slideNav">
+-    <div class="nav-progress" id="navProgress"></div>
+-    <div class="kb-hint">
+-      <span><kbd>←</kbd> <kbd>→</kbd> Navigate</span>
+-      <span><kbd>F</kbd> Fullscreen</span>
+-      <span><kbd>G</kbd> Grid</span>
+-      <span><kbd>Esc</kbd> Exit</span>
+-    </div>
+-    <button class="nav-btn" id="prevBtn" onclick="nav(-1)">‹ PREV</button>
+-    <div class="dot-row" id="dotRow"></div>
+-    <button class="nav-btn pri" id="nextBtn" onclick="navNext()">
+-      NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>
+-    </button>
+-  </div>
+ </div>
+ 
+ <!-- ══════════════════════════════════ OVERVIEW OVERLAY ══════════════════════════════════ -->
+ <div class="ov-overlay" id="ovOverlay">
+   <div class="ov-head">
+     <div class="ov-title" id="ovTitle">OVERVIEW</div>
+     <button class="ov-close" onclick="closeOv()"><svg><use href="#i-close"/></svg> CLOSE</button>
+   </div>
+   <div class="ov-grid" id="ovGrid"></div>
+ </div>
+ 
+ <!-- ══════════════════════════════════ THANK YOU PAGE ══════════════════════════════════ -->
+ <div class="page" id="pg-thanks">
+   <div class="ty-glow ty-glow-1"></div>
+   <div class="ty-glow ty-glow-2"></div>
+   <div class="ty-grid"></div>
+   <div class="ty-particles">
+     <div class="ty-particle"></div><div class="ty-particle"></div>
+     <div class="ty-particle"></div><div class="ty-particle"></div>
+     <div class="ty-particle"></div><div class="ty-particle"></div>
+     <div class="ty-particle"></div><div class="ty-particle"></div>
+   </div>
+   <div class="ty-center">
+     <div class="ty-eyebrow">END OF PRESENTATION</div>
+     <div class="ty-main-text">
+       <span class="ty-word1">THANK</span>
+       <span class="ty-word2">YOU</span>
+     </div>
+     <div class="ty-divider"></div>
+     <div class="ty-subtitle">Strait of Hormuz</div>
+     <div class="ty-sub2">GEOPOLITICS · GEOGRAPHY · GLOBAL TRADE</div>
+-    <button class="ty-back" onclick="showPage('menu');_isCssFs=false;document.getElementById('pg-thanks').classList.remove('fs-mode');document.body.classList.remove('fs-body')">
+-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+-        <path d="M19 12H5M12 19l-7-7 7-7"/>
+-      </svg>
+-      RETURN TO MENU
+-    </button>
++    <div class="ty-note">You’ve reached the end. Use the actions below to replay or jump directly to an overview.</div>
++    <div class="ty-actions">
++      <button class="ty-btn pri" onclick="restartDeck()">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
++        RESTART DECK
++      </button>
++      <button class="ty-btn" onclick="showPage('slides');openOv();">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
++        OPEN OVERVIEW
++      </button>
++      <button class="ty-back" onclick="showPage('menu');_isCssFs=false;document.getElementById('pg-thanks').classList.remove('fs-mode');document.body.classList.remove('fs-body')">
++        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
++          <path d="M19 12H5M12 19l-7-7 7-7"/>
++        </svg>
++        RETURN TO MENU
++      </button>
++    </div>
+   </div>
+ </div>
+ 
+ <script>
+ /* ══════════════════════════════════
+    SVG DIAGRAMS
+ ══════════════════════════════════ */
+ const DIAGRAMS = {
+   /* ─── BIOLOGY DIAGRAMS (unchanged) ─── */
+   'cell-wall-intro': `<svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+     <rect x="10" y="10" width="240" height="180" rx="4" fill="#1a1a1a" stroke="#444" stroke-width="1"/>
+     <rect x="20" y="20" width="220" height="160" rx="2" fill="none" stroke="#888" stroke-width="8" opacity=".5"/>
+     <rect x="36" y="36" width="188" height="128" rx="2" fill="none" stroke="#bbb" stroke-width="5" opacity=".7"/>
+     <rect x="48" y="48" width="164" height="104" rx="2" fill="#222" stroke="#fff" stroke-width="2"/>
+     <rect x="58" y="58" width="144" height="84" rx="20" fill="#1a1a1a" stroke="#888" stroke-width="1.5" stroke-dasharray="4,2"/>
+     <ellipse cx="130" cy="100" rx="28" ry="22" fill="#2a2a2a" stroke="#666" stroke-width="1.5"/>
+     <ellipse cx="130" cy="100" rx="14" ry="11" fill="#333" stroke="#888" stroke-width="1"/>
+     <text x="130" y="16" text-anchor="middle" fill="#fff" font-size="8" font-family="Arial Black">CELL WALL LAYERS</text>
+     <line x1="24" y1="100" x2="50" y2="100" stroke="#888" stroke-width=".8"/>
+     <text x="4" y="88" fill="#888" font-size="5.5" font-family="Arial">Secondary</text>
+     <text x="4" y="95" fill="#888" font-size="5.5" font-family="Arial">Wall</text>
+     <line x1="38" y1="130" x2="56" y2="130" stroke="#bbb" stroke-width=".8"/>
+     <text x="4" y="133" fill="#bbb" font-size="5.5" font-family="Arial">Primary</text>
+     <text x="4" y="140" fill="#bbb" font-size="5.5" font-family="Arial">Wall</text>
+     <line x1="50" y1="155" x2="64" y2="155" stroke="#fff" stroke-width=".8"/>
+@@ -2194,86 +2138,76 @@ async function getWikiImgs(data) {
+         var pages = Object.values(j.query && j.query.pages ? j.query.pages : {});
+         pages.sort(function(a,b){return (a.index||0)-(b.index||0);});
+         for (var i = 0; i < pages.length; i++) {
+           if (pages[i].thumbnail && pages[i].thumbnail.source && !usedUrls.has(pages[i].thumbnail.source)) {
+             usedUrls.add(pages[i].thumbnail.source);
+             return {url: pages[i].thumbnail.source, caption: pages[i].title || query};
+           }
+         }
+       } catch(e1) {}
+     }
+     return null;
+   }
+   var slides = [];
+   for (var i = 0; i < data.slides.length; i++) {
+     var sl = data.slides[i];
+     if (sl.imageQuery) { var img = await fetchImg(sl.imageQuery); if (img) { sl.imageUrl = img.url; sl.imageCaption = img.caption; } }
+     slides.push(sl);
+   }
+   return {title: data.title, slides: slides};
+ }
+ 
+ /* ══════════════════════════════════
+    BUILD DECK
+ ══════════════════════════════════ */
+ var cur = 0, tot = 0, deck = [];
++var autoPlayTimer = null;
++var autoPlayOn = false;
+ 
+ function buildDeck(data) {
+   deck = data.slides; tot = deck.length; cur = 0;
+   var isHormuz = !!(data.id === 'hormuz' || (data.slides[0] && data.slides[0].diagramKey && data.slides[0].diagramKey.indexOf('hormuz') === 0));
+   currentIsHormuz = isHormuz;
+ 
+   var stage = document.getElementById('stage');
+   stage.innerHTML = '';
+-  document.getElementById('dotRow').innerHTML = '';
+   document.getElementById('ovGrid').innerHTML = '';
++  stopAutoPlay();
+ 
+   // Apply hormuz theming to chrome elements
+   var slidesBar = document.getElementById('slidesBar');
+   var deckTitleEl = document.getElementById('deckTitle');
+   var slideCounter = document.getElementById('slideCounter');
+-  var navProgress = document.getElementById('navProgress');
+-  var slideNav = document.getElementById('slideNav');
+-  var dotRow = document.getElementById('dotRow');
+-  var nextBtn = document.getElementById('nextBtn');
+ 
+   if (isHormuz) {
+ slidesBar.classList.add('hormuz-deck');
+   deckTitleEl.classList.add('hormuz-title');
+   slideCounter.classList.add('hormuz-counter');
+-  navProgress.classList.add('hormuz-prog');
+-  slideNav.classList.add('hormuz-nav');
+-    dotRow.classList.add('hormuz-dots');
+-    nextBtn.classList.add('hormuz-next');
+   } else {
+ slidesBar.classList.remove('hormuz-deck');
+   deckTitleEl.classList.remove('hormuz-title');
+   slideCounter.classList.remove('hormuz-counter');
+-  navProgress.classList.remove('hormuz-prog');
+-  slideNav.classList.remove('hormuz-nav');
+-    dotRow.classList.remove('hormuz-dots');
+-    nextBtn.classList.remove('hormuz-next');
+   }
+ 
+   deckTitleEl.textContent = data.title || '';
+   document.getElementById('totN').textContent = tot;
+   document.getElementById('ovTitle').textContent = (data.title || 'OVERVIEW').toUpperCase();
+ 
+   deck.forEach(function(sl, i) {
+     var hasDiagram = !!(sl.diagramKey && DIAGRAMS[sl.diagramKey]);
+     var hasImg = !!sl.imageUrl;
+     var hasSide = hasDiagram || hasImg;
+     var slIsHormuz = hasDiagram && sl.diagramKey && sl.diagramKey.indexOf('hormuz') === 0;
+ 
+     var kfHtml = sl.keyFacts && sl.keyFacts.length
+       ? '<div class="kf-row">' + sl.keyFacts.map(function(f){return '<span class="kf">'+f+'</span>';}).join('') + '</div>' : '';
+ 
+     var sideHtml = '';
+     if (hasDiagram) {
+       sideHtml = '<div class="diagram-panel' + (slIsHormuz ? ' hormuz-diag' : '') + '">' +
+         DIAGRAMS[sl.diagramKey] +
+         '<div class="diagram-label">' + (sl.diagramLabel || '') + '</div></div>';
+     } else if (hasImg) {
+       sideHtml = '<div class="img-panel"><img src="' + sl.imageUrl + '" alt="" loading="lazy">' +
+         (sl.imageCaption ? '<div class="img-cap">' + sl.imageCaption + '</div>' : '') + '</div>';
+     }
+ 
+@@ -2291,143 +2225,185 @@ slidesBar.classList.remove('hormuz-deck');
+               '<div class="reveal-badge" id="badge'+i+'">' +
+                 '<div class="reveal-badge-inner">' +
+                   '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:' + (slIsHormuz ? '#d4a017' : 'white') + ';fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                   '<span style="color:' + (slIsHormuz ? '#d4a017' : 'white') + '">CLICK TO REVEAL</span>' +
+                 '</div>' +
+               '</div>' +
+             '</div>' +
+           '</div>' +
+           sideHtml +
+         '</div>' +
+       '</div>';
+     stage.appendChild(slide);
+ 
+     (function(idx) {
+       var card = document.getElementById('cc' + idx);
+       var badge = document.getElementById('badge' + idx);
+       card.addEventListener('click', function() {
+         // Only allow unblurring - can only re-blur when switching slides
+         if (this.classList.contains('blurred')) {
+           this.classList.remove('blurred');
+           badge.style.display = 'none';
+         }
+       });
+     })(i);
+ 
+-    var dot = document.createElement('button');
+-    dot.className = 'dot' + (i === 0 ? ' on' : '');
+-    dot.onclick = (function(idx){return function(){goTo(idx);};})(i);
+-    document.getElementById('dotRow').appendChild(dot);
+-
+     var oc = document.createElement('div');
+     oc.className = 'ov-card' + (i === 0 ? ' cur' : '');
+     oc.innerHTML = '<div class="ov-num">SLIDE ' + String(i+1).padStart(2,'0') + '</div><div class="ov-heading">' + sl.heading + '</div>';
+     oc.onclick = (function(idx){return function(){goTo(idx);closeOv();};})(i);
+     document.getElementById('ovGrid').appendChild(oc);
+   });
+ 
+   updateUI();
+ }
+ 
+ /* ══════════════════════════════════
+    NAVIGATION
+ ══════════════════════════════════ */
+ function goTo(n) {
+   if (n < 0 || n >= tot) return;
+   var dir = n > cur ? 'next' : 'prev';
+   var prevSlide = document.getElementById('sl'+cur);
+   prevSlide.classList.remove('active','dir-next','dir-prev');
+   
+   // Re-blur the previous slide's card when leaving
+   var prevCard = document.getElementById('cc' + cur);
+   var prevBadge = document.getElementById('badge' + cur);
+   if (prevCard) {
+     prevCard.classList.add('blurred');
+     if (prevBadge) prevBadge.style.display = '';
+   }
+   
+   cur = n;
+   var nextSlide = document.getElementById('sl'+cur);
+   nextSlide.classList.remove('dir-next','dir-prev');
+   // Force reflow so animation replays
+   void nextSlide.offsetWidth;
+   nextSlide.classList.add('active', dir === 'next' ? 'dir-next' : 'dir-prev');
+   nextSlide.scrollTop = 0;
+   updateUI();
+ }
+ function nav(dir) { goTo(cur + dir); }
+ function goBack() {
+   _isCssFs=false;
+   document.getElementById('pg-slides').classList.remove('fs-mode');
+   document.body.classList.remove('fs-body');
+   showPage(prevPage || 'menu');
+ }
+ function navNext() {
+   if (cur === tot - 1) {
++    stopAutoPlay();
+     // Show thank you page in fullscreen
+     showPage('thanks');
+     document.getElementById('pg-thanks').classList.add('fs-mode');
+     document.body.classList.add('fs-body');
+   } else { nav(1); }
+ }
+ 
+-/* ── SWIPE GESTURES ── */
++/* ── GESTURES: touch + pointer drag + wheel ── */
+ (function(){
+   var stage = document.getElementById('stage');
+   var tx = 0, ty = 0;
++  var px = 0, py = 0;
++  var wheelLock = false;
+   stage.addEventListener('touchstart', function(e){
+     tx = e.touches[0].clientX;
+     ty = e.touches[0].clientY;
+   }, {passive:true});
+   stage.addEventListener('touchend', function(e){
+     var dx = e.changedTouches[0].clientX - tx;
+     var dy = e.changedTouches[0].clientY - ty;
+     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+       if (dx < 0) navNext();
+       else nav(-1);
+     }
+   }, {passive:true});
++
++  stage.addEventListener('pointerdown', function(e){
++    if (e.pointerType === 'mouse' && e.button !== 0) return;
++    px = e.clientX; py = e.clientY;
++  });
++  stage.addEventListener('pointerup', function(e){
++    var dx = e.clientX - px;
++    var dy = e.clientY - py;
++    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
++      if (dx < 0) navNext();
++      else nav(-1);
++    }
++  });
++  stage.addEventListener('wheel', function(e){
++    if (wheelLock || Math.abs(e.deltaX) < 20) return;
++    wheelLock = true;
++    if (e.deltaX > 0) navNext();
++    else nav(-1);
++    setTimeout(function(){ wheelLock = false; }, 280);
++  }, {passive:true});
+ })();
+ 
+ function updateUI() {
+   document.getElementById('curN').textContent = cur + 1;
+-  document.getElementById('navProgress').style.width = ((cur+1)/tot*90) + '%';
+-  document.getElementById('prevBtn').disabled = cur === 0;
+-  var nb = document.getElementById('nextBtn');
+-  if (cur === tot - 1) {
+-    nb.textContent = 'DONE';
+-    nb.classList.remove('pri');
+-    nb.disabled = false;
+-  } else {
+-    nb.innerHTML = 'NEXT <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="9,18 15,12 9,6"/></svg>';
+-    nb.classList.add('pri');
+-  }
+-  nb.disabled = false;
+-  document.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('on',i===cur);});
+   document.querySelectorAll('.ov-card').forEach(function(c,i){c.classList.toggle('cur',i===cur);});
+ }
+ 
++function revealCurrent() {
++  var card = document.getElementById('cc' + cur);
++  var badge = document.getElementById('badge' + cur);
++  if (card && card.classList.contains('blurred')) {
++    card.classList.remove('blurred');
++    if (badge) badge.style.display = 'none';
++  }
++}
++
++function stopAutoPlay() {
++  autoPlayOn = false;
++  clearInterval(autoPlayTimer);
++  autoPlayTimer = null;
++  var autoBtn = document.getElementById('autoBtn');
++  if (autoBtn) autoBtn.classList.remove('on');
++}
++
++function toggleAutoPlay() {
++  if (autoPlayOn) { stopAutoPlay(); return; }
++  autoPlayOn = true;
++  var autoBtn = document.getElementById('autoBtn');
++  if (autoBtn) autoBtn.classList.add('on');
++  autoPlayTimer = setInterval(function(){
++    if (!document.getElementById('pg-slides').classList.contains('active')) return;
++    if (cur >= tot - 1) { navNext(); return; }
++    navNext();
++  }, 9000);
++}
++
++function restartDeck() {
++  showPage('slides');
++  document.getElementById('pg-thanks').classList.remove('fs-mode');
++  document.body.classList.remove('fs-body');
++  goTo(0);
++  showControls();
++}
++
+ function openOv()  { document.getElementById('ovOverlay').classList.add('open'); }
+ function closeOv() { document.getElementById('ovOverlay').classList.remove('open'); }
+ 
+ /* ══════════════════════════════════
+    FULLSCREEN
+ ══════════════════════════════════ */
+ /* ── FULLSCREEN: uses browser Fullscreen API with CSS fallback ── */
+ var _isCssFs = false;
+ 
+ function isFullscreen() {
+   return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+ }
+ 
+ function toggleFullscreen() {
+   var slides = document.getElementById('pg-slides');
+   
+   if (!isFullscreen()) {
+     // Enter fullscreen
+     var elem = document.documentElement;
+     if (elem.requestFullscreen) {
+       elem.requestFullscreen().catch(function(err) {
+         // Fullscreen API failed (e.g., in iframe without permission), use CSS fallback
+         _isCssFs = true;
+         slides.classList.add('fs-mode');
+         document.body.classList.add('fs-body');
+@@ -2470,123 +2446,120 @@ function handleFullscreenChange() {
+   var slides = document.getElementById('pg-slides');
+   _isCssFs = isFullscreen();
+   slides.classList.toggle('fs-mode', _isCssFs);
+   document.body.classList.toggle('fs-body', _isCssFs);
+   updateFsIcon();
+ }
+ 
+ function updateFsIcon() {
+   var btn = document.getElementById('fsBtn');
+   if (!btn) return;
+   if (_isCssFs || isFullscreen()) {
+     btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/></svg> EXIT';
+   } else {
+     btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> FS';
+   }
+ }
+ 
+ /* ══════════════════════════════════
+    KEYBOARD
+ ══════════════════════════════════ */
+ document.addEventListener('keydown', function(e) {
+   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+   var onSlides = document.getElementById('pg-slides').classList.contains('active');
+   if (!onSlides) return;
+   showControls(); // Show controls on any key press
+-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nav(1); }
++  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navNext(); }
+   if (e.key === 'ArrowLeft')  { e.preventDefault(); nav(-1); }
+   if (e.key === 'g' || e.key === 'G') openOv();
+   if (e.key === 'f' || e.key === 'F') toggleFullscreen();
++  if (e.key === 'a' || e.key === 'A') toggleAutoPlay();
++  if (e.key === 'Enter') revealCurrent();
+   if (e.key === 'Escape') {
+     if (document.getElementById('ovOverlay').classList.contains('open')) closeOv();
+     else if (_isCssFs) toggleFullscreen();
+     else goBack();
+   }
+   if (e.key === 'r' || e.key === 'R') {
+-    // R key only reveals (unblurs), doesn't toggle back
+-    var card = document.getElementById('cc' + cur);
+-    var badge = document.getElementById('badge' + cur);
+-    if (card && card.classList.contains('blurred')) {
+-      card.classList.remove('blurred');
+-      if (badge) badge.style.display = 'none';
+-    }
++    revealCurrent();
+   }
+ });
+ 
+ /* ══════════════════════════════════
+    AUTO-HIDE CONTROLS (3 seconds)
+ ══════════════════════════════════ */
+ var autoHideTimer = null;
+ var controlsHidden = false;
+ 
+ function showControls() {
+   var slidesBar = document.getElementById('slidesBar');
+-  var slideNav = document.getElementById('slideNav');
+-  if (!slidesBar || !slideNav) return;
++  if (!slidesBar) return;
+   
+   slidesBar.classList.remove('auto-hidden');
+-  slideNav.classList.remove('auto-hidden');
+   controlsHidden = false;
+   
+   // Reset timer
+   clearTimeout(autoHideTimer);
+   autoHideTimer = setTimeout(hideControls, 3000);
+ }
+ 
+ function hideControls() {
+   var onSlides = document.getElementById('pg-slides').classList.contains('active');
+   if (!onSlides) return;
+   
+   var slidesBar = document.getElementById('slidesBar');
+-  var slideNav = document.getElementById('slideNav');
+-  if (!slidesBar || !slideNav) return;
++  if (!slidesBar) return;
+   
+   slidesBar.classList.add('auto-hidden');
+-  slideNav.classList.add('auto-hidden');
+   controlsHidden = true;
+ }
+ 
+ // Show controls on mouse/touch activity
+ document.getElementById('pg-slides').addEventListener('mousemove', showControls);
+ document.getElementById('pg-slides').addEventListener('touchstart', showControls, {passive: true});
+ document.getElementById('pg-slides').addEventListener('click', function(e) {
+-  // Show controls when clicking on sides (left/right 15% of screen)
++  // Tap/click side zones for quick navigation
+   var rect = this.getBoundingClientRect();
+   var x = e.clientX - rect.left;
+   var width = rect.width;
+-  if (x < width * 0.15 || x > width * 0.85) {
++  if (x < width * 0.18) {
++    nav(-1);
++    showControls();
++  } else if (x > width * 0.82) {
++    navNext();
+     showControls();
+   }
+ });
+ 
+ // Start auto-hide timer when entering slides page
+ var origShowPage = showPage;
+ showPage = function(id) {
+   origShowPage(id);
+   if (id === 'slides') {
+     showControls(); // Start the timer
+   } else {
++    stopAutoPlay();
+     clearTimeout(autoHideTimer);
+   }
+ };
+ 
+ /* ══════════════════════════════════
+    INTERACTIVE LEAFLET MAP FOR HORMUZ
+ ══════════════════════════════════ */
+ var hormuzMap = null;
+ var mapInitialized = false;
+ 
+ function initHormuzMap() {
+   if (mapInitialized || !document.getElementById('hormuz-leaflet-map')) return;
+   
+   // Strait of Hormuz coordinates
+   var straitCenter = [26.5667, 56.2500];
+   
+   hormuzMap = L.map('hormuz-leaflet-map', {
+     center: straitCenter,
+     zoom: 7,
+     zoomControl: true,
+     scrollWheelZoom: false
+   });
+   
+   // Dark themed map tiles
+   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
