@@ -940,5 +940,15 @@ document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) clos
     });
 })();
 </script>
+
+<!-- Chat System -->
+<link rel="stylesheet" href="/css/chat.css">
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
+  window.supabase = { createClient };
+  
+  // Import and initialize chat system
+  import('./js/chat/init.js').catch(err => console.error('[Chat] Init error:', err));
+</script>
 </body>
 </html>
