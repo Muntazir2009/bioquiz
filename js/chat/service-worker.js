@@ -21,7 +21,12 @@ self.addEventListener('push', (event) => {
       body: 'You have a new message',
       icon: '/images/logo.png',
       badge: '/images/badge.png',
-      tag: 'new-message'
+      tag: 'chat-notification',
+      requireInteraction: false,
+      actions: [
+        { action: 'open', title: 'Open' },
+        { action: 'close', title: 'Close' }
+      ]
     }
   };
 
@@ -30,6 +35,7 @@ self.addEventListener('push', (event) => {
       const data = event.data.json();
       notificationData.title = data.title || notificationData.title;
       notificationData.options.body = data.body || notificationData.options.body;
+      if (data.tag) notificationData.options.tag = data.tag;
     } catch (e) {
       notificationData.options.body = event.data.text();
     }
@@ -41,14 +47,17 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification clicked');
+  console.log('[Service Worker] Notification clicked', event.action);
   event.notification.close();
+
+  if (event.action === 'close') {
+    return;
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Focus existing window or open new one
       for (let client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
+        if (client.url.includes('/') && 'focus' in client) {
           return client.focus();
         }
       }

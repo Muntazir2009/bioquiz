@@ -3,130 +3,86 @@
  * This file initializes the entire chat system globally
  */
 
-// Global configuration
-window.SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 
-                      (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) ||
-                      localStorage.getItem('supabase_url');
-
-window.SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 
-                           (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-                           localStorage.getItem('supabase_key');
-
-// Import chat modules
-import { chatManager } from './chat-manager.js';
-import { chatUI } from './chat-ui.js';
-import { notificationsManager } from './notifications.js';
+// Import all chat modules
+import AuthManager from './auth.js';
+import ProfileManager from './profile.js';
+import MessagingManager from './messaging.js';
+import StorageManager from './storage.js';
+import ThemeManager from './theme.js';
+import AuthHandler from './auth-handler.js';
+import MessagingHandler from './messaging-handler.js';
 
 /**
  * Initialize chat system
  */
-function initializeChat() {
-  // Validate Supabase credentials
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-    console.error('[Chat Init] Missing Supabase credentials. Please set environment variables.');
-    return;
-  }
-
-  console.log('[Chat Init] Initializing chat system...');
-
-  // Initialize chat UI (creates floating button and panel)
-  console.log('[Chat Init] Chat UI initialized');
-
-  // Setup idle detection for online status
-  setupIdleDetection();
-
-  // Setup message event listener
-  chatManager.onMessageChange((message) => {
-    console.log('[Chat Init] New message:', message);
-  });
-
-  // Setup unread count updates
-  updateUnreadCounts();
-
-  console.log('[Chat Init] Chat system ready!');
-}
-
-/**
- * Setup idle detection for user status
- */
-function setupIdleDetection() {
-  let idleTimer = null;
-  let idleTime = 0;
-  const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-
-  function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    idleTime = 0;
-
-    if (chatManager.currentUser && chatManager.currentUser.status !== 'online') {
-      chatManager.updateUserStatus('online');
-    }
-
-    idleTimer = setTimeout(() => {
-      if (chatManager.currentUser) {
-        chatManager.updateUserStatus('away');
-      }
-    }, IDLE_TIMEOUT);
-  }
-
-  // Track user activity
-  ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
-    document.addEventListener(event, resetIdleTimer, true);
-  });
-
-  // Check online status on page visibility
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (chatManager.currentUser) {
-        chatManager.updateUserStatus('away');
-      }
-    } else {
-      if (chatManager.currentUser) {
-        chatManager.updateUserStatus('online');
-      }
-    }
-  });
-
-  // Set initial timer
-  resetIdleTimer();
-}
-
-/**
- * Update unread counts periodically
- */
-async function updateUnreadCounts() {
-  if (!chatManager.currentUser) return;
+async function initializeChat() {
+  console.log('[Chat Init] Starting chat system initialization...');
 
   try {
-    const { data: conversations } = await chatManager.supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', chatManager.currentUser.id);
-
-    if (!conversations) return;
-
-    let totalUnread = 0;
-
-    for (const conv of conversations) {
-      const { data: unread } = await chatManager.supabase
-        .from('unread_counts')
-        .select('count')
-        .eq('user_id', chatManager.currentUser.id)
-        .eq('conversation_id', conv.conversation_id)
-        .single();
-
-      if (unread) {
-        totalUnread += unread.count;
-      }
+    // Get Supabase client from global
+    if (!window.supabase || !window.supabase.createClient) {
+      console.error('[Chat Init] Supabase not available');
+      return;
     }
 
-    chatUI.updateNotificationBadge(totalUnread);
-  } catch (error) {
-    console.error('[Chat Init] Error updating unread counts:', error);
-  }
+    const { createClient } = window.supabase;
+    const url = localStorage.getItem('SUPABASE_URL');
+    const key = localStorage.getItem('SUPABASE_ANON_KEY');
 
-  // Update again in 30 seconds
-  setTimeout(updateUnreadCounts, 30000);
+    if (!url || !key) {
+      console.error('[Chat Init] Missing Supabase credentials');
+      return;
+    }
+
+    const supabase = createClient(url, key);
+
+    // Initialize managers
+    const authManager = new AuthManager(supabase);
+    const profileManager = new ProfileManager(supabase, authManager);
+    const messagingManager = new MessagingManager(supabase, authManager);
+    const storageManager = new StorageManager(supabase);
+    const themeManager = new ThemeManager();
+
+    // Initialize UI
+    const ChatUI = (await import('./chat-ui.js')).ChatUI;
+    const chatUI = new ChatUI();
+    chatUI.init();
+
+    // Initialize handlers
+    const authHandler = new AuthHandler(authManager, profileManager, themeManager, chatUI);
+    const messagingHandler = new MessagingHandler(messagingManager, storageManager, authManager, chatUI);
+
+    // Make available globally
+    window.chatSystem = {
+      auth: authManager,
+      profile: profileManager,
+      messaging: messagingManager,
+      storage: storageManager,
+      theme: themeManager,
+      ui: chatUI,
+      handlers: {
+        auth: authHandler,
+        messaging: messagingHandler
+      },
+      supabase: supabase
+    };
+
+    console.log('[Chat Init] ✓ All managers initialized');
+
+    // Check if user is already logged in
+    const currentUser = authManager.getCurrentUser();
+    if (currentUser) {
+      console.log('[Chat Init] ✓ User logged in:', currentUser.username);
+      chatUI.showChatMain();
+    } else {
+      console.log('[Chat Init] No logged-in user detected');
+      chatUI.showAuthPanel();
+    }
+
+    console.log('[Chat Init] ✓ Chat system fully initialized!');
+  } catch (error) {
+    console.error('[Chat Init] Initialization error:', error);
+  }
 }
 
 // Initialize when DOM is ready
@@ -136,9 +92,4 @@ if (document.readyState === 'loading') {
   initializeChat();
 }
 
-// Export for global access
-window.chatManager = chatManager;
-window.chatUI = chatUI;
-window.notificationsManager = notificationsManager;
-
-console.log('[Chat Init] Chat system loaded. Access via window.chatManager, window.chatUI, window.notificationsManager');
+console.log('[Chat Init] Chat system loader ready');
