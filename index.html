@@ -858,7 +858,15 @@ document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) clos
 
 /* ═══ ANNOUNCEMENT BAR ═══ */
 (function(){
-  var STORAGE_KEY = 'bq_announce';
+  // ┌─────────────────────────────────────────┐
+  // │  PASTE YOUR WORKER URL HERE             │
+  // │  e.g. https://bioquiz-announce.         │
+  // │       YOUR-NAME.workers.dev             │
+  // └─────────────────────────────────────────┘
+  var WORKER_URL  = 'YOUR_WORKER_URL_HERE';
+  var CACHE_KEY   = 'bq_announce_cache';
+  var CACHE_TTL   = 5 * 60 * 1000; // 5 minutes client-side cache
+
   var DEFAULT = {
     visible: true,
     text: 'Strait of Hormuz — Presentation',
@@ -871,22 +879,19 @@ document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) clos
     txtColor: 'rgba(255,255,255,.82)',
     size: '.52rem',
   };
-  var bar  = document.getElementById('announceBar');
+
+  var bar   = document.getElementById('announceBar');
   var inner = document.getElementById('announceInner');
-  var dot  = document.getElementById('announceDot');
-  var txt  = document.getElementById('announceText');
-  if(!bar) return;
+  var dot   = document.getElementById('announceDot');
+  var txt   = document.getElementById('announceText');
+  if (!bar) return;
 
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    var cfg = raw ? JSON.parse(raw) : DEFAULT;
+  function applyConfig(cfg) {
+    // Merge missing keys with defaults
+    Object.keys(DEFAULT).forEach(function(k){ if(cfg[k]===undefined) cfg[k]=DEFAULT[k]; });
 
-    // Merge with defaults for any missing keys
-    Object.keys(DEFAULT).forEach(function(k){ if(cfg[k] === undefined) cfg[k] = DEFAULT[k]; });
+    if (!cfg.visible) { bar.style.display='none'; return; }
 
-    if(!cfg.visible){ bar.style.display = 'none'; return; }
-
-    // Apply styles
     bar.style.background   = cfg.bg;
     bar.style.borderBottom = '1px solid ' + cfg.bgBorder;
     bar.style.display      = 'flex';
@@ -897,23 +902,42 @@ document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) clos
     txt.style.color        = cfg.txtColor;
     txt.textContent        = (cfg.emoji ? cfg.emoji + '  ' : '') + cfg.text;
 
-    if(cfg.link){
+    if (cfg.link) {
       inner.href   = cfg.link;
       inner.target = cfg.target || '_self';
     } else {
       inner.removeAttribute('href');
       inner.style.cursor = 'default';
-      inner.querySelector('svg').style.display = 'none';
+      var arrow = inner.querySelector('svg');
+      if (arrow) arrow.style.display = 'none';
     }
-  } catch(e) {
-    // Fallback to default
-    bar.style.background  = DEFAULT.bg;
-    bar.style.borderBottom = '1px solid ' + DEFAULT.bgBorder;
-    bar.style.display     = 'flex';
-    dot.style.background  = DEFAULT.dotColor;
-    txt.textContent       = DEFAULT.text;
-    inner.href            = DEFAULT.link;
   }
+
+  // 1. Show cached version immediately (no flicker)
+  try {
+    var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached && cached._ts && (Date.now() - cached._ts < CACHE_TTL)) {
+      applyConfig(cached);
+    } else if (cached) {
+      applyConfig(cached); // show stale while refreshing
+    } else {
+      applyConfig(DEFAULT); // first load fallback
+    }
+  } catch(e) { applyConfig(DEFAULT); }
+
+  // 2. Fetch fresh config from Worker (if URL is set)
+  if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL_HERE') return;
+
+  fetch(WORKER_URL, { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(cfg){
+      cfg._ts = Date.now();
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cfg));
+      applyConfig(cfg);
+    })
+    .catch(function(){
+      // Network failed — already showing cached/default, do nothing
+    });
 })();
 </script>
 </body>
