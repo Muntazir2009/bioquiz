@@ -11,10 +11,19 @@ const path = require('path');
 const CHAT_INJECTION = `<!-- Chat System -->
 <link rel="stylesheet" href="/css/chat.css">
 <script type="module">
+  // Setup Supabase credentials
+  const SUPABASE_URL = 'https://nphxcexqmrfbplzlbqfz.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5waHhjZXhxbXJmYnBsemxicWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI0NDc2NDksImV4cCI6MjAyODAyMzY0OX0.mWUvPZJJC_JfWvKAjqI8IhjKXGfKEkMRH4rVZvKlrPE';
+  
+  // Store credentials in localStorage for chat system
+  localStorage.setItem('SUPABASE_URL', SUPABASE_URL);
+  localStorage.setItem('SUPABASE_ANON_KEY', SUPABASE_ANON_KEY);
+  
+  // Import and initialize Supabase client
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
   window.supabase = { createClient };
   
-  // Import and initialize chat system
+  // Initialize chat system
   import('./js/chat/init.js').catch(err => console.error('[Chat] Init error:', err));
 </script>`;
 
