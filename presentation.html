@@ -5,7 +5,181 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presentation · BioQuiz</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="">
+/* ══════════════════════════════════
+   HIGHLIGHT FEATURE
+   Works on desktop (mouseup) and mobile (selectionchange).
+   Zero conflict with swipe — swipe uses touch move/end,
+   highlights only trigger when getSelection() is non-empty.
+══════════════════════════════════ */
+(function(){
+  var bar       = document.getElementById('hl-bar');
+  var clearBtn  = document.getElementById('hl-clear');
+  var dots      = bar.querySelectorAll('.hl-dot');
+  var activeClr = 'y';
+  var _savedRange = null;  // saved Range before toolbar mousedown steals focus
+  var _visible  = false;
+
+  /* ── Active colour ── */
+  function pickColour(c) {
+    activeClr = c;
+    dots.forEach(function(d){ d.classList.toggle('active', d.dataset.c === c); });
+  }
+  pickColour('y');
+
+  /* ── Position bar above the selection rect ── */
+  function positionBar(rect) {
+    var x = rect.left + rect.width / 2;
+    var y = rect.top + window.scrollY - 12;
+    // Clamp horizontally so it never clips out of viewport
+    var halfW = 130; // approximate half-width of bar
+    x = Math.max(halfW, Math.min(window.innerWidth - halfW, x));
+    bar.style.left = x + 'px';
+    bar.style.top  = y + 'px';
+  }
+
+  function showBar(range) {
+    var rect = range.getBoundingClientRect();
+    if (rect.width < 1) return;
+    _savedRange = range.cloneRange();
+    positionBar(rect);
+    bar.classList.add('visible');
+    _visible = true;
+  }
+
+  function hideBar() {
+    bar.classList.remove('visible');
+    _visible = false;
+    _savedRange = null;
+  }
+
+  /* ── Check if selection is inside a revealed content-body ── */
+  function selectionInContent(sel) {
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    var range = sel.getRangeAt(0);
+    var node  = range.commonAncestorContainer;
+    var el    = node.nodeType === 3 ? node.parentElement : node;
+    var body  = el && el.closest && el.closest('.content-body');
+    var card  = el && el.closest && el.closest('.content-card');
+    if (!body || !card) return null;
+    if (card.classList.contains('blurred')) return null; // not revealed
+    return range;
+  }
+
+  /* ── Apply highlight ── */
+  function applyHighlight(colour, range) {
+    if (!range || range.collapsed) return;
+    try {
+      var mark = document.createElement('mark');
+      mark.className = 'hl';
+      mark.dataset.c = colour;
+      // surroundContents fails if selection spans multiple elements
+      try {
+        range.surroundContents(mark);
+      } catch(e) {
+        var frag = range.extractContents();
+        mark.appendChild(frag);
+        range.insertNode(mark);
+      }
+    } catch(e2) { /* ignore edge cases */ }
+    window.getSelection().removeAllRanges();
+    hideBar();
+  }
+
+  /* ── Remove highlight under cursor/selection ── */
+  function removeHighlight() {
+    var sel = window.getSelection();
+    // Find a <mark.hl> at the anchor node
+    var node = sel && sel.anchorNode;
+    var el = node ? (node.nodeType === 3 ? node.parentElement : node) : null;
+    var mark = el && el.closest && el.closest('mark.hl');
+    if (mark) {
+      var parent = mark.parentNode;
+      while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+      parent.removeChild(mark);
+    }
+    sel && sel.removeAllRanges();
+    hideBar();
+  }
+
+  /* ── Toolbar interactions ── */
+  // preventDefault on mousedown keeps the text selection alive
+  bar.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  bar.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var range = _savedRange;
+      if (!range) {
+        var sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.rangeCount) range = sel.getRangeAt(0).cloneRange();
+      }
+      pickColour(dot.dataset.c);
+      if (range) applyHighlight(dot.dataset.c, range);
+    });
+  });
+
+  clearBtn.addEventListener('click', function(e) {
+    e.preventDefault(); e.stopPropagation();
+    removeHighlight();
+  });
+
+  /* ── DESKTOP: show on mouseup ── */
+  document.addEventListener('mouseup', function(e) {
+    if (bar.contains(e.target)) return; // click inside toolbar — ignore
+    setTimeout(function() { // tiny delay so selection is committed
+      var sel = window.getSelection();
+      var range = selectionInContent(sel);
+      if (range) showBar(range);
+      else if (_visible) hideBar();
+    }, 20);
+  });
+
+  /* ── MOBILE: show on selectionchange (fires when handles move) ── */
+  var _selTimer = null;
+  document.addEventListener('selectionchange', function() {
+    clearTimeout(_selTimer);
+    _selTimer = setTimeout(function() {
+      var sel = window.getSelection();
+      var range = selectionInContent(sel);
+      if (range) showBar(range);
+      // Don't hide on mobile selectionchange — user might still be adjusting handles
+    }, 350);
+  });
+
+  /* ── Hide when clicking / tapping elsewhere ── */
+  document.addEventListener('mousedown', function(e) {
+    if (!bar.contains(e.target) && _visible) hideBar();
+  });
+  document.addEventListener('touchstart', function(e) {
+    if (!bar.contains(e.target) && _visible) {
+      // On mobile: only hide if the touch is clearly outside and not a handle
+      setTimeout(function(){
+        var sel = window.getSelection();
+        if (!sel || sel.isCollapsed) hideBar();
+      }, 200);
+    }
+  }, {passive: true});
+
+  /* ── Clicking an existing mark: offer to remove it ── */
+  document.addEventListener('click', function(e) {
+    var mark = e.target.closest && e.target.closest('mark.hl');
+    if (mark) {
+      // Show bar positioned over the mark with only the clear button useful
+      var rect = mark.getBoundingClientRect();
+      positionBar(rect);
+      // Save a range wrapping this mark so applyHighlight has something
+      var r = document.createRange();
+      r.selectNode(mark);
+      _savedRange = r;
+      bar.classList.add('visible');
+      _visible = true;
+    }
+  });
+})();
+
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -595,32 +769,52 @@ body{color:var(--white);font-family:var(--body);overflow-x:hidden}
 body.fs-body{overflow:hidden!important}
 
 /* ══════════════════════════════════
-   SLIDE DIRECTIONAL ANIMATIONS (swipe)
+   SLIDE ANIMATIONS — premium enter + exit
 ══════════════════════════════════ */
-@keyframes slideFromRight{
-  from{opacity:0;transform:translateX(60px) scale(.98)}
-  to{opacity:1;transform:translateX(0) scale(1)}
-}
-@keyframes slideFromLeft{
-  from{opacity:0;transform:translateX(-60px) scale(.98)}
-  to{opacity:1;transform:translateX(0) scale(1)}
-}
-@keyframes slideIn{
-  from{opacity:0;transform:translateX(24px)}
-  to{opacity:1;transform:translateX(0)}
-}
-.slide.active{display:block}
-.slide.dir-next{animation:slideFromRight .4s cubic-bezier(.16,1,.3,1) both}
-.slide.dir-prev{animation:slideFromLeft .4s cubic-bezier(.16,1,.3,1) both}
 
-/* Content stagger animation */
-.slide.active .content-card{animation:cardFadeIn .5s cubic-bezier(.16,1,.3,1) both}
-.slide.active .content-card:nth-child(1){animation-delay:.1s}
-.slide.active .content-card:nth-child(2){animation-delay:.2s}
-.slide.active .content-card:nth-child(3){animation-delay:.3s}
+/* Enter from right (going forward) */
+@keyframes enterFromRight{
+  from{opacity:0;transform:translateX(52px) scale(.975)}
+  to  {opacity:1;transform:translateX(0)    scale(1)}
+}
+/* Enter from left (going back) */
+@keyframes enterFromLeft{
+  from{opacity:0;transform:translateX(-52px) scale(.975)}
+  to  {opacity:1;transform:translateX(0)     scale(1)}
+}
+/* Exit to left (going forward) */
+@keyframes exitToLeft{
+  from{opacity:1;transform:translateX(0)    scale(1)}
+  to  {opacity:0;transform:translateX(-36px) scale(.97)}
+}
+/* Exit to right (going back) */
+@keyframes exitToRight{
+  from{opacity:1;transform:translateX(0)   scale(1)}
+  to  {opacity:0;transform:translateX(36px) scale(.97)}
+}
+
+.slide.active{display:block}
+.slide.dir-next{animation:enterFromRight .38s cubic-bezier(.25,.46,.45,.94) both}
+.slide.dir-prev{animation:enterFromLeft  .38s cubic-bezier(.25,.46,.45,.94) both}
+.slide.slide-exiting.exit-to-left {animation:exitToLeft  .34s cubic-bezier(.55,.06,.68,.19) both}
+.slide.slide-exiting.exit-to-right{animation:exitToRight .34s cubic-bezier(.55,.06,.68,.19) both}
+
+/* Content stagger — each card cascades in */
+.slide.dir-next .content-card,
+.slide.dir-prev .content-card{animation:cardFadeIn .45s cubic-bezier(.16,1,.3,1) both}
+.slide.dir-next .content-card:nth-child(1),.slide.dir-prev .content-card:nth-child(1){animation-delay:.08s}
+.slide.dir-next .content-card:nth-child(2),.slide.dir-prev .content-card:nth-child(2){animation-delay:.16s}
+.slide.dir-next .content-card:nth-child(3),.slide.dir-prev .content-card:nth-child(3){animation-delay:.24s}
+.slide.dir-next .slide-heading,.slide.dir-prev .slide-heading{
+  animation:headingReveal .42s cubic-bezier(.16,1,.3,1) .04s both
+}
 @keyframes cardFadeIn{
-  from{opacity:0;transform:translateY(16px)}
-  to{opacity:1;transform:translateY(0)}
+  from{opacity:0;transform:translateY(14px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+@keyframes headingReveal{
+  from{opacity:0;transform:translateY(8px)}
+  to  {opacity:1;transform:translateY(0)}
 }
 
 /* ══════════════════════════════════
@@ -959,6 +1153,90 @@ body.fs-body{overflow:hidden!important}
   color:#d4a017;letter-spacing:.1em;margin-bottom:10px;
 }
 .chart-col{display:flex;flex-direction:column;align-items:center}
+
+
+/* ══════════════════════════════════
+   TEXT HIGHLIGHT FEATURE
+══════════════════════════════════ */
+
+/* Floating highlight toolbar */
+#hl-bar{
+  position:fixed;
+  z-index:8000;
+  display:none;
+  align-items:center;
+  gap:5px;
+  padding:7px 10px;
+  background:#141414;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:40px;
+  box-shadow:0 8px 32px rgba(0,0,0,.7), 0 2px 8px rgba(0,0,0,.4);
+  transform:translateX(-50%) translateY(-8px);
+  pointer-events:all;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:opacity .15s, transform .15s;
+}
+#hl-bar.visible{
+  display:flex;
+  animation:hlBarPop .18s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes hlBarPop{
+  from{opacity:0;transform:translateX(-50%) translateY(0px) scale(.9)}
+  to  {opacity:1;transform:translateX(-50%) translateY(-8px) scale(1)}
+}
+#hl-bar::after{
+  content:'';
+  position:absolute;
+  bottom:-6px;left:50%;transform:translateX(-50%);
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-top:6px solid rgba(255,255,255,.18);
+}
+
+/* Color swatches */
+.hl-dot{
+  width:22px;height:22px;border-radius:50%;
+  cursor:pointer;border:2px solid transparent;
+  transition:transform .15s, border-color .15s, box-shadow .15s;
+  flex-shrink:0;
+}
+.hl-dot:hover{transform:scale(1.25)}
+.hl-dot.active{border-color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.hl-dot[data-c="y"]{background:#f5e642}
+.hl-dot[data-c="g"]{background:#42f5a7}
+.hl-dot[data-c="c"]{background:#42c8f5}
+.hl-dot[data-c="p"]{background:#c342f5}
+.hl-dot[data-c="r"]{background:#f54242}
+
+/* Separator */
+.hl-sep{width:1px;height:14px;background:rgba(255,255,255,.15);flex-shrink:0;margin:0 2px}
+
+/* Clear button */
+.hl-clear{
+  width:22px;height:22px;border-radius:50%;
+  background:transparent;border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.5);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;line-height:1;
+  transition:all .15s;flex-shrink:0;
+}
+.hl-clear:hover{background:rgba(255,60,60,.25);border-color:rgba(255,60,60,.5);color:#ff6060}
+
+/* The actual highlight marks rendered in text */
+mark.hl{
+  border-radius:2px;
+  padding:1px 2px;
+  -webkit-box-decoration-break:clone;
+  box-decoration-break:clone;
+  cursor:pointer;
+}
+mark.hl[data-c="y"]{background:rgba(245,230,66,.32);color:inherit}
+mark.hl[data-c="g"]{background:rgba(66,245,167,.22);color:inherit}
+mark.hl[data-c="c"]{background:rgba(66,200,245,.22);color:inherit}
+mark.hl[data-c="p"]{background:rgba(195,66,245,.22);color:inherit}
+mark.hl[data-c="r"]{background:rgba(245,66,66,.25);color:inherit}
+mark.hl:hover{filter:brightness(1.25)}
 
 </style>
 </head>
@@ -2330,30 +2608,46 @@ slidesBar.classList.remove('hormuz-deck');
 }
 
 /* ══════════════════════════════════
-   NAVIGATION
+   NAVIGATION — premium transition
 ══════════════════════════════════ */
+var _navAnimating = false;
+var _ANIM_MS = 380;
+
 function goTo(n) {
   if (n < 0 || n >= tot) return;
+  if (_navAnimating) return;
   var dir = n > cur ? 'next' : 'prev';
-  var prevSlide = document.getElementById('sl'+cur);
-  prevSlide.classList.remove('active','dir-next','dir-prev');
-  
-  // Re-blur the previous slide's card when leaving
-  var prevCard = document.getElementById('cc' + cur);
-  var prevBadge = document.getElementById('badge' + cur);
+  var leavingIdx = cur;
+  var leaving  = document.getElementById('sl' + leavingIdx);
+  var entering = document.getElementById('sl' + n);
+
+  _navAnimating = true;
+
+  // Re-blur leaving card
+  var prevCard  = document.getElementById('cc' + leavingIdx);
+  var prevBadge = document.getElementById('badge' + leavingIdx);
   if (prevCard) {
     prevCard.classList.add('blurred');
     if (prevBadge) prevBadge.style.display = '';
   }
-  
+
+  // Exit animation on leaving slide (stays .active so it's visible)
+  leaving.classList.remove('dir-next','dir-prev');
+  leaving.classList.add('slide-exiting', dir === 'next' ? 'exit-to-left' : 'exit-to-right');
+
+  // Enter animation on incoming slide
   cur = n;
-  var nextSlide = document.getElementById('sl'+cur);
-  nextSlide.classList.remove('dir-next','dir-prev');
-  // Force reflow so animation replays
-  void nextSlide.offsetWidth;
-  nextSlide.classList.add('active', dir === 'next' ? 'dir-next' : 'dir-prev');
-  nextSlide.scrollTop = 0;
+  entering.classList.remove('dir-next','dir-prev','slide-exiting','exit-to-left','exit-to-right');
+  void entering.offsetWidth; // force reflow
+  entering.classList.add('active', dir === 'next' ? 'dir-next' : 'dir-prev');
+  entering.scrollTop = 0;
   updateUI();
+
+  // Clean up after animation
+  setTimeout(function() {
+    leaving.classList.remove('active','slide-exiting','exit-to-left','exit-to-right');
+    _navAnimating = false;
+  }, _ANIM_MS);
 }
 function nav(dir) { goTo(cur + dir); }
 function goBack() {
@@ -2372,43 +2666,30 @@ function navNext() {
   } else { nav(1); }
 }
 
-/* ── GESTURES: touch + pointer drag + wheel ── */
+/* ── GESTURES: swipe only (touch), no tap conflicts ── */
 (function(){
   var stage = document.getElementById('stage');
-  var tx = 0, ty = 0;
-  var px = 0, py = 0;
-  var wheelLock = false;
+  var tx = 0, ty = 0, tMoved = false;
+
   stage.addEventListener('touchstart', function(e){
     tx = e.touches[0].clientX;
     ty = e.touches[0].clientY;
-  }, {passive:true});
-  stage.addEventListener('touchend', function(e){
-    var dx = e.changedTouches[0].clientX - tx;
-    var dy = e.changedTouches[0].clientY - ty;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
-      if (dx < 0) navNext();
-      else nav(-1);
-    }
+    tMoved = false;
   }, {passive:true});
 
-  stage.addEventListener('pointerdown', function(e){
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    px = e.clientX; py = e.clientY;
-  });
-  stage.addEventListener('pointerup', function(e){
-    var dx = e.clientX - px;
-    var dy = e.clientY - py;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
+  stage.addEventListener('touchmove', function(e){
+    tMoved = true;
+  }, {passive:true});
+
+  stage.addEventListener('touchend', function(e){
+    if (!tMoved) return; // tap — not a swipe, ignore
+    var dx = e.changedTouches[0].clientX - tx;
+    var dy = e.changedTouches[0].clientY - ty;
+    // Only fire if clearly horizontal (dx > dy) and long enough
+    if (Math.abs(dx) > Math.abs(dy) * 1.6 && Math.abs(dx) > 55) {
       if (dx < 0) navNext();
       else nav(-1);
     }
-  });
-  stage.addEventListener('wheel', function(e){
-    if (wheelLock || Math.abs(e.deltaX) < 20) return;
-    wheelLock = true;
-    if (e.deltaX > 0) navNext();
-    else nav(-1);
-    setTimeout(function(){ wheelLock = false; }, 280);
   }, {passive:true});
 })();
 
@@ -2588,26 +2869,17 @@ function hideControls() {
 // Show controls on mouse/touch activity
 document.getElementById('pg-slides').addEventListener('mousemove', showControls);
 document.getElementById('pg-slides').addEventListener('touchstart', showControls, {passive: true});
-document.getElementById('pg-slides').addEventListener('click', function(e) {
-  // Tap/click side zones for quick navigation
-  var rect = this.getBoundingClientRect();
-  var x = e.clientX - rect.left;
-  var width = rect.width;
-  if (x < width * 0.18) {
-    nav(-1);
-    showControls();
-  } else if (x > width * 0.82) {
-    navNext();
-    showControls();
-  }
-});
 
-// Start auto-hide timer when entering slides page
-var origShowPage = showPage;
+// Unified showPage hook (controls + autoPlay + map)
+var _baseShowPage = showPage;
 showPage = function(id) {
-  origShowPage(id);
+  _baseShowPage(id);
   if (id === 'slides') {
-    showControls(); // Start the timer
+    showControls();
+    setTimeout(function() {
+      if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) initHormuzMap();
+      if (hormuzMap) hormuzMap.invalidateSize();
+    }, 200);
   } else {
     stopAutoPlay();
     clearTimeout(autoHideTimer);
@@ -2700,35 +2972,201 @@ function initHormuzMap() {
   mapInitialized = true;
 }
 
-// Initialize map when slide with map is shown
-var origGoTo = goTo;
+// Map: initialize + resize after each slide transition
+var _baseGoTo = goTo;
 goTo = function(n) {
-  origGoTo(n);
-  // Check if current slide has the map and initialize if needed
+  _baseGoTo(n);
   setTimeout(function() {
-    if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) {
-      initHormuzMap();
-    }
-    // Invalidate map size in case container was hidden
-    if (hormuzMap) {
-      hormuzMap.invalidateSize();
-    }
-  }, 100);
+    if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) initHormuzMap();
+    if (hormuzMap) hormuzMap.invalidateSize();
+  }, _ANIM_MS + 20);
 };
 
-// Also check on page show
-var origShowPage2 = showPage;
-showPage = function(id) {
-  origShowPage2(id);
-  if (id === 'slides') {
-    setTimeout(function() {
-      if (document.getElementById('hormuz-leaflet-map') && !mapInitialized) {
-        initHormuzMap();
-      }
-      if (hormuzMap) hormuzMap.invalidateSize();
-    }, 200);
+/* showPage hooks unified above */
+
+/* ══════════════════════════════════
+   HIGHLIGHT FEATURE
+   Works on desktop (mouseup) and mobile (selectionchange).
+   Zero conflict with swipe — swipe uses touch move/end,
+   highlights only trigger when getSelection() is non-empty.
+══════════════════════════════════ */
+(function(){
+  var bar       = document.getElementById('hl-bar');
+  var clearBtn  = document.getElementById('hl-clear');
+  var dots      = bar.querySelectorAll('.hl-dot');
+  var activeClr = 'y';
+  var _savedRange = null;  // saved Range before toolbar mousedown steals focus
+  var _visible  = false;
+
+  /* ── Active colour ── */
+  function pickColour(c) {
+    activeClr = c;
+    dots.forEach(function(d){ d.classList.toggle('active', d.dataset.c === c); });
   }
-};
+  pickColour('y');
+
+  /* ── Position bar above the selection rect ── */
+  function positionBar(rect) {
+    var x = rect.left + rect.width / 2;
+    var y = rect.top + window.scrollY - 12;
+    // Clamp horizontally so it never clips out of viewport
+    var halfW = 130; // approximate half-width of bar
+    x = Math.max(halfW, Math.min(window.innerWidth - halfW, x));
+    bar.style.left = x + 'px';
+    bar.style.top  = y + 'px';
+  }
+
+  function showBar(range) {
+    var rect = range.getBoundingClientRect();
+    if (rect.width < 1) return;
+    _savedRange = range.cloneRange();
+    positionBar(rect);
+    bar.classList.add('visible');
+    _visible = true;
+  }
+
+  function hideBar() {
+    bar.classList.remove('visible');
+    _visible = false;
+    _savedRange = null;
+  }
+
+  /* ── Check if selection is inside a revealed content-body ── */
+  function selectionInContent(sel) {
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    var range = sel.getRangeAt(0);
+    var node  = range.commonAncestorContainer;
+    var el    = node.nodeType === 3 ? node.parentElement : node;
+    var body  = el && el.closest && el.closest('.content-body');
+    var card  = el && el.closest && el.closest('.content-card');
+    if (!body || !card) return null;
+    if (card.classList.contains('blurred')) return null; // not revealed
+    return range;
+  }
+
+  /* ── Apply highlight ── */
+  function applyHighlight(colour, range) {
+    if (!range || range.collapsed) return;
+    try {
+      var mark = document.createElement('mark');
+      mark.className = 'hl';
+      mark.dataset.c = colour;
+      // surroundContents fails if selection spans multiple elements
+      try {
+        range.surroundContents(mark);
+      } catch(e) {
+        var frag = range.extractContents();
+        mark.appendChild(frag);
+        range.insertNode(mark);
+      }
+    } catch(e2) { /* ignore edge cases */ }
+    window.getSelection().removeAllRanges();
+    hideBar();
+  }
+
+  /* ── Remove highlight under cursor/selection ── */
+  function removeHighlight() {
+    var sel = window.getSelection();
+    // Find a <mark.hl> at the anchor node
+    var node = sel && sel.anchorNode;
+    var el = node ? (node.nodeType === 3 ? node.parentElement : node) : null;
+    var mark = el && el.closest && el.closest('mark.hl');
+    if (mark) {
+      var parent = mark.parentNode;
+      while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+      parent.removeChild(mark);
+    }
+    sel && sel.removeAllRanges();
+    hideBar();
+  }
+
+  /* ── Toolbar interactions ── */
+  // preventDefault on mousedown keeps the text selection alive
+  bar.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  bar.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var range = _savedRange;
+      if (!range) {
+        var sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.rangeCount) range = sel.getRangeAt(0).cloneRange();
+      }
+      pickColour(dot.dataset.c);
+      if (range) applyHighlight(dot.dataset.c, range);
+    });
+  });
+
+  clearBtn.addEventListener('click', function(e) {
+    e.preventDefault(); e.stopPropagation();
+    removeHighlight();
+  });
+
+  /* ── DESKTOP: show on mouseup ── */
+  document.addEventListener('mouseup', function(e) {
+    if (bar.contains(e.target)) return; // click inside toolbar — ignore
+    setTimeout(function() { // tiny delay so selection is committed
+      var sel = window.getSelection();
+      var range = selectionInContent(sel);
+      if (range) showBar(range);
+      else if (_visible) hideBar();
+    }, 20);
+  });
+
+  /* ── MOBILE: show on selectionchange (fires when handles move) ── */
+  var _selTimer = null;
+  document.addEventListener('selectionchange', function() {
+    clearTimeout(_selTimer);
+    _selTimer = setTimeout(function() {
+      var sel = window.getSelection();
+      var range = selectionInContent(sel);
+      if (range) showBar(range);
+      // Don't hide on mobile selectionchange — user might still be adjusting handles
+    }, 350);
+  });
+
+  /* ── Hide when clicking / tapping elsewhere ── */
+  document.addEventListener('mousedown', function(e) {
+    if (!bar.contains(e.target) && _visible) hideBar();
+  });
+  document.addEventListener('touchstart', function(e) {
+    if (!bar.contains(e.target) && _visible) {
+      // On mobile: only hide if the touch is clearly outside and not a handle
+      setTimeout(function(){
+        var sel = window.getSelection();
+        if (!sel || sel.isCollapsed) hideBar();
+      }, 200);
+    }
+  }, {passive: true});
+
+  /* ── Clicking an existing mark: offer to remove it ── */
+  document.addEventListener('click', function(e) {
+    var mark = e.target.closest && e.target.closest('mark.hl');
+    if (mark) {
+      // Show bar positioned over the mark with only the clear button useful
+      var rect = mark.getBoundingClientRect();
+      positionBar(rect);
+      // Save a range wrapping this mark so applyHighlight has something
+      var r = document.createRange();
+      r.selectNode(mark);
+      _savedRange = r;
+      bar.classList.add('visible');
+      _visible = true;
+    }
+  });
+})();
+
 </script>
+<!-- HIGHLIGHT TOOLBAR -->
+<div id="hl-bar" role="toolbar" aria-label="Highlight colour">
+  <div class="hl-dot active" data-c="y" title="Yellow"></div>
+  <div class="hl-dot" data-c="g" title="Green"></div>
+  <div class="hl-dot" data-c="c" title="Cyan"></div>
+  <div class="hl-dot" data-c="p" title="Purple"></div>
+  <div class="hl-dot" data-c="r" title="Red"></div>
+  <div class="hl-sep"></div>
+  <div class="hl-clear" id="hl-clear" title="Remove highlight">✕</div>
+</div>
 </body>
 </html>
