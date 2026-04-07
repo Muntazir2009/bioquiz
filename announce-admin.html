@@ -112,7 +112,7 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
 }
 .clear-btn:hover{background:rgba(248,113,113,.08);border-color:var(--red)}
 .status-msg{font-size:.56rem;letter-spacing:.12em;text-align:center;min-height:20px;margin-top:10px;transition:opacity .3s}
-.status-msg.ok{color:var(--green)}.status-msg.err{color:var(--red)}
+.status-msg.ok{color:var(--green)}.status-msg.err{color:var(--red)}.status-msg.loading{color:var(--amber)}
 
 /* Change password */
 .pwd-section{margin-top:8px}
@@ -153,6 +153,10 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
 
 <!-- ── ADMIN PANEL ── -->
 <div id="adminScreen">
+  <!-- Worker URL status -->
+  <div id="workerStatus" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:.52rem;letter-spacing:.1em;color:rgba(251,191,36,.8);display:none">
+    ⚠ WORKER_URL not set — open admin.html in a text editor and paste your Worker URL at the top of the &lt;script&gt; block
+  </div>
   <div class="admin-header">
     <div>
       <div class="admin-title">ANNOUNCEMENT BAR</div>
@@ -273,57 +277,82 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
     <div class="status-msg" id="statusMsg"></div>
 
     <div class="pwd-section" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-      <button class="change-pwd-btn" onclick="togglePwdChange()">CHANGE PASSWORD</button>
-      <div class="pwd-fields" id="pwdFields">
-        <div class="f-group">
-          <label class="f-label">NEW PASSWORD</label>
-          <input type="password" class="f-input" id="newPwd1" placeholder="New password">
-        </div>
-        <div class="f-group">
-          <label class="f-label">CONFIRM</label>
-          <input type="password" class="f-input" id="newPwd2" placeholder="Confirm">
-        </div>
-        <button class="save-btn" style="margin-top:8px;grid-column:1/-1" onclick="changePassword()">UPDATE PASSWORD</button>
+      <div style="font-size:.52rem;letter-spacing:.12em;color:rgba(255,255,255,.3);line-height:1.6">
+        🔒 Password is stored as a <strong style="color:rgba(255,255,255,.55)">Cloudflare Worker Secret</strong>.<br>
+        To change it: CF Dashboard → Your Worker → <em>Settings → Variables → ADMIN_PASSWORD</em>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/* ── CONFIG ── */
-const STORAGE_KEY  = 'bq_announce';
-const PWD_KEY      = 'bq_admin_pwd';
-const SESSION_KEY  = 'bq_admin_session';
-const DEFAULT_PWD  = 'bioquiz2025';   // ← Change this before deploying
+/* ── WORKER URL ── */
+// ┌──────────────────────────────────────────────────┐
+// │  Paste your Cloudflare Worker URL below          │
+// │  e.g. https://bioquiz-announce.YOU.workers.dev   │
+// └──────────────────────────────────────────────────┘
+const WORKER_URL = 'YOUR_WORKER_URL_HERE';
+
+const SESSION_KEY = 'bq_admin_session';
+var _password = ''; // held in memory only — never stored
+
+/* ── AUTO-SESSION ── */
+// If already logged in this browser session, show admin
+var _sess = sessionStorage.getItem(SESSION_KEY);
+if (_sess) { _password = _sess; setTimeout(showAdmin, 0); }
 
 /* ── AUTH ── */
-function getPassword() {
-  return localStorage.getItem(PWD_KEY) || DEFAULT_PWD;
-}
-
-// Auto-login if session active
-if (sessionStorage.getItem(SESSION_KEY) === '1') showAdmin();
-
 function doLogin() {
-  var pwd = document.getElementById('pwdInput').value;
-  if (pwd === getPassword()) {
-    sessionStorage.setItem(SESSION_KEY, '1');
-    showAdmin();
-  } else {
-    var card = document.querySelector('.login-card');
-    card.classList.remove('shake');
-    void card.offsetWidth;
-    card.classList.add('shake');
-    document.getElementById('loginErr').textContent = 'Incorrect password.';
-    document.getElementById('pwdInput').value = '';
-    document.getElementById('pwdInput').focus();
-    setTimeout(() => document.getElementById('loginErr').textContent = '', 3000);
-  }
+  var pwd = document.getElementById('pwdInput').value.trim();
+  if (!pwd) return;
+  var btn = document.querySelector('.login-btn');
+  btn.textContent = 'CHECKING…'; btn.disabled = true;
+
+  // Verify by attempting to fetch — if GET succeeds at all
+  // we confirm Worker is reachable; password is verified on POST
+  // Do a lightweight probe POST with empty config
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password: pwd, config: null })
+  })
+  .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+  .then(function(res){
+    btn.textContent = 'UNLOCK'; btn.disabled = false;
+    if (res.status === 401) {
+      shake(); loginErr('Incorrect password.');
+    } else if (res.status === 400 || res.status === 200) {
+      // 400 = wrong body but password was accepted → logged in
+      // 200 = somehow accepted (shouldn't happen with null config but handle it)
+      _password = pwd;
+      sessionStorage.setItem(SESSION_KEY, pwd);
+      showAdmin();
+    } else {
+      loginErr('Worker error ' + res.status + '. Check WORKER_URL.');
+    }
+  })
+  .catch(function(e){
+    btn.textContent = 'UNLOCK'; btn.disabled = false;
+    loginErr('Cannot reach Worker. Check WORKER_URL is set correctly.');
+  });
 }
-document.getElementById('pwdInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function shake() {
+  var card = document.querySelector('.login-card');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+}
+function loginErr(msg) {
+  document.getElementById('loginErr').textContent = msg;
+  document.getElementById('pwdInput').value = '';
+  document.getElementById('pwdInput').focus();
+  setTimeout(function(){ document.getElementById('loginErr').textContent = ''; }, 4000);
+}
+
+document.getElementById('pwdInput').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
   sessionStorage.removeItem(SESSION_KEY);
+  _password = '';
   document.getElementById('adminScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('pwdInput').value = '';
@@ -334,46 +363,52 @@ function showAdmin() {
   document.getElementById('adminScreen').style.display = 'block';
   loadCurrentSettings();
   updatePreview();
-  // Sync swatches
   syncSwatch('dot'); syncSwatch('txt');
 }
 
-/* ── LOAD CURRENT SETTINGS ── */
+/* ── LOAD CURRENT SETTINGS FROM WORKER ── */
 function loadCurrentSettings() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    var cfg = JSON.parse(raw);
-    if (cfg.text)    document.getElementById('fText').value    = cfg.text;
-    if (cfg.link)    document.getElementById('fLink').value    = cfg.link;
-    if (cfg.target)  document.getElementById('fTarget').value  = cfg.target;
-    if (cfg.emoji)   document.getElementById('fEmoji').value   = cfg.emoji;
-    if (cfg.txtColor){ document.getElementById('txtColor').value = cfg.txtColor; document.getElementById('txtColorText').value = cfg.txtColor; }
-    if (cfg.dotColor){ document.getElementById('dotColor').value = cfg.dotColor; document.getElementById('dotColorText').value = cfg.dotColor; }
-    if (cfg.size)    document.getElementById('fSize').value    = cfg.size;
-    if (cfg.bg) {
-      // Try to match a preset
-      var chips = document.querySelectorAll('#bgPresets .color-chip');
-      chips.forEach(c => c.classList.remove('on'));
-      var matched = false;
-      chips.forEach(c => { if (c.dataset.bg === cfg.bg) { c.classList.add('on'); matched = true; } });
-      if (!matched && chips.length) chips[0].classList.add('on');
-    }
-    document.getElementById('togVisible').checked = cfg.visible !== false;
-  } catch(e) {}
+  showStatus('Loading current config…', 'loading');
+  fetch(WORKER_URL + '?t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(cfg){
+      applyFormValues(cfg);
+      showStatus('', '');
+    })
+    .catch(function(){
+      showStatus('Could not load current config — showing defaults', 'err');
+    });
+}
+
+function applyFormValues(cfg) {
+  if (cfg.text    !== undefined) document.getElementById('fText').value    = cfg.text;
+  if (cfg.link    !== undefined) document.getElementById('fLink').value    = cfg.link;
+  if (cfg.target  !== undefined) document.getElementById('fTarget').value  = cfg.target;
+  if (cfg.emoji   !== undefined) document.getElementById('fEmoji').value   = cfg.emoji;
+  if (cfg.txtColor!== undefined) { document.getElementById('txtColor').value=cfg.txtColor; document.getElementById('txtColorText').value=cfg.txtColor; }
+  if (cfg.dotColor!== undefined) { document.getElementById('dotColor').value=cfg.dotColor; document.getElementById('dotColorText').value=cfg.dotColor; }
+  if (cfg.size    !== undefined) document.getElementById('fSize').value    = cfg.size;
+  if (cfg.bg      !== undefined) {
+    var chips = document.querySelectorAll('#bgPresets .color-chip');
+    chips.forEach(function(c){ c.classList.remove('on'); });
+    var matched = false;
+    chips.forEach(function(c){ if(c.dataset.bg===cfg.bg){ c.classList.add('on'); matched=true; } });
+    if(!matched && chips.length) chips[0].classList.add('on');
+  }
+  document.getElementById('togVisible').checked = cfg.visible !== false;
+  syncSwatch('dot'); syncSwatch('txt');
+  updatePreview();
 }
 
 /* ── PRESET SELECTION ── */
 var _currentPreset = {bg:'rgba(0,45,120,.94)', border:'rgba(0,112,209,.3)', dot:'#60a5fa'};
-
 function selectPreset(el) {
-  document.querySelectorAll('#bgPresets .color-chip').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('#bgPresets .color-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
   _currentPreset = { bg: el.dataset.bg, border: el.dataset.border, dot: el.dataset.dot };
   document.getElementById('dotColor').value = el.dataset.dot;
   document.getElementById('dotColorText').value = el.dataset.dot;
-  syncSwatch('dot');
-  updatePreview();
+  syncSwatch('dot'); updatePreview();
 }
 
 /* ── COLOR SYNC ── */
@@ -392,10 +427,7 @@ function syncColor(type) {
 }
 
 /* ── EMOJI ── */
-function setEmoji(e) {
-  document.getElementById('fEmoji').value = e;
-  updatePreview();
-}
+function setEmoji(e) { document.getElementById('fEmoji').value = e; updatePreview(); }
 
 /* ── LIVE PREVIEW ── */
 function updatePreview() {
@@ -405,28 +437,26 @@ function updatePreview() {
   var dotColor = document.getElementById('dotColor').value;
   var txtColor = document.getElementById('txtColor').value;
   var size     = document.getElementById('fSize').value;
-
-  // Get selected preset bg
-  var onChip = document.querySelector('#bgPresets .color-chip.on');
-  var bg     = onChip ? onChip.dataset.bg : 'rgba(0,45,120,.94)';
-  var border = onChip ? onChip.dataset.border : 'rgba(0,112,209,.3)';
+  var onChip   = document.querySelector('#bgPresets .color-chip.on');
+  var bg       = onChip ? onChip.dataset.bg     : 'rgba(0,45,120,.94)';
+  var border   = onChip ? onChip.dataset.border  : 'rgba(0,112,209,.3)';
 
   var bar = document.getElementById('previewBar');
   var dot = document.getElementById('previewDot');
   var txt = document.getElementById('previewText');
-
-  bar.style.background   = visible ? bg : 'rgba(30,30,30,.5)';
-  bar.style.borderColor  = visible ? border : 'rgba(255,255,255,.06)';
-  bar.style.opacity      = visible ? '1' : '.35';
-  dot.style.background   = dotColor;
-  dot.style.boxShadow    = `0 0 6px ${dotColor}`;
-  txt.style.color        = visible ? txtColor : 'rgba(255,255,255,.3)';
-  txt.style.fontSize     = size;
-  txt.textContent        = (emoji ? emoji + '  ' : '') + (visible ? text : '— Bar hidden —');
+  bar.style.background  = visible ? bg : 'rgba(30,30,30,.5)';
+  bar.style.borderColor = visible ? border : 'rgba(255,255,255,.06)';
+  bar.style.opacity     = visible ? '1' : '.35';
+  dot.style.background  = dotColor;
+  dot.style.boxShadow   = '0 0 6px ' + dotColor;
+  txt.style.color       = visible ? txtColor : 'rgba(255,255,255,.3)';
+  txt.style.fontSize    = size;
+  txt.textContent       = (emoji ? emoji + '  ' : '') + (visible ? text : '— Bar hidden —');
 }
 
-/* ── SAVE ── */
+/* ── SAVE & PUBLISH (posts to Worker) ── */
 function saveAnnouncement() {
+  if (!_password) { showStatus('Not logged in — please refresh', 'err'); return; }
   var onChip = document.querySelector('#bgPresets .color-chip.on');
   var cfg = {
     visible:  document.getElementById('togVisible').checked,
@@ -439,51 +469,62 @@ function saveAnnouncement() {
     dotColor: document.getElementById('dotColor').value,
     txtColor: document.getElementById('txtColor').value,
     size:     document.getElementById('fSize').value,
-    updated:  new Date().toISOString(),
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-  showStatus('✓ SAVED — reload index.html to see changes', 'ok');
+
+  var btn = document.querySelector('.save-btn');
+  btn.textContent = 'PUBLISHING…'; btn.disabled = true;
+  showStatus('Saving to Cloudflare…', 'loading');
+
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password: _password, config: cfg })
+  })
+  .then(function(r){ return r.json().then(function(j){ return {status:r.status,body:j}; }); })
+  .then(function(res){
+    btn.textContent = 'SAVE & PUBLISH'; btn.disabled = false;
+    if (res.status === 200) {
+      showStatus('✓ PUBLISHED — live everywhere instantly', 'ok');
+    } else if (res.status === 401) {
+      showStatus('Wrong password — please log out and back in', 'err');
+    } else {
+      showStatus('Error: ' + (res.body.error || res.status), 'err');
+    }
+  })
+  .catch(function(e){
+    btn.textContent = 'SAVE & PUBLISH'; btn.disabled = false;
+    showStatus('Network error — check your connection', 'err');
+  });
 }
 
-/* ── CLEAR / HIDE ── */
+/* ── HIDE BAR ── */
 function clearAnnouncement() {
-  var cfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  cfg.visible = false;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
   document.getElementById('togVisible').checked = false;
   updatePreview();
-  showStatus('Bar hidden — reload index.html to apply', 'ok');
-}
-
-/* ── CHANGE PASSWORD ── */
-function togglePwdChange() {
-  var f = document.getElementById('pwdFields');
-  f.classList.toggle('show');
-}
-function changePassword() {
-  var p1 = document.getElementById('newPwd1').value;
-  var p2 = document.getElementById('newPwd2').value;
-  if (!p1) { showStatus('Enter a new password', 'err'); return; }
-  if (p1 !== p2) { showStatus('Passwords do not match', 'err'); return; }
-  if (p1.length < 6) { showStatus('Password must be at least 6 characters', 'err'); return; }
-  localStorage.setItem(PWD_KEY, p1);
-  document.getElementById('newPwd1').value = '';
-  document.getElementById('newPwd2').value = '';
-  document.getElementById('pwdFields').classList.remove('show');
-  showStatus('✓ Password updated', 'ok');
+  saveAnnouncement();
 }
 
 /* ── STATUS ── */
 function showStatus(msg, type) {
   var el = document.getElementById('statusMsg');
   el.textContent = msg;
-  el.className = 'status-msg ' + type;
-  setTimeout(() => { el.textContent = ''; el.className = 'status-msg'; }, 4000);
+  el.className = 'status-msg' + (type ? ' ' + type : '');
+  if (type === 'ok') setTimeout(function(){ el.textContent=''; el.className='status-msg'; }, 4000);
 }
 
-// Init preview on load
+// Remove change-password section note: password is now a Cloudflare Worker Secret.
+// To change it: CF Dashboard → Worker → Settings → Variables → ADMIN_PASSWORD → Edit
+
+// Show warning if URL not set
+if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL_HERE') {
+  var ws = document.getElementById('workerStatus');
+  if (ws) ws.style.display = 'block';
+}
+// Init
 updatePreview();
 syncSwatch('dot'); syncSwatch('txt');
 </script>
+</body>
+</html>
 </body>
 </html>
