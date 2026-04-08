@@ -143,6 +143,10 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
     <div class="login-title">ANNOUNCEMENT</div>
     <div class="login-sub">CONTROL PANEL</div>
     <div class="field">
+      <label>WORKER URL</label>
+      <input type="url" id="workerUrlInput" placeholder="https://bioquiz-announce.you.workers.dev" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-size:.7rem">
+    </div>
+    <div class="field">
       <label>PASSWORD</label>
       <input type="password" id="pwdInput" placeholder="Enter admin password" autocomplete="current-password">
     </div>
@@ -153,10 +157,7 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
 
 <!-- ── ADMIN PANEL ── -->
 <div id="adminScreen">
-  <!-- Worker URL status -->
-  <div id="workerStatus" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:.52rem;letter-spacing:.1em;color:rgba(251,191,36,.8);display:none">
-    ⚠ WORKER_URL not set — open admin.html in a text editor and paste your Worker URL at the top of the &lt;script&gt; block
-  </div>
+
   <div class="admin-header">
     <div>
       <div class="admin-title">ANNOUNCEMENT BAR</div>
@@ -286,55 +287,54 @@ body{color:var(--white);font-family:'Rajdhani',sans-serif;display:flex;flex-dire
 </div>
 
 <script>
-/* ── WORKER URL ── */
-// ┌──────────────────────────────────────────────────┐
-// │  Paste your Cloudflare Worker URL below          │
-// │  e.g. https://bioquiz-announce.YOU.workers.dev   │
-// └──────────────────────────────────────────────────┘
-const WORKER_URL = 'YOUR_WORKER_URL_HERE';
+/* ── CONFIG — URL comes from UI input, stored in localStorage ── */
+var WORKER_URL = localStorage.getItem('bq_worker_url') || '';
+var SESSION_KEY = 'bq_admin_session';
+var _password = '';
 
-const SESSION_KEY = 'bq_admin_session';
-var _password = ''; // held in memory only — never stored
+/* ── PREFILL URL input on page load ── */
+window.addEventListener('DOMContentLoaded', function(){
+  var urlInp = document.getElementById('workerUrlInput');
+  if (urlInp && WORKER_URL) urlInp.value = WORKER_URL;
+});
 
 /* ── AUTO-SESSION ── */
-// If already logged in this browser session, show admin
 var _sess = sessionStorage.getItem(SESSION_KEY);
-if (_sess) { _password = _sess; setTimeout(showAdmin, 0); }
+if (_sess) {
+  _password = _sess;
+  WORKER_URL = localStorage.getItem('bq_worker_url') || '';
+  setTimeout(showAdmin, 0);
+}
 
 /* ── AUTH ── */
 function doLogin() {
+  // Read URL from the input field — user typed/pasted it there
+  var urlInp = document.getElementById('workerUrlInput');
+  var url = (urlInp ? urlInp.value.trim() : '').replace(/\/$/, '');
   var pwd = document.getElementById('pwdInput').value.trim();
-  if (!pwd) return;
+
+  if (!url) { loginErr('Paste your Worker URL in the field above.'); urlInp && urlInp.focus(); return; }
+  if (!pwd) { loginErr('Enter your password.'); document.getElementById('pwdInput').focus(); return; }
+
+  // Persist URL so user never has to type it again
+  localStorage.setItem('bq_worker_url', url);
+  WORKER_URL = url;
+
   var btn = document.querySelector('.login-btn');
-  btn.textContent = 'CHECKING…';
-  btn.disabled = true;
+  btn.textContent = 'CONNECTING…'; btn.disabled = true;
 
-  if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL_HERE') {
-    btn.textContent = 'UNLOCK'; btn.disabled = false;
-    loginErr('Worker URL not set — open admin.html and paste your URL.');
-    return;
-  }
-
-  // Step 1: confirm Worker is reachable with a simple GET /health
-  // Step 2: password is verified server-side on the first POST save
-  fetch(WORKER_URL + '/health', { mode: 'cors', cache: 'no-store' })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
-      if (!data.ok) throw new Error('Worker unhealthy');
-      // Worker is reachable — store password in memory and open admin
-      // Real auth happens server-side on every POST (wrong pwd → 401 on save)
+  fetch(url + '/health', { mode: 'cors', cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (!data.ok) throw new Error('bad health');
       _password = pwd;
       sessionStorage.setItem(SESSION_KEY, pwd);
       btn.textContent = 'UNLOCK'; btn.disabled = false;
       showAdmin();
     })
-    .catch(function(err) {
+    .catch(function(err){
       btn.textContent = 'UNLOCK'; btn.disabled = false;
-      loginErr('Cannot reach Worker — check the URL and that the Worker is deployed.');
-      console.error('Worker health check failed:', err);
+      loginErr('Cannot reach Worker. Make sure the URL is correct and the Worker is deployed.');
     });
 }
 
@@ -350,6 +350,12 @@ function loginErr(msg) {
 }
 
 document.getElementById('pwdInput').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+document.addEventListener('DOMContentLoaded', function(){
+  var urlInp = document.getElementById('workerUrlInput');
+  if(urlInp) urlInp.addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('pwdInput').focus();
+  });
+});
 
 function doLogout() {
   sessionStorage.removeItem(SESSION_KEY);
@@ -525,11 +531,7 @@ function showStatus(msg, type) {
 // Remove change-password section note: password is now a Cloudflare Worker Secret.
 // To change it: CF Dashboard → Worker → Settings → Variables → ADMIN_PASSWORD → Edit
 
-// Show warning if URL not set
-if (!WORKER_URL || WORKER_URL === 'fancy-sun-9222.killermunu.workers.dev') {
-  var ws = document.getElementById('workerStatus');
-  if (ws) ws.style.display = 'block';
-}
+
 // Init
 updatePreview();
 syncSwatch('dot'); syncSwatch('txt');
