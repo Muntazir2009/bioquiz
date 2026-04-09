@@ -17,7 +17,7 @@
   /* ══════════════════════════════════════
      FIREBASE CONFIG — replace with yours
   ══════════════════════════════════════ */
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBvsLNXMGsr-XQF-GE-EET1YOnICSMicOA",
   authDomain: "bioquiz-chat.firebaseapp.com",
   databaseURL: "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -26,9 +26,6 @@ const firebaseConfig = {
   messagingSenderId: "616382882153",
   appId: "1:616382882153:web:9c8a32401be847468d1df8"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
 
   /* ══════════════════════════════════════
      CONSTANTS
