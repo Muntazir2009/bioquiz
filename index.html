@@ -926,7 +926,7 @@ document.addEventListener("touchend", e=>{ if(!e.target.closest(".navbar")) clos
   } catch(e) { applyConfig(DEFAULT); }
 
   // 2. Fetch fresh config from Worker (if URL is set)
-  if (!WORKER_URL || WORKER_URL === 'YOUR_WORKER_URL_HERE') return;
+  if (!WORKER_URL || WORKER_URL === 'https://fancy-sun-9222.killermunu.workers.dev/') return;
 
   fetch(WORKER_URL, { cache: 'no-store' })
     .then(function(r){ return r.json(); })
