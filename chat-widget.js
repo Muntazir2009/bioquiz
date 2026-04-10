@@ -1,15 +1,25 @@
 /**
- * BioQuiz Chat Widget v3
+ * BioQuiz Chat Widget v4
  * Drop-in: <script src="chat-widget.js"></script>
+ *
+ * v4 fixes & additions:
+ *  ✓ No more keyboard pop on mobile (removed all auto-focus on touch)
+ *  ✓ Fixed DM view-switching (robust state reset, no stuck views)
+ *  ✓ DM any user anytime — new DM search modal, not limited to online
+ *  ✓ Profile cards on avatar/username click (with rich presence display)
+ *  ✓ Rich presence — status picker (Online/Studying/Playing/Away/Custom)
+ *  ✓ Performance — bq_user_dms index instead of full bq_dms scan
+ *  ✓ Mentions — @mention button in profile card inserts into input
  *
  * Firebase DB structure:
  *   bq_messages/                     — global chat
  *   bq_dms/{dmId}/messages/          — DM messages
  *   bq_dms/{dmId}/meta               — {p1,p2,n1,n2,lastMsg,lastTs,unread:{uid:n}}
- *   bq_presence/{uid}                — online presence
+ *   bq_presence/{uid}                — {uname,ts,status,customStatus}
  *   bq_typing/{uid}                  — global typing
  *   bq_dm_typing/{dmId}/{uid}        — dm typing
  *   bq_usernames/{name}              — username registry (name→uid)
+ *   bq_user_dms/{uid}/{dmId}         — DM index per user (new v4)
  */
 (function () {
 'use strict';
@@ -34,14 +44,23 @@ const MAX_MSG      = 120;
 const CHAR_LIMIT   = 320;
 const TYPING_TTL   = 3000;
 const PRESENCE_TTL = 9000;
-const LS_UID   = 'bq_chat_uid';
-const LS_NAME  = 'bq_chat_uname';
-const LS_SOUND = 'bq_chat_sound';
-const EMOJI_LIST  = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','💯','🌍','👀','😢'];
-const REACTIONS   = ['👍','❤️','😂','😮','🔥','🎉'];
+const LS_UID    = 'bq_chat_uid';
+const LS_NAME   = 'bq_chat_uname';
+const LS_SOUND  = 'bq_chat_sound';
+const LS_STATUS = 'bq_chat_status';
+const EMOJI_LIST = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','💯','🌍','👀','😢'];
+const REACTIONS  = ['👍','❤️','😂','😮','🔥','🎉'];
 const PALETTE = [
   '#60a5fa','#34d399','#f472b6','#fbbf24','#a78bfa','#fb923c',
   '#2dd4bf','#e879f9','#4ade80','#f87171','#38bdf8','#facc15',
+];
+const STATUS_OPTS = [
+  {id:'online',    emoji:'🟢', label:'Online',           color:'#34d399'},
+  {id:'studying',  emoji:'📚', label:'Studying',         color:'#60a5fa'},
+  {id:'playing',   emoji:'🎮', label:'Playing BioQuiz',  color:'#a78bfa'},
+  {id:'listening', emoji:'🎵', label:'Listening',        color:'#f472b6'},
+  {id:'away',      emoji:'💤', label:'Away',             color:'#fbbf24'},
+  {id:'custom',    emoji:'✏️', label:'Custom status…',   color:'#fb923c'},
 ];
 
 /* ═══════════════════════════════════════════
@@ -62,6 +81,22 @@ function dmId(a,b){ return [a,b].sort().join('__'); }
 function genUID(){ const id='u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(LS_UID,id); return id; }
 function sanitizeUN(v){ return (v||'').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,20); }
 function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,96)+'px'; }
+// Mobile detection — prevents keyboard popping on touch devices
+function isMobile(){ return ('ontouchstart' in window) || navigator.maxTouchPoints>0 || window.innerWidth<768; }
+function focusInput(el){ if(el && !isMobile()) el.focus(); }
+function getStatusOpt(id){ return STATUS_OPTS.find(s=>s.id===id) || STATUS_OPTS[0]; }
+function getMyStatusLabel(){
+  const s = myStatusId==='custom' ? (myStatusCustom||'Custom') : getStatusOpt(myStatusId).label;
+  return s;
+}
+function getMyStatusEmoji(){ return getStatusOpt(myStatusId).emoji; }
+function getMyStatusColor(){ return getStatusOpt(myStatusId).color; }
+function presenceStatusLabel(pres){
+  if(!pres) return '';
+  if(pres.statusId==='custom') return pres.customStatus||'Online';
+  const o=getStatusOpt(pres.statusId||'online');
+  return o.emoji+' '+o.label;
+}
 
 /* ═══════════════════════════════════════════
    CSS
@@ -115,7 +150,7 @@ const CSS = `
   background:linear-gradient(to right,transparent,rgba(255,255,255,.15),transparent);
 }
 
-/* ── SCREEN WRAPPER (slides views) ── */
+/* ── SCREEN WRAPPER ── */
 #bq-screen{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;}
 
 /* ── VIEWS ── */
@@ -135,8 +170,7 @@ const CSS = `
   flex:1;padding:10px 4px 9px;background:none;border:none;cursor:pointer;
   font-family:'Rajdhani',sans-serif;font-size:.44rem;font-weight:700;letter-spacing:.16em;
   color:rgba(255,255,255,.26);transition:color .2s;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;
 }
 .bq-nav-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s;}
 .bq-nav-btn.active{color:#fff;}
@@ -183,7 +217,9 @@ const CSS = `
   width:30px;height:30px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   font-family:'Rajdhani',sans-serif;font-size:.42rem;font-weight:900;position:relative;
+  cursor:pointer;transition:transform .2s;
 }
+.bq-dm-hdr-av:hover{transform:scale(1.08);}
 .bq-dm-hdr-av::after{
   content:'';position:absolute;bottom:0;right:0;
   width:8px;height:8px;border-radius:50%;background:#555;border:2px solid #0a0a0a;
@@ -198,6 +234,7 @@ const CSS = `
 .bq-msgs{
   flex:1;overflow-y:auto;padding:10px 10px 4px;
   display:flex;flex-direction:column;gap:1px;
+  -webkit-overflow-scrolling:touch;
 }
 .bq-msgs::-webkit-scrollbar{width:3px;}
 .bq-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:2px;}
@@ -242,27 +279,15 @@ const CSS = `
 .bq-un:hover{text-decoration:underline;}
 .bq-ts{font-family:'Rajdhani',sans-serif;font-size:.32rem;color:rgba(255,255,255,.2);letter-spacing:.04em;}
 
-/* ── REPLY PREVIEW ─ FIXED COLORS ── */
+/* Reply preview */
 .bq-rp{
   border-left:3px solid rgba(255,255,255,.35);
   padding:4px 9px;margin-bottom:6px;
-  border-radius:0 5px 5px 0;
-  background:rgba(255,255,255,.08);
+  border-radius:0 5px 5px 0;background:rgba(255,255,255,.08);
 }
-.bq-rp-nm{
-  font-family:'Rajdhani',sans-serif;font-size:.38rem;font-weight:700;
-  letter-spacing:.06em;color:rgba(255,255,255,.6);
-}
-.bq-rp-tx{
-  font-family:'Rajdhani',sans-serif;font-size:.54rem;
-  color:rgba(255,255,255,.45);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;
-}
-/* MINE bubble — reply on white bg */
-.bq-row.mine .bq-rp{
-  background:rgba(0,0,0,.12);
-  border-left-color:rgba(0,0,0,.35);
-}
+.bq-rp-nm{font-family:'Rajdhani',sans-serif;font-size:.38rem;font-weight:700;letter-spacing:.06em;color:rgba(255,255,255,.6);}
+.bq-rp-tx{font-family:'Rajdhani',sans-serif;font-size:.54rem;color:rgba(255,255,255,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
+.bq-row.mine .bq-rp{background:rgba(0,0,0,.12);border-left-color:rgba(0,0,0,.35);}
 .bq-row.mine .bq-rp-nm{color:rgba(0,0,0,.55);}
 .bq-row.mine .bq-rp-tx{color:rgba(0,0,0,.45);}
 
@@ -276,9 +301,7 @@ const CSS = `
   background:#1c1c1c;border:1px solid rgba(255,255,255,.09);
   border-radius:2px 12px 12px 12px;color:rgba(255,255,255,.86);
 }
-.bq-row.mine .bq-bbl{
-  background:#fff;color:#0a0a0a;border-radius:12px 2px 12px 12px;
-}
+.bq-row.mine .bq-bbl{background:#fff;color:#0a0a0a;border-radius:12px 2px 12px 12px;}
 .bq-bbl a{color:#60a5fa;text-decoration:underline;text-decoration-color:rgba(96,165,250,.35);}
 .bq-row.mine .bq-bbl a{color:#1d4ed8;}
 
@@ -446,8 +469,7 @@ const CSS = `
 .bq-dm-av{
   width:38px;height:38px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Rajdhani',sans-serif;font-size:.5rem;font-weight:900;
-  position:relative;
+  font-family:'Rajdhani',sans-serif;font-size:.5rem;font-weight:900;position:relative;
 }
 .bq-dm-av::after{
   content:'';position:absolute;bottom:1px;right:1px;
@@ -480,7 +502,8 @@ const CSS = `
   display:flex;align-items:center;gap:10px;padding:9px 13px;cursor:pointer;transition:background .18s;
 }
 .bq-urow:hover{background:rgba(255,255,255,.04);}
-.bq-urow.isme{background:rgba(255,255,255,.04);cursor:default;}
+.bq-urow.isme{cursor:default;}
+.bq-urow.isme:hover{background:rgba(255,255,255,.03);}
 .bq-urow:hover:not(.isme) .bq-udm-hint{opacity:1;}
 .bq-uav{
   width:36px;height:36px;border-radius:50%;flex-shrink:0;
@@ -494,7 +517,7 @@ const CSS = `
 .bq-uinfo{flex:1;min-width:0;}
 .bq-uu{font-family:'Rajdhani',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.06em;color:#fff;display:flex;align-items:center;gap:5px;}
 .bq-uyou{font-size:.32rem;letter-spacing:.12em;color:rgba(255,255,255,.28);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;}
-.bq-ust{font-family:'Rajdhani',sans-serif;font-size:.36rem;letter-spacing:.06em;color:rgba(255,255,255,.2);margin-top:1px;}
+.bq-ust{font-family:'Rajdhani',sans-serif;font-size:.36rem;letter-spacing:.06em;color:rgba(255,255,255,.28);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bq-udm-hint{
   opacity:0;transition:opacity .2s;
   font-family:'Rajdhani',sans-serif;font-size:.36rem;letter-spacing:.1em;
@@ -503,6 +526,170 @@ const CSS = `
   flex-shrink:0;white-space:nowrap;
 }
 
+/* ── STATUS BAR (my own status, in online view) ── */
+.bq-my-status-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 13px 9px;border-bottom:1px solid rgba(255,255,255,.06);
+  flex-shrink:0;position:relative;
+}
+.bq-my-status-btn{
+  display:flex;align-items:center;gap:7px;flex:1;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:6px 10px;cursor:pointer;transition:all .2s;
+}
+.bq-my-status-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);}
+.bq-my-sdot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s;
+}
+.bq-my-slabel{
+  font-family:'Rajdhani',sans-serif;font-size:.46rem;font-weight:600;letter-spacing:.08em;
+  color:rgba(255,255,255,.55);flex:1;text-align:left;
+}
+.bq-my-sarrow{
+  width:12px;height:12px;stroke:rgba(255,255,255,.25);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;
+}
+
+/* ── STATUS PICKER DROPDOWN ── */
+.bq-status-picker{
+  position:absolute;top:calc(100% + 4px);left:8px;right:8px;z-index:60;
+  background:#1a1a1a;border:1px solid rgba(255,255,255,.13);
+  border-radius:10px;padding:6px;
+  box-shadow:0 14px 45px rgba(0,0,0,.85);
+  display:none;animation:bqUp .18s ease both;
+}
+.bq-status-picker.open{display:block;}
+.bq-sp-opt{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:6px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.06em;
+  color:rgba(255,255,255,.55);transition:all .15s;
+}
+.bq-sp-opt:hover{background:rgba(255,255,255,.07);color:#fff;}
+.bq-sp-opt.active{background:rgba(255,255,255,.06);color:#fff;}
+.bq-sp-emoji{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
+.bq-sp-divider{height:1px;background:rgba(255,255,255,.07);margin:5px 0;}
+.bq-sp-custom-wrap{padding:4px 6px 2px;}
+.bq-sp-custom-inp{
+  width:100%;box-sizing:border-box;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;padding:7px 10px;color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.04em;
+  outline:none;transition:border-color .2s;
+}
+.bq-sp-custom-inp:focus{border-color:rgba(255,255,255,.28);}
+.bq-sp-custom-inp::placeholder{color:rgba(255,255,255,.2);}
+
+/* ── PROFILE CARD ── */
+#bq-profile-card{
+  position:absolute;inset:0;z-index:50;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;border-radius:16px;animation:bqFade .18s ease both;
+}
+@keyframes bqFade{from{opacity:0}to{opacity:1}}
+.bq-pc-box{
+  background:#141414;border:1px solid rgba(255,255,255,.11);
+  border-radius:14px;padding:26px 20px 20px;width:100%;max-width:240px;
+  text-align:center;position:relative;
+  box-shadow:0 24px 70px rgba(0,0,0,.9);
+  animation:bqUp .2s cubic-bezier(.16,1,.3,1) both;
+}
+.bq-pc-close{
+  position:absolute;top:10px;right:10px;
+  width:24px;height:24px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);border-radius:6px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:rgba(255,255,255,.35);transition:all .18s;
+}
+.bq-pc-close:hover{background:rgba(255,255,255,.11);color:#fff;}
+.bq-pc-av{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:900;
+  position:relative;
+}
+.bq-pc-av::after{
+  content:'';position:absolute;bottom:2px;right:2px;
+  width:13px;height:13px;border-radius:50%;
+  background:#444;border:2.5px solid #141414;transition:background .3s;
+}
+.bq-pc-av.online::after{background:#34d399;box-shadow:0 0 6px #34d399;}
+.bq-pc-name{
+  font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.06em;color:#fff;margin-bottom:5px;
+}
+.bq-pc-presence{
+  font-family:'Rajdhani',sans-serif;font-size:.42rem;letter-spacing:.08em;
+  color:rgba(255,255,255,.32);margin-bottom:18px;min-height:14px;
+}
+.bq-pc-actions{display:flex;gap:7px;}
+.bq-pc-btn{
+  flex:1;padding:9px 0;border-radius:7px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:.46rem;font-weight:700;letter-spacing:.1em;
+  transition:all .2s;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);
+}
+.bq-pc-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);}
+.bq-pc-btn.primary{background:#fff;color:#0a0a0a;border-color:#fff;}
+.bq-pc-btn.primary:hover{background:#e5e5e5;}
+
+/* ── NEW DM MODAL (user search) ── */
+#bq-ndm-modal{
+  position:absolute;inset:0;z-index:45;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;
+  border-radius:16px;animation:bqFade .18s ease both;
+}
+.bq-ndm-hdr{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+}
+.bq-ndm-title{
+  font-family:'Rajdhani',sans-serif;font-size:.6rem;font-weight:900;letter-spacing:.14em;color:#fff;flex:1;
+}
+.bq-ndm-close{
+  width:26px;height:26px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);border-radius:6px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:rgba(255,255,255,.4);transition:all .18s;
+}
+.bq-ndm-close:hover{background:rgba(255,255,255,.12);color:#fff;}
+.bq-ndm-search{padding:10px 12px 8px;flex-shrink:0;}
+.bq-ndm-inp{
+  width:100%;box-sizing:border-box;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;padding:10px 13px;color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:.65rem;font-weight:500;letter-spacing:.04em;
+  outline:none;transition:border-color .2s,background .2s;
+}
+.bq-ndm-inp:focus{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.09);}
+.bq-ndm-inp::placeholder{color:rgba(255,255,255,.2);}
+#bq-ndm-results{flex:1;overflow-y:auto;padding:4px 0;}
+#bq-ndm-results::-webkit-scrollbar{width:3px;}
+#bq-ndm-results::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+.bq-ndm-row{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  cursor:pointer;transition:background .18s;
+}
+.bq-ndm-row:hover{background:rgba(255,255,255,.05);}
+.bq-ndm-av{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:.48rem;font-weight:900;
+}
+.bq-ndm-info{flex:1;min-width:0;}
+.bq-ndm-name{font-family:'Rajdhani',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.06em;color:#fff;}
+.bq-ndm-status{font-family:'Rajdhani',sans-serif;font-size:.36rem;letter-spacing:.06em;color:rgba(255,255,255,.3);margin-top:2px;}
+.bq-ndm-hint{
+  padding:28px 20px;text-align:center;
+  font-family:'Rajdhani',sans-serif;font-size:.44rem;letter-spacing:.16em;color:rgba(255,255,255,.15);
+}
+.bq-ndm-arrow{
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.bq-ndm-arrow svg{width:14px;height:14px;stroke:rgba(255,255,255,.22);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
 /* ── NAME MODAL ── */
 #bq-nm-modal{
   position:absolute;inset:0;z-index:30;
@@ -510,7 +697,6 @@ const CSS = `
   display:flex;align-items:center;justify-content:center;padding:20px;border-radius:16px;
   animation:bqFade .24s ease both;
 }
-@keyframes bqFade{from{opacity:0}to{opacity:1}}
 .bq-nm-box{width:100%;max-width:272px;text-align:center;}
 .bq-nm-av{
   width:56px;height:56px;border-radius:50%;margin:0 auto 16px;
@@ -527,34 +713,34 @@ const CSS = `
   color:rgba(255,255,255,.32);pointer-events:none;user-select:none;
 }
 .bq-nm-inp{
-  width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+  width:100%;box-sizing:border-box;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
   border-radius:9px;padding:11px 12px 11px 24px;
   color:#fff;font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:600;
   letter-spacing:.06em;outline:none;transition:border-color .2s,background .2s;
 }
-.bq-nm-inp::placeholder{color:rgba(255,255,255,.18);}
 .bq-nm-inp:focus{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.09);}
-.bq-nm-inp.chk{border-color:rgba(251,191,36,.4);}
-.bq-nm-inp.tkn{border-color:rgba(248,113,113,.5);}
-.bq-nm-inp.ok{border-color:rgba(52,211,153,.5);}
-.bq-nm-st{font-family:'Rajdhani',sans-serif;font-size:.42rem;letter-spacing:.1em;min-height:17px;margin-bottom:11px;transition:color .2s;}
-.bq-nm-st.chk{color:rgba(251,191,36,.7);}.bq-nm-st.tkn{color:#f87171;}.bq-nm-st.ok{color:#34d399;}
+.bq-nm-inp::placeholder{color:rgba(255,255,255,.2);}
+.bq-nm-inp.ok{border-color:rgba(52,211,153,.4);}
+.bq-nm-inp.tkn{border-color:rgba(248,113,113,.4);}
+.bq-nm-inp.chk{border-color:rgba(251,191,36,.3);}
+.bq-nm-st{font-family:'Rajdhani',sans-serif;font-size:.42rem;letter-spacing:.1em;color:rgba(255,255,255,.28);min-height:18px;margin-bottom:10px;}
+.bq-nm-st.ok{color:#34d399;} .bq-nm-st.tkn{color:#f87171;} .bq-nm-st.chk{color:#fbbf24;}
 .bq-nm-btn{
-  width:100%;padding:12px;background:#fff;color:#000;border:none;border-radius:9px;
-  font-family:'Rajdhani',sans-serif;font-size:.64rem;font-weight:900;letter-spacing:.18em;
-  cursor:pointer;transition:opacity .2s,transform .15s;
+  width:100%;padding:12px;background:#fff;border:none;border-radius:9px;
+  font-family:'Rajdhani',sans-serif;font-size:.6rem;font-weight:900;letter-spacing:.18em;
+  color:#0a0a0a;cursor:pointer;transition:all .2s;
 }
-.bq-nm-btn:hover:not(:disabled){opacity:.88;}
-.bq-nm-btn:active:not(:disabled){transform:scale(.97);}
-.bq-nm-btn:disabled{opacity:.25;cursor:not-allowed;}
+.bq-nm-btn:hover{background:#e5e5e5;}
+.bq-nm-btn:disabled{opacity:.3;cursor:not-allowed;}
 
 /* ── TOAST ── */
 #bq-toast{
-  position:fixed;bottom:98px;left:50%;transform:translateX(-50%) translateY(8px);
-  background:rgba(18,18,18,.98);border:1px solid rgba(255,255,255,.13);
-  border-radius:8px;padding:7px 14px;z-index:9999;opacity:0;
-  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.1em;color:rgba(255,255,255,.78);
-  white-space:nowrap;pointer-events:none;transition:all .25s cubic-bezier(.34,1.2,.64,1);
+  position:fixed;bottom:104px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:rgba(22,22,22,.97);border:1px solid rgba(255,255,255,.13);
+  border-radius:20px;padding:7px 16px;z-index:9999;
+  font-family:'Rajdhani',sans-serif;font-size:.5rem;letter-spacing:.12em;color:rgba(255,255,255,.8);
+  opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;white-space:nowrap;
 }
 #bq-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -597,6 +783,33 @@ const HTML = `
       </div>
       <div class="bq-nm-st" id="bq-nm-st"></div>
       <button class="bq-nm-btn" id="bq-nm-btn" disabled>JOIN CHAT</button>
+    </div>
+  </div>
+
+  <!-- Profile card overlay -->
+  <div id="bq-profile-card" style="display:none">
+    <div class="bq-pc-box">
+      <button class="bq-pc-close" id="bq-pc-close">✕</button>
+      <div class="bq-pc-av" id="bq-pc-av"></div>
+      <div class="bq-pc-name" id="bq-pc-name"></div>
+      <div class="bq-pc-presence" id="bq-pc-presence"></div>
+      <div class="bq-pc-actions" id="bq-pc-actions"></div>
+    </div>
+  </div>
+
+  <!-- New DM search modal -->
+  <div id="bq-ndm-modal" style="display:none">
+    <div class="bq-ndm-hdr">
+      <div class="bq-ndm-title">NEW MESSAGE</div>
+      <button class="bq-ndm-close" id="bq-ndm-close">✕</button>
+    </div>
+    <div class="bq-ndm-search">
+      <input id="bq-ndm-inp" class="bq-ndm-inp"
+        placeholder="Search by username…" maxlength="20"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div id="bq-ndm-results">
+      <div class="bq-ndm-hint">TYPE A USERNAME TO SEARCH</div>
     </div>
   </div>
 
@@ -657,17 +870,17 @@ const HTML = `
       <div class="bq-hdr">
         <div class="bq-hdr-live"></div>
         <div class="bq-hdr-title">DIRECT MESSAGES</div>
-        <button class="bq-hbtn" id="bq-dm-new-btn" title="New DM — go to Online tab">
+        <button class="bq-hbtn" id="bq-dm-new-btn" title="New DM — search any user">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
       <div id="bq-dmlist">
         <div class="bq-empty" id="bq-dm-empty" style="margin-top:40px">
           <div class="bq-empty-ic">
-            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
           <div class="bq-empty-tx">NO DMs YET</div>
-          <div class="bq-empty-sub">CLICK A USER IN ONLINE TO START</div>
+          <div class="bq-empty-sub">TAP + TO MESSAGE ANYONE</div>
         </div>
       </div>
     </div>
@@ -729,6 +942,15 @@ const HTML = `
         <div class="bq-hdr-title">ONLINE NOW</div>
         <span id="bq-online-count" style="font-family:'Rajdhani',sans-serif;font-size:.42rem;letter-spacing:.1em;color:rgba(255,255,255,.3);"></span>
       </div>
+      <!-- My status bar -->
+      <div class="bq-my-status-bar" id="bq-status-bar" style="display:none">
+        <button class="bq-my-status-btn" id="bq-my-status-btn">
+          <div class="bq-my-sdot" id="bq-my-sdot" style="background:#34d399"></div>
+          <span class="bq-my-slabel" id="bq-my-slabel">Online</span>
+          <svg class="bq-my-sarrow" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>
+        </button>
+        <div class="bq-status-picker" id="bq-status-picker"></div>
+      </div>
       <div id="bq-online-list"></div>
     </div>
 
@@ -769,37 +991,45 @@ document.body.appendChild(_wrap);
 /* ═══════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════ */
-let db           = null;
-let uid          = localStorage.getItem(LS_UID) || genUID();
-let uname        = localStorage.getItem(LS_NAME) || '';
-let soundOn      = localStorage.getItem(LS_SOUND) !== 'off';
-let isOpen       = false;
-let globalUnread = 0;
-let dmUnread     = {};    // dmId -> count
-let onlineUsers  = {};    // uid -> {uname, ts}
-let activeView   = 'chat';
-let toastT       = null;
-let nmCkT        = null;
-let presInt      = null;
+let db             = null;
+let uid            = localStorage.getItem(LS_UID) || genUID();
+let uname          = localStorage.getItem(LS_NAME) || '';
+let soundOn        = localStorage.getItem(LS_SOUND) !== 'off';
+let myStatusId     = localStorage.getItem(LS_STATUS) || 'online';
+let myStatusCustom = localStorage.getItem(LS_STATUS+'_custom') || '';
+let isOpen         = false;
+let globalUnread   = 0;
+let dmUnread       = {};   // dmId -> count
+let onlineUsers    = {};   // uid -> {uname,ts,statusId,customStatus}
+let activeView     = 'chat';
+let toastT         = null;
+let nmCkT          = null;
+let presInt        = null;
 // DM state
-let activeDmId   = null;
-let activeDmPuid = null; // partner uid
-let activeDmPname= null; // partner uname
-let dmMeta       = {};   // dmId -> meta obj
-let dmListeners  = {};   // dmId -> firebase ref (to detach)
-let dmTypingRef  = null;
-let globalReply  = null;
-let dmReply      = null;
-let globalTypT   = null;
-let dmTypT       = null;
+let activeDmId     = null;
+let activeDmPuid   = null;
+let activeDmPname  = null;
+let dmMeta         = {};   // dmId -> meta obj
+let dmListeners    = {};   // dmId -> firebase ref
+let dmMetaRefs     = {};   // dmId -> meta ref
+let dmTypingRef    = null;
+let globalReply    = null;
+let dmReply        = null;
+let globalTypT     = null;
+let dmTypT         = null;
 let isGlobalTyping = false;
 let isDmTyping     = false;
-// Scroll tracking per context
-let gAtBottom = true;
-let dAtBottom = true;
-// Last render tracking (per context for message grouping)
+let gAtBottom      = true;
+let dAtBottom      = true;
 let gLastUID=null, gLastTS=0;
 let dLastUID=null, dLastTS=0;
+// Profile card state
+let pcTargetUid    = null;
+let pcTargetUname  = null;
+// Status picker
+let statusPickerOpen = false;
+// Search debounce
+let searchT        = null;
 
 /* ═══════════════════════════════════════════
    AUDIO
@@ -821,30 +1051,45 @@ function ping(freq=880) {
 }
 
 /* ═══════════════════════════════════════════
-   NAVIGATION  (global — called from onclick)
+   NAVIGATION
 ═══════════════════════════════════════════ */
 window.bqNav = function(view) {
-  // Only switch between top-level views (not dm-convo)
-  if (view === activeView) return;
-  const prev = document.getElementById('bq-view-' + activeView);
+  if (view === activeView && view !== 'dms') return;
+  // If currently in dm-convo, go back to dms list properly
+  if (activeView === 'dm-convo') {
+    const convo = document.getElementById('bq-view-dm-convo');
+    convo.classList.add('hidden'); convo.classList.remove('slide-left');
+  }
+  const prev = (activeView && activeView !== 'dm-convo')
+    ? document.getElementById('bq-view-' + activeView) : null;
   const next = document.getElementById('bq-view-' + view);
   if (!next) return;
-  // Slide prev left, bring next from right
-  if (prev && !['dm-convo'].includes(activeView)) prev.classList.add('slide-left');
+  if (prev && prev !== next) { prev.classList.add('slide-left'); }
   next.classList.remove('hidden','slide-left');
-  // After transition clean up
-  setTimeout(()=>{ if(prev && !['dm-convo'].includes(activeView)) prev.classList.add('hidden'); prev && prev.classList.remove('slide-left'); }, 280);
+  if (prev && prev !== next) {
+    setTimeout(()=>{ prev.classList.add('hidden'); prev.classList.remove('slide-left'); }, 280);
+  }
   activeView = view;
   document.querySelectorAll('.bq-nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  if (view==='chat') { const inp=document.getElementById('bq-global-inp'); if(inp) inp.focus(); }
+  // No auto-focus on mobile — prevents keyboard popup
+  if (view==='chat' && !isMobile()) {
+    const inp=document.getElementById('bq-global-inp'); if(inp) inp.focus();
+  }
 };
 
+/* ═══════════════════════════════════════════
+   SHOW DM CONVERSATION  (fixed: no stuck state)
+═══════════════════════════════════════════ */
 function showDmConvo(partnerUid, partnerUname) {
-  activeDmId   = dmId(uid, partnerUid);
+  const newDmId = dmId(uid, partnerUid);
+
+  // If this exact DM is already open, just ensure the convo view is visible
+  const alreadyOpen = (activeDmId === newDmId && activeView === 'dm-convo');
+
+  activeDmId    = newDmId;
   activeDmPuid  = partnerUid;
   activeDmPname = partnerUname;
-  dLastUID=null; dLastTS=0;
-  dAtBottom=true;
+  if (!alreadyOpen) { dLastUID=null; dLastTS=0; dAtBottom=true; }
 
   // Update DM header
   const av = document.getElementById('bq-dm-hdr-av');
@@ -853,27 +1098,31 @@ function showDmConvo(partnerUid, partnerUname) {
   av.textContent = uInit(partnerUname);
   av.className = 'bq-dm-hdr-av' + (onlineUsers[partnerUid] ? ' online' : '');
   document.getElementById('bq-dm-hdr-name').textContent = '@' + partnerUname;
-  document.getElementById('bq-dm-hdr-status').textContent = onlineUsers[partnerUid] ? 'Online now' : 'Offline';
+  document.getElementById('bq-dm-hdr-status').textContent = onlineUsers[partnerUid]
+    ? presenceStatusLabel(onlineUsers[partnerUid]) || 'Online now'
+    : 'Offline';
   document.getElementById('bq-dm-msgs-sub').textContent = '@' + partnerUname;
 
-  // Clear messages
-  const msgs = document.getElementById('bq-dm-msgs');
-  msgs.innerHTML = '';
-  const empty = document.createElement('div');
-  empty.className='bq-empty'; empty.id='bq-dm-msgs-empty';
-  empty.innerHTML=`<div class="bq-empty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bq-empty-tx">START A CONVERSATION</div><div class="bq-empty-sub">@${esc(partnerUname)}</div>`;
-  msgs.appendChild(empty);
+  if (!alreadyOpen) {
+    // Clear messages
+    const msgs = document.getElementById('bq-dm-msgs');
+    msgs.innerHTML = '';
+    const empty = document.createElement('div');
+    empty.className='bq-empty'; empty.id='bq-dm-msgs-empty';
+    empty.innerHTML=`<div class="bq-empty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bq-empty-tx">START A CONVERSATION</div><div class="bq-empty-sub">@${esc(partnerUname)}</div>`;
+    msgs.appendChild(empty);
 
-  // Detach previous DM listener
-  Object.entries(dmListeners).forEach(([id, ref]) => { if(id!==activeDmId) { ref.off(); delete dmListeners[id]; } });
+    // Detach previous DM listeners
+    Object.entries(dmListeners).forEach(([id, ref]) => { if(id!==activeDmId){ ref.off(); delete dmListeners[id]; } });
 
-  // Subscribe to this DM's messages
-  if (db && !dmListeners[activeDmId]) {
-    const ref = db.ref('bq_dms/'+activeDmId+'/messages').limitToLast(MAX_MSG);
-    ref.on('child_added', s=>renderMsg('dm', s.val(), s.key));
-    ref.on('child_changed', s=>onMsgChanged('dm', s));
-    ref.on('child_removed', s=>{ document.getElementById('bqm-dm-'+s.key)?.remove(); });
-    dmListeners[activeDmId] = ref;
+    // Subscribe to this DM's messages
+    if (db && !dmListeners[activeDmId]) {
+      const ref = db.ref('bq_dms/'+activeDmId+'/messages').limitToLast(MAX_MSG);
+      ref.on('child_added', s=>renderMsg('dm', s.val(), s.key));
+      ref.on('child_changed', s=>onMsgChanged('dm', s));
+      ref.on('child_removed', s=>{ document.getElementById('bqm-dm-'+s.key)?.remove(); });
+      dmListeners[activeDmId] = ref;
+    }
   }
 
   // Subscribe DM typing
@@ -896,14 +1145,246 @@ function showDmConvo(partnerUid, partnerUname) {
     updateDmBadges();
   }
 
-  // Slide DM convo view in from right
+  // === ROBUST view switching — hide everything, show dm-convo ===
+  ['chat','dms','online'].forEach(v=>{
+    const el=document.getElementById('bq-view-'+v);
+    if(el){ el.classList.add('hidden'); el.classList.remove('slide-left'); }
+  });
   const convo = document.getElementById('bq-view-dm-convo');
-  const prev  = document.getElementById('bq-view-' + activeView);
-  if (prev) { prev.classList.add('slide-left'); setTimeout(()=>{ prev.classList.add('hidden'); prev.classList.remove('slide-left'); },280); }
   convo.classList.remove('hidden','slide-left');
   activeView = 'dm-convo';
   document.querySelectorAll('.bq-nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view==='dms'));
-  setTimeout(()=>{ const inp=document.getElementById('bq-dm-inp'); if(inp)inp.focus(); },100);
+
+  // Click DM header avatar → profile card
+  const hdrAv = document.getElementById('bq-dm-hdr-av');
+  hdrAv.onclick = () => showProfileCard(partnerUid, partnerUname);
+
+  // Focus only on desktop
+  setTimeout(()=>{ focusInput(document.getElementById('bq-dm-inp')); }, 80);
+}
+
+/* ═══════════════════════════════════════════
+   PROFILE CARD
+═══════════════════════════════════════════ */
+function showProfileCard(targetUid, targetUname) {
+  pcTargetUid   = targetUid;
+  pcTargetUname = targetUname;
+
+  const card = document.getElementById('bq-profile-card');
+  const av   = document.getElementById('bq-pc-av');
+  const nm   = document.getElementById('bq-pc-name');
+  const pr   = document.getElementById('bq-pc-presence');
+  const acts = document.getElementById('bq-pc-actions');
+
+  const c = uColor(targetUname);
+  av.style.background = c; av.style.color = '#000';
+  av.textContent = uInit(targetUname);
+  const isOnline = !!onlineUsers[targetUid];
+  av.className = 'bq-pc-av' + (isOnline ? ' online' : '');
+  nm.textContent = '@' + targetUname;
+
+  // Rich presence
+  const pres = onlineUsers[targetUid];
+  if (isOnline && pres) {
+    const lbl = presenceStatusLabel(pres);
+    pr.textContent = lbl || '🟢 Online';
+  } else {
+    pr.textContent = 'Offline';
+  }
+
+  // Actions
+  acts.innerHTML = '';
+  const isSelf = (targetUid === uid);
+
+  if (!isSelf) {
+    const dmBtn = document.createElement('button');
+    dmBtn.className = 'bq-pc-btn primary';
+    dmBtn.textContent = 'DM';
+    dmBtn.addEventListener('click', ()=>{
+      hideProfileCard();
+      showDmConvo(targetUid, targetUname);
+    });
+
+    const mentionBtn = document.createElement('button');
+    mentionBtn.className = 'bq-pc-btn';
+    mentionBtn.textContent = '@MENTION';
+    mentionBtn.addEventListener('click', ()=>{
+      hideProfileCard();
+      // Insert @mention into whichever input is active
+      const inpId = (activeView==='dm-convo') ? 'bq-dm-inp' : 'bq-global-inp';
+      const inp = document.getElementById(inpId);
+      if (inp) {
+        const mention = '@'+targetUname+' ';
+        inp.value = (inp.value + mention).trimStart();
+        inp.dispatchEvent(new Event('input'));
+        inp.focus();
+      }
+    });
+    acts.appendChild(dmBtn);
+    acts.appendChild(mentionBtn);
+  } else {
+    // Self — show rename button
+    const renBtn = document.createElement('button');
+    renBtn.className = 'bq-pc-btn';
+    renBtn.textContent = 'RENAME';
+    renBtn.addEventListener('click', ()=>{ hideProfileCard(); showModal(true); });
+    acts.appendChild(renBtn);
+  }
+
+  card.style.display = 'flex';
+}
+
+function hideProfileCard() {
+  document.getElementById('bq-profile-card').style.display = 'none';
+  pcTargetUid = null; pcTargetUname = null;
+}
+
+/* ═══════════════════════════════════════════
+   NEW DM SEARCH MODAL
+═══════════════════════════════════════════ */
+function openNewDmModal() {
+  const modal = document.getElementById('bq-ndm-modal');
+  const inp   = document.getElementById('bq-ndm-inp');
+  modal.style.display = 'flex';
+  inp.value = '';
+  document.getElementById('bq-ndm-results').innerHTML = '<div class="bq-ndm-hint">TYPE A USERNAME TO SEARCH</div>';
+  // Slight delay to avoid triggering mobile keyboard on the wrong element
+  setTimeout(()=>{ if(!isMobile()) inp.focus(); }, 80);
+}
+
+function closeNewDmModal() {
+  document.getElementById('bq-ndm-modal').style.display = 'none';
+}
+
+async function searchUsers(query) {
+  const q = sanitizeUN(query);
+  const resultsEl = document.getElementById('bq-ndm-results');
+  if (!q || q.length < 1) {
+    resultsEl.innerHTML = '<div class="bq-ndm-hint">TYPE A USERNAME TO SEARCH</div>';
+    return;
+  }
+  resultsEl.innerHTML = '<div class="bq-ndm-hint">SEARCHING…</div>';
+  if (!db) { resultsEl.innerHTML = '<div class="bq-ndm-hint">NOT CONNECTED YET</div>'; return; }
+  try {
+    const snap = await db.ref('bq_usernames')
+      .orderByKey()
+      .startAt(q)
+      .endAt(q+'\uf8ff')
+      .limitToFirst(10)
+      .once('value');
+    const results = [];
+    snap.forEach(c=>{ if(c.val()!==uid) results.push({name:c.key, puid:c.val()}); });
+    if (!results.length) {
+      resultsEl.innerHTML = '<div class="bq-ndm-hint">NO USERS FOUND</div>'; return;
+    }
+    resultsEl.innerHTML = '';
+    results.forEach(({name, puid})=>{
+      const isOnline = !!onlineUsers[puid];
+      const c = uColor(name);
+      const row = document.createElement('div');
+      row.className = 'bq-ndm-row';
+      row.innerHTML = `
+        <div class="bq-ndm-av" style="background:${c};color:#000">${uInit(name)}</div>
+        <div class="bq-ndm-info">
+          <div class="bq-ndm-name">@${esc(name)}</div>
+          <div class="bq-ndm-status">${isOnline ? '🟢 Online' : '⚫ Offline'}</div>
+        </div>
+        <div class="bq-ndm-arrow"><svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg></div>`;
+      row.addEventListener('click', ()=>{
+        closeNewDmModal();
+        if(!uname){showModal(false);return;}
+        showDmConvo(puid, name);
+      });
+      resultsEl.appendChild(row);
+    });
+  } catch(e) {
+    console.warn('[BioQuiz Chat] search error', e);
+    resultsEl.innerHTML = '<div class="bq-ndm-hint">SEARCH FAILED</div>';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   STATUS PICKER
+═══════════════════════════════════════════ */
+function buildStatusPicker() {
+  const picker = document.getElementById('bq-status-picker');
+  picker.innerHTML = '';
+  STATUS_OPTS.forEach(opt=>{
+    const el = document.createElement('div');
+    el.className = 'bq-sp-opt' + (myStatusId===opt.id ? ' active' : '');
+    el.innerHTML = `<span class="bq-sp-emoji">${opt.emoji}</span>${opt.label}`;
+    if (opt.id === 'custom') {
+      el.addEventListener('click', ()=>{
+        // show text input
+        const wrap = document.createElement('div');
+        wrap.className = 'bq-sp-custom-wrap';
+        const cinp = document.createElement('input');
+        cinp.className = 'bq-sp-custom-inp';
+        cinp.type = 'text';
+        cinp.maxLength = 40;
+        cinp.placeholder = 'What are you up to?';
+        cinp.value = myStatusCustom;
+        cinp.addEventListener('keydown', e=>{
+          if(e.key==='Enter'){
+            const v=cinp.value.trim();
+            setMyStatus('custom', v||'Custom');
+            closeStatusPicker();
+          }
+          if(e.key==='Escape') closeStatusPicker();
+        });
+        // Replace options with input
+        picker.innerHTML = '<div class="bq-sp-opt" id="bq-sp-back">← BACK</div><div class="bq-sp-divider"></div>';
+        picker.querySelector('#bq-sp-back').addEventListener('click',()=>buildStatusPicker());
+        wrap.appendChild(cinp);
+        picker.appendChild(wrap);
+        setTimeout(()=>cinp.focus(),60);
+      });
+    } else {
+      el.addEventListener('click', ()=>{
+        setMyStatus(opt.id);
+        closeStatusPicker();
+      });
+    }
+    picker.appendChild(el);
+  });
+}
+
+function openStatusPicker() {
+  buildStatusPicker();
+  document.getElementById('bq-status-picker').classList.add('open');
+  statusPickerOpen = true;
+}
+function closeStatusPicker() {
+  document.getElementById('bq-status-picker').classList.remove('open');
+  statusPickerOpen = false;
+}
+function toggleStatusPicker() {
+  if(statusPickerOpen) closeStatusPicker(); else openStatusPicker();
+}
+
+function setMyStatus(statusId, customText) {
+  myStatusId = statusId;
+  myStatusCustom = customText||'';
+  localStorage.setItem(LS_STATUS, myStatusId);
+  localStorage.setItem(LS_STATUS+'_custom', myStatusCustom);
+  updateStatusBar();
+  // Push updated presence
+  if(db && uname) {
+    const opt = getStatusOpt(myStatusId);
+    db.ref('bq_presence/'+uid).update({
+      statusId: myStatusId,
+      customStatus: myStatusCustom,
+      ts: Date.now(),
+    });
+  }
+}
+
+function updateStatusBar() {
+  const opt = getStatusOpt(myStatusId);
+  const sdot  = document.getElementById('bq-my-sdot');
+  const slabel= document.getElementById('bq-my-slabel');
+  if(sdot) sdot.style.background = opt.color;
+  if(slabel) slabel.textContent = (myStatusId==='custom'&&myStatusCustom) ? myStatusCustom : opt.label;
 }
 
 /* ═══════════════════════════════════════════
@@ -926,7 +1407,7 @@ async function startDB(){
   try {
     await loadSDK();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    db=firebase.database();
+    db = firebase.database();
     subscribeGlobal();
     subscribeGlobalTyping();
     startPresence();
@@ -983,7 +1464,7 @@ function showModal(rename){
   const av=document.getElementById('bq-nm-av');
   if(rename&&uname){av.style.background=uColor(uname);av.textContent=uInit(uname);ckUN(uname);}
   else{av.style.background='rgba(255,255,255,.1)';av.textContent='?';}
-  setTimeout(()=>inp.focus(),60);
+  setTimeout(()=>inp.focus(),60); // Modal input always gets focus — user explicitly opened it
 }
 function hideModal(){ document.getElementById('bq-nm-modal').style.display='none'; }
 
@@ -1014,15 +1495,26 @@ async function submitName(){
 }
 
 /* ═══════════════════════════════════════════
-   PRESENCE
+   PRESENCE  (includes rich presence status)
 ═══════════════════════════════════════════ */
 function startPresence(){
   if(!db||!uname) return;
   const ref=db.ref('bq_presence/'+uid);
-  const beat=()=>ref.set({uname,ts:Date.now()});
+  const beat=()=>ref.set({
+    uname,
+    ts: Date.now(),
+    statusId: myStatusId,
+    customStatus: myStatusCustom,
+  });
   beat(); clearInterval(presInt);
-  presInt=setInterval(beat,PRESENCE_TTL*.7);
+  presInt=setInterval(beat, PRESENCE_TTL*.7);
   ref.onDisconnect().remove();
+
+  // Show status bar when we have a username
+  const bar = document.getElementById('bq-status-bar');
+  if(bar) bar.style.display='flex';
+  updateStatusBar();
+
   db.ref('bq_presence').on('value',snap=>{
     const now=Date.now(); onlineUsers={};
     snap.forEach(c=>{
@@ -1044,10 +1536,13 @@ function startPresence(){
 function updateDmHdrStatus(){
   if(activeView!=='dm-convo'||!activeDmPuid) return;
   const isOnline=!!onlineUsers[activeDmPuid];
+  const pres = onlineUsers[activeDmPuid];
   const av=document.getElementById('bq-dm-hdr-av');
   const st=document.getElementById('bq-dm-hdr-status');
   if(av) av.className='bq-dm-hdr-av'+(isOnline?' online':'');
-  if(st) st.textContent=isOnline?'Online now':'Offline';
+  if(st) st.textContent = isOnline
+    ? (presenceStatusLabel(pres)||'Online now')
+    : 'Offline';
 }
 
 function renderOnlineList(){
@@ -1061,19 +1556,27 @@ function renderOnlineList(){
   entries.sort((a,b)=>a[0]===uid?-1:b[0]===uid?1:(a[1].uname||'').localeCompare(b[1].uname||''));
   entries.forEach(([id,d])=>{
     const me=id===uid, n=d.uname||'?', c=uColor(n);
+    const statusLbl = me
+      ? (myStatusId==='custom'&&myStatusCustom ? myStatusCustom : getStatusOpt(myStatusId).emoji+' '+getStatusOpt(myStatusId).label)
+      : presenceStatusLabel(d)||'🟢 Online';
     const row=document.createElement('div');
     row.className='bq-urow'+(me?' isme':'');
     row.innerHTML=`
       <div class="bq-uav" style="background:${c};color:#000">${uInit(n)}</div>
       <div class="bq-uinfo">
         <div class="bq-uu">@${esc(n)}${me?'<span class="bq-uyou">YOU</span>':''}</div>
-        <div class="bq-ust">Online now</div>
+        <div class="bq-ust">${esc(statusLbl)}</div>
       </div>
       ${!me?'<div class="bq-udm-hint">DM →</div>':''}`;
-    if(!me) row.addEventListener('click',()=>{
-      if(!uname){showModal(false);return;}
-      showDmConvo(id,n);
-    });
+    if(me){
+      // Click self → show profile card
+      row.addEventListener('click',()=>showProfileCard(uid, uname));
+    } else {
+      row.addEventListener('click',()=>{
+        if(!uname){showModal(false);return;}
+        showDmConvo(id,n);
+      });
+    }
     list.appendChild(row);
   });
 }
@@ -1104,7 +1607,6 @@ function sendGlobal(text){
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
   if(globalReply) p.replyTo={key:globalReply.key,uname:globalReply.uname,text:globalReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
-  // Prune
   db.ref('bq_messages').once('value',snap=>{
     const keys=[]; snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
@@ -1113,21 +1615,50 @@ function sendGlobal(text){
 }
 
 /* ═══════════════════════════════════════════
-   DM LIST SUBSCRIPTION
+   DM LIST SUBSCRIPTION  (v4: uses per-user index)
 ═══════════════════════════════════════════ */
 function subscribeDmList(){
   if(!db||!uid) return;
-  // Watch all DMs where this user is a participant
-  db.ref('bq_dms').on('value',snap=>{
+
+  // Listen to this user's DM index (bq_user_dms/{uid})
+  // Fall back: also check old-style bq_dms if index is empty
+  db.ref('bq_user_dms/'+uid).on('value', async snap=>{
+    const ids=[];
+    snap.forEach(c=>ids.push(c.key));
+
+    // Detach old meta refs
+    Object.values(dmMetaRefs).forEach(r=>r.off());
+    dmMetaRefs={};
     dmMeta={};
-    snap.forEach(child=>{
-      const m=child.val();
-      if(!m||!m.meta) return;
-      const meta=m.meta;
-      if(meta.p1===uid||meta.p2===uid){
-        dmMeta[child.key]=meta;
-      }
+
+    if(!ids.length){
+      // Legacy fallback — scan bq_dms once for this user
+      const all=await db.ref('bq_dms').once('value').catch(()=>null);
+      if(all) all.forEach(child=>{
+        const m=child.val();
+        if(!m||!m.meta) return;
+        const meta=m.meta;
+        if(meta.p1===uid||meta.p2===uid){
+          ids.push(child.key);
+          // Write to user index for future use
+          db.ref('bq_user_dms/'+uid+'/'+child.key).set(true);
+        }
+      });
+    }
+
+    // Subscribe to each DM's meta
+    ids.forEach(did=>{
+      const mref=db.ref('bq_dms/'+did+'/meta');
+      mref.on('value',s=>{
+        const meta=s.val();
+        if(meta) dmMeta[did]=meta;
+        else delete dmMeta[did];
+        renderDmList();
+        updateDmBadges();
+      });
+      dmMetaRefs[did]=mref;
     });
+
     renderDmList();
     updateDmBadges();
   });
@@ -1135,16 +1666,15 @@ function subscribeDmList(){
 
 function renderDmList(){
   const list=document.getElementById('bq-dmlist');if(!list) return;
-  const items=Object.entries(dmMeta);
+  const items=Object.entries(dmMeta).filter(([,m])=>m&&(m.p1===uid||m.p2===uid));
   if(!items.length){
     list.innerHTML='';
     const empty=document.createElement('div');
     empty.className='bq-empty';empty.id='bq-dm-empty';empty.style.marginTop='40px';
-    empty.innerHTML='<div class="bq-empty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bq-empty-tx">NO DMs YET</div><div class="bq-empty-sub">GO TO ONLINE TAB TO START ONE</div>';
+    empty.innerHTML='<div class="bq-empty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bq-empty-tx">NO DMs YET</div><div class="bq-empty-sub">TAP + TO MESSAGE ANYONE</div>';
     list.appendChild(empty);
     return;
   }
-  // Sort by lastTs desc
   items.sort((a,b)=>(b[1].lastTs||0)-(a[1].lastTs||0));
   list.innerHTML='';
   items.forEach(([did,meta],i)=>{
@@ -1167,19 +1697,26 @@ function renderDmList(){
         <div class="bq-dm-time">${ts}</div>
         ${unread?`<div class="bq-dm-ubadge">${unread>9?'9+':unread}</div>`:''}
       </div>`;
-    row.addEventListener('click',()=>showDmConvo(partnerUid,partnerName));
+    row.addEventListener('click', e=>{
+      e.stopPropagation();
+      showDmConvo(partnerUid, partnerName);
+    });
     list.appendChild(row);
     if(i<items.length-1){ const div=document.createElement('div'); div.className='bq-dm-divider'; list.appendChild(div); }
   });
 }
 
 function updateDmBadges(){
+  // Recalculate from dmMeta
+  Object.entries(dmMeta).forEach(([did,meta])=>{
+    const n = meta&&meta.unread&&meta.unread[uid] ? meta.unread[uid] : 0;
+    dmUnread[did] = n;
+  });
   const total=Object.values(dmUnread).reduce((s,n)=>s+n,0);
   const nb=document.getElementById('bq-dm-nbadge');
   if(!nb) return;
   if(total>0){nb.textContent=total>9?'9+':total;nb.classList.add('show');}
   else nb.classList.remove('show');
-  // Main badge = global + dm
   const mainUnread=globalUnread+total;
   const badge=document.getElementById('bq-badge');
   if(!badge) return;
@@ -1188,7 +1725,7 @@ function updateDmBadges(){
 }
 
 /* ═══════════════════════════════════════════
-   DM SEND
+   DM SEND  (writes to bq_user_dms index — no more full scan)
 ═══════════════════════════════════════════ */
 function sendDm(text){
   if(!db||!text.trim()||!uname||!activeDmId||!activeDmPuid) return;
@@ -1196,20 +1733,18 @@ function sendDm(text){
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  // Update meta
-  const myPos = [activeDmPuid,uid].sort()[0]===uid ? 'p1':'p2';
-  const partPos= myPos==='p1'?'p2':'p1';
+  const sorted=[uid,activeDmPuid].sort();
   db.ref('bq_dms/'+activeDmId+'/meta').update({
-    p1: [uid,activeDmPuid].sort()[0],
-    p2: [uid,activeDmPuid].sort()[1],
-    n1: [uid,activeDmPuid].sort()[0]===uid ? uname : partnerName,
-    n2: [uid,activeDmPuid].sort()[0]===uid ? partnerName : uname,
+    p1: sorted[0], p2: sorted[1],
+    n1: sorted[0]===uid ? uname : partnerName,
+    n2: sorted[0]===uid ? partnerName : uname,
     lastMsg: text.trim().slice(0,60),
     lastTs:  Date.now(),
-    ['unread/'+activeDmPuid]: (db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).once('value').then(s=>(s.val()||0)+1).catch(()=>1)),
   });
-  // Simpler unread increment
   db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).transaction(n=>(n||0)+1);
+  // Update per-user DM index so both parties see this DM
+  db.ref('bq_user_dms/'+uid+'/'+activeDmId).set(true);
+  db.ref('bq_user_dms/'+activeDmPuid+'/'+activeDmId).set(true);
   clearReply('dm');
 }
 
@@ -1297,15 +1832,15 @@ function clearReply(ctx){
 }
 
 /* ═══════════════════════════════════════════
-   RENDER MESSAGE (shared for global + DM)
+   RENDER MESSAGE
 ═══════════════════════════════════════════ */
 function renderMsg(ctx,msg,key){
-  const isGlobal = ctx==='global';
-  const msgsEl   = document.getElementById(isGlobal?'bq-global-msgs':'bq-dm-msgs');
-  const emptyEl  = document.getElementById(isGlobal?'bq-global-empty':'bq-dm-msgs-empty');
+  const isGlobal=ctx==='global';
+  const msgsEl=document.getElementById(isGlobal?'bq-global-msgs':'bq-dm-msgs');
+  const emptyEl=document.getElementById(isGlobal?'bq-global-empty':'bq-dm-msgs-empty');
   if(!msgsEl) return;
   if(emptyEl) emptyEl.remove();
-  const prefix   = isGlobal?'bqm-global-':'bqm-dm-';
+  const prefix=isGlobal?'bqm-global-':'bqm-dm-';
 
   if(msg.type==='system'){
     const d=document.createElement('div');
@@ -1317,7 +1852,6 @@ function renderMsg(ctx,msg,key){
   const ts=msg.ts||Date.now();
   const msgDate=new Date(ts);
 
-  // Date separator
   const lastEl=msgsEl.lastElementChild;
   if(!lastEl||lastEl.dataset.date!==msgDate.toDateString()){
     const sep=document.createElement('div');
@@ -1327,16 +1861,15 @@ function renderMsg(ctx,msg,key){
     if(isGlobal){gLastUID=null;} else {dLastUID=null;}
   }
 
-  const lastUID = isGlobal?gLastUID:dLastUID;
-  const lastTS  = isGlobal?gLastTS:dLastTS;
-  const consec  = lastUID===msg.uid&&(ts-lastTS)<120000;
+  const lastUID=isGlobal?gLastUID:dLastUID;
+  const lastTS=isGlobal?gLastTS:dLastTS;
+  const consec=lastUID===msg.uid&&(ts-lastTS)<120000;
   if(isGlobal){gLastUID=msg.uid;gLastTS=ts;} else {dLastUID=msg.uid;dLastTS=ts;}
 
   const col=uColor(msg.uname||'');
   const ini=uInit(msg.uname||'?');
   const tStr=timeStr(ts);
 
-  // Reply preview
   const replyHTML=msg.replyTo?`
     <div class="bq-rp">
       <div class="bq-rp-nm">@${esc(msg.replyTo.uname||'')}</div>
@@ -1353,7 +1886,7 @@ function renderMsg(ctx,msg,key){
 
   row.innerHTML=`
     <div class="bq-row-inner">
-      <div class="bq-av" style="background:${col};color:#000" data-uid="${esc(msg.uid)}" data-uname="${esc(msg.uname||'')}" title="DM @${esc(msg.uname||'')}">${ini}</div>
+      <div class="bq-av" style="background:${col};color:#000" data-uid="${esc(msg.uid)}" data-uname="${esc(msg.uname||'')}" title="@${esc(msg.uname||'')}">${ini}</div>
       <div class="bq-col">
         <div class="bq-meta">
           <span class="bq-un" style="color:${col}" data-uid="${esc(msg.uid)}" data-uname="${esc(msg.uname||'')}">@${esc(msg.uname||'?')}</span>
@@ -1392,22 +1925,25 @@ function renderMsg(ctx,msg,key){
     });
   });
 
-  // Click avatar or @username → DM (only in global chat, only other users)
-  if(isGlobal && msg.uid!==uid){
-    ['.bq-av','.bq-un'].forEach(sel=>{
-      const el=row.querySelector(sel);
-      if(el) el.addEventListener('click',()=>{
-        if(!uname){showModal(false);return;}
-        showDmConvo(msg.uid,msg.uname||'?');
-        bqNav('dms');
-      });
+  // Avatar + username → profile card (for any user, including self)
+  ['.bq-av','.bq-un'].forEach(sel=>{
+    const el=row.querySelector(sel);
+    if(el) el.addEventListener('click', e=>{
+      e.stopPropagation();
+      showProfileCard(msg.uid, msg.uname||'?');
     });
-  }
+  });
 
   // Unread / sound
-  if(!isOpen && !isMine){ if(isGlobal){globalUnread++;} else if(activeDmId!==key){} ping(); updateDmBadges(); }
-  if(isOpen && !isMine && ((isGlobal&&activeView==='chat')||((!isGlobal)&&activeView==='dm-convo'))) { /* visible */ }
-  else if(!isOpen && !isMine) { if(!isGlobal) { dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1; updateDmBadges(); } }
+  if(!isMine){
+    const msgInView = isOpen && ((isGlobal&&activeView==='chat')||(!isGlobal&&activeView==='dm-convo'&&activeDmId===dmId(uid,msg.uid)));
+    if(!msgInView){
+      if(isGlobal){ globalUnread++; }
+      else { dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1; }
+      ping();
+      updateDmBadges();
+    }
+  }
 
   scrollDown(ctx);
 }
@@ -1423,7 +1959,7 @@ function doAction(ctx,a,key,msg){
   } else if(a==='reply'){
     setReply(ctx,{key,uname:msg.uname,text:msg.text});
     const inp=document.getElementById(ctx==='global'?'bq-global-inp':'bq-dm-inp');
-    if(inp) inp.focus();
+    if(inp) inp.focus(); // User explicitly clicked reply — focus is expected
   } else if(a==='copy'){
     navigator.clipboard?.writeText(msg.text).then(()=>toast('Copied'));
   } else if(a==='del'){
@@ -1444,11 +1980,6 @@ function scrollDown(ctx){
 }
 
 /* ═══════════════════════════════════════════
-   BADGE
-═══════════════════════════════════════════ */
-// updateDmBadges defined above
-
-/* ═══════════════════════════════════════════
    PANEL
 ═══════════════════════════════════════════ */
 function openPanel(){
@@ -1458,7 +1989,10 @@ function openPanel(){
   globalUnread=0; updateDmBadges();
   const msgs=document.getElementById('bq-global-msgs');
   if(msgs) requestAnimationFrame(()=>msgs.scrollTop=msgs.scrollHeight);
-  if(activeView==='chat'){ const inp=document.getElementById('bq-global-inp');if(inp)inp.focus(); }
+  // No auto-focus on mobile — prevents unwanted keyboard
+  if(activeView==='chat' && !isMobile()){
+    const inp=document.getElementById('bq-global-inp'); if(inp) inp.focus();
+  }
 }
 function closePanel(){
   document.getElementById('bq-panel').classList.remove('open');
@@ -1466,6 +2000,7 @@ function closePanel(){
   isOpen=false;
   setGlobalTyping(false); clearTimeout(globalTypT);
   if(activeDmId){setDmTyping(false);clearTimeout(dmTypT);}
+  closeStatusPicker();
 }
 function togglePanel(){
   if(isOpen){closePanel();return;}
@@ -1484,7 +2019,7 @@ function toast(msg,dur=2200){
 }
 
 /* ═══════════════════════════════════════════
-   INPUT SETUP (shared factory)
+   INPUT SETUP
 ═══════════════════════════════════════════ */
 function setupInput(ctx){
   const isGlobal=ctx==='global';
@@ -1510,10 +2045,16 @@ function setupInput(ctx){
   EMOJI_LIST.forEach(e=>{
     const b=document.createElement('button');
     b.className='bq-etbtn'; b.textContent=e;
-    b.addEventListener('click',()=>{ inp.value+=e; inp.dispatchEvent(new Event('input')); inp.focus(); });
+    b.addEventListener('click',()=>{
+      inp.value+=e; inp.dispatchEvent(new Event('input'));
+      inp.focus(); // User tapped emoji — focus is expected
+    });
     tray.appendChild(b);
   });
-  if(eoBtn) eoBtn.addEventListener('click',()=>tray.classList.toggle('open'));
+  if(eoBtn) eoBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    tray.classList.toggle('open');
+  });
 
   inp.addEventListener('input',()=>{
     resize(inp);
@@ -1542,7 +2083,6 @@ function setupInput(ctx){
     inp.value=''; inp.style.height='auto';
     send.disabled=true; cc.textContent='';
     if(isGlobal) setGlobalTyping(false); else setDmTyping(false);
-    const atBtm=isGlobal?gAtBottom:dAtBottom;
     if(isGlobal) gAtBottom=true; else dAtBottom=true;
     if(msgs) requestAnimationFrame(()=>msgs.scrollTop=msgs.scrollHeight);
   }
@@ -1585,21 +2125,47 @@ function init(){
   });
   document.getElementById('bq-sound-btn').classList.toggle('active',soundOn);
 
-  // DM back
+  // DM back button
   document.getElementById('bq-dm-back').addEventListener('click',()=>{
-    const convo=document.getElementById('bq-view-dm-convo');
-    convo.classList.add('hidden');
     setDmTyping(false);
     if(dmTypingRef){dmTypingRef.off();dmTypingRef=null;}
-    // Return to DMs list
+    // Hide dm-convo, show DMs list
+    const convo=document.getElementById('bq-view-dm-convo');
+    convo.classList.add('hidden');
     const dmsView=document.getElementById('bq-view-dms');
     dmsView.classList.remove('hidden','slide-left');
     activeView='dms';
     document.querySelectorAll('.bq-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==='dms'));
   });
 
-  // DM new → go to online tab
-  document.getElementById('bq-dm-new-btn').addEventListener('click',()=>bqNav('online'));
+  // DM new → open search modal (allows DM to ANY user, not just online)
+  document.getElementById('bq-dm-new-btn').addEventListener('click',e=>{
+    e.stopPropagation();
+    openNewDmModal();
+  });
+
+  // New DM modal close
+  document.getElementById('bq-ndm-close').addEventListener('click',closeNewDmModal);
+  document.getElementById('bq-ndm-inp').addEventListener('input',e=>{
+    clearTimeout(searchT);
+    const q=e.target.value.trim();
+    if(q.length>=1) searchT=setTimeout(()=>searchUsers(q),320);
+    else document.getElementById('bq-ndm-results').innerHTML='<div class="bq-ndm-hint">TYPE A USERNAME TO SEARCH</div>';
+  });
+  document.getElementById('bq-ndm-inp').addEventListener('keydown',e=>{ if(e.key==='Escape') closeNewDmModal(); });
+
+  // Profile card close
+  document.getElementById('bq-pc-close').addEventListener('click',hideProfileCard);
+  document.getElementById('bq-profile-card').addEventListener('click',e=>{
+    if(e.target===document.getElementById('bq-profile-card')) hideProfileCard();
+  });
+
+  // Status picker
+  document.getElementById('bq-my-status-btn').addEventListener('click',e=>{
+    e.stopPropagation();
+    toggleStatusPicker();
+  });
+  updateStatusBar();
 
   // Reply cancels
   document.getElementById('bq-global-rb-x').addEventListener('click',()=>clearReply('global'));
@@ -1609,22 +2175,30 @@ function init(){
   setupInput('global');
   setupInput('dm');
 
-  // Outside click
+  // Global click — close panel if outside, close dropdowns
   document.addEventListener('click',e=>{
+    // Close status picker
+    if(statusPickerOpen){
+      const picker=document.getElementById('bq-status-picker');
+      const btn=document.getElementById('bq-my-status-btn');
+      if(!picker.contains(e.target)&&!btn.contains(e.target)) closeStatusPicker();
+    }
+    // Close panel if clicking outside
     if(!isOpen) return;
     const panel=document.getElementById('bq-panel'), bub=document.getElementById('bq-bub');
     if(!panel.contains(e.target)&&!bub.contains(e.target)) closePanel();
+    // Close emoji pickers
     document.querySelectorAll('.bq-epick.open').forEach(el=>{
       if(!el.contains(e.target)) el.classList.remove('open');
     });
-    const trays=document.querySelectorAll('.bq-etray.open');
-    trays.forEach(t=>{
+    // Close emoji trays
+    document.querySelectorAll('.bq-etray.open').forEach(t=>{
       const eoBtn=t.closest('.bq-inp-wrap')?.querySelector('.bq-eopenbtn');
       if(!t.contains(e.target)&&!(eoBtn&&eoBtn.contains(e.target))) t.classList.remove('open');
     });
   });
 
-  // Cleanup
+  // Cleanup on unload
   window.addEventListener('beforeunload',()=>{
     if(db){
       db.ref('bq_presence/'+uid).remove();
@@ -1633,10 +2207,10 @@ function init(){
     }
   });
 
-  // Start if already have a username
+  // Start DB if already have a username
   if(uname) startDB();
 
-  // Make sure initial view (chat) is visible
+  // Ensure initial view is visible
   document.getElementById('bq-view-chat').classList.remove('hidden');
 }
 
