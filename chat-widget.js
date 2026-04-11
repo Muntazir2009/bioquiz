@@ -36,6 +36,18 @@ const FIREBASE_CONFIG = {
 };
 
 /* ─────────────────────────────────────────
+   FCM / PUSH CONFIG
+   Replace the two values below with your own from Firebase Console:
+   Firebase Console → Project Settings → Cloud Messaging
+   → Web Push certificates → Key pair (Public key)
+───────────────────────────────────────── */
+const FCM_VAPID_KEY = 'BOApoUHNNHDA4Ooyu54alSD_jo2WIcexgXmX_nT2LQYjnweKZNqdmsTb2SqNTh-61atjHUMLjxTNt6nrTsI7-9I';
+
+// Allow the host page to override by setting window.CHAT_VAPID_KEY before
+// loading this script.  If no override is set, the constant above is used.
+const _resolvedVapidKey = window.CHAT_VAPID_KEY || FCM_VAPID_KEY;
+
+/* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
 const MAX_MSG      = 120;
@@ -67,9 +79,19 @@ const REACTIONS  = ['👍','❤️','😂','😮','🔥','🎉'];
 ───────────────────────────────────────── */
 function uColor(n){ let h=0; for(let i=0;i<n.length;i++) h=(Math.imul(h,31)+n.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; }
 function uInit(n){ return (n||'?').slice(0,2).toUpperCase(); }
+function myInit(){ return myProfile.initials || uInit(uname||'?'); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function linkify(s){ return s.replace(/(https?:\/\/[^\s<>"']{4,})/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'); }
 function tsStr(ts){ return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function lastSeenStr(ts){
+  if(!ts) return 'Never';
+  const now=Date.now(),diff=now-ts;
+  if(diff<60000) return 'Just now';
+  if(diff<3600000) return Math.floor(diff/60000)+' min ago';
+  if(diff<86400000) return Math.floor(diff/3600000)+' hr ago';
+  if(diff<604800000) return Math.floor(diff/86400000)+' days ago';
+  return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
 function dateLabel(ts){
   const d=new Date(ts),t=new Date();
   if(d.toDateString()===t.toDateString()) return 'TODAY';
@@ -137,15 +159,7 @@ const CSS = `
 #bqbadge.show{display:flex;}
 @keyframes bqPop{from{transform:scale(0)}to{transform:scale(1)}}
 
-/* ── PULSE ANIMATION ── */
-#bqb::before{
-  content:'';position:absolute;inset:-4px;border-radius:50%;
-  background:linear-gradient(135deg,var(--bq-accent),#818cf8);
-  opacity:0;z-index:-1;
-  animation:bqPulse 2s ease infinite;
-}
-#bqb.open::before{display:none;}
-@keyframes bqPulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:.3;transform:scale(1.15)}}
+/* ── PULSE ANIMATION (REMOVED) ── */
 
 /* ── PANEL ── */
 #bqp{
@@ -156,10 +170,11 @@ const CSS = `
   box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;
   transform-origin:bottom right;
   transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;
-  transition:transform .32s var(--bq-transition),opacity .26s ease;
+  transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s .32s;
   will-change:transform,opacity;
+  visibility:hidden;
 }
-#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s 0s;}
 
 /* Glow effect */
 #bqp::before{
@@ -177,18 +192,44 @@ const CSS = `
 }
 body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
-/* ── SCREEN + VIEW SYSTEM ── */
+/* ── SCREEN + VIEW SYSTEM (APP-LIKE) ── */
 #bqs{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:0;}
 .bqv{
   position:absolute;inset:0;display:flex;flex-direction:column;
   background:var(--bq-bg);
   opacity:0;pointer-events:none;
-  transition:opacity .25s ease,transform .3s var(--bq-transition);
+  transition:opacity .2s ease,transform .28s var(--bq-transition);
   will-change:opacity,transform;
-  transform:translateX(20px);
+  transform:translateX(24px) scale(.98);
 }
-.bqv.bq-active{opacity:1;pointer-events:all;transform:translateX(0);}
-.bqv.bq-exit-left{transform:translateX(-20px);opacity:0;pointer-events:none;}
+.bqv.bq-active{opacity:1;pointer-events:all;transform:translateX(0) scale(1);}
+.bqv.bq-exit-left{transform:translateX(-24px) scale(.98);opacity:0;pointer-events:none;}
+
+/* App-like haptic feedback */
+@keyframes bqTap{0%{transform:scale(1)}50%{transform:scale(.97)}100%{transform:scale(1)}}
+.bq-tap{animation:bqTap .15s ease;}
+
+/* Smooth scroll */
+.bqmsgs{scroll-behavior:smooth;}
+
+/* Mobile touch feedback */
+@media (hover:none){
+  .bqnb:active{transform:scale(.95);background:var(--bq-bg-hover);}
+  .bqact:active{transform:scale(.9);}
+  .bqsnd:active{transform:scale(.9);}
+  .bqdmr:active{background:var(--bq-bg-hover);}
+  .bqurow:active{background:var(--bq-bg-hover);}
+}
+
+/* Pull to refresh indicator */
+.bq-ptr{
+  display:flex;align-items:center;justify-content:center;
+  padding:12px;color:var(--bq-text-muted);
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+  opacity:0;transition:opacity .2s;
+}
+.bq-ptr.show{opacity:1;}
+.bq-ptr svg{width:16px;height:16px;margin-right:6px;animation:bqSpin 1s linear infinite;}
 
 /* ── BOTTOM NAV ── */
 #bqnav{
@@ -556,15 +597,22 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bquact{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.01em;color:var(--bq-text-subtle);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bqudmh{opacity:0;transition:opacity .2s;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.04em;color:var(--bq-accent);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:4px 10px;border-radius:4px;flex-shrink:0;white-space:nowrap;font-weight:600;}
 
-/* ── NAME MODAL ── */
+/* ── NAME MODAL (APP-LIKE) ── */
 #bqnm{
   position:absolute;inset:0;z-index:30;
   background:rgba(0,0,0,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   display:flex;align-items:center;justify-content:center;padding:24px;border-radius:var(--bq-radius);
-  animation:bqFade .24s ease both;
-}
-@keyframes bqFade{from{opacity:0}to{opacity:1}}
-.bqnmb{width:100%;max-width:280px;text-align:center;}
+  animation:bqFade .2s ease both;
+  }
+  @keyframes bqFade{from{opacity:0}to{opacity:1}}
+  .bqnmb{
+    width:100%;max-width:300px;text-align:center;
+    background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
+    border-radius:var(--bq-radius);padding:28px 24px;
+    animation:bqSlideUp .3s var(--bq-transition) both;
+    box-shadow:0 24px 80px rgba(0,0,0,.6);
+  }
+  @keyframes bqSlideUp{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
 .bqnmav{
   width:64px;height:64px;border-radius:50%;margin:0 auto 20px;
   display:flex;align-items:center;justify-content:center;
@@ -659,6 +707,135 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqpf-push-btn.subscribed{background:var(--bq-success);cursor:default;}
 .bqpf-push-status{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);text-align:center;}
 
+/* ── PROFILE CUSTOMIZATION ── */
+.bqpf-initials-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.bqpf-initials-inp{
+  width:60px;height:60px;border-radius:50%;text-align:center;
+  background:var(--bq-bg);border:2px solid var(--bq-border);
+  font-family:'Inter',sans-serif;font-size:20px;font-weight:800;
+  color:var(--bq-text);outline:none;text-transform:uppercase;
+  transition:all .2s;
+}
+.bqpf-initials-inp:focus{border-color:var(--bq-accent);box-shadow:0 0 0 3px var(--bq-accent-glow);}
+.bqpf-initials-hint{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);line-height:1.4;}
+.bqpf-banner-row{display:flex;gap:8px;margin-bottom:16px;}
+.bqpf-banner-preview{
+  flex:1;height:48px;border-radius:var(--bq-radius-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:rgba(0,0,0,.6);
+  transition:all .2s;
+}
+.bqpf-theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.bqpf-theme{
+  padding:12px 10px;border-radius:var(--bq-radius-sm);border:1px solid var(--bq-border);
+  background:var(--bq-bg);cursor:pointer;text-align:center;transition:all .2s;
+}
+.bqpf-theme:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);}
+.bqpf-theme.sel{border-color:var(--bq-accent);background:rgba(96,165,250,.08);}
+.bqpf-theme-icon{font-size:20px;margin-bottom:4px;}
+.bqpf-theme-lbl{font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--bq-text-muted);text-transform:uppercase;}
+.bqpf-fontsize-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.bqpf-fontsize{
+  padding:10px 8px;border-radius:var(--bq-radius-sm);border:1px solid var(--bq-border);
+  background:var(--bq-bg);cursor:pointer;text-align:center;transition:all .2s;
+}
+.bqpf-fontsize:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);}
+.bqpf-fontsize.sel{border-color:var(--bq-accent);background:rgba(96,165,250,.08);}
+.bqpf-fontsize-sample{font-family:'Inter',sans-serif;font-weight:600;color:var(--bq-text);margin-bottom:2px;}
+.bqpf-fontsize-lbl{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--bq-text-muted);text-transform:uppercase;}
+.bqpf-divider{height:1px;background:var(--bq-border);margin:8px 0 16px;}
+
+/* Font size modifiers */
+#bqp.bq-font-sm .bqbbl{font-size:12px!important;}
+#bqp.bq-font-sm .bqun{font-size:10px!important;}
+#bqp.bq-font-lg .bqbbl{font-size:16px!important;}
+#bqp.bq-font-lg .bqun{font-size:13px!important;}
+#bqp.bq-font-lg .bqinp{font-size:16px!important;}
+
+/* ── DISAPPEARING MESSAGES ── */
+.bqbbl.disappearing{position:relative;}
+.bqbbl.disappearing::after{
+  content:'';position:absolute;bottom:4px;right:4px;
+  width:12px;height:12px;border-radius:50%;
+  background:conic-gradient(var(--bq-accent) var(--progress,0%),transparent var(--progress,0%));
+  opacity:.6;
+}
+.bq-timer-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:'Inter',sans-serif;font-size:9px;font-weight:600;
+  color:var(--bq-text-subtle);margin-left:6px;
+}
+.bq-timer-badge svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* ── CONFIRMATION MODAL ── */
+.bq-confirm{
+  position:absolute;inset:0;z-index:250;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.bq-confirm.open{opacity:1;pointer-events:all;}
+.bq-confirm-box{
+  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
+  border-radius:var(--bq-radius);padding:24px;width:100%;max-width:300px;text-align:center;
+  animation:bqSlideUp .3s var(--bq-transition) both;
+}
+.bq-confirm-icon{
+  width:48px;height:48px;margin:0 auto 16px;border-radius:50%;
+  background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;
+}
+.bq-confirm-icon svg{width:24px;height:24px;stroke:#ef4444;fill:none;stroke-width:2;}
+.bq-confirm-title{font-family:'Inter',sans-serif;font-size:16px;font-weight:700;color:var(--bq-text);margin-bottom:8px;}
+.bq-confirm-desc{font-family:'Inter',sans-serif;font-size:13px;color:var(--bq-text-muted);margin-bottom:20px;line-height:1.5;}
+.bq-confirm-btns{display:flex;gap:10px;}
+.bq-confirm-btn{
+  flex:1;padding:12px 16px;border-radius:var(--bq-radius-sm);border:none;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;transition:all .15s;
+}
+.bq-confirm-btn.cancel{background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);}
+.bq-confirm-btn.cancel:hover{background:var(--bq-bg-elevated);}
+.bq-confirm-btn.danger{background:#ef4444;color:#fff;}
+.bq-confirm-btn.danger:hover{background:#dc2626;}
+
+/* ── NEW CHAT BUBBLE THEME (GRADIENT) ── */
+.bqbbl{
+  background:linear-gradient(135deg,rgba(30,30,35,1) 0%,rgba(40,40,50,1) 100%)!important;
+  border:1px solid rgba(255,255,255,.06)!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03)!important;
+}
+.bqr.me .bqbbl{
+  background:linear-gradient(135deg,var(--bq-accent) 0%,#3b82f6 100%)!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  box-shadow:0 2px 12px rgba(96,165,250,.25),inset 0 1px 0 rgba(255,255,255,.15)!important;
+}
+
+/* ── SETTINGS MENU IN HEADER ── */
+.bqhdr-menu{position:relative;}
+.bqhdr-menu-btn{
+  width:32px;height:32px;border-radius:50%;border:none;
+  background:var(--bq-bg-hover);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.bqhdr-menu-btn:hover{background:var(--bq-bg-elevated);}
+.bqhdr-menu-btn svg{width:16px;height:16px;stroke:var(--bq-text-muted);fill:none;stroke-width:2;}
+.bqhdr-dropdown{
+  position:absolute;top:100%;right:0;margin-top:8px;
+  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
+  border-radius:var(--bq-radius-sm);padding:6px 0;min-width:180px;
+  opacity:0;pointer-events:none;transform:translateY(-8px) scale(.95);
+  transition:all .15s;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.bqhdr-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
+.bqhdr-dropdown-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--bq-text);
+  transition:background .1s;
+}
+.bqhdr-dropdown-item:hover{background:var(--bq-bg-hover);}
+.bqhdr-dropdown-item.danger{color:#ef4444;}
+.bqhdr-dropdown-item svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+.bqhdr-dropdown-divider{height:1px;background:var(--bq-border);margin:6px 0;}
+
 /* ── TOAST ── */
 #bqtoast{
   position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);
@@ -669,6 +846,57 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   box-shadow:0 8px 32px rgba(0,0,0,.5);
 }
 #bqtoast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── LAST SEEN ── */
+.bqls{font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.02em;color:var(--bq-text-subtle);margin-top:2px;}
+.bqls-online{color:var(--bq-success);}
+
+/* ── MESSAGE EDITING ── */
+.bqbbl.editing{background:rgba(96,165,250,.15)!important;border:1px dashed var(--bq-accent)!important;}
+.bqedit-inp{
+  width:100%;background:transparent;border:none;color:var(--bq-text);
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;line-height:1.5;
+  outline:none;resize:none;min-height:20px;max-height:80px;
+}
+.bqedit-btns{display:flex;gap:6px;margin-top:8px;justify-content:flex-end;}
+.bqedit-btn{
+  padding:4px 10px;border-radius:4px;border:none;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.02em;
+  transition:all .15s;
+}
+.bqedit-btn.save{background:var(--bq-accent);color:#fff;}
+.bqedit-btn.save:hover{opacity:.9;}
+.bqedit-btn.cancel{background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);}
+.bqedit-btn.cancel:hover{background:var(--bq-bg-elevated);}
+.bqedited{font-family:'Inter',sans-serif;font-size:10px;color:var(--bq-text-subtle);margin-left:6px;font-style:italic;}
+
+/* ── IMAGE MESSAGES ── */
+.bqimg{max-width:200px;max-height:200px;border-radius:var(--bq-radius-sm);cursor:pointer;transition:transform .2s;}
+.bqimg:hover{transform:scale(1.02);}
+.bqimg-preview{
+  position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.95);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.bqimg-preview.open{opacity:1;pointer-events:all;}
+.bqimg-preview img{max-width:100%;max-height:100%;object-fit:contain;border-radius:var(--bq-radius);}
+.bqimg-close{
+  position:absolute;top:16px;right:16px;width:40px;height:40px;
+  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.bqimg-close:hover{background:var(--bq-bg-hover);transform:scale(1.1);}
+.bqimg-close svg{width:18px;height:18px;stroke:var(--bq-text);fill:none;stroke-width:2;}
+
+/* ── MESSAGE READ RECEIPTS ── */
+.bqread{display:flex;align-items:center;gap:4px;margin-top:4px;padding:0 3px;}
+.bqread svg{width:14px;height:14px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2;}
+.bqread.seen svg{stroke:var(--bq-accent);}
+.bqread-txt{font-family:'Inter',sans-serif;font-size:9px;color:var(--bq-text-subtle);letter-spacing:.02em;}
+
+/* ── SPINNER ── */
+@keyframes bqSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.bqspinner{animation:bqSpin 1s linear infinite;}
 
 /* ── MY AVATAR BUTTON ── */
 .bq-me-av{
@@ -746,6 +974,7 @@ const HTML = `
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
+        <div class="bqls" id="bqpc-lastseen"></div>
         <div class="bqpc-activity" id="bqpc-activity" style="display:none"></div>
         <div class="bqpc-bio" id="bqpc-bio" style="display:none"></div>
         <div class="bqpc-aliasw" id="bqpc-aliasw" style="display:none">
@@ -777,13 +1006,29 @@ const HTML = `
   <div id="bqs">
 
     <!-- VIEW: Global Chat -->
-    <div class="bqv bq-active" id="bqv-chat">
-      <div class="bqhdr">
-        <div class="bqlive"></div>
-        <div class="bqhtitle">Global Chat</div>
-        <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
-          <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-        </button>
+<div class="bqv bq-active" id="bqv-chat">
+  <div class="bqhdr">
+  <div class="bqlive"></div>
+  <div class="bqhtitle">Global Chat</div>
+  <div class="bqhdr-menu">
+    <button class="bqhdr-menu-btn" id="bq-chat-menu-btn" title="Options">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </button>
+    <div class="bqhdr-dropdown" id="bq-chat-menu">
+      <div class="bqhdr-dropdown-item" id="bq-toggle-disappear">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Disappearing: OFF</span>
+      </div>
+      <div class="bqhdr-dropdown-divider"></div>
+      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        <span>Clear Chat</span>
+      </div>
+    </div>
+  </div>
+  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
+  <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+  </button>
         <button class="bqhbtn" id="bq-ren-btn" title="Change username">
           <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
         </button>
@@ -873,7 +1118,7 @@ const HTML = `
       <div id="bqol"></div>
     </div>
 
-    <!-- VIEW: Profile Settings (FIXED - proper view) -->
+    <!-- VIEW: Profile Settings (ENHANCED) -->
     <div class="bqv" id="bqv-profile">
       <div class="bqhdr">
         <button class="bqback" id="bqprofback"><svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>Back</button>
@@ -881,7 +1126,11 @@ const HTML = `
       </div>
       <div class="bqpf-scroll">
         <div class="bqpf-section">
-          <div class="bqpf-label">Avatar</div>
+          <div class="bqpf-label">Avatar & Initials</div>
+          <div class="bqpf-initials-row">
+            <input type="text" class="bqpf-initials-inp" id="bqpf-initials" maxlength="2" placeholder="AB">
+            <div class="bqpf-initials-hint">Custom initials (1-2 letters)<br>Leave empty to use auto-generated</div>
+          </div>
           <div class="bqpf-avrow">
             <div class="bqpf-av" id="bqpfav"></div>
             <div class="bqpf-av-info">
@@ -891,6 +1140,11 @@ const HTML = `
           </div>
           <div class="bqpf-label">Avatar Colour</div>
           <div class="bqpf-colors" id="bqpfcols"></div>
+          <div class="bqpf-label">Banner Colour</div>
+          <div class="bqpf-banner-row">
+            <div class="bqpf-banner-preview" id="bqpf-banner-preview">Preview</div>
+          </div>
+          <div class="bqpf-colors" id="bqpf-banner-cols"></div>
         </div>
         <div class="bqpf-section">
           <div class="bqpf-label">Status</div>
@@ -901,6 +1155,24 @@ const HTML = `
         <div class="bqpf-section">
           <div class="bqpf-label">Bio</div>
           <textarea id="bqpfbio" class="bqpf-textarea" placeholder="Write something about yourself..." maxlength="120" autocorrect="off"></textarea>
+        </div>
+        <div class="bqpf-section">
+          <div class="bqpf-label">Appearance</div>
+          <div class="bqpf-label" style="margin-top:8px;font-size:9px;color:var(--bq-text-muted);">Font Size</div>
+          <div class="bqpf-fontsize-row" id="bqpf-fontsize">
+            <div class="bqpf-fontsize" data-size="sm">
+              <div class="bqpf-fontsize-sample" style="font-size:12px;">Aa</div>
+              <div class="bqpf-fontsize-lbl">Small</div>
+            </div>
+            <div class="bqpf-fontsize sel" data-size="md">
+              <div class="bqpf-fontsize-sample" style="font-size:14px;">Aa</div>
+              <div class="bqpf-fontsize-lbl">Medium</div>
+            </div>
+            <div class="bqpf-fontsize" data-size="lg">
+              <div class="bqpf-fontsize-sample" style="font-size:16px;">Aa</div>
+              <div class="bqpf-fontsize-lbl">Large</div>
+            </div>
+          </div>
         </div>
         <div class="bqpf-section">
           <div class="bqpf-label">Push Notifications</div>
@@ -941,7 +1213,24 @@ const HTML = `
 
 </div>
 <div id="bqtoast"></div>
-`;
+<div class="bqimg-preview" id="bqimg-preview">
+  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <img id="bqimg-full" src="" alt="Full size image">
+  </div>
+  <div class="bq-confirm" id="bq-confirm">
+    <div class="bq-confirm-box">
+      <div class="bq-confirm-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <div class="bq-confirm-title" id="bq-confirm-title">Clear Chat?</div>
+      <div class="bq-confirm-desc" id="bq-confirm-desc">This will clear all messages from your view. This action cannot be undone.</div>
+      <div class="bq-confirm-btns">
+        <button class="bq-confirm-btn cancel" id="bq-confirm-cancel">Cancel</button>
+        <button class="bq-confirm-btn danger" id="bq-confirm-ok">Clear</button>
+      </div>
+    </div>
+  </div>
+  `;
 
 /* ─────────────────────────────────────────
    INJECT
@@ -984,8 +1273,9 @@ let isFull    = false;
 let pushEnabled = localStorage.getItem(LS_PUSH) === 'true';
 
 // Profile local state
-let myProfile = JSON.parse(localStorage.getItem(LS_PROF)||'{"status":"online","activity":"","bio":"","color":""}');
+let myProfile = JSON.parse(localStorage.getItem(LS_PROF)||'{"status":"online","activity":"","bio":"","color":"","bannerColor":"","initials":"","fontSize":"md"}');
 if(!myProfile.status) myProfile.status='online';
+if(!myProfile.fontSize) myProfile.fontSize='md';
 
 /* ─────────────────────────────────────────
    ALIAS / PIN HELPERS
@@ -1003,10 +1293,18 @@ let aliasT=null;
 
 function refreshMeAvatar(){
   const col=myProfile.color||uColor(uname||'u');
+  const initials=myInit();
   ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
-    el.style.background=col;el.style.color='#000';el.textContent=uInit(uname||'?');
+    el.style.background=col;el.style.color='#000';el.textContent=initials;
   });
+  // Apply font size preference
+  const panel=document.getElementById('bqp');
+  if(panel){
+    panel.classList.remove('bq-font-sm','bq-font-lg');
+    if(myProfile.fontSize==='sm') panel.classList.add('bq-font-sm');
+    else if(myProfile.fontSize==='lg') panel.classList.add('bq-font-lg');
+  }
 }
 
 /* ─────────────────────────────────────────
@@ -1034,43 +1332,96 @@ async function subscribeToPush() {
   const btn = document.getElementById('bqpf-push-btn');
   const status = document.getElementById('bqpf-push-status');
   
-  if (!btn) return;
+  if (!btn || !uname) {
+    if (status) status.textContent = 'Please log in first';
+    return;
+  }
   
   btn.disabled = true;
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="60" stroke-dashoffset="20"/></svg>Enabling...';
   
   try {
+    // 1. Request browser notification permission
     const granted = await requestNotificationPermission();
     
-    if (granted) {
-      pushEnabled = true;
-      localStorage.setItem(LS_PUSH, 'true');
-      
-      btn.classList.add('subscribed');
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
-      btn.disabled = true;
-      
-      if (status) status.textContent = 'You will receive notifications for new messages';
-      
-      toast('Notifications enabled!');
-      
-      // Show a test notification
-      new Notification('BioQuiz Chat', {
-        body: 'Notifications are now enabled!',
-        icon: '/icon.svg',
-        badge: '/icon.svg'
-      });
-    } else {
+    if (!granted) {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
       if (status) status.textContent = 'Permission denied. Please enable in browser settings.';
       toast('Permission denied');
+      return;
     }
+    
+    // 2. Register service worker if not already registered
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('[FCM] Service Worker registered:', reg);
+      } catch (e) {
+        console.error('[FCM] Service Worker registration failed:', e);
+      }
+    }
+    
+    // 3. Get FCM token from Firebase
+    if (!window.firebase) {
+      throw new Error('Firebase not loaded');
+    }
+    
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({
+      vapidKey: _resolvedVapidKey
+    });
+    
+    if (!token) {
+      throw new Error('Failed to get FCM token');
+    }
+    
+    console.log('[FCM] Token obtained:', token.substring(0, 20) + '...');
+    
+    // 4. Save token to Firebase Realtime DB under user's data
+    if (db && uid) {
+      const tokenKey = 'token_' + Date.now().toString(36);
+      db.ref('fcm_tokens/' + uid + '/' + tokenKey).set(token);
+      
+      // Cleanup old tokens after 30 days
+      db.ref('fcm_tokens/' + uid).once('value', snap => {
+        const tokens = snap.val() || {};
+        const now = Date.now();
+        Object.entries(tokens).forEach(([key, val]) => {
+          const ts = parseInt(key.split('_')[1], 36);
+          if (now - ts > 30 * 24 * 60 * 60 * 1000) {
+            db.ref('fcm_tokens/' + uid + '/' + key).remove();
+          }
+        });
+      });
+    }
+    
+    // 5. Setup message listener for foreground messages
+    const messaging2 = firebase.messaging();
+    messaging2.onMessage(payload => {
+      console.log('[FCM] Foreground message:', payload);
+      if (!document.hasFocus() || !isOpen) {
+        showNotification(payload.notification?.title || 'Message', payload.notification?.body || '');
+      }
+    });
+    
+    pushEnabled = true;
+    localStorage.setItem(LS_PUSH, 'true');
+    
+    btn.classList.add('subscribed');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
+    btn.disabled = true;
+    
+    if (status) status.textContent = 'You will receive notifications even when the browser is closed';
+    
+    toast('Push notifications enabled!');
+    
   } catch (err) {
-    console.error('Push subscription error:', err);
+    console.error('[FCM] Setup error:', err);
     btn.disabled = false;
     btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
-    if (status) status.textContent = 'Error enabling notifications';
+    if (status) status.textContent = 'Error: ' + (err.message || 'Failed to enable');
+    toast('Error: ' + (err.message || 'Failed to enable notifications'));
   }
 }
 
@@ -1114,7 +1465,7 @@ function updatePushUI() {
   }
 }
 
-/* ─────────────────────────────────────────
+/* ────���────────────────────────────────────
    TOAST
 ───────────────────────────────────────── */
 function toast(m,dur=2500){
@@ -1214,16 +1565,25 @@ function showDmConvo(pUid, pName) {
   hav.className = 'bqdmhav' + (pdata.status ? ' ' + pdata.status : '');
   document.getElementById('bqdmhn').textContent = '@' + pName;
   const st = statusInfo(pdata.status || '');
-  document.getElementById('bqdmhs').textContent = onlineU[pUid] ? st.label : 'Offline';
-  document.getElementById('bqdmesub').textContent = '@' + pName;
+  const isOn=!!onlineU[pUid];
+  const hsEl=document.getElementById('bqdmhs');
+  if(hsEl){
+    if(isOn){
+      hsEl.textContent=st.label;
+      hsEl.style.color='var(--bq-success)';
+    } else {
+      hsEl.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      hsEl.style.color='var(--bq-text-subtle)';
+    }
+  }
 
-  // Clear msgs
+  // Clear msgs and create empty state
   const msgs = document.getElementById('bqdmmsgs');
   msgs.innerHTML = '';
   const e = document.createElement('div');
   e.className = 'bqempty';
   e.id = 'bqdmempty';
-  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub">@${esc(pName)}</div>`;
+  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub" id="bqdmesub">@${esc(pName)}</div>`;
   msgs.appendChild(e);
 
   // Detach old listeners
@@ -1268,8 +1628,9 @@ function showDmConvo(pUid, pName) {
 function loadSDK(){
   return new Promise((res,rej)=>{
     let done=0;
-    ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-     'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'].forEach(u=>{
+['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js'].forEach(u=>{
       const s=document.createElement('script');s.src=u;
       s.onload=()=>{if(++done===2)res();};s.onerror=rej;
       document.head.appendChild(s);
@@ -1411,9 +1772,17 @@ function updateDmHdrStatus(){
   const isOn=!!onlineU[activeDmPuid];
   const hav=document.getElementById('bqdmhav');
   if(hav){hav.className='bqdmhav'+(pdata.status?' '+pdata.status:'');hav.dataset.status=pdata.status||'';}
-  const hs=document.getElementById('bqdmhs');
-  if(hs) hs.textContent=isOn?statusInfo(pdata.status||'online').label:'Offline';
-}
+const hs=document.getElementById('bqdmhs');
+  if(hs){
+    if(isOn){
+      hs.textContent=statusInfo(pdata.status||'online').label;
+      hs.style.color='var(--bq-success)';
+    } else {
+      hs.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      hs.style.color='var(--bq-text-subtle)';
+    }
+  }
+  }
 
 function renderOnlineList(){
   const list=document.getElementById('bqol');if(!list)return;
@@ -1465,6 +1834,22 @@ function openProfileCard(targetUid,targetName,presData){
   document.getElementById('bqpc-name').textContent='@'+targetName;
   const stEl=document.getElementById('bqpc-status');
   stEl.innerHTML=`<div class="bqpc-sdot" style="background:${si.color}"></div><span class="bqpc-slabel" style="color:${si.color}">${si.label}</span>`;
+  
+  // Last seen
+  const lsEl=document.getElementById('bqpc-lastseen');
+  if(lsEl){
+    const isOnline=!!onlineU[targetUid];
+    if(isOnline){
+      lsEl.textContent='Currently online';
+      lsEl.className='bqls bqls-online';
+    } else if(pd.ts){
+      lsEl.textContent='Last seen '+lastSeenStr(pd.ts);
+      lsEl.className='bqls';
+    } else {
+      lsEl.textContent='';
+    }
+  }
+  
   const actEl=document.getElementById('bqpc-activity');
   if(pd.activity){actEl.textContent=pd.activity;actEl.style.display='flex';}
   else actEl.style.display='none';
@@ -1537,13 +1922,28 @@ function subscribeGlobalTyping(){
 
 function sendGlobal(text){
   if(!db||!text.trim()||!uname)return;
+  const disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
+  if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
   });
+  
+  // Send FCM notification
+  fetch('/api/send-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      senderId: uid,
+      senderName: uname,
+      messageText: text.trim().slice(0, 100),
+      type: 'global'
+    })
+  }).catch(e => console.error('[FCM] Send error:', e));
+  
   clearReply('g');
 }
 
@@ -1678,6 +2078,20 @@ function sendDm(text){
     lastMsg:text.trim().slice(0,60),lastTs:Date.now(),
   });
   db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).transaction(n=>(n||0)+1);
+  
+  // Send FCM notification to DM recipient
+  fetch('/api/send-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      senderId: uid,
+      senderName: uname,
+      messageText: text.trim().slice(0, 100),
+      type: 'dm',
+      recipientId: activeDmPuid
+    })
+  }).catch(e => console.error('[FCM] Send DM error:', e));
+  
   clearReply('dm');
 }
 
@@ -1756,13 +2170,22 @@ function clearReply(ctx){
   else{dmReply=null;document.getElementById('bqdmrbar').classList.remove('show');}
 }
 
-/* ─────────────────────────────────────────
+/* ───────────────────────────────────��─────
    RENDER MESSAGE
 ───────────────────────────────────────── */
 function renderMsg(ctx,msg,key){
   const isG=ctx==='global';
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl)return;
+  
+  // Check if message has expired (disappearing messages)
+  if(msg.expiresAt && Date.now() > msg.expiresAt){
+    // Delete expired message from DB
+    if(db && isG) db.ref('bq_messages/'+key).remove();
+    else if(db && activeDmId) db.ref('bq_dms/'+activeDmId+'/messages/'+key).remove();
+    return;
+  }
+  
   document.getElementById(isG?'bqgempty':'bqdmempty')?.remove();
   const pfx='bqmsg-'+ctx+'-';
 
@@ -1792,6 +2215,7 @@ function renderMsg(ctx,msg,key){
   const ini=uInit(msg.uname||'?');
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
   const pickBtns=REACTIONS.map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
 
   const row=document.createElement('div');
@@ -1811,11 +2235,12 @@ function renderMsg(ctx,msg,key){
           <div class="bqacts">
             <div class="bqepick" id="${pfx}ep-${key}">${pickBtns}</div>
             <button class="bqact" data-a="react" title="React">😊</button>
-            <button class="bqact" data-a="reply" title="Reply"><svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
-            <button class="bqact" data-a="copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-            ${isMine?`<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>`:''}
-          </div>
-          <div class="bqbbl">${rpHTML}${linkify(esc(msg.text||''))}</div>
+<button class="bqact" data-a="reply" title="Reply"><svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+  <button class="bqact" data-a="copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+  ${isMine?`<button class="bqact" data-a="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`:''}
+  ${isMine?`<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>`:''}
+  </div>
+  <div class="bqbbl${msg.expiresAt?' disappearing':''}">${rpHTML}${linkify(esc(msg.text||''))}${msg.edited?'<span class="bqedited">(edited)</span>':''}${timerHTML}</div>
         </div>
       </div>
     </div>`;
@@ -1860,7 +2285,61 @@ function doAction(ctx,a,key,msg,pfx){
   else if(a==='reply'){setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:msg.text});document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();}
   else if(a==='copy'){navigator.clipboard?.writeText(msg.text).then(()=>toast('Copied!'));}
   else if(a==='del'){if(msg.uid!==uid)return;const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;db.ref(p).remove();}
-}
+  else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
+  }
+  
+function startEditMsg(ctx,key,msg,pfx){
+  const row=document.getElementById(pfx+key);
+  if(!row)return;
+  const bbl=row.querySelector('.bqbbl');
+  if(!bbl||bbl.classList.contains('editing'))return;
+  
+  const originalText=msg.text||'';
+  bbl.classList.add('editing');
+  bbl.innerHTML=`
+    <textarea class="bqedit-inp">${esc(originalText)}</textarea>
+    <div class="bqedit-btns">
+      <button class="bqedit-btn cancel">Cancel</button>
+      <button class="bqedit-btn save">Save</button>
+    </div>
+  `;
+  
+  const inp=bbl.querySelector('.bqedit-inp');
+  const saveBtn=bbl.querySelector('.bqedit-btn.save');
+  const cancelBtn=bbl.querySelector('.bqedit-btn.cancel');
+  
+  inp.focus();
+  inp.setSelectionRange(inp.value.length,inp.value.length);
+  autoH(inp);
+  inp.addEventListener('input',()=>autoH(inp));
+  
+  cancelBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    bbl.classList.remove('editing');
+    bbl.innerHTML=linkify(esc(originalText));
+  });
+  
+  saveBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const newText=inp.value.trim();
+    if(!newText){toast('Message cannot be empty');return;}
+    if(newText===originalText){
+      bbl.classList.remove('editing');
+      bbl.innerHTML=linkify(esc(originalText));
+      return;
+    }
+    const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
+    db.ref(p).update({text:newText,edited:true,editedAt:Date.now()});
+    bbl.classList.remove('editing');
+    bbl.innerHTML=linkify(esc(newText))+'<span class="bqedited">(edited)</span>';
+    toast('Message edited');
+  });
+  
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveBtn.click();}
+    if(e.key==='Escape'){cancelBtn.click();}
+  });
+  }
 
 /* ─────────────────────────────────────────
    BADGES
@@ -1876,14 +2355,26 @@ function updateBadges(){
 }
 
 /* ─────────────────────────────────────────
-   SCROLL
+  IMAGE PREVIEW
+───────────────────────────────────────── */
+function openImagePreview(src){
+  const preview=document.getElementById('bqimg-preview');
+  const img=document.getElementById('bqimg-full');
+  if(preview&&img){
+    img.src=src;
+    preview.classList.add('open');
+  }
+}
+
+/* ─────────────────────────────────────────
+  SCROLL
 ───────────────────────────────────────── */
 function scrollD(ctx){
   const isG=ctx==='global';
   const atB=isG?gAtBot:dAtBot;
   const el=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(atB&&el) requestAnimationFrame(()=>el.scrollTop=el.scrollHeight);
-}
+  }
 
 /* ─────────────────────────────────────────
    PANEL OPEN/CLOSE
@@ -1918,10 +2409,50 @@ function togglePanel(){
 ───────────────────────────────────────── */
 function refreshProfileView(){
   const col=myProfile.color||uColor(uname||'');
+  const bannerCol=myProfile.bannerColor||col;
+  const initials=myInit();
   const av=document.getElementById('bqpfav');
-  if(av){av.style.background=col;av.style.color='#000';av.textContent=uInit(uname||'?');}
+  if(av){av.style.background=col;av.style.color='#000';av.textContent=initials;}
   const un=document.getElementById('bqpfuname');
   if(un) un.textContent='@'+(uname||'...');
+  
+  // Custom initials input
+  const initInp=document.getElementById('bqpf-initials');
+  if(initInp){
+    initInp.value=myProfile.initials||'';
+    initInp.style.background=col;
+    initInp.style.color='#000';
+    initInp.style.borderColor=col;
+    initInp.addEventListener('input',()=>{
+      const val=initInp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2);
+      initInp.value=val;
+      myProfile.initials=val;
+      if(av) av.textContent=val||uInit(uname||'?');
+    });
+  }
+  
+  // Banner preview
+  const bannerPreview=document.getElementById('bqpf-banner-preview');
+  if(bannerPreview){
+    bannerPreview.style.background=`linear-gradient(135deg,${bannerCol}88,${bannerCol}44)`;
+  }
+  
+  // Banner colour chips
+  const bannerCols=document.getElementById('bqpf-banner-cols');
+  if(bannerCols){
+    bannerCols.innerHTML='';
+    PALETTE.forEach(c=>{
+      const chip=document.createElement('div');
+      chip.className='bqpf-col'+(c===bannerCol?' sel':'');
+      chip.style.background=c;
+      chip.addEventListener('click',()=>{
+        myProfile.bannerColor=c;
+        bannerCols.querySelectorAll('.bqpf-col').forEach(x=>x.classList.toggle('sel',x.style.background===c||x.style.backgroundColor===c));
+        if(bannerPreview) bannerPreview.style.background=`linear-gradient(135deg,${c}88,${c}44)`;
+      });
+      bannerCols.appendChild(chip);
+    });
+  }
   
   // Colour chips
   const cols=document.getElementById('bqpfcols');
@@ -1935,6 +2466,7 @@ function refreshProfileView(){
         myProfile.color=c;
         cols.querySelectorAll('.bqpf-col').forEach(x=>x.classList.toggle('sel',x.style.background===c||x.style.backgroundColor===c));
         if(av){av.style.background=c;}
+        if(initInp){initInp.style.background=c;initInp.style.borderColor=c;}
       });
       cols.appendChild(chip);
     });
@@ -1956,6 +2488,26 @@ function refreshProfileView(){
     });
   }
   
+  // Font size chips
+  const fontRow=document.getElementById('bqpf-fontsize');
+  if(fontRow){
+    fontRow.querySelectorAll('.bqpf-fontsize').forEach(chip=>{
+      const size=chip.dataset.size;
+      chip.classList.toggle('sel',size===myProfile.fontSize);
+      chip.onclick=()=>{
+        myProfile.fontSize=size;
+        fontRow.querySelectorAll('.bqpf-fontsize').forEach(x=>x.classList.toggle('sel',x.dataset.size===size));
+        // Apply immediately for preview
+        const panel=document.getElementById('bqp');
+        if(panel){
+          panel.classList.remove('bq-font-sm','bq-font-lg');
+          if(size==='sm') panel.classList.add('bq-font-sm');
+          else if(size==='lg') panel.classList.add('bq-font-lg');
+        }
+      };
+    });
+  }
+  
   // Activity + bio
   const act=document.getElementById('bqpfact');
   const bio=document.getElementById('bqpfbio');
@@ -1969,13 +2521,15 @@ function refreshProfileView(){
 function saveProfile(){
   const act=document.getElementById('bqpfact')?.value.trim()||'';
   const bio=document.getElementById('bqpfbio')?.value.trim()||'';
+  const initials=document.getElementById('bqpf-initials')?.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'';
   myProfile.activity=act;
   myProfile.bio=bio;
+  myProfile.initials=initials;
   localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
   if(db&&uname) startPresence();
   refreshMeAvatar();
   const msg=document.getElementById('bqpfmsg');
-  if(msg){msg.textContent='Saved!';msg.style.opacity='1';setTimeout(()=>msg.style.opacity='0',2500);}
+  if(msg){msg.textContent='Profile saved!';msg.style.opacity='1';setTimeout(()=>msg.style.opacity='0',2500);}
   toast('Profile saved');
 }
 
@@ -2039,7 +2593,7 @@ function setupInput(ctx){
   }
 }
 
-/* ─────────────────────────────────────────
+/* ────────────────────────��────────────────
    INIT
 ───────────────────────────────────────── */
 function init(){
@@ -2160,13 +2714,89 @@ function init(){
     }
   });
 
-  // Boot Firebase if we have username
+// Boot Firebase if we have username
   if(uname) startDB();
   refreshMeAvatar();
-
+  
+  // Image preview handlers
+  document.getElementById('bqimg-close')?.addEventListener('click',()=>{
+    document.getElementById('bqimg-preview')?.classList.remove('open');
+  });
+  document.getElementById('bqimg-preview')?.addEventListener('click',e=>{
+    if(e.target===document.getElementById('bqimg-preview')){
+      document.getElementById('bqimg-preview')?.classList.remove('open');
+    }
+  });
+  
+  // Chat menu (options dropdown)
+  const chatMenuBtn = document.getElementById('bq-chat-menu-btn');
+  const chatMenu = document.getElementById('bq-chat-menu');
+  if (chatMenuBtn && chatMenu) {
+    chatMenuBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      chatMenu.classList.toggle('open');
+    });
+    document.addEventListener('click', () => chatMenu.classList.remove('open'));
+  }
+  
+  // Disappearing messages toggle
+  let disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
+  const disappearBtn = document.getElementById('bq-toggle-disappear');
+  function updateDisappearBtn() {
+    if (disappearBtn) {
+      disappearBtn.querySelector('span').textContent = disappearingEnabled ? 'Disappearing: ON (1hr)' : 'Disappearing: OFF';
+    }
+  }
+  updateDisappearBtn();
+  if (disappearBtn) {
+    disappearBtn.addEventListener('click', () => {
+      disappearingEnabled = !disappearingEnabled;
+      localStorage.setItem('bq_disappearing', disappearingEnabled);
+      updateDisappearBtn();
+      chatMenu.classList.remove('open');
+      toast(disappearingEnabled ? 'Disappearing messages enabled (1 hour)' : 'Disappearing messages disabled');
+    });
+  }
+  
+  // Clear chat confirmation
+  const clearChatBtn = document.getElementById('bq-clear-chat');
+  const confirmModal = document.getElementById('bq-confirm');
+  const confirmCancel = document.getElementById('bq-confirm-cancel');
+  const confirmOk = document.getElementById('bq-confirm-ok');
+  
+  if (clearChatBtn) {
+    clearChatBtn.addEventListener('click', () => {
+      chatMenu.classList.remove('open');
+      if (confirmModal) confirmModal.classList.add('open');
+    });
+  }
+  if (confirmCancel) {
+    confirmCancel.addEventListener('click', () => {
+      confirmModal.classList.remove('open');
+    });
+  }
+  if (confirmOk) {
+    confirmOk.addEventListener('click', () => {
+      confirmModal.classList.remove('open');
+      // Clear local view of messages
+      const msgsEl = document.getElementById('bqgmsgs');
+      if (msgsEl) {
+        msgsEl.innerHTML = '';
+        const empty = document.createElement('div');
+        empty.className = 'bqempty';
+        empty.id = 'bqgempty';
+        empty.innerHTML = '<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Be the first to say hello!</div>';
+        msgsEl.appendChild(empty);
+        gLastU = null;
+        gLastT = 0;
+      }
+      toast('Chat cleared from your view');
+    });
+  }
+  
   // Ensure initial view is active
   document.getElementById('bqv-chat').classList.add('bq-active');
-}
+  }
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
 else init();
