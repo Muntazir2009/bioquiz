@@ -23,16 +23,6 @@
 'use strict';
 
 /* ─────────────────────────────────────────
-   ONESIGNAL CONFIG  ← fill in your App ID
-   1. Create free account at onesignal.com
-   2. Add Web Push platform (use "Typical Site")
-   3. Copy App ID below
-   4. Add this file to your site root: OneSignalSDKWorker.js
-      Content: importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-───────────────────────────────────────── */
-const ONESIGNAL_APP_ID = 'ef41dd5b-04e9-4076-935a-359bb12eb849'; // ← replace this
-
-/* ─────────────────────────────────────────
    FIREBASE CONFIG
 ───────────────────────────────────────── */
 const FIREBASE_CONFIG = {
@@ -78,13 +68,6 @@ const REACTIONS  = ['👍','❤️','😂','😮','🔥','🎉'];
 function uColor(n){ let h=0; for(let i=0;i<n.length;i++) h=(Math.imul(h,31)+n.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; }
 function uInit(n){ return (n||'?').slice(0,2).toUpperCase(); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function mentionify(s){
-  // highlight @username mentions; mark our own as .me
-  return s.replace(/@([a-z0-9_]{2,20})/gi,(m,n)=>{
-    const cls='bq-mention'+(n.toLowerCase()===uname?'  me':'');
-    return `<span class="${cls}" data-mention="${n.toLowerCase()}">@${n}</span>`;
-  });
-}
 function linkify(s){ return s.replace(/(https?:\/\/[^\s<>"']{4,})/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'); }
 function tsStr(ts){ return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); }
 function dateLabel(ts){
@@ -154,7 +137,15 @@ const CSS = `
 #bqbadge.show{display:flex;}
 @keyframes bqPop{from{transform:scale(0)}to{transform:scale(1)}}
 
-/* pulse removed */
+/* ── PULSE ANIMATION ── */
+#bqb::before{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  background:linear-gradient(135deg,var(--bq-accent),#818cf8);
+  opacity:0;z-index:-1;
+  animation:bqPulse 2s ease infinite;
+}
+#bqb.open::before{display:none;}
+@keyframes bqPulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:.3;transform:scale(1.15)}}
 
 /* ── PANEL ── */
 #bqp{
@@ -164,11 +155,11 @@ const CSS = `
   border-radius:var(--bq-radius);display:flex;flex-direction:column;overflow:hidden;
   box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;
   transform-origin:bottom right;
-  transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;visibility:hidden;
+  transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;
   transition:transform .32s var(--bq-transition),opacity .26s ease;
   will-change:transform,opacity;
 }
-#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;}
+#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
 
 /* Glow effect */
 #bqp::before{
@@ -181,7 +172,7 @@ const CSS = `
   position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
   width:100vw!important;height:100dvh!important;max-height:100dvh!important;
   border-radius:0!important;border:none!important;
-  transform:none!important;opacity:1!important;pointer-events:all!important;visibility:visible!important;
+  transform:none!important;opacity:1!important;pointer-events:all!important;
   z-index:99900!important;
 }
 body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
@@ -237,9 +228,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   background:var(--bq-success);
   box-shadow:0 0 12px var(--bq-success);
   flex-shrink:0;
-  /* animation removed */
+  animation:bqLive 2s ease infinite;
 }
-
+@keyframes bqLive{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .bqhtitle{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--bq-text);flex:1;}
 .bqhbtn{
   width:32px;height:32px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);
@@ -799,12 +790,6 @@ const HTML = `
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
       
-      <div class="bq-search-wrap" id="bq-search-wrap">
-        <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input class="bq-search-inp" id="bq-search-inp" type="text" placeholder="Search messages…" autocomplete="off">
-        <span class="bq-search-count" id="bq-search-count"></span>
-        <button class="bq-search-close" id="bq-search-close"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -918,20 +903,15 @@ const HTML = `
           <textarea id="bqpfbio" class="bqpf-textarea" placeholder="Write something about yourself..." maxlength="120" autocorrect="off"></textarea>
         </div>
         <div class="bqpf-section">
-          <div class="bqpf-label">Notifications</div>
+          <div class="bqpf-label">Push Notifications</div>
           <div class="bqpf-push">
-            <div class="bqpf-push-row">
-              <div class="bqpf-push-ic">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              </div>
-              <div>
-                <div class="bqpf-push-title">Message Alerts</div>
-                <div class="bqpf-push-sub">Get notified for DMs &amp; global chat</div>
-              </div>
+            <div class="bqpf-push-title">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              Notification Alerts
             </div>
-            <div class="bqpf-push-desc">Powered by OneSignal — works even when this tab is closed. Requires setup of <code style="font-size:11px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px">OneSignalSDKWorker.js</code> in site root.</div>
+            <div class="bqpf-push-desc">Get notified when you receive new DMs or messages in global chat, even when the browser is closed.</div>
             <button class="bqpf-push-btn" id="bqpf-push-btn">
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               Enable Notifications
             </button>
             <div class="bqpf-push-status" id="bqpf-push-status"></div>
@@ -953,9 +933,6 @@ const HTML = `
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>DMs
       <div class="bqnnb" id="bqdmnb"></div>
     </button>
-    <button class="bqnb" data-v="profile">
-      <div class="bq-me-tiny" id="bq-nav-me-av" style="background:var(--bq-accent);color:#000"></div>Profile
-    </button>
     <button class="bqnb" data-v="online">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Online
       <div class="bqnnb" id="bqonb"></div>
@@ -963,133 +940,7 @@ const HTML = `
   </div>
 
 </div>
-<div class="bq-notif-toast" id="bq-notif-toast"></div>
 <div id="bqtoast"></div>
-
-/* ── SEARCH BAR ── */
-.bq-search-wrap{
-  padding:8px 12px;border-bottom:1px solid var(--bq-border);
-  flex-shrink:0;background:var(--bq-bg-elevated);
-  display:none;align-items:center;gap:8px;
-}
-.bq-search-wrap.show{display:flex;animation:bqUp .2s ease both;}
-.bq-search-inp{
-  flex:1;background:var(--bq-bg);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:7px 11px;
-  color:var(--bq-text);font-family:'Inter',sans-serif;font-size:13px;
-  outline:none;transition:border-color .2s;
-}
-.bq-search-inp:focus{border-color:var(--bq-border-hover);}
-.bq-search-inp::placeholder{color:var(--bq-text-subtle);}
-.bq-search-close{background:none;border:none;cursor:pointer;color:var(--bq-text-subtle);padding:4px;border-radius:4px;line-height:0;transition:color .18s;}
-.bq-search-close:hover{color:var(--bq-text);}
-.bq-search-count{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);white-space:nowrap;}
-
-/* search highlight */
-.bq-hl{background:rgba(251,191,36,.35);border-radius:2px;padding:0 1px;}
-
-/* ── MENTION HIGHLIGHT ── */
-.bq-mention{color:var(--bq-accent);font-weight:600;cursor:pointer;}
-.bq-mention:hover{text-decoration:underline;}
-.bq-mention.me{color:var(--bq-warning);background:rgba(251,191,36,.1);border-radius:3px;padding:0 2px;}
-
-/* ── KEYBOARD SHORTCUT HINT ── */
-.bq-kbd{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
-  border-radius:4px;padding:1px 5px;font-family:'Inter',sans-serif;
-  font-size:10px;color:var(--bq-text-subtle);letter-spacing:.02em;
-}
-
-/* ── ONLINE COUNT BADGE IN NAV ── */
-.bq-online-count{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:16px;height:16px;border-radius:8px;padding:0 4px;
-  background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.25);
-  font-family:'Inter',sans-serif;font-size:9px;font-weight:700;
-  color:var(--bq-success);margin-left:2px;
-}
-
-/* ── PUSH NOTIFICATION UI (enhanced) ── */
-.bqpf-push{
-  background:var(--bq-bg);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:14px;margin-bottom:14px;
-}
-.bqpf-push-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.bqpf-push-ic{
-  width:36px;height:36px;border-radius:var(--bq-radius-sm);flex-shrink:0;
-  background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(129,140,248,.15));
-  border:1px solid rgba(96,165,250,.2);
-  display:flex;align-items:center;justify-content:center;
-}
-.bqpf-push-ic svg{stroke:var(--bq-accent);}
-.bqpf-push-title{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:var(--bq-text);}
-.bqpf-push-sub{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-subtle);margin-top:2px;}
-.bqpf-push-desc{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-subtle);line-height:1.6;margin-bottom:12px;}
-.bqpf-push-btn{
-  width:100%;padding:10px;border-radius:var(--bq-radius-sm);border:none;cursor:pointer;
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.03em;
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  background:linear-gradient(135deg,var(--bq-accent),#818cf8);color:#fff;
-  transition:all .2s var(--bq-transition);box-shadow:0 4px 14px rgba(96,165,250,.25);
-}
-.bqpf-push-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(96,165,250,.35);}
-.bqpf-push-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-.bqpf-push-btn.subscribed{background:linear-gradient(135deg,var(--bq-success),#059669);box-shadow:0 4px 14px rgba(52,211,153,.25);}
-.bqpf-push-btn.blocked{background:var(--bq-bg-elevated);color:var(--bq-text-subtle);box-shadow:none;}
-.bqpf-push-status{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);margin-top:8px;text-align:center;line-height:1.5;}
-.bqpf-push-status.ok{color:var(--bq-success);}
-.bqpf-push-status.err{color:var(--bq-danger);}
-
-/* ── NOTIFICATION TOAST (richer) ── */
-.bq-notif-toast{
-  position:fixed;top:16px;right:16px;z-index:99999;
-  max-width:300px;min-width:220px;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
-  border-radius:12px;padding:12px 14px;
-  box-shadow:0 12px 40px rgba(0,0,0,.5);
-  display:flex;align-items:flex-start;gap:10px;
-  transform:translateX(120%);opacity:0;
-  transition:all .32s cubic-bezier(.16,1,.3,1);
-  pointer-events:all;cursor:pointer;
-}
-.bq-notif-toast.show{transform:translateX(0);opacity:1;}
-.bq-notif-av{
-  width:36px;height:36px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',sans-serif;font-size:12px;font-weight:800;
-}
-.bq-notif-body{flex:1;min-width:0;}
-.bq-notif-title{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:var(--bq-text);margin-bottom:2px;}
-.bq-notif-msg{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bq-notif-time{font-family:'Inter',sans-serif;font-size:10px;color:var(--bq-text-subtle);flex-shrink:0;margin-top:2px;}
-.bq-notif-close{background:none;border:none;cursor:pointer;color:var(--bq-text-subtle);padding:0;line-height:0;transition:color .18s;flex-shrink:0;}
-.bq-notif-close:hover{color:var(--bq-text);}
-
-/* ── READ RECEIPT ── */
-.bq-read{display:inline-flex;align-items:center;gap:2px;margin-left:5px;opacity:.6;}
-.bq-read svg{width:12px;height:12px;stroke:currentColor;}
-.bq-read.seen{opacity:1;color:var(--bq-accent);}
-
-/* ── TYPING IMPROVED ── */
-.bqtyp{min-height:22px;padding:4px 16px 6px;flex-shrink:0;display:flex;align-items:center;gap:7px;}
-.bqtyp-av{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:8px;font-weight:800;}
-
-/* ── UNREAD DIVIDER ── */
-.bq-unread-div{
-  display:flex;align-items:center;gap:8px;margin:8px 0;
-  font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--bq-danger);
-}
-.bq-unread-div::before,.bq-unread-div::after{content:'';flex:1;height:1px;background:rgba(248,113,113,.3);}
-
-/* ── PROFILE NAV TAB ── */
-.bqnb .bq-me-tiny{
-  width:20px;height:20px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',sans-serif;font-size:8px;font-weight:800;
-}
-
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 `;
 
 /* ─────────────────────────────────────────
@@ -1152,236 +1003,115 @@ let aliasT=null;
 
 function refreshMeAvatar(){
   const col=myProfile.color||uColor(uname||'u');
-  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online','bq-nav-me-av'].forEach(id=>{
+  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     el.style.background=col;el.style.color='#000';el.textContent=uInit(uname||'?');
   });
 }
 
 /* ─────────────────────────────────────────
-   ONESIGNAL PUSH NOTIFICATIONS
-   ─────────────────────────────────────────
-   How it works:
-   1. If ONESIGNAL_APP_ID is set → uses OneSignal SDK for real background push
-   2. Falls back to native Notification API (works when tab is open)
-   3. Always shows in-app notification toast (no permission needed)
+   PUSH NOTIFICATIONS
 ───────────────────────────────────────── */
-let oneSignalReady = false;
-
-function initOneSignal() {
-  if (ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') return; // Not configured
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  const s = document.createElement('script');
-  s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-  s.defer = true;
-  s.onload = () => {
-    window.OneSignalDeferred.push(async (OneSignal) => {
-      try {
-        await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          notifyButton: { enable: false }, // We have our own UI
-          allowLocalhostAsSecureOrigin: true,
-        });
-        oneSignalReady = true;
-        // Link our uid as external user id so we can target this user
-        await OneSignal.login(uid);
-        updatePushUI();
-      } catch(e) { console.warn('[BioQuiz Push] OneSignal init failed:', e); }
-    });
-  };
-  document.head.appendChild(s);
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    toast('Notifications not supported');
+    return false;
+  }
+  
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+  
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+  
+  return false;
 }
 
 async function subscribeToPush() {
-  const btn    = document.getElementById('bqpf-push-btn');
+  const btn = document.getElementById('bqpf-push-btn');
   const status = document.getElementById('bqpf-push-status');
+  
   if (!btn) return;
+  
   btn.disabled = true;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" style="animation:spin 1s linear infinite;stroke:currentColor;fill:none;stroke-width:2.5"><circle cx="12" cy="12" r="9" stroke-dasharray="40" stroke-dashoffset="15"/></svg> Enabling…';
-
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="60" stroke-dashoffset="20"/></svg>Enabling...';
+  
   try {
-    // OneSignal path
-    if (oneSignalReady && window.OneSignal) {
-      await window.OneSignal.Notifications.requestPermission();
-      const granted = window.OneSignal.Notifications.permission;
-      if (granted) {
-        await window.OneSignal.User.PushSubscription.optIn();
-        // Store subscription in Firebase for other users to target us
-        if (db && uname) {
-          const subId = window.OneSignal.User.PushSubscription.id;
-          if (subId) await db.ref('bq_push_subs/' + uid).set({ subId, uname, ts: Date.now() });
-        }
-        pushEnabled = true;
-        localStorage.setItem(LS_PUSH, 'true');
-        updatePushUI();
-        toast('🔔 Push notifications enabled!');
-        // Test notification
-        setTimeout(() => showNotification('BioQuiz Chat', 'Push notifications are now active!', 'bq-test'), 800);
-        return;
-      }
-    }
-    // Fallback: native browser Notification API
-    if (!('Notification' in window)) { toast('Notifications not supported on this browser'); btn.disabled = false; updatePushUI(); return; }
-    const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-    if (perm === 'granted') {
+    const granted = await requestNotificationPermission();
+    
+    if (granted) {
       pushEnabled = true;
       localStorage.setItem(LS_PUSH, 'true');
-      updatePushUI();
-      toast('🔔 Notifications enabled!');
-      new Notification('BioQuiz Chat', { body: 'Notifications active — you'll be alerted to new messages.', icon: '/favicon.ico' });
-    } else {
-      if (status) { status.textContent = perm === 'denied' ? 'Blocked in browser — open site settings to allow.' : 'Permission not granted.'; status.className = 'bqpf-push-status err'; }
-      btn.disabled = false;
-      updatePushUI();
-    }
-  } catch(err) {
-    console.warn('[BioQuiz Push]', err);
-    if (status) { status.textContent = 'Error: ' + err.message; status.className = 'bqpf-push-status err'; }
-    btn.disabled = false;
-    updatePushUI();
-  }
-}
-
-function unsubscribePush() {
-  pushEnabled = false;
-  localStorage.setItem(LS_PUSH, 'false');
-  if (oneSignalReady && window.OneSignal) window.OneSignal.User.PushSubscription.optOut().catch(()=>{});
-  if (db) db.ref('bq_push_subs/' + uid).remove().catch(()=>{});
-  updatePushUI();
-  toast('🔕 Notifications disabled');
-}
-
-function showNotification(title, body, tag, senderUid, senderName) {
-  // Always show in-app toast
-  showInAppNotif(title, body, senderUid, senderName, tag);
-
-  // Browser/OS notification — only when not focused
-  if (!pushEnabled) return;
-  if (document.hasFocus() && isOpen) return;
-
-  // OneSignal handles background delivery via service worker automatically
-  // For in-session (tab open but not focused), use native API
-  if (Notification.permission === 'granted') {
-    try {
-      new Notification(title, {
-        body: body.slice(0, 120),
-        icon: '/favicon.ico',
-        tag: tag || 'bq-msg',
-        requireInteraction: false,
+      
+      btn.classList.add('subscribed');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
+      btn.disabled = true;
+      
+      if (status) status.textContent = 'You will receive notifications for new messages';
+      
+      toast('Notifications enabled!');
+      
+      // Show a test notification
+      new Notification('BioQuiz Chat', {
+        body: 'Notifications are now enabled!',
+        icon: '/icon.svg',
+        badge: '/icon.svg'
       });
-    } catch(e) { console.warn('[BioQuiz Push] Notification error:', e); }
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
+      if (status) status.textContent = 'Permission denied. Please enable in browser settings.';
+      toast('Permission denied');
+    }
+  } catch (err) {
+    console.error('Push subscription error:', err);
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
+    if (status) status.textContent = 'Error enabling notifications';
   }
 }
 
-/* In-app notification toast (always shows, no permission needed) */
-let notifTimer = null;
-function showInAppNotif(title, body, senderUid, senderName, tag) {
-  if (isOpen && activeView === 'chat' && !senderUid) return;  // Skip if viewing that chat
-  const el = document.getElementById('bq-notif-toast');
-  if (!el) return;
-  const col = senderUid ? getColor(senderUid, senderName||'') : 'var(--bq-accent)';
-  const ini = uInit(senderName||title||'?');
-  el.innerHTML = `
-    <div class="bq-notif-av" style="background:${col};color:#000">${ini}</div>
-    <div class="bq-notif-body">
-      <div class="bq-notif-title">${esc(title)}</div>
-      <div class="bq-notif-msg">${esc(body.slice(0,80))}</div>
-    </div>
-    <span class="bq-notif-time">now</span>
-    <button class="bq-notif-close" title="Dismiss">
-      <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>`;
-  el.onclick = () => { openPanel(); el.classList.remove('show'); if(tag&&tag.startsWith('bq-dm-')){/* navigate to that DM if needed */} };
-  el.querySelector('.bq-notif-close').onclick = e => { e.stopPropagation(); el.classList.remove('show'); clearTimeout(notifTimer); };
-  el.classList.add('show');
-  clearTimeout(notifTimer);
-  notifTimer = setTimeout(() => el.classList.remove('show'), 5000);
+function showNotification(title, body, tag) {
+  if (!pushEnabled || Notification.permission !== 'granted') return;
+  if (document.hasFocus() && isOpen) return; // Don't notify if widget is open and focused
+  
+  try {
+    new Notification(title, {
+      body: body.slice(0, 100),
+      icon: '/icon.svg',
+      badge: '/icon.svg',
+      tag: tag || 'bq-msg',
+      requireInteraction: false,
+      silent: false
+    });
+  } catch (err) {
+    console.warn('Notification error:', err);
+  }
 }
 
 function updatePushUI() {
-  const btn    = document.getElementById('bqpf-push-btn');
+  const btn = document.getElementById('bqpf-push-btn');
   const status = document.getElementById('bqpf-push-status');
+  
   if (!btn) return;
-  const osReady     = oneSignalReady && window.OneSignal;
-  const nativePerm  = 'Notification' in window ? Notification.permission : 'not-supported';
-  const osPerm      = osReady ? window.OneSignal.Notifications.permission : false;
-  const isEnabled   = pushEnabled && (nativePerm === 'granted' || osPerm);
-  const isBlocked   = nativePerm === 'denied';
-
-  if (isEnabled) {
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Notifications On';
-    btn.className = 'bqpf-push-btn subscribed';
-    btn.disabled = false;
-    btn.onclick = unsubscribePush;
-    if (status) { status.textContent = osReady ? '✓ Real-time push active via OneSignal' : '✓ Browser notifications active (tab must be open)'; status.className = 'bqpf-push-status ok'; }
-  } else if (isBlocked) {
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Blocked by Browser';
-    btn.className = 'bqpf-push-btn blocked';
+  
+  if (pushEnabled && Notification.permission === 'granted') {
+    btn.classList.add('subscribed');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
     btn.disabled = true;
-    if (status) { status.textContent = 'Open site settings → Notifications → Allow'; status.className = 'bqpf-push-status err'; }
+    if (status) status.textContent = 'You will receive notifications for new messages';
+  } else if (Notification.permission === 'denied') {
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Blocked';
+    if (status) status.textContent = 'Notifications blocked. Please enable in browser settings.';
   } else {
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Enable Notifications';
-    btn.className = 'bqpf-push-btn';
     btn.disabled = false;
-    btn.onclick = subscribeToPush;
-    if (status) { status.textContent = osReady ? 'Enable to get push alerts even when this tab is closed' : 'Enable to get alerts when messages arrive'; status.className = 'bqpf-push-status'; }
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
+    if (status) status.textContent = '';
   }
-}
-
-
-/* ─────────────────────────────────────────
-   MESSAGE SEARCH
-───────────────────────────────────────── */
-let searchActive = false;
-let searchQuery  = '';
-
-function toggleSearch(){
-  const wrap = document.getElementById('bq-search-wrap');
-  const inp  = document.getElementById('bq-search-inp');
-  if(!wrap) return;
-  searchActive = !searchActive;
-  wrap.classList.toggle('show', searchActive);
-  document.getElementById('bq-search-btn').classList.toggle('on', searchActive);
-  if(searchActive){ inp.focus(); }
-  else { clearSearch(); }
-}
-
-function clearSearch(){
-  searchQuery = '';
-  const inp = document.getElementById('bq-search-inp');
-  if(inp) inp.value = '';
-  const cnt = document.getElementById('bq-search-count');
-  if(cnt) cnt.textContent = '';
-  // Remove all highlights
-  document.querySelectorAll('#bqgmsgs .bq-hl').forEach(el=>{
-    el.outerHTML = el.textContent;
-  });
-}
-
-function runSearch(query){
-  searchQuery = query.trim().toLowerCase();
-  const cnt = document.getElementById('bq-search-count');
-  // Reset highlights first
-  document.querySelectorAll('#bqgmsgs .bqbbl').forEach(el=>{
-    // Strip existing highlights by re-setting from data-original
-    if(el.dataset.orig) el.innerHTML = el.dataset.orig;
-  });
-  if(!searchQuery){ if(cnt) cnt.textContent=''; return; }
-  let matches = 0;
-  document.querySelectorAll('#bqgmsgs .bqbbl').forEach(el=>{
-    if(!el.dataset.orig) el.dataset.orig = el.innerHTML;
-    const text = el.textContent;
-    if(text.toLowerCase().includes(searchQuery)){
-      matches++;
-      // Highlight — safe regex on text content only
-      el.innerHTML = el.dataset.orig.replace(
-        new RegExp('(' + searchQuery.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
-        '<span class="bq-hl">$1</span>'
-      );
-      el.scrollIntoView({block:'nearest',behavior:'smooth'});
-    }
-  });
-  if(cnt) cnt.textContent = matches ? matches + ' result' + (matches>1?'s':'') : 'No results';
 }
 
 /* ─────────────────────────────────────────
@@ -1414,7 +1144,7 @@ function toggleFS(){
 function bqNav(targetView) {
   if (targetView === activeView) return;
   
-  const views = ['chat', 'dms', 'dmconv', 'online', 'profile', 'about'];
+  const views = ['chat', 'dms', 'dmconv', 'online', 'profile'];
   
   // Store previous view for back navigation (but not if going to dmconv)
   if (targetView !== 'dmconv' && targetView !== 'profile') {
@@ -1554,8 +1284,6 @@ async function startDB(){
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
     subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();
-    // Re-link OneSignal with firebase uid if SDK ready
-    if(oneSignalReady&&window.OneSignal) window.OneSignal.login(uid).catch(()=>{});
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 
@@ -2087,7 +1815,7 @@ function renderMsg(ctx,msg,key){
             <button class="bqact" data-a="copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
             ${isMine?`<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>`:''}
           </div>
-          <div class="bqbbl">${rpHTML}${mentionify(linkify(esc(msg.text||'')))}</div>
+          <div class="bqbbl">${rpHTML}${linkify(esc(msg.text||''))}</div>
         </div>
       </div>
     </div>`;
@@ -2119,9 +1847,9 @@ function renderMsg(ctx,msg,key){
     updateBadges();
     // Push notification
     if(isG) {
-      showNotification('Global Chat', `@${msg.uname}: ${msg.text}`, 'bq-global', msg.uid, msg.uname);
+      showNotification('Global Chat', `@${msg.uname}: ${msg.text}`, 'bq-global');
     } else {
-      showNotification(`@${msg.uname} (DM)`, msg.text, 'bq-dm-'+activeDmId, msg.uid, msg.uname);
+      showNotification(`@${msg.uname}`, msg.text, 'bq-dm-'+activeDmId);
     }
   }
   scrollD(ctx);
@@ -2328,33 +2056,6 @@ function init(){
   // Fullscreen
   document.getElementById('bq-fs-btn').addEventListener('click',toggleFS);
 
-
-  // Search
-  document.getElementById('bq-search-btn')?.addEventListener('click', toggleSearch);
-  document.getElementById('bq-search-close')?.addEventListener('click', ()=>{ searchActive=true; toggleSearch(); });
-  document.getElementById('bq-search-inp')?.addEventListener('input', e=>runSearch(e.target.value));
-
-  // Keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    // Ctrl+F or / → open search (when panel is open)
-    if (isOpen && (e.key==='/' || (e.ctrlKey && e.key==='f')) && activeView==='chat' && document.activeElement?.id!=='bqginp') {
-      e.preventDefault(); if(!searchActive) toggleSearch();
-    }
-    // Escape → close search first, then panel
-    if (e.key === 'Escape') {
-      if (searchActive) { searchActive=true; toggleSearch(); return; }
-      if (document.getElementById('bqpc').classList.contains('open')) { closeProfileCard(); return; }
-      if (activeView === 'profile' || activeView === 'dmconv') { bqNav(prevView||'chat'); return; }
-      if (isOpen) closePanel();
-    }
-  });
-
-  // Profile nav tab — show mini avatar
-  document.getElementById('bq-nav-me-av')?.addEventListener('click', e=>{ e.stopPropagation(); if(!uname){showModal(false);return;} });
-
-  // Init OneSignal
-  initOneSignal();
-
   // DM back (FIXED)
   document.getElementById('bqdmback').addEventListener('click',()=>{
     setDmTyp(false);
@@ -2397,14 +2098,10 @@ function init(){
   document.getElementById('bqpf-changename')?.addEventListener('click',()=>{showModal(true);});
 
   // Push notifications button
-  document.getElementById('bqpf-push-btn')?.addEventListener('click',()=>{
-    const btn=document.getElementById('bqpf-push-btn');
-    if(btn&&btn.classList.contains('subscribed')) unsubscribePush();
-    else subscribeToPush();
-  });
+  document.getElementById('bqpf-push-btn')?.addEventListener('click',subscribeToPush);
 
   // Me avatar buttons → profile view (FIXED)
-  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online','bq-nav-me-av'].forEach(id=>{
+  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
     document.getElementById(id)?.addEventListener('click',e=>{
       e.stopPropagation();
       if(!uname){showModal(false);return;}
