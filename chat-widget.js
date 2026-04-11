@@ -137,15 +137,7 @@ const CSS = `
 #bqbadge.show{display:flex;}
 @keyframes bqPop{from{transform:scale(0)}to{transform:scale(1)}}
 
-/* ── PULSE ANIMATION ── */
-#bqb::before{
-  content:'';position:absolute;inset:-4px;border-radius:50%;
-  background:linear-gradient(135deg,var(--bq-accent),#818cf8);
-  opacity:0;z-index:-1;
-  animation:bqPulse 2s ease infinite;
-}
-#bqb.open::before{display:none;}
-@keyframes bqPulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:.3;transform:scale(1.15)}}
+/* Pulse animation removed */
 
 /* ── PANEL ── */
 #bqp{
@@ -155,11 +147,11 @@ const CSS = `
   border-radius:var(--bq-radius);display:flex;flex-direction:column;overflow:hidden;
   box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;
   transform-origin:bottom right;
-  transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;
-  transition:transform .32s var(--bq-transition),opacity .26s ease;
+  transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;visibility:hidden;
+  transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s linear .32s;
   will-change:transform,opacity;
 }
-#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s linear 0s;}
 
 /* Glow effect */
 #bqp::before{
@@ -168,7 +160,7 @@ const CSS = `
 }
 
 /* Fullscreen mode */
-#bqp.bq-fs{
+#bqp.bq-fs{visibility:visible!important;
   position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
   width:100vw!important;height:100dvh!important;max-height:100dvh!important;
   border-radius:0!important;border:none!important;
@@ -228,9 +220,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   background:var(--bq-success);
   box-shadow:0 0 12px var(--bq-success);
   flex-shrink:0;
-  animation:bqLive 2s ease infinite;
+  /* breathing animation removed */
 }
-@keyframes bqLive{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .bqhtitle{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--bq-text);flex:1;}
 .bqhbtn{
   width:32px;height:32px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);
@@ -914,7 +905,7 @@ const HTML = `
               <svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               Enable Notifications
             </button>
-            <div class="bqpf-push-status" id="bqpf-push-status"></div>
+            <div class="bqpf-push-status" id="bqpf-push-status">Works when browser tab is open or backgrounded. For notifications when browser is fully closed, integrate OneSignal (free at onesignal.com).</div>
           </div>
         </div>
         <button class="bqpf-savebtn" id="bqpfsave">Save Profile</button>
@@ -947,7 +938,7 @@ const HTML = `
    INJECT
 ───────────────────────────────────────── */
 const _s = document.createElement('style'); _s.textContent = CSS; document.head.appendChild(_s);
-const _w = document.createElement('div'); _w.innerHTML = HTML; document.body.appendChild(_w);
+const _w = document.createElement('div'); _w.style.pointerEvents='none'; _w.innerHTML = HTML; document.body.appendChild(_w);
 
 /* ─────────────────────────────────────────
    STATE
@@ -1014,20 +1005,17 @@ function refreshMeAvatar(){
 ───────────────────────────────────────── */
 async function requestNotificationPermission() {
   if (!('Notification' in window)) {
-    toast('Notifications not supported');
+    toast('Notifications not supported in this browser');
     return false;
   }
-  
-  if (Notification.permission === 'granted') {
-    return true;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') {
+    toast('Notifications blocked — enable in browser settings');
+    return false;
   }
-  
-  if (Notification.permission !== 'denied') {
-    const permission = await Notification.requestPermission();
-    return permission === 'granted';
-  }
-  
-  return false;
+  /* Must be triggered by user gesture — this is called from button click so it's fine */
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
 }
 
 async function subscribeToPush() {
@@ -1050,16 +1038,19 @@ async function subscribeToPush() {
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
       btn.disabled = true;
       
-      if (status) status.textContent = 'You will receive notifications for new messages';
+      if (status) status.textContent = 'Notifications enabled — works when tab is open or backgrounded';
       
       toast('Notifications enabled!');
       
       // Show a test notification
-      new Notification('BioQuiz Chat', {
-        body: 'Notifications are now enabled!',
-        icon: '/icon.svg',
-        badge: '/icon.svg'
-      });
+      // Use actual favicon if available
+      const _fav = document.querySelector('link[rel~="icon"]');
+      const _ico = _fav ? _fav.href : '/favicon.ico';
+      if (_swReg) {
+        _swReg.showNotification('BioQuiz Chat', { body: 'Notifications are now enabled! 🔔', icon: _ico, tag: 'bq-test' });
+      } else {
+        new Notification('BioQuiz Chat', { body: 'Notifications are now enabled! 🔔', icon: _ico, tag: 'bq-test' });
+      }
     } else {
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Enable Notifications';
@@ -1074,21 +1065,68 @@ async function subscribeToPush() {
   }
 }
 
+/* ── SERVICE WORKER REGISTRATION (for background notifications) ── */
+/* The SW is registered from a blob URL so no separate sw.js file is needed. */
+/* It handles notificationclick to focus the tab. */
+let _swReg = null;
+(function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const swCode = `
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return clients.openWindow('/');
+  }));
+});
+self.addEventListener('push', e => {
+  if (!e.data) return;
+  const d = e.data.json();
+  e.waitUntil(self.registration.showNotification(d.title || 'BioQuiz Chat', {
+    body: d.body || '', tag: d.tag || 'bq', icon: d.icon || '/favicon.ico',
+    badge: d.icon || '/favicon.ico'
+  }));
+});
+`;
+  try {
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).then(reg => {
+      _swReg = reg;
+      // Revoke blob URL after registration (no longer needed)
+      URL.revokeObjectURL(swUrl);
+    }).catch(() => { /* SW registration failed — silently fall back */ });
+  } catch(_) {}
+})();
+
 function showNotification(title, body, tag) {
   if (!pushEnabled || Notification.permission !== 'granted') return;
-  if (document.hasFocus() && isOpen) return; // Don't notify if widget is open and focused
+  /* Only suppress when widget is open AND page is focused (user can see messages) */
+  if (isOpen && !document.hidden) return;
   
-  try {
-    new Notification(title, {
-      body: body.slice(0, 100),
-      icon: '/icon.svg',
-      badge: '/icon.svg',
-      tag: tag || 'bq-msg',
-      requireInteraction: false,
-      silent: false
+  const opts = {
+    body: body ? body.slice(0, 120) : '',
+    tag: tag || 'bq-msg',
+    icon: (() => {
+      /* Try to find an existing favicon to avoid 404 errors */
+      const link = document.querySelector('link[rel~="icon"]');
+      return link ? link.href : '/favicon.ico';
+    })(),
+    requireInteraction: false,
+    silent: false
+  };
+  
+  /* Prefer ServiceWorker notification — works even when tab is backgrounded */
+  if (_swReg) {
+    _swReg.showNotification(title, opts).catch(() => {
+      /* SW showNotification failed, fall back */
+      try { new Notification(title, opts); } catch(_) {}
     });
-  } catch (err) {
-    console.warn('Notification error:', err);
+  } else {
+    /* Direct notification (tab must be open, works on desktop browsers) */
+    try { new Notification(title, opts); } catch(err) {
+      console.warn('[BioQuiz Chat] Notification error:', err);
+    }
   }
 }
 
@@ -1102,7 +1140,7 @@ function updatePushUI() {
     btn.classList.add('subscribed');
     btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>Notifications Enabled';
     btn.disabled = true;
-    if (status) status.textContent = 'You will receive notifications for new messages';
+    if (status) status.textContent = 'Notifications enabled — works when tab is open or backgrounded';
   } else if (Notification.permission === 'denied') {
     btn.disabled = true;
     btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Blocked';
@@ -1841,15 +1879,19 @@ function renderMsg(ctx,msg,key){
     });
   });
 
-  // Notification + badge
-  if(!isOpen&&!isMine){
-    if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
-    updateBadges();
-    // Push notification
-    if(isG) {
-      showNotification('Global Chat', `@${msg.uname}: ${msg.text}`, 'bq-global');
-    } else {
-      showNotification(`@${msg.uname}`, msg.text, 'bq-dm-'+activeDmId);
+  // Badges
+  if(!isMine){
+    if(!isOpen) {
+      if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
+      updateBadges();
+    }
+    // Notifications: fire if widget closed OR tab is in background
+    if(!isOpen || document.hidden) {
+      if(isG) {
+        showNotification('Global Chat', `@${msg.uname}: ${msg.text}`, 'bq-global');
+      } else {
+        showNotification(`@${msg.uname}`, msg.text, 'bq-dm-'+activeDmId);
+      }
     }
   }
   scrollD(ctx);
