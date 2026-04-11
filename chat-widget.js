@@ -133,7 +133,58 @@ const CSS = `
   border-radius:0!important;border:none!important;
   transform:none!important;opacity:1!important;pointer-events:all!important;
   z-index:99900!important;
+  font-size:16px!important;
 }
+#bqp.bq-fs .bqhtitle{font-size:1rem!important;}
+#bqp.bq-fs .bqmsgs{padding:16px 20px 8px!important;}
+#bqp.bq-fs .bqbbl{padding:12px 16px!important;font-size:1rem!important;}
+#bqp.bq-fs .bqav{width:36px!important;height:36px!important;font-size:.52rem!important;}
+#bqp.bq-fs .bqun{font-size:.56rem!important;}
+#bqp.bq-fs .bqts{font-size:.42rem!important;}
+#bqp.bq-fs .bqri{gap:10px!important;}
+#bqp.bq-fs .bqr{padding:0 4px!important;}
+#bqp.bq-fs .bqmeta{margin-bottom:3px!important;}
+#bqp.bq-fs .bqds{font-size:.42rem!important;margin:14px 0 12px!important;}
+#bqp.bq-fs .bqiw{padding:12px 16px 16px!important;}
+#bqp.bq-fs .bqinp{padding:12px 14px!important;font-size:1rem!important;min-height:44px!important;}
+#bqp.bq-fs .bqsnd{width:44px!important;height:44px!important;}
+#bqp.bq-fs .bqsnd svg{width:18px!important;height:18px!important;}
+#bqp.bq-fs .bqieo{width:40px!important;height:40px!important;font-size:18px!important;}
+#bqp.bq-fs .bqtyp{padding:0 20px 8px!important;font-size:.46rem!important;}
+#bqp.bq-fs .bqhdr{padding:14px 18px 12px!important;}
+#bqp.bq-fs .bqnb{padding:12px 6px 11px!important;font-size:.48rem!important;}
+#bqp.bq-fs .bqnb svg{width:20px!important;height:20px!important;}
+#bqp.bq-fs .bqdmr{padding:14px 18px!important;}
+#bqp.bq-fs .bqdmav{width:46px!important;height:46px!important;font-size:.58rem!important;}
+#bqp.bq-fs .bqdmn{font-size:.72rem!important;}
+#bqp.bq-fs .bqdmp{font-size:.56rem!important;}
+#bqp.bq-fs .bqdmt{font-size:.42rem!important;}
+#bqp.bq-fs .bqurow{padding:12px 18px!important;}
+#bqp.bq-fs .bquav{width:44px!important;height:44px!important;font-size:.56rem!important;}
+#bqp.bq-fs .bquu{font-size:.72rem!important;}
+#bqp.bq-fs .bqust{font-size:.44rem!important;}
+#bqp.bq-fs .bquact{font-size:.44rem!important;}
+#bqp.bq-fs .bqrp{padding:6px 12px!important;margin-bottom:8px!important;}
+#bqp.bq-fs .bqrp-n{font-size:.46rem!important;}
+#bqp.bq-fs .bqrp-t{font-size:.64rem!important;}
+#bqp.bq-fs .bqacts{top:-40px!important;}
+#bqp.bq-fs .bqact{width:34px!important;height:34px!important;font-size:16px!important;}
+#bqp.bq-fs .bqact svg{width:14px!important;height:14px!important;}
+#bqp.bq-fs .bqrbar{padding:10px 16px!important;}
+#bqp.bq-fs .bqrbn{font-size:.46rem!important;}
+#bqp.bq-fs .bqrbt{font-size:.58rem!important;}
+#bqp.bq-fs .bqempty-ic{width:56px!important;height:56px!important;}
+#bqp.bq-fs .bqempty-ic svg{width:26px!important;height:26px!important;}
+#bqp.bq-fs .bqempty-tx{font-size:.6rem!important;}
+#bqp.bq-fs .bqempty-sub{font-size:.48rem!important;}
+#bqp.bq-fs .bqhbtn{width:34px!important;height:34px!important;}
+#bqp.bq-fs .bqhbtn svg{width:16px!important;height:16px!important;}
+#bqp.bq-fs .bq-me-av{width:32px!important;height:32px!important;font-size:.46rem!important;}
+#bqp.bq-fs .bqback{font-size:.54rem!important;}
+#bqp.bq-fs .bqback svg{width:18px!important;height:18px!important;}
+#bqp.bq-fs .bqdmhav{width:36px!important;height:36px!important;font-size:.5rem!important;}
+#bqp.bq-fs .bqdmhn{font-size:.74rem!important;}
+#bqp.bq-fs .bqdmhs{font-size:.44rem!important;}
 body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── SCREEN + VIEW SYSTEM ── */
@@ -755,9 +806,7 @@ const HTML = `
         <button class="bqhbtn" id="bq-sound-btn" title="Sound">
           <svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         </button>
-        <button class="bqhbtn" id="bq-search-btn" title="Search">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
+        
         <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
           <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
         </button>
@@ -766,7 +815,7 @@ const HTML = `
         </button>
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
-      <div class="bqsbar" id="bqsbar"><input id="bqsinp" class="bqsinp" placeholder="Search messages…" autocomplete="off"><button class="bqsx" id="bqsx">✕</button></div>
+      
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -1135,25 +1184,49 @@ function toggleFS(){
 }
 
 /* ─────────────────────────────────────────
-   NAVIGATION  (global — used from inline onclick)
+   NAVIGATION  (global — used from inline onclick) - FIXED
 ───────────────────────────────────────── */
 window.bqNav = function(v){
   if(v===activeView) return;
-  const fromEl=document.getElementById('bqv-'+activeView);
+  const oldView=activeView;
+  const fromEl=document.getElementById('bqv-'+oldView);
   const toEl  =document.getElementById('bqv-'+v);
   if(!toEl) return;
-  if(fromEl&&activeView!=='dmconv') fromEl.classList.add('bq-sleft');
-  toEl.classList.remove('bq-hidden','bq-sleft');
-  setTimeout(()=>{if(fromEl&&activeView!=='dmconv'){fromEl.classList.add('bq-hidden');fromEl.classList.remove('bq-sleft');}},300);
-  if(v!=='dmconv') prevNonDmView=activeView;
+  
+  // Store previous non-DM view before updating activeView
+  if(v!=='dmconv') prevNonDmView=oldView;
   activeView=v;
-  document.querySelectorAll('.bqnb').forEach(b=>b.classList.toggle('active',b.dataset.v===v||(v==='dmconv'&&b.dataset.v==='dms')));
-  if(v==='chat'&&!('ontouchstart' in window)){const i=document.getElementById('bqginp');if(i)i.focus();}
+  
+  // Immediately show target view and hide old view
+  if(fromEl){
+    fromEl.classList.add('bq-hidden');
+    fromEl.classList.remove('bq-sleft');
+  }
+  toEl.classList.remove('bq-hidden','bq-sleft');
+  
+  // Update nav buttons immediately
+  document.querySelectorAll('.bqnb').forEach(b=>{
+    const isActive = b.dataset.v===v || (v==='dmconv'&&b.dataset.v==='dms');
+    b.classList.toggle('active', isActive);
+  });
+  
+  // Focus input if chat view
+  if(v==='chat'&&!('ontouchstart' in window)){
+    const i=document.getElementById('bqginp');
+    if(i) setTimeout(()=>i.focus(),50);
+  }
+  if(v==='dmconv'&&!('ontouchstart' in window)){
+    const i=document.getElementById('bqdminp');
+    if(i) setTimeout(()=>i.focus(),50);
+  }
   if(v==='profile') refreshProfileView();
 };
 
 function showDmConvo(pUid,pName){
-  activeDmId=dmKey(uid,pUid);
+  const newDmId=dmKey(uid,pUid);
+  const isSameDm=activeDmId===newDmId;
+  
+  activeDmId=newDmId;
   activeDmPuid=pUid; activeDmPname=pName;
   dLastU=null;dLastT=0;dAtBot=true;
 
@@ -1176,10 +1249,11 @@ function showDmConvo(pUid,pName){
   e.innerHTML=`<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">START A CONVERSATION</div><div class="bqempty-sub">@${esc(pName)}</div>`;
   msgs.appendChild(e);
 
-  // Detach old listener except this one
-  Object.entries(dmListeners).forEach(([id,ref])=>{if(id!==activeDmId){ref.off();delete dmListeners[id];}});
-  // Subscribe
-  if(db&&!dmListeners[activeDmId]){
+  // Detach ALL old listeners (including for same DM since we cleared msgs)
+  Object.entries(dmListeners).forEach(([id,ref])=>{ref.off();delete dmListeners[id];});
+  
+  // Subscribe fresh
+  if(db){
     const ref=db.ref('bq_dms/'+activeDmId+'/messages').limitToLast(MAX_MSG);
     ref.on('child_added',s=>renderMsg('dm',s.val(),s.key));
     ref.on('child_changed',s=>onMsgChanged('dm',s));
@@ -1204,8 +1278,14 @@ function showDmConvo(pUid,pName){
     dmUnread[activeDmId]=0;updateBadges();
   }
 
-  // Navigate
-  bqNav('dmconv');
+  // Force navigate - ensure dmconv view is visible even if we think we're already there
+  const dmconvEl=document.getElementById('bqv-dmconv');
+  if(dmconvEl.classList.contains('bq-hidden')||activeView!=='dmconv'){
+    bqNav('dmconv');
+  } else {
+    // Already on dmconv but need to scroll to bottom
+    requestAnimationFrame(()=>{if(msgs)msgs.scrollTop=msgs.scrollHeight;});
+  }
 }
 
 /* ─────────────────────────────────────────
@@ -2057,15 +2137,14 @@ function init(){
   // Fullscreen
   document.getElementById('bq-fs-btn').addEventListener('click',toggleFS);
 
-  // DM back
+  // DM back - FIXED
   document.getElementById('bqdmback').addEventListener('click',()=>{
-    setDmTyp(false);if(dmTypRef){dmTypRef.off();dmTypRef=null;}
-    document.getElementById('bqv-dmconv').classList.add('bq-hidden');
+    setDmTyp(false);
+    if(dmTypRef){dmTypRef.off();dmTypRef=null;}
     const prev=prevNonDmView||'dms';
-    const prevEl=document.getElementById('bqv-'+prev);
-    if(prevEl){prevEl.classList.remove('bq-hidden','bq-sleft');}
-    activeView=prev;
-    document.querySelectorAll('.bqnb').forEach(b=>b.classList.toggle('active',b.dataset.v===prev));
+    // Use bqNav for consistent navigation
+    activeView='dmconv'; // Reset so bqNav doesn't return early
+    bqNav(prev);
   });
 
   // DM header profile view
@@ -2108,22 +2187,7 @@ function init(){
     });
   });
 
-  // Search
-  document.getElementById('bq-search-btn')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    searchBarOpen=!searchBarOpen;
-    document.getElementById('bqsbar').classList.toggle('open',searchBarOpen);
-    document.getElementById('bq-search-btn').classList.toggle('on',searchBarOpen);
-    if(searchBarOpen){searchQ='';if(!('ontouchstart' in window))document.getElementById('bqsinp')?.focus();}
-    else{searchQ='';filterMsgs();}
-  });
-  document.getElementById('bqsx')?.addEventListener('click',()=>{
-    searchBarOpen=false;searchQ='';
-    document.getElementById('bqsbar').classList.remove('open');
-    document.getElementById('bq-search-btn').classList.remove('on');
-    filterMsgs();
-  });
-  document.getElementById('bqsinp')?.addEventListener('input',e=>{searchQ=e.target.value.toLowerCase().trim();filterMsgs();});
+  
 
   // DM delegation
   initDmDelegate();
