@@ -1,4 +1,3 @@
-import { put } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -20,25 +19,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only images allowed' }, { status: 400 });
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }, { status: 400 });
+    // Validate file size (2MB max for base64)
+    if (file.size > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 2MB)' }, { status: 400 });
     }
 
+    // Convert to base64
     const buffer = await file.arrayBuffer();
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `chat_images/${uid}/${Date.now()}.${ext}`;
+    const base64 = Buffer.from(buffer).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    const blob = await put(filename, buffer, {
-      access: 'public',
-      contentType: file.type,
-    });
-
-    return NextResponse.json({ url: blob.url }, { status: 200 });
+    return NextResponse.json({ url: dataUrl }, { status: 200 });
   } catch (err) {
     console.error('[Upload] Error:', err);
     return NextResponse.json(
-      { error: 'Upload failed' },
+      { error: 'Upload failed', details: String(err) },
       { status: 500 }
     );
   }
