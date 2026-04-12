@@ -1704,8 +1704,22 @@ function showDmConvo(pUid, pName) {
       hsEl.textContent=st.label;
       hsEl.style.color='var(--bq-success)';
     } else {
-      hsEl.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      // Fetch accurate last seen from database
       hsEl.style.color='var(--bq-text-subtle)';
+      if(db && pUid) {
+        db.ref('bq_last_seen/'+pUid).once('value', snap => {
+          const lastSeen = snap.val();
+          if(lastSeen) {
+            hsEl.textContent='Last seen '+lastSeenStr(lastSeen);
+          } else if(pdata.ts) {
+            hsEl.textContent='Last seen '+lastSeenStr(pdata.ts);
+          } else {
+            hsEl.textContent='Offline';
+          }
+        });
+      } else {
+        hsEl.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      }
     }
   }
 
@@ -1721,10 +1735,28 @@ function showDmConvo(pUid, pName) {
   // Detach old listeners
   Object.entries(dmListeners).forEach(([id, ref]) => { ref.off(); delete dmListeners[id]; });
   
-  // Subscribe fresh
+  // Subscribe fresh - load initial messages immediately
   if (db) {
-    const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
-    ref.on('child_added', s => renderMsg('dm', s.val(), s.key));
+    const ref = db.ref('bq_dms/' + activeDmId + '/messages');
+    
+    // Load last messages synchronously so they show immediately
+    ref.limitToLast(MAX_MSG).once('value', snap => {
+      snap.forEach(s => {
+        if(!document.getElementById('bqmsg-dm-' + s.key)) {
+          renderMsg('dm', s.val(), s.key);
+        }
+      });
+      // Scroll to bottom after initial load
+      setTimeout(() => {
+        const msgs = document.getElementById('bqdmmsgs');
+        if(msgs) msgs.scrollTop = msgs.scrollHeight;
+      }, 50);
+    });
+    
+    // Then listen for real-time updates
+    ref.on('child_added', s => {
+      if(!document.getElementById('bqmsg-dm-' + s.key)) renderMsg('dm', s.val(), s.key);
+    });
     ref.on('child_changed', s => onMsgChanged('dm', s));
     ref.on('child_removed', s => document.getElementById('bqmsg-dm-' + s.key)?.remove());
     dmListeners[activeDmId] = ref;
@@ -2092,8 +2124,16 @@ function closeProfileCard(){
    GLOBAL CHAT
 ───────────────────────────────────────── */
 function subscribeGlobal(){
-  const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
-  ref.on('child_added',s=>renderMsg('global',s.val(),s.key));
+  const ref=db.ref('bq_messages');
+  // First load last messages
+  ref.limitToLast(MAX_MSG).once('value',snap=>{
+    snap.forEach(s=>renderMsg('global',s.val(),s.key));
+  });
+  // Then listen for new ones in real-time
+  ref.on('child_added',s=>{
+    // Skip if already rendered
+    if(!document.getElementById('bqmsg-global-'+s.key)) renderMsg('global',s.val(),s.key);
+  });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>document.getElementById('bqmsg-global-'+s.key)?.remove());
 }
