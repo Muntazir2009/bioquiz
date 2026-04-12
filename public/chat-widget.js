@@ -1522,8 +1522,8 @@ function toast(m,dur=2500){
 let pendingImage = { global: null, dm: null };
 
 async function uploadImage(file, ctx) {
-  if (!file || !firebase.storage) {
-    toast('Storage not available');
+  if (!file) {
+    toast('No file selected');
     return null;
   }
   
@@ -1544,17 +1544,23 @@ async function uploadImage(file, ctx) {
   try {
     btn?.classList.add('uploading');
     
-    const storage = firebase.storage();
-    const timestamp = Date.now();
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `chat_images/${uid}/${timestamp}.${ext}`;
-    const ref = storage.ref(path);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('uid', uid);
     
-    const snapshot = await ref.put(file);
-    const url = await snapshot.ref.getDownloadURL();
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
     
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    
+    const data = await response.json();
     btn?.classList.remove('uploading');
-    return url;
+    return data.url;
   } catch (err) {
     console.error('[Upload] Error:', err);
     btn?.classList.remove('uploading');
@@ -2327,7 +2333,7 @@ function renderRxns(ctx,rowEl,rxns,key){
   if(div.children.length) bw.appendChild(div);
 }
 
-/* ─────────────────────────────────────────
+/* ───���─────────────────────────────────────
    REPLY
 ───────────────────────────────────────── */
 function setReply(ctx,data){
