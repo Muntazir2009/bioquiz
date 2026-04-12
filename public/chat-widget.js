@@ -422,12 +422,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqimg-preview-remove:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08);}
 .bqimg-preview-remove svg{width:12px;height:12px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;}
 /* Message image */
-.bqmsg-img{max-width:200px;max-height:200px;border-radius:8px;margin-top:6px;cursor:pointer;transition:transform .2s;}
-.bqmsg-img:hover{transform:scale(1.02);}
+.bqmsg-img{display:block;max-width:220px;max-height:220px;border-radius:12px;margin-top:8px;cursor:pointer;transition:transform .2s,box-shadow .2s;border:1px solid var(--bq-border);box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.bqmsg-img:hover{transform:scale(1.03);box-shadow:0 4px 16px rgba(0,0,0,.3);}
+.bqmsg-imgwrap{margin-top:6px;position:relative;display:inline-block;}
 
 /* ── READ RECEIPTS ── */
-.bqread{display:inline-flex;align-items:center;gap:2px;margin-left:6px;vertical-align:middle;}
-.bqread svg{width:14px;height:14px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bqread{display:inline-flex;align-items:center;margin-left:8px;vertical-align:middle;}
+.bqread svg{width:16px;height:12px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 .bqread.read svg{stroke:var(--bq-accent);}
 .bqread-time{font-family:'Inter',sans-serif;font-size:9px;color:var(--bq-text-subtle);margin-left:4px;}
 
@@ -916,11 +917,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqimg-close:hover{background:var(--bq-bg-hover);transform:scale(1.1);}
 .bqimg-close svg{width:18px;height:18px;stroke:var(--bq-text);fill:none;stroke-width:2;}
 
-/* ── MESSAGE READ RECEIPTS ── */
-.bqread{display:flex;align-items:center;gap:4px;margin-top:4px;padding:0 3px;}
-.bqread svg{width:14px;height:14px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2;}
-.bqread.seen svg{stroke:var(--bq-accent);}
-.bqread-txt{font-family:'Inter',sans-serif;font-size:9px;color:var(--bq-text-subtle);letter-spacing:.02em;}
+/* ── MESSAGE READ RECEIPTS (see above) ── */
 
 /* ── SPINNER ── */
 @keyframes bqSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -1892,18 +1889,28 @@ function startPresence(){
   if(!db||!uname)return;
   const ref=db.ref('bq_presence/'+uid);
   const lastSeenRef=db.ref('bq_last_seen/'+uid);
+  const connRef=db.ref('.info/connected');
+  
   const beat=()=>ref.set({
-    uname,ts:Date.now(),
-    status:myProfile.status||'online',
-    activity:myProfile.activity||'',
-    bio:myProfile.bio||'',
-    color:myProfile.color||'',
+  uname,ts:Date.now(),
+  status:myProfile.status||'online',
+  activity:myProfile.activity||'',
+  bio:myProfile.bio||'',
+  color:myProfile.color||'',
   });
-  beat();clearInterval(presInt);
+  
+  // Listen for connection state
+  connRef.on('value', snap => {
+    if(snap.val() === true) {
+      // Connected - set up onDisconnect handlers
+      ref.onDisconnect().remove();
+      lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+      beat();
+    }
+  });
+  
+  clearInterval(presInt);
   presInt=setInterval(beat,PRESENCE_TTL*.7);
-  // Set lastSeen on disconnect
-  ref.onDisconnect().remove();
-  lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
   db.ref('bq_presence').on('value',snap=>{
     const now=Date.now();onlineU={};
     snap.forEach(c=>{
@@ -2400,9 +2407,9 @@ function renderMsg(ctx,msg,key){
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
-  const imageHTML=msg.imageUrl?`<img class="bqmsg-img" src="${esc(msg.imageUrl)}" alt="Shared image" loading="lazy" onclick="window.bqOpenImage&&window.bqOpenImage('${esc(msg.imageUrl)}')">`:'';
+  const imageHTML=msg.imageUrl?`<div class="bqmsg-imgwrap"><img class="bqmsg-img" src="${esc(msg.imageUrl)}" alt="Shared image" loading="lazy" onclick="window.bqOpenImage&&window.bqOpenImage('${esc(msg.imageUrl)}')"></div>`:'';
   // Read receipts for DMs (only show for sender's own messages)
-  const readHTML=(!isG && isMine && msg.readAt)?`<span class="bqread read" title="Read at ${tsStr(msg.readAt)}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/><polyline points="16 6 5 17"/></svg></span>`:(!isG && isMine)?`<span class="bqread" title="Delivered"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:'';
+  const readHTML=(!isG && isMine && msg.readAt)?`<span class="bqread read" title="Read at ${tsStr(msg.readAt)}"><svg viewBox="0 0 24 12"><polyline points="1 6 5 10 12 2"/><polyline points="8 6 12 10 19 2"/></svg></span>`:(!isG && isMine)?`<span class="bqread" title="Delivered"><svg viewBox="0 0 24 12"><polyline points="6 6 10 10 17 2"/></svg></span>`:'';
   const pickBtns=REACTIONS.map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
 
   const row=document.createElement('div');
