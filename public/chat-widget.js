@@ -407,6 +407,34 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrxn.mr{background:rgba(96,165,250,.15);border-color:rgba(96,165,250,.3);}
 .bqrxn-n{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--bq-text-muted);}
 
+/* ── IMAGE UPLOAD ── */
+.bqimg-btn{width:32px;height:32px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.bqimg-btn:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);}
+.bqimg-btn svg{width:16px;height:16px;stroke:var(--bq-text-muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.bqimg-btn.uploading{pointer-events:none;opacity:.6;}
+.bqimg-btn.uploading svg{animation:bqSpin 1s linear infinite;}
+@keyframes bqSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.bqimg-preview-bar{display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(96,165,250,.06);border-top:1px solid var(--bq-border);flex-shrink:0;}
+.bqimg-preview-bar.show{display:flex;}
+.bqimg-preview-thumb{width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid var(--bq-border);}
+.bqimg-preview-info{flex:1;font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);}
+.bqimg-preview-remove{width:26px;height:26px;background:none;border:1px solid var(--bq-border);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+.bqimg-preview-remove:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08);}
+.bqimg-preview-remove svg{width:12px;height:12px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;}
+/* Message image */
+.bqmsg-img{max-width:200px;max-height:200px;border-radius:8px;margin-top:6px;cursor:pointer;transition:transform .2s;}
+.bqmsg-img:hover{transform:scale(1.02);}
+
+/* ── READ RECEIPTS ── */
+.bqread{display:inline-flex;align-items:center;gap:2px;margin-left:6px;vertical-align:middle;}
+.bqread svg{width:14px;height:14px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bqread.read svg{stroke:var(--bq-accent);}
+.bqread-time{font-family:'Inter',sans-serif;font-size:9px;color:var(--bq-text-subtle);margin-left:4px;}
+
+/* ── LAST SEEN ── */
+.bqls{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);margin-top:4px;}
+.bqls.bqls-online{color:var(--bq-success);}
+
 /* ── REPLY BAR ── */
 .bqrbar{display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(96,165,250,.06);border-top:1px solid var(--bq-border);flex-shrink:0;}
 .bqrbar.show{display:flex;}
@@ -1051,8 +1079,15 @@ const HTML = `
       </div>
       <div class="bqiw">
         <div class="bqiet" id="bqget"></div>
+        <div class="bqimg-preview-bar" id="bqgimg-preview">
+          <img class="bqimg-preview-thumb" id="bqgimg-thumb" src="" alt="Preview"/>
+          <div class="bqimg-preview-info" id="bqgimg-info">Image ready to send</div>
+          <button class="bqimg-preview-remove" id="bqgimg-remove"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
         <div class="bqirow">
           <button class="bqieo" id="bqgeo">😊</button>
+          <button class="bqimg-btn" id="bqgimg-btn" title="Send image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+          <input type="file" id="bqgimg-input" accept="image/*" style="display:none"/>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
         </div>
@@ -1098,8 +1133,15 @@ const HTML = `
       </div>
       <div class="bqiw">
         <div class="bqiet" id="bqdmet"></div>
+        <div class="bqimg-preview-bar" id="bqdmimg-preview">
+          <img class="bqimg-preview-thumb" id="bqdmimg-thumb" src="" alt="Preview"/>
+          <div class="bqimg-preview-info" id="bqdmimg-info">Image ready to send</div>
+          <button class="bqimg-preview-remove" id="bqdmimg-remove"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
         <div class="bqirow">
           <button class="bqieo" id="bqdmeo">😊</button>
+          <button class="bqimg-btn" id="bqdmimg-btn" title="Send image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+          <input type="file" id="bqdmimg-input" accept="image/*" style="display:none"/>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
         </div>
@@ -1309,7 +1351,7 @@ function refreshMeAvatar(){
 
 /* ─────────────────────────────────────────
    PUSH NOTIFICATIONS
-───────────────────────────────────────── */
+─────────────────────────���─────────────── */
 async function requestNotificationPermission() {
   if (!('Notification' in window)) {
     toast('Notifications not supported');
@@ -1467,11 +1509,98 @@ function updatePushUI() {
 
 /* ────���────────────────────────────────────
    TOAST
-───────────────────────────────────────── */
+────────────���──────────────────────────── */
 function toast(m,dur=2500){
   const el=document.getElementById('bqtoast');if(!el)return;
   el.textContent=m;el.classList.add('show');
   clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+/* ─────────────────────────────────────────
+   IMAGE UPLOAD
+───────────────────────────────────────── */
+let pendingImage = { global: null, dm: null };
+
+async function uploadImage(file, ctx) {
+  if (!file || !firebase.storage) {
+    toast('Storage not available');
+    return null;
+  }
+  
+  // Validate file
+  if (!file.type.startsWith('image/')) {
+    toast('Please select an image file');
+    return null;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    toast('Image must be under 5MB');
+    return null;
+  }
+  
+  const isG = ctx === 'global';
+  const btn = document.getElementById(isG ? 'bqgimg-btn' : 'bqdmimg-btn');
+  
+  try {
+    btn?.classList.add('uploading');
+    
+    const storage = firebase.storage();
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `chat_images/${uid}/${timestamp}.${ext}`;
+    const ref = storage.ref(path);
+    
+    const snapshot = await ref.put(file);
+    const url = await snapshot.ref.getDownloadURL();
+    
+    btn?.classList.remove('uploading');
+    return url;
+  } catch (err) {
+    console.error('[Upload] Error:', err);
+    btn?.classList.remove('uploading');
+    toast('Upload failed: ' + (err.message || 'Unknown error'));
+    return null;
+  }
+}
+
+function setupImageUpload(ctx) {
+  const isG = ctx === 'global';
+  const btn = document.getElementById(isG ? 'bqgimg-btn' : 'bqdmimg-btn');
+  const input = document.getElementById(isG ? 'bqgimg-input' : 'bqdmimg-input');
+  const preview = document.getElementById(isG ? 'bqgimg-preview' : 'bqdmimg-preview');
+  const thumb = document.getElementById(isG ? 'bqgimg-thumb' : 'bqdmimg-thumb');
+  const info = document.getElementById(isG ? 'bqgimg-info' : 'bqdmimg-info');
+  const remove = document.getElementById(isG ? 'bqgimg-remove' : 'bqdmimg-remove');
+  const sndBtn = document.getElementById(isG ? 'bqgsnd' : 'bqdmsnd');
+  
+  if (!btn || !input) return;
+  
+  btn.addEventListener('click', () => input.click());
+  
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      thumb.src = ev.target.result;
+      info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
+      preview.classList.add('show');
+      pendingImage[isG ? 'global' : 'dm'] = file;
+      sndBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  });
+  
+  remove?.addEventListener('click', () => {
+    preview.classList.remove('show');
+    thumb.src = '';
+    pendingImage[isG ? 'global' : 'dm'] = null;
+    const inp = document.getElementById(isG ? 'bqginp' : 'bqdminp');
+    sndBtn.disabled = !inp?.value.trim();
+  });
 }
 
 /* ─────────────────────────────────────────
@@ -1611,11 +1740,22 @@ function showDmConvo(pUid, pName) {
     });
   }
   
-  // Mark read
-  if (db && dmUnread[activeDmId]) {
-    db.ref('bq_dms/' + activeDmId + '/meta/unread/' + uid).set(0);
-    dmUnread[activeDmId] = 0;
-    updateBadges();
+  // Mark read and update read receipts
+  if (db) {
+    if(dmUnread[activeDmId]) {
+      db.ref('bq_dms/' + activeDmId + '/meta/unread/' + uid).set(0);
+      dmUnread[activeDmId] = 0;
+      updateBadges();
+    }
+    // Mark all messages from the other user as read
+    db.ref('bq_dms/' + activeDmId + '/messages').once('value', snap => {
+      snap.forEach(child => {
+        const msg = child.val();
+        if(msg && msg.uid !== uid && !msg.readAt) {
+          db.ref('bq_dms/' + activeDmId + '/messages/' + child.key + '/readAt').set(Date.now());
+        }
+      });
+    });
   }
 
   bqNav('dmconv');
@@ -1628,11 +1768,15 @@ function showDmConvo(pUid, pName) {
 function loadSDK(){
   return new Promise((res,rej)=>{
     let done=0;
-['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js'].forEach(u=>{
+    const sdks = [
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js',
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js'
+    ];
+    sdks.forEach(u=>{
       const s=document.createElement('script');s.src=u;
-      s.onload=()=>{if(++done===2)res();};s.onerror=rej;
+      s.onload=()=>{if(++done===sdks.length-1)res();};s.onerror=rej;
       document.head.appendChild(s);
     });
   });
@@ -1741,6 +1885,7 @@ function getColor(userId, userName){
 function startPresence(){
   if(!db||!uname)return;
   const ref=db.ref('bq_presence/'+uid);
+  const lastSeenRef=db.ref('bq_last_seen/'+uid);
   const beat=()=>ref.set({
     uname,ts:Date.now(),
     status:myProfile.status||'online',
@@ -1750,7 +1895,9 @@ function startPresence(){
   });
   beat();clearInterval(presInt);
   presInt=setInterval(beat,PRESENCE_TTL*.7);
+  // Set lastSeen on disconnect
   ref.onDisconnect().remove();
+  lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
   db.ref('bq_presence').on('value',snap=>{
     const now=Date.now();onlineU={};
     snap.forEach(c=>{
@@ -1778,8 +1925,22 @@ const hs=document.getElementById('bqdmhs');
       hs.textContent=statusInfo(pdata.status||'online').label;
       hs.style.color='var(--bq-success)';
     } else {
-      hs.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      // Fetch accurate last seen from database
       hs.style.color='var(--bq-text-subtle)';
+      if(db && activeDmPuid) {
+        db.ref('bq_last_seen/'+activeDmPuid).once('value', snap => {
+          const lastSeen = snap.val();
+          if(lastSeen) {
+            hs.textContent='Last seen '+lastSeenStr(lastSeen);
+          } else if(pdata.ts) {
+            hs.textContent='Last seen '+lastSeenStr(pdata.ts);
+          } else {
+            hs.textContent='Offline';
+          }
+        });
+      } else {
+        hs.textContent=pdata.ts?'Last seen '+lastSeenStr(pdata.ts):'Offline';
+      }
     }
   }
   }
@@ -1835,18 +1996,33 @@ function openProfileCard(targetUid,targetName,presData){
   const stEl=document.getElementById('bqpc-status');
   stEl.innerHTML=`<div class="bqpc-sdot" style="background:${si.color}"></div><span class="bqpc-slabel" style="color:${si.color}">${si.label}</span>`;
   
-  // Last seen
+  // Last seen - fetch from database for accurate offline time
   const lsEl=document.getElementById('bqpc-lastseen');
   if(lsEl){
     const isOnline=!!onlineU[targetUid];
     if(isOnline){
       lsEl.textContent='Currently online';
       lsEl.className='bqls bqls-online';
-    } else if(pd.ts){
-      lsEl.textContent='Last seen '+lastSeenStr(pd.ts);
-      lsEl.className='bqls';
     } else {
-      lsEl.textContent='';
+      // Fetch last seen from database
+      lsEl.textContent='Checking...';
+      lsEl.className='bqls';
+      if(db) {
+        db.ref('bq_last_seen/'+targetUid).once('value', snap => {
+          const lastSeen = snap.val();
+          if(lastSeen) {
+            lsEl.textContent='Last seen '+lastSeenStr(lastSeen);
+          } else if(pd.ts) {
+            lsEl.textContent='Last seen '+lastSeenStr(pd.ts);
+          } else {
+            lsEl.textContent='Never seen online';
+          }
+        });
+      } else if(pd.ts) {
+        lsEl.textContent='Last seen '+lastSeenStr(pd.ts);
+      } else {
+        lsEl.textContent='Never seen online';
+      }
     }
   }
   
@@ -1920,10 +2096,11 @@ function subscribeGlobalTyping(){
   });
 }
 
-function sendGlobal(text){
-  if(!db||!text.trim()||!uname)return;
+async function sendGlobal(text, imageUrl = null){
+  if(!db||(!text.trim() && !imageUrl)||!uname)return;
   const disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
+  if(imageUrl) p.imageUrl = imageUrl;
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
@@ -2063,11 +2240,12 @@ function deleteDmConvo(did){
 
 /* ─────────────────────────────────────────
    DM SEND
-───────────────────────────────────────── */
-function sendDm(text){
-  if(!db||!text.trim()||!uname||!activeDmId||!activeDmPuid)return;
+──────────────────────────────────────��── */
+async function sendDm(text, imageUrl = null){
+  if(!db||(!text.trim() && !imageUrl)||!uname||!activeDmId||!activeDmPuid)return;
   const pname=activeDmPname||'?';
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
+  if(imageUrl) p.imageUrl = imageUrl;
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
   const sorted=[uid,activeDmPuid].sort();
@@ -2216,6 +2394,9 @@ function renderMsg(ctx,msg,key){
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
+  const imageHTML=msg.imageUrl?`<img class="bqmsg-img" src="${esc(msg.imageUrl)}" alt="Shared image" loading="lazy" onclick="window.bqOpenImage&&window.bqOpenImage('${esc(msg.imageUrl)}')">`:'';
+  // Read receipts for DMs (only show for sender's own messages)
+  const readHTML=(!isG && isMine && msg.readAt)?`<span class="bqread read" title="Read at ${tsStr(msg.readAt)}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/><polyline points="16 6 5 17"/></svg></span>`:(!isG && isMine)?`<span class="bqread" title="Delivered"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:'';
   const pickBtns=REACTIONS.map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
 
   const row=document.createElement('div');
@@ -2240,7 +2421,7 @@ function renderMsg(ctx,msg,key){
   ${isMine?`<button class="bqact" data-a="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`:''}
   ${isMine?`<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>`:''}
   </div>
-  <div class="bqbbl${msg.expiresAt?' disappearing':''}">${rpHTML}${linkify(esc(msg.text||''))}${msg.edited?'<span class="bqedited">(edited)</span>':''}${timerHTML}</div>
+  <div class="bqbbl${msg.expiresAt?' disappearing':''}">${rpHTML}${msg.text?linkify(esc(msg.text)):''}${imageHTML}${msg.edited?'<span class="bqedited">(edited)</span>':''}${timerHTML}${readHTML}</div>
         </div>
       </div>
     </div>`;
@@ -2343,7 +2524,7 @@ function startEditMsg(ctx,key,msg,pfx){
 
 /* ─────────────────────────────────────────
    BADGES
-───────────────────────────────────────── */
+──────────────────────────���────────────── */
 function updateBadges(){
   const dmTotal=Object.values(dmUnread).reduce((s,n)=>s+n,0);
   const nb=document.getElementById('bqdmnb');
@@ -2569,10 +2750,30 @@ function setupInput(ctx){
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});
   snd.addEventListener('click',doSend);
 
-  function doSend(){
-    const txt=inp.value.trim();if(!txt)return;
+  async function doSend(){
+    const txt=inp.value.trim();
+    const imgFile = pendingImage[isG ? 'global' : 'dm'];
+    if(!txt && !imgFile)return;
     if(!uname){showModal(false);return;}
-    if(isG) sendGlobal(txt); else sendDm(txt);
+    
+    // Upload image if present
+    let imageUrl = null;
+    if(imgFile) {
+      snd.disabled = true;
+      imageUrl = await uploadImage(imgFile, isG ? 'global' : 'dm');
+      if(!imageUrl && !txt) {
+        snd.disabled = false;
+        return; // Upload failed and no text
+      }
+      // Clear preview
+      const preview = document.getElementById(isG ? 'bqgimg-preview' : 'bqdmimg-preview');
+      const thumb = document.getElementById(isG ? 'bqgimg-thumb' : 'bqdmimg-thumb');
+      if(preview) preview.classList.remove('show');
+      if(thumb) thumb.src = '';
+      pendingImage[isG ? 'global' : 'dm'] = null;
+    }
+    
+    if(isG) sendGlobal(txt, imageUrl); else sendDm(txt, imageUrl);
     inp.value='';inp.style.height='auto';snd.disabled=true;cc.textContent='';
     if(isG)setGTyp(false);else setDmTyp(false);
     if(isG)gAtBot=true;else dAtBot=true;
@@ -2677,6 +2878,15 @@ function init(){
   // Set up inputs
   setupInput('global');
   setupInput('dm');
+  
+  // Set up image uploads
+  setupImageUpload('global');
+  setupImageUpload('dm');
+  
+  // Global image preview opener
+  window.bqOpenImage = function(src) {
+    openImagePreview(src);
+  };
 
   // Outside click
   document.addEventListener('mousedown',e=>{
