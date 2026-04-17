@@ -274,11 +274,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqlive{
   width:8px;height:8px;border-radius:50%;
   background:var(--bq-success);
-  box-shadow:0 0 12px var(--bq-success);
+  box-shadow:0 0 10px var(--bq-success);
   flex-shrink:0;
-  animation:bqLive 2s ease infinite;
 }
-@keyframes bqLive{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .bqhtitle{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--bq-text);flex:1;}
 .bqhbtn{
   width:32px;height:32px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);
@@ -426,11 +424,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrbx svg{width:11px;height:11px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;}
 
 /* ── TYPING ── */
-.bqtyp{min-height:22px;padding:0 16px 8px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);display:flex;align-items:center;gap:8px;}
-.bqtd{display:flex;gap:3px;align-items:center;}
-.bqtd span{width:4px;height:4px;background:var(--bq-accent);border-radius:50%;animation:bqTd 1.2s ease infinite;}
+.bqtyp{min-height:24px;padding:2px 16px 8px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);display:flex;align-items:center;gap:8px;}
+.bqtd{display:flex;gap:4px;align-items:center;padding:6px 10px;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px 12px 12px 4px;width:fit-content;}
+.bqtd span{width:5px;height:5px;background:var(--bq-accent);border-radius:50%;animation:bqTd 1.4s ease infinite;opacity:.4;}
 .bqtd span:nth-child(2){animation-delay:.2s;}.bqtd span:nth-child(3){animation-delay:.4s;}
-@keyframes bqTd{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
+@keyframes bqTd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
 
 /* ── INPUT ── */
 .bqiw{border-top:1px solid var(--bq-border);padding:12px 14px;flex-shrink:0;background:var(--bq-bg-elevated);}
@@ -804,16 +802,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-confirm-btn.danger{background:#ef4444;color:#fff;}
 .bq-confirm-btn.danger:hover{background:#dc2626;}
 
-/* ── NEW CHAT BUBBLE THEME (GRADIENT) ── */
-.bqbbl{
-  background:linear-gradient(135deg,rgba(30,30,35,1) 0%,rgba(40,40,50,1) 100%)!important;
-  border:1px solid rgba(255,255,255,.06)!important;
-  box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03)!important;
-}
-.bqr.me .bqbbl{
-  background:linear-gradient(135deg,var(--bq-accent) 0%,#3b82f6 100%)!important;
-  border:1px solid rgba(255,255,255,.1)!important;
-  box-shadow:0 2px 12px rgba(96,165,250,.25),inset 0 1px 0 rgba(255,255,255,.15)!important;
+/* ── THEIRS bubble subtle gradient ── */
+.bqr.theirs .bqbbl{
+  background:linear-gradient(145deg,var(--bq-bg-elevated) 0%,rgba(30,30,38,1) 100%);
 }
 
 /* ── SETTINGS MENU IN HEADER ── */
@@ -896,9 +887,10 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqimg-close svg{width:18px;height:18px;stroke:var(--bq-text);fill:none;stroke-width:2;}
 
 /* ── MESSAGE READ RECEIPTS ── */
-.bqread{display:flex;align-items:center;gap:4px;margin-top:4px;padding:0 3px;}
-.bqread svg{width:14px;height:14px;stroke:var(--bq-text-subtle);fill:none;stroke-width:2;}
-.bqread.seen svg{stroke:var(--bq-accent);}
+.bqread{display:flex;align-items:center;gap:2px;margin-top:3px;padding:0 2px;opacity:.45;transition:opacity .3s ease,color .3s ease;}
+.bqread svg{height:11px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}
+.bqread.delivered{opacity:.65;}
+.bqread.seen{opacity:1;color:var(--bq-accent);}
 .bqread-txt{font-family:'Inter',sans-serif;font-size:9px;color:var(--bq-text-subtle);letter-spacing:.02em;}
 
 /* ── SPINNER ── */
@@ -1112,21 +1104,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-pinbar-unpin:hover{color:var(--bq-text);}
 .bq-pinbar-unpin svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
 
-/* ── DM SEARCH BAR ── */
-#bq-dm-search-wrap{
-  display:none;padding:8px 12px;border-bottom:1px solid var(--bq-border);
-  flex-shrink:0;background:var(--bq-bg-elevated);align-items:center;gap:8px;
-}
-#bq-dm-search-wrap.show{display:flex;animation:bqFadeDown .2s ease both;}
-@keyframes bqFadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.bq-dm-sinp{
-  flex:1;background:var(--bq-bg);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:7px 11px;
-  color:var(--bq-text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s;
-}
-.bq-dm-sinp:focus{border-color:var(--bq-border-hover);}
-.bq-dm-sinp::placeholder{color:var(--bq-text-subtle);}
-.bq-dm-scnt{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);white-space:nowrap;}
+
 
 /* ── MEDIA PREVIEW ── */
 .bq-media-preview{
@@ -1356,7 +1334,6 @@ const HTML = `
         <div class="bqdmhav" id="bqdmhav"></div>
         <div class="bqdmhi"><div class="bqdmhn" id="bqdmhn"></div><div class="bqdmhs" id="bqdmhs">Offline</div></div>
         <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
-        <button class="bqhbtn" id="bq-dm-search-btn" title="Search messages (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
@@ -1374,12 +1351,6 @@ const HTML = `
         <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-pinbar-text"></div></div>
         <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
-      <div id="bq-dm-search-wrap">
-        <svg viewBox="0 0 24 24" width="14" height="14" style="stroke:var(--bq-text-subtle);fill:none;stroke-width:2;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input class="bq-dm-sinp" id="bq-dm-sinp" type="text" placeholder="Search in conversation..." autocomplete="off">
-        <span class="bq-dm-scnt" id="bq-dm-scnt"></span>
-        <button style="background:none;border:none;cursor:pointer;color:var(--bq-text-subtle);padding:2px;line-height:0" id="bq-dm-sclose"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
@@ -1598,6 +1569,8 @@ let gLastU=null, gLastT=0;
 let dLastU=null, dLastT=0;
 let nmCkT     = null;
 let toastT    = null;
+let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
+let dmReadRef   = null; // current active read listener ref
 let activeView= 'chat';
 let prevView  = 'chat';
 let isFull    = false;
@@ -1955,9 +1928,10 @@ function showDmConvo(pUid, pName) {
   // Subscribe pinned + read receipts
   subscribeDmPinned(activeDmId);
   subscribeDmRead(activeDmId);
+  // Mark read immediately + update all receipt indicators
   markDmRead(activeDmId);
-  // Reset DM search
-  if(dmSearchActive){ dmSearchActive=true; toggleDmSearch(); }
+  // Small delay to let messages render before checking receipt cache
+  setTimeout(()=>updateAllReadReceipts(activeDmId), 300);
   // Close info panel if open
   closeDmInfo();
   // Update muted state in header status
@@ -1977,12 +1951,16 @@ function loadSDK(){
   return new Promise((res,rej)=>{
     let done=0;
 ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js'].forEach(u=>{
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'].forEach(u=>{
       const s=document.createElement('script');s.src=u;
       s.onload=()=>{if(++done===2)res();};s.onerror=rej;
       document.head.appendChild(s);
     });
+    // Load messaging SDK non-critically — push won't work without it but core chat will
+    const _mssdk=document.createElement('script');
+    _mssdk.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
+    _mssdk.onerror=()=>console.warn('[Chat] Messaging SDK unavailable');
+    document.head.appendChild(_mssdk);
   });
 }
 
@@ -2469,22 +2447,39 @@ function markDmRead(dmId){
   if(!db||!uid||!dmId) return;
   db.ref('bq_dms/'+dmId+'/read/'+uid).set(Date.now());
 }
+/* ─── READ RECEIPT SVG CONSTANTS ─── */
+const TICK_SINGLE = '<svg viewBox="0 0 16 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5L4.5 9L12 1"/></svg>';
+const TICK_DOUBLE = '<svg viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5L4.5 9L12 1"/><path d="M8 5.5L11.5 9L19 1"/></svg>';
+
 function subscribeDmRead(dmId){
   if(!db) return;
-  db.ref('bq_dms/'+dmId+'/read').on('value',snap=>{
-    const reads={}; snap.forEach(c=>reads[c.key]=c.val());
-    // Update all mine receipts
-    document.querySelectorAll('#bqdmmsgs .bqread').forEach(el=>{
-      const key=el.id.replace('bqread-','');
-      const row=document.getElementById('bqmsg-dm-'+key); if(!row) return;
-      const msgTs = parseInt(row.dataset.ts||'0');
-      // If partner has a read timestamp after this message, mark seen
-      if(activeDmPuid && reads[activeDmPuid] && reads[activeDmPuid] > msgTs){
-        el.classList.add('seen');
-        el.title='Seen';
-        el.innerHTML='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/><polyline points="16 6 5 17 0 12"/></svg>';
-      }
-    });
+  // Detach previous listener cleanly
+  if(dmReadRef){ db.ref('bq_dms/'+(dmReadRef._dmId||dmId)+'/read').off('value', dmReadRef); dmReadRef=null; }
+  const handler = snap=>{
+    if(!dmReadCache[dmId]) dmReadCache[dmId]={};
+    snap.forEach(ch=>{ dmReadCache[dmId][ch.key]=ch.val(); });
+    updateAllReadReceipts(dmId);
+  };
+  handler._dmId = dmId;
+  dmReadRef = handler;
+  db.ref('bq_dms/'+dmId+'/read').on('value', handler);
+}
+
+function updateAllReadReceipts(dmId){
+  dmId = dmId||activeDmId;
+  if(!dmId||!activeDmPuid) return;
+  const reads = dmReadCache[dmId]||{};
+  const partnerTs = reads[activeDmPuid]||0;
+  document.querySelectorAll('#bqdmmsgs .bqr.mine').forEach(row=>{
+    const msgTs = parseInt(row.dataset.ts||'0');
+    if(!msgTs) return;
+    const el = row.querySelector('.bqread');
+    if(!el) return;
+    if(partnerTs && partnerTs >= msgTs){
+      if(!el.classList.contains('seen')){ el.className='bqread seen'; el.title='Seen'; el.innerHTML=TICK_DOUBLE; }
+    } else if(partnerTs){
+      if(!el.classList.contains('seen')&&!el.classList.contains('delivered')){ el.className='bqread delivered'; el.title='Delivered'; el.innerHTML=TICK_DOUBLE; }
+    }
   });
 }
 
@@ -2623,43 +2618,6 @@ function updateDmInfoPanel(){
   updateStarCount();
 }
 
-/* ── DM SEARCH ── */
-let dmSearchActive=false;
-function toggleDmSearch(){
-  const wrap=document.getElementById('bq-dm-search-wrap');
-  const inp=document.getElementById('bq-dm-sinp');
-  if(!wrap) return;
-  dmSearchActive=!dmSearchActive;
-  wrap.classList.toggle('show',dmSearchActive);
-  document.getElementById('bq-dm-search-btn')?.classList.toggle('on',dmSearchActive);
-  if(dmSearchActive) setTimeout(()=>inp?.focus(),50);
-  else clearDmSearch();
-}
-function clearDmSearch(){
-  const inp=document.getElementById('bq-dm-sinp'); if(inp) inp.value='';
-  const cnt=document.getElementById('bq-dm-scnt'); if(cnt) cnt.textContent='';
-  document.querySelectorAll('#bqdmmsgs .bqbbl[data-orig]').forEach(el=>{
-    el.innerHTML=el.dataset.orig; delete el.dataset.orig;
-  });
-}
-function runDmSearch(q){
-  q=q.trim().toLowerCase();
-  document.querySelectorAll('#bqdmmsgs .bqbbl').forEach(el=>{
-    if(el.dataset.orig) el.innerHTML=el.dataset.orig;
-  });
-  const cnt=document.getElementById('bq-dm-scnt');
-  if(!q){ if(cnt) cnt.textContent=''; return; }
-  let matches=0;
-  document.querySelectorAll('#bqdmmsgs .bqbbl').forEach(el=>{
-    if(!el.dataset.orig) el.dataset.orig=el.innerHTML;
-    if(el.textContent.toLowerCase().includes(q)){
-      matches++;
-      el.innerHTML=el.dataset.orig.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<span class="bq-hl">$1</span>');
-      el.scrollIntoView({block:'nearest',behavior:'smooth'});
-    }
-  });
-  if(cnt) cnt.textContent=matches?matches+' result'+(matches>1?'s':''):'No results';
-}
 
 /* ── DISAPPEARING MESSAGES TOGGLE ── */
 function toggleDisappear(did){
@@ -2718,11 +2676,6 @@ function clearMediaPreview(){
 
 /* ── INIT DM FEATURES ── */
 function initDmFeatures(){
-  // DM search
-  document.getElementById('bq-dm-search-btn')?.addEventListener('click',()=>toggleDmSearch());
-  document.getElementById('bq-dm-sclose')?.addEventListener('click',()=>{ dmSearchActive=true; toggleDmSearch(); });
-  document.getElementById('bq-dm-sinp')?.addEventListener('input',e=>runDmSearch(e.target.value));
-  
   // DM menu button
   const menuBtn=document.getElementById('bq-dm-menu-btn');
   const menuDrop=document.getElementById('bq-dm-menu');
@@ -2923,13 +2876,15 @@ function renderMsg(ctx,msg,key){
   row.id=pfx+key;
   row.className='bqr '+(isMine?'mine':'theirs')+(consec?' consec':'');
   row.dataset.date=msgDate.toDateString();
+  row.dataset.ts=String(ts);
+  row.dataset.msguid=msg.uid;
 
   // Build actions safely (no nested backticks)
   var _pinBtn   = !isG ? '<button class="bqact" data-a="pin" title="Pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button>' : '';
   var _editBtn  = isMine ? '<button class="bqact" data-a="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' : '';
   var _delBtn   = isMine ? '<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>' : '';
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+msg.imageData+'" alt="" loading="lazy">' : '';
-  var _readHtml = (isMine&&!isG) ? '<div class="bqread" id="bqread-'+key+'"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>' : '';
+  var _readHtml = (isMine&&!isG) ? '<div class="bqread" id="bqread-'+key+'">'+TICK_SINGLE+'</div>' : '';
   var _bblCls   = 'bqbbl'+(msg.expiresAt?' disappearing':'');
   var _unName   = isMine ? 'You' : '@'+esc(msg.uname||'?');
 
@@ -2966,9 +2921,9 @@ function renderMsg(ctx,msg,key){
   const _stars=getStarred();
   const _sdid=ctx==='global'?'global':(activeDmId||'');
   if(_stars[_sdid]&&_stars[_sdid][key]){ row.querySelector('.bqact.star')?.classList.add('starred'); }
-  // Store ts for read receipts
-  row.dataset.ts=String(ts);
   msgsEl.appendChild(row);
+  // Apply any cached read receipts to this newly rendered message
+  if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
 
   // Action buttons
   row.querySelectorAll('.bqact').forEach(b=>{
@@ -3005,7 +2960,7 @@ function renderMsg(ctx,msg,key){
   if(!isG&&isOpen&&activeView==='dmconv'&&!isMine){
     markDmRead(activeDmId);
   }
-  scrollD(ctx);
+  scrollD(ctx,isMine);
 }
 
 function doAction(ctx,a,key,msg,pfx){
@@ -3105,12 +3060,19 @@ function openImagePreview(src){
 /* ─────────────────────────────────────────
   SCROLL
 ───────────────────────────────────────── */
-function scrollD(ctx){
+function scrollD(ctx, isMyMsg){
   const isG=ctx==='global';
-  const atB=isG?gAtBot:dAtBot;
-  const el=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
-  if(atB&&el) requestAnimationFrame(()=>el.scrollTop=el.scrollHeight);
+  const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
+  if(!msgsEl) return;
+  const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+  // Scroll if: it's my own message, OR user is already near bottom (<150px)
+  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<150){
+    requestAnimationFrame(()=>{
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+      if(isG) gAtBot=true; else dAtBot=true;
+    });
   }
+}
 
 /* ─────────────────────────────────────────
    PANEL OPEN/CLOSE
@@ -3123,6 +3085,11 @@ function openPanel(){
   const m=document.getElementById('bqgmsgs');
   if(m) requestAnimationFrame(()=>m.scrollTop=m.scrollHeight);
   if(activeView==='chat'&&!('ontouchstart' in window)) document.getElementById('bqginp')?.focus();
+  // If DM is open, mark as read + refresh receipts
+  if(activeView==='dmconv'&&activeDmId){
+    markDmRead(activeDmId);
+    setTimeout(()=>updateAllReadReceipts(activeDmId),200);
+  }
 }
 
 function closePanel(){
@@ -3310,19 +3277,19 @@ function setupInput(ctx){
     if(!uname){showModal(false);return;}
     if(isG) sendGlobal(txt); else sendDm(txt);
     inp.value='';inp.style.height='auto';snd.disabled=true;cc.textContent='';
-    // Send button pop animation
     snd.classList.add('sending'); setTimeout(()=>snd.classList.remove('sending'),320);
     if(isG)setGTyp(false);else setDmTyp(false);
     if(isG)gAtBot=true;else dAtBot=true;
-    if(msgs) requestAnimationFrame(()=>msgs.scrollTop=msgs.scrollHeight);
+    // Always scroll on send (it's our own message)
+    if(msgs) requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight;});
   }
 
   // Scroll tracking
   if(msgs&&scrB){
     msgs.addEventListener('scroll',()=>{
       const d=msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight;
-      const atB=d<60;if(isG)gAtBot=atB;else dAtBot=atB;
-      scrB.classList.toggle('show',!atB&&d>100);
+      const atB=d<80;if(isG)gAtBot=atB;else dAtBot=atB;
+      scrB.classList.toggle('show',!atB&&d>120);
     },{passive:true});
     scrB.addEventListener('click',()=>{
       msgs.scrollTop=msgs.scrollHeight;
