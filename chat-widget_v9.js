@@ -69,7 +69,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.0.0';                 // v9: bump on each release
+const WIDGET_VERSION = '9.2.0';                 // v9.2: tap-to-record, full-emoji reactions, whole-widget themes, black + WhatsApp Dark
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
 const VERSION_CHECK_URL = '/chat-widget-version.json'; // optional; ignored if 404
 const AVATAR_CACHE = Object.create(null);       // v9: uid -> {avatar, banner, initials, displayName}
@@ -87,7 +87,19 @@ const PALETTE = [
 ];
 
 const EMOJI_LIST = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','💯','🌍','👀','😢','✨','💪','🙌','😎'];
-const REACTIONS  = ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','💀','🫶','🤯'];
+// v9.2: Full emoji reaction picker — categorized like WhatsApp's keyboard
+const REACTION_CATEGORIES = {
+  '⭐': ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','💀','🫶','🤯'],
+  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','💋','🩸'],
+  '🐶': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪰','🪲','🪳','🦟','🦗','🕷️','🕸️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🪶','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔'],
+  '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊'],
+  '⚽': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🏵️','🎗️','🎫','🎟️','🎪','🤹','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🪘','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
+  '🚗': ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','🪝','⛽','🚧','🚦','🚥','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🕍','🛕','🕋','⛩️','🛤️','🛣️','🗾','🎑','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌌','🌉','🌁'],
+  '💡': ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','🪛','🔧','🔨','⚒️','🛠️','⛏️','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🔫','💣','🧨','🪓','🔪','🗡️','⚔️','🛡️','🚬','⚰️','🪦','⚱️','🏺','🔮','📿','🧿','💈','⚗️','🔭','🔬','🕳️','🩹','🩺','💊','💉','🩸','🧬','🦠','🧫','🧪','🌡️','🧹','🧺','🧻','🚽','🚰','🚿','🛁','🛀','🧼','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛋️','🛏️','🛌','🧸','🪆','🖼️','🪞','🪟','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🎎','🏮','🎐'],
+  '❤️': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯','💹','❇️','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈂️','🛂','🛃','🛄','🛅','🚹','🚺','🚼','⚧️','🚻','🚮','🎦','📶','🈁','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
+};
+const REACTIONS  = REACTION_CATEGORIES['⭐'];     // legacy quick row (kept for compatibility)
 // Quick reaction stickers — one-tap big-emoji message ("burst" bubble)
 const QUICK_STICKERS = ['❤️','🔥','😂','🎉','👏','🥰','😮','💯','🫶','🙏','😭','🤯','💀','✨','👀','🤝'];
 
@@ -502,13 +514,23 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqact svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 .bqact.del:hover{background:rgba(248,113,113,.12);color:var(--bq-danger);}
 .bqepick{
-  position:absolute;top:-48px;display:none;gap:2px;flex-wrap:wrap;width:180px;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);padding:6px;
+  position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
+  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
   box-shadow:0 12px 32px rgba(0,0,0,.6);z-index:15;
 }
 .bqr.mine .bqepick{right:0;}.bqr.theirs .bqepick{left:0;}
 .bqepick.open{display:flex;}
-.bqepbtn{width:30px;height:30px;background:none;border:none;cursor:pointer;border-radius:6px;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
+.bqep-tabs{display:flex;gap:0;padding:4px 6px;border-bottom:1px solid var(--bq-border);background:rgba(0,0,0,.15);flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.bqep-tabs::-webkit-scrollbar{display:none;}
+.bqep-tab{flex:0 0 auto;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:6px 8px;border-radius:6px;opacity:.55;transition:all .15s;}
+.bqep-tab:hover{opacity:.85;background:var(--bq-bg-hover);}
+.bqep-tab.active{opacity:1;background:var(--bq-bg-hover);box-shadow:inset 0 -2px 0 var(--bq-accent);}
+.bqep-panes{flex:1;min-height:0;overflow:hidden;position:relative;}
+.bqep-pane{display:none;padding:8px;height:100%;overflow-y:auto;flex-wrap:wrap;gap:2px;align-content:flex-start;scrollbar-width:thin;}
+.bqep-pane.active{display:flex;}
+.bqep-pane::-webkit-scrollbar{width:5px;}
+.bqep-pane::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
+.bqepbtn{width:32px;height:32px;background:none;border:none;cursor:pointer;border-radius:6px;font-size:20px;display:flex;align-items:center;justify-content:center;transition:transform .12s,background .12s;line-height:1;flex:0 0 auto;}
 .bqepbtn:hover{background:var(--bq-bg-hover);transform:scale(1.2);}
 .bqrxns{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;padding:0 6px;}
 .bqr.theirs .bqrxns{justify-content:flex-start;}
@@ -587,9 +609,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrxn{animation:bqRxnPop .35s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes bqRxnPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
 /* Make the reaction picker scrollable since we have more reactions */
-.bqepick{width:230px!important;max-height:96px;overflow-y:auto;scrollbar-width:thin;}
-.bqepick::-webkit-scrollbar{width:4px;}
-.bqepick::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+/* v9.2: legacy width override removed — full picker uses .bqepick rules above */
 .bqirow{display:flex;gap:8px;align-items:flex-end;}
 .bqieo{width:38px;height:38px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;transition:all .2s;line-height:1;}
 .bqieo:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);transform:scale(1.05);}
@@ -1380,20 +1400,71 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqp.bq-theme-wadark .bqbbl-tick svg{stroke:#53bdeb!important;}
 /* v9: perf — let off-screen rows skip layout */
 #bqgmsgs .bqr,#bqdmmsgs .bqr{content-visibility:auto;contain-intrinsic-size:auto 80px;}
-/* v9: voice hold-to-record overlay */
-.bq-vn-hold-overlay{position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85));display:none;align-items:center;justify-content:space-between;padding:0 12px;z-index:50;border-radius:0 0 12px 12px;}
-.bq-vn-hold-overlay.show{display:flex;}
-.bq-vn-hold-time{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px;}
-.bq-vn-hold-time::before{content:'';width:10px;height:10px;border-radius:50%;background:#ef4444;animation:bqRecPulse 1s infinite;}
-@keyframes bqRecPulse{0%,100%{opacity:1}50%{opacity:.3}}
-.bq-vn-hold-slide{display:flex;align-items:center;gap:6px;color:#fff;font-size:12px;opacity:.7;animation:bqSlideHint 1.4s ease-in-out infinite;}
-@keyframes bqSlideHint{0%,100%{transform:translateX(0)}50%{transform:translateX(-8px)}}
-.bq-vn-cancel-zone{position:absolute;left:0;right:0;bottom:0;height:64px;display:none;align-items:center;justify-content:center;background:rgba(239,68,68,.18);color:#fef2f2;font-weight:600;z-index:51;border-radius:0 0 12px 12px;}
-.bq-vn-cancel-zone.show{display:flex;}
-.bq-vn-lock-hint{position:absolute;right:18px;bottom:80px;background:#0f172a;color:#fff;width:36px;height:48px;border-radius:24px;display:none;align-items:flex-start;justify-content:center;padding-top:6px;z-index:52;box-shadow:0 4px 12px rgba(0,0,0,.4);}
-.bq-vn-lock-hint.show{display:flex;}
-.bq-vn-lock-hint.locked{background:#10b981;}
-.bq-vn-lock-hint svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;}
+
+/* v9.2: Pure Black theme */
+#bqp.bq-theme-black{background:#000!important;}
+#bqp.bq-theme-black .bqr.mine .bqbbl{background:#1a1a1a!important;color:#fff!important;border:1px solid #2a2a2a!important;box-shadow:none!important;}
+#bqp.bq-theme-black .bqr.theirs .bqbbl{background:#0d0d0d!important;color:#e5e5e5!important;border:1px solid #1a1a1a!important;}
+#bqp.bq-theme-black .bqun{color:#a3a3a3!important;}
+#bqp.bq-theme-black .bqbbl-meta{color:#737373!important;}
+
+/* v9.2: Apply selected theme to the WHOLE widget (lists, headers, settings, composer) */
+#bqp.bq-theme-walight,
+#bqp.bq-theme-walight .bqv,
+#bqp.bq-theme-walight .bqlst,
+#bqp.bq-theme-walight #bqdmlist,
+#bqp.bq-theme-walight .bqcomp,
+#bqp.bq-theme-walight .bqsettings,
+#bqp.bq-theme-walight .bq-info-scroll,
+#bqp.bq-theme-walight .bq-profile-scroll{color:#0b141a!important;}
+#bqp.bq-theme-walight .bqlst,#bqp.bq-theme-walight #bqdmlist,#bqp.bq-theme-walight .bqcomp,#bqp.bq-theme-walight .bqsettings,#bqp.bq-theme-walight .bq-info-scroll,#bqp.bq-theme-walight .bq-profile-scroll{background:#efeae2!important;}
+#bqp.bq-theme-walight .bqdmh,#bqp.bq-theme-walight .bqgh,#bqp.bq-theme-walight .bqsh,#bqp.bq-theme-walight .bq-info-header,#bqp.bq-theme-walight .bq-profile-header{background:#075e54!important;color:#fff!important;border-color:#054d44!important;}
+#bqp.bq-theme-walight .bqiw,#bqp.bq-theme-walight .bqgi{background:#f0f2f5!important;border-color:#d1d7db!important;}
+#bqp.bq-theme-walight .bqlst-item,#bqp.bq-theme-walight .bqdml,#bqp.bq-theme-walight .bq-info-row,#bqp.bq-theme-walight .bq-info-section{background:transparent!important;color:#0b141a!important;border-color:#e9edef!important;}
+#bqp.bq-theme-walight .bqlst-item:hover,#bqp.bq-theme-walight .bqdml:hover{background:rgba(0,0,0,.04)!important;}
+#bqp.bq-theme-walight .bq-info-section-title{color:#075e54!important;}
+#bqp.bq-theme-walight input,#bqp.bq-theme-walight textarea{background:#fff!important;color:#0b141a!important;border-color:#d1d7db!important;}
+
+#bqp.bq-theme-wadark,
+#bqp.bq-theme-wadark .bqv,
+#bqp.bq-theme-wadark .bqlst,
+#bqp.bq-theme-wadark #bqdmlist,
+#bqp.bq-theme-wadark .bqcomp,
+#bqp.bq-theme-wadark .bqsettings,
+#bqp.bq-theme-wadark .bq-info-scroll,
+#bqp.bq-theme-wadark .bq-profile-scroll{color:#e9edef!important;}
+#bqp.bq-theme-wadark .bqlst,#bqp.bq-theme-wadark #bqdmlist,#bqp.bq-theme-wadark .bqcomp,#bqp.bq-theme-wadark .bqsettings,#bqp.bq-theme-wadark .bq-info-scroll,#bqp.bq-theme-wadark .bq-profile-scroll{background:#0b141a!important;}
+#bqp.bq-theme-wadark .bqdmh,#bqp.bq-theme-wadark .bqgh,#bqp.bq-theme-wadark .bqsh,#bqp.bq-theme-wadark .bq-info-header,#bqp.bq-theme-wadark .bq-profile-header{background:#1f2c33!important;color:#e9edef!important;border-color:#222e35!important;}
+#bqp.bq-theme-wadark .bqiw,#bqp.bq-theme-wadark .bqgi{background:#1f2c33!important;border-color:#222e35!important;}
+#bqp.bq-theme-wadark .bqlst-item,#bqp.bq-theme-wadark .bqdml,#bqp.bq-theme-wadark .bq-info-row,#bqp.bq-theme-wadark .bq-info-section{background:transparent!important;color:#e9edef!important;border-color:#222e35!important;}
+#bqp.bq-theme-wadark .bqlst-item:hover,#bqp.bq-theme-wadark .bqdml:hover{background:#202c33!important;}
+#bqp.bq-theme-wadark .bq-info-section-title{color:#00a884!important;}
+#bqp.bq-theme-wadark input,#bqp.bq-theme-wadark textarea{background:#2a3942!important;color:#e9edef!important;border-color:#222e35!important;}
+
+#bqp.bq-theme-crimson .bqv,
+#bqp.bq-theme-crimson .bqlst,
+#bqp.bq-theme-crimson #bqdmlist,
+#bqp.bq-theme-crimson .bqcomp,
+#bqp.bq-theme-crimson .bqsettings,
+#bqp.bq-theme-crimson .bq-info-scroll,
+#bqp.bq-theme-crimson .bq-profile-scroll{background:transparent!important;color:#fce7eb!important;}
+#bqp.bq-theme-crimson .bqdmh,#bqp.bq-theme-crimson .bqgh,#bqp.bq-theme-crimson .bqsh,#bqp.bq-theme-crimson .bq-info-header,#bqp.bq-theme-crimson .bq-profile-header{background:linear-gradient(180deg,#1a0306,#0a0102)!important;color:#fce7eb!important;border-color:rgba(220,20,60,.25)!important;}
+#bqp.bq-theme-crimson .bqiw,#bqp.bq-theme-crimson .bqgi{background:rgba(220,20,60,.06)!important;border-color:rgba(220,20,60,.2)!important;}
+#bqp.bq-theme-crimson .bqlst-item:hover,#bqp.bq-theme-crimson .bqdml:hover{background:rgba(220,20,60,.08)!important;}
+#bqp.bq-theme-crimson .bq-info-section-title{color:#dc143c!important;}
+
+#bqp.bq-theme-black .bqv,
+#bqp.bq-theme-black .bqlst,
+#bqp.bq-theme-black #bqdmlist,
+#bqp.bq-theme-black .bqcomp,
+#bqp.bq-theme-black .bqsettings,
+#bqp.bq-theme-black .bq-info-scroll,
+#bqp.bq-theme-black .bq-profile-scroll{background:#000!important;color:#e5e5e5!important;}
+#bqp.bq-theme-black .bqdmh,#bqp.bq-theme-black .bqgh,#bqp.bq-theme-black .bqsh,#bqp.bq-theme-black .bq-info-header,#bqp.bq-theme-black .bq-profile-header{background:#0a0a0a!important;color:#fff!important;border-color:#1a1a1a!important;}
+#bqp.bq-theme-black .bqiw,#bqp.bq-theme-black .bqgi{background:#0a0a0a!important;border-color:#1a1a1a!important;}
+#bqp.bq-theme-black .bqlst-item:hover,#bqp.bq-theme-black .bqdml:hover{background:#0d0d0d!important;}
+#bqp.bq-theme-black .bq-info-section-title{color:#a3a3a3!important;}
+#bqp.bq-theme-black input,#bqp.bq-theme-black textarea{background:#0a0a0a!important;color:#e5e5e5!important;border-color:#1a1a1a!important;}
 
 /* Per-theme theirs bubble subtle tints */
 #bqp.bq-theme-sunset .bqr.theirs .bqbbl{background:rgba(251,146,60,.08)!important;border-color:rgba(251,146,60,.2)!important;}
@@ -1576,6 +1647,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-theme-chip[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#7f1d1d 100%);}
 .bq-theme-chip[data-t="walight"]{background:linear-gradient(135deg,#dcf8c6 0%,#075e54 100%);}
 .bq-theme-chip[data-t="wadark"]{background:linear-gradient(135deg,#005c4b 0%,#0b141a 100%);}
+.bq-theme-chip[data-t="black"]{background:linear-gradient(135deg,#0a0a0a 0%,#000 100%);border-color:rgba(255,255,255,.2);}
 .bq-theme-chip.sel::after{content:'';position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);}
 
 /* ── SCROLL TO BOTTOM BUTTON improved ── */
@@ -2149,7 +2221,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips"><div class="bq-theme-chip sel" data-t="none" title="Default"><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="walight" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div></div><div class="bq-theme-chip" data-t="dots" title="Dots"></div><div class="bq-theme-chip" data-t="grid" title="Grid"></div><div class="bq-theme-chip" data-t="wave" title="Wave"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="sunset" title="Sunset"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="forest" title="Forest"></div><div class="bq-theme-chip" data-t="rose" title="Rosé"></div><div class="bq-theme-chip" data-t="mono" title="Mono"></div><div class="bq-theme-chip" data-t="bubblegum" title="Bubblegum"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips"><div class="bq-theme-chip sel" data-t="none" title="Default"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="walight" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="dots" title="Dots"></div><div class="bq-theme-chip" data-t="grid" title="Grid"></div><div class="bq-theme-chip" data-t="wave" title="Wave"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="sunset" title="Sunset"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="forest" title="Forest"></div><div class="bq-theme-chip" data-t="rose" title="Rosé"></div><div class="bq-theme-chip" data-t="mono" title="Mono"></div><div class="bq-theme-chip" data-t="bubblegum" title="Bubblegum"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -3905,7 +3977,14 @@ function renderMsg(ctx,msg,key){
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
-  const pickBtns=REACTIONS.map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
+  // v9.2: Full WhatsApp-style emoji picker — tabs + scrollable grid per category
+  const _epCats=Object.keys(REACTION_CATEGORIES);
+  const _epTabs=_epCats.map((c,i)=>`<button class="bqep-tab${i===0?' active':''}" data-cat="${c}">${c}</button>`).join('');
+  const _epPanes=_epCats.map((c,i)=>{
+    const btns=REACTION_CATEGORIES[c].map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
+    return `<div class="bqep-pane${i===0?' active':''}" data-cat="${c}">${btns}</div>`;
+  }).join('');
+  const pickBtns=`<div class="bqep-tabs">${_epTabs}</div><div class="bqep-panes">${_epPanes}</div>`;
 
   const row=document.createElement('div');
   row.id=pfx+key;
@@ -3975,6 +4054,16 @@ function renderMsg(ctx,msg,key){
   // Emoji pick
   row.querySelectorAll('.bqepbtn').forEach(b=>{
     b.addEventListener('click',e=>{e.stopPropagation();toggleRxn(ctx,key,b.dataset.e);document.getElementById(pfx+'ep-'+key)?.classList.remove('open');});
+  });
+  // v9.2: Emoji-picker category tabs
+  row.querySelectorAll('.bqep-tab').forEach(t=>{
+    t.addEventListener('click',e=>{
+      e.stopPropagation();
+      const cat=t.dataset.cat;
+      const pickEl=t.closest('.bqepick'); if(!pickEl) return;
+      pickEl.querySelectorAll('.bqep-tab').forEach(x=>x.classList.toggle('active',x===t));
+      pickEl.querySelectorAll('.bqep-pane').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));
+    });
   });
   // Avatar / username click
   row.querySelectorAll('.bqav,.bqun').forEach(el=>{
@@ -5152,7 +5241,44 @@ setTimeout(_injectProfileUploads,1500);
   }
 
   .bqvoice-rec-bar{position:relative;z-index:4;}
-  .bq-voice-preview{position:relative;z-index:4;}
+  /* v9.1: Voice preview bar — Send / Discard / Play / Replay controls */
+  .bq-voice-preview{
+    position:relative;z-index:4;display:flex;align-items:center;gap:8px;
+    padding:8px 10px;margin:6px 8px 0;border-radius:14px;
+    background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(15,23,42,.78));
+    border:1px solid var(--bq-border,rgba(255,255,255,.08));
+    box-shadow:0 6px 18px rgba(0,0,0,.32);
+    animation:bqVpIn .18s ease-out;
+  }
+  @keyframes bqVpIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .bq-voice-preview .bq-vp-play,
+  .bq-voice-preview .bq-vp-replay{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--bq-accent,#3b82f6);color:#fff;transition:transform .12s ease,background .12s ease;
+  }
+  .bq-voice-preview .bq-vp-replay{background:rgba(255,255,255,.12);color:#fff;width:28px;height:28px;}
+  .bq-voice-preview .bq-vp-play:hover,
+  .bq-voice-preview .bq-vp-replay:hover{transform:scale(1.08);}
+  .bq-voice-preview .bq-vp-play svg,
+  .bq-voice-preview .bq-vp-replay svg{width:14px;height:14px;fill:currentColor;}
+  .bq-voice-preview .bq-vp-replay svg{fill:none;stroke:currentColor;}
+  .bq-voice-preview .bq-vp-wave{flex:1;min-width:60px;height:28px;}
+  .bq-voice-preview .bq-vp-time{
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#cbd5e1;
+    flex-shrink:0;min-width:34px;text-align:center;
+  }
+  .bq-voice-preview .bq-vp-btn{
+    flex-shrink:0;width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:transform .12s ease,filter .12s ease;
+  }
+  .bq-voice-preview .bq-vp-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .bq-voice-preview .bq-vp-btn.discard{background:rgba(220,38,38,.18);color:#fca5a5;}
+  .bq-voice-preview .bq-vp-btn.discard:hover{background:rgba(220,38,38,.32);color:#fff;transform:scale(1.06);}
+  .bq-voice-preview .bq-vp-btn.send{background:#22c55e;color:#fff;}
+  .bq-voice-preview .bq-vp-btn.send svg{fill:#fff;stroke:none;}
+  .bq-voice-preview .bq-vp-btn.send:hover{filter:brightness(1.1);transform:scale(1.06);}
 
   #bqv-profile .bqpf-scroll{padding:0!important;overflow:auto;}
   .bqp4{
@@ -5880,141 +6006,62 @@ setTimeout(_injectProfileUploads,1500);
 
   function bindVoiceUi(){
     ensureRecordingCanvas();
-    // v9: WhatsApp-style hold-to-record, slide-left-to-cancel, slide-up-to-lock
+    // v9.2: Tap-to-record (no hold). Tap mic → start recording; tap again → stop & show preview.
+    // The previous hold-to-record implementation caused jank from continuous mousemove/touchmove
+    // listeners and the floating overlay shifting layout. Tap is simpler and lag-free.
     const btn=document.getElementById('bq-voice-btn');
-    if(btn && !btn.dataset.v9Bound){
-      btn.dataset.v9Bound='1';
+    if(btn && !btn.dataset.v92Bound){
+      btn.dataset.v92Bound='1';
+      // Replace node to drop any older listeners
       const fresh=btn.cloneNode(true);
       btn.parentNode.replaceChild(fresh,btn);
-      // Inject overlays inside the input wrapper (once)
+      // Remove any leftover hold-overlay DOM from older versions
       const iw=fresh.closest('.bqiw') || fresh.parentElement;
-      if(iw && !iw.querySelector('.bq-vn-hold-overlay')){
-        if(getComputedStyle(iw).position==='static') iw.style.position='relative';
-        iw.insertAdjacentHTML('beforeend',
-          '<div class="bq-vn-hold-overlay" id="bq-vn-hold"><div class="bq-vn-hold-time"><span id="bq-vn-hold-t">0:00</span></div><div class="bq-vn-hold-slide">‹ Slide to cancel</div></div>'+
-          '<div class="bq-vn-cancel-zone" id="bq-vn-cancel-zone">🗑️ Release to cancel</div>'+
-          '<div class="bq-vn-lock-hint" id="bq-vn-lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>'
-        );
+      if(iw){
+        iw.querySelector('.bq-vn-hold-overlay')?.remove();
+        iw.querySelector('.bq-vn-cancel-zone')?.remove();
+        iw.querySelector('.bq-vn-lock-hint')?.remove();
       }
-      let _holdState = null; // {startX, startY, locked, recording, longPressT}
-      let _holdT=null;
-      function _holdTick(){
-        if(!_holdState || !_holdState.recording) return;
-        const elapsed = Date.now() - (voiceController?.startTime || Date.now());
-        const s=Math.floor(elapsed/1000),m=Math.floor(s/60),r=s%60;
-        const t=document.getElementById('bq-vn-hold-t'); if(t) t.textContent=m+':'+(r<10?'0':'')+r;
-      }
-      function _showHoldUI(){
-        document.getElementById('bq-vn-hold')?.classList.add('show');
-        document.getElementById('bq-vn-lock')?.classList.add('show');
-        fresh.classList.add('recording');
-        if(_holdT) clearInterval(_holdT);
-        _holdT=setInterval(_holdTick,200);
-      }
-      function _hideHoldUI(){
-        document.getElementById('bq-vn-hold')?.classList.remove('show');
-        document.getElementById('bq-vn-cancel-zone')?.classList.remove('show');
-        const lk=document.getElementById('bq-vn-lock'); if(lk){ lk.classList.remove('show','locked'); }
-        fresh.classList.remove('recording');
-        if(_holdT){ clearInterval(_holdT); _holdT=null; }
-      }
-      function _cancelHoldRecording(){
+      let _starting=false;
+      fresh.addEventListener('click', async function(e){
+        e.preventDefault(); e.stopPropagation();
+        // If already recording → stop and show preview
         if(voiceController?.recorder?.state==='recording'){
-          const ctrl=voiceController;
-          ctrl.recorder.onstop=()=>{ cleanupVoiceController(); _hideHoldUI(); const te=document.getElementById('bq-voice-rec-time'); if(te) te.textContent='0:00'; };
-          try{ ctrl.recorder.stop(); }catch(_){ cleanupVoiceController(); _hideHoldUI(); }
-        } else {
-          _hideHoldUI();
-        }
-      }
-      function _finishHoldRecording(){
-        // Release: send immediately (no preview) for hold-to-record style
-        if(voiceController?.recorder?.state==='recording'){
-          // Mark to send immediately on next finishRecording() call
           try{
             const ctrl=voiceController;
-            const origStop=ctrl.recorder.onstop;
             ctrl.recorder.onstop=function(){
               ctrl.blob=new Blob(ctrl.chunks,{type:ctrl.mimeType||'audio/webm'});
               ctrl.duration=Date.now()-ctrl.startTime;
               try{ ctrl.audioCtx?.close?.(); }catch(_){}
-              finishRecording(true); // sendImmediately=true
-              _hideHoldUI();
+              finishRecording(false); // sendImmediately=false → show preview UI
+              fresh.classList.remove('recording');
             };
             ctrl.recorder.stop();
-          }catch(_){ _hideHoldUI(); }
-        } else {
-          _hideHoldUI();
+          }catch(_){
+            cleanupVoiceController();
+            fresh.classList.remove('recording');
+          }
+          return;
         }
-      }
-      function _onPointerDown(e){
-        // Ignore if already recording (locked mode handles via existing cancel button)
-        if(voiceController?.recorder?.state==='recording') return;
-        e.preventDefault();
-        const pt = e.touches? e.touches[0] : e;
-        _holdState = { startX: pt.clientX, startY: pt.clientY, locked:false, recording:false, longPressT:null };
-        // Long-press threshold (180ms) — taps below this don't start recording
-        _holdState.longPressT = setTimeout(async ()=>{
-          if(!_holdState) return;
-          try{ if(navigator.vibrate) navigator.vibrate(15); }catch(_){}
+        // Else start recording
+        if(_starting) return;
+        _starting=true;
+        try{ if(navigator.vibrate) navigator.vibrate(10); }catch(_){}
+        try{
           await startStableRecording();
-          if(_holdState){ _holdState.recording=true; _showHoldUI(); }
-        }, 180);
-      }
-      function _onPointerMove(e){
-        if(!_holdState || !_holdState.recording || _holdState.locked) return;
-        const pt = e.touches? e.touches[0] : e;
-        const dx = pt.clientX - _holdState.startX;
-        const dy = pt.clientY - _holdState.startY;
-        const cz=document.getElementById('bq-vn-cancel-zone');
-        const lk=document.getElementById('bq-vn-lock');
-        // Slide left past 80px = arming cancel
-        if(dx < -80){ cz?.classList.add('show'); }
-        else { cz?.classList.remove('show'); }
-        // Slide up past 60px = lock
-        if(dy < -60){
-          _holdState.locked = true;
-          lk?.classList.add('locked');
-          // Show explicit cancel button (existing #bq-voice-rec-cancel) and let user release
+          fresh.classList.add('recording');
           document.getElementById('bq-voice-rec-bar')?.classList.add('show');
-          document.getElementById('bq-vn-hold')?.classList.remove('show');
-          if(_holdT){ clearInterval(_holdT); _holdT=null; }
+        }catch(err){
+          toast('Microphone unavailable');
+        }finally{
+          _starting=false;
         }
-      }
-      function _onPointerUp(e){
-        if(!_holdState) return;
-        const st=_holdState;
-        if(st.longPressT){ clearTimeout(st.longPressT); st.longPressT=null; }
-        _holdState=null;
-        if(!st.recording){
-          // Tap (too short) — show hint
-          toast('Hold to record');
-          return;
-        }
-        if(st.locked){
-          // Locked — leave UI as-is; user uses cancel/send buttons
-          return;
-        }
-        const cz=document.getElementById('bq-vn-cancel-zone');
-        const cancelArmed = cz?.classList.contains('show');
-        if(cancelArmed){ _cancelHoldRecording(); }
-        else { _finishHoldRecording(); }
-      }
-      // Mouse + touch
-      fresh.addEventListener('mousedown', _onPointerDown);
-      fresh.addEventListener('touchstart', _onPointerDown, {passive:false});
-      window.addEventListener('mousemove', _onPointerMove);
-      window.addEventListener('touchmove', _onPointerMove, {passive:false});
-      window.addEventListener('mouseup', _onPointerUp);
-      window.addEventListener('touchend', _onPointerUp);
-      window.addEventListener('touchcancel', _onPointerUp);
-      // Keyboard accessibility — Space toggles record
+      });
+      // Keyboard accessibility — Space/Enter toggles record
       fresh.addEventListener('keydown', e=>{
-        if(e.code==='Space' && !e.repeat){
+        if((e.code==='Space'||e.code==='Enter') && !e.repeat){
           e.preventDefault();
-          if(voiceController?.recorder?.state==='recording'){
-            try{voiceController.recorder.stop();}catch(_){}
-          } else { startStableRecording(); }
+          fresh.click();
         }
       });
     }
