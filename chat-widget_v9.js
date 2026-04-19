@@ -1,4 +1,11 @@
 /**
+ * v10.0 — cleaned & optimized (Apr 2026)
+ * - Removed legacy .bqacts hover toolbar + inline .bqepick (caused 'half menu' on React)
+ * - New centered reaction picker modal (#bq-rx-picker)
+ * - Removed banner & avatar uploads (catbox.moe). Initials + accent color only.
+ * - Throttled typing/presence writes; lazy GIF loading; single global ticker
+ */
+/**
  * BioQuiz Chat Widget v9 (chat-widget_v9.js)
  * Bug fixes: profile avatar/banner, voice hold-to-record, theme persistence, perf, auto-update
  * Drop-in: <script src="chat-widget.js"></script>
@@ -62,6 +69,16 @@ const GIPHY_CATEGORIES = [
    CONSTANTS
 ───────────────────────────────────────── */
 const MAX_MSG      = 50;
+// v10: throttle typing/presence writes
+const _typingThrottle = Object.create(null);
+function _throttledTypingWrite(path, data){
+  if(!db) return;
+  const now=Date.now();
+  const last=_typingThrottle[path]||0;
+  if(now-last < 1500) return;
+  _typingThrottle[path]=now;
+  db.ref(path).set(data);
+}
 const CHAR_LIMIT   = 320;
 const TYPING_TTL   = 3000;
 const PRESENCE_TTL = 9000;
@@ -70,9 +87,8 @@ const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
 const WIDGET_VERSION = '9.6.1';                 // v9.6.1: compact working message menu + 4 fixed themes
-// v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
-const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
+const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
 const VERSION_CHECK_URL = '/chat-widget-version.json'; // optional; ignored if 404
 const AVATAR_CACHE = Object.create(null);       // v9: uid -> {avatar, banner, initials, displayName}
@@ -114,10 +130,11 @@ function uInit(n){ return (n||'?').slice(0,2).toUpperCase(); }
 
 /* v9: avatar cache helpers — keep bubble avatars fresh as Firebase tokens expire */
 function _cacheAvatarFromPresence(uid, d){
+  // v10: banner/avatar URL fields no longer cached
   if(!uid || !d) return;
   AVATAR_CACHE[uid] = {
-    avatar: d.avatar||'',
-    banner: d.banner||'',
+    
+    
     initials: d.initials||'',
     displayName: d.displayName||'',
     color: d.color||''
@@ -314,7 +331,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* Mobile touch feedback */
 @media (hover:none){
   .bqnb:active{transform:scale(.95);background:var(--bq-bg-hover);}
-  .bqact:active{transform:scale(.9);}
   .bqsnd:active{transform:scale(.9);}
   .bqdmr:active{background:var(--bq-bg-hover);}
   .bqurow:active{background:var(--bq-bg-hover);}
@@ -501,27 +517,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* Bubble hover actions */
 .bqbw{position:relative;display:flex;flex-direction:column;align-items:flex-end;}
 .bqr.theirs .bqbw{align-items:flex-start;}
-.bqacts{
   position:absolute;top:-44px;display:none;align-items:center;gap:4px;
   background:var(--bq-bg-elevated,#1f2937);border:1px solid var(--bq-border,rgba(255,255,255,.12));
   border-radius:var(--bq-radius-sm,10px);padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.5);
   z-index:50;white-space:nowrap;max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:none;
 }
-.bqacts::-webkit-scrollbar{display:none;}
-.bqr.mine .bqacts{right:0;}.bqr.theirs .bqacts{left:0;}
 /* If message is near the top of the chat, flip actions BELOW the bubble so they don't get clipped */
-.bqr:first-child .bqacts,.bqr.bq-flip-acts .bqacts{top:auto;bottom:-44px;}
-.bqbw:hover .bqacts{display:flex;}
-/* v9.3: mobile/tap support — message gains .bq-tapped class on tap to show actions */
-.bqr.bq-tapped .bqacts{display:flex;}
-.bqact{
   width:32px;height:32px;background:rgba(255,255,255,.04);border:none;cursor:pointer;
   border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
   font-size:16px;line-height:1;transition:all .15s;color:var(--bq-text,#e5e7eb);
 }
-.bqact:hover{background:var(--bq-bg-hover,rgba(255,255,255,.1));color:var(--bq-text,#fff);transform:scale(1.1);}
-.bqact svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
-.bqact.del:hover{background:rgba(248,113,113,.18);color:var(--bq-danger,#f87171);}
 #bq-msg-sheet{position:fixed;inset:0;display:none;z-index:999999;pointer-events:none;}
 #bq-msg-sheet.open{display:block;pointer-events:auto;}
 .bq-ms-backdrop{position:absolute;inset:0;background:transparent;}
@@ -541,26 +546,34 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-voice-bars{position:relative;overflow:hidden;}
 .bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease;opacity:.42;}
 .bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 12px color-mix(in srgb,var(--bq-accent) 22%, transparent);}
+
+#bq-rx-picker{position:fixed;inset:0;display:none;z-index:2147483646;align-items:flex-end;justify-content:center;}
+#bq-rx-picker.open{display:flex;}
+.bq-rx-back{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.bq-rx-panel{position:relative;width:min(420px,100%);max-height:55vh;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -10px 40px rgba(0,0,0,.5);animation:bqRxIn .18s ease;}
+@keyframes bqRxIn{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.bq-rx-tabs{display:flex;gap:0;padding:8px;border-bottom:1px solid var(--bq-border);background:rgba(0,0,0,.15);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.bq-rx-tabs::-webkit-scrollbar{display:none;}
+.bq-rx-tab{flex:0 0 auto;background:none;border:none;cursor:pointer;font-size:22px;line-height:1;padding:8px 12px;border-radius:8px;opacity:.55;transition:opacity .15s,background .15s;}
+.bq-rx-tab:hover{opacity:.85;background:var(--bq-bg-hover);}
+.bq-rx-tab.active{opacity:1;background:var(--bq-bg-hover);box-shadow:inset 0 -2px 0 var(--bq-accent);}
+.bq-rx-panes{flex:1;overflow-y:auto;}
+.bq-rx-pane{display:none;padding:12px;grid-template-columns:repeat(8,1fr);gap:4px;}
+.bq-rx-pane.active{display:grid;}
+@media (max-width:480px){.bq-rx-pane{grid-template-columns:repeat(7,1fr);}}
+.bq-rx-emo{aspect-ratio:1;background:none;border:none;cursor:pointer;border-radius:8px;font-size:26px;display:flex;align-items:center;justify-content:center;transition:transform .12s,background .12s;line-height:1;}
+.bq-rx-emo:hover{background:var(--bq-bg-hover);transform:scale(1.25);}
+.bq-rx-emo:active{transform:scale(.95);}
 @media (max-width: 640px){.bq-ms-panel{max-width:min(200px,calc(100vw - 20px));}}
-.bqepick{
   position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
   box-shadow:0 12px 32px rgba(0,0,0,.6);z-index:15;
 }
-.bqr.mine .bqepick{right:0;}.bqr.theirs .bqepick{left:0;}
-.bqepick.open{display:flex;}
-.bqep-tabs{display:flex;gap:0;padding:4px 6px;border-bottom:1px solid var(--bq-border);background:rgba(0,0,0,.15);flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
-.bqep-tabs::-webkit-scrollbar{display:none;}
-.bqep-tab{flex:0 0 auto;background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:6px 8px;border-radius:6px;opacity:.55;transition:all .15s;}
-.bqep-tab:hover{opacity:.85;background:var(--bq-bg-hover);}
-.bqep-tab.active{opacity:1;background:var(--bq-bg-hover);box-shadow:inset 0 -2px 0 var(--bq-accent);}
-.bqep-panes{flex:1;min-height:0;overflow:hidden;position:relative;}
-.bqep-pane{display:none;padding:8px;height:100%;overflow-y:auto;flex-wrap:wrap;gap:2px;align-content:flex-start;scrollbar-width:thin;}
-.bqep-pane.active{display:flex;}
-.bqep-pane::-webkit-scrollbar{width:5px;}
-.bqep-pane::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
-.bqepbtn{width:32px;height:32px;background:none;border:none;cursor:pointer;border-radius:6px;font-size:20px;display:flex;align-items:center;justify-content:center;transition:transform .12s,background .12s;line-height:1;flex:0 0 auto;}
-.bqepbtn:hover{background:var(--bq-bg-hover);transform:scale(1.2);}
+
+
+
+
+
 .bqrxns{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;padding:0 6px;}
 .bqr.theirs .bqrxns{justify-content:flex-start;}
 .bqr.mine .bqrxns{justify-content:flex-end;}
@@ -638,7 +651,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrxn{animation:bqRxnPop .35s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes bqRxnPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
 /* Make the reaction picker scrollable since we have more reactions */
-/* v9.2: legacy width override removed — full picker uses .bqepick rules above */
 .bqirow{display:flex;gap:8px;align-items:flex-end;}
 .bqieo{width:38px;height:38px;background:none;border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;transition:all .2s;line-height:1;}
 .bqieo:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);transform:scale(1.05);}
@@ -704,7 +716,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   transition:transform .3s var(--bq-transition);
 }
 #bqpc.open .bqpc-card{transform:scale(1) translateY(0);}
-.bqpc-banner{height:64px;position:relative;flex-shrink:0;}
+
 .bqpc-av{
   position:absolute;bottom:-24px;left:18px;
   width:56px;height:56px;border-radius:50%;
@@ -1049,13 +1061,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqpf-initials-inp:focus{border-color:var(--bq-accent);box-shadow:0 0 0 3px var(--bq-accent-glow);}
 .bqpf-initials-hint{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);line-height:1.4;}
-.bqpf-banner-row{display:flex;gap:8px;margin-bottom:16px;}
-.bqpf-banner-preview{
-  flex:1;height:48px;border-radius:var(--bq-radius-sm);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:rgba(0,0,0,.6);
-  transition:all .2s;
-}
+
 .bqpf-theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
 .bqpf-theme{
   padding:12px 10px;border-radius:var(--bq-radius-sm);border:1px solid var(--bq-border);
@@ -1527,7 +1533,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqv-dmconv .bqr.mine .bqun{display:none;}
 
 /* ── STAR BUTTON in actions ── */
-.bqact.star.starred svg{fill:#fbbf24;stroke:#fbbf24;}
 
 /* ── DM PINNED MESSAGE BAR ── */
 #bq-pinned-bar{
@@ -1960,10 +1965,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   border:1px solid var(--bq-border);border-radius:18px;overflow:hidden;
   box-shadow:0 28px 90px rgba(0,0,0,.7);animation:bqSlideUp .3s cubic-bezier(.16,1,.3,1) both;
 }
-.bqpv-banner{
-  height:96px;background:linear-gradient(135deg,#60a5fa,#818cf8);
-  background-size:cover;background-position:center;position:relative;
-}
+
 .bqpv-av-wrap{
   position:absolute;left:50%;bottom:-32px;transform:translateX(-50%);
   width:72px;height:72px;border-radius:50%;border:4px solid var(--bq-bg-elevated);
@@ -2068,9 +2070,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-      <div class="bqpc-banner" id="bqpc-banner">
-        <div class="bqpc-av" id="bqpc-av"></div>
-        <button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              <button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
@@ -2474,9 +2474,7 @@ const HTML = `
 <!-- v3: Profile View modal (Profiles V2) -->
 <div class="bqpv-modal" id="bq-pv">
   <div class="bqpv-card">
-    <div class="bqpv-banner" id="bq-pv-banner">
-      <div class="bqpv-av-wrap" id="bq-pv-av"></div>
-    </div>
+        </div>
     <div class="bqpv-body">
       <div class="bqpv-name" id="bq-pv-name"></div>
       <div class="bqpv-st" id="bq-pv-st"></div>
@@ -2571,14 +2569,7 @@ function refreshMeAvatar(){
 }
 
 /* PUSH NOTIFICATIONS REMOVED — kept stubs to avoid reference errors */
-function showNotification(){ /* no-op: notifications removed */ }
-function updatePushUI(){
-  const btn = document.getElementById('bqpf-push-btn');
-  const sec = document.getElementById('bqpf-push-section');
-  if(sec) sec.style.display='none';
-  if(btn) btn.style.display='none';
-}
-function subscribeToPush(){ /* no-op */ }
+function updatePushUI(){}
 
 /* ────���────────────────────────────────────
    TOAST
@@ -2900,7 +2891,7 @@ function startPresence(){
     color:myProfile.color||'',
     initials:myProfile.initials||'',
     avatar:myProfile.avatar||'',
-    banner:myProfile.banner||'',
+    banner:'',
     displayName:myProfile.displayName||'',
     pronouns:myProfile.pronouns||'',
     customStatus:myProfile.customStatus||'',
@@ -2999,47 +2990,7 @@ function openProfileCard(targetUid,targetName,presData){
   const pd=presData||onlineU[targetUid]||{};
   const si=statusInfo(pd.status||'online');
 
-  // v9: live banner + avatar with onerror fallback
-  const bnEl=document.getElementById('bqpc-banner');
-  if(pd.banner){
-    const bp=new Image();
-    bp.onload=()=>{ bnEl.style.background='url('+pd.banner.replace(/'/g,"%27")+') center/cover'; };
-    bp.onerror=()=>{ bnEl.style.background='linear-gradient(135deg,'+color+'66,'+color+'33)'; };
-    bp.src=pd.banner;
-    bnEl.style.background='linear-gradient(135deg,'+color+'66,'+color+'33)';
-  } else {
-    bnEl.style.background='linear-gradient(135deg,'+color+'66,'+color+'33)';
-  }
-  const av=document.getElementById('bqpc-av');
-  if(pd.avatar){
-    const ap=new Image();
-    ap.onload=()=>{ av.style.background='url('+pd.avatar.replace(/'/g,"%27")+') center/cover';av.style.color='transparent';av.textContent=''; };
-    ap.onerror=()=>{ av.style.background=color;av.style.color='#000';av.textContent=uInit(targetName); };
-    ap.src=pd.avatar;
-    av.style.background=color;av.style.color='#000';av.textContent=uInit(targetName);
-  } else {
-    av.style.background=color;av.style.color='#000';av.textContent=uInit(targetName);
-  }
-  // v9: also re-fetch from DB in case the cached snapshot is stale
-  if(db && targetUid){
-    db.ref('bq_presence/'+targetUid).once('value').then(snap=>{
-      const live=snap.val();
-      if(live){
-        onlineU[targetUid]=live; _cacheAvatarFromPresence(targetUid,live);
-        if(live.avatar && live.avatar !== pd.avatar){
-          const ap2=new Image();
-          ap2.onload=()=>{ av.style.background='url('+live.avatar.replace(/'/g,"%27")+') center/cover';av.style.color='transparent';av.textContent=''; };
-          ap2.onerror=()=>{ av.style.background=color;av.style.color='#000';av.textContent=uInit(targetName); };
-          ap2.src=live.avatar;
-        }
-        if(live.banner && live.banner !== pd.banner){
-          const bp2=new Image();
-          bp2.onload=()=>{ bnEl.style.background='url('+live.banner.replace(/'/g,"%27")+') center/cover'; };
-          bp2.src=live.banner;
-        }
-      }
-    }).catch(()=>{});
-  }
+  // v10: banner removed
   document.getElementById('bqpc-name').textContent='@'+targetName;
   const stEl=document.getElementById('bqpc-status');
   stEl.innerHTML=`<div class="bqpc-sdot" style="background:${si.color}"></div><span class="bqpc-slabel" style="color:${si.color}">${si.label}</span>`;
@@ -3465,7 +3416,10 @@ function attachGifPicker(ctx){
       curCat = c.dataset.cat;
       curQ = '';
       inp.value = '';
-      load();
+      // v10: lazy — only load when picker becomes visible
+  let _gifLoaded=false;
+  const _origLoad=load;
+  load=function(){ if(_gifLoaded) return _origLoad(); _gifLoaded=true; return _origLoad(); };
     });
   });
   inp.addEventListener('input', ()=>{
@@ -3620,8 +3574,8 @@ function starMessage(ctx, key, msg){
   localStorage.setItem(LS_STARS,JSON.stringify(stars));
   // Update star button appearance
   const pfx='bqmsg-'+ctx+'-';
-  const btn=document.querySelector('#'+pfx+key+' .bqact.star');
-  if(btn) btn.classList.toggle('starred',!isStarred);
+  const row=document.getElementById(pfx+key); const btn=row;
+  if(btn) btn.classList.toggle('bq-starred',!isStarred);
   updateStarCount();
   toast(isStarred?'Unstarred':'⭐ Starred');
 }
@@ -3873,7 +3827,7 @@ function initDmFeatures(){
 ───────────────────────────────────────── */
 function setGTyp(on){
   if(!db||!uname)return;
-  on?db.ref('bq_typing/'+uid).set({uname,ts:Date.now()}):db.ref('bq_typing/'+uid).remove();
+  on?_throttledTypingWrite('bq_typing/'+uid,{uname,ts:Date.now()}):db.ref('bq_typing/'+uid).remove();
   isGTyp=on;
 }
 function setDmTyp(on){
@@ -3996,15 +3950,6 @@ function renderMsg(ctx,msg,key){
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
-  // v9.2: Full WhatsApp-style emoji picker — tabs + scrollable grid per category
-  const _epCats=Object.keys(REACTION_CATEGORIES);
-  const _epTabs=_epCats.map((c,i)=>`<button class="bqep-tab${i===0?' active':''}" data-cat="${c}">${c}</button>`).join('');
-  const _epPanes=_epCats.map((c,i)=>{
-    const btns=REACTION_CATEGORIES[c].map(e=>`<button class="bqepbtn" data-e="${e}">${e}</button>`).join('');
-    return `<div class="bqep-pane${i===0?' active':''}" data-cat="${c}">${btns}</div>`;
-  }).join('');
-  const pickBtns=`<div class="bqep-tabs">${_epTabs}</div><div class="bqep-panes">${_epPanes}</div>`;
-
   const row=document.createElement('div');
   row.id=pfx+key;
   row.className='bqr '+(isMine?'mine':'theirs')+(consec?' consec':'');
@@ -4012,10 +3957,6 @@ function renderMsg(ctx,msg,key){
   row.dataset.ts=String(ts);
   row.dataset.msguid=msg.uid;
 
-  // Build actions safely (no nested backticks)
-  var _pinBtn   = !isG ? '<button class="bqact" data-a="pin" title="Pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button>' : '';
-  var _editBtn  = isMine ? '<button class="bqact" data-a="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>' : '';
-  var _delBtn   = isMine ? '<button class="bqact del" data-a="del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>' : '';
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+msg.imageData+'" alt="" loading="lazy">' : '';
   var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
   var _stickerHtml = (msg.type==='sticker' && msg.sticker) ? '<span class="bqsticker">'+esc(msg.sticker)+'</span>' : '';
@@ -4044,14 +3985,6 @@ function renderMsg(ctx,msg,key){
             ' data-uname="'+esc(msg.uname||'')+'">'+_unName+'</span>'+
         '</div>'+
         '<div class="bqbw">'+
-          '<div class="bqacts">'+
-            '<div class="bqepick" id="'+pfx+'ep-'+key+'">'+pickBtns+'</div>'+
-            '<button class="bqact" data-a="react" title="React">😊</button>'+
-            '<button class="bqact" data-a="reply" title="Reply"><svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>'+
-            '<button class="bqact" data-a="copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'+
-            '<button class="bqact star" data-a="star" title="Star"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>'+
-            _pinBtn+_editBtn+_delBtn+
-          '</div>'+
           '<div class="'+_bblCls+'">'+rpHTML+_imgHtml+_gifHtml+_stickerHtml+_voiceHtml+_txtHtml+(msg.edited?'<span class="bqedited">(edited)</span>':'')+timerHTML+_metaHtml+'</div>'+
         '</div>'+
       '</div>'+
@@ -4061,29 +3994,11 @@ function renderMsg(ctx,msg,key){
   // Mark if starred
   const _stars=getStarred();
   const _sdid=ctx==='global'?'global':(activeDmId||'');
-  if(_stars[_sdid]&&_stars[_sdid][key]){ row.querySelector('.bqact.star')?.classList.add('starred'); }
+  if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred'); }
   msgsEl.appendChild(row);
   // Apply any cached read receipts to this newly rendered message
   if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
 
-  // Action buttons
-  row.querySelectorAll('.bqact').forEach(b=>{
-    b.addEventListener('click',e=>{e.stopPropagation();doAction(ctx,b.dataset.a,key,msg,pfx);});
-  });
-  // Emoji pick
-  row.querySelectorAll('.bqepbtn').forEach(b=>{
-    b.addEventListener('click',e=>{e.stopPropagation();toggleRxn(ctx,key,b.dataset.e);document.getElementById(pfx+'ep-'+key)?.classList.remove('open');});
-  });
-  // v9.2: Emoji-picker category tabs
-  row.querySelectorAll('.bqep-tab').forEach(t=>{
-    t.addEventListener('click',e=>{
-      e.stopPropagation();
-      const cat=t.dataset.cat;
-      const pickEl=t.closest('.bqepick'); if(!pickEl) return;
-      pickEl.querySelectorAll('.bqep-tab').forEach(x=>x.classList.toggle('active',x===t));
-      pickEl.querySelectorAll('.bqep-pane').forEach(p=>p.classList.toggle('active',p.dataset.cat===cat));
-    });
-  });
   // Avatar / username click
   row.querySelectorAll('.bqav,.bqun').forEach(el=>{
     el.addEventListener('click',e=>{
@@ -4098,10 +4013,8 @@ function renderMsg(ctx,msg,key){
   const _bbl=row.querySelector('.bqbbl');
   if(_bbl){
     _bbl.addEventListener('click',e=>{
-      if(e.target.closest('a,img,.bq-voice-play,.bqact,.bqepick,.bqep-tab,.bqepbtn,.bqrp')) return;
+      if(e.target.closest('a,img,.bq-voice-play,.bqrp')) return;
       e.stopPropagation();
-      document.querySelectorAll('.bqr.bq-tapped').forEach(r=>{ if(r!==row) r.classList.remove('bq-tapped'); });
-      row.classList.add('bq-tapped');
       renderMsgActionSheet(ctx,key,msg,pfx,_bbl);
     });
   }
@@ -4117,6 +4030,56 @@ function renderMsg(ctx,msg,key){
     markDmRead(activeDmId);
   }
   scrollD(ctx,isMine);
+}
+
+
+function ensureReactionPicker(){
+  let el=document.getElementById('bq-rx-picker');
+  if(el) return el;
+  el=document.createElement('div');
+  el.id='bq-rx-picker';
+  const cats=Object.keys(REACTION_CATEGORIES);
+  const tabs=cats.map((c,i)=>'<button class="bq-rx-tab'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+c+'</button>').join('');
+  const panes=cats.map((c,i)=>{
+    const btns=REACTION_CATEGORIES[c].map(e=>'<button class="bq-rx-emo" data-e="'+esc(e)+'">'+e+'</button>').join('');
+    return '<div class="bq-rx-pane'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+btns+'</div>';
+  }).join('');
+  el.innerHTML='<div class="bq-rx-back" data-close="1"></div>'+
+    '<div class="bq-rx-panel" role="dialog" aria-label="Pick a reaction">'+
+      '<div class="bq-rx-tabs">'+tabs+'</div>'+
+      '<div class="bq-rx-panes">'+panes+'</div>'+
+    '</div>';
+  document.body.appendChild(el);
+  el.addEventListener('click',e=>{
+    if(e.target.dataset.close==='1'||e.target===el) closeReactionPicker();
+  });
+  el.querySelectorAll('.bq-rx-tab').forEach(t=>{
+    t.addEventListener('click',e=>{
+      e.stopPropagation();
+      el.querySelectorAll('.bq-rx-tab').forEach(x=>x.classList.toggle('active',x===t));
+      el.querySelectorAll('.bq-rx-pane').forEach(p=>p.classList.toggle('active',p.dataset.cat===t.dataset.cat));
+    });
+  });
+  el.querySelectorAll('.bq-rx-emo').forEach(b=>{
+    b.addEventListener('click',e=>{
+      e.stopPropagation();
+      const ctx=el.dataset.ctx, key=el.dataset.key;
+      if(ctx&&key) toggleRxn(ctx,key,b.dataset.e);
+      closeReactionPicker();
+    });
+  });
+  return el;
+}
+function openReactionPicker(ctx,key){
+  const el=ensureReactionPicker();
+  el.dataset.ctx=ctx; el.dataset.key=key;
+  el.classList.add('open');
+}
+function closeReactionPicker(){
+  const el=document.getElementById('bq-rx-picker');
+  if(!el) return;
+  el.classList.remove('open');
+  el.dataset.ctx=''; el.dataset.key='';
 }
 
 function ensureMsgActionSheet(){
@@ -4156,12 +4119,21 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   const isMine=msg.uid===uid;
   const previewText = msg.type==='voice' ? '🎤 Voice note' : (msg.text || (msg.imageData?'Photo':(msg.gifUrl?'GIF':'Message')));
   preview.innerHTML = '<div class="bq-ms-author">'+esc(isMine?'You':'@'+(msg.uname||'?'))+'</div><div class="bq-ms-text">'+esc(previewText)+'</div>';
+  const isG = ctx==='global';
+  const _stars=getStarred();
+  const _sdid=isG?'global':(activeDmId||'');
+  const isStarred = !!(_stars[_sdid]&&_stars[_sdid][key]);
   const items = [
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
     {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
     {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
-    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'}
+    {a:'star', label: isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
   ];
-  if(isMine) items.splice(0, items.length, {a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
+  if(!isG) items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
+  if(isMine){
+    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
+    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
+  }
   actions.innerHTML = items.map(item=>'<button class="bq-ms-btn'+(item.danger?' danger':'')+'" data-a="'+item.a+'">'+item.icon+'<span>'+item.label+'</span></button>').join('');
   actions.querySelectorAll('.bq-ms-btn').forEach(btn=>{
     btn.addEventListener('pointerdown',e=>e.stopPropagation(),true);
@@ -4188,18 +4160,7 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
 
 function doAction(ctx,a,key,msg,pfx,fromSheet){
   if(a==='react'){
-    const p=document.getElementById(pfx+'ep-'+key);
-    if(p){
-      p.classList.toggle('open');
-      const row=document.getElementById(pfx+key);
-      row?.classList.add('bq-tapped');
-      if(fromSheet){
-        requestAnimationFrame(()=>{
-          const first=p.querySelector('.bqepbtn');
-          first?.focus?.();
-        });
-      }
-    }
+    openReactionPicker(ctx,key);
   }
   else if(a==='reply'){
     setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:(msg.text || (msg.type==='voice'?'🎤 Voice note':'Media'))});
@@ -4651,7 +4612,7 @@ function init(){
 
   // Close emoji pickers
   document.getElementById('bqp').addEventListener('click',e=>{
-    document.querySelectorAll('.bqepick.open').forEach(el=>{if(!el.contains(e.target))el.classList.remove('open');});
+
     document.querySelectorAll('.bqiet.open').forEach(t=>{
       const eo=t.closest('.bqiw')?.querySelector('.bqieo');
       if(!t.contains(e.target)&&!(eo&&eo.contains(e.target))) t.classList.remove('open');
@@ -4903,16 +4864,6 @@ function openProfileView(targetUid,targetName){
     const banner=pd.banner;
     const avatar=pd.avatar;
     const bEl=document.getElementById('bq-pv-banner');
-    if(banner){
-      // Probe banner URL; fall back to gradient if it fails (expired token)
-      const probe=new Image();
-      probe.onload=()=>{ bEl.style.background='url('+banner.replace(/'/g,"%27")+') center/cover'; };
-      probe.onerror=()=>{ bEl.style.background='linear-gradient(135deg,'+col+'aa,'+col+'33)'; };
-      probe.src=banner;
-      bEl.style.background='linear-gradient(135deg,'+col+'aa,'+col+'33)';
-    } else {
-      bEl.style.background='linear-gradient(135deg,'+col+'aa,'+col+'33)';
-    }
     const av=document.getElementById('bq-pv-av');
     if(avatar){
       const probe=new Image();
@@ -4970,55 +4921,9 @@ function resizeImageFile(file,maxW,maxH){
 
 /* v9.3: Free image hosting via catbox.moe (no API key, anonymous, permanent URLs).
    Falls back to data URL if upload fails (so the user still sees their pic locally). */
-async function dataUrlToBlob(dataUrl){
-  const r=await fetch(dataUrl); return await r.blob();
-}
-async function hostImage(dataUrl){
-  try{
-    const blob=await dataUrlToBlob(dataUrl);
-    // Catbox accepts files up to 200MB, returns a plain-text URL like https://files.catbox.moe/abc123.jpg
-    const fd=new FormData();
-    fd.append('reqtype','fileupload');
-    fd.append('fileToUpload', blob, 'pic.jpg');
-    const resp=await fetch(IMAGE_HOST_URL, { method:'POST', body:fd });
-    if(!resp.ok) throw new Error('upload http '+resp.status);
-    const url=(await resp.text()).trim();
-    if(!/^https?:\/\//.test(url)) throw new Error('upload bad response');
-    return url;
-  }catch(e){
-    console.warn('[Chat] image hosting failed, keeping local data URL', e);
-    return null;
-  }
-}
 
-async function uploadAvatar(file){
-  try{
-    const data=await resizeImageFile(file,256,256);
-    // Try hosting first → small URL safe to store in RTDB & loadable on every device.
-    const hosted=await hostImage(data);
-    const finalUrl=hosted||data;
-    myProfile.avatar=finalUrl;
-    localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
-    if(db&&uid) db.ref('bq_presence/'+uid+'/avatar').set(finalUrl);
-    refreshMeAvatar();
-    const prev=document.getElementById('bqpf-avatar-preview');
-    if(prev) prev.style.background='url('+finalUrl+') center/cover';
-    toast(hosted?'Avatar updated':'Avatar saved locally (host upload failed)');
-  }catch(e){toast('Failed to upload');}
-}
-async function uploadBanner(file){
-  try{
-    const data=await resizeImageFile(file,1500,500);
-    const hosted=await hostImage(data);
-    const finalUrl=hosted||data;
-    myProfile.banner=finalUrl;
-    localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
-    if(db&&uid) db.ref('bq_presence/'+uid+'/banner').set(finalUrl);
-    const prev=document.getElementById('bqpf-banner-upload-preview');
-    if(prev) prev.style.background='url('+finalUrl+') center/cover';
-    toast(hosted?'Banner updated':'Banner saved locally (host upload failed)');
-  }catch(e){toast('Failed to upload');}
-}
+async function uploadAvatar(){ toast('Avatar uploads disabled'); }
+async function uploadBanner(){ toast('Banner uploads disabled'); }
 
 /* ── VOICE NOTES (≤30s) ── */
 let _vnRecorder=null, _vnChunks=[], _vnStart=0, _vnTimer=null, _vnStream=null, _vnWaveInterval=null, _vnWaveAnalyser=null, _vnWaveData=null, _vnWavePeaks=[];
@@ -5162,8 +5067,8 @@ function buildVoiceHtml(msg){
 // v9.3: Dismiss tap-opened message menus when clicking elsewhere
 document.addEventListener('click',function(e){
   if(e.target.closest('#bq-msg-sheet')) return;
-  if(!e.target.closest('.bqr.bq-tapped')){
-    document.querySelectorAll('.bqr.bq-tapped').forEach(r=>r.classList.remove('bq-tapped'));
+  if(false){
+    
     closeMsgActionSheet();
   }
 }, true);
@@ -5316,9 +5221,7 @@ function bindV3(){
   document.getElementById('bqpf-avatar-file')?.addEventListener('change',e=>{
     const f=e.target.files?.[0];if(f) uploadAvatar(f);
   });
-  document.getElementById('bqpf-banner-file')?.addEventListener('change',e=>{
-    const f=e.target.files?.[0];if(f) uploadBanner(f);
-  });
+  /* v10: banner upload removed */
 
   // Hook avatar clicks to open Profile View modal (Profiles V2)
   document.getElementById('bqp')?.addEventListener('click',e=>{
@@ -5388,9 +5291,7 @@ function _injectProfileUploads(){
       '<input type="file" id="bqpf-avatar-file" accept="image/*" style="display:none">'+
     '</label>'+
     '<label class="bqpf-upload" style="cursor:pointer">'+
-      '<div class="bqpf-upload-preview" id="bqpf-banner-upload-preview" style="background:'+(myProfile.banner?'url('+myProfile.banner+') center/cover':'var(--bq-bg-hover)')+'"></div>'+
-      'Upload Banner'+
-      '<input type="file" id="bqpf-banner-file" accept="image/*" style="display:none">'+
+      ''+
     '</label>';
   anchor.insertBefore(wrap,anchor.firstChild);
   // bind right away
@@ -5507,52 +5408,12 @@ setTimeout(_injectProfileUploads,1500);
     backdrop-filter:blur(18px);
     -webkit-backdrop-filter:blur(18px);
   }
-  .bqp4-banner{
-    position:relative;
-    height:148px;
-    border-bottom:1px solid rgba(255,255,255,.07);
-    background-size:cover;
-    background-position:center;
-    overflow:hidden;
-  }
-  .bqp4-banner::after{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.42));
-  }
-  .bqp4-banner-btn,
-  .bqp4-avatar-edit{
-    position:absolute;
-    z-index:2;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    border:none;
-    cursor:pointer;
-    color:#fff;
-    background:rgba(10,10,10,.55);
-    border:1px solid rgba(255,255,255,.14);
-    box-shadow:0 10px 30px rgba(0,0,0,.28);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-    transition:transform .18s var(--bq-transition), background .18s;
-  }
-  .bqp4-banner-btn:hover,
-  .bqp4-avatar-edit:hover{transform:translateY(-1px);background:rgba(10,10,10,.72);}
-  .bqp4-banner-btn{
-    right:14px;
-    bottom:14px;
-    padding:8px 12px;
-    border-radius:999px;
-    font-family:'Inter',sans-serif;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.04em;
-    text-transform:uppercase;
-  }
-  .bqp4-banner-btn svg,
-  .bqp4-avatar-edit svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+
+
+
+
+
+
   .bqp4-head{
     display:flex;
     align-items:flex-end;
@@ -5854,7 +5715,7 @@ setTimeout(_injectProfileUploads,1500);
       bio: myProfile.bio || '',
       initials: myProfile.initials || '',
       avatar: myProfile.avatar || '',
-      banner: myProfile.banner || '',
+      banner:'',
       color: myProfile.color || uColor(uname||'u'),
       bannerColor: myProfile.bannerColor || myProfile.color || uColor(uname||'u'),
       nameColor: myProfile.nameColor || myProfile.color || uColor(uname||'u'),
@@ -6429,9 +6290,7 @@ setTimeout(_injectProfileUploads,1500);
     }
     const banner=document.getElementById('bqp4-banner');
     if(banner){
-      banner.style.background = draft.banner
-        ? 'url('+draft.banner+') center/cover'
-        : 'linear-gradient(135deg,'+draft.bannerColor+'cc,'+draft.bannerColor+'33)';
+      banner.style.background = 'linear-gradient(135deg,'+draft.bannerColor+'cc,'+draft.bannerColor+'33)';
     }
     const bioCount=document.getElementById('bqp4-bio-count');
     if(bioCount) bioCount.textContent=(draft.bio||'').length+' / 120';
@@ -6453,8 +6312,7 @@ setTimeout(_injectProfileUploads,1500);
       '<div class="bqp4">'+
         '<div class="bqp4-hero">'+
           '<div class="bqp4-banner" id="bqp4-banner">'+
-            '<button class="bqp4-banner-btn" id="bqp4-banner-btn"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Banner</button>'+
-            '<input type="file" id="bqp4-banner-file" accept="image/*" hidden>'+
+            ''+
           '</div>'+
           '<div class="bqp4-head">'+
             '<div class="bqp4-avatar" id="bqp4-avatar">'+(draft.avatar?'':(draft.initials||uInit(draft.username||'?')).slice(0,2).toUpperCase())+
@@ -6571,7 +6429,7 @@ setTimeout(_injectProfileUploads,1500);
     document.querySelectorAll('.bqp4-tab').forEach(tab=>tab.addEventListener('click',()=>activateProfileTab(tab.dataset.tab)));
     document.getElementById('bqp4-rename')?.addEventListener('click',()=>showModal?.(true));
     document.getElementById('bqp4-avatar-btn')?.addEventListener('click',e=>{ e.stopPropagation(); document.getElementById('bqp4-avatar-file')?.click(); });
-    document.getElementById('bqp4-banner-btn')?.addEventListener('click',e=>{ e.stopPropagation(); document.getElementById('bqp4-banner-file')?.click(); });
+    /* v10: banner upload removed */
 
     ['display-name','pronouns','bio','initials','custom-status','activity'].forEach(id=>{
       document.getElementById('bqp4-'+id)?.addEventListener('input',e=>{
@@ -6589,16 +6447,8 @@ setTimeout(_injectProfileUploads,1500);
     document.getElementById('bqp4-dm-permission')?.addEventListener('change',e=>{ draft.dmPermission=e.target.value; setProfileDirty(true); });
     document.getElementById('bqp4-online-visibility')?.addEventListener('change',e=>{ draft.onlineVisibility=e.target.value; setProfileDirty(true); });
     document.getElementById('bqp4-read-receipts')?.addEventListener('change',e=>{ draft.readReceipts=!!e.target.checked; setProfileDirty(true); });
-    document.getElementById('bqp4-avatar-file')?.addEventListener('change',async e=>{
-      const file=e.target.files?.[0];
-      if(!file) return;
-      try{ draft.avatar=await resizeImageFile(file,256,256); renderProfilePreview(); setProfileDirty(true); toast('Avatar ready to save'); }catch(_){ toast('Failed to upload avatar'); }
-    });
-    document.getElementById('bqp4-banner-file')?.addEventListener('change',async e=>{
-      const file=e.target.files?.[0];
-      if(!file) return;
-      try{ draft.banner=await resizeImageFile(file,1500,500); renderProfilePreview(); setProfileDirty(true); toast('Banner ready to save'); }catch(_){ toast('Failed to upload banner'); }
-    });
+    /* v10: avatar upload removed */
+    /* v10: banner upload removed */
     document.getElementById('bqp4-save')?.addEventListener('click',()=>{
       const statusToStore=draft.status==='invisible'?'offline':draft.status;
       myProfile.displayName=draft.displayName;
