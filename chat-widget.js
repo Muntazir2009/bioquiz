@@ -210,6 +210,16 @@ const CSS = `
 }
 body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
+/* v8: fullscreen layout — ensure inner views fill the full panel */
+#bqp.bq-fs{display:flex!important;flex-direction:column!important;}
+#bqp.bq-fs #bqs{flex:1 1 auto!important;width:100%!important;min-width:0!important;min-height:0!important;}
+#bqp.bq-fs .bqv{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;}
+#bqp.bq-fs .bqv.bq-active{transform:none!important;}
+#bqp.bq-fs .bqmsgs{flex:1 1 auto!important;min-height:0!important;width:100%!important;}
+#bqp.bq-fs .bqdmh,#bqp.bq-fs .bqgh,#bqp.bq-fs .bqiw{width:100%!important;}
+#bqp.bq-fs #bqv-dmconv{display:flex!important;flex-direction:column!important;}
+
+
 /* ── SCREEN + VIEW SYSTEM (APP-LIKE) ── */
 #bqs{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:0;}
 .bqv{
@@ -1253,18 +1263,27 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-starred-unstar svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
 
 /* ── DM BACKGROUND THEMES ── */
-.bq-theme-none #bqdmmsgs{background:var(--bq-bg);}
-.bq-theme-grid #bqdmmsgs{background:var(--bq-bg) url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 40L40 0M0 0l40 40' stroke='rgba(255,255,255,.04)' stroke-width='.5'/%3E%3C/svg%3E") repeat;}
-.bq-theme-dots #bqdmmsgs{background:var(--bq-bg) radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px) 0 0/24px 24px;}
-.bq-theme-wave #bqdmmsgs{background:linear-gradient(180deg,rgba(96,165,250,.05) 0%,transparent 60%),var(--bq-bg);}
-.bq-theme-aurora #bqdmmsgs{background:radial-gradient(ellipse at 20% 50%,rgba(96,165,250,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.06) 0%,transparent 50%),var(--bq-bg);background-size:200% 200%;animation:bqAurora 18s ease infinite;}
-.bq-theme-sunset #bqdmmsgs{background:radial-gradient(ellipse at 30% 100%,rgba(251,146,60,.10) 0%,transparent 55%),radial-gradient(ellipse at 80% 0%,rgba(244,114,182,.08) 0%,transparent 50%),var(--bq-bg);}
-.bq-theme-ocean #bqdmmsgs{background:linear-gradient(180deg,rgba(45,212,191,.06) 0%,rgba(56,189,248,.04) 50%,transparent 100%),var(--bq-bg);}
-.bq-theme-midnight #bqdmmsgs{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0a14 70%);}
-.bq-theme-forest #bqdmmsgs{background:linear-gradient(160deg,rgba(34,197,94,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(20,184,166,.05) 0%,transparent 50%),var(--bq-bg);}
-.bq-theme-rose #bqdmmsgs{background:radial-gradient(ellipse at 50% 0%,rgba(244,114,182,.10) 0%,transparent 60%),radial-gradient(ellipse at 50% 100%,rgba(251,113,133,.06) 0%,transparent 50%),var(--bq-bg);}
-.bq-theme-mono #bqdmmsgs{background:#0a0a0a;}
-.bq-theme-bubblegum #bqdmmsgs{background:radial-gradient(circle at 20% 20%,rgba(236,72,153,.10) 0%,transparent 40%),radial-gradient(circle at 80% 80%,rgba(168,85,247,.10) 0%,transparent 40%),var(--bq-bg);}
+
+/* v8: theme covers whole widget */
+#bqp[class*="bq-theme-"] #bqdmmsgs,
+#bqp[class*="bq-theme-"] #bqgmsgs,
+#bqp[class*="bq-theme-"] .bqiw,
+#bqp[class*="bq-theme-"] .bqdmh,
+#bqp[class*="bq-theme-"] .bqv{background:transparent!important;background-color:transparent!important;}
+/* v8: make sure the theme class moves from msgs container up to #bqp */
+
+#bqp.bq-theme-none{background:var(--bq-bg);}
+#bqp.bq-theme-grid{background:var(--bq-bg) url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 40L40 0M0 0l40 40' stroke='rgba(255,255,255,.04)' stroke-width='.5'/%3E%3C/svg%3E") repeat;}
+#bqp.bq-theme-dots{background:var(--bq-bg) radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px) 0 0/24px 24px;}
+#bqp.bq-theme-wave{background:linear-gradient(180deg,rgba(96,165,250,.05) 0%,transparent 60%),var(--bq-bg);}
+#bqp.bq-theme-aurora{background:radial-gradient(ellipse at 20% 50%,rgba(96,165,250,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.06) 0%,transparent 50%),var(--bq-bg);background-size:200% 200%;animation:bqAurora 18s ease infinite;}
+#bqp.bq-theme-sunset{background:radial-gradient(ellipse at 30% 100%,rgba(251,146,60,.10) 0%,transparent 55%),radial-gradient(ellipse at 80% 0%,rgba(244,114,182,.08) 0%,transparent 50%),var(--bq-bg);}
+#bqp.bq-theme-ocean{background:linear-gradient(180deg,rgba(45,212,191,.06) 0%,rgba(56,189,248,.04) 50%,transparent 100%),var(--bq-bg);}
+#bqp.bq-theme-midnight{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0a14 70%);}
+#bqp.bq-theme-forest{background:linear-gradient(160deg,rgba(34,197,94,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(20,184,166,.05) 0%,transparent 50%),var(--bq-bg);}
+#bqp.bq-theme-rose{background:radial-gradient(ellipse at 50% 0%,rgba(244,114,182,.10) 0%,transparent 60%),radial-gradient(ellipse at 50% 100%,rgba(251,113,133,.06) 0%,transparent 50%),var(--bq-bg);}
+#bqp.bq-theme-mono{background:#0a0a0a;}
+#bqp.bq-theme-bubblegum{background:radial-gradient(circle at 20% 20%,rgba(236,72,153,.10) 0%,transparent 40%),radial-gradient(circle at 80% 80%,rgba(168,85,247,.10) 0%,transparent 40%),var(--bq-bg);}
 @keyframes bqAurora{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 
 /* ── BUBBLE THEME for mine in DM ── */
@@ -1275,20 +1294,20 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   box-shadow:0 2px 12px rgba(59,130,246,.3),inset 0 1px 0 rgba(255,255,255,.12)!important;
 }
 /* Per-theme bubble color overrides (mine, in DM) */
-.bq-theme-sunset #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%)!important;box-shadow:0 4px 16px rgba(244,63,94,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+#bqp.bq-theme-sunset .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%)!important;box-shadow:0 4px 16px rgba(244,63,94,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
 .bq-theme-ocean  #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%)!important;box-shadow:0 4px 16px rgba(14,165,233,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
-.bq-theme-midnight #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;}
-.bq-theme-forest #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#10b981 0%,#14b8a6 100%)!important;box-shadow:0 4px 16px rgba(16,185,129,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+#bqp.bq-theme-midnight .bqr.mine .bqbbl{background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+#bqp.bq-theme-forest .bqr.mine .bqbbl{background:linear-gradient(135deg,#10b981 0%,#14b8a6 100%)!important;box-shadow:0 4px 16px rgba(16,185,129,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
 .bq-theme-rose   #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#ec4899 0%,#f472b6 100%)!important;box-shadow:0 4px 16px rgba(236,72,153,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
 .bq-theme-mono   #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#27272a 0%,#3f3f46 100%)!important;box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important;}
-.bq-theme-bubblegum #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#a855f7 0%,#ec4899 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.2)!important;}
+#bqp.bq-theme-bubblegum .bqr.mine .bqbbl{background:linear-gradient(135deg,#a855f7 0%,#ec4899 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.2)!important;}
 /* Per-theme theirs bubble subtle tints */
-.bq-theme-sunset #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(251,146,60,.08)!important;border-color:rgba(251,146,60,.2)!important;}
+#bqp.bq-theme-sunset .bqr.theirs .bqbbl{background:rgba(251,146,60,.08)!important;border-color:rgba(251,146,60,.2)!important;}
 .bq-theme-ocean  #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(14,165,233,.08)!important;border-color:rgba(14,165,233,.2)!important;}
-.bq-theme-forest #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(16,185,129,.08)!important;border-color:rgba(16,185,129,.2)!important;}
+#bqp.bq-theme-forest .bqr.theirs .bqbbl{background:rgba(16,185,129,.08)!important;border-color:rgba(16,185,129,.2)!important;}
 .bq-theme-rose   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(236,72,153,.08)!important;border-color:rgba(236,72,153,.2)!important;}
 .bq-theme-mono   #bqdmmsgs .bqr.theirs .bqbbl{background:#1a1a1a!important;border-color:rgba(255,255,255,.08)!important;}
-.bq-theme-bubblegum #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(168,85,247,.08)!important;border-color:rgba(168,85,247,.2)!important;}
+#bqp.bq-theme-bubblegum .bqr.theirs .bqbbl{background:rgba(168,85,247,.08)!important;border-color:rgba(168,85,247,.2)!important;}
 #bqv-dmconv .bqr.mine .bqbbl a{color:rgba(255,255,255,.9)!important;}
 #bqv-dmconv .bqr.mine .bqrp{background:rgba(0,0,0,.18)!important;border-left-color:rgba(255,255,255,.35)!important;}
 #bqv-dmconv .bqr.mine .bqrp-n{color:rgba(255,255,255,.65)!important;}
@@ -1609,24 +1628,24 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 
 /* ── v3: NEW THEMES ── */
-.bq-theme-paper #bqdmmsgs{
+#bqp.bq-theme-paper{
   background:linear-gradient(180deg,#fafafa 0%,#f3f4f6 100%);
   color:#0f172a;
 }
-.bq-theme-paper #bqdmmsgs .bqr.theirs .bqbbl{background:#fff!important;border:1px solid #e5e7eb!important;color:#0f172a!important;box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.bq-theme-paper #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#3b82f6,#6366f1)!important;color:#fff!important;}
-.bq-theme-paper #bqdmmsgs .bqun{color:#1e293b!important;}
-.bq-theme-paper #bqdmmsgs .bqds{color:#64748b!important;}
-.bq-theme-paper #bqdmmsgs .bqds::before,.bq-theme-paper #bqdmmsgs .bqds::after{background:#e5e7eb!important;}
+#bqp.bq-theme-paper .bqr.theirs .bqbbl{background:#fff!important;border:1px solid #e5e7eb!important;color:#0f172a!important;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+#bqp.bq-theme-paper .bqr.mine .bqbbl{background:linear-gradient(135deg,#3b82f6,#6366f1)!important;color:#fff!important;}
+#bqp.bq-theme-paper .bqun{color:#1e293b!important;}
+#bqp.bq-theme-paper .bqds{color:#64748b!important;}
+#bqp.bq-theme-paper .bqds::before,#bqp.bq-theme-paper .bqds::after{background:#e5e7eb!important;}
 
-.bq-theme-monochrome #bqdmmsgs{background:#0a0a0a;}
-.bq-theme-monochrome #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#e5e5e5 0%,#a3a3a3 100%)!important;color:#0a0a0a!important;box-shadow:0 4px 14px rgba(255,255,255,.08),inset 0 1px 0 rgba(255,255,255,.4)!important;}
-.bq-theme-monochrome #bqdmmsgs .bqr.theirs .bqbbl{background:#1a1a1a!important;border-color:rgba(255,255,255,.08)!important;color:#e5e5e5!important;}
-.bq-theme-monochrome #bqdmmsgs .bqun{color:#d4d4d4!important;}
+#bqp.bq-theme-monochrome{background:#0a0a0a;}
+#bqp.bq-theme-monochrome .bqr.mine .bqbbl{background:linear-gradient(135deg,#e5e5e5 0%,#a3a3a3 100%)!important;color:#0a0a0a!important;box-shadow:0 4px 14px rgba(255,255,255,.08),inset 0 1px 0 rgba(255,255,255,.4)!important;}
+#bqp.bq-theme-monochrome .bqr.theirs .bqbbl{background:#1a1a1a!important;border-color:rgba(255,255,255,.08)!important;color:#e5e5e5!important;}
+#bqp.bq-theme-monochrome .bqun{color:#d4d4d4!important;}
 
-.bq-theme-midnightpurple #bqdmmsgs{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0118 70%);}
-.bq-theme-midnightpurple #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.45),inset 0 1px 0 rgba(255,255,255,.18)!important;}
-.bq-theme-midnightpurple #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(139,92,246,.10)!important;border-color:rgba(168,85,247,.22)!important;}
+#bqp.bq-theme-midnightpurple{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0118 70%);}
+#bqp.bq-theme-midnightpurple .bqr.mine .bqbbl{background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.45),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+#bqp.bq-theme-midnightpurple .bqr.theirs .bqbbl{background:rgba(139,92,246,.10)!important;border-color:rgba(168,85,247,.22)!important;}
 
 .bq-theme-oceanv2 #bqdmmsgs{background:linear-gradient(180deg,#022c43 0%,#053f5e 100%);}
 .bq-theme-oceanv2 #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#06b6d4 0%,#22d3ee 100%)!important;color:#022c43!important;box-shadow:0 4px 18px rgba(34,211,238,.4),inset 0 1px 0 rgba(255,255,255,.3)!important;}
@@ -1980,9 +1999,8 @@ const HTML = `
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
-            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Conversation Info</div>
+            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Settings</div>
             <div class="bq-dm-menu-item" id="bq-dm-menu-starred"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Starred Messages</div>
-            <div class="bq-dm-menu-item" id="bq-dm-menu-theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42"/></svg>Chat Theme</div>
             <div class="bq-dm-menu-div"></div>
                         <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg>Clear Messages</div>
           </div>
@@ -2024,7 +2042,7 @@ const HTML = `
 
     <!-- DM Info panel (inside dmconv) -->
     <div id="bq-dm-info">
-      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Conversation Info</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bq-info-av-section">
         <div class="bq-info-av" id="bq-info-av"></div>
         <div class="bq-info-name" id="bq-info-name"></div>
@@ -2533,6 +2551,12 @@ function showDmConvo(pUid, pName) {
   const _theme=getDmTheme(activeDmId);
   const _v=document.getElementById('bqv-dmconv');
   if(_v) _v.className='bqv bq-active bq-theme-'+_theme;
+  // v8: mirror theme on full panel
+  const _panel=document.getElementById('bqp');
+  if(_panel){
+    Array.from(_panel.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) _panel.classList.remove(c); });
+    _panel.classList.add('bq-theme-'+_theme);
+  }
   // Subscribe pinned + read receipts
   subscribeDmPinned(activeDmId);
   subscribeDmRead(activeDmId);
@@ -2685,6 +2709,14 @@ function startPresence(){
     activity:myProfile.activity||'',
     bio:myProfile.bio||'',
     color:myProfile.color||'',
+    initials:myProfile.initials||'',
+    avatar:myProfile.avatar||'',
+    banner:myProfile.banner||'',
+    displayName:myProfile.displayName||'',
+    pronouns:myProfile.pronouns||'',
+    customStatus:myProfile.customStatus||'',
+    nameColor:myProfile.nameColor||'',
+    bannerColor:myProfile.bannerColor||'',
   });
   beat();clearInterval(presInt);
   presInt=setInterval(beat,PRESENCE_TTL*.7);
@@ -3264,6 +3296,12 @@ function setDmTheme(did,theme){
 function applyDmTheme(did,theme){
   const v=document.getElementById('bqv-dmconv'); if(!v) return;
   v.className='bqv bq-active bq-theme-'+theme;
+  // v8: mirror theme class on the whole panel so background covers everything
+  const panel=document.getElementById('bqp');
+  if(panel){
+    Array.from(panel.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) panel.classList.remove(c); });
+    panel.classList.add('bq-theme-'+theme);
+  }
   // Update chip selection
   document.querySelectorAll('.bq-theme-chip').forEach(ch=>{
     ch.classList.toggle('sel', ch.dataset.t===theme);
@@ -3723,7 +3761,7 @@ function renderMsg(ctx,msg,key){
   var _txtHtml  = msg.text ? mentionify(linkify(esc(msg.text))) : '';
   var _hasText  = !!_txtHtml;
   var _bblCls   = 'bqbbl'+(msg.expiresAt?' disappearing':'')+(_hasMedia?' media':'')+(_hasMedia&&_hasText?' has-text':'')+(_isSticker?' sticker':'');
-  var _unName   = isMine ? 'You' : '@'+esc(msg.uname||'?');
+  var _unName   = isMine ? 'You' : '@'+esc(presD.displayName||msg.uname||'?');
 
   // Inline meta INSIDE bubble — timestamp + (mine&dm) tick
   var _tickHtml = (isMine&&!isG) ? '<span class="bqbbl-tick">'+TICK_SINGLE+'</span>' : '';
@@ -3731,10 +3769,10 @@ function renderMsg(ctx,msg,key){
 
   row.innerHTML =
     '<div class="bqri">'+
-      '<div class="bqav" style="background:'+col+';color:#000"'+
+      '<div class="bqav" style="'+(presD.avatar?('background:url('+presD.avatar+') center/cover;color:transparent;'):('background:'+col+';color:#000;'))+'"'+
         ' data-status="'+esc(presD.status||'')+'"'+
         ' data-uid="'+esc(msg.uid)+'"'+
-        ' data-uname="'+esc(msg.uname||'')+'">'+ini+'</div>'+
+        ' data-uname="'+esc(msg.uname||'')+'">'+(presD.avatar?'':((presD.initials||ini)))+'</div>'+
       '<div class="bqcol">'+
         '<div class="bqmeta">'+
           '<span class="bqun" style="color:'+col+'"'+
