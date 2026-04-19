@@ -2038,7 +2038,6 @@ const HTML = `
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
-          <div class="bq-info-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg></div><div class="bq-info-row-label">Mute notifications</div></div><label class="bq-toggle"><input type="checkbox" id="bq-mute-chk"><span class="bq-toggle-slider"></span></label></div>
           <div class="bq-info-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="bq-info-row-label">Disappearing messages</div><div class="bq-info-row-sub" id="bq-disappear-sub">Off</div></div></div><label class="bq-toggle"><input type="checkbox" id="bq-disappear-chk"><span class="bq-toggle-slider"></span></label></div>
         </div>
         <div class="bq-info-section">
@@ -2446,6 +2445,7 @@ function bqNav(targetView) {
   if (targetView === 'profile') {
     refreshProfileView();
     updatePushUI();
+    if(typeof _injectProfileUploads==='function') setTimeout(_injectProfileUploads,30);
   }
 }
 
@@ -3414,10 +3414,9 @@ function subscribeDmPinned(dmId){
 
 /* ── DM INFO PANEL ── */
 function openDmInfo(){
-  const panel=document.getElementById('bq-dm-info'); if(!panel) return;
-  panel.classList.add('open');
-  updateDmInfoPanel();
+  // v3: route legacy "Conversation Info" to the new floating card
   document.getElementById('bq-dm-menu')?.classList.remove('open');
+  if(typeof openInfoFloat==='function') openInfoFloat();
 }
 function closeDmInfo(){
   document.getElementById('bq-dm-info')?.classList.remove('open');
@@ -4230,12 +4229,14 @@ function init(){
   setupInput('global');
   setupInput('dm');
 
-  // Outside click
+  // Outside click — ignore clicks on widget overlays appended to body
   document.addEventListener('mousedown',e=>{
     if(!isOpen)return;
     if(isFull)return;
     const p=document.getElementById('bqp');
     const b=document.getElementById('bqb');
+    // v3: skip outside-close when interacting with overlays that live outside #bqp
+    if(e.target.closest('#bq-media-lightbox,#bq-pv,#bq-info-float,#bqimg-preview,#bq-confirm,.bqimg-preview,.bqpv-modal,.bq-confirm')) return;
     if(!p.contains(e.target)&&!b.contains(e.target)) closePanel();
   });
 
@@ -4853,7 +4854,7 @@ function _injectProfileUploads(){
   const view=document.getElementById('bqv-profile');
   if(!view||view.querySelector('#bqpf-avatar-file')) return;
   // Find a good anchor — banner section or top of profile body
-  const anchor=view.querySelector('.bqpf-body, .bqpf, .bqv-inner') || view;
+  const anchor=view.querySelector('.bqpf-scroll') || view;
   const wrap=document.createElement('div');
   wrap.className='bqpf-upload-row';
   wrap.style.padding='0 16px';
@@ -4881,5 +4882,343 @@ function _injectProfileUploads(){
 setTimeout(_injectProfileUploads,500);
 setTimeout(_injectProfileUploads,1500);
 
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1 PATCH — Bug fixes for: lightbox closes widget, themes
+   not applying both sides, missing themes, voice preview,
+   avatar/banner UI not appearing, redesigned floating menu.
+═══════════════════════════════════════════════════════════ */
+(function(){
+  /* ── Inject extended CSS (new themes + voice preview + redesigned menu) ── */
+  const _v31css = `
+  /* Hide legacy slide-in info panel (replaced by floating card) */
+  #bq-dm-info{display:none!important;}
+
+  /* ───── New themes — apply to both sender + receiver bubbles ───── */
+  /* MONOCHROME */
+  .bq-theme-monochrome #bqdmmsgs{background:#0c0c0d!important;}
+  .bq-theme-monochrome #bqdmmsgs .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#3f3f46 0%,#52525b 100%)!important;
+    box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important;
+    color:#fafafa!important;
+  }
+  .bq-theme-monochrome #bqdmmsgs .bqr.theirs .bqbbl{
+    background:#1c1c1f!important;border-color:rgba(255,255,255,.08)!important;color:#e4e4e7!important;
+  }
+  /* MIDNIGHT PURPLE */
+  .bq-theme-midnightpurple #bqdmmsgs{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0a14 70%)!important;}
+  .bq-theme-midnightpurple #bqdmmsgs .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%)!important;
+    box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
+  }
+  .bq-theme-midnightpurple #bqdmmsgs .bqr.theirs .bqbbl{
+    background:rgba(99,102,241,.14)!important;border-color:rgba(168,85,247,.35)!important;color:#ede9fe!important;
+  }
+  /* OCEAN v2 */
+  .bq-theme-oceanv2 #bqdmmsgs{background:linear-gradient(180deg,#0c2733 0%,#08151c 100%)!important;}
+  .bq-theme-oceanv2 #bqdmmsgs .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%)!important;
+    box-shadow:0 4px 16px rgba(14,165,233,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
+  }
+  .bq-theme-oceanv2 #bqdmmsgs .bqr.theirs .bqbbl{
+    background:rgba(6,182,212,.14)!important;border-color:rgba(14,165,233,.35)!important;color:#cffafe!important;
+  }
+  /* SUNSET v2 */
+  .bq-theme-sunsetv2 #bqdmmsgs{background:radial-gradient(ellipse at 30% 100%,#3a1a0c 0%,#15080d 65%)!important;}
+  .bq-theme-sunsetv2 #bqdmmsgs .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%)!important;
+    box-shadow:0 4px 16px rgba(244,63,94,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
+  }
+  .bq-theme-sunsetv2 #bqdmmsgs .bqr.theirs .bqbbl{
+    background:rgba(251,146,60,.14)!important;border-color:rgba(244,63,94,.35)!important;color:#ffe4e6!important;
+  }
+  /* PAPER (Light) */
+  .bq-theme-paper #bqdmmsgs{background:#f8f7f4!important;}
+  .bq-theme-paper #bqdmmsgs .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#1f2937 0%,#374151 100%)!important;color:#fff!important;
+    box-shadow:0 4px 14px rgba(31,41,55,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;
+  }
+  .bq-theme-paper #bqdmmsgs .bqr.theirs .bqbbl{
+    background:#fff!important;color:#111827!important;
+    border:1px solid #e5e7eb!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important;
+  }
+  .bq-theme-paper #bqdmmsgs .bqun{color:#6b7280!important;}
+  .bq-theme-paper #bqdmmsgs .bqts{color:#9ca3af!important;}
+
+  /* Existing extra themes — also paint receiver bubble (was sender-only) */
+  .bq-theme-aurora #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#60a5fa 0%,#a78bfa 100%)!important;color:#fff!important;}
+  .bq-theme-aurora #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(167,139,250,.14)!important;border-color:rgba(167,139,250,.32)!important;color:#ede9fe!important;}
+  .bq-theme-grid   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.10)!important;}
+  .bq-theme-dots   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.10)!important;}
+  .bq-theme-wave   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(96,165,250,.10)!important;border-color:rgba(96,165,250,.25)!important;}
+
+  /* ───── Floating Conversation card — new compact look ───── */
+  #bq-info-float{
+    background:rgba(14,16,22,.92)!important;
+    backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.08)!important;
+    box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04)!important;
+    border-radius:18px!important;
+    z-index:100000!important;
+    width:300px!important;
+  }
+  #bq-info-float .bq-if-head{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  #bq-info-float .bq-if-themes{
+    display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:8px!important;
+  }
+  #bq-info-float .bq-if-th{
+    width:34px!important;height:34px!important;border-radius:10px!important;
+    cursor:pointer;position:relative;border:2px solid rgba(255,255,255,.08);
+    transition:all .15s;
+  }
+  #bq-info-float .bq-if-th:hover{transform:scale(1.08);border-color:rgba(255,255,255,.25);}
+  #bq-info-float .bq-if-th.sel{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.3);}
+  /* Theme swatches */
+  .bq-if-th[data-t="none"]{background:#1a1a20;}
+  .bq-if-th[data-t="dots"]{background:#1a1a20 radial-gradient(circle,rgba(255,255,255,.25) 1px,transparent 1px) 0 0/8px 8px;}
+  .bq-if-th[data-t="grid"]{background:#1a1a20;background-image:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px);background-size:8px 8px;}
+  .bq-if-th[data-t="aurora"]{background:conic-gradient(from 90deg,#60a5fa,#a78bfa,#34d399,#60a5fa);}
+  .bq-if-th[data-t="forest"]{background:linear-gradient(135deg,#10b981 0%,#14b8a6 100%);}
+  .bq-if-th[data-t="rose"]{background:linear-gradient(135deg,#ec4899 0%,#f472b6 100%);}
+  .bq-if-th[data-t="bubblegum"]{background:linear-gradient(135deg,#a855f7 0%,#ec4899 100%);}
+  .bq-if-th[data-t="monochrome"]{background:linear-gradient(135deg,#27272a 0%,#71717a 100%);}
+  .bq-if-th[data-t="midnightpurple"]{background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%);}
+  .bq-if-th[data-t="oceanv2"]{background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%);}
+  .bq-if-th[data-t="sunsetv2"]{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%);}
+  .bq-if-th[data-t="paper"]{background:linear-gradient(135deg,#f8f7f4 0%,#e5e7eb 100%);}
+
+  #bq-info-float .bq-if-bubble,#bq-info-float .bq-if-fonts{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  }
+  #bq-info-float .bq-if-bubble-opt,#bq-info-float .bq-if-font{
+    text-align:center;padding:8px 6px;border-radius:10px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+    color:rgba(255,255,255,.7);font-size:11px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:all .15s;
+  }
+  #bq-info-float .bq-if-bubble-opt:hover,#bq-info-float .bq-if-font:hover{background:rgba(255,255,255,.08);color:#fff;}
+  #bq-info-float .bq-if-bubble-opt.sel,#bq-info-float .bq-if-font.sel{
+    background:rgba(96,165,250,.18);border-color:#60a5fa;color:#fff;
+  }
+
+  /* ───── Voice preview bar ───── */
+  .bq-voice-preview{
+    display:none;align-items:center;gap:10px;padding:10px 12px;margin:6px 8px;
+    background:rgba(96,165,250,.10);border:1px solid rgba(96,165,250,.28);
+    border-radius:14px;font-family:'Inter',sans-serif;
+  }
+  .bq-voice-preview.show{display:flex;}
+  .bq-voice-preview .bq-vp-play{
+    width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+    background:#60a5fa;color:#0a0a0f;display:flex;align-items:center;justify-content:center;
+  }
+  .bq-voice-preview .bq-vp-play svg{width:14px;height:14px;fill:currentColor;}
+  .bq-voice-preview .bq-vp-bars{display:flex;gap:2px;align-items:center;flex:1;height:24px;}
+  .bq-voice-preview .bq-vp-bars span{display:inline-block;width:2.5px;background:rgba(96,165,250,.55);border-radius:2px;transition:background .12s;}
+  .bq-voice-preview .bq-vp-bars span.played{background:#60a5fa;}
+  .bq-voice-preview .bq-vp-time{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);min-width:34px;text-align:center;}
+  .bq-voice-preview .bq-vp-btn{
+    width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:#fff;transition:all .15s;
+  }
+  .bq-voice-preview .bq-vp-btn:hover{background:rgba(255,255,255,.12);transform:scale(1.06);}
+  .bq-voice-preview .bq-vp-btn.send{background:#22c55e;border-color:#22c55e;}
+  .bq-voice-preview .bq-vp-btn.send:hover{background:#16a34a;}
+  .bq-voice-preview .bq-vp-btn.discard{background:#ef4444;border-color:#ef4444;}
+  .bq-voice-preview .bq-vp-btn.discard:hover{background:#dc2626;}
+  .bq-voice-preview .bq-vp-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* Avatar/banner upload UI inside profile editor */
+  .bqpf-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 4px;}
+  .bqpf-upload{
+    display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;
+    border:1px dashed rgba(255,255,255,.18);border-radius:12px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+    color:rgba(255,255,255,.7);transition:all .15s;background:rgba(255,255,255,.02);
+  }
+  .bqpf-upload:hover{border-color:#60a5fa;color:#fff;background:rgba(96,165,250,.06);}
+  .bqpf-upload-preview{
+    width:100%;aspect-ratio:1/1;max-width:80px;border-radius:50%;
+    background:var(--bq-bg-hover);background-size:cover!important;background-position:center!important;
+  }
+  .bqpf-upload[data-kind="banner"] .bqpf-upload-preview{
+    aspect-ratio:3/1;max-width:none;border-radius:10px;
+  }
+  `;
+  const _styleEl=document.createElement('style');_styleEl.textContent=_v31css;document.head.appendChild(_styleEl);
+
+  /* ── Always inject profile uploads when entering profile view ── */
+  function ensureProfileUploads(){
+    const view=document.getElementById('bqv-profile');
+    if(!view) return;
+    if(view.querySelector('.bqpf-upload-row')) return;
+    const anchor=view.querySelector('.bqpf-scroll')||view;
+    const wrap=document.createElement('div');
+    wrap.className='bqpf-upload-row';
+    const av=(window.myProfile&&myProfile.avatar)?'url('+myProfile.avatar+') center/cover':'';
+    const bn=(window.myProfile&&myProfile.banner)?'url('+myProfile.banner+') center/cover':'';
+    wrap.innerHTML=
+      '<label class="bqpf-upload">'+
+        '<div class="bqpf-upload-preview" id="bqpf-avatar-preview" style="background:'+(av||'rgba(255,255,255,.05)')+'"></div>'+
+        '<span>📷 Upload Avatar</span>'+
+        '<input type="file" id="bqpf-avatar-file" accept="image/*" hidden>'+
+      '</label>'+
+      '<label class="bqpf-upload" data-kind="banner">'+
+        '<div class="bqpf-upload-preview" id="bqpf-banner-upload-preview" style="background:'+(bn||'rgba(255,255,255,.05)')+'"></div>'+
+        '<span>🖼️ Upload Banner</span>'+
+        '<input type="file" id="bqpf-banner-file" accept="image/*" hidden>'+
+      '</label>';
+    anchor.insertBefore(wrap,anchor.firstChild);
+    wrap.querySelector('#bqpf-avatar-file').addEventListener('change',e=>{
+      const f=e.target.files?.[0];if(f&&typeof uploadAvatar==='function') uploadAvatar(f);
+    });
+    wrap.querySelector('#bqpf-banner-file').addEventListener('change',e=>{
+      const f=e.target.files?.[0];if(f&&typeof uploadBanner==='function') uploadBanner(f);
+    });
+  }
+  // Expose so bqNav() patch above can call it
+  window._injectProfileUploads = ensureProfileUploads;
+  setTimeout(ensureProfileUploads,300);
+  setTimeout(ensureProfileUploads,1200);
+
+  /* ── Voice preview before send ── */
+  function buildVoicePreview(){
+    if(document.getElementById('bq-voice-preview')) return;
+    const composer=document.getElementById('bqdmsnd')?.closest('.bqic')||document.getElementById('bqdminp')?.closest('.bqic');
+    if(!composer) return;
+    const bars=Array.from({length:28}).map((_,i)=>{
+      const h=6+Math.round(Math.sin(i*0.6)*5+Math.random()*8);
+      return '<span style="height:'+h+'px"></span>';
+    }).join('');
+    const wrap=document.createElement('div');
+    wrap.className='bq-voice-preview';
+    wrap.id='bq-voice-preview';
+    wrap.innerHTML=
+      '<button class="bq-vp-play" id="bq-vp-play"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>'+
+      '<div class="bq-vp-bars">'+bars+'</div>'+
+      '<span class="bq-vp-time" id="bq-vp-time">0:00</span>'+
+      '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '<button class="bq-vp-btn send" id="bq-vp-send" title="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>';
+    composer.parentNode.insertBefore(wrap,composer);
+  }
+  setTimeout(buildVoicePreview,500);
+
+  let _vpAudio=null,_vpData=null,_vpDur=0;
+  function showVoicePreview(dataUrl,durMs){
+    buildVoicePreview();
+    const wrap=document.getElementById('bq-voice-preview'); if(!wrap) return;
+    _vpData=dataUrl;_vpDur=durMs;
+    const sec=Math.max(1,Math.round(durMs/1000));
+    document.getElementById('bq-vp-time').textContent=Math.floor(sec/60)+':'+(sec%60<10?'0':'')+(sec%60);
+    wrap.classList.add('show');
+    if(_vpAudio){try{_vpAudio.pause();}catch(e){}_vpAudio=null;}
+    _vpAudio=new Audio(dataUrl);
+    _vpAudio.addEventListener('timeupdate',()=>{
+      const bars=wrap.querySelectorAll('.bq-vp-bars span');
+      const pct=_vpAudio.currentTime/(_vpAudio.duration||sec);
+      const cnt=Math.round(bars.length*pct);
+      bars.forEach((b,i)=>b.classList.toggle('played',i<cnt));
+    });
+    _vpAudio.addEventListener('ended',()=>{
+      const pb=document.getElementById('bq-vp-play');
+      if(pb) pb.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+    });
+  }
+  function hideVoicePreview(){
+    const wrap=document.getElementById('bq-voice-preview');
+    if(wrap){wrap.classList.remove('show');wrap.querySelectorAll('.bq-vp-bars span').forEach(b=>b.classList.remove('played'));}
+    if(_vpAudio){try{_vpAudio.pause();}catch(e){}_vpAudio=null;}
+    _vpData=null;_vpDur=0;
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest('#bq-vp-play')){
+      e.stopPropagation();
+      if(!_vpAudio) return;
+      if(_vpAudio.paused){_vpAudio.play();e.target.closest('#bq-vp-play').innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';}
+      else {_vpAudio.pause();e.target.closest('#bq-vp-play').innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';}
+    }
+    if(e.target.closest('#bq-vp-discard')){e.stopPropagation();hideVoicePreview();}
+    if(e.target.closest('#bq-vp-send')){
+      e.stopPropagation();
+      if(_vpData&&typeof sendVoiceDm==='function'){sendVoiceDm(_vpData,_vpDur);}
+      hideVoicePreview();
+    }
+  });
+
+  /* Override sendVoiceDm hook: intercept startVoice's onstop to preview first */
+  // We patch by replacing the recorder.onstop set in startVoice via a wrapper.
+  // Strategy: monkeypatch the existing startVoice to route the recorded blob
+  // into showVoicePreview instead of immediate send.
+  if(typeof window.startVoice==='undefined' && typeof startVoice==='function'){
+    window.__bqOrigStartVoice = startVoice;
+  }
+  // Replace global startVoice if available in scope (it lives in IIFE)
+  // Instead, hook by intercepting MediaRecorder constructor at a click on bq-voice-btn.
+  const vBtn=document.getElementById('bq-voice-btn');
+  if(vBtn){
+    // Remove any existing listeners by cloning
+    const fresh=vBtn.cloneNode(true);
+    vBtn.parentNode.replaceChild(fresh,vBtn);
+    let rec=null,chunks=[],stream=null,startT=0,timer=null;
+    const MAX=30000;
+    function fmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}
+    async function startRec(){
+      if(!activeDmId||!navigator.mediaDevices){if(typeof toast==='function')toast('Voice notes not supported');return;}
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        let mime='audio/webm;codecs=opus';
+        if(!MediaRecorder.isTypeSupported(mime)) mime='audio/webm';
+        if(!MediaRecorder.isTypeSupported(mime)) mime='';
+        rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+        chunks=[];
+        rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+        rec.onstop=()=>{
+          stream?.getTracks().forEach(t=>t.stop());stream=null;
+          const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});
+          if(blob.size<800){if(typeof toast==='function')toast('Recording too short');resetUI();return;}
+          const dur=Math.min(MAX,Date.now()-startT);
+          const r=new FileReader();
+          r.onload=()=>{showVoicePreview(r.result,dur);resetUI();};
+          r.readAsDataURL(blob);
+        };
+        rec.start();startT=Date.now();
+        fresh.classList.add('recording');
+        document.getElementById('bq-voice-rec-bar')?.classList.add('show');
+        timer=setInterval(()=>{
+          const el=Date.now()-startT;
+          const t=document.getElementById('bq-voice-rec-time');if(t)t.textContent=fmt(el);
+          if(el>=MAX) stopRec();
+        },200);
+      }catch(e){if(typeof toast==='function')toast('Microphone permission denied');}
+    }
+    function stopRec(){if(rec&&rec.state==='recording'){try{rec.stop();}catch(e){}}clearInterval(timer);timer=null;}
+    function resetUI(){
+      fresh.classList.remove('recording');
+      document.getElementById('bq-voice-rec-bar')?.classList.remove('show');
+      const t=document.getElementById('bq-voice-rec-time');if(t)t.textContent='0:00';
+    }
+    fresh.addEventListener('click',()=>{
+      if(rec&&rec.state==='recording') stopRec();
+      else startRec();
+    });
+    document.getElementById('bq-voice-rec-cancel')?.addEventListener('click',()=>{
+      if(rec&&rec.state==='recording'){rec.onstop=()=>{stream?.getTracks().forEach(t=>t.stop());stream=null;};try{rec.stop();}catch(e){}}
+      clearInterval(timer);timer=null;resetUI();
+    });
+  }
+
+  /* ── Final hardening: stop click propagation on overlays so outside-close cannot fire ── */
+  ['bq-media-lightbox','bq-pv','bq-info-float','bqimg-preview','bq-confirm'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener('mousedown',e=>e.stopPropagation());
+      el.addEventListener('click',e=>e.stopPropagation());
+    }
+  });
+})();
 
 })();
