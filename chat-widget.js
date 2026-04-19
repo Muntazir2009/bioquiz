@@ -6155,3 +6155,245 @@ setTimeout(_injectProfileUploads,1500);
 
 
 })();
+
+/* ═══════════════════════════════════════════════════════════════════
+   v6 PATCH — Settings card opens reliably; voice notes via RecordRTC
+   - Fixes: rebuildSettingsCard wiped IDs that openInfoFloat needed,
+            so clicking Settings threw and looked like "nothing happens"
+   - Fixes: large white canvas on mic click; broken/empty recording
+   - Uses: RecordRTC (free, MIT) loaded from jsDelivr CDN — battle-tested
+           cross-browser MediaRecorder wrapper. https://recordrtc.org
+   ═══════════════════════════════════════════════════════════════════ */
+(function v6Patch(){
+  if(window.__bqV6) return; window.__bqV6 = true;
+
+  /* ── 1. Tiny CSS fixes for recording UI (constrain canvas, fix class) ── */
+  const css = `
+    /* Constrain the waveform canvas so it cannot blow up the layout.
+       Match the real container class (.bqvoice-rec-bar — single word). */
+    #bqp .bqvoice-rec-bar canvas.bq-vn-wave,
+    #bqp canvas.bq-vn-wave{
+      flex:1 1 auto !important;
+      width:auto !important;
+      max-width:100% !important;
+      height:22px !important;
+      max-height:22px !important;
+      background:rgba(255,255,255,.04);
+      border-radius:8px;
+      display:block;
+    }
+    #bqp .bqvoice-rec-bar{ flex-wrap:nowrap; align-items:center; gap:10px; }
+  `;
+  const st=document.createElement('style'); st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+
+  /* ── 2. SETTINGS — make the menu item actually open the card ──
+     Root cause: rebuildSettingsCard() replaced the card's innerHTML and
+     removed #bq-if-av / #bq-if-name / #bq-if-st. Then openInfoFloat()
+     called .textContent on those nulls and threw — the menu had already
+     closed via the document click handler, so the user saw "nothing".
+     Fix: shadow openInfoFloat with a defensive wrapper that just opens
+     the card when the rebuilt-card layout is in use. */
+  function safeOpenInfoFloat(){
+    const card = document.getElementById('bq-info-float');
+    if(!card) return false;
+    // If rebuilt layout is active (no av node), just open it.
+    const hasLegacyNodes = !!card.querySelector('#bq-if-av')
+                       && !!card.querySelector('#bq-if-name');
+    if(!hasLegacyNodes){
+      card.classList.add('open');
+      return true;
+    }
+    try{
+      if(typeof window.openInfoFloat === 'function'){
+        window.openInfoFloat();
+        return true;
+      }
+    }catch(_){}
+    card.classList.add('open');
+    return true;
+  }
+
+  // Delegated click — overrides any earlier handler that called the
+  // throwing openInfoFloat directly.
+  document.addEventListener('click', function(e){
+    const item = e.target.closest('#bq-dm-menu-info');
+    if(!item) return;
+    e.stopPropagation();
+    document.getElementById('bq-dm-menu')?.classList.remove('open');
+    safeOpenInfoFloat();
+  }, true);
+
+  // Close button inside rebuilt card
+  document.addEventListener('click', function(e){
+    if(e.target.closest('#bq-if-close')){
+      document.getElementById('bq-info-float')?.classList.remove('open');
+    }
+    // Click outside to dismiss
+    const card = document.getElementById('bq-info-float');
+    if(card && card.classList.contains('open')
+       && !e.target.closest('#bq-info-float')
+       && !e.target.closest('#bq-dm-menu-info')
+       && !e.target.closest('#bq-dm-menu-btn')){
+      card.classList.remove('open');
+    }
+  }, true);
+
+  /* ── 3. VOICE NOTES — load RecordRTC and rewire mic button ──
+     RecordRTC handles MediaRecorder quirks (Safari mp4, Chrome opus,
+     codec fallbacks) and produces clean playable blobs. */
+  const RECORDRTC_URL =
+    'https://cdn.jsdelivr.net/npm/recordrtc@5.6.2/RecordRTC.min.js';
+  let _rtcLoading=null;
+  function loadRecordRTC(){
+    if(window.RecordRTC) return Promise.resolve(window.RecordRTC);
+    if(_rtcLoading) return _rtcLoading;
+    _rtcLoading = new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src=RECORDRTC_URL; s.async=true;
+      s.onload=()=>res(window.RecordRTC);
+      s.onerror=()=>rej(new Error('recordrtc-load-failed'));
+      document.head.appendChild(s);
+    });
+    return _rtcLoading;
+  }
+  // Preload in idle time
+  if('requestIdleCallback' in window){
+    requestIdleCallback(()=>loadRecordRTC().catch(()=>{}));
+  } else {
+    setTimeout(()=>loadRecordRTC().catch(()=>{}), 1500);
+  }
+
+  function fmtMS(ms){
+    const s=Math.floor(ms/1000), m=Math.floor(s/60), r=s%60;
+    return m+':'+(r<10?'0':'')+r;
+  }
+
+  function v6RewireMic(){
+    const btn = document.getElementById('bq-voice-btn');
+    if(!btn || btn.dataset.v6) return;
+    // Strip prior handlers (v4/v5 attached via clones)
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.dataset.v6='1';
+    fresh.dataset.v5='1';
+    fresh.dataset.v4='1';
+
+    let recorder=null, stream=null, startT=0, timer=null;
+    const MAX = 60000; // 60s
+
+    function showBar(on){
+      const bar = document.getElementById('bq-voice-rec-bar');
+      if(!bar) return;
+      bar.classList.toggle('show', on);
+      // Remove any stray oversized canvas from earlier patches
+      bar.querySelectorAll('canvas.bq-vn-wave').forEach(c=>c.remove());
+    }
+    function setTime(ms){
+      const el = document.getElementById('bq-voice-rec-time');
+      if(el) el.textContent = fmtMS(ms);
+    }
+    function cleanup(){
+      try{ stream && stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+      stream=null; recorder=null;
+      clearInterval(timer); timer=null;
+      fresh.classList.remove('recording');
+      showBar(false);
+      setTime(0);
+    }
+
+    async function start(){
+      if(typeof activeDmId !== 'undefined' && !activeDmId){
+        if(typeof toast==='function') toast('Open a conversation first');
+        return;
+      }
+      let RTC;
+      try{ RTC = await loadRecordRTC(); }
+      catch(_){ if(typeof toast==='function') toast('Voice recorder failed to load'); return; }
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio:{
+            channelCount:1,
+            echoCancellation:true,
+            noiseSuppression:true,
+            autoGainControl:true
+          }
+        });
+      }catch(_){
+        if(typeof toast==='function') toast('Microphone permission denied');
+        return;
+      }
+      recorder = new RTC(stream, {
+        type:'audio',
+        mimeType:'audio/webm;codecs=opus',
+        recorderType: RTC.MediaStreamRecorder,
+        numberOfAudioChannels:1,
+        desiredSampRate:48000,
+        bitsPerSecond:64000,
+        timeSlice:1000
+      });
+      recorder.startRecording();
+      startT = Date.now();
+      fresh.classList.add('recording');
+      showBar(true);
+      setTime(0);
+      timer = setInterval(()=>{
+        const el = Date.now()-startT;
+        setTime(el);
+        if(el >= MAX) stop();
+      }, 250);
+    }
+
+    function stop(){
+      if(!recorder){ cleanup(); return; }
+      const dur = Date.now() - startT;
+      const r = recorder;
+      clearInterval(timer); timer=null;
+      r.stopRecording(function(){
+        try{
+          const blob = r.getBlob();
+          if(!blob || blob.size < 800){
+            if(typeof toast==='function') toast('Recording too short');
+            cleanup(); return;
+          }
+          const fr = new FileReader();
+          fr.onload = () => {
+            try{
+              if(typeof showVoicePreview === 'function'){
+                showVoicePreview(fr.result, Math.min(MAX, dur));
+              }
+            }catch(_){}
+            cleanup();
+          };
+          fr.onerror = () => cleanup();
+          fr.readAsDataURL(blob);
+        }catch(_){ cleanup(); }
+      });
+    }
+    function cancel(){
+      if(recorder){
+        try{ recorder.stopRecording(()=>cleanup()); }
+        catch(_){ cleanup(); }
+      } else cleanup();
+    }
+
+    fresh.addEventListener('click', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      if(recorder) stop(); else start();
+    });
+
+    // Cancel button — re-bind without cloning the bar (it's a sibling)
+    document.addEventListener('click', (e)=>{
+      if(e.target.closest('#bq-voice-rec-cancel')){
+        e.preventDefault(); e.stopPropagation(); cancel();
+      }
+    }, true);
+  }
+
+  // Initial wire + observe for re-renders
+  function tick(){ try{ v6RewireMic(); }catch(_){} }
+  setTimeout(tick, 400);
+  setTimeout(tick, 1500);
+  setInterval(tick, 2500);
+
+})();
