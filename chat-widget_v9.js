@@ -2570,6 +2570,8 @@ function refreshMeAvatar(){
 
 /* PUSH NOTIFICATIONS REMOVED — kept stubs to avoid reference errors */
 function updatePushUI(){}
+function subscribeToPush(){}
+function showNotification(){}
 
 /* ────���────────────────────────────────────
    TOAST
