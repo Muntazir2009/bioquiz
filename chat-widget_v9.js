@@ -69,7 +69,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.3.1';                 // v9.3.1: removed force-reload loop on version mismatch
+const WIDGET_VERSION = '9.3.2';                 // v9.3.2: visible action icons (copy/delete/react/etc), recorder waveform no longer pushes Cancel offscreen
 // v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
@@ -502,22 +502,26 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqbw{position:relative;display:flex;flex-direction:column;align-items:flex-end;}
 .bqr.theirs .bqbw{align-items:flex-start;}
 .bqacts{
-  position:absolute;top:-38px;display:none;align-items:center;gap:3px;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:10;white-space:nowrap;
+  position:absolute;top:-44px;display:none;align-items:center;gap:4px;
+  background:var(--bq-bg-elevated,#1f2937);border:1px solid var(--bq-border,rgba(255,255,255,.12));
+  border-radius:var(--bq-radius-sm,10px);padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  z-index:50;white-space:nowrap;max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:none;
 }
+.bqacts::-webkit-scrollbar{display:none;}
 .bqr.mine .bqacts{right:0;}.bqr.theirs .bqacts{left:0;}
+/* If message is near the top of the chat, flip actions BELOW the bubble so they don't get clipped */
+.bqr:first-child .bqacts,.bqr.bq-flip-acts .bqacts{top:auto;bottom:-44px;}
 .bqbw:hover .bqacts{display:flex;}
 /* v9.3: mobile/tap support — message gains .bq-tapped class on tap to show actions */
 .bqr.bq-tapped .bqacts{display:flex;}
 .bqact{
-  width:30px;height:30px;background:none;border:none;cursor:pointer;
-  border-radius:6px;display:flex;align-items:center;justify-content:center;
-  font-size:14px;transition:all .15s;color:var(--bq-text-muted);
+  width:32px;height:32px;background:rgba(255,255,255,.04);border:none;cursor:pointer;
+  border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:16px;line-height:1;transition:all .15s;color:var(--bq-text,#e5e7eb);
 }
-.bqact:hover{background:var(--bq-bg-hover);color:var(--bq-text);transform:scale(1.1);}
-.bqact svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.bqact.del:hover{background:rgba(248,113,113,.12);color:var(--bq-danger);}
+.bqact:hover{background:var(--bq-bg-hover,rgba(255,255,255,.1));color:var(--bq-text,#fff);transform:scale(1.1);}
+.bqact svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
+.bqact.del:hover{background:rgba(248,113,113,.18);color:var(--bq-danger,#f87171);}
 .bqepick{
   position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
@@ -1994,12 +1998,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   display:none;align-items:center;gap:10px;padding:6px 12px;background:rgba(220,38,38,.12);
   border:1px solid rgba(220,38,38,.3);border-radius:10px;margin:0 0 6px 0;
   font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#fca5a5;
-  position:relative;width:100%;box-sizing:border-box;
+  position:relative;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;
 }
 .bqvoice-rec-bar.show{display:flex;}
 .bqvoice-rec-dot{width:8px;height:8px;border-radius:50%;background:#dc2626;animation:bqRecPulse 1.2s ease infinite;flex-shrink:0;}
-.bqvoice-rec-time{flex:1;}
-.bqvoice-rec-cancel{background:none;border:none;color:#fca5a5;cursor:pointer;font-weight:700;flex-shrink:0;}
+.bqvoice-rec-time{flex:0 0 auto;min-width:36px;text-align:right;}
+.bqvoice-rec-cancel{background:none;border:none;color:#fca5a5;cursor:pointer;font-weight:700;flex-shrink:0;padding:4px 8px;}
+.bq-vn-wave{flex:1 1 0;min-width:0;height:26px;display:block;}
 
 /* Voice message bubble */
 .bq-voice-msg{
@@ -5842,8 +5847,15 @@ setTimeout(_injectProfileUploads,1500);
     if(!voiceController?.analyser || !voiceController?.canvas) return;
     const { analyser, canvas, dataArray } = voiceController;
     const ctx=canvas.getContext('2d');
-    const width=canvas.width=canvas.clientWidth*devicePixelRatio;
-    const height=canvas.height=canvas.clientHeight*devicePixelRatio;
+    // Only resize the backing store when the CSS size actually changes
+    // (resizing every frame causes layout thrash and pushes siblings offscreen).
+    const cw=canvas.clientWidth, ch=canvas.clientHeight;
+    if(cw>0 && ch>0){
+      const tw=Math.floor(cw*devicePixelRatio), th=Math.floor(ch*devicePixelRatio);
+      if(canvas.width!==tw) canvas.width=tw;
+      if(canvas.height!==th) canvas.height=th;
+    }
+    const width=canvas.width, height=canvas.height;
     analyser.getByteTimeDomainData(dataArray);
     ctx.clearRect(0,0,width,height);
     ctx.lineWidth=2*devicePixelRatio;
@@ -6052,10 +6064,8 @@ setTimeout(_injectProfileUploads,1500);
     const time=bar.querySelector('#bq-voice-rec-time');
     const canvas=document.createElement('canvas');
     canvas.className='bq-vn-wave';
-    canvas.style.flex='1';
-    canvas.style.height='26px';
-    canvas.style.width='100%';
-    canvas.style.display='block';
+    // Sizing handled by CSS (.bq-vn-wave) — flex:1 1 0 + min-width:0 keeps
+    // siblings (Cancel button, time) on-screen no matter how wide the bar gets.
     if(time) bar.insertBefore(canvas,time);
     else bar.appendChild(canvas);
   }
