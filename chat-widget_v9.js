@@ -69,7 +69,10 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.2.0';                 // v9.2: tap-to-record, full-emoji reactions, whole-widget themes, black + WhatsApp Dark
+const WIDGET_VERSION = '9.3.0';                 // v9.3: voice preview fixed, mobile message-tap menu, hosted avatars/banners (catbox.moe)
+// v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
+// You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
+const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
 const VERSION_CHECK_URL = '/chat-widget-version.json'; // optional; ignored if 404
 const AVATAR_CACHE = Object.create(null);       // v9: uid -> {avatar, banner, initials, displayName}
@@ -505,6 +508,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqr.mine .bqacts{right:0;}.bqr.theirs .bqacts{left:0;}
 .bqbw:hover .bqacts{display:flex;}
+/* v9.3: mobile/tap support — message gains .bq-tapped class on tap to show actions */
+.bqr.bq-tapped .bqacts{display:flex;}
 .bqact{
   width:30px;height:30px;background:none;border:none;cursor:pointer;
   border-radius:6px;display:flex;align-items:center;justify-content:center;
@@ -1987,13 +1992,14 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqvoice-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
 .bqvoice-rec-bar{
   display:none;align-items:center;gap:10px;padding:6px 12px;background:rgba(220,38,38,.12);
-  border:1px solid rgba(220,38,38,.3);border-radius:10px;margin:0 12px 6px;
+  border:1px solid rgba(220,38,38,.3);border-radius:10px;margin:0 0 6px 0;
   font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#fca5a5;
+  position:relative;width:100%;box-sizing:border-box;
 }
 .bqvoice-rec-bar.show{display:flex;}
-.bqvoice-rec-dot{width:8px;height:8px;border-radius:50%;background:#dc2626;animation:bqRecPulse 1.2s ease infinite;}
+.bqvoice-rec-dot{width:8px;height:8px;border-radius:50%;background:#dc2626;animation:bqRecPulse 1.2s ease infinite;flex-shrink:0;}
 .bqvoice-rec-time{flex:1;}
-.bqvoice-rec-cancel{background:none;border:none;color:#fca5a5;cursor:pointer;font-weight:700;}
+.bqvoice-rec-cancel{background:none;border:none;color:#fca5a5;cursor:pointer;font-weight:700;flex-shrink:0;}
 
 /* Voice message bubble */
 .bq-voice-msg{
@@ -2197,11 +2203,17 @@ const HTML = `
       </div>
       <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqiw">
+        <!-- v9.3: Voice recording bar lives INSIDE composer to avoid layout shift -->
+        <div class="bqvoice-rec-bar" id="bq-voice-rec-bar">
+          <span class="bqvoice-rec-dot"></span>
+          <span class="bqvoice-rec-time" id="bq-voice-rec-time">0:00</span>
+          <button class="bqvoice-rec-cancel" id="bq-voice-rec-cancel">Cancel</button>
+        </div>
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqdmeo">😊</button>
           <button class="bqgifbtn" id="bqdmgif" title="Send a GIF">GIF</button>
-          <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note (hold)"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+          <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note (tap to record, tap to stop)"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
         </div>
@@ -2465,12 +2477,8 @@ const HTML = `
   </div>
 </div>
 
-<!-- v3: Voice recording bar (in DM) -->
-<div class="bqvoice-rec-bar" id="bq-voice-rec-bar">
-  <span class="bqvoice-rec-dot"></span>
-  <span class="bqvoice-rec-time" id="bq-voice-rec-time">0:00</span>
-  <button class="bqvoice-rec-cancel" id="bq-voice-rec-cancel">Cancel</button>
-</div>
+<!-- v9.3: Voice recording bar moved INSIDE DM composer (.bqiw) — see line ~2199 -->
+
 
   `;
 
@@ -4074,6 +4082,19 @@ function renderMsg(ctx,msg,key){
       openProfileCard(tuid,tname,onlineU[tuid]);
     });
   });
+  // v9.3: Mobile/tap support — tap a message bubble to toggle the action toolbar.
+  // Hover still works on desktop; tap is additive for touch devices.
+  const _bbl=row.querySelector('.bqbbl');
+  if(_bbl){
+    _bbl.addEventListener('click',e=>{
+      // Don't toggle if user tapped on a link, image, voice control or reply
+      if(e.target.closest('a,img,.bq-voice-play,.bqact,.bqepick,.bqep-tab,.bqepbtn,.bqrp')) return;
+      e.stopPropagation();
+      // Close any other open menus first
+      document.querySelectorAll('.bqr.bq-tapped').forEach(r=>{ if(r!==row) r.classList.remove('bq-tapped'); });
+      row.classList.toggle('bq-tapped');
+    });
+  }
 
   // Notification + badge
   if(!isOpen&&!isMine){
@@ -4852,27 +4873,55 @@ function resizeImageFile(file,maxW,maxH){
   });
 }
 
+/* v9.3: Free image hosting via catbox.moe (no API key, anonymous, permanent URLs).
+   Falls back to data URL if upload fails (so the user still sees their pic locally). */
+async function dataUrlToBlob(dataUrl){
+  const r=await fetch(dataUrl); return await r.blob();
+}
+async function hostImage(dataUrl){
+  try{
+    const blob=await dataUrlToBlob(dataUrl);
+    // Catbox accepts files up to 200MB, returns a plain-text URL like https://files.catbox.moe/abc123.jpg
+    const fd=new FormData();
+    fd.append('reqtype','fileupload');
+    fd.append('fileToUpload', blob, 'pic.jpg');
+    const resp=await fetch(IMAGE_HOST_URL, { method:'POST', body:fd });
+    if(!resp.ok) throw new Error('upload http '+resp.status);
+    const url=(await resp.text()).trim();
+    if(!/^https?:\/\//.test(url)) throw new Error('upload bad response');
+    return url;
+  }catch(e){
+    console.warn('[Chat] image hosting failed, keeping local data URL', e);
+    return null;
+  }
+}
+
 async function uploadAvatar(file){
   try{
     const data=await resizeImageFile(file,256,256);
-    myProfile.avatar=data;
+    // Try hosting first → small URL safe to store in RTDB & loadable on every device.
+    const hosted=await hostImage(data);
+    const finalUrl=hosted||data;
+    myProfile.avatar=finalUrl;
     localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
-    if(db&&uid) db.ref('bq_presence/'+uid+'/avatar').set(data);
+    if(db&&uid) db.ref('bq_presence/'+uid+'/avatar').set(finalUrl);
     refreshMeAvatar();
     const prev=document.getElementById('bqpf-avatar-preview');
-    if(prev) prev.style.background='url('+data+') center/cover';
-    toast('Avatar updated');
+    if(prev) prev.style.background='url('+finalUrl+') center/cover';
+    toast(hosted?'Avatar updated':'Avatar saved locally (host upload failed)');
   }catch(e){toast('Failed to upload');}
 }
 async function uploadBanner(file){
   try{
     const data=await resizeImageFile(file,1500,500);
-    myProfile.banner=data;
+    const hosted=await hostImage(data);
+    const finalUrl=hosted||data;
+    myProfile.banner=finalUrl;
     localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
-    if(db&&uid) db.ref('bq_presence/'+uid+'/banner').set(data);
+    if(db&&uid) db.ref('bq_presence/'+uid+'/banner').set(finalUrl);
     const prev=document.getElementById('bqpf-banner-upload-preview');
-    if(prev) prev.style.background='url('+data+') center/cover';
-    toast('Banner updated');
+    if(prev) prev.style.background='url('+finalUrl+') center/cover';
+    toast(hosted?'Banner updated':'Banner saved locally (host upload failed)');
   }catch(e){toast('Failed to upload');}
 }
 
@@ -4972,6 +5021,13 @@ function buildVoiceHtml(msg){
 }
 
 /* Voice play handler delegation */
+// v9.3: Dismiss tap-opened message menus when clicking elsewhere
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.bqr.bq-tapped')){
+    document.querySelectorAll('.bqr.bq-tapped').forEach(r=>r.classList.remove('bq-tapped'));
+  }
+}, true);
+
 document.addEventListener('click',function(e){
   const btn=e.target.closest('.bq-voice-play');
   if(!btn) return;
@@ -5094,15 +5150,10 @@ function bindV3(){
   });
   document.getElementById('bq-if-block')?.addEventListener('click',blockUser);
 
-  // Voice button
-  const vb=document.getElementById('bq-voice-btn');
-  if(vb){
-    vb.addEventListener('click',()=>{
-      if(_vnRecorder&&_vnRecorder.state==='recording') stopVoice();
-      else startVoice();
-    });
-  }
-  document.getElementById('bq-voice-rec-cancel')?.addEventListener('click',cancelVoice);
+  // v9.3: Old voice-button binding REMOVED — caused immediate-send bug.
+  // The new tap-to-record + preview UI is bound in bindVoiceUi() (called near boot end).
+  // Old startVoice/stopVoice/cancelVoice helpers remain only for backward compatibility.
+
 
   // Apply persisted bubble style + read receipts at boot
   setBubStyle(getBubStyle());
@@ -5274,6 +5325,9 @@ setTimeout(_injectProfileUploads,1500);
     transition:transform .12s ease,filter .12s ease;
   }
   .bq-voice-preview .bq-vp-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  /* v9.3: preview is hidden until .show is added (prevents stale empty bar) */
+  .bq-voice-preview{display:none;}
+  .bq-voice-preview.show{display:flex;}
   .bq-voice-preview .bq-vp-btn.discard{background:rgba(220,38,38,.18);color:#fca5a5;}
   .bq-voice-preview .bq-vp-btn.discard:hover{background:rgba(220,38,38,.32);color:#fff;transform:scale(1.06);}
   .bq-voice-preview .bq-vp-btn.send{background:#22c55e;color:#fff;}
@@ -5809,10 +5863,11 @@ setTimeout(_injectProfileUploads,1500);
 
   function ensureVoicePreview(){
     if(document.getElementById('bq-voice-preview')) return;
-    const composer=document.getElementById('bq-voice-rec-bar')?.parentNode || document.getElementById('bqdminp')?.closest('.bqiw');
+    // v9.3: Always inject inside the DM composer (.bqiw), never at body root.
+    const composer=document.getElementById('bqdminp')?.closest('.bqiw');
     if(!composer) return;
     const wrap=document.createElement('div');
-    wrap.className='bq-voice-preview';
+    wrap.className='bq-voice-preview show';
     wrap.id='bq-voice-preview';
     wrap.innerHTML=''+
       '<button class="bq-vp-play" id="bq-vp-play" title="Play/Pause"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>'+
@@ -5821,6 +5876,7 @@ setTimeout(_injectProfileUploads,1500);
       '<span class="bq-vp-time" id="bq-vp-time">0:00</span>'+
       '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
       '<button class="bq-vp-btn send" id="bq-vp-send" title="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>';
+    // Insert at TOP of composer so it sits above the input row but inside it
     composer.insertBefore(wrap, composer.firstChild);
   }
 
