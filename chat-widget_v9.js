@@ -61,7 +61,7 @@ const GIPHY_CATEGORIES = [
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const MAX_MSG      = 50;   // v9.6.1: was 120 — fewer rows = faster open + lighter listeners
+const MAX_MSG      = 50;
 const CHAR_LIMIT   = 320;
 const TYPING_TTL   = 3000;
 const PRESENCE_TTL = 9000;
@@ -69,7 +69,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.1';                 // v9.6.1: compact msg menu (no more widget-close bug), faster chat open w/ no scroll-jump, themes trimmed to 4 (Dark, Light, WhatsApp, Pure Black)
+const WIDGET_VERSION = '9.6.1';                 // v9.6.1: compact working message menu + 4 fixed themes
 // v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
@@ -522,26 +522,26 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqact:hover{background:var(--bq-bg-hover,rgba(255,255,255,.1));color:var(--bq-text,#fff);transform:scale(1.1);}
 .bqact svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
 .bqact.del:hover{background:rgba(248,113,113,.18);color:var(--bq-danger,#f87171);}
-/* v9.6.1: Compact message-action popover (was oversized bottom-sheet) */
 #bq-msg-sheet{position:fixed;inset:0;display:none;z-index:999999;pointer-events:none;}
 #bq-msg-sheet.open{display:block;pointer-events:auto;}
-.bq-ms-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.18);backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);}
-.bq-ms-panel{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(8px);width:min(280px,calc(100vw - 24px));background:var(--bq-bg-elevated,#1a1a1f);border:1px solid var(--bq-border,rgba(255,255,255,.08));border-radius:14px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.45);opacity:0;transition:transform .14s ease,opacity .14s ease;}
-#bq-msg-sheet.open .bq-ms-panel{transform:translateX(-50%) translateY(0);opacity:1;}
-.bq-ms-handle{display:none;}
-.bq-ms-preview{padding:6px 10px 8px;border-bottom:1px solid var(--bq-border,rgba(255,255,255,.06));margin-bottom:6px;}
-.bq-ms-author{font:700 11px system-ui,sans-serif;color:var(--bq-text);margin-bottom:2px;}
-.bq-ms-text{font:500 12px system-ui,sans-serif;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.bq-ms-actions{display:flex;flex-direction:column;gap:1px;}
-.bq-ms-btn{border:none;border-radius:8px;background:transparent;padding:9px 10px;display:flex;align-items:center;gap:10px;color:var(--bq-text);font:600 13px system-ui,sans-serif;cursor:pointer;text-align:left;width:100%;}
-.bq-ms-btn:hover,.bq-ms-btn:active{background:rgba(255,255,255,.06);}
+.bq-ms-backdrop{position:absolute;inset:0;background:transparent;}
+.bq-ms-panel{position:absolute;min-width:148px;max-width:min(220px,calc(100vw - 20px));background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:14px;padding:6px;box-shadow:0 18px 40px rgba(0,0,0,.38);transform:translateY(4px) scale(.98);opacity:0;transition:transform .14s ease,opacity .14s ease;pointer-events:auto;}
+#bq-msg-sheet.open .bq-ms-panel{transform:translateY(0) scale(1);opacity:1;}
+.bq-ms-preview{padding:6px 8px 8px;border-bottom:1px solid var(--bq-border);margin-bottom:6px;}
+.bq-ms-author{font:700 11px Inter,sans-serif;color:var(--bq-text);margin-bottom:2px;}
+.bq-ms-text{font:500 12px Inter,sans-serif;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bq-ms-actions{display:flex;flex-direction:column;gap:2px;}
+.bq-ms-btn{width:100%;border:none;border-radius:10px;background:transparent;min-height:0;padding:8px 10px;display:flex;align-items:center;justify-content:flex-start;gap:8px;color:var(--bq-text);font:700 12px Inter,sans-serif;cursor:pointer;text-align:left;}
+.bq-ms-btn:hover{background:var(--bq-bg-hover);}
 .bq-ms-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-.bq-ms-btn.danger{color:var(--bq-danger,#f87171);}
-.bq-ms-btn.danger:hover{background:rgba(248,113,113,.10);}
+.bq-ms-btn.danger{color:var(--bq-danger,#f87171);background:transparent;}
+.bq-ms-btn.danger:hover{background:rgba(248,113,113,.08);}
+.bq-ms-btn:active{transform:scale(.98);}
 .bq-voice-msg{--bq-voice-progress:0;}
 .bq-voice-bars{position:relative;overflow:hidden;}
 .bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease;opacity:.42;}
 .bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 12px color-mix(in srgb,var(--bq-accent) 22%, transparent);}
+@media (max-width: 640px){.bq-ms-panel{max-width:min(200px,calc(100vw - 20px));}}
 .bqepick{
   position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
@@ -1430,36 +1430,30 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* v9: perf — let off-screen rows skip layout */
 #bqgmsgs .bqr,#bqdmmsgs .bqr{content-visibility:auto;contain-intrinsic-size:auto 80px;}
 
+
+#bqp.bq-theme-light{background:linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%)!important;color:#0f172a!important;}
+#bqp.bq-theme-light .bqv,#bqp.bq-theme-light .bqlst,#bqp.bq-theme-light #bqdmlist,#bqp.bq-theme-light .bqcomp,#bqp.bq-theme-light .bqsettings,#bqp.bq-theme-light .bq-info-scroll,#bqp.bq-theme-light .bq-profile-scroll{background:transparent!important;color:#0f172a!important;}
+#bqp.bq-theme-light .bqdmh,#bqp.bq-theme-light .bqgh,#bqp.bq-theme-light .bqsh,#bqp.bq-theme-light .bq-info-header,#bqp.bq-theme-light .bq-profile-header{background:#ffffff!important;color:#0f172a!important;border-color:#dbe3ee!important;}
+#bqp.bq-theme-light .bqiw,#bqp.bq-theme-light .bqgi,#bqp.bq-theme-light input,#bqp.bq-theme-light textarea{background:#ffffff!important;color:#0f172a!important;border-color:#dbe3ee!important;}
+#bqp.bq-theme-light .bqr.mine .bqbbl{background:linear-gradient(135deg,#2563eb 0%,#3b82f6 100%)!important;color:#fff!important;border:none!important;box-shadow:0 8px 24px rgba(37,99,235,.18)!important;}
+#bqp.bq-theme-light .bqr.theirs .bqbbl{background:#ffffff!important;color:#0f172a!important;border:1px solid #dbe3ee!important;box-shadow:0 4px 12px rgba(15,23,42,.06)!important;}
+#bqp.bq-theme-light .bqun,#bqp.bq-theme-light .bq-info-section-title{color:#1d4ed8!important;}
+#bqp.bq-theme-light .bqbbl-meta,#bqp.bq-theme-light .bqds,#bqp.bq-theme-light .bqifooter,#bqp.bq-theme-light .bqih{color:#64748b!important;}
+#bqp.bq-theme-whatsapp{background:#ece5dd!important;color:#0b141a!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;}
+#bqp.bq-theme-whatsapp .bqv,#bqp.bq-theme-whatsapp .bqlst,#bqp.bq-theme-whatsapp #bqdmlist,#bqp.bq-theme-whatsapp .bqcomp,#bqp.bq-theme-whatsapp .bqsettings,#bqp.bq-theme-whatsapp .bq-info-scroll,#bqp.bq-theme-whatsapp .bq-profile-scroll{background:transparent!important;color:#0b141a!important;}
+#bqp.bq-theme-whatsapp .bqdmh,#bqp.bq-theme-whatsapp .bqgh,#bqp.bq-theme-whatsapp .bqsh,#bqp.bq-theme-whatsapp .bq-info-header,#bqp.bq-theme-whatsapp .bq-profile-header{background:#075e54!important;color:#fff!important;border-color:#054d44!important;}
+#bqp.bq-theme-whatsapp .bqiw,#bqp.bq-theme-whatsapp .bqgi,#bqp.bq-theme-whatsapp input,#bqp.bq-theme-whatsapp textarea{background:#ffffff!important;color:#0b141a!important;border-color:#d1d7db!important;}
+#bqp.bq-theme-whatsapp .bqr.mine .bqbbl{background:#dcf8c6!important;color:#0b141a!important;border:none!important;box-shadow:0 1px 1px rgba(0,0,0,.12)!important;}
+#bqp.bq-theme-whatsapp .bqr.theirs .bqbbl{background:#ffffff!important;color:#0b141a!important;border:none!important;box-shadow:0 1px 1px rgba(0,0,0,.12)!important;}
+#bqp.bq-theme-whatsapp .bqun,#bqp.bq-theme-whatsapp .bq-info-section-title{color:#075e54!important;}
+#bqp.bq-theme-whatsapp .bqbbl-meta,#bqp.bq-theme-whatsapp .bqds,#bqp.bq-theme-whatsapp .bqifooter,#bqp.bq-theme-whatsapp .bqih{color:#667781!important;}
+
 /* v9.2: Pure Black theme */
 #bqp.bq-theme-black{background:#000!important;}
 #bqp.bq-theme-black .bqr.mine .bqbbl{background:#1a1a1a!important;color:#fff!important;border:1px solid #2a2a2a!important;box-shadow:none!important;}
 #bqp.bq-theme-black .bqr.theirs .bqbbl{background:#0d0d0d!important;color:#e5e5e5!important;border:1px solid #1a1a1a!important;}
 #bqp.bq-theme-black .bqun{color:#a3a3a3!important;}
 #bqp.bq-theme-black .bqbbl-meta{color:#737373!important;}
-
-/* v9.6.1: Light theme */
-#bqp.bq-theme-light{background:#f5f6f8!important;}
-#bqp.bq-theme-light .bqr.mine .bqbbl{background:#3b82f6!important;color:#fff!important;border:none!important;box-shadow:0 1px 2px rgba(0,0,0,.08)!important;}
-#bqp.bq-theme-light .bqr.theirs .bqbbl{background:#fff!important;color:#0b141a!important;border:1px solid #e5e7eb!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important;}
-#bqp.bq-theme-light .bqun{color:#3b82f6!important;}
-#bqp.bq-theme-light .bqbbl-meta{color:#6b7280!important;}
-#bqp.bq-theme-light .bqv,
-#bqp.bq-theme-light .bqlst,
-#bqp.bq-theme-light #bqdmlist,
-#bqp.bq-theme-light .bqcomp,
-#bqp.bq-theme-light .bqsettings,
-#bqp.bq-theme-light .bq-info-scroll,
-#bqp.bq-theme-light .bq-profile-scroll{background:#f5f6f8!important;color:#0b141a!important;}
-#bqp.bq-theme-light .bqdmh,#bqp.bq-theme-light .bqgh,#bqp.bq-theme-light .bqsh,#bqp.bq-theme-light .bq-info-header,#bqp.bq-theme-light .bq-profile-header{background:#fff!important;color:#0b141a!important;border-color:#e5e7eb!important;}
-#bqp.bq-theme-light .bqiw,#bqp.bq-theme-light .bqgi{background:#fff!important;border-color:#e5e7eb!important;}
-#bqp.bq-theme-light .bqlst-item,#bqp.bq-theme-light .bqdml,#bqp.bq-theme-light .bq-info-row,#bqp.bq-theme-light .bq-info-section{background:transparent!important;color:#0b141a!important;border-color:#e9edef!important;}
-#bqp.bq-theme-light .bqlst-item:hover,#bqp.bq-theme-light .bqdml:hover{background:rgba(0,0,0,.04)!important;}
-#bqp.bq-theme-light .bq-info-section-title{color:#3b82f6!important;}
-#bqp.bq-theme-light input,#bqp.bq-theme-light textarea{background:#fff!important;color:#0b141a!important;border-color:#e5e7eb!important;}
-
-/* Theme chip swatches in picker (4 themes only) */
-.bq-theme-chip[data-t="light"]{background:linear-gradient(135deg,#fff 0%,#e5e7eb 100%);}
-
 
 /* v9.2: Apply selected theme to the WHOLE widget (lists, headers, settings, composer) */
 #bqp.bq-theme-walight,
@@ -1685,21 +1679,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bq-theme-chip:hover{border-color:rgba(255,255,255,.3);transform:scale(1.08);}
 .bq-theme-chip.sel{border-color:var(--bq-accent);}
-.bq-theme-chip[data-t="none"]{background:var(--bq-bg);}
-.bq-theme-chip[data-t="grid"]{background:var(--bq-bg);background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:10px 10px;}
-.bq-theme-chip[data-t="dots"]{background:var(--bq-bg) radial-gradient(circle,rgba(255,255,255,.15) 1px,transparent 1px) 0 0/8px 8px;}
-.bq-theme-chip[data-t="wave"]{background:linear-gradient(180deg,rgba(96,165,250,.2) 0%,transparent 100%);}
-.bq-theme-chip[data-t="aurora"]{background:conic-gradient(from 90deg,rgba(96,165,250,.4),rgba(167,139,250,.4),rgba(52,211,153,.3),rgba(96,165,250,.4));}
-.bq-theme-chip[data-t="sunset"]{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%);}
-.bq-theme-chip[data-t="ocean"]{background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%);}
-.bq-theme-chip[data-t="midnight"]{background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%);}
-.bq-theme-chip[data-t="forest"]{background:linear-gradient(135deg,#10b981 0%,#14b8a6 100%);}
-.bq-theme-chip[data-t="rose"]{background:linear-gradient(135deg,#ec4899 0%,#f472b6 100%);}
-.bq-theme-chip[data-t="mono"]{background:linear-gradient(135deg,#27272a 0%,#52525b 100%);}
-.bq-theme-chip[data-t="bubblegum"]{background:linear-gradient(135deg,#a855f7 0%,#ec4899 100%);}
-.bq-theme-chip[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#7f1d1d 100%);}
-.bq-theme-chip[data-t="walight"]{background:linear-gradient(135deg,#dcf8c6 0%,#075e54 100%);}
-.bq-theme-chip[data-t="wadark"]{background:linear-gradient(135deg,#005c4b 0%,#0b141a 100%);}
+.bq-theme-chip[data-t="none"]{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);}
+.bq-theme-chip[data-t="light"]{background:linear-gradient(135deg,#ffffff 0%,#e2e8f0 100%);border-color:rgba(15,23,42,.08);}
+.bq-theme-chip[data-t="whatsapp"]{background:linear-gradient(135deg,#dcf8c6 0%,#075e54 100%);}
 .bq-theme-chip[data-t="black"]{background:linear-gradient(135deg,#0a0a0a 0%,#000 100%);border-color:rgba(255,255,255,.2);}
 .bq-theme-chip.sel::after{content:'';position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);}
 
@@ -1929,7 +1911,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-if-row.danger .bq-if-row-l{color:#ef4444;}
 .bq-if-row.danger .bq-if-row-ic svg{stroke:#ef4444;}
 .bq-if-themes{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 10px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 10px;
 }
 .bq-if-th{
   height:34px;border-radius:8px;cursor:pointer;
@@ -1937,21 +1919,10 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bq-if-th:hover{transform:scale(1.05);}
 .bq-if-th.sel{border-color:var(--bq-accent);box-shadow:0 0 0 2px rgba(96,165,250,.2);}
-.bq-if-th[data-t="none"]{background:linear-gradient(135deg,#0a0a0a,#1a1a1a);}
-.bq-if-th[data-t="dots"]{background:#0a0a0a radial-gradient(circle,rgba(255,255,255,.18) 1px,transparent 1px) 0 0/8px 8px;}
-.bq-if-th[data-t="grid"]{background:#0a0a0a;background-image:linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px);background-size:8px 8px;}
-.bq-if-th[data-t="aurora"]{background:linear-gradient(135deg,#60a5fa,#a78bfa,#34d399);}
-.bq-if-th[data-t="sunset"]{background:linear-gradient(135deg,#fb923c,#f43f5e);}
-.bq-if-th[data-t="ocean"]{background:linear-gradient(135deg,#06b6d4,#0ea5e9);}
-.bq-if-th[data-t="midnight"]{background:linear-gradient(135deg,#1e1b4b,#a855f7);}
-.bq-if-th[data-t="forest"]{background:linear-gradient(135deg,#10b981,#14b8a6);}
-.bq-if-th[data-t="rose"]{background:linear-gradient(135deg,#ec4899,#f472b6);}
-.bq-if-th[data-t="bubblegum"]{background:linear-gradient(135deg,#a855f7,#ec4899);}
-.bq-if-th[data-t="monochrome"]{background:linear-gradient(135deg,#a3a3a3,#404040);}
-.bq-if-th[data-t="midnightpurple"]{background:linear-gradient(135deg,#1e1b4b,#7c3aed);}
-.bq-if-th[data-t="oceanv2"]{background:linear-gradient(135deg,#022c43,#22d3ee);}
-.bq-if-th[data-t="sunsetv2"]{background:linear-gradient(135deg,#fb923c,#ec4899);}
-.bq-if-th[data-t="paper"]{background:linear-gradient(135deg,#fafafa,#e5e7eb);border:1px solid var(--bq-border);}
+.bq-if-th[data-t="none"]{background:linear-gradient(135deg,#0f172a,#1e293b);}
+.bq-if-th[data-t="light"]{background:linear-gradient(135deg,#ffffff,#e2e8f0);border:1px solid var(--bq-border);}
+.bq-if-th[data-t="whatsapp"]{background:linear-gradient(135deg,#dcf8c6,#075e54);}
+.bq-if-th[data-t="black"]{background:linear-gradient(135deg,#0a0a0a,#000);}
 
 .bq-if-bubble{display:flex;gap:6px;padding:0 10px;}
 .bq-if-bubble-opt{
@@ -2282,7 +2253,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips"><div class="bq-theme-chip sel" data-t="none" title="Dark (Default)"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="walight" title="WhatsApp"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -2446,18 +2417,10 @@ const HTML = `
     <div class="bq-if-sect">
       <div class="bq-if-sect-t">Theme</div>
       <div class="bq-if-themes" id="bq-if-themes">
-        <div class="bq-if-th sel" data-t="none" title="Default"></div>
-        <div class="bq-if-th" data-t="dots" title="Dots"></div>
-        <div class="bq-if-th" data-t="grid" title="Grid"></div>
-        <div class="bq-if-th" data-t="aurora" title="Aurora"></div>
-        <div class="bq-if-th" data-t="forest" title="Forest"></div>
-        <div class="bq-if-th" data-t="rose" title="Rosé"></div>
-        <div class="bq-if-th" data-t="bubblegum" title="Bubblegum"></div>
-        <div class="bq-if-th" data-t="monochrome" title="Monochrome"></div>
-        <div class="bq-if-th" data-t="midnightpurple" title="Midnight Purple"></div>
-        <div class="bq-if-th" data-t="oceanv2" title="Ocean"></div>
-        <div class="bq-if-th" data-t="sunsetv2" title="Sunset"></div>
-        <div class="bq-if-th" data-t="paper" title="Light / Paper"></div>
+        <div class="bq-if-th sel" data-t="none" title="Dark"></div>
+        <div class="bq-if-th" data-t="light" title="Light"></div>
+        <div class="bq-if-th" data-t="whatsapp" title="WhatsApp"></div>
+        <div class="bq-if-th" data-t="black" title="Pure Black"></div>
       </div>
     </div>
     <div class="bq-if-sect">
@@ -2803,20 +2766,7 @@ function showDmConvo(pUid, pName) {
   document.querySelectorAll('.bqdmr').forEach(r=>{
     r.classList.toggle('active-row', r.dataset.did===newDmId);
   });
-  // v9.6.1: hide msgs container while batched renders happen, then jump to bottom
-  // BEFORE paint so the chat doesn't visibly scroll up to old messages on open.
-  if(msgs){
-    msgs.style.visibility='hidden';
-    requestAnimationFrame(()=>{
-      msgs.scrollTop=msgs.scrollHeight;
-      // Wait one more frame for the late child_added events from limitToLast(),
-      // then reveal at the correct (bottom) position.
-      requestAnimationFrame(()=>{
-        msgs.scrollTop=msgs.scrollHeight;
-        msgs.style.visibility='';
-      });
-    });
-  }
+  requestAnimationFrame(() => { if (msgs) msgs.scrollTop = msgs.scrollHeight; });
 }
 
 /* ─────────────────────────────────────────
@@ -3602,15 +3552,14 @@ function setDmTheme(did,theme){
   applyDmTheme(did,theme);
 }
 function applyDmTheme(did,theme){
+  theme=(theme==='light'||theme==='whatsapp'||theme==='black'||theme==='none')?theme:(theme==='paper'?'light':(theme==='walight'||theme==='wadark'?'whatsapp':'none'));
   const v=document.getElementById('bqv-dmconv'); if(!v) return;
   v.className='bqv bq-active bq-theme-'+theme;
-  // v8: mirror theme class on the whole panel so background covers everything
   const panel=document.getElementById('bqp');
   if(panel){
     Array.from(panel.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) panel.classList.remove(c); });
     panel.classList.add('bq-theme-'+theme);
   }
-  // Update chip selection
   document.querySelectorAll('.bq-theme-chip').forEach(ch=>{
     ch.classList.toggle('sel', ch.dataset.t===theme);
   });
@@ -4153,7 +4102,7 @@ function renderMsg(ctx,msg,key){
       e.stopPropagation();
       document.querySelectorAll('.bqr.bq-tapped').forEach(r=>{ if(r!==row) r.classList.remove('bq-tapped'); });
       row.classList.add('bq-tapped');
-      renderMsgActionSheet(ctx,key,msg,pfx);
+      renderMsgActionSheet(ctx,key,msg,pfx,_bbl);
     });
   }
 
@@ -4182,12 +4131,9 @@ function ensureMsgActionSheet(){
       '<div class="bq-ms-actions" id="bq-ms-actions"></div>'+
     '</div>';
   document.body.appendChild(el);
-  // v9.6.1: stop pointerdown/mousedown from bubbling to the panel's outside-close handler.
-  // Without this, tapping the menu was closing the whole widget.
-  const panel=el.querySelector('.bq-ms-panel');
-  ['pointerdown','mousedown','touchstart','click'].forEach(ev=>{
-    panel.addEventListener(ev,e=>e.stopPropagation(),true);
-  });
+  el.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.bq-ms-panel')) e.stopPropagation();
+  },true);
   el.addEventListener('click',e=>{
     if(e.target.dataset.close==='1' || e.target===el) closeMsgActionSheet();
   });
@@ -4197,13 +4143,15 @@ function closeMsgActionSheet(){
   const el=document.getElementById('bq-msg-sheet');
   if(!el) return;
   el.classList.remove('open');
-  el.dataset.ctx=''; el.dataset.key='';
+  el.dataset.ctx=''; el.dataset.key=''; el.dataset.pfx='';
+  delete el._anchorRect;
 }
-function renderMsgActionSheet(ctx,key,msg,pfx){
+function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   const sheet=ensureMsgActionSheet();
   const preview=sheet.querySelector('#bq-ms-preview');
+  const panel=sheet.querySelector('.bq-ms-panel');
   const actions=sheet.querySelector('#bq-ms-actions');
-  if(!preview||!actions) return;
+  if(!preview||!actions||!panel) return;
   sheet.dataset.ctx=ctx; sheet.dataset.key=key; sheet.dataset.pfx=pfx;
   const isMine=msg.uid===uid;
   const previewText = msg.type==='voice' ? '🎤 Voice note' : (msg.text || (msg.imageData?'Photo':(msg.gifUrl?'GIF':'Message')));
@@ -4211,22 +4159,30 @@ function renderMsgActionSheet(ctx,key,msg,pfx){
   const items = [
     {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
     {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
-    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
-    {a:'star', label:'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'}
   ];
-  if(ctx!=='global') items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
-  if(isMine) items.push(
-    {a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'},
-    {a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'}
-  );
+  if(isMine) items.splice(0, items.length, {a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
   actions.innerHTML = items.map(item=>'<button class="bq-ms-btn'+(item.danger?' danger':'')+'" data-a="'+item.a+'">'+item.icon+'<span>'+item.label+'</span></button>').join('');
   actions.querySelectorAll('.bq-ms-btn').forEach(btn=>{
+    btn.addEventListener('pointerdown',e=>e.stopPropagation(),true);
     btn.addEventListener('click',e=>{
       e.stopPropagation();
       closeMsgActionSheet();
       doAction(ctx, btn.dataset.a, key, msg, pfx, true);
     });
   });
+  const rect=(anchorEl||document.getElementById(pfx+key))?.getBoundingClientRect?.();
+  const w=Math.min(220,Math.max(148,panel.offsetWidth||168));
+  const h=panel.offsetHeight||112;
+  const vw=window.innerWidth||360;
+  const vh=window.innerHeight||640;
+  const left=Math.min(vw-w-10,Math.max(10,rect?rect.left+(rect.width-w)/2:10));
+  let top=rect?rect.top-h-8:12;
+  if(top<10) top=rect?Math.min(vh-h-10,rect.bottom+8):12;
+  panel.style.left=left+'px';
+  panel.style.top=top+'px';
+  panel.style.right='auto';
+  panel.style.bottom='auto';
   sheet.classList.add('open');
 }
 
@@ -4689,8 +4645,7 @@ function init(){
     const p=document.getElementById('bqp');
     const b=document.getElementById('bqb');
     // v3: skip outside-close when interacting with overlays that live outside #bqp
-    // v9.6.1: also exempt #bq-msg-sheet so tapping the action menu doesn't close the widget
-    if(e.target.closest('#bq-msg-sheet,#bq-media-lightbox,#bq-pv,#bq-info-float,#bqimg-preview,#bq-confirm,.bqimg-preview,.bqpv-modal,.bq-confirm')) return;
+    if(e.target.closest('#bq-media-lightbox,#bq-pv,#bq-info-float,#bqimg-preview,#bq-confirm,#bq-msg-sheet,.bqimg-preview,.bqpv-modal,.bq-confirm')) return;
     if(!p.contains(e.target)&&!b.contains(e.target)) closePanel();
   });
 
@@ -5204,14 +5159,13 @@ function buildVoiceHtml(msg){
 }
 
 /* Voice play handler delegation */
-// v9.3 / v9.6.1: Dismiss tap-opened message menus when clicking elsewhere.
-// IMPORTANT: don't close on clicks inside the action sheet itself, OR on the
-// message bubble that opened it (caused the menu to flicker / not respond).
+// v9.3: Dismiss tap-opened message menus when clicking elsewhere
 document.addEventListener('click',function(e){
   if(e.target.closest('#bq-msg-sheet')) return;
-  if(e.target.closest('.bqr.bq-tapped')) return;
-  document.querySelectorAll('.bqr.bq-tapped').forEach(r=>r.classList.remove('bq-tapped'));
-  closeMsgActionSheet();
+  if(!e.target.closest('.bqr.bq-tapped')){
+    document.querySelectorAll('.bqr.bq-tapped').forEach(r=>r.classList.remove('bq-tapped'));
+    closeMsgActionSheet();
+  }
 }, true);
 
 document.addEventListener('click',function(e){
