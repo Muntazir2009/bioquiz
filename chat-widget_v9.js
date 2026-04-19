@@ -69,7 +69,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.3.0';                 // v9.3: voice preview fixed, mobile message-tap menu, hosted avatars/banners (catbox.moe)
+const WIDGET_VERSION = '9.3.1';                 // v9.3.1: removed force-reload loop on version mismatch
 // v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
@@ -6528,18 +6528,39 @@ setTimeout(_injectProfileUploads,1500);
     if(tries>40) clearInterval(iv);
   },150);
 
-  // Version check — force reload on stale cached widget
+  // Version check — soft update, NEVER auto-reload (prevents reload loops when
+  // a CDN/SW keeps serving a stale chat-widget.js but version.json is fresh).
+  // We just clear our SW caches and expose window.BQ_UPDATE_AVAILABLE so the
+  // host page can show a "tap to update" banner if it wants.
   try{
-    fetch(VERSION_CHECK_URL, {cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
-      if(j && j.version && j.version !== WIDGET_VERSION){
-        console.info('[bq-widget] new version available:', j.version, '→ reloading');
-        // Bust SW caches we may have created
-        if('caches' in window){
-          caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bq-')).map(k=>caches.delete(k))))
-            .finally(()=>{ setTimeout(()=>location.reload(), 200); });
-        } else { setTimeout(()=>location.reload(), 200); }
+    const RELOAD_KEY='bq_widget_reload_attempt';
+    fetch(VERSION_CHECK_URL+'?t='+Date.now(), {cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+      if(!j || !j.version || j.version === WIDGET_VERSION) return;
+      console.info('[bq-widget] new version available:', j.version, '(running '+WIDGET_VERSION+')');
+      window.BQ_UPDATE_AVAILABLE = j.version;
+      // Best-effort: clear our own SW caches so the NEXT natural navigation
+      // picks up the new file. Do NOT reload here.
+      if('caches' in window){
+        try{ caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bq-')).map(k=>caches.delete(k)))); }catch(_){}
+      }
+      // One-shot reload guard: only reload if we've never tried this session
+      // AND the host opted in via window.BQ_AUTO_RELOAD === true.
+      if(window.BQ_AUTO_RELOAD === true){
+        try{
+          if(sessionStorage.getItem(RELOAD_KEY)) {
+            console.warn('[bq-widget] update still pending after reload — cached script is stuck. Skipping further reloads.');
+            return;
+          }
+          sessionStorage.setItem(RELOAD_KEY, '1');
+          setTimeout(()=>location.reload(), 300);
+        }catch(_){}
       }
     }).catch(()=>{});
+    // Clear the guard once we're actually on the new version
+    try{
+      const stored = sessionStorage.getItem(RELOAD_KEY);
+      if(stored) sessionStorage.removeItem(RELOAD_KEY);
+    }catch(_){}
   }catch(_){}
 })();
 
