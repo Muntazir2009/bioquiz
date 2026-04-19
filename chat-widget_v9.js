@@ -69,7 +69,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.3.2';                 // v9.3.2: visible action icons (copy/delete/react/etc), recorder waveform no longer pushes Cancel offscreen
+const WIDGET_VERSION = '9.3.3';                 // v9.3.3: real saved voice-note waveform + playback progress coloring + rebuilt mobile message actions
 // v9.3: Image hosting endpoint — catbox.moe is free, anonymous, returns permanent URLs.
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = (typeof window!=='undefined' && window.BQ_IMAGE_HOST) || 'https://catbox.moe/user/api.php';
@@ -522,6 +522,25 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqact:hover{background:var(--bq-bg-hover,rgba(255,255,255,.1));color:var(--bq-text,#fff);transform:scale(1.1);}
 .bqact svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
 .bqact.del:hover{background:rgba(248,113,113,.18);color:var(--bq-danger,#f87171);}
+#bq-msg-sheet{position:fixed;inset:0;display:none;z-index:999999;}
+#bq-msg-sheet.open{display:block;}
+.bq-ms-backdrop{position:absolute;inset:0;background:rgba(2,6,23,.52);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+.bq-ms-panel{position:absolute;left:12px;right:12px;bottom:12px;background:linear-gradient(180deg,var(--bq-bg-elevated),color-mix(in srgb,var(--bq-bg-elevated) 82%, #000 18%));border:1px solid var(--bq-border);border-radius:24px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));box-shadow:0 24px 60px rgba(0,0,0,.45);transform:translateY(20px);opacity:0;transition:transform .18s ease,opacity .18s ease;}
+#bq-msg-sheet.open .bq-ms-panel{transform:translateY(0);opacity:1;}
+.bq-ms-handle{width:42px;height:5px;border-radius:999px;background:rgba(255,255,255,.18);margin:2px auto 10px;}
+.bq-ms-preview{padding:8px 10px 12px;border-bottom:1px solid var(--bq-border);margin-bottom:10px;}
+.bq-ms-author{font:700 12px Inter,sans-serif;color:var(--bq-text);margin-bottom:4px;}
+.bq-ms-text{font:500 13px Inter,sans-serif;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bq-ms-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.bq-ms-btn{border:none;border-radius:18px;background:rgba(255,255,255,.04);min-height:72px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--bq-text);font:700 11px Inter,sans-serif;cursor:pointer;}
+.bq-ms-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bq-ms-btn.danger{color:var(--bq-danger,#f87171);background:rgba(248,113,113,.08);}
+.bq-ms-btn:active{transform:scale(.96);}
+.bq-voice-msg{--bq-voice-progress:0;}
+.bq-voice-bars{position:relative;overflow:hidden;}
+.bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease;opacity:.42;}
+.bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 12px color-mix(in srgb,var(--bq-accent) 22%, transparent);}
+@media (min-width: 640px){.bq-ms-panel{left:auto;right:18px;width:min(360px,calc(100vw - 24px));}}
 .bqepick{
   position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
@@ -4092,12 +4111,11 @@ function renderMsg(ctx,msg,key){
   const _bbl=row.querySelector('.bqbbl');
   if(_bbl){
     _bbl.addEventListener('click',e=>{
-      // Don't toggle if user tapped on a link, image, voice control or reply
       if(e.target.closest('a,img,.bq-voice-play,.bqact,.bqepick,.bqep-tab,.bqepbtn,.bqrp')) return;
       e.stopPropagation();
-      // Close any other open menus first
       document.querySelectorAll('.bqr.bq-tapped').forEach(r=>{ if(r!==row) r.classList.remove('bq-tapped'); });
-      row.classList.toggle('bq-tapped');
+      row.classList.add('bq-tapped');
+      renderMsgActionSheet(ctx,key,msg,pfx);
     });
   }
 
@@ -4114,14 +4132,87 @@ function renderMsg(ctx,msg,key){
   scrollD(ctx,isMine);
 }
 
-function doAction(ctx,a,key,msg,pfx){
-  if(a==='react'){const p=document.getElementById(pfx+'ep-'+key);if(p)p.classList.toggle('open');}
-  else if(a==='reply'){setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:msg.text});document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();}
-  else if(a==='copy'){navigator.clipboard?.writeText(msg.text).then(()=>toast('Copied!'));}
+function ensureMsgActionSheet(){
+  let el=document.getElementById('bq-msg-sheet');
+  if(el) return el;
+  el=document.createElement('div');
+  el.id='bq-msg-sheet';
+  el.innerHTML=''+
+    '<div class="bq-ms-backdrop" data-close="1"></div>'+
+    '<div class="bq-ms-panel" role="dialog" aria-label="Message actions">'+
+      '<div class="bq-ms-handle"></div>'+
+      '<div class="bq-ms-preview" id="bq-ms-preview"></div>'+
+      '<div class="bq-ms-actions" id="bq-ms-actions"></div>'+
+    '</div>';
+  document.body.appendChild(el);
+  el.addEventListener('click',e=>{
+    if(e.target.dataset.close==='1' || e.target===el) closeMsgActionSheet();
+  });
+  return el;
+}
+function closeMsgActionSheet(){
+  const el=document.getElementById('bq-msg-sheet');
+  if(!el) return;
+  el.classList.remove('open');
+  el.dataset.ctx=''; el.dataset.key='';
+}
+function renderMsgActionSheet(ctx,key,msg,pfx){
+  const sheet=ensureMsgActionSheet();
+  const preview=sheet.querySelector('#bq-ms-preview');
+  const actions=sheet.querySelector('#bq-ms-actions');
+  if(!preview||!actions) return;
+  sheet.dataset.ctx=ctx; sheet.dataset.key=key; sheet.dataset.pfx=pfx;
+  const isMine=msg.uid===uid;
+  const previewText = msg.type==='voice' ? '🎤 Voice note' : (msg.text || (msg.imageData?'Photo':(msg.gifUrl?'GIF':'Message')));
+  preview.innerHTML = '<div class="bq-ms-author">'+esc(isMine?'You':'@'+(msg.uname||'?'))+'</div><div class="bq-ms-text">'+esc(previewText)+'</div>';
+  const items = [
+    {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
+    {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
+    {a:'star', label:'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+  ];
+  if(ctx!=='global') items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
+  if(isMine) items.push(
+    {a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'},
+    {a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'}
+  );
+  actions.innerHTML = items.map(item=>'<button class="bq-ms-btn'+(item.danger?' danger':'')+'" data-a="'+item.a+'">'+item.icon+'<span>'+item.label+'</span></button>').join('');
+  actions.querySelectorAll('.bq-ms-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      closeMsgActionSheet();
+      doAction(ctx, btn.dataset.a, key, msg, pfx, true);
+    });
+  });
+  sheet.classList.add('open');
+}
+
+function doAction(ctx,a,key,msg,pfx,fromSheet){
+  if(a==='react'){
+    const p=document.getElementById(pfx+'ep-'+key);
+    if(p){
+      p.classList.toggle('open');
+      const row=document.getElementById(pfx+key);
+      row?.classList.add('bq-tapped');
+      if(fromSheet){
+        requestAnimationFrame(()=>{
+          const first=p.querySelector('.bqepbtn');
+          first?.focus?.();
+        });
+      }
+    }
+  }
+  else if(a==='reply'){
+    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:(msg.text || (msg.type==='voice'?'🎤 Voice note':'Media'))});
+    document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();
+  }
+  else if(a==='copy'){
+    const copyText = msg.text || (msg.type==='voice' ? '🎤 Voice note' : msg.gifUrl || msg.imageData || '');
+    navigator.clipboard?.writeText(copyText).then(()=>toast('Copied!'));
+  }
   else if(a==='del'){
     if(msg.uid!==uid)return;
     const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
-    // Remove DOM immediately for instant feedback, Firebase will confirm
     document.getElementById(pfx+key)?.remove();
     db.ref(p).remove();
   }
@@ -4931,12 +5022,39 @@ async function uploadBanner(file){
 }
 
 /* ── VOICE NOTES (≤30s) ── */
-let _vnRecorder=null, _vnChunks=[], _vnStart=0, _vnTimer=null, _vnStream=null;
+let _vnRecorder=null, _vnChunks=[], _vnStart=0, _vnTimer=null, _vnStream=null, _vnWaveInterval=null, _vnWaveAnalyser=null, _vnWaveData=null, _vnWavePeaks=[];
 const VN_MAX_MS=30000;
 
 function fmtRecTime(ms){
   const s=Math.floor(ms/1000),m=Math.floor(s/60),r=s%60;
   return m+':'+(r<10?'0':'')+r;
+}
+function normalizeVoiceWave(peaks,count){
+  const src=Array.isArray(peaks)?peaks.filter(v=>Number.isFinite(v)):[];
+  if(!src.length) return Array.from({length:count},()=>22);
+  const out=[];
+  for(let i=0;i<count;i++){
+    const idx=Math.min(src.length-1,Math.floor((i/src.length)*src.length));
+    const v=src[Math.min(src.length-1, Math.floor(i*(src.length/count)))] ?? src[src.length-1] ?? 0.35;
+    out.push(Math.max(10,Math.min(100,Math.round(v*100))));
+  }
+  return out;
+}
+function sampleVoiceWave(){
+  if(!_vnWaveAnalyser||!_vnWaveData) return;
+  _vnWaveAnalyser.getByteTimeDomainData(_vnWaveData);
+  let sum=0;
+  for(let i=0;i<_vnWaveData.length;i++){
+    const v=(_vnWaveData[i]-128)/128;
+    sum+=v*v;
+  }
+  const rms=Math.sqrt(sum/_vnWaveData.length);
+  _vnWavePeaks.push(Math.max(0.06, Math.min(1, rms*3.6)));
+  if(_vnWavePeaks.length>180) _vnWavePeaks.shift();
+}
+function stopVoiceWaveCapture(){
+  if(_vnWaveInterval){ clearInterval(_vnWaveInterval); _vnWaveInterval=null; }
+  _vnWaveAnalyser=null; _vnWaveData=null;
 }
 async function startVoice(){
   if(!activeDmId||!navigator.mediaDevices){toast('Voice notes not supported');return;}
@@ -4947,8 +5065,20 @@ async function startVoice(){
     if(!MediaRecorder.isTypeSupported(mime)) mime='';
     _vnRecorder=mime?new MediaRecorder(_vnStream,{mimeType:mime}):new MediaRecorder(_vnStream);
     _vnChunks=[];
+    _vnWavePeaks=[];
+    try{
+      const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      const source=audioCtx.createMediaStreamSource(_vnStream);
+      _vnWaveAnalyser=audioCtx.createAnalyser();
+      _vnWaveAnalyser.fftSize=512;
+      _vnWaveData=new Uint8Array(_vnWaveAnalyser.frequencyBinCount);
+      source.connect(_vnWaveAnalyser);
+      _vnWaveInterval=setInterval(sampleVoiceWave, 70);
+      _vnRecorder.addEventListener('stop',()=>{ try{audioCtx.close();}catch(_){} },{once:true});
+    }catch(_){ stopVoiceWaveCapture(); }
     _vnRecorder.ondataavailable=e=>{if(e.data.size>0)_vnChunks.push(e.data);};
     _vnRecorder.onstop=()=>{
+      stopVoiceWaveCapture();
       _vnStream?.getTracks().forEach(t=>t.stop());
       _vnStream=null;
       const blob=new Blob(_vnChunks,{type:_vnRecorder.mimeType||'audio/webm'});
@@ -4957,7 +5087,8 @@ async function startVoice(){
       reader.onload=()=>{
         const data=reader.result;
         const dur=Math.min(VN_MAX_MS,Date.now()-_vnStart);
-        sendVoiceDm(data,dur);
+        const waveform=normalizeVoiceWave(_vnWavePeaks, 48);
+        sendVoiceDm(data,dur,waveform);
         resetVoiceUI();
       };
       reader.readAsDataURL(blob);
@@ -4981,8 +5112,10 @@ function stopVoice(){
   clearInterval(_vnTimer);_vnTimer=null;
 }
 function cancelVoice(){
+  stopVoiceWaveCapture();
+  _vnWavePeaks=[];
   if(_vnRecorder&&_vnRecorder.state==='recording'){
-    _vnRecorder.onstop=()=>{_vnStream?.getTracks().forEach(t=>t.stop());_vnStream=null;};
+    _vnRecorder.onstop=()=>{stopVoiceWaveCapture();_vnStream?.getTracks().forEach(t=>t.stop());_vnStream=null;};
     try{_vnRecorder.stop();}catch(e){}
   }
   clearInterval(_vnTimer);_vnTimer=null;
@@ -4994,10 +5127,10 @@ function resetVoiceUI(){
   const t=document.getElementById('bq-voice-rec-time');if(t) t.textContent='0:00';
 }
 
-function sendVoiceDm(audioData,durMs){
+function sendVoiceDm(audioData,durMs,waveform){
   if(!db||!uname||!activeDmId||!activeDmPuid||!audioData) return;
   const pname=activeDmPname||'?';
-  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,ts:Date.now()};
+  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,waveform:Array.isArray(waveform)?waveform.slice(0,64):undefined,ts:Date.now()};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
   const sorted=[uid,activeDmPuid].sort();
   db.ref('bq_dms/'+activeDmId+'/meta').update({
@@ -5015,9 +5148,10 @@ function buildVoiceHtml(msg){
   const sec=Math.max(1,Math.round(dur/1000));
   const m=Math.floor(sec/60),r=sec%60;
   const time=m+':'+(r<10?'0':'')+r;
-  const bars=Array.from({length:24}).map((_,i)=>{
-    const h=8+Math.round(Math.sin(i*0.7)*6+Math.random()*8);
-    return '<span class="bq-voice-bar" style="height:'+h+'px"></span>';
+  const heights=normalizeVoiceWave(Array.isArray(msg.waveform)?msg.waveform:[], 48);
+  const bars=heights.map(h=>{
+    const px=Math.max(6,Math.round(6+(h/100)*18));
+    return '<span class="bq-voice-bar" style="height:'+px+'px"></span>';
   }).join('');
   return '<div class="bq-voice-msg" data-audio="'+esc(msg.audio||'')+'" data-dur="'+dur+'">'+
     '<button class="bq-voice-play" title="Play"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>'+
@@ -5028,8 +5162,10 @@ function buildVoiceHtml(msg){
 /* Voice play handler delegation */
 // v9.3: Dismiss tap-opened message menus when clicking elsewhere
 document.addEventListener('click',function(e){
+  if(e.target.closest('#bq-msg-sheet')) return;
   if(!e.target.closest('.bqr.bq-tapped')){
     document.querySelectorAll('.bqr.bq-tapped').forEach(r=>r.classList.remove('bq-tapped'));
+    closeMsgActionSheet();
   }
 }, true);
 
@@ -5045,16 +5181,30 @@ document.addEventListener('click',function(e){
     wrap._audio=audio;
     audio.addEventListener('timeupdate',()=>{
       const bars=wrap.querySelectorAll('.bq-voice-bar');
-      const pct=audio.currentTime/(audio.duration||1);
+      const pct=Math.max(0, Math.min(1, audio.currentTime/(audio.duration||1)));
       const cnt=Math.round(bars.length*pct);
-      bars.forEach((b,i)=>b.classList.toggle('played',i<cnt));
+      bars.forEach((b,i)=>{
+        b.classList.toggle('played',i<cnt);
+        b.style.opacity = i<cnt ? '1' : '.42';
+      });
+      wrap.style.setProperty('--bq-voice-progress', String(pct));
     });
     audio.addEventListener('ended',()=>{
       btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-      wrap.querySelectorAll('.bq-voice-bar').forEach(b=>b.classList.remove('played'));
+      wrap.querySelectorAll('.bq-voice-bar').forEach(b=>{b.classList.remove('played');b.style.opacity='';});
+      wrap.style.setProperty('--bq-voice-progress', '0');
     });
   }
   if(audio.paused){
+    document.querySelectorAll('.bq-voice-msg').forEach(other=>{
+      if(other!==wrap && other._audio && !other._audio.paused){
+        other._audio.pause();
+        other.querySelectorAll('.bq-voice-bar').forEach(b=>{b.classList.remove('played');b.style.opacity='';});
+        other.style.setProperty('--bq-voice-progress','0');
+        const otherBtn=other.querySelector('.bq-voice-play');
+        if(otherBtn) otherBtn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+      }
+    });
     audio.play();
     btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
   } else {
