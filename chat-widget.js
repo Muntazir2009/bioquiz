@@ -43,18 +43,17 @@ const FIREBASE_CONFIG = {
 const GIPHY_API_KEY = 'hylHrfS6vc3Hnbc6R6QRgpbHfWbwSCWY';
 const _resolvedGiphyKey = window.GIPHY_API_KEY || GIPHY_API_KEY;
 const GIPHY_CATEGORIES = [
-  { id:'trending', label:'Trending', q:null },
-  { id:'reactions', label:'Reactions', q:'reaction' },
-  { id:'love', label:'Love', q:'love' },
-  { id:'happy', label:'Happy', q:'happy' },
-  { id:'sad', label:'Sad', q:'sad' },
+  // v5: curated, wholesome-first ordering (no brainrot)
+  { id:'trending', label:'For You', q:null },
+  { id:'reactions', label:'Reactions', q:'wholesome reaction' },
   { id:'cute', label:'Cute', q:'cute animals' },
-  { id:'anime', label:'Anime', q:'anime' },
-  { id:'study', label:'Study', q:'studying' },
-  { id:'memes', label:'Memes', q:'meme' },
-  { id:'sports', label:'Sports', q:'sports' },
-  { id:'food', label:'Food', q:'food' },
-  { id:'fail', label:'Fail', q:'fail' },
+  { id:'happy', label:'Happy', q:'happy dance' },
+  { id:'love', label:'Love', q:'heart love' },
+  { id:'anime', label:'Anime', q:'anime smile' },
+  { id:'study', label:'Study', q:'studying focus' },
+  { id:'sports', label:'Sports', q:'sports celebration' },
+  { id:'food', label:'Food', q:'cute food' },
+  { id:'sad', label:'Sad', q:'sad hug' },
 ];
 
 /* ─────────────────────────────────────────
@@ -405,7 +404,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqr.mine .bqbbl-meta .bqbbl-tick{color:rgba(255,255,255,.55);} /* sent: pale */
 .bqbbl-meta.delivered .bqbbl-tick{color:rgba(255,255,255,.95);} /* delivered: solid white */
 .bqbbl-meta.seen .bqbbl-tick{color:#22d3ee;filter:drop-shadow(0 0 4px rgba(34,211,238,.65));animation:bqSeenPulse .5s ease;}
-.bqr.mine .bqbbl-meta.seen{color:#a5f3fc;}
+/* v5: do NOT recolor full meta on seen — only tick is colored above */
 @keyframes bqSeenPulse{0%{transform:scale(.7)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 /* Pill overlay variant for image / gif bubbles */
 .bqbbl.media .bqbbl-meta{
@@ -3045,29 +3044,42 @@ function sendDm(text){
    GIPHY — fetch + send
 ───────────────────────────────────────── */
 let _giphyCache = {};
+const _BR_DENY = /(brainrot|skibidi|gyatt|sigma\s*male|rizzler|fanum\s*tax|ohio\s+rizz|grimace\s*shake|mewing|gooning|hawk\s*tuah|edging)/i;
+const _CURATED_DEFAULT = ['wholesome reaction','cute animal','happy dance','celebrate','thumbs up','anime smile','cozy','high five'];
+function _curatedQuery(){ return _CURATED_DEFAULT[Math.floor(Math.random()*_CURATED_DEFAULT.length)]; }
+
 async function giphyFetch(category, query){
   const key = _resolvedGiphyKey;
   if(!key || key === 'PASTE_YOUR_GIPHY_KEY_HERE'){
     return { error: 'Add your Giphy API key in chat-widget.js (GIPHY_API_KEY) or set window.GIPHY_API_KEY.' };
   }
-  const cacheKey = (query||'')+'|'+(category||'trending');
+  const cacheKey = (query||'')+'|'+(category||'curated');
   if(_giphyCache[cacheKey]) return { data: _giphyCache[cacheKey] };
   let url;
+  const RATING = 'pg', LANG = 'en';
   if(query && query.trim()){
-    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=24&rating=pg-13&bundle=messaging_non_clips`;
+    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=40&rating=${RATING}&lang=${LANG}&bundle=messaging_non_clips`;
   } else if(category === 'trending' || !category){
-    url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=24&rating=pg-13&bundle=messaging_non_clips`;
+    // v5: replace raw trending (full of brainrot) with a curated rotation
+    const q = _curatedQuery();
+    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&limit=40&rating=${RATING}&lang=${LANG}&bundle=messaging_non_clips`;
   } else {
     const cat = GIPHY_CATEGORIES.find(c=>c.id===category);
     const q = cat ? cat.q : category;
-    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(q||category)}&limit=24&rating=pg-13&bundle=messaging_non_clips`;
+    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(q||category)}&limit=40&rating=${RATING}&lang=${LANG}&bundle=messaging_non_clips`;
   }
   try{
     const r = await fetch(url);
     if(!r.ok) return { error: 'Giphy request failed ('+r.status+')' };
     const j = await r.json();
-    _giphyCache[cacheKey] = j.data || [];
-    return { data: _giphyCache[cacheKey] };
+    let data = j.data || [];
+    // v5: filter brainrot keywords from titles/slugs
+    data = data.filter(g => {
+      const t = ((g.title||'') + ' ' + (g.slug||'')).toLowerCase();
+      return !_BR_DENY.test(t);
+    });
+    _giphyCache[cacheKey] = data;
+    return { data };
   } catch(err){
     return { error: 'Network error fetching GIFs' };
   }
@@ -4884,99 +4896,106 @@ setTimeout(_injectProfileUploads,1500);
 
 
 /* ═══════════════════════════════════════════════════════════
-   v3.1 PATCH — Bug fixes for: lightbox closes widget, themes
-   not applying both sides, missing themes, voice preview,
-   avatar/banner UI not appearing, redesigned floating menu.
+   v4 PATCH — Settings panel redesign, Profile V3,
+   voice-note preview, new themes (both-bubble), new
+   reactions + stickers, fixed avatar/banner uploads.
 ═══════════════════════════════════════════════════════════ */
-(function(){
-  /* ── Inject extended CSS (new themes + voice preview + redesigned menu) ── */
-  const _v31css = `
-  /* Hide legacy slide-in info panel (replaced by floating card) */
+(function v4Patch(){
+
+  /* ── Extend reactions + stickers ── */
+  const NEW_REACTIONS = ['🫡','🤩','😴','😇','🤗','🤝','👻','🥹','😤','🤪','🫥','🥺','😈','🤡','🌟','⚡'];
+  const NEW_STICKERS  = ['🎁','🌈','🦄','🍀','🌹','☕','🍕','🎵','🎮','📚','🧬','🚀','💎','🎯','🏆','🌙','☀️','🌊','🍩','🐶'];
+  try{
+    NEW_REACTIONS.forEach(e=>{ if(!REACTIONS.includes(e)) REACTIONS.push(e); });
+    NEW_STICKERS .forEach(e=>{ if(!QUICK_STICKERS.includes(e)) QUICK_STICKERS.push(e); });
+  }catch(e){ /* arrays may be frozen in some builds */ }
+
+  /* ── Inject all v4 CSS ── */
+  const _v4css = `
+  /* Hide LEGACY conversation-info slide-in panel — replaced by Settings card */
   #bq-dm-info{display:none!important;}
 
-  /* ───── New themes — apply to both sender + receiver bubbles ───── */
-  /* MONOCHROME */
-  .bq-theme-monochrome #bqdmmsgs{background:#0c0c0d!important;}
-  .bq-theme-monochrome #bqdmmsgs .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#3f3f46 0%,#52525b 100%)!important;
-    box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important;
-    color:#fafafa!important;
-  }
-  .bq-theme-monochrome #bqdmmsgs .bqr.theirs .bqbbl{
-    background:#1c1c1f!important;border-color:rgba(255,255,255,.08)!important;color:#e4e4e7!important;
-  }
-  /* MIDNIGHT PURPLE */
-  .bq-theme-midnightpurple #bqdmmsgs{background:radial-gradient(ellipse at top,#1e1b4b 0%,#0a0a14 70%)!important;}
-  .bq-theme-midnightpurple #bqdmmsgs .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%)!important;
-    box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
-  }
-  .bq-theme-midnightpurple #bqdmmsgs .bqr.theirs .bqbbl{
-    background:rgba(99,102,241,.14)!important;border-color:rgba(168,85,247,.35)!important;color:#ede9fe!important;
-  }
-  /* OCEAN v2 */
-  .bq-theme-oceanv2 #bqdmmsgs{background:linear-gradient(180deg,#0c2733 0%,#08151c 100%)!important;}
-  .bq-theme-oceanv2 #bqdmmsgs .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%)!important;
-    box-shadow:0 4px 16px rgba(14,165,233,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
-  }
-  .bq-theme-oceanv2 #bqdmmsgs .bqr.theirs .bqbbl{
-    background:rgba(6,182,212,.14)!important;border-color:rgba(14,165,233,.35)!important;color:#cffafe!important;
-  }
-  /* SUNSET v2 */
-  .bq-theme-sunsetv2 #bqdmmsgs{background:radial-gradient(ellipse at 30% 100%,#3a1a0c 0%,#15080d 65%)!important;}
-  .bq-theme-sunsetv2 #bqdmmsgs .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%)!important;
-    box-shadow:0 4px 16px rgba(244,63,94,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;color:#fff!important;
-  }
-  .bq-theme-sunsetv2 #bqdmmsgs .bqr.theirs .bqbbl{
-    background:rgba(251,146,60,.14)!important;border-color:rgba(244,63,94,.35)!important;color:#ffe4e6!important;
-  }
-  /* PAPER (Light) */
-  .bq-theme-paper #bqdmmsgs{background:#f8f7f4!important;}
-  .bq-theme-paper #bqdmmsgs .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#1f2937 0%,#374151 100%)!important;color:#fff!important;
-    box-shadow:0 4px 14px rgba(31,41,55,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;
-  }
-  .bq-theme-paper #bqdmmsgs .bqr.theirs .bqbbl{
-    background:#fff!important;color:#111827!important;
-    border:1px solid #e5e7eb!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important;
-  }
-  .bq-theme-paper #bqdmmsgs .bqun{color:#6b7280!important;}
-  .bq-theme-paper #bqdmmsgs .bqts{color:#9ca3af!important;}
+  /* ════ NEW THEMES — apply colors to BOTH .mine and .theirs bubbles ════ */
+  /* CYBERPUNK */
+  .bq-theme-cyberpunk #bqdmmsgs,.bq-theme-cyberpunk #bqgmsgs{background:radial-gradient(ellipse at top,#1a0033 0%,#05010a 70%)!important;}
+  .bq-theme-cyberpunk .bqr.mine .bqbbl{background:linear-gradient(135deg,#ec4899 0%,#a855f7 100%)!important;color:#fff!important;box-shadow:0 0 20px rgba(236,72,153,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-cyberpunk .bqr.theirs .bqbbl{background:rgba(34,211,238,.10)!important;border-color:rgba(34,211,238,.35)!important;color:#cffafe!important;box-shadow:0 0 12px rgba(34,211,238,.15)!important;}
+  /* SAKURA */
+  .bq-theme-sakura #bqdmmsgs,.bq-theme-sakura #bqgmsgs{background:linear-gradient(180deg,#3a1a26 0%,#1a0a12 100%)!important;}
+  .bq-theme-sakura .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb7185 0%,#f472b6 100%)!important;color:#fff!important;box-shadow:0 4px 16px rgba(244,114,182,.35),inset 0 1px 0 rgba(255,255,255,.20)!important;}
+  .bq-theme-sakura .bqr.theirs .bqbbl{background:rgba(251,113,133,.12)!important;border-color:rgba(244,114,182,.32)!important;color:#fce7f3!important;}
+  /* NORDIC */
+  .bq-theme-nordic #bqdmmsgs,.bq-theme-nordic #bqgmsgs{background:#2e3440!important;}
+  .bq-theme-nordic .bqr.mine .bqbbl{background:linear-gradient(135deg,#88c0d0 0%,#5e81ac 100%)!important;color:#eceff4!important;box-shadow:0 4px 14px rgba(94,129,172,.35),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-nordic .bqr.theirs .bqbbl{background:#3b4252!important;border-color:#434c5e!important;color:#eceff4!important;}
+  /* VAPORWAVE */
+  .bq-theme-vapor #bqdmmsgs,.bq-theme-vapor #bqgmsgs{background:linear-gradient(180deg,#2a0845 0%,#0f0524 100%)!important;}
+  .bq-theme-vapor .bqr.mine .bqbbl{background:linear-gradient(135deg,#f0abfc 0%,#22d3ee 100%)!important;color:#1e0a3c!important;box-shadow:0 0 22px rgba(240,171,252,.35),inset 0 1px 0 rgba(255,255,255,.30)!important;}
+  .bq-theme-vapor .bqr.theirs .bqbbl{background:rgba(34,211,238,.12)!important;border-color:rgba(240,171,252,.32)!important;color:#fae8ff!important;}
+  /* COFFEE */
+  .bq-theme-coffee #bqdmmsgs,.bq-theme-coffee #bqgmsgs{background:#1f1410!important;}
+  .bq-theme-coffee .bqr.mine .bqbbl{background:linear-gradient(135deg,#92400e 0%,#78350f 100%)!important;color:#fef3c7!important;box-shadow:0 4px 14px rgba(120,53,15,.5),inset 0 1px 0 rgba(255,255,255,.10)!important;}
+  .bq-theme-coffee .bqr.theirs .bqbbl{background:#2d1f17!important;border-color:#451a03!important;color:#fde68a!important;}
+  /* LAVENDER (light) */
+  .bq-theme-lavender #bqdmmsgs,.bq-theme-lavender #bqgmsgs{background:#f3f0fa!important;}
+  .bq-theme-lavender .bqr.mine .bqbbl{background:linear-gradient(135deg,#7c3aed 0%,#6366f1 100%)!important;color:#fff!important;box-shadow:0 4px 14px rgba(124,58,237,.25),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-lavender .bqr.theirs .bqbbl{background:#fff!important;color:#1e1b4b!important;border:1px solid #ddd6fe!important;box-shadow:0 1px 3px rgba(0,0,0,.06)!important;}
+  .bq-theme-lavender .bqun{color:#6b7280!important;}.bq-theme-lavender .bqts{color:#9ca3af!important;}
 
-  /* Existing extra themes — also paint receiver bubble (was sender-only) */
-  .bq-theme-aurora #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#60a5fa 0%,#a78bfa 100%)!important;color:#fff!important;}
-  .bq-theme-aurora #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(167,139,250,.14)!important;border-color:rgba(167,139,250,.32)!important;color:#ede9fe!important;}
-  .bq-theme-grid   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.10)!important;}
-  .bq-theme-dots   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.10)!important;}
-  .bq-theme-wave   #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(96,165,250,.10)!important;border-color:rgba(96,165,250,.25)!important;}
+  /* Existing v3 themes — also paint receiver bubble + GLOBAL chat */
+  .bq-theme-monochrome    #bqgmsgs .bqr.mine .bqbbl,.bq-theme-monochrome    #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#3f3f46 0%,#52525b 100%)!important;color:#fafafa!important;box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important;}
+  .bq-theme-monochrome    #bqgmsgs .bqr.theirs .bqbbl,.bq-theme-monochrome  #bqdmmsgs .bqr.theirs .bqbbl{background:#1c1c1f!important;border-color:rgba(255,255,255,.08)!important;color:#e4e4e7!important;}
+  .bq-theme-midnightpurple #bqgmsgs .bqr.mine .bqbbl,.bq-theme-midnightpurple #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#6366f1 0%,#a855f7 100%)!important;color:#fff!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-midnightpurple #bqgmsgs .bqr.theirs .bqbbl,.bq-theme-midnightpurple #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(99,102,241,.14)!important;border-color:rgba(168,85,247,.35)!important;color:#ede9fe!important;}
+  .bq-theme-oceanv2       #bqgmsgs .bqr.mine .bqbbl,.bq-theme-oceanv2       #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%)!important;color:#fff!important;box-shadow:0 4px 16px rgba(14,165,233,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-oceanv2       #bqgmsgs .bqr.theirs .bqbbl,.bq-theme-oceanv2     #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(6,182,212,.14)!important;border-color:rgba(14,165,233,.35)!important;color:#cffafe!important;}
+  .bq-theme-sunsetv2      #bqgmsgs .bqr.mine .bqbbl,.bq-theme-sunsetv2      #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%)!important;color:#fff!important;box-shadow:0 4px 16px rgba(244,63,94,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
+  .bq-theme-sunsetv2      #bqgmsgs .bqr.theirs .bqbbl,.bq-theme-sunsetv2    #bqdmmsgs .bqr.theirs .bqbbl{background:rgba(251,146,60,.14)!important;border-color:rgba(244,63,94,.35)!important;color:#ffe4e6!important;}
+  .bq-theme-paper         #bqgmsgs .bqr.mine .bqbbl,.bq-theme-paper         #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#1f2937 0%,#374151 100%)!important;color:#fff!important;box-shadow:0 4px 14px rgba(31,41,55,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;}
+  .bq-theme-paper         #bqgmsgs .bqr.theirs .bqbbl,.bq-theme-paper       #bqdmmsgs .bqr.theirs .bqbbl{background:#fff!important;color:#111827!important;border:1px solid #e5e7eb!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important;}
+  .bq-theme-paper #bqgmsgs,.bq-theme-paper #bqdmmsgs{background:#f8f7f4!important;}
 
-  /* ───── Floating Conversation card — new compact look ───── */
+  /* ════ Settings card (formerly "Conversation Info") — REDESIGNED ════ */
   #bq-info-float{
-    background:rgba(14,16,22,.92)!important;
-    backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
-    border:1px solid rgba(255,255,255,.08)!important;
-    box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04)!important;
-    border-radius:18px!important;
+    background:rgba(11,13,18,.95)!important;
+    backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid rgba(255,255,255,.07)!important;
+    box-shadow:0 30px 100px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)!important;
+    border-radius:20px!important;
     z-index:100000!important;
-    width:300px!important;
+    width:320px!important;max-height:75vh!important;overflow:hidden!important;
   }
   #bq-info-float .bq-if-head{
-    background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+    background:linear-gradient(180deg,rgba(96,165,250,.08),transparent);
     border-bottom:1px solid rgba(255,255,255,.06);
+    padding:14px 16px!important;
+  }
+  #bq-info-float .bq-if-head::after{
+    content:"Settings";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:#fff;letter-spacing:.04em;
+    pointer-events:none;
+  }
+  #bq-info-float .bq-if-av,#bq-info-float .bq-if-info{display:none!important;}
+  #bq-info-float .bq-if-scroll{max-height:calc(75vh - 50px);overflow-y:auto;padding:14px;}
+  #bq-info-float .bq-if-scroll::-webkit-scrollbar{width:5px;}
+  #bq-info-float .bq-if-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10);border-radius:3px;}
+  #bq-info-float .bq-if-sect{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.05);}
+  #bq-info-float .bq-if-sect:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  #bq-info-float .bq-if-sect-t{
+    font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.10em;
+    text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:9px;
   }
   #bq-info-float .bq-if-themes{
-    display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:8px!important;
+    display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:7px!important;
   }
   #bq-info-float .bq-if-th{
-    width:34px!important;height:34px!important;border-radius:10px!important;
-    cursor:pointer;position:relative;border:2px solid rgba(255,255,255,.08);
+    width:36px!important;height:36px!important;border-radius:11px!important;
+    cursor:pointer;position:relative;border:2px solid rgba(255,255,255,.06);
     transition:all .15s;
   }
-  #bq-info-float .bq-if-th:hover{transform:scale(1.08);border-color:rgba(255,255,255,.25);}
-  #bq-info-float .bq-if-th.sel{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.3);}
-  /* Theme swatches */
+  #bq-info-float .bq-if-th:hover{transform:scale(1.10);border-color:rgba(255,255,255,.30);}
+  #bq-info-float .bq-if-th.sel{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.35);transform:scale(1.06);}
+  /* Theme swatches — DM */
   .bq-if-th[data-t="none"]{background:#1a1a20;}
   .bq-if-th[data-t="dots"]{background:#1a1a20 radial-gradient(circle,rgba(255,255,255,.25) 1px,transparent 1px) 0 0/8px 8px;}
   .bq-if-th[data-t="grid"]{background:#1a1a20;background-image:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px);background-size:8px 8px;}
@@ -4989,41 +5008,65 @@ setTimeout(_injectProfileUploads,1500);
   .bq-if-th[data-t="oceanv2"]{background:linear-gradient(135deg,#06b6d4 0%,#0ea5e9 100%);}
   .bq-if-th[data-t="sunsetv2"]{background:linear-gradient(135deg,#fb923c 0%,#f43f5e 100%);}
   .bq-if-th[data-t="paper"]{background:linear-gradient(135deg,#f8f7f4 0%,#e5e7eb 100%);}
+  /* New v4 swatches */
+  .bq-if-th[data-t="cyberpunk"]{background:linear-gradient(135deg,#ec4899 0%,#22d3ee 100%);}
+  .bq-if-th[data-t="sakura"]{background:linear-gradient(135deg,#fb7185 0%,#f472b6 100%);}
+  .bq-if-th[data-t="nordic"]{background:linear-gradient(135deg,#88c0d0 0%,#5e81ac 100%);}
+  .bq-if-th[data-t="vapor"]{background:linear-gradient(135deg,#f0abfc 0%,#22d3ee 100%);}
+  .bq-if-th[data-t="coffee"]{background:linear-gradient(135deg,#92400e 0%,#78350f 100%);}
+  .bq-if-th[data-t="lavender"]{background:linear-gradient(135deg,#7c3aed 0%,#a78bfa 100%);}
 
   #bq-info-float .bq-if-bubble,#bq-info-float .bq-if-fonts{
     display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
   }
   #bq-info-float .bq-if-bubble-opt,#bq-info-float .bq-if-font{
-    text-align:center;padding:8px 6px;border-radius:10px;
+    text-align:center;padding:9px 6px;border-radius:11px;
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
     color:rgba(255,255,255,.7);font-size:11px;font-weight:600;cursor:pointer;
     font-family:'Inter',sans-serif;transition:all .15s;
   }
-  #bq-info-float .bq-if-bubble-opt:hover,#bq-info-float .bq-if-font:hover{background:rgba(255,255,255,.08);color:#fff;}
+  #bq-info-float .bq-if-bubble-opt:hover,#bq-info-float .bq-if-font:hover{background:rgba(255,255,255,.09);color:#fff;}
   #bq-info-float .bq-if-bubble-opt.sel,#bq-info-float .bq-if-font.sel{
     background:rgba(96,165,250,.18);border-color:#60a5fa;color:#fff;
   }
+  #bq-info-float .bq-if-row{
+    display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:#e5e7eb;
+    transition:background .14s;
+  }
+  #bq-info-float .bq-if-row:hover{background:rgba(255,255,255,.05);}
+  #bq-info-float .bq-if-row.danger{color:#fca5a5;}
+  #bq-info-float .bq-if-row.danger:hover{background:rgba(239,68,68,.10);}
+  #bq-info-float .bq-if-row-ic{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,.05);}
+  #bq-info-float .bq-if-row-ic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+  #bq-info-float .bq-if-row-l{flex:1;}
+  #bq-info-float .bq-if-row-v{font-size:11px;color:rgba(255,255,255,.45);font-weight:600;}
+  /* Hide any "mute notifications" item if present */
+  #bq-if-mute,#bq-if-mute-row,[data-bq-if="mute"]{display:none!important;}
 
-  /* ───── Voice preview bar ───── */
+  /* ════ Voice preview bar ════ */
   .bq-voice-preview{
     display:none;align-items:center;gap:10px;padding:10px 12px;margin:6px 8px;
     background:rgba(96,165,250,.10);border:1px solid rgba(96,165,250,.28);
     border-radius:14px;font-family:'Inter',sans-serif;
   }
   .bq-voice-preview.show{display:flex;}
-  .bq-voice-preview .bq-vp-play{
-    width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+  .bq-voice-preview .bq-vp-play,.bq-voice-preview .bq-vp-replay{
+    width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
     background:#60a5fa;color:#0a0a0f;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
   }
-  .bq-voice-preview .bq-vp-play svg{width:14px;height:14px;fill:currentColor;}
-  .bq-voice-preview .bq-vp-bars{display:flex;gap:2px;align-items:center;flex:1;height:24px;}
+  .bq-voice-preview .bq-vp-replay{background:rgba(255,255,255,.10);color:#fff;}
+  .bq-voice-preview .bq-vp-play:hover,.bq-voice-preview .bq-vp-replay:hover{transform:scale(1.06);}
+  .bq-voice-preview .bq-vp-play svg,.bq-voice-preview .bq-vp-replay svg{width:14px;height:14px;fill:currentColor;}
+  .bq-voice-preview .bq-vp-bars{display:flex;gap:2px;align-items:center;flex:1;height:24px;min-width:60px;}
   .bq-voice-preview .bq-vp-bars span{display:inline-block;width:2.5px;background:rgba(96,165,250,.55);border-radius:2px;transition:background .12s;}
   .bq-voice-preview .bq-vp-bars span.played{background:#60a5fa;}
   .bq-voice-preview .bq-vp-time{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);min-width:34px;text-align:center;}
   .bq-voice-preview .bq-vp-btn{
     width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.12);
     background:rgba(255,255,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;
-    color:#fff;transition:all .15s;
+    color:#fff;transition:all .15s;flex-shrink:0;
   }
   .bq-voice-preview .bq-vp-btn:hover{background:rgba(255,255,255,.12);transform:scale(1.06);}
   .bq-voice-preview .bq-vp-btn.send{background:#22c55e;border-color:#22c55e;}
@@ -5032,73 +5075,451 @@ setTimeout(_injectProfileUploads,1500);
   .bq-voice-preview .bq-vp-btn.discard:hover{background:#dc2626;}
   .bq-voice-preview .bq-vp-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
 
-  /* Avatar/banner upload UI inside profile editor */
-  .bqpf-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 4px;}
-  .bqpf-upload{
-    display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;
-    border:1px dashed rgba(255,255,255,.18);border-radius:12px;cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
-    color:rgba(255,255,255,.7);transition:all .15s;background:rgba(255,255,255,.02);
+  /* ════ Profile V3 — minimalist redesign ════ */
+  #bqv-profile .bqpf-scroll{padding:0!important;}
+  .bqp3{display:flex;flex-direction:column;gap:0;background:var(--bq-bg);}
+  .bqp3-cover{
+    position:relative;height:120px;background:linear-gradient(135deg,#1e293b,#0f172a);
+    background-size:cover;background-position:center;
   }
-  .bqpf-upload:hover{border-color:#60a5fa;color:#fff;background:rgba(96,165,250,.06);}
-  .bqpf-upload-preview{
-    width:100%;aspect-ratio:1/1;max-width:80px;border-radius:50%;
-    background:var(--bq-bg-hover);background-size:cover!important;background-position:center!important;
+  .bqp3-cover-edit{
+    position:absolute;right:10px;bottom:10px;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;
+    padding:6px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:all .15s;
   }
-  .bqpf-upload[data-kind="banner"] .bqpf-upload-preview{
-    aspect-ratio:3/1;max-width:none;border-radius:10px;
+  .bqp3-cover-edit:hover{background:rgba(0,0,0,.75);border-color:rgba(255,255,255,.30);}
+  .bqp3-cover-edit svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
+  .bqp3-av-wrap{
+    position:absolute;left:50%;bottom:-36px;transform:translateX(-50%);
+    width:80px;height:80px;border-radius:50%;border:4px solid var(--bq-bg);
+    background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#000;cursor:pointer;
+    box-shadow:0 8px 22px rgba(0,0,0,.4);transition:transform .15s;
   }
+  .bqp3-av-wrap:hover{transform:translateX(-50%) scale(1.04);}
+  .bqp3-av-edit{
+    position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;
+    background:#60a5fa;color:#0a0a0f;border:3px solid var(--bq-bg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .bqp3-av-edit svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;}
+  .bqp3-body{padding:50px 18px 18px;display:flex;flex-direction:column;gap:18px;}
+  .bqp3-name-row{text-align:center;}
+  .bqp3-username{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;}
+  .bqp3-tag{font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;cursor:pointer;}
+  .bqp3-tag:hover{color:#60a5fa;}
+  .bqp3-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;}
+  .bqp3-card-t{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:10px;}
+  .bqp3-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bqp3-row:last-child{margin-bottom:0;}
+  .bqp3-initials-inp{
+    width:60px;height:40px;text-align:center;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:18px;letter-spacing:.05em;
+    background:transparent;border:2px solid rgba(255,255,255,.10);border-radius:10px;color:#000;
+    text-transform:uppercase;outline:none;transition:all .15s;
+  }
+  .bqp3-initials-inp:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.20);}
+  .bqp3-initials-hint{flex:1;font-family:'Inter',sans-serif;font-size:11px;color:rgba(255,255,255,.5);line-height:1.4;}
+  .bqp3-inp{
+    width:100%;padding:10px 12px;font-family:'Inter',sans-serif;font-size:13px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:10px;
+    color:#fff;outline:none;transition:all .15s;box-sizing:border-box;
+  }
+  .bqp3-inp:focus{border-color:#60a5fa;background:rgba(255,255,255,.06);box-shadow:0 0 0 3px rgba(96,165,250,.15);}
+  .bqp3-textarea{min-height:62px;resize:vertical;font-family:'Inter',sans-serif;}
+  .bqp3-cols{display:flex;flex-wrap:wrap;gap:7px;}
+  .bqp3-col{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+    transition:transform .15s,border-color .15s;
+  }
+  .bqp3-col:hover{transform:scale(1.10);}
+  .bqp3-col.sel{border-color:#fff;box-shadow:0 0 0 2px rgba(96,165,250,.4);}
+  .bqp3-sts{display:flex;flex-wrap:wrap;gap:6px;}
+  .bqp3-st{
+    display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;cursor:pointer;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);
+    transition:all .15s;
+  }
+  .bqp3-st:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .bqp3-st.sel{background:rgba(96,165,250,.16);border-color:#60a5fa;color:#fff;}
+  .bqp3-st-dot{width:8px;height:8px;border-radius:50%;}
+  .bqp3-savebar{
+    position:sticky;bottom:0;background:linear-gradient(180deg,transparent,rgba(11,13,18,.95) 30%);
+    padding:14px 18px 16px;display:flex;gap:10px;
+  }
+  .bqp3-save{
+    flex:1;padding:12px;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,#60a5fa,#6366f1);color:#fff;
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;
+    box-shadow:0 6px 20px rgba(96,165,250,.30);transition:all .15s;
+  }
+  .bqp3-save:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(96,165,250,.45);}
+  .bqp3-savemsg{align-self:center;font-family:'Inter',sans-serif;font-size:12px;color:#22c55e;opacity:0;transition:opacity .25s;}
+  .bqp3-savemsg.show{opacity:1;}
   `;
-  const _styleEl=document.createElement('style');_styleEl.textContent=_v31css;document.head.appendChild(_styleEl);
+  const _styleEl=document.createElement('style');_styleEl.textContent=_v4css;document.head.appendChild(_styleEl);
 
-  /* ── Always inject profile uploads when entering profile view ── */
-  function ensureProfileUploads(){
-    const view=document.getElementById('bqv-profile');
-    if(!view) return;
-    if(view.querySelector('.bqpf-upload-row')) return;
-    const anchor=view.querySelector('.bqpf-scroll')||view;
-    const wrap=document.createElement('div');
-    wrap.className='bqpf-upload-row';
-    const av=(window.myProfile&&myProfile.avatar)?'url('+myProfile.avatar+') center/cover':'';
-    const bn=(window.myProfile&&myProfile.banner)?'url('+myProfile.banner+') center/cover':'';
-    wrap.innerHTML=
-      '<label class="bqpf-upload">'+
-        '<div class="bqpf-upload-preview" id="bqpf-avatar-preview" style="background:'+(av||'rgba(255,255,255,.05)')+'"></div>'+
-        '<span>📷 Upload Avatar</span>'+
-        '<input type="file" id="bqpf-avatar-file" accept="image/*" hidden>'+
-      '</label>'+
-      '<label class="bqpf-upload" data-kind="banner">'+
-        '<div class="bqpf-upload-preview" id="bqpf-banner-upload-preview" style="background:'+(bn||'rgba(255,255,255,.05)')+'"></div>'+
-        '<span>🖼️ Upload Banner</span>'+
-        '<input type="file" id="bqpf-banner-file" accept="image/*" hidden>'+
-      '</label>';
-    anchor.insertBefore(wrap,anchor.firstChild);
-    wrap.querySelector('#bqpf-avatar-file').addEventListener('change',e=>{
-      const f=e.target.files?.[0];if(f&&typeof uploadAvatar==='function') uploadAvatar(f);
+  /* ── Hide legacy panel triggers + rename DM 3-dots ── */
+  function relabelDmMenu(){
+    const info=document.getElementById('bq-dm-menu-info');
+    if(info && !info.dataset.v4){
+      info.dataset.v4='1';
+      // Replace icon + label
+      info.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings';
+      // Re-bind: open Settings card
+      const fresh=info.cloneNode(true);
+      info.parentNode.replaceChild(fresh,info);
+      fresh.addEventListener('click',()=>{
+        document.getElementById('bq-dm-menu')?.classList.remove('open');
+        if(typeof openInfoFloat==='function') openInfoFloat();
+      });
+    }
+    // Remove standalone "Chat Theme" item from 3-dots — Settings now contains it
+    const t=document.getElementById('bq-dm-menu-theme');
+    if(t) t.remove();
+  }
+  setTimeout(relabelDmMenu,300);
+  setTimeout(relabelDmMenu,1500);
+
+  /* ── Rebuild Settings card body cleanly (no "mute" or "Conversation" header text) ── */
+  function rebuildSettingsCard(){
+    const card=document.getElementById('bq-info-float'); if(!card) return;
+    if(card.dataset.v4) return; card.dataset.v4='1';
+    // Replace inner HTML
+    card.innerHTML=
+      '<div class="bq-if-head" style="position:relative;display:flex;align-items:center;justify-content:flex-end;padding:14px 16px;">'+
+        '<button class="bq-if-x" id="bq-if-close" title="Close" style="background:transparent;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:4px;"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '</div>'+
+      '<div class="bq-if-scroll">'+
+        '<div class="bq-if-sect"><div class="bq-if-sect-t">Theme</div>'+
+          '<div class="bq-if-themes" id="bq-if-themes">'+
+            ['none','dots','grid','aurora','forest','rose','bubblegum','monochrome','midnightpurple','oceanv2','sunsetv2','paper','cyberpunk','sakura','nordic','vapor','coffee','lavender']
+              .map(t=>`<div class="bq-if-th" data-t="${t}" title="${t}"></div>`).join('')+
+          '</div>'+
+        '</div>'+
+        '<div class="bq-if-sect"><div class="bq-if-sect-t">Bubble Style</div>'+
+          '<div class="bq-if-bubble" id="bq-if-bubble">'+
+            '<div class="bq-if-bubble-opt" data-b="rounded">Rounded</div>'+
+            '<div class="bq-if-bubble-opt" data-b="square">Square</div>'+
+            '<div class="bq-if-bubble-opt" data-b="glass">Glass</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="bq-if-sect"><div class="bq-if-sect-t">Font Size</div>'+
+          '<div class="bq-if-fonts" id="bq-if-fonts">'+
+            '<div class="bq-if-font" data-s="sm">A</div>'+
+            '<div class="bq-if-font" data-s="md">A</div>'+
+            '<div class="bq-if-font" data-s="lg">A</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="bq-if-sect"><div class="bq-if-sect-t">Conversation</div>'+
+          '<div class="bq-if-row" id="bq-if-pin"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div><div class="bq-if-row-l">Pin conversation</div><div class="bq-if-row-v" id="bq-if-pin-v">Off</div></div>'+
+          '<div class="bq-if-row" id="bq-if-search"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="bq-if-row-l">Search in conversation</div></div>'+
+          '<div class="bq-if-row" id="bq-if-export"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div class="bq-if-row-l">Export chat (.txt)</div></div>'+
+          '<div class="bq-if-row" id="bq-if-readrec"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><path d="M1 5.5L4.5 9L12 1"/><path d="M8 5.5L11.5 9L19 1"/></svg></div><div class="bq-if-row-l">Read receipts</div><div class="bq-if-row-v" id="bq-if-rr-v">On</div></div>'+
+          '<div class="bq-if-row danger" id="bq-if-clear"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div><div class="bq-if-row-l">Clear conversation</div></div>'+
+          '<div class="bq-if-row danger" id="bq-if-block"><div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div><div class="bq-if-row-l">Block user</div></div>'+
+        '</div>'+
+      '</div>';
+
+    // Re-bind
+    document.getElementById('bq-if-close').addEventListener('click',()=>card.classList.remove('open'));
+    document.querySelectorAll('#bq-if-themes .bq-if-th').forEach(t=>{
+      t.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(!activeDmId) return;
+        if(typeof setDmTheme==='function') setDmTheme(activeDmId,t.dataset.t);
+        document.querySelectorAll('#bq-if-themes .bq-if-th').forEach(x=>x.classList.toggle('sel',x===t));
+      });
     });
-    wrap.querySelector('#bqpf-banner-file').addEventListener('change',e=>{
-      const f=e.target.files?.[0];if(f&&typeof uploadBanner==='function') uploadBanner(f);
+    document.querySelectorAll('#bq-if-bubble .bq-if-bubble-opt').forEach(o=>{
+      o.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(typeof setBubStyle==='function') setBubStyle(o.dataset.b);
+        document.querySelectorAll('#bq-if-bubble .bq-if-bubble-opt').forEach(x=>x.classList.toggle('sel',x===o));
+      });
+    });
+    document.querySelectorAll('#bq-if-fonts .bq-if-font').forEach(f=>{
+      f.addEventListener('click',e=>{
+        e.stopPropagation();
+        myProfile.fontSize=f.dataset.s;
+        try{localStorage.setItem(LS_PROF,JSON.stringify(myProfile));}catch(_){}
+        if(typeof refreshMeAvatar==='function') refreshMeAvatar();
+        document.querySelectorAll('#bq-if-fonts .bq-if-font').forEach(x=>x.classList.toggle('sel',x===f));
+      });
+    });
+    document.getElementById('bq-if-pin').addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!activeDmId||typeof togglePin!=='function') return;
+      togglePin(activeDmId);
+      const pins=(typeof getPins==='function'?getPins():[]);
+      document.getElementById('bq-if-pin-v').textContent=pins.includes(activeDmId)?'On':'Off';
+    });
+    document.getElementById('bq-if-search').addEventListener('click',e=>{e.stopPropagation();if(typeof searchInConversation==='function') searchInConversation();});
+    document.getElementById('bq-if-export').addEventListener('click',e=>{e.stopPropagation();if(typeof exportConversation==='function') exportConversation();});
+    document.getElementById('bq-if-readrec').addEventListener('click',e=>{e.stopPropagation();if(typeof toggleRR==='function') toggleRR();});
+    document.getElementById('bq-if-clear').addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!activeDmId) return;
+      if(!confirm('Clear this entire conversation?')) return;
+      try{db?.ref('bq_dms/'+activeDmId+'/messages').remove();}catch(_){}
+      const m=document.getElementById('bqdmmsgs');if(m)m.innerHTML='';
+      card.classList.remove('open');
+      if(typeof toast==='function') toast('Conversation cleared');
+    });
+    document.getElementById('bq-if-block').addEventListener('click',e=>{e.stopPropagation();if(typeof blockUser==='function') blockUser();});
+
+    // Highlight current selections when card opens
+    const _origOpen=window.openInfoFloat;
+    window.openInfoFloat=function(){
+      if(typeof _origOpen==='function'){ try{_origOpen();}catch(_){} }
+      // sync selections
+      const curTheme=(typeof getDmTheme==='function'?getDmTheme(activeDmId):'')||'none';
+      document.querySelectorAll('#bq-if-themes .bq-if-th').forEach(t=>t.classList.toggle('sel',t.dataset.t===curTheme));
+      const bs=(typeof getBubStyle==='function'?getBubStyle():'rounded');
+      document.querySelectorAll('#bq-if-bubble .bq-if-bubble-opt').forEach(o=>o.classList.toggle('sel',o.dataset.b===bs));
+      const fs=(myProfile.fontSize)||'md';
+      document.querySelectorAll('#bq-if-fonts .bq-if-font').forEach(f=>f.classList.toggle('sel',f.dataset.s===fs));
+      const pins=(typeof getPins==='function'?getPins():[]);
+      const pv=document.getElementById('bq-if-pin-v');if(pv)pv.textContent=(activeDmId&&pins.includes(activeDmId))?'On':'Off';
+      const rrv=document.getElementById('bq-if-rr-v');if(rrv)rrv.textContent=(typeof getRR==='function'&&getRR())?'On':'Off';
+      card.classList.add('open');
+    };
+  }
+  setTimeout(rebuildSettingsCard,400);
+  setTimeout(rebuildSettingsCard,1600);
+
+  /* ════ PROFILE V3 — minimalist redesign with working uploads ════ */
+  const STATUS_OPTIONS=[
+    {id:'online', label:'Online',     color:'#22c55e'},
+    {id:'busy',   label:'Busy',       color:'#ef4444'},
+    {id:'away',   label:'Away',       color:'#eab308'},
+    {id:'studying',label:'Studying',  color:'#a855f7'},
+    {id:'offline',label:'Invisible',  color:'#6b7280'},
+  ];
+  function profilePalette(){
+    return (typeof PALETTE!=='undefined'&&Array.isArray(PALETTE))?PALETTE:[
+      '#60a5fa','#a78bfa','#34d399','#fbbf24','#fb7185','#22d3ee',
+      '#2dd4bf','#e879f9','#4ade80','#f87171','#38bdf8','#facc15'];
+  }
+  function buildProfileV3(){
+    const view=document.getElementById('bqv-profile'); if(!view) return;
+    if(view.dataset.v3built) return; view.dataset.v3built='1';
+    const scroll=view.querySelector('.bqpf-scroll'); if(!scroll) return;
+    // Wipe legacy markup
+    scroll.innerHTML='';
+    const myAvBg=myProfile.avatar?('url('+myProfile.avatar+') center/cover'):'';
+    const myBnBg=myProfile.banner?('url('+myProfile.banner+') center/cover'):'';
+    const col=myProfile.color || (typeof uColor==='function'?uColor(uname||'u'):'#60a5fa');
+    const inits=myProfile.initials || (typeof uInit==='function'?uInit(uname||'?'):(uname||'?').slice(0,2).toUpperCase());
+
+    scroll.innerHTML=
+      '<div class="bqp3">'+
+        '<div class="bqp3-cover" id="bqp3-cover" style="'+(myBnBg?('background:'+myBnBg):('background:linear-gradient(135deg,'+col+'aa,'+col+'33)'))+'">'+
+          '<button class="bqp3-cover-edit" id="bqp3-banner-btn"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Edit cover</button>'+
+          '<input type="file" id="bqp3-banner-file" accept="image/*" hidden>'+
+          '<div class="bqp3-av-wrap" id="bqp3-av" style="'+(myAvBg?('background:'+myAvBg+';color:transparent'):('background:'+col+';color:#000'))+'">'+(myAvBg?'':inits)+
+            '<div class="bqp3-av-edit"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>'+
+          '</div>'+
+          '<input type="file" id="bqp3-avatar-file" accept="image/*" hidden>'+
+        '</div>'+
+        '<div class="bqp3-body">'+
+          '<div class="bqp3-name-row">'+
+            '<div class="bqp3-username" id="bqp3-uname">@'+(uname||'username')+'</div>'+
+            '<div class="bqp3-tag" id="bqp3-changename">Change username</div>'+
+          '</div>'+
+
+          '<div class="bqp3-card">'+
+            '<div class="bqp3-card-t">Identity</div>'+
+            '<div class="bqp3-row">'+
+              '<input type="text" class="bqp3-initials-inp" id="bqp3-initials" maxlength="2" placeholder="AB" value="'+(myProfile.initials||'')+'" style="background:'+col+';color:#000;border-color:'+col+'">'+
+              '<div class="bqp3-initials-hint">Custom initials shown on your avatar.<br>1–2 letters. Empty = auto.</div>'+
+            '</div>'+
+            '<div class="bqp3-row" style="flex-direction:column;align-items:flex-start;gap:8px;"><div class="bqp3-card-t" style="margin:0;">Avatar Color</div><div class="bqp3-cols" id="bqp3-cols"></div></div>'+
+            '<div class="bqp3-row" style="flex-direction:column;align-items:flex-start;gap:8px;margin-top:8px;"><div class="bqp3-card-t" style="margin:0;">Cover Color (fallback)</div><div class="bqp3-cols" id="bqp3-bcols"></div></div>'+
+          '</div>'+
+
+          '<div class="bqp3-card">'+
+            '<div class="bqp3-card-t">Status</div>'+
+            '<div class="bqp3-sts" id="bqp3-sts"></div>'+
+            '<div class="bqp3-card-t" style="margin-top:14px;">Activity</div>'+
+            '<input id="bqp3-act" class="bqp3-inp" type="text" placeholder="e.g. Studying Biology…" maxlength="60" value="'+( (myProfile.activity||'').replace(/"/g,'&quot;') )+'">'+
+          '</div>'+
+
+          '<div class="bqp3-card">'+
+            '<div class="bqp3-card-t">Bio</div>'+
+            '<textarea id="bqp3-bio" class="bqp3-inp bqp3-textarea" maxlength="120" placeholder="Write something about yourself…">'+( (myProfile.bio||'').replace(/</g,'&lt;') )+'</textarea>'+
+            '<div style="font-family:Inter,sans-serif;font-size:10px;color:rgba(255,255,255,.35);text-align:right;margin-top:6px;" id="bqp3-bio-cnt">0 / 120</div>'+
+          '</div>'+
+
+          '<div class="bqp3-card">'+
+            '<div class="bqp3-card-t">Pronouns (optional)</div>'+
+            '<input id="bqp3-pron" class="bqp3-inp" type="text" placeholder="e.g. she/her, they/them" maxlength="20" value="'+( (myProfile.pronouns||'').replace(/"/g,'&quot;') )+'">'+
+          '</div>'+
+
+          '<div class="bqp3-card">'+
+            '<div class="bqp3-card-t">Spotlight Link</div>'+
+            '<input id="bqp3-link" class="bqp3-inp" type="url" placeholder="https://your-link.com" maxlength="100" value="'+( (myProfile.link||'').replace(/"/g,'&quot;') )+'">'+
+          '</div>'+
+
+        '</div>'+
+        '<div class="bqp3-savebar">'+
+          '<button class="bqp3-save" id="bqp3-save">Save Profile</button>'+
+          '<span class="bqp3-savemsg" id="bqp3-savemsg">Saved!</span>'+
+        '</div>'+
+      '</div>';
+
+    // Build color chips
+    const cols=document.getElementById('bqp3-cols');
+    const bcols=document.getElementById('bqp3-bcols');
+    const av=document.getElementById('bqp3-av');
+    const initInp=document.getElementById('bqp3-initials');
+    const cover=document.getElementById('bqp3-cover');
+    const curCol=myProfile.color||col;
+    const curBn=myProfile.bannerColor||curCol;
+    profilePalette().forEach(c=>{
+      const chip=document.createElement('div');
+      chip.className='bqp3-col'+(c===curCol?' sel':'');
+      chip.style.background=c;
+      chip.addEventListener('click',()=>{
+        myProfile.color=c;
+        cols.querySelectorAll('.bqp3-col').forEach(x=>x.classList.remove('sel'));
+        chip.classList.add('sel');
+        if(!myProfile.avatar){ av.style.background=c; av.style.color='#000'; }
+        initInp.style.background=c; initInp.style.borderColor=c;
+      });
+      cols.appendChild(chip);
+    });
+    profilePalette().forEach(c=>{
+      const chip=document.createElement('div');
+      chip.className='bqp3-col'+(c===curBn?' sel':'');
+      chip.style.background=c;
+      chip.addEventListener('click',()=>{
+        myProfile.bannerColor=c;
+        bcols.querySelectorAll('.bqp3-col').forEach(x=>x.classList.remove('sel'));
+        chip.classList.add('sel');
+        if(!myProfile.banner) cover.style.background='linear-gradient(135deg,'+c+'aa,'+c+'33)';
+      });
+      bcols.appendChild(chip);
+    });
+
+    // Build status chips
+    const sts=document.getElementById('bqp3-sts');
+    STATUS_OPTIONS.forEach(s=>{
+      const chip=document.createElement('div');
+      chip.className='bqp3-st'+(s.id===(myProfile.status||'online')?' sel':'');
+      chip.innerHTML='<div class="bqp3-st-dot" style="background:'+s.color+'"></div>'+s.label;
+      chip.addEventListener('click',()=>{
+        myProfile.status=s.id;
+        sts.querySelectorAll('.bqp3-st').forEach(x=>x.classList.remove('sel'));
+        chip.classList.add('sel');
+      });
+      sts.appendChild(chip);
+    });
+
+    // Initials live-update
+    initInp.addEventListener('input',()=>{
+      const v=initInp.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,2);
+      initInp.value=v;
+      myProfile.initials=v;
+      if(!myProfile.avatar){ av.textContent=v||(typeof uInit==='function'?uInit(uname||'?'):'?'); }
+    });
+
+    // Bio counter
+    const bioEl=document.getElementById('bqp3-bio');
+    const bioCnt=document.getElementById('bqp3-bio-cnt');
+    function updBioCnt(){bioCnt.textContent=(bioEl.value.length)+' / 120';}
+    bioEl.addEventListener('input',updBioCnt); updBioCnt();
+
+    // Username change
+    document.getElementById('bqp3-changename').addEventListener('click',()=>{
+      if(typeof showModal==='function') showModal(true);
+    });
+
+    // Avatar/Banner upload — wired to label clicks
+    document.getElementById('bqp3-av').addEventListener('click',e=>{
+      e.stopPropagation();
+      document.getElementById('bqp3-avatar-file').click();
+    });
+    document.getElementById('bqp3-banner-btn').addEventListener('click',e=>{
+      e.stopPropagation();
+      document.getElementById('bqp3-banner-file').click();
+    });
+    document.getElementById('bqp3-avatar-file').addEventListener('change',async e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{
+        const data=await resizeImageFile(f,256,256);
+        myProfile.avatar=data;
+        try{localStorage.setItem(LS_PROF,JSON.stringify(myProfile));}catch(_){}
+        if(db&&uid) try{db.ref('bq_presence/'+uid+'/avatar').set(data);}catch(_){}
+        av.style.background='url('+data+') center/cover';
+        av.style.color='transparent';
+        av.textContent='';
+        if(typeof refreshMeAvatar==='function') refreshMeAvatar();
+        if(typeof toast==='function') toast('Avatar updated');
+      }catch(err){ if(typeof toast==='function') toast('Failed to upload avatar'); }
+    });
+    document.getElementById('bqp3-banner-file').addEventListener('change',async e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{
+        const data=await resizeImageFile(f,1500,500);
+        myProfile.banner=data;
+        try{localStorage.setItem(LS_PROF,JSON.stringify(myProfile));}catch(_){}
+        if(db&&uid) try{db.ref('bq_presence/'+uid+'/banner').set(data);}catch(_){}
+        cover.style.background='url('+data+') center/cover';
+        if(typeof toast==='function') toast('Cover updated');
+      }catch(err){ if(typeof toast==='function') toast('Failed to upload banner'); }
+    });
+
+    // Save
+    document.getElementById('bqp3-save').addEventListener('click',()=>{
+      myProfile.activity=document.getElementById('bqp3-act').value.trim();
+      myProfile.bio=document.getElementById('bqp3-bio').value.trim();
+      myProfile.pronouns=document.getElementById('bqp3-pron').value.trim();
+      myProfile.link=document.getElementById('bqp3-link').value.trim();
+      myProfile.initials=initInp.value.trim();
+      try{localStorage.setItem(LS_PROF,JSON.stringify(myProfile));}catch(_){}
+      if(db&&uname){
+        try{
+          db.ref('bq_presence/'+uid).update({
+            uname,status:myProfile.status||'online',activity:myProfile.activity||'',
+            bio:myProfile.bio||'',pronouns:myProfile.pronouns||'',link:myProfile.link||'',
+            color:myProfile.color||'',initials:myProfile.initials||'',ts:Date.now(),
+          });
+        }catch(_){}
+        if(typeof startPresence==='function') startPresence();
+      }
+      if(typeof refreshMeAvatar==='function') refreshMeAvatar();
+      const m=document.getElementById('bqp3-savemsg');
+      if(m){ m.classList.add('show'); setTimeout(()=>m.classList.remove('show'),2200); }
+      if(typeof toast==='function') toast('Profile saved');
     });
   }
-  // Expose so bqNav() patch above can call it
-  window._injectProfileUploads = ensureProfileUploads;
-  setTimeout(ensureProfileUploads,300);
-  setTimeout(ensureProfileUploads,1200);
+  // Hook bqNav so opening profile builds it
+  const _origNav=window.bqNav;
+  window.bqNav=function(target){
+    if(typeof _origNav==='function') _origNav(target);
+    if(target==='profile') setTimeout(buildProfileV3,40);
+  };
+  setTimeout(()=>{ if(activeView==='profile') buildProfileV3(); },800);
 
-  /* ── Voice preview before send ── */
+  /* ════ VOICE PREVIEW: build bar + intercept recording ════ */
   function buildVoicePreview(){
     if(document.getElementById('bq-voice-preview')) return;
-    const composer=document.getElementById('bqdmsnd')?.closest('.bqic')||document.getElementById('bqdminp')?.closest('.bqic');
+    const composer=document.getElementById('bqdmsnd')?.closest('.bqic')||document.getElementById('bqdminp')?.closest('.bqic')||document.getElementById('bqdminp')?.closest('.bqiw');
     if(!composer) return;
-    const bars=Array.from({length:28}).map((_,i)=>{
-      const h=6+Math.round(Math.sin(i*0.6)*5+Math.random()*8);
+    const bars=Array.from({length:30}).map((_,i)=>{
+      const h=6+Math.round(Math.sin(i*0.55)*5+Math.random()*8);
       return '<span style="height:'+h+'px"></span>';
     }).join('');
     const wrap=document.createElement('div');
     wrap.className='bq-voice-preview';
     wrap.id='bq-voice-preview';
     wrap.innerHTML=
-      '<button class="bq-vp-play" id="bq-vp-play"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>'+
+      '<button class="bq-vp-play" id="bq-vp-play" title="Play/Pause"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></button>'+
+      '<button class="bq-vp-replay" id="bq-vp-replay" title="Replay from start"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>'+
       '<div class="bq-vp-bars">'+bars+'</div>'+
       '<span class="bq-vp-time" id="bq-vp-time">0:00</span>'+
       '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
@@ -5106,16 +5527,18 @@ setTimeout(_injectProfileUploads,1500);
     composer.parentNode.insertBefore(wrap,composer);
   }
   setTimeout(buildVoicePreview,500);
+  setTimeout(buildVoicePreview,1500);
 
   let _vpAudio=null,_vpData=null,_vpDur=0;
   function showVoicePreview(dataUrl,durMs){
     buildVoicePreview();
     const wrap=document.getElementById('bq-voice-preview'); if(!wrap) return;
-    _vpData=dataUrl;_vpDur=durMs;
+    _vpData=dataUrl; _vpDur=durMs;
     const sec=Math.max(1,Math.round(durMs/1000));
-    document.getElementById('bq-vp-time').textContent=Math.floor(sec/60)+':'+(sec%60<10?'0':'')+(sec%60);
+    const mm=Math.floor(sec/60), ss=sec%60;
+    document.getElementById('bq-vp-time').textContent=mm+':'+(ss<10?'0':'')+ss;
     wrap.classList.add('show');
-    if(_vpAudio){try{_vpAudio.pause();}catch(e){}_vpAudio=null;}
+    if(_vpAudio){try{_vpAudio.pause();}catch(_){}_vpAudio=null;}
     _vpAudio=new Audio(dataUrl);
     _vpAudio.addEventListener('timeupdate',()=>{
       const bars=wrap.querySelectorAll('.bq-vp-bars span');
@@ -5131,15 +5554,21 @@ setTimeout(_injectProfileUploads,1500);
   function hideVoicePreview(){
     const wrap=document.getElementById('bq-voice-preview');
     if(wrap){wrap.classList.remove('show');wrap.querySelectorAll('.bq-vp-bars span').forEach(b=>b.classList.remove('played'));}
-    if(_vpAudio){try{_vpAudio.pause();}catch(e){}_vpAudio=null;}
+    if(_vpAudio){try{_vpAudio.pause();}catch(_){}_vpAudio=null;}
     _vpData=null;_vpDur=0;
   }
   document.addEventListener('click',function(e){
     if(e.target.closest('#bq-vp-play')){
-      e.stopPropagation();
-      if(!_vpAudio) return;
-      if(_vpAudio.paused){_vpAudio.play();e.target.closest('#bq-vp-play').innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';}
-      else {_vpAudio.pause();e.target.closest('#bq-vp-play').innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';}
+      e.stopPropagation(); if(!_vpAudio) return;
+      const pb=e.target.closest('#bq-vp-play');
+      if(_vpAudio.paused){_vpAudio.play();pb.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';}
+      else {_vpAudio.pause();pb.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';}
+    }
+    if(e.target.closest('#bq-vp-replay')){
+      e.stopPropagation(); if(!_vpAudio) return;
+      _vpAudio.currentTime=0; _vpAudio.play();
+      const pb=document.getElementById('bq-vp-play');
+      if(pb) pb.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
     }
     if(e.target.closest('#bq-vp-discard')){e.stopPropagation();hideVoicePreview();}
     if(e.target.closest('#bq-vp-send')){
@@ -5149,23 +5578,20 @@ setTimeout(_injectProfileUploads,1500);
     }
   });
 
-  /* Override sendVoiceDm hook: intercept startVoice's onstop to preview first */
-  // We patch by replacing the recorder.onstop set in startVoice via a wrapper.
-  // Strategy: monkeypatch the existing startVoice to route the recorded blob
-  // into showVoicePreview instead of immediate send.
-  if(typeof window.startVoice==='undefined' && typeof startVoice==='function'){
-    window.__bqOrigStartVoice = startVoice;
-  }
-  // Replace global startVoice if available in scope (it lives in IIFE)
-  // Instead, hook by intercepting MediaRecorder constructor at a click on bq-voice-btn.
-  const vBtn=document.getElementById('bq-voice-btn');
-  if(vBtn){
-    // Remove any existing listeners by cloning
+  // Hook the voice button: replace its click flow to route through preview
+  function rewireVoiceBtn(){
+    const vBtn=document.getElementById('bq-voice-btn');
+    if(!vBtn||vBtn.dataset.v4) return; vBtn.dataset.v4='1';
     const fresh=vBtn.cloneNode(true);
     vBtn.parentNode.replaceChild(fresh,vBtn);
     let rec=null,chunks=[],stream=null,startT=0,timer=null;
     const MAX=30000;
     function fmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}
+    function resetUI(){
+      fresh.classList.remove('recording');
+      document.getElementById('bq-voice-rec-bar')?.classList.remove('show');
+      const t=document.getElementById('bq-voice-rec-time');if(t)t.textContent='0:00';
+    }
     async function startRec(){
       if(!activeDmId||!navigator.mediaDevices){if(typeof toast==='function')toast('Voice notes not supported');return;}
       try{
@@ -5193,23 +5619,20 @@ setTimeout(_injectProfileUploads,1500);
           const t=document.getElementById('bq-voice-rec-time');if(t)t.textContent=fmt(el);
           if(el>=MAX) stopRec();
         },200);
-      }catch(e){if(typeof toast==='function')toast('Microphone permission denied');}
+      }catch(_){if(typeof toast==='function')toast('Microphone permission denied');}
     }
-    function stopRec(){if(rec&&rec.state==='recording'){try{rec.stop();}catch(e){}}clearInterval(timer);timer=null;}
-    function resetUI(){
-      fresh.classList.remove('recording');
-      document.getElementById('bq-voice-rec-bar')?.classList.remove('show');
-      const t=document.getElementById('bq-voice-rec-time');if(t)t.textContent='0:00';
-    }
+    function stopRec(){if(rec&&rec.state==='recording'){try{rec.stop();}catch(_){}}clearInterval(timer);timer=null;}
     fresh.addEventListener('click',()=>{
       if(rec&&rec.state==='recording') stopRec();
       else startRec();
     });
     document.getElementById('bq-voice-rec-cancel')?.addEventListener('click',()=>{
-      if(rec&&rec.state==='recording'){rec.onstop=()=>{stream?.getTracks().forEach(t=>t.stop());stream=null;};try{rec.stop();}catch(e){}}
+      if(rec&&rec.state==='recording'){rec.onstop=()=>{stream?.getTracks().forEach(t=>t.stop());stream=null;};try{rec.stop();}catch(_){}}
       clearInterval(timer);timer=null;resetUI();
     });
   }
+  setTimeout(rewireVoiceBtn,600);
+  setTimeout(rewireVoiceBtn,1800);
 
   /* ── Final hardening: stop click propagation on overlays so outside-close cannot fire ── */
   ['bq-media-lightbox','bq-pv','bq-info-float','bqimg-preview','bq-confirm'].forEach(id=>{
@@ -5219,6 +5642,516 @@ setTimeout(_injectProfileUploads,1500);
       el.addEventListener('click',e=>e.stopPropagation());
     }
   });
+
+  /* ── Re-inject sticker tray with new emoji set (already mutated above) ── */
+  // The original setupInput populated the tray once; refresh it if visible
+  function refreshStickerTray(){
+    document.querySelectorAll('.bqset, .bqsticker-tray, #bqdmst, #bqgst').forEach(()=>{});
+    // Easiest: add new sticker chips to any open sticker tray container
+    document.querySelectorAll('.bqsticker-row,.bqstickers').forEach(row=>{
+      QUICK_STICKERS.forEach(e=>{
+        if(![...row.children].some(c=>c.dataset.s===e)){
+          const b=document.createElement('button');
+          b.className='bqsticker'; b.dataset.s=e; b.textContent=e;
+          row.appendChild(b);
+        }
+      });
+    });
+  }
+  setTimeout(refreshStickerTray,1200);
+
 })();
+
+
+/* ═══════════════════════════════════════════════════════════
+   v5 PATCH — fixes:
+     • Voice notes: opus 64kbps mono + AnalyserNode waveform
+     • Settings (DM "..." → Conversation Info / Settings) reliably opens
+     • Profile customisation: tabbed redesign (Identity/Appearance/Status/Privacy)
+     • Read receipts: only the tick recolours, never the timestamp
+     • GIF recommendations: curated, brainrot-filtered (also handled above)
+     • Delete-message ghost render: prune local cache + DOM on child_removed
+     • Theme covers entire widget shell (no white composer strip)
+═══════════════════════════════════════════════════════════ */
+(function v5Patch(){
+
+  /* ───────── 1. CSS: theme covers full widget + tabbed profile ───────── */
+  const css = `
+  /* THEME: lift background to whole widget shell */
+  #bqp{ background: var(--bq-bg) !important; }
+  #bqs, .bqv, #bqdmmsgs, #bqgmsgs, .bqhdr, #bqnav, .bqcomp, .bqcompose,
+  .bq-input-row, .bq-comp, #bq-input-bar, .bqgcomp, .bqdmcomp,
+  #bqp .bq-voice-rec-bar, #bqp .bq-voice-preview {
+    background: transparent !important;
+  }
+  /* keep elevated bars subtly distinct */
+  #bqnav{ background: rgba(255,255,255,.02) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .bqhdr{ background: linear-gradient(180deg, rgba(255,255,255,.025), transparent) !important; }
+  /* Themed backgrounds — apply at panel level so composer is included */
+  .bq-theme-cyberpunk #bqp{ background: radial-gradient(ellipse at top,#1a0033 0%,#05010a 70%) !important; }
+  .bq-theme-sakura    #bqp{ background: linear-gradient(180deg,#3a1a26 0%,#1a0a12 100%) !important; }
+  .bq-theme-nordic    #bqp{ background: #2e3440 !important; }
+  .bq-theme-vapor     #bqp{ background: linear-gradient(180deg,#2a0845 0%,#0f0524 100%) !important; }
+  .bq-theme-coffee    #bqp{ background: #1f1410 !important; }
+  .bq-theme-lavender  #bqp{ background: #f3f0fa !important; }
+  .bq-theme-paper     #bqp{ background: #f8f7f4 !important; }
+  .bq-theme-monochrome    #bqp{ background:#0a0a0a !important; }
+  .bq-theme-midnightpurple #bqp{ background: radial-gradient(ellipse at top,#1e1140 0%,#070314 70%) !important; }
+  .bq-theme-oceanv2   #bqp{ background: linear-gradient(180deg,#062a3a 0%,#020e15 100%) !important; }
+  .bq-theme-sunsetv2  #bqp{ background: linear-gradient(180deg,#3a1208 0%,#0f0503 100%) !important; }
+
+  /* TABBED profile redesign */
+  #bqv-profile .bqp3-tabs{
+    position:sticky; top:0; z-index:20;
+    display:flex; gap:4px; padding:8px 12px;
+    background:rgba(15,15,18,.85); backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.06);
+    overflow-x:auto; scrollbar-width:none;
+  }
+  #bqv-profile .bqp3-tabs::-webkit-scrollbar{display:none;}
+  #bqv-profile .bqp3-tab{
+    flex:0 0 auto; padding:8px 14px; border-radius:10px;
+    background:transparent; border:1px solid transparent; color:rgba(255,255,255,.55);
+    font:600 11px/1 'Inter',sans-serif; letter-spacing:.04em; text-transform:uppercase;
+    cursor:pointer; transition:all .18s ease; white-space:nowrap;
+  }
+  #bqv-profile .bqp3-tab:hover{ color:#fff; background:rgba(255,255,255,.04); }
+  #bqv-profile .bqp3-tab.sel{
+    background:linear-gradient(135deg, var(--bq-accent), #818cf8);
+    color:#fff; border-color:transparent;
+    box-shadow:0 4px 14px rgba(96,165,250,.35);
+  }
+  #bqv-profile .bqp3-tabpane{display:none;}
+  #bqv-profile .bqp3-tabpane.active{display:block; animation:bqp3FadeIn .22s ease;}
+  @keyframes bqp3FadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  #bqv-profile .bqp3-preview{
+    margin:10px 12px 4px; padding:10px 12px;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+    border-radius:12px;
+  }
+  #bqv-profile .bqp3-preview-av{
+    width:36px; height:36px; border-radius:50%; background:#444; color:#000;
+    display:flex; align-items:center; justify-content:center;
+    font:800 12px 'Inter',sans-serif;
+  }
+  #bqv-profile .bqp3-preview-meta{flex:1; min-width:0;}
+  #bqv-profile .bqp3-preview-name{font:700 13px 'Inter',sans-serif; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #bqv-profile .bqp3-preview-sub{font:500 10px 'Inter',sans-serif; color:rgba(255,255,255,.5); margin-top:2px;}
+
+  #bqv-profile .bqp3-savebar{
+    position:sticky; bottom:0; z-index:25;
+    margin-top:0;
+    background:linear-gradient(180deg, transparent, rgba(10,10,14,.94) 35%);
+    padding:14px 14px 16px; backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  }
+  #bqv-profile .bqp3-savebar .bqp3-dirty{
+    display:none; font:600 10px 'Inter',sans-serif;
+    color:#fbbf24; margin-right:8px; letter-spacing:.05em; text-transform:uppercase;
+  }
+  #bqv-profile .bqp3-savebar.is-dirty .bqp3-dirty{display:inline-block;}
+
+  /* Voice waveform canvas (recording) */
+  .bq-voice-rec-bar{ align-items:center; gap:10px; }
+  .bq-voice-rec-bar canvas.bq-vn-wave{
+    flex:1; height:22px; background:rgba(255,255,255,.04);
+    border-radius:8px;
+  }
+  `;
+  const st = document.createElement('style'); st.textContent = css;
+  (document.head||document.documentElement).appendChild(st);
+
+  /* ───────── 2. SETTINGS button delegation ─────────
+     The "..." menu and its "Conversation Info" item live inside DM header.
+     v4Patch cloned them which broke the binding on subsequent re-renders.
+     Use document-level delegation so it always works. */
+  document.addEventListener('click', function(e){
+    const moreBtn = e.target.closest('#bq-dm-menu-btn');
+    if(moreBtn){
+      e.stopPropagation();
+      const menu = document.getElementById('bq-dm-menu');
+      menu?.classList.toggle('open');
+      return;
+    }
+    const infoItem = e.target.closest('#bq-dm-menu-info');
+    if(infoItem){
+      e.stopPropagation();
+      document.getElementById('bq-dm-menu')?.classList.remove('open');
+      if(typeof openInfoFloat === 'function'){
+        // Ensure the card exists; openInfoFloat returns silently if missing
+        const card = document.getElementById('bq-info-float');
+        if(card){ openInfoFloat(); }
+      }
+      return;
+    }
+  }, true);
+
+  /* ───────── 3. Voice notes — opus 64k mono + waveform + clean playback ───────── */
+  function v5RewireVoiceBtn(){
+    const vBtn = document.getElementById('bq-voice-btn');
+    if(!vBtn) return;
+    if(vBtn.dataset.v5) return;
+    vBtn.dataset.v5 = '1';
+    // Replace any prior wiring (v4 cloned + bound). Clone again to wipe listeners.
+    const fresh = vBtn.cloneNode(true);
+    vBtn.parentNode.replaceChild(fresh, vBtn);
+    fresh.dataset.v5 = '1';
+    fresh.dataset.v4 = '1'; // block v4 rewire from re-binding
+
+    let rec=null, chunks=[], stream=null, startT=0, timer=null, ac=null, analyser=null, raf=null;
+    const MAX = 30000;
+
+    function pickMime(){
+      const list = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4;codecs=mp4a.40.2', 'audio/webm', 'audio/mp4'];
+      for(const m of list){ try{ if(MediaRecorder.isTypeSupported(m)) return m; }catch(_){} }
+      return '';
+    }
+    function fmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}
+    function ensureWaveCanvas(){
+      const bar = document.getElementById('bq-voice-rec-bar'); if(!bar) return null;
+      let cv = bar.querySelector('canvas.bq-vn-wave');
+      if(!cv){
+        cv = document.createElement('canvas');
+        cv.className = 'bq-vn-wave';
+        // Insert after the time element if present
+        const t = document.getElementById('bq-voice-rec-time');
+        if(t && t.parentNode === bar){ bar.insertBefore(cv, t.nextSibling); }
+        else bar.appendChild(cv);
+      }
+      // size to actual width
+      const r = cv.getBoundingClientRect();
+      cv.width  = Math.max(60, Math.floor(r.width  * (window.devicePixelRatio||1)));
+      cv.height = Math.max(20, Math.floor(r.height * (window.devicePixelRatio||1)));
+      return cv;
+    }
+    function drawWave(){
+      if(!analyser) return;
+      const cv = ensureWaveCanvas(); if(!cv) return;
+      const ctx = cv.getContext('2d'); if(!ctx) return;
+      const buf = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(buf);
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ctx.lineWidth = Math.max(1, (window.devicePixelRatio||1));
+      ctx.strokeStyle = '#22d3ee';
+      ctx.beginPath();
+      const slice = cv.width / buf.length;
+      let x = 0;
+      for(let i=0;i<buf.length;i++){
+        const v = buf[i] / 128.0;
+        const y = (v * cv.height) / 2;
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        x += slice;
+      }
+      ctx.stroke();
+      raf = requestAnimationFrame(drawWave);
+    }
+    function resetUI(){
+      fresh.classList.remove('recording');
+      document.getElementById('bq-voice-rec-bar')?.classList.remove('show');
+      const t = document.getElementById('bq-voice-rec-time'); if(t) t.textContent='0:00';
+      cancelAnimationFrame(raf); raf=null;
+      const cv = document.querySelector('#bq-voice-rec-bar canvas.bq-vn-wave');
+      if(cv){ const c = cv.getContext('2d'); c && c.clearRect(0,0,cv.width,cv.height); }
+      try{ ac && ac.close(); }catch(_){}
+      ac=null; analyser=null;
+    }
+    async function startRec(){
+      if(!activeDmId || !navigator.mediaDevices){ if(typeof toast==='function') toast('Voice notes not supported'); return; }
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio:{
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000,
+          }
+        });
+        const mime = pickMime();
+        const opts = { audioBitsPerSecond: 64000 };
+        if(mime) opts.mimeType = mime;
+        rec = new MediaRecorder(stream, opts);
+        chunks=[];
+        rec.ondataavailable = e => { if(e.data && e.data.size>0) chunks.push(e.data); };
+        rec.onstop = () => {
+          stream?.getTracks().forEach(t=>t.stop()); stream=null;
+          const blob = new Blob(chunks, { type: rec.mimeType || mime || 'audio/webm' });
+          if(blob.size < 800){ if(typeof toast==='function') toast('Recording too short'); resetUI(); return; }
+          const dur = Math.min(MAX, Date.now()-startT);
+          const r = new FileReader();
+          r.onload = () => { if(typeof showVoicePreview==='function') showVoicePreview(r.result, dur); resetUI(); };
+          r.readAsDataURL(blob);
+        };
+        rec.start(100); // small timeslice → smoother chunks
+        startT = Date.now();
+        fresh.classList.add('recording');
+        document.getElementById('bq-voice-rec-bar')?.classList.add('show');
+        // Analyser
+        try{
+          ac = new (window.AudioContext||window.webkitAudioContext)();
+          const src = ac.createMediaStreamSource(stream);
+          analyser = ac.createAnalyser();
+          analyser.fftSize = 2048;
+          analyser.smoothingTimeConstant = 0.8;
+          src.connect(analyser);
+          raf = requestAnimationFrame(drawWave);
+        }catch(_){}
+        timer = setInterval(()=>{
+          const el = Date.now()-startT;
+          const t = document.getElementById('bq-voice-rec-time'); if(t) t.textContent = fmt(el);
+          if(el >= MAX) stopRec();
+        }, 200);
+      }catch(_){ if(typeof toast==='function') toast('Microphone permission denied'); }
+    }
+    function stopRec(){
+      if(rec && rec.state==='recording'){ try{ rec.stop(); }catch(_){} }
+      clearInterval(timer); timer=null;
+    }
+    fresh.addEventListener('click', () => {
+      if(rec && rec.state==='recording') stopRec(); else startRec();
+    });
+    document.getElementById('bq-voice-rec-cancel')?.addEventListener('click', () => {
+      if(rec && rec.state==='recording'){
+        rec.onstop = () => { stream?.getTracks().forEach(t=>t.stop()); stream=null; };
+        try{ rec.stop(); }catch(_){}
+      }
+      clearInterval(timer); timer=null; resetUI();
+    });
+  }
+  setTimeout(v5RewireVoiceBtn, 800);
+  setTimeout(v5RewireVoiceBtn, 2200);
+  // Whenever DM view opens, re-check (id may have been re-injected)
+  document.addEventListener('click', e => {
+    if(e.target.closest('.bqdmr,#bqdmback,#bqnav')) setTimeout(v5RewireVoiceBtn, 250);
+  }, true);
+
+  /* Voice playback in bubbles: native <audio> for clean output.
+     The existing handler already uses `new Audio(...)` — but it prefetches no metadata.
+     Patch by ensuring `preload="metadata"` and unlocking AudioContext if needed. */
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.bq-voice-play');
+    if(!btn) return;
+    const wrap = btn.closest('.bq-voice-msg');
+    if(wrap && wrap._audio && !wrap._audio._v5){
+      try{ wrap._audio.preload = 'metadata'; }catch(_){}
+      wrap._audio._v5 = true;
+    }
+  }, true);
+
+  /* ───────── 4. Delete-message ghost render: prune local caches ───────── */
+  // Many in-memory caches exist (renderedMsgs, msgCache, etc). We hook
+  // child_removed at the document level by re-attaching listeners to the
+  // active refs whenever subscribeGlobal/openDmConv runs. Easiest robust fix:
+  // observe Firebase removals via a wrapper if available.
+  function pruneLocalCaches(ctx, key){
+    try{
+      // Common cache names used in this widget
+      ['msgCache','msgs','dmMsgs','renderedMsgs'].forEach(n=>{
+        const obj = window[n]; if(!obj) return;
+        if(Array.isArray(obj)){
+          for(let i=obj.length-1;i>=0;i--){ if(obj[i] && (obj[i].key===key || obj[i]._key===key)) obj.splice(i,1); }
+        } else if(typeof obj==='object'){
+          if(ctx==='global' && obj.global) delete obj.global[key];
+          if(ctx==='dm'){
+            const did = window.activeDmId;
+            if(did && obj[did]) delete obj[did][key];
+          }
+          if(obj[key]) delete obj[key];
+        }
+      });
+    }catch(_){}
+    // Always remove DOM
+    document.getElementById('bqmsg-'+ctx+'-'+key)?.remove();
+  }
+
+  // Re-bind child_removed safely after subscriptions exist.
+  function rebindRemoval(){
+    if(!window.db) return;
+    try{
+      const gRef = window.db.ref('bq_messages').limitToLast(typeof MAX_MSG!=='undefined'?MAX_MSG:200);
+      gRef.off('child_removed');
+      gRef.on('child_removed', s => pruneLocalCaches('global', s.key));
+    }catch(_){}
+    try{
+      if(window.activeDmId){
+        const dRef = window.db.ref('bq_dms/'+window.activeDmId+'/messages').limitToLast(typeof MAX_MSG!=='undefined'?MAX_MSG:200);
+        dRef.off('child_removed');
+        dRef.on('child_removed', s => pruneLocalCaches('dm', s.key));
+      }
+    }catch(_){}
+  }
+  setTimeout(rebindRemoval, 1500);
+  setTimeout(rebindRemoval, 4000);
+  // When entering a DM, rebind for that DM
+  document.addEventListener('click', e => {
+    if(e.target.closest('.bqdmr')) setTimeout(rebindRemoval, 600);
+  }, true);
+
+  /* ───────── 5. Tabbed profile customisation ───────── */
+  function v5TabbifyProfile(){
+    const view = document.getElementById('bqv-profile');
+    if(!view) return;
+    const scroll = view.querySelector('.bqpf-scroll') || view.querySelector('.bqv-scroll') || view;
+    const root = scroll.querySelector('.bqp3');
+    if(!root) return;
+    if(root.dataset.v5) return;
+    root.dataset.v5 = '1';
+
+    // Find existing cards by their title text
+    const cards = Array.from(root.querySelectorAll('.bqp3-card'));
+    const findCard = (label) => cards.find(c => {
+      const t = c.querySelector('.bqp3-card-t');
+      return t && t.textContent.trim().toLowerCase().startsWith(label.toLowerCase());
+    });
+    const identityCard = findCard('identity');
+    const statusCard   = findCard('status');
+    const bioCard      = findCard('bio');
+    const pronCard     = findCard('pronouns');
+    const linkCard     = findCard('spotlight');
+
+    // Build tab nav
+    const tabs = document.createElement('div');
+    tabs.className = 'bqp3-tabs';
+    tabs.innerHTML =
+      '<button class="bqp3-tab sel" data-tab="identity">Identity</button>'+
+      '<button class="bqp3-tab" data-tab="appearance">Appearance</button>'+
+      '<button class="bqp3-tab" data-tab="status">Status</button>'+
+      '<button class="bqp3-tab" data-tab="privacy">Privacy</button>';
+
+    // Live preview chip
+    const col = (window.myProfile && myProfile.color) || '#60a5fa';
+    const inits = (window.myProfile && myProfile.initials) || (window.uname||'?').slice(0,2).toUpperCase();
+    const preview = document.createElement('div');
+    preview.className = 'bqp3-preview';
+    preview.innerHTML =
+      '<div class="bqp3-preview-av" id="bqp3-prev-av" style="background:'+col+';color:#000">'+inits+'</div>'+
+      '<div class="bqp3-preview-meta">'+
+        '<div class="bqp3-preview-name" id="bqp3-prev-name">@'+(window.uname||'username')+'</div>'+
+        '<div class="bqp3-preview-sub" id="bqp3-prev-sub">'+((window.myProfile&&myProfile.activity)||'No status')+'</div>'+
+      '</div>';
+
+    // Insert tabs + preview at top of body
+    const body = root.querySelector('.bqp3-body');
+    if(!body) return;
+    body.insertBefore(tabs, body.firstChild);
+    body.insertBefore(preview, tabs.nextSibling);
+
+    // Build panes
+    const paneIdentity   = document.createElement('div'); paneIdentity.className='bqp3-tabpane active'; paneIdentity.dataset.tab='identity';
+    const paneAppearance = document.createElement('div'); paneAppearance.className='bqp3-tabpane'; paneAppearance.dataset.tab='appearance';
+    const paneStatus     = document.createElement('div'); paneStatus.className='bqp3-tabpane'; paneStatus.dataset.tab='status';
+    const panePrivacy    = document.createElement('div'); panePrivacy.className='bqp3-tabpane'; panePrivacy.dataset.tab='privacy';
+
+    // Re-distribute existing cards into panes
+    if(identityCard) paneIdentity.appendChild(identityCard);
+    if(bioCard)      paneIdentity.appendChild(bioCard);
+    if(pronCard)     paneIdentity.appendChild(pronCard);
+
+    // Appearance pane: clone the avatar/cover color rows out of identity card if present, plus link
+    // (Identity card itself contains color chips.) Move color rows to Appearance.
+    if(identityCard){
+      const colorRows = identityCard.querySelectorAll('.bqp3-row');
+      colorRows.forEach(r => {
+        // rows after the first (initials) are color pickers
+        if(r.querySelector('.bqp3-cols')) {
+          const wrap = document.createElement('div');
+          wrap.className = 'bqp3-card';
+          wrap.appendChild(r);
+          paneAppearance.appendChild(wrap);
+        }
+      });
+    }
+    if(linkCard) paneAppearance.appendChild(linkCard);
+
+    // Status pane
+    if(statusCard) paneStatus.appendChild(statusCard);
+
+    // Privacy pane (lightweight: surfaces existing toggles via deep-link)
+    panePrivacy.innerHTML =
+      '<div class="bqp3-card">'+
+        '<div class="bqp3-card-t">Privacy</div>'+
+        '<div class="bqp3-row" style="justify-content:space-between;">'+
+          '<div style="font:600 12px Inter,sans-serif;color:#fff;">Read receipts</div>'+
+          '<button class="bqp3-tab" id="bqp3-priv-rr">'+(localStorage.getItem('bq_read_receipts')!=='off'?'On':'Off')+'</button>'+
+        '</div>'+
+        '<div class="bqp3-row" style="justify-content:space-between; margin-top:8px;">'+
+          '<div style="font:600 12px Inter,sans-serif;color:#fff;">Show online status</div>'+
+          '<button class="bqp3-tab" id="bqp3-priv-online">'+(localStorage.getItem('bq_hide_online')!=='1'?'On':'Off')+'</button>'+
+        '</div>'+
+        '<div style="font:500 11px Inter,sans-serif;color:rgba(255,255,255,.5);margin-top:10px;line-height:1.5;">'+
+          'Tip: Open a DM → "..." → Settings to manage per-conversation theme, pin, mute and disappearing messages.'+
+        '</div>'+
+      '</div>';
+
+    body.appendChild(paneIdentity);
+    body.appendChild(paneAppearance);
+    body.appendChild(paneStatus);
+    body.appendChild(panePrivacy);
+
+    // Tab switching
+    tabs.addEventListener('click', e=>{
+      const t = e.target.closest('.bqp3-tab'); if(!t) return;
+      tabs.querySelectorAll('.bqp3-tab').forEach(x=>x.classList.remove('sel'));
+      t.classList.add('sel');
+      const id = t.dataset.tab;
+      [paneIdentity,paneAppearance,paneStatus,panePrivacy].forEach(p=>{
+        p.classList.toggle('active', p.dataset.tab===id);
+      });
+    });
+
+    // Privacy toggles
+    panePrivacy.querySelector('#bqp3-priv-rr')?.addEventListener('click', e=>{
+      if(typeof toggleRR==='function'){ toggleRR(); e.target.textContent = localStorage.getItem('bq_read_receipts')!=='off'?'On':'Off'; }
+    });
+    panePrivacy.querySelector('#bqp3-priv-online')?.addEventListener('click', e=>{
+      const cur = localStorage.getItem('bq_hide_online')==='1';
+      localStorage.setItem('bq_hide_online', cur?'0':'1');
+      e.target.textContent = !cur ? 'Off' : 'On';
+      if(typeof toast==='function') toast('Online status: '+(!cur?'Hidden':'Visible'));
+    });
+
+    // Live preview wiring
+    const prevAv   = preview.querySelector('#bqp3-prev-av');
+    const prevName = preview.querySelector('#bqp3-prev-name');
+    const prevSub  = preview.querySelector('#bqp3-prev-sub');
+    const initInp  = root.querySelector('#bqp3-initials');
+    const actInp   = root.querySelector('#bqp3-act');
+    const bioInp   = root.querySelector('#bqp3-bio');
+    initInp?.addEventListener('input', () => { prevAv.textContent = (initInp.value||inits).toUpperCase().slice(0,2); });
+    actInp?.addEventListener('input', () => { prevSub.textContent = actInp.value || (bioInp?.value || 'No status'); });
+    // Color chips → preview avatar background
+    root.querySelectorAll('#bqp3-cols .bqp3-col').forEach(chip => {
+      chip.addEventListener('click', () => { prevAv.style.background = chip.style.background; });
+    });
+
+    // Dirty tracking → save bar
+    const saveBar = root.querySelector('.bqp3-savebar');
+    if(saveBar && !saveBar.querySelector('.bqp3-dirty')){
+      const tag = document.createElement('span');
+      tag.className = 'bqp3-dirty';
+      tag.textContent = 'Unsaved changes';
+      saveBar.insertBefore(tag, saveBar.firstChild);
+    }
+    const markDirty = () => saveBar?.classList.add('is-dirty');
+    [initInp,actInp,bioInp,root.querySelector('#bqp3-pron'),root.querySelector('#bqp3-link')]
+      .filter(Boolean).forEach(el => el.addEventListener('input', markDirty));
+    root.querySelectorAll('.bqp3-col,.bqp3-st').forEach(el => el.addEventListener('click', markDirty));
+    root.querySelector('#bqp3-save')?.addEventListener('click', () => saveBar?.classList.remove('is-dirty'));
+  }
+  // Run when profile view opens
+  const _origNav = window.bqNav;
+  if(typeof _origNav === 'function'){
+    window.bqNav = function(view){
+      const r = _origNav.apply(this, arguments);
+      if(view==='profile') setTimeout(v5TabbifyProfile, 80);
+      return r;
+    };
+  }
+  setTimeout(v5TabbifyProfile, 1200);
+  setTimeout(v5TabbifyProfile, 3000);
+
+})();
+
 
 })();
