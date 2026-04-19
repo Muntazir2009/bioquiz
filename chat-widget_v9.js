@@ -2070,8 +2070,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-              <button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
+      <button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
@@ -3370,7 +3369,9 @@ function attachGifPicker(ctx){
   const grid = panel.querySelector('.bqgifp-grid');
   const inp  = panel.querySelector('input');
   const cats = panel.querySelectorAll('.bqgifp-cat');
+  if(!grid || !inp || !cats) return;
   let curCat = 'trending', curQ = '', searchT = null;
+  let _gifLoaded = false;
 
   function showSkeletons(){
     grid.innerHTML = '';
@@ -3418,10 +3419,6 @@ function attachGifPicker(ctx){
       curCat = c.dataset.cat;
       curQ = '';
       inp.value = '';
-      // v10: lazy — only load when picker becomes visible
-  let _gifLoaded=false;
-  const _origLoad=load;
-  load=function(){ if(_gifLoaded) return _origLoad(); _gifLoaded=true; return _origLoad(); };
     });
   });
   inp.addEventListener('input', ()=>{
@@ -3447,7 +3444,8 @@ function attachGifPicker(ctx){
     if(opening){
       panel.classList.add('open');
       btn.classList.add('active');
-      if(!grid.children.length) load();
+      if(!_gifLoaded){ _gifLoaded = true; load(); }
+      else if(!grid.children.length) load();
       setTimeout(()=>inp.focus(), 60);
     }
   });
@@ -4668,17 +4666,19 @@ function init(){
   let disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
   const disappearBtn = document.getElementById('bq-toggle-disappear');
   function updateDisappearBtn() {
-    if (disappearBtn) {
-      disappearBtn.querySelector('span').textContent = disappearingEnabled ? 'Disappearing: ON (1hr)' : 'Disappearing: OFF';
+    if (!disappearBtn) return;
+    const label = disappearBtn.querySelector('span');
+    if (label) {
+      label.textContent = disappearingEnabled ? 'Disappearing: ON (1hr)' : 'Disappearing: OFF';
     }
   }
   updateDisappearBtn();
   if (disappearBtn) {
     disappearBtn.addEventListener('click', () => {
       disappearingEnabled = !disappearingEnabled;
-      localStorage.setItem('bq_disappearing', disappearingEnabled);
+      localStorage.setItem('bq_disappearing', String(disappearingEnabled));
       updateDisappearBtn();
-      chatMenu.classList.remove('open');
+      chatMenu?.classList.remove('open');
       toast(disappearingEnabled ? 'Disappearing messages enabled (1 hour)' : 'Disappearing messages disabled');
     });
   }
@@ -4691,7 +4691,7 @@ function init(){
   
   if (clearChatBtn) {
     clearChatBtn.addEventListener('click', () => {
-      chatMenu.classList.remove('open');
+      chatMenu?.classList.remove('open');
       if (confirmModal) confirmModal.classList.add('open');
     });
   }
@@ -5278,33 +5278,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 else setTimeout(bindV3,200);
 
 /* ── Profile editor: inject upload UI lazily ── */
-function _injectProfileUploads(){
-  const view=document.getElementById('bqv-profile');
-  if(!view||view.querySelector('#bqpf-avatar-file')) return;
-  // Find a good anchor — banner section or top of profile body
-  const anchor=view.querySelector('.bqpf-scroll') || view;
-  const wrap=document.createElement('div');
-  wrap.className='bqpf-upload-row';
-  wrap.style.padding='0 16px';
-  wrap.innerHTML=
-    '<label class="bqpf-upload" style="cursor:pointer">'+
-      '<div class="bqpf-upload-preview" id="bqpf-avatar-preview" style="background:'+(myProfile.avatar?'url('+myProfile.avatar+') center/cover':'var(--bq-bg-hover)')+'"></div>'+
-      'Upload Avatar'+
-      '<input type="file" id="bqpf-avatar-file" accept="image/*" style="display:none">'+
-    '</label>'+
-    '<label class="bqpf-upload" style="cursor:pointer">'+
-      ''+
-    '</label>';
-  anchor.insertBefore(wrap,anchor.firstChild);
-  // bind right away
-  wrap.querySelector('#bqpf-avatar-file').addEventListener('change',e=>{
-    const f=e.target.files?.[0];if(f) uploadAvatar(f);
-  });
-  wrap.querySelector('#bqpf-banner-file').addEventListener('change',e=>{
-    const f=e.target.files?.[0];if(f) uploadBanner(f);
-  });
-}
-// Try injecting after init
+function _injectProfileUploads(){}
 setTimeout(_injectProfileUploads,500);
 setTimeout(_injectProfileUploads,1500);
 
