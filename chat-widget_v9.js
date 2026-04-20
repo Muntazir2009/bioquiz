@@ -5146,7 +5146,8 @@ function resetVoiceUI(){
 function sendVoiceDm(audioData,durMs,waveform){
   if(!db||!uname||!activeDmId||!activeDmPuid||!audioData) return;
   const pname=activeDmPname||'?';
-  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,waveform:Array.isArray(waveform)?waveform.slice(0,64):undefined,ts:Date.now()};
+  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,ts:Date.now()};
+  if(Array.isArray(waveform) && waveform.length) p.waveform=waveform.slice(0,64);
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
   const sorted=[uid,activeDmPuid].sort();
   db.ref('bq_dms/'+activeDmId+'/meta').update({
@@ -5160,7 +5161,8 @@ function sendVoiceDm(audioData,durMs,waveform){
 
 function sendVoiceGlobal(audioData,durMs,waveform){
   if(!db||!uname||!audioData) return;
-  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,waveform:Array.isArray(waveform)?waveform.slice(0,64):undefined,ts:Date.now()};
+  const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,ts:Date.now()};
+  if(Array.isArray(waveform) && waveform.length) p.waveform=waveform.slice(0,64);
   db.ref('bq_messages').push(p);
 }
 
@@ -6301,7 +6303,15 @@ setTimeout(_injectProfileUploads,1500);
           return;
         }
         if(e.target.closest('#bq-vp-discard')){ e.stopPropagation(); hideVoicePreview(); return; }
-        if(e.target.closest('#bq-vp-send')){ e.stopPropagation(); if(voicePreviewData){ if(activeDmId){ sendVoiceDm(voicePreviewData,voicePreviewDuration); } else if(typeof sendVoiceGlobal==='function'){ sendVoiceGlobal(voicePreviewData,voicePreviewDuration); } else { toast('Open a DM to send voice notes'); } } hideVoicePreview(); }
+        if(e.target.closest('#bq-vp-send')){
+          e.stopPropagation();
+          if(voicePreviewData){
+            if(activeDmId){ sendVoiceDm(voicePreviewData,voicePreviewDuration,voicePreviewWave); }
+            else if(typeof sendVoiceGlobal==='function'){ sendVoiceGlobal(voicePreviewData,voicePreviewDuration,voicePreviewWave); }
+            else { toast('Open a DM to send voice notes'); return; }
+          }
+          hideVoicePreview();
+        }
       });
     }
   }
