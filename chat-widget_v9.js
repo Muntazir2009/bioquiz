@@ -588,6 +588,52 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqp.bq-theme-wadark .bqsnd{background:#00a884!important;box-shadow:0 6px 18px rgba(0,168,132,.24)!important;}
 #bqp.bq-theme-wadark .bqsnd svg{stroke:#fff!important;}
 #bqp.bq-theme-wadark .bqnb.active{color:#00a884!important;background:rgba(0,168,132,.14)!important;}
+/* ===== v14: WhatsApp-style icons for walight + wadark themes ===== */
+#bqp.bq-theme-walight .bqvoice-btn svg,#bqp.bq-theme-wadark .bqvoice-btn svg,
+#bqp.bq-theme-walight .bqgifbtn svg,#bqp.bq-theme-wadark .bqgifbtn svg,
+#bqp.bq-theme-walight .bqhbtn svg,#bqp.bq-theme-wadark .bqhbtn svg,
+#bqp.bq-theme-walight .bqsnd svg,#bqp.bq-theme-wadark .bqsnd svg{visibility:hidden!important;}
+#bqp.bq-theme-walight .bqvoice-btn,#bqp.bq-theme-wadark .bqvoice-btn,
+#bqp.bq-theme-walight .bqgifbtn,#bqp.bq-theme-wadark .bqgifbtn,
+#bqp.bq-theme-walight .bqhbtn,#bqp.bq-theme-wadark .bqhbtn,
+#bqp.bq-theme-walight .bqsnd,#bqp.bq-theme-wadark .bqsnd{position:relative!important;}
+#bqp.bq-theme-walight .bqvoice-btn::after,#bqp.bq-theme-wadark .bqvoice-btn::after,
+#bqp.bq-theme-walight .bqgifbtn::after,#bqp.bq-theme-wadark .bqgifbtn::after,
+#bqp.bq-theme-walight .bqhbtn::after,#bqp.bq-theme-wadark .bqhbtn::after,
+#bqp.bq-theme-walight .bqsnd::after,#bqp.bq-theme-wadark .bqsnd::after{
+  content:"";position:absolute;inset:0;margin:auto;width:22px;height:22px;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:contain;mask-size:contain;
+  background-color:currentColor;pointer-events:none;
+}
+/* Mic — WhatsApp-style filled mic */
+#bqp.bq-theme-walight .bqvoice-btn::after,#bqp.bq-theme-wadark .bqvoice-btn::after{
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z'/></svg>");
+}
+/* Smiley — WhatsApp emoji icon */
+#bqp.bq-theme-walight .bqhbtn::after,#bqp.bq-theme-wadark .bqhbtn::after{
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-3.5-9a1.5 1.5 0 1 1 1.5-1.5A1.5 1.5 0 0 1 8.5 11zm7 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5zm-3.5 7a5.5 5.5 0 0 0 4.9-3H7.1a5.5 5.5 0 0 0 4.9 3z'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-3.5-9a1.5 1.5 0 1 1 1.5-1.5A1.5 1.5 0 0 1 8.5 11zm7 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5zm-3.5 7a5.5 5.5 0 0 0 4.9-3H7.1a5.5 5.5 0 0 0 4.9 3z'/></svg>");
+}
+/* GIF — pill/badge style */
+#bqp.bq-theme-walight .bqgifbtn::after,#bqp.bq-theme-wadark .bqgifbtn::after{
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6zm3.5 4v4h1.2v-4H6.5zm2.6 0v4h1.2v-1.4h1.2v-1H10.3V11h1.6v-1H9.1zm4.4 0v4h1.2v-1.4h.5l.7 1.4h1.4l-.9-1.6a1.2 1.2 0 0 0 .8-1.2c0-.8-.6-1.2-1.5-1.2h-2.2zm1.2 1h.9c.3 0 .5.1.5.4s-.2.4-.5.4h-.9V11z'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z'/></svg>");
+}
+/* Send — WhatsApp paper plane (filled, white on green) */
+#bqp.bq-theme-walight .bqsnd::after,#bqp.bq-theme-wadark .bqsnd::after{
+  width:18px;height:18px;background-color:#fff;
+  -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z'/></svg>");
+  mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z'/></svg>");
+}
+/* Color tweaks per theme */
+#bqp.bq-theme-walight .bqvoice-btn::after,#bqp.bq-theme-walight .bqhbtn::after,#bqp.bq-theme-walight .bqgifbtn::after{background-color:#54656f;}
+#bqp.bq-theme-walight .bqvoice-btn:hover::after,#bqp.bq-theme-walight .bqhbtn:hover::after,#bqp.bq-theme-walight .bqgifbtn:hover::after{background-color:#075e54;}
+#bqp.bq-theme-wadark .bqvoice-btn::after,#bqp.bq-theme-wadark .bqhbtn::after,#bqp.bq-theme-wadark .bqgifbtn::after{background-color:#aebac1;}
+#bqp.bq-theme-wadark .bqvoice-btn:hover::after,#bqp.bq-theme-wadark .bqhbtn:hover::after,#bqp.bq-theme-wadark .bqgifbtn:hover::after{background-color:#e9edef;}
+/* ===== end v14 wa icons ===== */
 #bqp.bq-theme-walight .bq-msg-inline .bq-ms-btn{background:#fff!important;border-color:#d1d7db!important;color:#54656f!important;box-shadow:0 8px 18px rgba(11,20,26,.12)!important;}
 #bqp.bq-theme-wadark .bq-msg-inline .bq-ms-btn{background:#202c33!important;border-color:#2a3942!important;color:#e9edef!important;box-shadow:0 8px 18px rgba(0,0,0,.32)!important;}
 .bq-voice-msg{--bq-voice-progress:0;}
@@ -2807,7 +2853,12 @@ function showDmConvo(pUid, pName) {
   document.querySelectorAll('.bqdmr').forEach(r=>{
     r.classList.toggle('active-row', r.dataset.did===newDmId);
   });
-  requestAnimationFrame(() => { if (msgs) msgs.scrollTop = msgs.scrollHeight; });
+  // v14: aggressive auto-scroll — initial frame + after async messages load
+  const _scrollDmBottom=()=>{ const m=document.getElementById('bqdmmsgs'); if(m) m.scrollTop=m.scrollHeight; };
+  requestAnimationFrame(_scrollDmBottom);
+  setTimeout(_scrollDmBottom, 150);
+  setTimeout(_scrollDmBottom, 450);
+  setTimeout(_scrollDmBottom, 900);
 }
 
 /* ─────────────────────────────────────────
@@ -5901,10 +5952,27 @@ setTimeout(_injectProfileUploads,1500);
   }
 
   function ensureVoicePreview(){
-    if(document.getElementById('bq-voice-preview')) return;
-    // v9.3: Always inject inside the DM composer (.bqiw), never at body root.
-    const composer=document.getElementById('bqdminp')?.closest('.bqiw');
+    // v14: Attach preview to whichever composer is currently visible (global OR dm).
+    // Previously locked to #bqdminp which prevented sending voice notes from global chat.
+    const dmInp=document.getElementById('bqdminp');
+    const gInp=document.getElementById('bqginp');
+    let composer=null;
+    // Prefer the composer whose view is currently active/visible
+    const dmIw=dmInp?.closest('.bqiw');
+    const gIw=gInp?.closest('.bqiw');
+    function isVisible(el){ if(!el) return false; const r=el.getBoundingClientRect(); return r.width>0 && r.height>0; }
+    if(activeDmId && dmIw && isVisible(dmIw)) composer=dmIw;
+    else if(gIw && isVisible(gIw)) composer=gIw;
+    else composer = dmIw || gIw;
     if(!composer) return;
+    // If preview already exists but in wrong composer, move it
+    const existing=document.getElementById('bq-voice-preview');
+    if(existing){
+      if(existing.parentNode!==composer){
+        composer.insertBefore(existing, composer.firstChild);
+      }
+      return;
+    }
     const wrap=document.createElement('div');
     wrap.className='bq-voice-preview show';
     wrap.id='bq-voice-preview';
