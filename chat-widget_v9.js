@@ -4563,7 +4563,7 @@ function setupInput(ctx){
   inp.addEventListener('input',()=>{
     autoH(inp);
     const len=inp.value.length,rem=CHAR_LIMIT-len;
-    snd.disabled=len===0;
+    snd.disabled=len===0 && !voicePreviewData;
     cc.textContent=rem<=60?rem+' left':'';
     cc.className='bqcc'+(rem<=20?' over':rem<=60?' warn':'');
     if(len){
@@ -4575,8 +4575,23 @@ function setupInput(ctx){
   snd.addEventListener('click',doSend);
 
   function doSend(){
-    const txt=inp.value.trim();if(!txt)return;
+    const txt=inp.value.trim();
     if(!uname){showModal(false);return;}
+    if(!txt && voicePreviewData){
+      if(isG){
+        if(typeof sendVoiceGlobal==='function') sendVoiceGlobal(voicePreviewData,voicePreviewDuration,voicePreviewWave);
+      }else{
+        sendVoiceDm(voicePreviewData,voicePreviewDuration,voicePreviewWave);
+      }
+      hideVoicePreview();
+      inp.value=''; inp.style.height='auto'; snd.disabled=true; cc.textContent='';
+      snd.classList.add('sending'); setTimeout(()=>snd.classList.remove('sending'),320);
+      if(isG)setGTyp(false);else setDmTyp(false);
+      if(isG)gAtBot=true;else dAtBot=true;
+      if(msgs) requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight;});
+      return;
+    }
+    if(!txt)return;
     if(isG) sendGlobal(txt); else sendDm(txt);
     inp.value='';inp.style.height='auto';snd.disabled=true;cc.textContent='';
     snd.classList.add('sending'); setTimeout(()=>snd.classList.remove('sending'),320);
@@ -6048,6 +6063,8 @@ setTimeout(_injectProfileUploads,1500);
     const timeEl=document.getElementById('bq-vp-time');
     if(timeEl) timeEl.textContent=mm+':'+(ss<10?'0':'')+ss;
     wrap.classList.add('show');
+    const previewSendBtn=document.getElementById(activeDmId?'bqdmsnd':'bqgsnd');
+    if(previewSendBtn) previewSendBtn.disabled=false;
     voicePreviewAudio.addEventListener('timeupdate',()=>{
       const progress=(voicePreviewAudio.currentTime/(voicePreviewAudio.duration||sec));
       const animated=voicePreviewWave.length?voicePreviewWave.map((v,i)=>{
@@ -6071,6 +6088,12 @@ setTimeout(_injectProfileUploads,1500);
     voicePreviewData=null;
     voicePreviewDuration=0;
     voicePreviewWave=[];
+    const gInp=document.getElementById('bqginp');
+    const dmInp=document.getElementById('bqdminp');
+    const gSend=document.getElementById('bqgsnd');
+    const dmSend=document.getElementById('bqdmsnd');
+    if(gSend) gSend.disabled=!(gInp?.value.trim());
+    if(dmSend) dmSend.disabled=!(dmInp?.value.trim());
   }
 
   async function finishRecording(sendImmediately){
