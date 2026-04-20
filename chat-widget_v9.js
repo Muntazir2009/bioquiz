@@ -4578,11 +4578,18 @@ function setupInput(ctx){
     const txt=inp.value.trim();
     if(!uname){showModal(false);return;}
     if(!txt && voicePreviewData){
-      if(isG){
-        if(typeof sendVoiceGlobal==='function') sendVoiceGlobal(voicePreviewData,voicePreviewDuration,voicePreviewWave);
-      }else{
-        sendVoiceDm(voicePreviewData,voicePreviewDuration,voicePreviewWave);
-      }
+      try{
+        const _data=voicePreviewData,_dur=voicePreviewDuration,_wave=voicePreviewWave;
+        let ok=false;
+        if(isG){
+          if(typeof sendVoiceGlobal==='function'){ sendVoiceGlobal(_data,_dur,_wave); ok=true; }
+          else { toast&&toast('Voice send unavailable'); }
+        }else{
+          if(!activeDmId){ toast&&toast('Open a DM to send voice'); }
+          else { sendVoiceDm(_data,_dur,_wave); ok=true; }
+        }
+        if(!ok){ console.error('[voice] send failed - isG=',isG,'activeDmId=',activeDmId,'hasFn=',typeof sendVoiceGlobal); return; }
+      }catch(err){ console.error('[voice] send threw',err); toast&&toast('Voice send failed'); return; }
       hideVoicePreview();
       inp.value=''; inp.style.height='auto'; snd.disabled=true; cc.textContent='';
       snd.classList.add('sending'); setTimeout(()=>snd.classList.remove('sending'),320);
