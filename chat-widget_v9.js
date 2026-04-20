@@ -438,6 +438,37 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* Message row — messenger style */
 .bqr{display:flex;flex-direction:column;gap:2px;animation:bqUp .26s var(--bq-transition) both;padding:0 4px;margin-top:8px;}
 @keyframes bqUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* v18: directional entrance — theirs slides in from left, mine from right,
+   with a soft scale pop and subtle blur fade. Applied only to the newest
+   message so existing messages don't re-animate on scroll. */
+.bqr.theirs.bq-new{animation:bqBubbleInL .36s cubic-bezier(.22,1.2,.36,1) both;}
+.bqr.mine.bq-new{animation:bqBubbleInR .36s cubic-bezier(.22,1.2,.36,1) both;}
+@keyframes bqBubbleInL{
+  0%{opacity:0;transform:translateX(-14px) translateY(6px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);}
+  100%{opacity:1;transform:translateX(0) translateY(0) scale(1);filter:blur(0);}
+}
+@keyframes bqBubbleInR{
+  0%{opacity:0;transform:translateX(14px) translateY(6px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);}
+  100%{opacity:1;transform:translateX(0) translateY(0) scale(1);filter:blur(0);}
+}
+/* v18: reply chip entrance — subtle slide-down from above the bubble */
+.bqr.bq-new .bqrp{animation:bqReplySlide .42s cubic-bezier(.22,1,.36,1) both;transform-origin:top left;}
+.bqr.mine.bq-new .bqrp{transform-origin:top right;}
+@keyframes bqReplySlide{
+  0%{opacity:0;transform:translateY(-6px) scaleY(.4);max-height:0;}
+  60%{opacity:1;}
+  100%{opacity:1;transform:translateY(0) scaleY(1);max-height:80px;}
+}
+/* v18: soft bubble hover lift on desktop */
+@media (hover:hover){
+  .bqr .bqbbl{transition:transform .22s var(--bq-transition),box-shadow .22s ease,filter .22s ease;}
+  .bqr:hover .bqbbl{transform:translateY(-1px);}
+}
+/* v18: tap ripple on bubble press (mobile) */
+.bqbbl{-webkit-tap-highlight-color:transparent;}
+.bqbbl:active{transform:scale(.985);transition:transform .08s ease;}
 .bqr.mine{align-items:flex-end;}
 .bqr.theirs{align-items:flex-start;}
 .bqri{display:flex;align-items:flex-end;gap:8px;max-width:78%;}
@@ -1352,6 +1383,32 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @media(max-width:480px){
   #bqp{right:0;bottom:0;width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:none;transform-origin:bottom center;}
   #bqb{bottom:16px;right:16px;}
+}
+
+/* ── v18: tablet + small-browser responsive fix ──
+   Previously the panel stayed at 400×600 floating bottom-right on viewports
+   between 481-767px, causing the "halved UI" bug on many phones/browsers
+   (landscape phones, split screens, embedded web-views). Now any viewport
+   narrower than 768px or shorter than 620px goes edge-to-edge. */
+@media (max-width: 767px), (max-height: 620px){
+  #bqp{
+    right:0 !important;bottom:0 !important;left:0 !important;top:0 !important;
+    width:100vw !important;height:100dvh !important;max-height:100dvh !important;
+    border-radius:0 !important;border:none !important;
+    transform-origin:center !important;
+    padding-bottom:env(safe-area-inset-bottom, 0) !important;
+    padding-top:env(safe-area-inset-top, 0) !important;
+  }
+  #bqb{bottom:calc(16px + env(safe-area-inset-bottom, 0));right:16px;}
+  #bqp.open{transform:scale(1) translateY(0) !important;}
+  /* ensure inner scroll areas don't overflow under browser chrome */
+  .bqmsgs{padding-bottom:12px !important;-webkit-overflow-scrolling:touch;}
+}
+
+/* v18: gentler entrance from any origin to avoid clipping half the panel */
+@media (max-width: 767px){
+  #bqp{transform:translateY(18px) scale(.985);opacity:0;}
+  #bqp.open{transform:translateY(0) scale(1);}
 }
 /* ────────────────────────────────────────────
    DM INFO PANEL (slides from right inside dmconv)
@@ -2853,12 +2910,29 @@ function showDmConvo(pUid, pName) {
   document.querySelectorAll('.bqdmr').forEach(r=>{
     r.classList.toggle('active-row', r.dataset.did===newDmId);
   });
-  // v14: aggressive auto-scroll — initial frame + after async messages load
-  const _scrollDmBottom=()=>{ const m=document.getElementById('bqdmmsgs'); if(m) m.scrollTop=m.scrollHeight; };
-  requestAnimationFrame(_scrollDmBottom);
-  setTimeout(_scrollDmBottom, 150);
-  setTimeout(_scrollDmBottom, 450);
-  setTimeout(_scrollDmBottom, 900);
+  // v18: robust enter-to-latest — disable smooth briefly so the jump is
+  // instant on open, then restore smooth scrolling for incoming messages.
+  const _scrollDmBottom=(instant)=>{
+    const m=document.getElementById('bqdmmsgs');
+    if(!m) return;
+    if(instant){
+      const prev=m.style.scrollBehavior;
+      m.style.scrollBehavior='auto';
+      m.scrollTop=m.scrollHeight;
+      // restore on next frame
+      requestAnimationFrame(()=>{ m.style.scrollBehavior=prev||''; });
+    } else {
+      m.scrollTop=m.scrollHeight;
+    }
+    dAtBot=true;
+  };
+  // Run once immediately, then cover async render + image/GIF load reflows
+  _scrollDmBottom(true);
+  requestAnimationFrame(()=>_scrollDmBottom(true));
+  setTimeout(()=>_scrollDmBottom(true),80);
+  setTimeout(()=>_scrollDmBottom(true),240);
+  setTimeout(()=>_scrollDmBottom(true),600);
+  setTimeout(()=>_scrollDmBottom(false),1200);
 }
 
 /* ─────────────────────────────────────────
@@ -4047,6 +4121,12 @@ function renderMsg(ctx,msg,key){
   row.dataset.date=msgDate.toDateString();
   row.dataset.ts=String(ts);
   row.dataset.msguid=msg.uid;
+  // v18: mark rows rendered after initial load as "new" so they get the
+  // directional slide-in animation; strip the class after it plays.
+  if(ts && (Date.now()-ts) < 15000){
+    row.classList.add('bq-new');
+    setTimeout(()=>{ try{ row.classList.remove('bq-new'); }catch(_){}},600);
+  }
 
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+msg.imageData+'" alt="" loading="lazy">' : '';
   var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
@@ -4355,12 +4435,27 @@ function scrollD(ctx, isMyMsg){
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl) return;
   const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-  // Scroll if: it's my own message, OR user is already near bottom (<150px)
-  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<150){
+  // v18: wider threshold (220px) so replies/short bursts reliably scroll
+  // into view. Use smooth scroll for incoming, instant for our own sends.
+  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<220){
     requestAnimationFrame(()=>{
-      msgsEl.scrollTop=msgsEl.scrollHeight;
+      try{
+        if(isMyMsg){
+          const prev=msgsEl.style.scrollBehavior;
+          msgsEl.style.scrollBehavior='auto';
+          msgsEl.scrollTop=msgsEl.scrollHeight;
+          requestAnimationFrame(()=>{ msgsEl.style.scrollBehavior=prev||''; });
+        } else {
+          msgsEl.scrollTo({top:msgsEl.scrollHeight, behavior:'smooth'});
+        }
+      }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
       if(isG) gAtBot=true; else dAtBot=true;
     });
+    // Second pass to catch image/GIF reflows after decode
+    setTimeout(()=>{
+      const d2=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+      if(d2<260) msgsEl.scrollTop=msgsEl.scrollHeight;
+    }, 260);
   }
 }
 
