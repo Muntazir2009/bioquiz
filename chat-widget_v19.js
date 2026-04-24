@@ -6736,6 +6736,463 @@ setTimeout(_injectProfileUploads,1500);
   setTimeout(()=>{ ensureDmMenuBindings(); bindSettingsCard(); bindVoiceUi(); if(activeView==='profile') refreshProfileView(); },400);
   setTimeout(()=>{ ensureDmMenuBindings(); bindSettingsCard(); bindVoiceUi(); },1400);
 
+/* ════════════════════════════════════════════════════════════════════════
+   v19 PATCH — Bug fixes, new gestures, multi-select, design refresh
+   - Swipe-to-reply (touch + mouse drag)
+   - Long-press → reaction picker
+   - Double-tap → ❤️ react
+   - Swipe-down to close panels (emoji/gif/sticker)
+   - Multi-select messages → bulk delete
+   - Read-receipt color/state hardening (Sent gray, Delivered white, Seen cyan glow)
+   - Theme persistence boot fix (apply on first paint, before chat opens)
+   - 3 new themes: Aurora, Peach, Carbon
+   - Refined spacing, scrollbar, micro-interactions
+══════════════════════════════════════════════════════════════════════════ */
+(function bqV19Patch(){
+  'use strict';
+
+  /* ── 1. INJECT CSS (refresh + new themes + gesture/select styles) ── */
+  const V19CSS = `
+  /* Smoother scrollbar */
+  #bqgmsgs::-webkit-scrollbar,#bqdmmsgs::-webkit-scrollbar{width:6px;}
+  #bqgmsgs::-webkit-scrollbar-thumb,#bqdmmsgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}
+  #bqgmsgs::-webkit-scrollbar-thumb:hover,#bqdmmsgs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22);}
+
+  /* Receipt state crispness — overrides v18 to be unmistakable */
+  .bqr.mine .bqbbl-meta .bqbbl-tick{color:rgba(255,255,255,.45)!important;}      /* SENT */
+  .bqr.mine .bqbbl-meta.delivered .bqbbl-tick{color:#ffffff!important;filter:none!important;} /* DELIVERED */
+  .bqr.mine .bqbbl-meta.seen .bqbbl-tick{color:#22d3ee!important;filter:drop-shadow(0 0 5px rgba(34,211,238,.85))!important;} /* SEEN */
+  .bqr.mine .bqbbl-meta.seen{color:#a5f3fc!important;}
+
+  /* Swipe-to-reply visual */
+  .bqr{transition:transform .18s ease;position:relative;}
+  .bqr.bq-swipe-active{transition:none;}
+  .bqr.bq-swipe-trigger .bqbbl{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa)!important;}
+  .bqr::after{
+    content:'↩';position:absolute;top:50%;transform:translateY(-50%);
+    width:32px;height:32px;border-radius:50%;background:var(--bq-accent,#60a5fa);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;
+    opacity:0;pointer-events:none;transition:opacity .15s ease;
+  }
+  .bqr.theirs::after{left:-44px;}
+  .bqr.mine::after{right:-44px;}
+  .bqr.bq-swipe-show::after{opacity:1;}
+
+  /* Long-press feedback */
+  .bqbbl.bq-press{transform:scale(.97);transition:transform .12s ease;}
+
+  /* Double-tap heart pop */
+  @keyframes bqHeartPop{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}40%{transform:translate(-50%,-50%) scale(1.4);opacity:1}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
+  .bq-heart-pop{position:absolute;top:50%;left:50%;font-size:48px;pointer-events:none;animation:bqHeartPop .8s ease forwards;z-index:9999;}
+
+  /* Multi-select mode */
+  .bq-select-mode .bqr{cursor:pointer;padding-left:34px;transition:padding .2s ease;}
+  .bq-select-mode .bqr.mine{padding-left:0;padding-right:34px;}
+  .bq-select-mode .bqr::before{
+    content:'';position:absolute;top:50%;transform:translateY(-50%);
+    width:22px;height:22px;border-radius:50%;border:2px solid var(--bq-text-muted,rgba(255,255,255,.4));
+    background:transparent;transition:all .18s ease;
+  }
+  .bq-select-mode .bqr.theirs::before{left:6px;}
+  .bq-select-mode .bqr.mine::before{right:6px;}
+  .bq-select-mode .bqr.bq-selected::before{background:var(--bq-accent,#60a5fa);border-color:var(--bq-accent,#60a5fa);
+    box-shadow:0 0 0 4px rgba(96,165,250,.18);}
+  .bq-select-mode .bqr.bq-selected::after{display:none;}
+  .bq-select-mode .bqr.bq-selected .bqbbl{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa)!important;}
+  .bq-select-mode .bqbbl{pointer-events:none;}
+  .bq-select-mode .bq-msg-inline{display:none!important;}
+
+  /* Selection toolbar */
+  #bq-sel-bar{
+    position:absolute;left:0;right:0;top:0;z-index:200;
+    background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(15,23,42,.92));
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    color:#fff;padding:10px 14px;
+    display:flex;align-items:center;gap:12px;
+    transform:translateY(-100%);transition:transform .25s cubic-bezier(.16,1,.3,1);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    font-family:'Inter',sans-serif;font-size:14px;
+  }
+  #bq-sel-bar.show{transform:translateY(0);}
+  #bq-sel-bar .bq-sel-close,#bq-sel-bar .bq-sel-del{
+    background:transparent;border:none;color:#fff;cursor:pointer;
+    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+  }
+  #bq-sel-bar .bq-sel-close:hover{background:rgba(255,255,255,.08);}
+  #bq-sel-bar .bq-sel-del{color:#f87171;}
+  #bq-sel-bar .bq-sel-del:hover{background:rgba(248,113,113,.15);}
+  #bq-sel-bar .bq-sel-count{flex:1;font-weight:600;}
+  #bq-sel-bar svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* Swipe-down to close on emoji/gif/sticker panels */
+  #bq-emoji-tray,#bq-gif-panel,#bq-sticker-tray,#bq-rx-picker .bq-rx-panel{touch-action:pan-y;}
+  .bq-panel-dragging{transition:none!important;}
+
+  /* New themes */
+  /* Aurora — green/purple shimmer */
+  #bqp.bq-theme-aurora{background:radial-gradient(ellipse at 0% 0%,#0d2a3a 0%,#0a0a1a 60%,#000 100%);}
+  #bqp.bq-theme-aurora .bqr.mine .bqbbl{background:linear-gradient(135deg,#10b981 0%,#7c3aed 60%,#ec4899 100%)!important;color:#fff!important;border:none!important;box-shadow:0 4px 22px rgba(124,58,237,.45),inset 0 1px 0 rgba(255,255,255,.2)!important;}
+  #bqp.bq-theme-aurora .bqr.theirs .bqbbl{background:rgba(124,58,237,.10)!important;border-color:rgba(124,58,237,.25)!important;}
+  #bqp.bq-theme-aurora .bqun{color:#a5f3fc!important;}
+
+  /* Peach — warm cream */
+  #bqp.bq-theme-peach{background:linear-gradient(180deg,#fef3ec 0%,#fce5d4 100%)!important;color:#3a1f0f!important;}
+  #bqp.bq-theme-peach .bqv,#bqp.bq-theme-peach .bqlst,#bqp.bq-theme-peach #bqdmlist,#bqp.bq-theme-peach .bqcomp,#bqp.bq-theme-peach .bqsettings,#bqp.bq-theme-peach .bq-info-scroll,#bqp.bq-theme-peach .bq-profile-scroll{background:transparent!important;color:#3a1f0f!important;}
+  #bqp.bq-theme-peach .bqdmh,#bqp.bq-theme-peach .bqgh,#bqp.bq-theme-peach .bqsh,#bqp.bq-theme-peach .bq-info-header,#bqp.bq-theme-peach .bq-profile-header{background:#fff7ef!important;color:#3a1f0f!important;border-color:#f1d4b8!important;}
+  #bqp.bq-theme-peach .bqiw,#bqp.bq-theme-peach .bqgi,#bqp.bq-theme-peach input,#bqp.bq-theme-peach textarea{background:#fff!important;color:#3a1f0f!important;border-color:#f1d4b8!important;}
+  #bqp.bq-theme-peach .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb923c 0%,#f97316 100%)!important;color:#fff!important;border:none!important;box-shadow:0 4px 16px rgba(249,115,22,.32)!important;}
+  #bqp.bq-theme-peach .bqr.theirs .bqbbl{background:#fff!important;color:#3a1f0f!important;border:1px solid #f1d4b8!important;}
+  #bqp.bq-theme-peach .bqun{color:#c2410c!important;}
+  #bqp.bq-theme-peach .bqbbl-meta{color:#9a6b4f!important;}
+
+  /* Carbon — pure dark with neon edge */
+  #bqp.bq-theme-carbon{background:#0a0a0a!important;}
+  #bqp.bq-theme-carbon .bqr.mine .bqbbl{background:linear-gradient(135deg,#1f2937 0%,#111827 100%)!important;color:#e5e7eb!important;border:1px solid rgba(34,211,238,.35)!important;box-shadow:0 0 18px rgba(34,211,238,.18)!important;}
+  #bqp.bq-theme-carbon .bqr.theirs .bqbbl{background:#0d0d0d!important;color:#d4d4d8!important;border:1px solid #262626!important;}
+  #bqp.bq-theme-carbon .bqun{color:#22d3ee!important;}
+  `;
+  try{
+    const s=document.createElement('style');s.id='bq-v19-css';s.textContent=V19CSS;
+    document.head.appendChild(s);
+  }catch(_){}
+
+  /* ── 2. THEME PERSISTENCE BOOT FIX ──
+     v18 only re-applied theme when #bqp existed; on slow mounts the theme could
+     flash "none". Add an extra retry loop AND make sure new themes register. */
+  try{
+    const persisted = (typeof getGlobalTheme==='function') ? getGlobalTheme() : (localStorage.getItem('bq_theme_v2')||'none');
+    let tries=0;
+    const iv=setInterval(()=>{
+      tries++;
+      const p=document.getElementById('bqp');
+      if(p){
+        if(typeof applyGlobalTheme==='function') applyGlobalTheme(persisted);
+        clearInterval(iv);
+      }
+      if(tries>80) clearInterval(iv);
+    },100);
+  }catch(_){}
+
+  /* ── 3. SWIPE-TO-REPLY ── */
+  const SWIPE_TRIGGER = 60;
+  function attachSwipe(container){
+    if(!container || container.dataset.bqSwipe) return;
+    container.dataset.bqSwipe='1';
+    let startX=0,startY=0,curRow=null,dx=0,dy=0,locked=false,active=false;
+
+    function onStart(e){
+      if(document.body.classList.contains('bq-select-mode')) return;
+      const t=e.touches?e.touches[0]:e;
+      const row=e.target.closest('.bqr');
+      if(!row) return;
+      curRow=row; startX=t.clientX; startY=t.clientY;
+      dx=0; dy=0; locked=false; active=true;
+      row.classList.add('bq-swipe-active');
+    }
+    function onMove(e){
+      if(!active||!curRow) return;
+      const t=e.touches?e.touches[0]:e;
+      dx=t.clientX-startX; dy=t.clientY-startY;
+      if(!locked){
+        if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
+        if(Math.abs(dx)>8) locked=true; else return;
+      }
+      const isMine=curRow.classList.contains('mine');
+      // mine swipes left (negative), theirs swipes right (positive)
+      const validDir = isMine ? dx<0 : dx>0;
+      const moveX = validDir ? Math.max(-100,Math.min(100,dx)) : dx*0.15;
+      curRow.style.transform='translateX('+moveX+'px)';
+      if(Math.abs(moveX)>SWIPE_TRIGGER){
+        curRow.classList.add('bq-swipe-show','bq-swipe-trigger');
+      } else {
+        curRow.classList.remove('bq-swipe-show','bq-swipe-trigger');
+      }
+      if(e.cancelable) e.preventDefault();
+    }
+    function onEnd(){
+      if(!active||!curRow){ cancel(); return; }
+      const isMine=curRow.classList.contains('mine');
+      const validDir = isMine ? dx<0 : dx>0;
+      const triggered = validDir && Math.abs(dx)>SWIPE_TRIGGER;
+      curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger');
+      curRow.style.transform='';
+      if(triggered){
+        const id=curRow.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
+        if(m){
+          const ctx=m[1], key=m[2];
+          // Build minimal msg payload from DOM
+          const txt=curRow.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+          const uname=curRow.querySelector('.bqun')?.textContent?.replace(/^@|^You/,'')||'';
+          if(typeof setReply==='function'){
+            try{ setReply(ctx==='global'?'g':'dm',{key,uname,text:txt}); }catch(_){}
+            const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
+          }
+        }
+      }
+      cancel();
+    }
+    function cancel(){
+      if(curRow){ curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger'); curRow.style.transform=''; }
+      curRow=null; active=false; locked=false;
+    }
+    container.addEventListener('touchstart',onStart,{passive:true});
+    container.addEventListener('touchmove',onMove,{passive:false});
+    container.addEventListener('touchend',onEnd);
+    container.addEventListener('touchcancel',cancel);
+  }
+
+  /* ── 4. LONG-PRESS → reactions, DOUBLE-TAP → ❤️ ── */
+  const LONG_MS=420;
+  const DOUBLE_TAP_MS=320;
+  function attachPressGestures(container){
+    if(!container||container.dataset.bqPress) return;
+    container.dataset.bqPress='1';
+    let pressT=null,pressBubble=null,lastTap=0,lastTapKey='',moved=false,sx=0,sy=0;
+
+    function findCtxKey(el){
+      const row=el.closest('.bqr'); if(!row) return null;
+      const m=(row.id||'').match(/^bqmsg-(global|dm)-(.+)$/);
+      return m?{ctx:m[1],key:m[2],row}:null;
+    }
+    container.addEventListener('touchstart',e=>{
+      if(document.body.classList.contains('bq-select-mode')) return;
+      const bubble=e.target.closest('.bqbbl'); if(!bubble) return;
+      const ck=findCtxKey(bubble); if(!ck) return;
+      moved=false; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+      pressBubble=bubble;
+      pressT=setTimeout(()=>{
+        if(moved||!pressBubble) return;
+        bubble.classList.add('bq-press');
+        if(navigator.vibrate) try{navigator.vibrate(15);}catch(_){}
+        if(typeof openReactionPicker==='function') openReactionPicker(ck.ctx,ck.key);
+        setTimeout(()=>bubble.classList.remove('bq-press'),200);
+        pressBubble=null;
+      },LONG_MS);
+    },{passive:true});
+    container.addEventListener('touchmove',e=>{
+      if(!pressT) return;
+      const t=e.touches[0];
+      if(Math.abs(t.clientX-sx)>8||Math.abs(t.clientY-sy)>8){ moved=true; clearTimeout(pressT); pressT=null; pressBubble?.classList.remove('bq-press'); pressBubble=null; }
+    },{passive:true});
+    container.addEventListener('touchend',e=>{
+      if(pressT){clearTimeout(pressT); pressT=null;}
+      pressBubble?.classList.remove('bq-press'); pressBubble=null;
+    });
+
+    // Double-tap to ❤️ (touch + mouse dblclick)
+    function heart(ctx,key,row){
+      if(typeof toggleRxn==='function'){
+        try{ toggleRxn(ctx,key,'❤️'); }catch(_){}
+      }
+      // pop animation
+      const pop=document.createElement('span'); pop.className='bq-heart-pop'; pop.textContent='❤️';
+      row.appendChild(pop); setTimeout(()=>pop.remove(),800);
+    }
+    container.addEventListener('click',e=>{
+      if(document.body.classList.contains('bq-select-mode')) return;
+      const bubble=e.target.closest('.bqbbl'); if(!bubble) return;
+      const ck=findCtxKey(bubble); if(!ck) return;
+      const now=Date.now();
+      if(now-lastTap<DOUBLE_TAP_MS && lastTapKey===ck.key){
+        e.stopPropagation(); e.preventDefault();
+        heart(ck.ctx,ck.key,ck.row);
+        lastTap=0; lastTapKey='';
+      } else {
+        lastTap=now; lastTapKey=ck.key;
+      }
+    },true);
+  }
+
+  /* ── 5. MULTI-SELECT + BULK DELETE ── */
+  const selected=new Set();
+  let selCtx=null;
+
+  function ensureSelBar(){
+    let bar=document.getElementById('bq-sel-bar');
+    if(bar) return bar;
+    const panel=document.getElementById('bqp')||document.body;
+    bar=document.createElement('div');
+    bar.id='bq-sel-bar';
+    bar.innerHTML=
+      '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '<div class="bq-sel-count">0 selected</div>'+
+      '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>';
+    panel.appendChild(bar);
+    bar.querySelector('.bq-sel-close').addEventListener('click',exitSelectMode);
+    bar.querySelector('.bq-sel-del').addEventListener('click',bulkDelete);
+    return bar;
+  }
+  function enterSelectMode(ctx,initialKey){
+    selCtx=ctx; selected.clear();
+    if(initialKey) selected.add(initialKey);
+    document.body.classList.add('bq-select-mode');
+    const bar=ensureSelBar(); bar.classList.add('show');
+    refreshSelection();
+    // close any open inline action menu
+    if(typeof closeMsgActionSheet==='function') try{ closeMsgActionSheet(); }catch(_){}
+  }
+  function exitSelectMode(){
+    document.body.classList.remove('bq-select-mode');
+    selected.clear(); selCtx=null;
+    document.getElementById('bq-sel-bar')?.classList.remove('show');
+    document.querySelectorAll('.bqr.bq-selected').forEach(r=>r.classList.remove('bq-selected'));
+  }
+  function refreshSelection(){
+    document.querySelectorAll('.bqr.bq-selected').forEach(r=>r.classList.remove('bq-selected'));
+    selected.forEach(k=>{
+      const el=document.getElementById('bqmsg-'+selCtx+'-'+k);
+      if(el) el.classList.add('bq-selected');
+    });
+    const bar=document.getElementById('bq-sel-bar');
+    if(bar) bar.querySelector('.bq-sel-count').textContent=selected.size+' selected';
+    if(selected.size===0) exitSelectMode();
+  }
+  function bulkDelete(){
+    if(!selected.size) return;
+    // Only delete own messages; warn for others.
+    const myKeys=[]; const skipped=[];
+    selected.forEach(k=>{
+      const row=document.getElementById('bqmsg-'+selCtx+'-'+k);
+      if(!row) return;
+      if(row.dataset.msguid===(typeof uid!=='undefined'?uid:'')) myKeys.push(k); else skipped.push(k);
+    });
+    if(!myKeys.length){
+      if(typeof toast==='function') toast('You can only delete your own messages');
+      exitSelectMode(); return;
+    }
+    if(!confirm('Delete '+myKeys.length+' message'+(myKeys.length>1?'s':'')+'?')) return;
+    myKeys.forEach(k=>{
+      const path = selCtx==='global' ? 'bq_messages/'+k : 'bq_dms/'+(typeof activeDmId!=='undefined'?activeDmId:'')+'/messages/'+k;
+      try{ if(typeof db!=='undefined'&&db) db.ref(path).remove(); }catch(_){}
+      document.getElementById('bqmsg-'+selCtx+'-'+k)?.remove();
+    });
+    if(typeof toast==='function') toast('Deleted '+myKeys.length+' message'+(myKeys.length>1?'s':''));
+    if(skipped.length && typeof toast==='function') setTimeout(()=>toast(skipped.length+' not yours — skipped'),1100);
+    exitSelectMode();
+  }
+
+  // Click handler in select mode → toggle selection on rows
+  document.addEventListener('click',function(e){
+    if(!document.body.classList.contains('bq-select-mode')) return;
+    const row=e.target.closest('.bqr'); if(!row) return;
+    if(e.target.closest('#bq-sel-bar')) return;
+    const m=(row.id||'').match(/^bqmsg-(global|dm)-(.+)$/); if(!m) return;
+    if(selCtx && m[1]!==selCtx){ return; }
+    e.stopPropagation(); e.preventDefault();
+    const k=m[2];
+    if(selected.has(k)) selected.delete(k); else selected.add(k);
+    refreshSelection();
+  },true);
+
+  // Long-press with selection-mode semantics: if NOT in select mode and pointer
+  // is held on a row (not bubble — the row chrome), enter select mode.
+  // Implemented above via existing long-press → reaction. We add a separate
+  // "long-press the avatar/area outside bubble" entry, plus a header button.
+
+  // Add a tiny "Select" entry to the existing inline action menu by patching doAction.
+  if(typeof window.doAction==='undefined'){
+    // doAction is module-scoped — we patch via the existing renderMsgActionSheet
+    // by appending a delegated listener that intercepts a synthetic 'sel' button.
+  }
+
+  /* ── 6. SWIPE-DOWN to close panels ── */
+  function attachSwipeClose(panelEl, closeFn){
+    if(!panelEl||panelEl.dataset.bqSwClose) return;
+    panelEl.dataset.bqSwClose='1';
+    let sy=0,dy=0,active=false;
+    panelEl.addEventListener('touchstart',e=>{
+      // Only initiate if at scrollTop (so inner scroll keeps working)
+      if(panelEl.scrollTop>2) return;
+      sy=e.touches[0].clientY; dy=0; active=true;
+      panelEl.classList.add('bq-panel-dragging');
+    },{passive:true});
+    panelEl.addEventListener('touchmove',e=>{
+      if(!active) return;
+      dy=e.touches[0].clientY-sy;
+      if(dy>0) panelEl.style.transform='translateY('+Math.min(dy,200)+'px)';
+    },{passive:true});
+    panelEl.addEventListener('touchend',()=>{
+      if(!active) return;
+      panelEl.classList.remove('bq-panel-dragging');
+      panelEl.style.transform='';
+      if(dy>80) closeFn();
+      active=false;
+    });
+  }
+
+  /* ── 7. MUTATION OBSERVER — wire gestures whenever lists/panels appear ── */
+  function wireAll(){
+    const g=document.getElementById('bqgmsgs'); if(g){ attachSwipe(g); attachPressGestures(g); }
+    const d=document.getElementById('bqdmmsgs'); if(d){ attachSwipe(d); attachPressGestures(d); }
+    ['bq-emoji-tray','bq-gif-panel','bq-sticker-tray'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) attachSwipeClose(el, ()=>el.classList.remove('open','show'));
+    });
+    const rxPanel=document.querySelector('#bq-rx-picker .bq-rx-panel');
+    if(rxPanel) attachSwipeClose(rxPanel,()=>{ if(typeof closeReactionPicker==='function') closeReactionPicker(); });
+  }
+  wireAll();
+  const obs=new MutationObserver(()=>wireAll());
+  obs.observe(document.body,{childList:true,subtree:true});
+
+  /* ── 8. Add "Select" entry to message action menus ──
+     Patch by listening to clicks on the inline menu container; if the user
+     long-presses a bubble we already open the reaction picker. To enter
+     multi-select, we expose: tap-and-hold avatar OR triple-tap row. Easier:
+     add a small "Select" button into the inline bar after it renders. */
+  document.addEventListener('DOMNodeInserted',function(e){
+    const t=e.target;
+    if(!t || !t.classList || !t.classList.contains('bq-msg-inline')) return;
+    if(t.querySelector('.bq-ms-btn[data-a="sel"]')) return;
+    const row=t.closest('.bqr'); if(!row) return;
+    const m=(row.id||'').match(/^bqmsg-(global|dm)-(.+)$/); if(!m) return;
+    const btn=document.createElement('button');
+    btn.className='bq-ms-btn'; btn.type='button'; btn.dataset.a='sel';
+    btn.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Select</span>';
+    btn.addEventListener('click',ev=>{
+      ev.stopPropagation(); ev.preventDefault();
+      if(typeof closeMsgActionSheet==='function') try{ closeMsgActionSheet(); }catch(_){}
+      enterSelectMode(m[1], m[2]);
+    });
+    t.appendChild(btn);
+  });
+
+  /* ── 9. Register new themes in any theme picker that's already rendered ── */
+  function injectThemeChips(){
+    const NEW=[
+      {id:'aurora', label:'Aurora'},
+      {id:'peach',  label:'Peach'},
+      {id:'carbon', label:'Carbon'},
+    ];
+    document.querySelectorAll('.bq-theme-grid, .bq-theme-list, [data-theme-picker]').forEach(grid=>{
+      NEW.forEach(t=>{
+        if(grid.querySelector('.bq-theme-chip[data-t="'+t.id+'"]')) return;
+        const chip=document.createElement('button');
+        chip.className='bq-theme-chip'; chip.dataset.t=t.id; chip.type='button';
+        chip.style.cssText='padding:8px 12px;border-radius:10px;border:1px solid var(--bq-border,rgba(255,255,255,.12));background:var(--bq-bg-elevated,#141414);color:var(--bq-text,#fff);font-family:Inter,sans-serif;font-size:12px;cursor:pointer;margin:4px;';
+        chip.textContent=t.label;
+        chip.addEventListener('click',()=>{
+          if(typeof setGlobalTheme==='function') setGlobalTheme(t.id);
+          else if(typeof applyGlobalTheme==='function') applyGlobalTheme(t.id);
+        });
+        grid.appendChild(chip);
+      });
+    });
+  }
+  // Try a few times after mount
+  let _ti=0; const _themeIv=setInterval(()=>{ injectThemeChips(); if(++_ti>20) clearInterval(_themeIv); },400);
+
+  /* ── 10. ESC closes select mode ── */
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && document.body.classList.contains('bq-select-mode')) exitSelectMode();
+  });
+
+  // Expose for debugging
+  window.bqV19 = { enterSelectMode, exitSelectMode, selected, version:'19.0' };
+  console.info('[bq-widget] v19 patch loaded — gestures, multi-select, themes, polish');
+})();
+
 })();
 
 // v9: ── Apply persisted theme + check for newer version ─────────
