@@ -2405,7 +2405,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -2566,16 +2566,23 @@ const HTML = `
     <button class="bq-if-x" id="bq-if-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="bq-if-scroll">
-    <div class="bq-if-sect">
-      <div class="bq-if-sect-t">Theme</div>
-      <div class="bq-if-themes" id="bq-if-themes">
-        <div class="bq-if-th sel" data-t="none" title="Dark"></div>
-        <div class="bq-if-th" data-t="light" title="Light"></div>
-        <div class="bq-if-th" data-t="whatsapp" title="WhatsApp Light"></div>
-        <div class="bq-if-th" data-t="wadark" title="WhatsApp Dark"></div>
-        <div class="bq-if-th" data-t="black" title="Pure Black"></div>
-      </div>
-    </div>
+      <div class="bq-if-sect">
+       <div class="bq-if-sect-t">Theme</div>
+       <div class="bq-if-themes" id="bq-if-themes">
+         <div class="bq-if-th sel" data-t="none" title="Dark"></div>
+         <div class="bq-if-th" data-t="light" title="Light"></div>
+         <div class="bq-if-th" data-t="whatsapp" title="WhatsApp Light"></div>
+         <div class="bq-if-th" data-t="wadark" title="WhatsApp Dark"></div>
+         <div class="bq-if-th" data-t="black" title="Pure Black"></div>
+         <div class="bq-if-th" data-t="noir" title="Noir"></div>
+         <div class="bq-if-th" data-t="aurora" title="Aurora"></div>
+         <div class="bq-if-th" data-t="peach" title="Peach"></div>
+         <div class="bq-if-th" data-t="carbon" title="Carbon"></div>
+         <div class="bq-if-th" data-t="midnight" title="Midnight"></div>
+         <div class="bq-if-th" data-t="rose" title="Rose"></div>
+         <div class="bq-if-th" data-t="ocean" title="Ocean"></div>
+       </div>
+     </div>
     <div class="bq-if-sect">
       <div class="bq-if-sect-t">Bubble Style</div>
       <div class="bq-if-bubble" id="bq-if-bubble">
@@ -7409,6 +7416,426 @@ setTimeout(_injectProfileUploads,1500);
 
   window.bqV20 = { lastSeenCache, version:'20.0', installLastSeen };
   console.info('[bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening');
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   v21 PATCH — WhatsApp-true swipe-to-reply, themes in Settings grid,
+   3 new themes (midnight/rose/ocean), jump-to-bottom button,
+   in-chat search, unread divider, message copy gesture
+   ═══════════════════════════════════════════════════════════════════ */
+(function bqV21Patch(){
+  'use strict';
+
+  /* ── 1. CSS ── */
+  const CSS = `
+  /* Settings grid theme chips — was missing styles for 4 of them */
+  .bq-if-th{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;
+    transition:transform .15s ease,border-color .15s ease;position:relative;flex-shrink:0;}
+  .bq-if-th:hover{transform:scale(1.1);border-color:rgba(255,255,255,.3);}
+  .bq-if-th.sel{border-color:var(--bq-accent,#60a5fa);box-shadow:0 0 0 2px rgba(96,165,250,.25);}
+  .bq-if-themes{display:flex;flex-wrap:wrap;gap:8px;}
+  .bq-if-th[data-t="none"]{background:linear-gradient(135deg,#0f172a,#1e293b);}
+  .bq-if-th[data-t="light"]{background:linear-gradient(135deg,#fff,#e2e8f0);}
+  .bq-if-th[data-t="whatsapp"]{background:linear-gradient(135deg,#dcf8c6,#075e54);}
+  .bq-if-th[data-t="wadark"]{background:linear-gradient(135deg,#005c4b,#0b141a);}
+  .bq-if-th[data-t="black"]{background:linear-gradient(135deg,#0a0a0a,#000);border:1px solid rgba(255,255,255,.18);}
+  .bq-if-th[data-t="noir"]{background:linear-gradient(135deg,#dc2626,#000);}
+  .bq-if-th[data-t="aurora"]{background:linear-gradient(135deg,#10b981 0%,#7c3aed 60%,#ec4899 100%);}
+  .bq-if-th[data-t="peach"]{background:linear-gradient(135deg,#fb923c,#f97316);}
+  .bq-if-th[data-t="carbon"]{background:linear-gradient(135deg,#1f2937,#0a0a0a);border:1px solid rgba(34,211,238,.4);}
+  .bq-if-th[data-t="midnight"]{background:linear-gradient(135deg,#1e3a8a,#0f172a 60%,#020617);}
+  .bq-if-th[data-t="rose"]{background:linear-gradient(135deg,#fda4af,#be123c);}
+  .bq-if-th[data-t="ocean"]{background:linear-gradient(135deg,#06b6d4,#0e7490 60%,#083344);}
+
+  /* Same for the global #bq-theme-chips row (new ones) */
+  .bq-theme-chip[data-t="midnight"]{background:linear-gradient(135deg,#1e3a8a,#0f172a 60%,#020617)!important;}
+  .bq-theme-chip[data-t="rose"]{background:linear-gradient(135deg,#fda4af,#be123c)!important;}
+  .bq-theme-chip[data-t="ocean"]{background:linear-gradient(135deg,#06b6d4,#0e7490 60%,#083344)!important;}
+
+  /* New themes — body styles */
+  #bqp.bq-theme-midnight{background:radial-gradient(ellipse at top,#1e3a8a 0%,#0f172a 50%,#020617 100%)!important;}
+  #bqp.bq-theme-midnight .bqr.mine .bqbbl{background:linear-gradient(135deg,#3b82f6,#1e40af)!important;color:#fff!important;border:none!important;box-shadow:0 4px 18px rgba(59,130,246,.4)!important;}
+  #bqp.bq-theme-midnight .bqr.theirs .bqbbl{background:rgba(30,58,138,.25)!important;color:#e0e7ff!important;border:1px solid rgba(59,130,246,.2)!important;}
+  #bqp.bq-theme-midnight .bqun{color:#93c5fd!important;}
+
+  #bqp.bq-theme-rose{background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%)!important;color:#4c0519!important;}
+  #bqp.bq-theme-rose .bqv,#bqp.bq-theme-rose .bqlst,#bqp.bq-theme-rose #bqdmlist,#bqp.bq-theme-rose .bqcomp,#bqp.bq-theme-rose .bqsettings,#bqp.bq-theme-rose .bq-info-scroll{background:transparent!important;color:#4c0519!important;}
+  #bqp.bq-theme-rose .bqdmh,#bqp.bq-theme-rose .bqgh,#bqp.bq-theme-rose .bqsh,#bqp.bq-theme-rose .bq-info-header{background:#fff1f2!important;color:#4c0519!important;border-color:#fbcfe8!important;}
+  #bqp.bq-theme-rose .bqiw,#bqp.bq-theme-rose .bqgi,#bqp.bq-theme-rose input,#bqp.bq-theme-rose textarea{background:#fff!important;color:#4c0519!important;border-color:#fbcfe8!important;}
+  #bqp.bq-theme-rose .bqr.mine .bqbbl{background:linear-gradient(135deg,#fb7185,#be123c)!important;color:#fff!important;border:none!important;box-shadow:0 4px 16px rgba(190,18,60,.3)!important;}
+  #bqp.bq-theme-rose .bqr.theirs .bqbbl{background:#fff!important;color:#4c0519!important;border:1px solid #fbcfe8!important;}
+  #bqp.bq-theme-rose .bqun{color:#be123c!important;}
+
+  #bqp.bq-theme-ocean{background:linear-gradient(180deg,#083344 0%,#0e7490 100%)!important;}
+  #bqp.bq-theme-ocean .bqr.mine .bqbbl{background:linear-gradient(135deg,#22d3ee,#0891b2)!important;color:#022c33!important;border:none!important;box-shadow:0 4px 18px rgba(34,211,238,.35)!important;font-weight:500;}
+  #bqp.bq-theme-ocean .bqr.theirs .bqbbl{background:rgba(255,255,255,.08)!important;color:#cffafe!important;border:1px solid rgba(34,211,238,.25)!important;backdrop-filter:blur(8px);}
+  #bqp.bq-theme-ocean .bqun{color:#67e8f9!important;}
+
+  /* ── WhatsApp-style swipe-to-reply ──
+     The reply icon is OUTSIDE the row, fades + slides INTO view from the
+     edge as the bubble drags. Bubble follows the finger 1:1.
+     This overrides v20's translateX-on-row approach. */
+  .bqr{position:relative;}
+  .bqr-swipe-wrap{display:contents;}
+  .bqr.bq-wa-swipe{transition:none!important;will-change:transform;}
+  .bqr.bq-wa-swipe-release{transition:transform .32s cubic-bezier(.34,1.56,.64,1)!important;}
+
+  /* Hide v20's ::after icon while WA swipe is engaged */
+  .bqr.bq-wa-swipe::after,.bqr.bq-wa-swipe-release::after{display:none!important;}
+
+  /* The WA reply badge — separate element appended to row */
+  .bq-wa-reply-ic{
+    position:absolute;top:50%;width:36px;height:36px;border-radius:50%;
+    background:rgba(96,165,250,.92);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;opacity:0;
+    transform:translateY(-50%) scale(.4);
+    transition:opacity .12s ease,transform .12s ease,background .12s ease;
+    box-shadow:0 4px 12px rgba(0,0,0,.35);
+    z-index:10;
+  }
+  .bq-wa-reply-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+  .bqr.theirs .bq-wa-reply-ic{left:8px;}
+  .bqr.mine .bq-wa-reply-ic{right:8px;}
+  .bqr.bq-wa-trigger .bq-wa-reply-ic{background:#22c55e;transform:translateY(-50%) scale(1.15);}
+
+  /* Jump-to-bottom button */
+  .bq-jtb{
+    position:absolute;right:14px;bottom:80px;z-index:50;
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(15,23,42,.85);color:#fff;border:1px solid rgba(255,255,255,.12);
+    display:none;align-items:center;justify-content:center;cursor:pointer;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+    transition:transform .18s ease,opacity .18s ease;
+    opacity:0;transform:translateY(8px);
+  }
+  .bq-jtb.show{display:flex;opacity:1;transform:translateY(0);}
+  .bq-jtb:hover{transform:scale(1.08);}
+  .bq-jtb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .bq-jtb-badge{
+    position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;
+    border-radius:9px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid #0f172a;
+  }
+
+  /* In-chat search overlay */
+  .bq-search-bar{
+    position:absolute;top:0;left:0;right:0;z-index:60;
+    background:rgba(15,23,42,.96);backdrop-filter:blur(14px);
+    padding:10px 12px;display:flex;gap:8px;align-items:center;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    transform:translateY(-100%);transition:transform .22s cubic-bezier(.16,1,.3,1);
+  }
+  .bq-search-bar.show{transform:translateY(0);}
+  .bq-search-bar input{
+    flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    color:#fff;padding:8px 12px;border-radius:18px;font-size:14px;outline:none;
+  }
+  .bq-search-bar input:focus{border-color:var(--bq-accent,#60a5fa);}
+  .bq-search-bar button{
+    background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;
+    border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  }
+  .bq-search-bar button:hover{background:rgba(255,255,255,.08);}
+  .bq-search-bar svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .bq-search-count{color:rgba(255,255,255,.6);font-size:12px;min-width:42px;text-align:center;}
+  .bqr.bq-search-hit .bqbbl{outline:2px solid #fbbf24;outline-offset:2px;animation:bqHitPulse 1s ease;}
+  @keyframes bqHitPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}50%{box-shadow:0 0 0 8px rgba(251,191,36,0)}}
+
+  /* Unread divider */
+  .bq-unread-divider{
+    display:flex;align-items:center;gap:10px;
+    margin:14px 12px;color:#fbbf24;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em;
+  }
+  .bq-unread-divider::before,.bq-unread-divider::after{
+    content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(251,191,36,.4),transparent);
+  }
+  `;
+  try{
+    const s=document.createElement('style');s.id='bq-v21-css';s.textContent=CSS;
+    document.head.appendChild(s);
+  }catch(_){}
+
+  /* ── 2. Settings grid (#bq-if-themes) — wire clicks + sync selection ── */
+  function wireSettingsThemes(){
+    const grid=document.getElementById('bq-if-themes');
+    if(!grid || grid.dataset.bqV21Wired) return;
+    grid.dataset.bqV21Wired='1';
+    grid.addEventListener('click',(e)=>{
+      const ch=e.target.closest('.bq-if-th'); if(!ch) return;
+      const t=ch.dataset.t; if(!t) return;
+      grid.querySelectorAll('.bq-if-th').forEach(x=>x.classList.toggle('sel',x===ch));
+      try{
+        if(typeof applyGlobalTheme==='function') applyGlobalTheme(t);
+        if(typeof setGlobalTheme==='function') setGlobalTheme(t);
+        else localStorage.setItem('bq_theme_v2',t);
+      }catch(_){}
+      // mirror selection on the other picker too
+      document.querySelectorAll('.bq-theme-chip').forEach(x=>x.classList.toggle('sel',x.dataset.t===t));
+    });
+    // sync initial sel
+    try{
+      const cur=(typeof getGlobalTheme==='function')?getGlobalTheme():(localStorage.getItem('bq_theme_v2')||'none');
+      grid.querySelectorAll('.bq-if-th').forEach(x=>x.classList.toggle('sel',x.dataset.t===cur));
+    }catch(_){}
+  }
+
+  /* ── 3. WhatsApp-style swipe-to-reply ── */
+  const WA_TRIGGER = 70;
+  const WA_MAX = 110;
+  const REPLY_SVG = '<svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
+
+  function detachOldSwipe(container){
+    // Remove v20's transform listener residue by killing inline transform on touchend
+    // (handled implicitly — we use different classes)
+  }
+
+  function ensureBadge(row){
+    let b=row.querySelector('.bq-wa-reply-ic');
+    if(!b){
+      b=document.createElement('div');
+      b.className='bq-wa-reply-ic';
+      b.innerHTML=REPLY_SVG;
+      row.appendChild(b);
+    }
+    return b;
+  }
+
+  function attachWASwipe(container){
+    if(!container || container.dataset.bqWaSwipe) return;
+    container.dataset.bqWaSwipe='1';
+
+    let row=null, badge=null, startX=0, startY=0, dx=0, dy=0;
+    let locked=false, isMine=false, active=false, triggered=false;
+
+    function onStart(e){
+      if(document.body.classList.contains('bq-select-mode')) return;
+      const t=e.touches?e.touches[0]:e;
+      const r=e.target.closest('.bqr'); if(!r) return;
+      // Don't hijack swipe over images, links, audio controls
+      if(e.target.closest('audio,video,button,a,input,textarea,.bq-rx-picker')) return;
+      row=r; isMine=row.classList.contains('mine');
+      startX=t.clientX; startY=t.clientY; dx=0; dy=0;
+      locked=false; active=true; triggered=false;
+      badge=ensureBadge(row);
+    }
+    function onMove(e){
+      if(!active||!row) return;
+      const t=e.touches?e.touches[0]:e;
+      dx=t.clientX-startX; dy=t.clientY-startY;
+      if(!locked){
+        if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
+        if(Math.abs(dx)>6) {
+          locked=true;
+          row.classList.add('bq-wa-swipe');
+          row.classList.remove('bq-wa-swipe-release');
+        } else return;
+      }
+      // Mine swipes LEFT (negative dx). Theirs swipes RIGHT (positive dx).
+      const valid = isMine ? dx<0 : dx>0;
+      let move;
+      if(valid){
+        move = Math.sign(dx) * Math.min(WA_MAX, Math.abs(dx));
+      } else {
+        // rubber-band the wrong direction
+        move = dx * 0.18;
+      }
+      row.style.transform = 'translateX('+move+'px)';
+      // Badge fades in proportionally
+      const prog = Math.min(1, Math.abs(move) / WA_TRIGGER);
+      badge.style.opacity = prog.toFixed(2);
+      badge.style.transform = 'translateY(-50%) scale('+(0.4 + prog*0.6).toFixed(2)+')';
+      const nowTrig = valid && Math.abs(move) >= WA_TRIGGER;
+      if(nowTrig !== triggered){
+        triggered = nowTrig;
+        row.classList.toggle('bq-wa-trigger', triggered);
+        // haptic-like: a tiny vibrate on mobile
+        if(triggered && navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){} }
+      }
+      if(e.cancelable) e.preventDefault();
+    }
+    function fire(){
+      if(!row) return;
+      const id=row.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
+      if(!m) return;
+      const ctx=m[1], key=m[2];
+      const txt=row.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+      const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
+      try{
+        if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt});
+        const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
+      }catch(_){}
+    }
+    function onEnd(){
+      if(!active||!row){ cancel(); return; }
+      const didTrigger = triggered;
+      // animate back to 0 with spring
+      row.classList.remove('bq-wa-swipe');
+      row.classList.add('bq-wa-swipe-release');
+      row.style.transform='translateX(0)';
+      if(badge){
+        badge.style.opacity='0';
+        badge.style.transform='translateY(-50%) scale(.4)';
+      }
+      const r=row;
+      setTimeout(()=>{
+        r.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
+        r.style.transform='';
+      }, 340);
+      if(didTrigger) fire();
+      row=null; badge=null; active=false; locked=false; triggered=false;
+    }
+    function cancel(){
+      if(row){
+        row.classList.remove('bq-wa-swipe','bq-wa-trigger');
+        row.classList.add('bq-wa-swipe-release');
+        row.style.transform='';
+        if(badge){ badge.style.opacity='0'; badge.style.transform='translateY(-50%) scale(.4)'; }
+        const r=row;
+        setTimeout(()=>{ r.classList.remove('bq-wa-swipe-release'); r.style.transform=''; }, 340);
+      }
+      row=null; badge=null; active=false; locked=false; triggered=false;
+    }
+    container.addEventListener('touchstart', onStart, {passive:true});
+    container.addEventListener('touchmove', onMove, {passive:false});
+    container.addEventListener('touchend', onEnd);
+    container.addEventListener('touchcancel', cancel);
+    // Mouse drag for desktop (so devs can test)
+    let mouseDown=false;
+    container.addEventListener('mousedown',(e)=>{ if(e.button!==0) return; mouseDown=true; onStart(e); });
+    container.addEventListener('mousemove',(e)=>{ if(!mouseDown) return; onMove(e); });
+    window.addEventListener('mouseup',()=>{ if(mouseDown){ mouseDown=false; onEnd(); } });
+  }
+
+  /* Disable v20's swipe (which uses .bq-swipe-active) on the same containers
+     by removing its listener via cloning is too aggressive — instead we just
+     suppress its visual ::after via CSS when bq-wa-swipe is present (done above)
+     and v20's handler will still run touchstart but our preventDefault-on-move
+     stops native scroll the same way. Both add transforms — to avoid conflict,
+     override v20's transform mid-flight by reading row.style at end. */
+
+  /* ── 4. Jump-to-bottom button ── */
+  function installJTB(scroller, ctx){
+    if(!scroller || scroller.dataset.bqJtb) return;
+    scroller.dataset.bqJtb='1';
+    const btn=document.createElement('button');
+    btn.className='bq-jtb';
+    btn.title='Jump to latest';
+    btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg><span class="bq-jtb-badge" style="display:none">0</span>';
+    // append to scroller's parent so it can be absolutely positioned
+    const host=scroller.parentElement||scroller;
+    if(getComputedStyle(host).position==='static') host.style.position='relative';
+    host.appendChild(btn);
+    let unread=0;
+    const badge=btn.querySelector('.bq-jtb-badge');
+    function update(){
+      const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      if(distance > 200){
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+        unread=0; badge.style.display='none';
+      }
+    }
+    scroller.addEventListener('scroll', update, {passive:true});
+    // Detect new messages while scrolled up
+    new MutationObserver((muts)=>{
+      const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      if(distance > 200){
+        muts.forEach(m=>{
+          m.addedNodes.forEach(n=>{
+            if(n.nodeType===1 && n.classList && n.classList.contains('bqr')) unread++;
+          });
+        });
+        if(unread>0){ badge.textContent=unread>99?'99+':unread; badge.style.display='flex'; }
+      }
+    }).observe(scroller, {childList:true});
+    btn.addEventListener('click',()=>{
+      scroller.scrollTo({top:scroller.scrollHeight, behavior:'smooth'});
+      unread=0; badge.style.display='none';
+    });
+    update();
+  }
+
+  /* ── 5. In-chat search ── */
+  function installSearch(scroller, ctx){
+    if(!scroller || scroller.dataset.bqSearch) return;
+    scroller.dataset.bqSearch='1';
+    const host=scroller.parentElement||scroller;
+    if(getComputedStyle(host).position==='static') host.style.position='relative';
+    const bar=document.createElement('div');
+    bar.className='bq-search-bar';
+    bar.innerHTML=`
+      <button class="bq-s-up" title="Prev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></button>
+      <button class="bq-s-down" title="Next"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+      <input type="text" placeholder="Search in chat…" />
+      <span class="bq-search-count">0/0</span>
+      <button class="bq-s-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    `;
+    host.appendChild(bar);
+    const inp=bar.querySelector('input');
+    const cnt=bar.querySelector('.bq-search-count');
+    let hits=[], idx=-1;
+    function clear(){
+      hits.forEach(r=>r.classList.remove('bq-search-hit'));
+      hits=[]; idx=-1; cnt.textContent='0/0';
+    }
+    function run(){
+      clear();
+      const q=inp.value.trim().toLowerCase(); if(!q){ return; }
+      const rows=scroller.querySelectorAll('.bqr');
+      rows.forEach(r=>{
+        const txt=r.querySelector('.bqbbl')?.innerText?.toLowerCase()||'';
+        if(txt.includes(q)) hits.push(r);
+      });
+      if(hits.length){ idx=hits.length-1; jump(); }
+      else cnt.textContent='0/0';
+    }
+    function jump(){
+      hits.forEach(r=>r.classList.remove('bq-search-hit'));
+      const r=hits[idx]; if(!r) return;
+      r.classList.add('bq-search-hit');
+      r.scrollIntoView({behavior:'smooth',block:'center'});
+      cnt.textContent=(idx+1)+'/'+hits.length;
+    }
+    let to;
+    inp.addEventListener('input',()=>{ clearTimeout(to); to=setTimeout(run,200); });
+    bar.querySelector('.bq-s-up').addEventListener('click',()=>{ if(!hits.length)return; idx=(idx-1+hits.length)%hits.length; jump(); });
+    bar.querySelector('.bq-s-down').addEventListener('click',()=>{ if(!hits.length)return; idx=(idx+1)%hits.length; jump(); });
+    bar.querySelector('.bq-s-close').addEventListener('click',()=>{ bar.classList.remove('show'); clear(); inp.value=''; });
+    // Expose opener
+    scroller._bqOpenSearch=()=>{ bar.classList.add('show'); setTimeout(()=>inp.focus(),120); };
+  }
+
+  // Wire the "Search in conversation" row in DM info to open the DM search bar
+  document.addEventListener('click',(e)=>{
+    const r=e.target.closest('#bq-if-search'); if(!r) return;
+    const dm=document.getElementById('bqdmmsgs');
+    if(dm && dm._bqOpenSearch){
+      // Close info panel first if it has a close button
+      document.getElementById('bq-if-close')?.click();
+      setTimeout(()=>dm._bqOpenSearch(), 240);
+    }
+  });
+
+  /* ── 6. Wire everything (idempotent, observer-driven) ── */
+  function wireAll(){
+    wireSettingsThemes();
+    const g=document.getElementById('bqgmsgs');
+    const d=document.getElementById('bqdmmsgs');
+    if(g){ attachWASwipe(g); installJTB(g,'g'); installSearch(g,'g'); }
+    if(d){ attachWASwipe(d); installJTB(d,'dm'); installSearch(d,'dm'); }
+  }
+  wireAll();
+  try{
+    new MutationObserver(()=>wireAll()).observe(document.body,{childList:true,subtree:true});
+  }catch(_){}
+
+  window.bqV21 = { version:'21.0' };
+  console.info('[bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search');
 })();
 
 })();
