@@ -782,6 +782,7 @@ const FACTS=[
 let factIdx=Math.floor(Math.random()*FACTS.length);
 function showFact(i){
   const el=document.getElementById("factText");
+  if(!el) return;
   el.style.opacity="0";
   setTimeout(()=>{
     factIdx=((i%FACTS.length)+FACTS.length)%FACTS.length;
@@ -791,7 +792,6 @@ function showFact(i){
 }
 function nextFact(){showFact(factIdx+1)}
 showFact(factIdx);
-
 /* ═══ KEYBOARD SHORTCUTS ═══ */
 const SHORTCUTS={p:"presentation.html",q:"quiz.html",a:"ask.html",o:"organelles.html","3":"cell-3d.html",s:"solutions.html",f:"suggestions.html"};
 function showToast(msg,dur=2200){
