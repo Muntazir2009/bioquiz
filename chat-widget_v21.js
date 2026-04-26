@@ -3272,18 +3272,87 @@ function sendGlobal(text){
    DM LIST
 ───────────────────────────────────────── */
 let dmRenderT=null;
+let _dmIndexRef=null;
+let _dmMetaRefs={};       // {dmId: ref}
+let _dmIndexFired=false;
+let _dmIndexWatchdog=null;
+let _dmMigrated=false;
+
+// v22: scoped per-user DM index — no more whole-tree scans.
 function subscribeDmList(){
-  if(!db||!uid)return;
-  db.ref('bq_dms').on('value',snap=>{
-    dmMeta={};
-    snap.forEach(child=>{
-      const m=child.val();
-      if(m&&m.meta&&(m.meta.p1===uid||m.meta.p2===uid)) dmMeta[child.key]=m.meta;
+  if(!db||!uid) return;
+
+  // Tear down previous listeners
+  if(_dmIndexRef){ try{_dmIndexRef.off();}catch(_){} _dmIndexRef=null; }
+  Object.entries(_dmMetaRefs).forEach(([id,r])=>{ try{r.off();}catch(_){} });
+  _dmMetaRefs={};
+  dmMeta={};
+  _dmIndexFired=false;
+
+  // One-time legacy migration: backfill bq_user_dms/{uid} from existing bq_dms
+  // for accounts created before v22. Keyed in localStorage so it runs once.
+  const MIG_KEY='bq_user_dms_migrated_v22_'+uid;
+  if(!_dmMigrated && !localStorage.getItem(MIG_KEY)){
+    _dmMigrated=true;
+    db.ref('bq_dms').once('value').then(snap=>{
+      const updates={};
+      snap.forEach(ch=>{
+        const m=ch.val();
+        if(m&&m.meta&&(m.meta.p1===uid||m.meta.p2===uid)){
+          updates['bq_user_dms/'+uid+'/'+ch.key]=true;
+        }
+      });
+      if(Object.keys(updates).length){ db.ref().update(updates).catch(()=>{}); }
+      localStorage.setItem(MIG_KEY,'1');
+    }).catch(()=>{ /* ignore — empty account is fine */ });
+  }
+
+  const idxRef=db.ref('bq_user_dms/'+uid);
+  _dmIndexRef=idxRef;
+
+  const attachMeta=(dmId)=>{
+    if(_dmMetaRefs[dmId]) return;
+    const mref=db.ref('bq_dms/'+dmId+'/meta');
+    _dmMetaRefs[dmId]=mref;
+    mref.on('value',ms=>{
+      const meta=ms.val();
+      if(meta && (meta.p1===uid||meta.p2===uid)){
+        dmMeta[dmId]=meta;
+      } else {
+        delete dmMeta[dmId];
+      }
+      clearTimeout(dmRenderT);
+      dmRenderT=setTimeout(()=>{ renderDmList(); updateBadges(); },80);
     });
-    clearTimeout(dmRenderT);
-    dmRenderT=setTimeout(renderDmList,120);
-    updateBadges();
-  });
+  };
+  const detachMeta=(dmId)=>{
+    if(_dmMetaRefs[dmId]){ try{_dmMetaRefs[dmId].off();}catch(_){} delete _dmMetaRefs[dmId]; }
+    delete dmMeta[dmId];
+  };
+
+  idxRef.on('child_added',  s=>{ _dmIndexFired=true; attachMeta(s.key); });
+  idxRef.on('child_removed',s=>{ detachMeta(s.key); clearTimeout(dmRenderT); dmRenderT=setTimeout(()=>{ renderDmList(); updateBadges(); },80); });
+  idxRef.on('value', ()=>{ _dmIndexFired=true; });
+
+  // Watchdog: if nothing fires within 4s, retry once and surface a hint.
+  clearTimeout(_dmIndexWatchdog);
+  _dmIndexWatchdog=setTimeout(()=>{
+    if(!_dmIndexFired){
+      const list=document.getElementById('bqdml');
+      if(list && !list.querySelector('.bqdmr')){
+        let hint=list.querySelector('.bq-reconnect-hint');
+        if(!hint){
+          hint=document.createElement('div');
+          hint.className='bqempty bq-reconnect-hint';
+          hint.style.marginTop='40px';
+          hint.innerHTML='<div class="bqempty-tx">Reconnecting…</div><div class="bqempty-sub">If this persists, try refreshing.</div>';
+          list.innerHTML=''; list.appendChild(hint);
+        }
+      }
+      try{ idxRef.off(); }catch(_){}
+      setTimeout(()=>subscribeDmList(),800);
+    }
+  },4000);
 }
 
 function renderDmList(){
@@ -3397,8 +3466,17 @@ function initDmDelegate(){
 function deleteDmConvo(did){
   if(!db||!did)return;
   db.ref('bq_dms/'+did).remove();
+  // v22 — remove from per-user index for both sides
+  const meta=dmMeta[did];
+  if(meta){
+    if(meta.p1) db.ref('bq_user_dms/'+meta.p1+'/'+did).remove().catch(()=>{});
+    if(meta.p2) db.ref('bq_user_dms/'+meta.p2+'/'+did).remove().catch(()=>{});
+  } else {
+    db.ref('bq_user_dms/'+uid+'/'+did).remove().catch(()=>{});
+  }
   delete dmMeta[did];delete dmUnread[did];
   if(dmListeners[did]){dmListeners[did].off();delete dmListeners[did];}
+  if(_dmMetaRefs && _dmMetaRefs[did]){ try{_dmMetaRefs[did].off();}catch(_){} delete _dmMetaRefs[did]; }
   if(activeDmId===did&&activeView==='dmconv'){
     activeDmId=null;activeDmPuid=null;activeDmPname=null;
     bqNav('dms');
@@ -4027,7 +4105,34 @@ function toggleRxn(ctx,key,emoji){
 
 function onMsgChanged(ctx,snap){
   const el=document.getElementById('bqmsg-'+ctx+'-'+snap.key);if(!el)return;
-  const msg=snap.val();el.querySelector('.bqrxns')?.remove();
+  const msg=snap.val()||{};
+  // v22 — handle deleted-for-everyone tombstone
+  if(msg.deleted){
+    const bbl=el.querySelector('.bqbbl');
+    if(bbl){
+      bbl.innerHTML='<span style="opacity:.55;font-style:italic">Message deleted</span>';
+      bbl.classList.add('bq-tombstone');
+    }
+    el.querySelector('.bqrxns')?.remove();
+    return;
+  }
+  // v22 — sync edited text to ALL clients (was previously sender-only)
+  if(typeof msg.text==='string'){
+    const bbl=el.querySelector('.bqbbl');
+    if(bbl && !bbl.classList.contains('editing')){
+      // Preserve any reply/voice/image/sticker children — only update text node + edited marker
+      const reply=bbl.querySelector('.bqreply, .bq-replyref');
+      const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
+      const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
+      const replyHTML=reply?reply.outerHTML:'';
+      const mediaHTML=media?media.outerHTML:'';
+      const metaHTML=meta?meta.outerHTML:'';
+      const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
+      const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
+      bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
+    }
+  }
+  el.querySelector('.bqrxns')?.remove();
   if(msg.reactions) renderRxns(ctx,el,msg.reactions,snap.key);
 }
 
@@ -7894,5 +7999,539 @@ setTimeout(_injectProfileUploads,1500);
     }catch(_){}
   }catch(_){}
 })();
+
+/* ════════════════════════════════════════════════════════════
+   v22 PATCH BLOCK — recovery, edit/delete polish, sender wraps
+════════════════════════════════════════════════════════════ */
+(function v22Patch(){
+'use strict';
+
+const $ = (id)=>document.getElementById(id);
+const _esc = (s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _toast = (m)=>{ try{ const t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:8px;z-index:2147483646;font:13px/1.4 system-ui'; document.body.appendChild(t); setTimeout(()=>t.remove(),2400);}catch(_){} };
+
+async function sha256Hex(s){
+  const enc=new TextEncoder().encode(s);
+  const buf=await crypto.subtle.digest('SHA-256', enc);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function pbkdf2Hex(password, saltHex, iter=100000){
+  const enc=new TextEncoder();
+  const salt=new Uint8Array(saltHex.match(/.{1,2}/g).map(h=>parseInt(h,16)));
+  const key=await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'}, key, 256);
+  return [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomHex(bytes){
+  const a=new Uint8Array(bytes); crypto.getRandomValues(a);
+  return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genRecoveryCode(){
+  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const a=new Uint8Array(16); crypto.getRandomValues(a);
+  let out='BQ'; for(let i=0;i<a.length;i++){ if(i%4===0) out+='-'; out+=alphabet[a[i]%alphabet.length]; }
+  return out;
+}
+
+function _db(){
+  try{ if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){}
+  return null;
+}
+function _uid(){ return localStorage.getItem('bq_uid')||''; }
+function _uname(){ return localStorage.getItem('bq_name')||''; }
+
+/* ── Per-user DM index writes (wrap senders) ── */
+function _indexBoth(dmId, partnerUid){
+  const db=_db(); const u=_uid();
+  if(!db||!u||!dmId||!partnerUid) return;
+  const upd={};
+  upd['bq_user_dms/'+u+'/'+dmId]=true;
+  upd['bq_user_dms/'+partnerUid+'/'+dmId]=true;
+  db.ref().update(upd).catch(()=>{});
+}
+function wrapSenders(){
+  ['sendDm','sendGifDm','sendStickerDm','sendVoiceDm'].forEach(fnName=>{
+    const orig=window[fnName];
+    if(typeof orig!=='function' || orig._bqWrapped) return;
+    const wrapped=function(){
+      const r=orig.apply(this, arguments);
+      try{
+        const id = window.__bqActiveDm?.id;
+        const p  = window.__bqActiveDm?.puid;
+        if(id && p) _indexBoth(id, p);
+      }catch(_){}
+      return r;
+    };
+    wrapped._bqWrapped=true;
+    window[fnName]=wrapped;
+  });
+}
+function trackActiveDm(){
+  const hav=document.getElementById('bqdmhav');
+  const puid=hav?.dataset?.puid;
+  const own=_uid();
+  if(puid && own){
+    window.__bqActiveDm={id:[own,puid].sort().join('__'), puid};
+  } else {
+    window.__bqActiveDm=null;
+  }
+}
+const _activeObs=new MutationObserver(trackActiveDm);
+
+/* ── Recovery: code, passphrase, question ── */
+const REC_LS_CODE_SHOWN='bq_rec_code_shown_v22';
+async function getRecoveryNode(uid){
+  const db=_db(); if(!db||!uid) return null;
+  try{ const s=await db.ref('bq_recovery/'+uid).once('value'); return s.val(); }catch(_){ return null; }
+}
+async function ensureRecoveryCode(){
+  const db=_db(); const u=_uid(); const n=_uname();
+  if(!db||!u||!n) return;
+  if(localStorage.getItem(REC_LS_CODE_SHOWN+'_'+u)) return;
+  const existing=await getRecoveryNode(u);
+  if(existing && existing.codeHash){ localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'existing'); return; }
+  const code=genRecoveryCode();
+  const hash=await sha256Hex(code);
+  await db.ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:n});
+  localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'1');
+  showRecoveryCodeModal(code, true);
+}
+
+function closeAnyV22Modal(){
+  ['bq-rec-modal','bq-rec-restore','bq-rec-settings'].forEach(id=>$(id)?.remove());
+}
+
+function showRecoveryCodeModal(code, firstTime){
+  closeAnyV22Modal();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-modal';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px">🔐</div>
+        <div>
+          <div style="font-weight:700;font-size:16px">${firstTime?'Save your recovery code':'Your recovery code'}</div>
+          <div style="opacity:.65;font-size:12px">${firstTime?'This will only be shown once.':'Keep it somewhere safe.'}</div>
+        </div>
+      </div>
+      <div style="background:#0f1218;border:1px dashed #3a4256;border-radius:10px;padding:14px;font:600 16px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-align:center;color:#9ad7ff;margin:14px 0;user-select:all;word-break:break-all">${_esc(code)}</div>
+      <div style="font-size:12px;opacity:.7;margin-bottom:14px">If you lose access to this device, enter your username + this code on a new one to restore your account.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="bq-rec-copy"  style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Copy</button>
+        <button id="bq-rec-dl"    style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Download</button>
+        <button id="bq-rec-done"  style="flex:1;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">I saved it</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  $('bq-rec-copy').onclick=async()=>{ try{ await navigator.clipboard.writeText(code); _toast('Copied'); }catch(_){ _toast('Copy failed'); } };
+  $('bq-rec-dl').onclick=()=>{
+    const blob=new Blob(['BioQuiz recovery code\nUsername: @'+_uname()+'\nUID: '+_uid()+'\nCode: '+code+'\n\nKeep this safe. Treat it like a password.'], {type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='bioquiz-recovery-'+_uname()+'.txt'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
+  $('bq-rec-done').onclick=()=>wrap.remove();
+}
+
+/* ── Restore modal & lockouts ── */
+function getLockoutKey(name){ return 'bq_rec_lockout_'+name; }
+function checkLockout(name){
+  try{ const raw=localStorage.getItem(getLockoutKey(name)); if(!raw) return 0;
+    const o=JSON.parse(raw); if(o.until && o.until>Date.now()) return Math.ceil((o.until-Date.now())/1000);
+  }catch(_){} return 0;
+}
+function bumpLockout(name){
+  try{ const raw=localStorage.getItem(getLockoutKey(name)); const o=raw?JSON.parse(raw):{tries:0};
+    o.tries=(o.tries||0)+1; if(o.tries>=5){ o.until=Date.now()+10*60*1000; o.tries=0; }
+    localStorage.setItem(getLockoutKey(name), JSON.stringify(o));
+  }catch(_){}
+}
+function clearLockout(name){ try{ localStorage.removeItem(getLockoutKey(name)); }catch(_){} }
+async function lookupUidForUsername(name){
+  const db=_db(); if(!db) return null;
+  try{ const s=await db.ref('bq_usernames/'+name).once('value'); return s.val()||null; }catch(_){ return null; }
+}
+function restoreToUid(newUid, sourceMsg){
+  try{ const prev=localStorage.getItem('bq_uid'); if(prev) sessionStorage.setItem('bq_uid_pre_restore', prev); }catch(_){}
+  localStorage.setItem('bq_uid', newUid);
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k); });
+  _toast(sourceMsg||'Account restored — reloading…');
+  setTimeout(()=>location.reload(), 800);
+}
+
+function showRestoreModal(){
+  closeAnyV22Modal();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-restore';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:460px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:90vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:700;font-size:17px">Recover your account</div>
+        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+      </div>
+      <div style="opacity:.65;font-size:12px;margin-bottom:14px">Restore an account by proving you own it. Pick a method.</div>
+      <div id="bq-rec-tabs" style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #2a3040;flex-wrap:wrap">
+        <button data-tab="code"  class="bqrt" style="background:none;border:0;color:#fff;padding:8px 12px;cursor:pointer;border-bottom:2px solid #3b82f6">Code</button>
+        <button data-tab="pass"  class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Passphrase</button>
+        <button data-tab="quest" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Question</button>
+        <button data-tab="claim" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Reclaim</button>
+      </div>
+      <div data-pane="code">
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Username</label>
+        <input id="bq-rc-name-1" placeholder="yourname" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:10px;box-sizing:border-box"/>
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Recovery code</label>
+        <input id="bq-rc-code" placeholder="BQ-XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;font:600 14px ui-monospace,Menlo,monospace;box-sizing:border-box"/>
+        <button id="bq-rc-go-code" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+      </div>
+      <div data-pane="pass" style="display:none">
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Username or full UID</label>
+        <input id="bq-rc-name-2" placeholder="yourname or UID" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:10px;box-sizing:border-box"/>
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Passphrase</label>
+        <input id="bq-rc-pass" type="password" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;box-sizing:border-box"/>
+        <button id="bq-rc-go-pass" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+      </div>
+      <div data-pane="quest" style="display:none">
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Username</label>
+        <input id="bq-rc-name-3" placeholder="yourname" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:10px;box-sizing:border-box"/>
+        <div id="bq-rc-q-display" style="font-size:13px;opacity:.85;margin-bottom:8px;min-height:18px"></div>
+        <input id="bq-rc-q-ans" placeholder="Your answer" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;box-sizing:border-box"/>
+        <button id="bq-rc-go-quest" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+        <div style="font-size:11px;opacity:.55;margin-top:8px">Less secure. Only available if the account set this up.</div>
+      </div>
+      <div data-pane="claim" style="display:none">
+        <div style="font-size:12px;opacity:.75;margin-bottom:10px;line-height:1.55">For accounts that lost access <b>before v22</b> and never set up recovery. Best-effort only.</div>
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Username of lost account</label>
+        <input id="bq-rc-name-4" placeholder="yourname" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;box-sizing:border-box"/>
+        <button id="bq-rc-go-claim" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Continue</button>
+      </div>
+      <div id="bq-rc-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+  wrap.querySelectorAll('.bqrt').forEach(btn=>{
+    btn.onclick=()=>{
+      wrap.querySelectorAll('.bqrt').forEach(b=>{ b.style.color='#aaa'; b.style.borderBottomColor='transparent'; });
+      btn.style.color='#fff'; btn.style.borderBottomColor='#3b82f6';
+      wrap.querySelectorAll('[data-pane]').forEach(p=>p.style.display='none');
+      wrap.querySelector('[data-pane="'+btn.dataset.tab+'"]').style.display='';
+      $('bq-rc-status').textContent='';
+      if(btn.dataset.tab==='quest'){
+        const name=$('bq-rc-name-3').value.trim().toLowerCase();
+        if(name) loadQuestionFor(name);
+      }
+    };
+  });
+  $('bq-rc-name-3')?.addEventListener('blur',e=>loadQuestionFor(e.target.value.trim().toLowerCase()));
+  $('bq-rc-go-code').onclick=doRestoreCode;
+  $('bq-rc-go-pass').onclick=doRestorePass;
+  $('bq-rc-go-quest').onclick=doRestoreQuest;
+  $('bq-rc-go-claim').onclick=doReclaimStart;
+}
+
+function setRecStatus(msg, ok){
+  const s=$('bq-rc-status'); if(!s) return;
+  s.textContent=msg||''; s.style.color=ok?'#4ade80':(msg?'#fca5a5':'');
+}
+async function loadQuestionFor(name){
+  const el=$('bq-rc-q-display'); if(!el) return; el.textContent='';
+  if(!name) return;
+  const u=await lookupUidForUsername(name); if(!u){ el.textContent='No such account.'; return; }
+  const r=await getRecoveryNode(u);
+  if(r && r.question) el.textContent='Q: '+r.question;
+  else el.textContent='This account has no security question set.';
+}
+async function doRestoreCode(){
+  const name=($('bq-rc-name-1').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  const code=($('bq-rc-code').value||'').trim().toUpperCase().replace(/\s+/g,'');
+  if(!name || !code){ setRecStatus('Enter both fields.'); return; }
+  const lock=checkLockout(name); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+  setRecStatus('Verifying…', true);
+  const u=await lookupUidForUsername(name); if(!u){ bumpLockout(name); setRecStatus('Username and code do not match.'); return; }
+  const r=await getRecoveryNode(u); if(!r||!r.codeHash){ bumpLockout(name); setRecStatus('Username and code do not match.'); return; }
+  const h=await sha256Hex(code);
+  if(h!==r.codeHash){ bumpLockout(name); setRecStatus('Username and code do not match.'); return; }
+  clearLockout(name);
+  const fresh=genRecoveryCode();
+  const freshHash=await sha256Hex(fresh);
+  await _db().ref('bq_recovery/'+u).update({codeHash:freshHash, codeCreatedAt:Date.now()});
+  restoreToUid(u, 'Account restored.');
+  setTimeout(()=>showRecoveryCodeModal(fresh,false), 1200);
+}
+async function doRestorePass(){
+  const raw=($('bq-rc-name-2').value||'').trim();
+  const pass=($('bq-rc-pass').value||'').trim();
+  if(!raw||!pass){ setRecStatus('Enter both fields.'); return; }
+  let u=raw;
+  if(!/^[A-Za-z0-9_-]{16,}$/.test(raw)){
+    const name=raw.toLowerCase().replace(/[^a-z0-9_]/g,'');
+    u=await lookupUidForUsername(name);
+    if(!u){ setRecStatus('No matching account.'); return; }
+  }
+  const lock=checkLockout(u); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+  setRecStatus('Verifying…', true);
+  const r=await getRecoveryNode(u); if(!r||!r.passHash||!r.passSalt){ bumpLockout(u); setRecStatus('No passphrase set on this account.'); return; }
+  const h=await pbkdf2Hex(pass, r.passSalt);
+  if(h!==r.passHash){ bumpLockout(u); setRecStatus('Wrong passphrase.'); return; }
+  clearLockout(u);
+  restoreToUid(u, 'Account restored.');
+}
+async function doRestoreQuest(){
+  const name=($('bq-rc-name-3').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  const ans =($('bq-rc-q-ans').value||'').trim().toLowerCase();
+  if(!name||!ans){ setRecStatus('Enter both fields.'); return; }
+  const lock=checkLockout(name); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+  const u=await lookupUidForUsername(name); if(!u){ bumpLockout(name); setRecStatus('No matching account.'); return; }
+  const r=await getRecoveryNode(u); if(!r||!r.qHash||!r.qSalt){ bumpLockout(name); setRecStatus('No security question set.'); return; }
+  setRecStatus('Verifying…', true);
+  const h=await pbkdf2Hex(ans, r.qSalt);
+  if(h!==r.qHash){ bumpLockout(name); setRecStatus('Wrong answer.'); return; }
+  clearLockout(name);
+  restoreToUid(u, 'Account restored.');
+}
+async function doReclaimStart(){
+  const name=($('bq-rc-name-4').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  if(!name){ setRecStatus('Enter the username.'); return; }
+  const u=await lookupUidForUsername(name); if(!u){ setRecStatus('No such account.'); return; }
+  const r=await getRecoveryNode(u);
+  if(r && (r.codeHash || r.passHash || r.qHash)){
+    setRecStatus('This account already has recovery set up — use the methods above instead.');
+    return;
+  }
+  const db=_db();
+  const haveAny = await new Promise(res=>{
+    db.ref('bq_messages').orderByChild('uid').equalTo(u).limitToLast(1).once('value', s=>{
+      let m=null; s.forEach(c=>{m=c.val();}); res(m);
+    },()=>res(null));
+  });
+  if(!haveAny){ setRecStatus('We could not find global-chat history for this account, so reclaim is not available.'); return; }
+  const target=$('bq-rc-status');
+  target.innerHTML=`
+    <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:12px;color:#e6e9ef">
+      <div style="font-weight:600;margin-bottom:8px">Verify ownership</div>
+      <label style="font-size:12px;opacity:.7">Approximate text of any message you sent on this account (5+ chars)</label>
+      <input id="bq-rcc-text" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:8px;margin:6px 0 10px;box-sizing:border-box"/>
+      <label style="font-size:12px;opacity:.7">Approximate month + year you started (e.g. "Mar 2025")</label>
+      <input id="bq-rcc-when" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:8px;margin:6px 0 10px;box-sizing:border-box"/>
+      <button id="bq-rcc-submit" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Verify</button>
+      <div id="bq-rcc-result" style="font-size:12px;margin-top:8px;min-height:14px"></div>
+    </div>`;
+  $('bq-rcc-submit').onclick=async()=>{
+    const text=($('bq-rcc-text').value||'').trim().toLowerCase();
+    const when=($('bq-rcc-when').value||'').trim().toLowerCase();
+    if(text.length<5){ const r=$('bq-rcc-result'); r.textContent='Need at least 5 characters of message text.'; r.style.color='#fca5a5'; return; }
+    const earliest=await new Promise(res=>{
+      db.ref('bq_messages').orderByChild('uid').equalTo(u).limitToFirst(1).once('value', s=>{
+        let m=null; s.forEach(c=>{m=c.val();}); res(m);
+      },()=>res(null));
+    });
+    const matched=await new Promise(res=>{
+      db.ref('bq_messages').orderByChild('uid').equalTo(u).limitToLast(200).once('value', s=>{
+        let hit=false;
+        s.forEach(c=>{ const v=c.val(); if(v && v.text && v.text.toLowerCase().includes(text)) hit=true; });
+        res(hit);
+      },()=>res(false));
+    });
+    let dateOk=false;
+    if(earliest && earliest.ts){
+      const d=new Date(earliest.ts); const mo=d.toLocaleString('en-US',{month:'short'}).toLowerCase(); const yr=String(d.getFullYear());
+      if(when.includes(mo) && when.includes(yr)) dateOk=true;
+    }
+    const score=(matched?1:0)+(dateOk?1:0);
+    const r=$('bq-rcc-result');
+    if(score>=2){
+      r.style.color='#4ade80'; r.textContent='Verified. Restoring…';
+      const fresh=genRecoveryCode();
+      const freshHash=await sha256Hex(fresh);
+      await db.ref('bq_recovery/'+u).update({codeHash:freshHash, codeCreatedAt:Date.now(), reclaimed:Date.now()});
+      restoreToUid(u, 'Account restored.');
+      setTimeout(()=>showRecoveryCodeModal(fresh, false), 1200);
+    } else {
+      r.style.color='#fca5a5'; r.textContent='Could not verify. Try again with more accurate info.';
+    }
+  };
+}
+
+function showRecoverySettings(){
+  closeAnyV22Modal();
+  const u=_uid();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-settings';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:460px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:90vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:700;font-size:17px">🔐 Account security</div>
+        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+      </div>
+      <div style="opacity:.65;font-size:12px;margin-bottom:18px">Set up multiple ways to recover your account if you lose this device.</div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Recovery code <span id="bq-rs-code-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A one-time secret you save somewhere safe. Strongest protection.</div>
+        <button id="bq-rs-code-show" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Generate new code</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Passphrase <span id="bq-rs-pass-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A password tied to your UID. No email needed.</div>
+        <input id="bq-rs-pass-inp" type="password" placeholder="New passphrase (min 8 chars)" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
+        <button id="bq-rs-pass-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save passphrase</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Security question <span id="bq-rs-q-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">Soft fallback. Less secure.</div>
+        <input id="bq-rs-q-q" placeholder="Question" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
+        <input id="bq-rs-q-a" placeholder="Answer" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
+        <button id="bq-rs-q-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save question</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:0">
+        <div style="font-weight:600;margin-bottom:6px">Your UID</div>
+        <div style="font:600 12px ui-monospace,Menlo,monospace;opacity:.85;word-break:break-all;user-select:all">${_esc(u)}</div>
+        <div style="font-size:11px;opacity:.55;margin-top:6px">Keep this — combined with a passphrase or code, it's how you recover.</div>
+      </div>
+      <div id="bq-rs-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+  getRecoveryNode(u).then(r=>{
+    if(r){
+      if(r.codeHash) $('bq-rs-code-status').textContent='✓ set';
+      if(r.passHash) $('bq-rs-pass-status').textContent='✓ set';
+      if(r.qHash){ $('bq-rs-q-status').textContent='✓ set'; if(r.question) $('bq-rs-q-q').value=r.question; }
+    }
+  });
+  $('bq-rs-code-show').onclick=async()=>{
+    const fresh=genRecoveryCode();
+    const hash=await sha256Hex(fresh);
+    await _db().ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:_uname()});
+    showRecoveryCodeModal(fresh, false);
+  };
+  $('bq-rs-pass-save').onclick=async()=>{
+    const v=($('bq-rs-pass-inp').value||'').trim();
+    const s=$('bq-rs-status');
+    if(v.length<8){ s.textContent='Passphrase must be at least 8 characters.'; s.style.color='#fca5a5'; return; }
+    const salt=randomHex(16);
+    const hash=await pbkdf2Hex(v, salt);
+    await _db().ref('bq_recovery/'+u).update({passHash:hash, passSalt:salt, username:_uname()});
+    $('bq-rs-pass-inp').value=''; $('bq-rs-pass-status').textContent='✓ set';
+    s.textContent='Passphrase saved.'; s.style.color='#4ade80';
+  };
+  $('bq-rs-q-save').onclick=async()=>{
+    const q=($('bq-rs-q-q').value||'').trim().slice(0,120);
+    const a=($('bq-rs-q-a').value||'').trim().toLowerCase();
+    const s=$('bq-rs-status');
+    if(q.length<5||a.length<2){ s.textContent='Question and answer required.'; s.style.color='#fca5a5'; return; }
+    const salt=randomHex(16);
+    const hash=await pbkdf2Hex(a, salt);
+    await _db().ref('bq_recovery/'+u).update({question:q, qHash:hash, qSalt:salt, username:_uname()});
+    $('bq-rs-q-a').value=''; $('bq-rs-q-status').textContent='✓ set';
+    s.textContent='Security question saved.'; s.style.color='#4ade80';
+  };
+}
+
+function mountRecoveryEntry(){
+  const profV=$('bqv-profile');
+  if(profV && !profV.querySelector('.bq-rec-entry')){
+    const row=document.createElement('button');
+    row.type='button';
+    row.className='bq-rec-entry';
+    row.style.cssText='display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:8px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(167,139,250,.12));border:1px solid rgba(96,165,250,.25);border-radius:12px;color:inherit;cursor:pointer;font:600 14px system-ui,sans-serif;text-align:left';
+    row.innerHTML='<span style="font-size:20px">🔐</span><span style="flex:1">Account &amp; recovery</span><span style="opacity:.5">›</span>';
+    row.onclick=()=>{ if(!_uname()) { _toast('Set a username first'); return; } showRecoverySettings(); };
+    const scroll=profV.querySelector('.bqpf-scroll')||profV;
+    scroll.insertBefore(row, scroll.firstChild);
+  }
+  const nm=$('bqnm');
+  if(nm && !nm.querySelector('.bq-rec-link')){
+    const card=nm.querySelector('.bqnmc')||nm.firstElementChild;
+    if(card){
+      const link=document.createElement('button');
+      link.type='button';
+      link.className='bq-rec-link';
+      link.style.cssText='display:block;width:100%;margin-top:12px;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px system-ui;text-decoration:underline';
+      link.textContent='Recover an existing account →';
+      link.onclick=(e)=>{ e.preventDefault(); showRestoreModal(); };
+      card.appendChild(link);
+    }
+  }
+}
+
+/* ── Edit window + delete-for-everyone ── */
+const EDIT_WINDOW_MS = 15*60*1000;
+function patchEditWindow(){
+  if(typeof window.startEditMsg !== 'function') return;
+  if(window.startEditMsg._bqV22) return;
+  const orig=window.startEditMsg;
+  const wrapped=function(ctx,key,msg,pfx){
+    if(msg && msg.ts && (Date.now()-msg.ts > EDIT_WINDOW_MS)){ _toast('Edit window has passed (15 min)'); return; }
+    return orig.apply(this, arguments);
+  };
+  wrapped._bqV22=true;
+  window.startEditMsg=wrapped;
+}
+function wireDeleteForEveryone(){
+  if(window._bqDelAllWired) return; window._bqDelAllWired=true;
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest('[data-bq-delall]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const ctx=btn.dataset.ctx; const key=btn.dataset.key;
+    if(!ctx||!key) return;
+    const path=(ctx==='global'?'bq_messages/':'bq_dms/'+(window.__bqActiveDm?.id||'')+'/messages/')+key;
+    if(!confirm('Delete this message for everyone?')) return;
+    _db()?.ref(path).update({deleted:true, deletedAt:Date.now(), text:''}).then(()=>_toast('Deleted'));
+    document.getElementById('bq-msg-sheet')?.remove();
+  }, true);
+}
+function patchActionSheet(){
+  if(window._bqSheetObs) return;
+  const obs=new MutationObserver(muts=>{
+    muts.forEach(m=>{
+      m.addedNodes.forEach(n=>{
+        if(!(n instanceof HTMLElement)) return;
+        const sheet=n.id==='bq-msg-sheet'?n:n.querySelector?.('#bq-msg-sheet');
+        if(!sheet) return;
+        const delItem=sheet.querySelector('[data-a="delete"]');
+        if(!delItem || sheet.querySelector('[data-bq-delall]')) return;
+        const ctx=delItem.dataset.ctx||sheet.dataset.ctx||'';
+        const key=delItem.dataset.key||sheet.dataset.key||'';
+        const item=document.createElement('button');
+        item.className=delItem.className;
+        item.dataset.bqDelall='1';
+        item.dataset.ctx=ctx;
+        item.dataset.key=key;
+        item.style.color='#fca5a5';
+        item.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg> Delete for everyone';
+        delItem.parentNode.insertBefore(item, delItem.nextSibling);
+      });
+    });
+  });
+  obs.observe(document.body, {childList:true, subtree:true});
+  window._bqSheetObs=obs;
+}
+
+function boot(){
+  try{ wrapSenders(); }catch(_){}
+  try{
+    const hav=document.getElementById('bqdmhav');
+    if(hav) _activeObs.observe(hav, {attributes:true, attributeFilter:['data-puid']});
+    trackActiveDm();
+  }catch(_){}
+  try{ mountRecoveryEntry(); }catch(_){}
+  try{ patchEditWindow(); }catch(_){}
+  try{ wireDeleteForEveryone(); }catch(_){}
+  try{ patchActionSheet(); }catch(_){}
+  const tryEnsure=()=>{ if(_db() && _uname()) ensureRecoveryCode(); };
+  setTimeout(tryEnsure, 2500);
+  setTimeout(tryEnsure, 6000);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(boot, 600));
+else setTimeout(boot, 600);
+
+setInterval(()=>{ try{ wrapSenders(); mountRecoveryEntry(); patchEditWindow(); }catch(_){} }, 3000);
+
+})();
+
 
 })();
