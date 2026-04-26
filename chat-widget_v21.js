@@ -8535,3 +8535,1559 @@ setInterval(()=>{ try{ wrapSenders(); mountRecoveryEntry(); patchEditWindow(); }
 
 
 })();
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   v23 PATCH BLOCK — Apr 2026
+   - Recovery: bug fixes + Reclaim now uses DM history + profile/preferences
+   - New features: ephemeral msgs (per-chat TTL), spoilers, polls,
+     slash commands, drafts, scheduled messages, jump-to-unread,
+     swipe-to-reply, markdown, link previews, inline translate
+   ════════════════════════════════════════════════════════════════════════ */
+(function v23Patch(){
+'use strict';
+const V23 = '23.0.0';
+try { console.info('[BioQuiz] chat-widget v'+V23+' loaded'); } catch(_){}
+
+/* ─────────── tiny utils ─────────── */
+const $ = (id)=>document.getElementById(id);
+const _esc = (s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function _toast(m,kind){
+  try{
+    const t=document.createElement('div'); t.textContent=m;
+    const bg = kind==='err' ? '#7f1d1d' : kind==='ok' ? '#15803d' : '#222';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+bg+';color:#fff;padding:11px 18px;border-radius:8px;z-index:2147483647;font:13px/1.4 system-ui;box-shadow:0 6px 24px rgba(0,0,0,.35);max-width:90vw;text-align:center';
+    document.body.appendChild(t); setTimeout(()=>t.remove(),2800);
+  }catch(_){}
+}
+function _db(){ try{ if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){} return null; }
+function _uid(){ return localStorage.getItem('bq_uid')||''; }
+function _uname(){ return localStorage.getItem('bq_name')||''; }
+async function sha256Hex(s){
+  const enc=new TextEncoder().encode(s);
+  const buf=await crypto.subtle.digest('SHA-256', enc);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function pbkdf2Hex(password, saltHex, iter=100000){
+  const enc=new TextEncoder();
+  const salt=new Uint8Array(saltHex.match(/.{1,2}/g).map(h=>parseInt(h,16)));
+  const key=await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'}, key, 256);
+  return [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomHex(bytes){
+  const a=new Uint8Array(bytes); crypto.getRandomValues(a);
+  return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genRecoveryCode(){
+  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const a=new Uint8Array(16); crypto.getRandomValues(a);
+  let out='BQ'; for(let i=0;i<a.length;i++){ if(i%4===0) out+='-'; out+=alphabet[a[i]%alphabet.length]; }
+  return out;
+}
+function normalizeRecoveryCode(raw){
+  const cleaned=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!cleaned.startsWith('BQ')) return cleaned; // user typed something weird, hash as-is
+  const body=cleaned.slice(2); // strip BQ
+  // body should be 16 chars; re-insert dashes every 4
+  const groups=body.match(/.{1,4}/g)||[];
+  return 'BQ-'+groups.join('-');
+}
+function debounce(fn, ms){
+  let t; return function(){ clearTimeout(t); const a=arguments, c=this; t=setTimeout(()=>fn.apply(c,a), ms); };
+}
+function fuzzyOverlap(a,b){
+  if(!a||!b) return 0;
+  const wa=String(a).toLowerCase().match(/\w{3,}/g)||[];
+  const wb=new Set(String(b).toLowerCase().match(/\w{3,}/g)||[]);
+  if(!wa.length||!wb.size) return 0;
+  let hit=0; wa.forEach(w=>{ if(wb.has(w)) hit++; });
+  return hit/wa.length;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PART 1 — RECOVERY: bug fixes + new Reclaim flow
+   ════════════════════════════════════════════════════════════════════════ */
+
+const REC_LS_CODE_SHOWN='bq_rec_code_shown_v22';
+const PENDING_NEW_CODE_KEY='bq_pending_new_code_v23';
+
+async function getRecoveryNode(uid){
+  const db=_db(); if(!db||!uid) return null;
+  try{ const s=await db.ref('bq_recovery/'+uid).once('value'); return s.val(); }catch(_){ return null; }
+}
+async function lookupUidForUsername(name){
+  const db=_db(); if(!db) return null;
+  try{ const s=await db.ref('bq_usernames/'+name).once('value'); return s.val()||null; }catch(_){ return null; }
+}
+
+/* ── Server-mirrored lockout ── */
+function lsLockKey(name){ return 'bq_rec_lockout_'+name; }
+async function checkLockout(nameOrUid){
+  // local first (cheap)
+  try{ const raw=localStorage.getItem(lsLockKey(nameOrUid));
+    if(raw){ const o=JSON.parse(raw); if(o.until && o.until>Date.now()) return Math.ceil((o.until-Date.now())/1000); }
+  }catch(_){}
+  // server
+  const db=_db(); if(!db) return 0;
+  let uid=nameOrUid;
+  if(!/^[A-Za-z0-9_-]{16,}$/.test(uid)){
+    const looked=await lookupUidForUsername(String(nameOrUid).toLowerCase());
+    if(looked) uid=looked; else return 0;
+  }
+  try{
+    const s=await db.ref('bq_recovery/'+uid+'/lockout').once('value');
+    const o=s.val();
+    if(o && o.until && o.until>Date.now()) return Math.ceil((o.until-Date.now())/1000);
+  }catch(_){}
+  return 0;
+}
+async function bumpLockout(nameOrUid){
+  // local
+  try{
+    const raw=localStorage.getItem(lsLockKey(nameOrUid));
+    const o=raw?JSON.parse(raw):{tries:0};
+    o.tries=(o.tries||0)+1;
+    if(o.tries>=5){ o.until=Date.now()+10*60*1000; o.tries=0; }
+    localStorage.setItem(lsLockKey(nameOrUid), JSON.stringify(o));
+  }catch(_){}
+  // server
+  const db=_db(); if(!db) return;
+  let uid=nameOrUid;
+  if(!/^[A-Za-z0-9_-]{16,}$/.test(uid)){
+    const looked=await lookupUidForUsername(String(nameOrUid).toLowerCase());
+    if(looked) uid=looked; else return;
+  }
+  try{
+    await db.ref('bq_recovery/'+uid+'/lockout').transaction(cur=>{
+      cur=cur||{tries:0};
+      cur.tries=(cur.tries||0)+1;
+      if(cur.tries>=5){ cur.until=Date.now()+10*60*1000; cur.tries=0; }
+      cur.lastAt=Date.now();
+      return cur;
+    });
+  }catch(_){}
+}
+async function clearLockout(nameOrUid){
+  try{ localStorage.removeItem(lsLockKey(nameOrUid)); }catch(_){}
+  const db=_db(); if(!db) return;
+  let uid=nameOrUid;
+  if(!/^[A-Za-z0-9_-]{16,}$/.test(uid)){
+    const looked=await lookupUidForUsername(String(nameOrUid).toLowerCase());
+    if(looked) uid=looked; else return;
+  }
+  try{ await db.ref('bq_recovery/'+uid+'/lockout').remove(); }catch(_){}
+}
+
+/* ── Ensure first-time recovery code (with retry on failure) ── */
+async function ensureRecoveryCode(){
+  const db=_db(); const u=_uid(); const n=_uname();
+  if(!db||!u||!n) return;
+  if(localStorage.getItem(REC_LS_CODE_SHOWN+'_'+u)) return;
+  try{
+    const existing=await getRecoveryNode(u);
+    if(existing && existing.codeHash){ localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'existing'); return; }
+    const code=genRecoveryCode();
+    const hash=await sha256Hex(code);
+    await db.ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:n});
+    localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'1');
+    showRecoveryCodeModal(code, true);
+  }catch(_){
+    // try again next boot — do NOT mark shown
+  }
+}
+
+function closeAnyModal(){
+  ['bq-rec-modal','bq-rec-restore','bq-rec-settings','bq-v23-confirm'].forEach(id=>$(id)?.remove());
+}
+
+/* ── Recovery code modal ── */
+function showRecoveryCodeModal(code, firstTime){
+  closeAnyModal();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-modal';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px">🔐</div>
+        <div>
+          <div style="font-weight:700;font-size:16px">${firstTime?'Save your recovery code':'Your recovery code'}</div>
+          <div style="opacity:.65;font-size:12px">${firstTime?'This is shown only once. Save it now.':'Keep it somewhere safe.'}</div>
+        </div>
+      </div>
+      <div style="background:#0f1218;border:1px dashed #3a4256;border-radius:10px;padding:14px;font:600 16px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-align:center;color:#9ad7ff;margin:14px 0;user-select:all;word-break:break-all">${_esc(code)}</div>
+      <div style="font-size:12px;opacity:.7;margin-bottom:14px">If you lose access to this device, enter your username + this code on a new one to restore your account.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="bq-rec-copy"  style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Copy</button>
+        <button id="bq-rec-dl"    style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Download</button>
+        <button id="bq-rec-done"  style="flex:1;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">I saved it</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  $('bq-rec-copy').onclick=async()=>{ try{ await navigator.clipboard.writeText(code); _toast('Copied','ok'); }catch(_){ _toast('Copy failed','err'); } };
+  $('bq-rec-dl').onclick=()=>{
+    const blob=new Blob(['BioQuiz recovery code\nUsername: @'+_uname()+'\nUID: '+_uid()+'\nCode: '+code+'\n\nKeep this safe. Treat it like a password.'], {type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='bioquiz-recovery-'+_uname()+'.txt'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
+  $('bq-rec-done').onclick=()=>wrap.remove();
+}
+
+/* ── Confirm dialog (for destructive restore) ── */
+function showConfirmRestore(){
+  return new Promise(resolve=>{
+    closeAnyModal();
+    const haveSelf=!!_uid();
+    const wrap=document.createElement('div');
+    wrap.id='bq-v23-confirm';
+    wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+    wrap.innerHTML=`
+      <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:420px;width:100%;padding:22px">
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">Replace current account?</div>
+        <div style="font-size:13px;opacity:.8;margin-bottom:16px;line-height:1.55">
+          ${haveSelf
+            ? 'Restoring will sign out the account currently on this device (<b>@'+_esc(_uname()||'(no name)')+'</b>) and replace it with the recovered one.<br><br>If the current account is yours too, back up its recovery code first.'
+            : 'No account is signed in on this device, so nothing will be lost.'}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${haveSelf?'<button data-act="backup" style="background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Back up current account first</button>':''}
+          <button data-act="ok" style="background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Continue with restore</button>
+          <button data-act="cancel" style="background:none;color:#aaa;border:0;border-radius:8px;padding:8px;font-weight:600;cursor:pointer">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', async (e)=>{
+      const a=e.target.closest('[data-act]')?.dataset?.act;
+      if(!a) return;
+      if(a==='cancel'){ wrap.remove(); resolve(false); return; }
+      if(a==='backup'){
+        const u=_uid(); if(!u){ resolve(true); wrap.remove(); return; }
+        try{
+          const fresh=genRecoveryCode();
+          const hash=await sha256Hex(fresh);
+          await _db().ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:_uname()});
+          showRecoveryCodeModal(fresh, false);
+        }catch(_){ _toast('Backup failed — continuing','err'); }
+        // After modal closes, user can retry restore
+        resolve(false); wrap.remove(); return;
+      }
+      if(a==='ok'){ wrap.remove(); resolve(true); }
+    });
+  });
+}
+
+function restoreToUid(newUid, sourceMsg, freshCode){
+  if(freshCode){ try{ sessionStorage.setItem(PENDING_NEW_CODE_KEY, freshCode); }catch(_){} }
+  try{ const prev=localStorage.getItem('bq_uid'); if(prev) sessionStorage.setItem('bq_uid_pre_restore', prev); }catch(_){}
+  localStorage.setItem('bq_uid', newUid);
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k); });
+  _toast(sourceMsg||'Account restored — reloading…','ok');
+  setTimeout(()=>location.reload(), 800);
+}
+
+/* ── Restore modal ── */
+function showRestoreModal(presetTab){
+  closeAnyModal();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-restore';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:480px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:700;font-size:17px">Recover your account</div>
+        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+      </div>
+      <div style="opacity:.65;font-size:12px;margin-bottom:14px">Pick a recovery method. Tip: type your username and we'll auto-pick the best method.</div>
+      <input id="bq-rc-uname" placeholder="Your username (without @)" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:10px;box-sizing:border-box"/>
+      <div id="bq-rc-tabs" style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #2a3040;flex-wrap:wrap">
+        <button data-tab="code"  class="bqrt" style="background:none;border:0;color:#fff;padding:8px 12px;cursor:pointer;border-bottom:2px solid #3b82f6">Code</button>
+        <button data-tab="pass"  class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Passphrase</button>
+        <button data-tab="quest" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Question</button>
+        <button data-tab="claim" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Reclaim</button>
+      </div>
+      <div data-pane="code">
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Recovery code</label>
+        <input id="bq-rc-code" placeholder="BQ-XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;font:600 14px ui-monospace,Menlo,monospace;box-sizing:border-box;text-transform:uppercase"/>
+        <button id="bq-rc-go-code" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+      </div>
+      <div data-pane="pass" style="display:none">
+        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Passphrase</label>
+        <div style="position:relative;margin-bottom:14px">
+          <input id="bq-rc-pass" type="password" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px 38px 10px 10px;box-sizing:border-box"/>
+          <button type="button" id="bq-rc-pass-eye" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#aaa;cursor:pointer;font-size:13px;padding:4px 8px">👁</button>
+        </div>
+        <button id="bq-rc-go-pass" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+      </div>
+      <div data-pane="quest" style="display:none">
+        <div id="bq-rc-q-display" style="font-size:13px;opacity:.85;margin-bottom:8px;min-height:18px;padding:8px 10px;background:#0f1218;border:1px solid #2a3040;border-radius:6px"></div>
+        <input id="bq-rc-q-ans" placeholder="Your answer" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;box-sizing:border-box"/>
+        <button id="bq-rc-go-quest" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+        <div style="font-size:11px;opacity:.55;margin-top:8px">Less secure. Only available if the account set this up.</div>
+      </div>
+      <div data-pane="claim" style="display:none">
+        <div style="font-size:12px;opacity:.75;margin-bottom:10px;line-height:1.55">For accounts with no recovery set up. We'll verify ownership using your DM history, profile, or message text.</div>
+        <button id="bq-rc-go-claim" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Start verification</button>
+      </div>
+      <div id="bq-rc-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+
+  // Tab switching (also clears status, refreshes question on quest tab)
+  const switchTab=(name)=>{
+    wrap.querySelectorAll('.bqrt').forEach(b=>{
+      const on=b.dataset.tab===name;
+      b.style.color=on?'#fff':'#aaa';
+      b.style.borderBottomColor=on?'#3b82f6':'transparent';
+    });
+    wrap.querySelectorAll('[data-pane]').forEach(p=>p.style.display=p.dataset.pane===name?'':'none');
+    setRecStatus('');
+    if(name==='quest'){ const n=$('bq-rc-uname').value.trim().toLowerCase(); if(n) loadQuestionFor(n); else $('bq-rc-q-display').textContent='Enter your username above first.'; }
+  };
+  wrap.querySelectorAll('.bqrt').forEach(btn=>{ btn.onclick=()=>switchTab(btn.dataset.tab); });
+  if(presetTab) switchTab(presetTab);
+
+  // Username field: clear status on change, debounced auto-suggestion
+  const onName=debounce(async()=>{
+    setRecStatus('');
+    const n=$('bq-rc-uname').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+    if(!n) return;
+    const u=await lookupUidForUsername(n); if(!u) return;
+    const r=await getRecoveryNode(u);
+    if(!r){ /* no recovery → suggest reclaim */ if(!presetTab) switchTab('claim'); return; }
+    // Auto-suggest best method (only if not already user-driven)
+    if(!presetTab){
+      if(r.codeHash) switchTab('code');
+      else if(r.passHash) switchTab('pass');
+      else if(r.qHash) switchTab('quest');
+      else switchTab('claim');
+    }
+    if(r.qHash && wrap.querySelector('[data-pane="quest"]').style.display!=='none') loadQuestionFor(n);
+  }, 400);
+  $('bq-rc-uname').addEventListener('input', onName);
+
+  // Show/hide passphrase
+  $('bq-rc-pass-eye').onclick=()=>{
+    const inp=$('bq-rc-pass'); inp.type=inp.type==='password'?'text':'password';
+  };
+
+  // Wire actions
+  $('bq-rc-go-code').onclick=doRestoreCode;
+  $('bq-rc-go-pass').onclick=doRestorePass;
+  $('bq-rc-go-quest').onclick=doRestoreQuest;
+  $('bq-rc-go-claim').onclick=doReclaimStart;
+
+  // Clear status on input in any field
+  ['bq-rc-code','bq-rc-pass','bq-rc-q-ans'].forEach(id=>{
+    $(id)?.addEventListener('input', ()=>setRecStatus(''));
+  });
+}
+
+function setRecStatus(msg, kind){
+  const s=$('bq-rc-status'); if(!s) return;
+  s.textContent=msg||'';
+  if(kind==='ok') s.style.color='#4ade80';
+  else if(kind==='busy') s.style.color='#9ca3af';
+  else if(msg) s.style.color='#fca5a5';
+  else s.style.color='';
+}
+async function loadQuestionFor(name){
+  const el=$('bq-rc-q-display'); if(!el) return; el.textContent='Looking up…';
+  if(!name){ el.textContent='Enter your username first.'; return; }
+  const u=await lookupUidForUsername(name); if(!u){ el.textContent='No such account.'; return; }
+  const r=await getRecoveryNode(u);
+  if(r && r.question) el.textContent='Q: '+r.question;
+  else el.textContent='This account has no security question set.';
+}
+
+function withBusy(btn, busyText, fn){
+  return async function(){
+    if(!btn || btn.disabled) return;
+    const orig=btn.textContent;
+    btn.disabled=true; btn.style.opacity='.7'; btn.textContent=busyText||'Working…';
+    try{ await fn.apply(this, arguments); }
+    finally{ btn.disabled=false; btn.style.opacity=''; btn.textContent=orig; }
+  };
+}
+
+async function doRestoreCode(ev){
+  const btn=ev?.currentTarget||$('bq-rc-go-code');
+  await withBusy(btn,'Verifying…',async()=>{
+    const name=($('bq-rc-uname').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+    const code=normalizeRecoveryCode($('bq-rc-code').value||'');
+    if(!name){ setRecStatus('Enter your username at the top.'); return; }
+    if(!code || code.length<10){ setRecStatus('Enter your recovery code.'); return; }
+    const lock=await checkLockout(name); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+    setRecStatus('Verifying…','busy');
+    const u=await lookupUidForUsername(name); if(!u){ await bumpLockout(name); setRecStatus('Username and code do not match.'); return; }
+    const r=await getRecoveryNode(u); if(!r||!r.codeHash){ await bumpLockout(name); setRecStatus('No recovery code on this account. Try Reclaim instead.'); return; }
+    const h=await sha256Hex(code);
+    if(h!==r.codeHash){ await bumpLockout(name); setRecStatus('Username and code do not match.'); return; }
+    await clearLockout(name);
+    if(!await showConfirmRestore()) { setRecStatus(''); return; }
+    setRecStatus('Restoring…','ok');
+    const fresh=genRecoveryCode();
+    const freshHash=await sha256Hex(fresh);
+    try{ await _db().ref('bq_recovery/'+u).update({codeHash:freshHash, codeCreatedAt:Date.now()}); }catch(_){}
+    restoreToUid(u, 'Account restored.', fresh);
+  })(ev);
+}
+async function doRestorePass(ev){
+  const btn=ev?.currentTarget||$('bq-rc-go-pass');
+  await withBusy(btn,'Verifying…',async()=>{
+    const raw=($('bq-rc-uname').value||'').trim();
+    const pass=($('bq-rc-pass').value||'').trim();
+    if(!raw||!pass){ setRecStatus('Enter username and passphrase.'); return; }
+    let u=raw;
+    if(!/^[A-Za-z0-9_-]{16,}$/.test(raw)){
+      const name=raw.toLowerCase().replace(/[^a-z0-9_]/g,'');
+      u=await lookupUidForUsername(name);
+      if(!u){ setRecStatus('No matching account.'); return; }
+    }
+    const lock=await checkLockout(u); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+    setRecStatus('Verifying…','busy');
+    const r=await getRecoveryNode(u); if(!r||!r.passHash||!r.passSalt){ await bumpLockout(u); setRecStatus('No passphrase set on this account.'); return; }
+    const h=await pbkdf2Hex(pass, r.passSalt);
+    if(h!==r.passHash){ await bumpLockout(u); setRecStatus('Wrong passphrase.'); return; }
+    await clearLockout(u);
+    if(!await showConfirmRestore()){ setRecStatus(''); return; }
+    setRecStatus('Restoring…','ok');
+    restoreToUid(u, 'Account restored.');
+  })(ev);
+}
+async function doRestoreQuest(ev){
+  const btn=ev?.currentTarget||$('bq-rc-go-quest');
+  await withBusy(btn,'Verifying…',async()=>{
+    const name=($('bq-rc-uname').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+    const ans =($('bq-rc-q-ans').value||'').trim().toLowerCase();
+    if(!name||!ans){ setRecStatus('Enter username and answer.'); return; }
+    const lock=await checkLockout(name); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+    const u=await lookupUidForUsername(name); if(!u){ await bumpLockout(name); setRecStatus('No matching account.'); return; }
+    const r=await getRecoveryNode(u); if(!r||!r.qHash||!r.qSalt){ await bumpLockout(name); setRecStatus('No security question set.'); return; }
+    setRecStatus('Verifying…','busy');
+    const h=await pbkdf2Hex(ans, r.qSalt);
+    if(h!==r.qHash){ await bumpLockout(name); setRecStatus('Wrong answer.'); return; }
+    await clearLockout(name);
+    if(!await showConfirmRestore()){ setRecStatus(''); return; }
+    setRecStatus('Restoring…','ok');
+    restoreToUid(u, 'Account restored.');
+  })(ev);
+}
+
+/* ── NEW Reclaim flow: DM + profile + global signals ── */
+async function gatherTraces(uid){
+  const db=_db();
+  const out={ presence:null, dmIds:[], earliestTs:null, sampleMsgs:[], dmPartners:[] };
+  if(!db) return out;
+  // Presence
+  try{ const ps=await db.ref('bq_presence/'+uid).once('value'); out.presence=ps.val()||null; }catch(_){}
+  // DM index
+  try{
+    const ix=await db.ref('bq_user_dms/'+uid).once('value');
+    ix.forEach(c=>{ out.dmIds.push(c.key); });
+  }catch(_){}
+  // Fallback DM scan if index empty (legacy accounts)
+  if(out.dmIds.length===0){
+    try{
+      const all=await db.ref('bq_dms').once('value');
+      all.forEach(ch=>{
+        const m=ch.val()?.meta;
+        if(m && (m.p1===uid||m.p2===uid)) out.dmIds.push(ch.key);
+      });
+    }catch(_){}
+  }
+  // Sample msgs from up to 5 DMs + global
+  const samples=[];
+  const partners=new Set();
+  const slice=out.dmIds.slice(0,5);
+  for(const dmId of slice){
+    try{
+      const meta=(await db.ref('bq_dms/'+dmId+'/meta').once('value')).val();
+      if(meta){
+        if(meta.p1===uid && meta.n2) partners.add(String(meta.n2).toLowerCase());
+        else if(meta.p2===uid && meta.n1) partners.add(String(meta.n1).toLowerCase());
+      }
+      const ms=await db.ref('bq_dms/'+dmId+'/messages').orderByChild('uid').equalTo(uid).limitToLast(40).once('value');
+      ms.forEach(c=>{
+        const v=c.val();
+        if(v){
+          if(v.text) samples.push({text:String(v.text), ts:v.ts||0});
+          if(v.ts && (!out.earliestTs || v.ts<out.earliestTs)) out.earliestTs=v.ts;
+        }
+      });
+    }catch(_){}
+  }
+  // Global
+  try{
+    const gms=await db.ref('bq_messages').orderByChild('uid').equalTo(uid).limitToLast(60).once('value');
+    gms.forEach(c=>{
+      const v=c.val();
+      if(v){
+        if(v.text) samples.push({text:String(v.text), ts:v.ts||0});
+        if(v.ts && (!out.earliestTs || v.ts<out.earliestTs)) out.earliestTs=v.ts;
+      }
+    });
+  }catch(_){}
+  // earliest fallback
+  if(!out.earliestTs && out.presence?.createdAt) out.earliestTs=out.presence.createdAt;
+  if(!out.earliestTs && out.presence?.ts) out.earliestTs=out.presence.ts;
+  out.sampleMsgs=samples;
+  out.dmPartners=[...partners].filter(Boolean);
+  return out;
+}
+
+async function doReclaimStart(ev){
+  const btn=ev?.currentTarget||$('bq-rc-go-claim');
+  await withBusy(btn,'Looking up…',async()=>{
+    const name=($('bq-rc-uname').value||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+    if(!name){ setRecStatus('Enter the username at the top.'); return; }
+    const u=await lookupUidForUsername(name);
+    if(!u){ setRecStatus('No such account. The username may be available — set it as your own from the home screen.'); return; }
+    const r=await getRecoveryNode(u);
+    if(r && (r.codeHash || r.passHash || r.qHash)){
+      setRecStatus('This account already has recovery set up — use the methods above.'); return;
+    }
+    const lock=await checkLockout(name); if(lock){ setRecStatus('Too many attempts. Try again in '+lock+'s.'); return; }
+    setRecStatus('Gathering data…','busy');
+    const traces=await gatherTraces(u);
+    const hasAnything = traces.presence || traces.dmIds.length || traces.sampleMsgs.length;
+    if(!hasAnything){
+      setRecStatus('No data found for this username. The account may have been deleted.'); return;
+    }
+    setRecStatus('');
+    showReclaimQuiz(u, name, traces);
+  })(ev);
+}
+
+async function showReclaimQuiz(uid, name, traces){
+  // Build challenges that we can verify
+  const challenges=[];
+  if(traces.earliestTs){
+    challenges.push({
+      id:'when',
+      label:'Approximate <b>month + year</b> you started using this account (e.g. "Mar 2025")',
+      kind:'text',
+      verify:(ans)=>{
+        const a=String(ans||'').toLowerCase();
+        const d=new Date(traces.earliestTs);
+        const mo=d.toLocaleString('en-US',{month:'short'}).toLowerCase();
+        const moLong=d.toLocaleString('en-US',{month:'long'}).toLowerCase();
+        const yr=String(d.getFullYear());
+        return (a.includes(mo)||a.includes(moLong)) && a.includes(yr);
+      }
+    });
+  }
+  if(traces.sampleMsgs.length){
+    challenges.push({
+      id:'msg',
+      label:'A snippet (5+ chars) of <b>any message you sent</b> from this account',
+      kind:'text',
+      verify:(ans)=>{
+        const a=String(ans||'').trim().toLowerCase();
+        if(a.length<5) return false;
+        return traces.sampleMsgs.some(m=>String(m.text).toLowerCase().includes(a));
+      }
+    });
+  }
+  if(traces.presence?.bio || traces.presence?.status){
+    const bio=traces.presence.bio||'';
+    const status=traces.presence.status||'';
+    challenges.push({
+      id:'bio',
+      label:'Your <b>bio or status</b> on this account (a few words is enough)',
+      kind:'text',
+      verify:(ans)=>{
+        return Math.max(fuzzyOverlap(ans,bio), fuzzyOverlap(ans,status)) >= 0.6;
+      }
+    });
+  }
+  if(traces.dmPartners.length){
+    // Build 4 options: 1 real + 3 decoys
+    const real=traces.dmPartners[Math.floor(Math.random()*traces.dmPartners.length)];
+    const db=_db();
+    const decoys=[];
+    try{
+      const all=await db.ref('bq_usernames').limitToFirst(80).once('value');
+      const cands=[]; all.forEach(c=>{ if(c.key && c.key!==real && !traces.dmPartners.includes(c.key)) cands.push(c.key); });
+      for(let i=0;i<3 && cands.length;i++){
+        const idx=Math.floor(Math.random()*cands.length);
+        decoys.push(cands.splice(idx,1)[0]);
+      }
+    }catch(_){}
+    if(decoys.length>=2){
+      const opts=[real, ...decoys].sort(()=>Math.random()-.5);
+      challenges.push({
+        id:'partner',
+        label:'Pick a username you have <b>DM\'d</b> from this account',
+        kind:'choice',
+        options:opts,
+        verify:(ans)=> String(ans||'').toLowerCase()===real.toLowerCase()
+      });
+    }
+  }
+  if(challenges.length<2){
+    setRecStatus('Not enough recoverable data to verify ownership safely. If you set up a passphrase or security question earlier, try those tabs.');
+    return;
+  }
+
+  closeAnyModal();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-restore';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:480px;width:100%;padding:22px;max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:700;font-size:17px">Verify ownership of @${_esc(name)}</div>
+        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+      </div>
+      <div style="opacity:.7;font-size:12px;margin-bottom:14px">Answer at least 2 correctly to recover this account.</div>
+      <div id="bq-rcq-list"></div>
+      <button id="bq-rcq-submit" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;margin-top:8px">Verify and restore</button>
+      <div id="bq-rcq-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+
+  const list=$('bq-rcq-list');
+  challenges.forEach((c,i)=>{
+    const box=document.createElement('div');
+    box.style.cssText='background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:12px;margin-bottom:10px';
+    if(c.kind==='text'){
+      box.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${c.label}</div>
+        <input data-q="${c.id}" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:8px;box-sizing:border-box"/>`;
+    } else if(c.kind==='choice'){
+      box.innerHTML=`<div style="font-size:13px;margin-bottom:8px">${c.label}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${c.options.map(o=>`<label style="display:flex;align-items:center;gap:8px;padding:8px;background:#0a0d12;border:1px solid #2a3040;border-radius:6px;cursor:pointer">
+            <input type="radio" name="q-${c.id}" value="${_esc(o)}" data-q="${c.id}"/>
+            <span>@${_esc(o)}</span></label>`).join('')}
+        </div>`;
+    }
+    list.appendChild(box);
+  });
+
+  $('bq-rcq-submit').onclick=async function(){
+    const lock=await checkLockout(name); if(lock){ $('bq-rcq-status').style.color='#fca5a5'; $('bq-rcq-status').textContent='Too many attempts. Try again in '+lock+'s.'; return; }
+    let score=0;
+    challenges.forEach(c=>{
+      let ans='';
+      if(c.kind==='text'){ ans=wrap.querySelector('[data-q="'+c.id+'"]')?.value||''; }
+      else { const r=wrap.querySelector('input[name="q-'+c.id+'"]:checked'); ans=r?r.value:''; }
+      if(c.verify(ans)) score++;
+    });
+    const status=$('bq-rcq-status');
+    if(score<2){
+      await bumpLockout(name);
+      status.style.color='#fca5a5';
+      status.textContent='Could not verify (got '+score+'/'+challenges.length+' right). Try again with more accurate info.';
+      return;
+    }
+    await clearLockout(name);
+    if(!await showConfirmRestore()){ status.textContent=''; return; }
+    status.style.color='#4ade80'; status.textContent='Verified. Restoring…';
+    const fresh=genRecoveryCode();
+    const freshHash=await sha256Hex(fresh);
+    try{ await _db().ref('bq_recovery/'+uid).update({codeHash:freshHash, codeCreatedAt:Date.now(), reclaimed:Date.now(), username:name}); }catch(_){}
+    restoreToUid(uid, 'Account restored.', fresh);
+  };
+}
+
+/* ── Settings (kept similar to v22, with passphrase show/hide & strength) ── */
+function passStrength(p){
+  let s=0;
+  if(!p) return 0;
+  if(p.length>=8) s++;
+  if(p.length>=12) s++;
+  if(/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+  if(/\d/.test(p)) s++;
+  if(/[^A-Za-z0-9]/.test(p)) s++;
+  return Math.min(s,4);
+}
+
+function showRecoverySettings(){
+  closeAnyModal();
+  const u=_uid();
+  const wrap=document.createElement('div');
+  wrap.id='bq-rec-settings';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.innerHTML=`
+    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:460px;width:100%;padding:22px;max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-weight:700;font-size:17px">🔐 Account security</div>
+        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+      </div>
+      <div style="opacity:.65;font-size:12px;margin-bottom:18px">Set up multiple ways to recover your account if you lose this device.</div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Recovery code <span id="bq-rs-code-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A one-time secret you save somewhere safe. Strongest protection.</div>
+        <button id="bq-rs-code-show" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Generate new code</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Passphrase <span id="bq-rs-pass-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A password tied to your UID. No email needed.</div>
+        <div style="position:relative;margin-bottom:6px">
+          <input id="bq-rs-pass-inp" type="password" placeholder="New passphrase (min 8 chars)" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px 38px 9px 9px;box-sizing:border-box"/>
+          <button type="button" id="bq-rs-pass-eye" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#aaa;cursor:pointer;font-size:13px;padding:4px 8px">👁</button>
+        </div>
+        <div id="bq-rs-pass-meter" style="height:4px;background:#2a3040;border-radius:2px;overflow:hidden;margin-bottom:8px"><div id="bq-rs-pass-bar" style="height:100%;width:0;background:#ef4444;transition:.2s all"></div></div>
+        <button id="bq-rs-pass-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save passphrase</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px">Security question <span id="bq-rs-q-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
+        <div style="font-size:12px;opacity:.7;margin-bottom:10px">Soft fallback. Less secure.</div>
+        <input id="bq-rs-q-q" placeholder="Question" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
+        <input id="bq-rs-q-a" placeholder="Answer" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
+        <button id="bq-rs-q-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save question</button>
+      </div>
+      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:0">
+        <div style="font-weight:600;margin-bottom:6px">Your UID</div>
+        <div style="font:600 12px ui-monospace,Menlo,monospace;opacity:.85;word-break:break-all;user-select:all">${_esc(u)}</div>
+        <div style="font-size:11px;opacity:.55;margin-top:6px">Keep this — combined with a passphrase or code, it's how you recover.</div>
+      </div>
+      <div id="bq-rs-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
+  wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
+  getRecoveryNode(u).then(r=>{
+    if(r){
+      if(r.codeHash) $('bq-rs-code-status').textContent='✓ set';
+      if(r.passHash) $('bq-rs-pass-status').textContent='✓ set';
+      if(r.qHash){ $('bq-rs-q-status').textContent='✓ set'; if(r.question) $('bq-rs-q-q').value=r.question; }
+    }
+  });
+  $('bq-rs-pass-eye').onclick=()=>{
+    const inp=$('bq-rs-pass-inp'); inp.type=inp.type==='password'?'text':'password';
+  };
+  $('bq-rs-pass-inp').addEventListener('input',()=>{
+    const v=$('bq-rs-pass-inp').value, s=passStrength(v);
+    const bar=$('bq-rs-pass-bar');
+    const colors=['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+    const widths=[10,30,55,80,100];
+    bar.style.width=widths[s]+'%'; bar.style.background=colors[s];
+  });
+  $('bq-rs-code-show').onclick=async()=>{
+    const fresh=genRecoveryCode();
+    const hash=await sha256Hex(fresh);
+    try{
+      await _db().ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:_uname()});
+      showRecoveryCodeModal(fresh, false);
+    }catch(_){ _toast('Failed to save — check connection','err'); }
+  };
+  $('bq-rs-pass-save').onclick=async()=>{
+    const v=($('bq-rs-pass-inp').value||'').trim();
+    const s=$('bq-rs-status');
+    if(v.length<8){ s.textContent='Passphrase must be at least 8 characters.'; s.style.color='#fca5a5'; return; }
+    const salt=randomHex(16);
+    const hash=await pbkdf2Hex(v, salt);
+    try{
+      await _db().ref('bq_recovery/'+u).update({passHash:hash, passSalt:salt, username:_uname()});
+      $('bq-rs-pass-inp').value=''; $('bq-rs-pass-status').textContent='✓ set';
+      $('bq-rs-pass-bar').style.width='0';
+      s.textContent='Passphrase saved.'; s.style.color='#4ade80';
+    }catch(_){ s.textContent='Save failed.'; s.style.color='#fca5a5'; }
+  };
+  $('bq-rs-q-save').onclick=async()=>{
+    const q=($('bq-rs-q-q').value||'').trim().slice(0,120);
+    const a=($('bq-rs-q-a').value||'').trim().toLowerCase();
+    const s=$('bq-rs-status');
+    if(q.length<5||a.length<2){ s.textContent='Question and answer required.'; s.style.color='#fca5a5'; return; }
+    const salt=randomHex(16);
+    const hash=await pbkdf2Hex(a, salt);
+    try{
+      await _db().ref('bq_recovery/'+u).update({question:q, qHash:hash, qSalt:salt, username:_uname()});
+      $('bq-rs-q-a').value=''; $('bq-rs-q-status').textContent='✓ set';
+      s.textContent='Security question saved.'; s.style.color='#4ade80';
+    }catch(_){ s.textContent='Save failed.'; s.style.color='#fca5a5'; }
+  };
+}
+
+/* ── Mount entry points (override v22) ── */
+function mountRecoveryEntry(){
+  // Profile pane
+  const profV=$('bqv-profile');
+  if(profV){
+    let row=profV.querySelector('.bq-rec-entry');
+    if(!row){
+      row=document.createElement('button');
+      row.type='button';
+      row.className='bq-rec-entry';
+      row.style.cssText='display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:8px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(167,139,250,.12));border:1px solid rgba(96,165,250,.25);border-radius:12px;color:inherit;cursor:pointer;font:600 14px system-ui,sans-serif;text-align:left';
+      row.innerHTML='<span style="font-size:20px">🔐</span><span style="flex:1">Account &amp; recovery</span><span style="opacity:.5">›</span>';
+      const scroll=profV.querySelector('.bqpf-scroll')||profV;
+      scroll.insertBefore(row, scroll.firstChild);
+    }
+    row.onclick=()=>{ if(!_uname()) { _toast('Set a username first'); return; } showRecoverySettings(); };
+  }
+  // Username intro card — "Recover an existing account"
+  const nm=$('bqnm');
+  if(nm){
+    const card=nm.querySelector('.bqnmc')||nm.firstElementChild;
+    if(card){
+      let link=card.querySelector('.bq-rec-link');
+      if(!link){
+        link=document.createElement('button');
+        link.type='button';
+        link.className='bq-rec-link';
+        link.style.cssText='display:block;width:100%;margin-top:12px;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px system-ui;text-decoration:underline';
+        link.textContent='Recover an existing account →';
+        card.appendChild(link);
+      }
+      link.onclick=(e)=>{ e.preventDefault(); showRestoreModal(); };
+    }
+  }
+}
+
+/* ── On-load: show pending new-code modal after restore ── */
+function maybeShowPendingCode(){
+  try{
+    const c=sessionStorage.getItem(PENDING_NEW_CODE_KEY);
+    if(c){ sessionStorage.removeItem(PENDING_NEW_CODE_KEY); setTimeout(()=>showRecoveryCodeModal(c,false), 800); }
+  }catch(_){}
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PART 2 — NEW FEATURES
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────── Helpers: which chat is active ─────────── */
+function activeCtx(){
+  // 'global' if global chat is visible, 'dm' if dm view is visible
+  const g=$('bqv-global'); const d=$('bqv-dm');
+  const dmActive = d && (d.classList.contains('bq-active') || getComputedStyle(d).display!=='none');
+  const gActive = g && (g.classList.contains('bq-active') || getComputedStyle(g).display!=='none');
+  if(dmActive) return 'dm';
+  if(gActive) return 'global';
+  return null;
+}
+function activeDmId(){
+  const hav=$('bqdmhav'); return document.querySelector(".bqdmr.active-row")?.dataset?.did || null;
+}
+function activeDmPuid(){
+  const hav=$('bqdmhav'); return hav?.dataset?.puid || null;
+}
+
+/* ─────────── Inject CSS for new features ─────────── */
+(function injectV23CSS(){
+  if($('bq-v23-css')) return;
+  const s=document.createElement('style');
+  s.id='bq-v23-css';
+  s.textContent=`
+  /* Spoiler */
+  .bq-spoiler{background:#2a3040;color:transparent;border-radius:4px;padding:0 4px;cursor:pointer;transition:all .2s;text-shadow:none;-webkit-user-select:none;user-select:none}
+  .bq-spoiler.revealed{background:rgba(96,165,250,.15);color:inherit;cursor:auto;-webkit-user-select:auto;user-select:auto}
+  /* Markdown */
+  .bqbbl strong{font-weight:700}
+  .bqbbl em{font-style:italic}
+  .bqbbl s{opacity:.7}
+  .bqbbl code{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(0,0,0,.25);padding:1px 5px;border-radius:4px;font-size:.92em}
+  .bqbbl pre{background:rgba(0,0,0,.3);border-radius:6px;padding:8px 10px;margin:4px 0;overflow:auto;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace}
+  .bqbbl blockquote{border-left:3px solid rgba(96,165,250,.5);margin:4px 0;padding:2px 0 2px 8px;opacity:.85}
+  /* Link preview card */
+  .bq-linkprev{display:flex;gap:10px;margin-top:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-decoration:none;color:inherit;max-width:340px;align-items:center}
+  .bq-linkprev img{width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#222}
+  .bq-linkprev .bq-lp-t{font-weight:600;font-size:13px;line-height:1.3;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .bq-linkprev .bq-lp-d{font-size:11px;opacity:.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* Translate badge */
+  .bq-tr-out{margin-top:6px;padding:6px 8px;background:rgba(96,165,250,.1);border-left:2px solid #60a5fa;border-radius:0 6px 6px 0;font-size:.95em}
+  .bq-tr-toggle{display:inline-block;margin-top:4px;font-size:11px;color:#9ad7ff;cursor:pointer;opacity:.8}
+  /* Poll bubble */
+  .bq-poll{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;margin:4px 0;min-width:220px;max-width:340px}
+  .bq-poll-q{font-weight:700;margin-bottom:10px}
+  .bq-poll-opt{display:block;margin-bottom:6px;cursor:pointer;position:relative;padding:8px 10px;background:rgba(0,0,0,.25);border-radius:6px;overflow:hidden;border:1px solid transparent;transition:all .15s}
+  .bq-poll-opt:hover{border-color:rgba(96,165,250,.4)}
+  .bq-poll-opt.voted{border-color:#3b82f6}
+  .bq-poll-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(59,130,246,.25),rgba(167,139,250,.18));transform-origin:left;transition:transform .35s}
+  .bq-poll-row{position:relative;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+  .bq-poll-meta{font-size:11px;opacity:.65;margin-top:6px}
+  /* Slash menu */
+  #bq-slash{position:absolute;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:6px;min-width:240px;max-height:280px;overflow-y:auto;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5);font:13px system-ui}
+  #bq-slash .bq-sl-item{display:flex;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;color:#e6e9ef}
+  #bq-slash .bq-sl-item.active,#bq-slash .bq-sl-item:hover{background:#2a3040}
+  #bq-slash .bq-sl-cmd{font-weight:600;color:#9ad7ff;min-width:80px;font-family:ui-monospace}
+  #bq-slash .bq-sl-desc{opacity:.7;font-size:11px}
+  /* Jump-to-unread pill */
+  .bq-jump{position:absolute;left:50%;transform:translateX(-50%);bottom:80px;background:#3b82f6;color:#fff;border:0;border-radius:20px;padding:7px 14px;font:600 12px system-ui;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:5;animation:bqJumpIn .25s ease}
+  @keyframes bqJumpIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+  /* Swipe-to-reply hint */
+  .bqr.bq-swipe{transition:transform .15s ease}
+  .bqr.bq-swipe-active{transition:none}
+  .bq-swipe-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,.25);display:flex;align-items:center;justify-content:center;color:#9ad7ff;pointer-events:none;transition:opacity .15s}
+  .bqr.bq-swipe-show .bq-swipe-icon{opacity:1}
+  /* Draft chip */
+  .bq-draft-chip{font-size:10px;background:rgba(245,158,11,.18);color:#fbbf24;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  /* Schedule menu */
+  #bq-sched-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:8px;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #bq-sched-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font:13px system-ui}
+  #bq-sched-menu button:hover{background:#2a3040}
+  /* Disappearing menu */
+  #bq-disappear-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:6px;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5);min-width:200px}
+  #bq-disappear-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:9px 12px;border-radius:6px;cursor:pointer;font:13px system-ui}
+  #bq-disappear-menu button:hover{background:#2a3040}
+  #bq-disappear-menu button.active{background:rgba(59,130,246,.2);color:#9ad7ff}
+  `;
+  document.head.appendChild(s);
+})();
+
+/* ─────────── A) Markdown + spoiler + link previews + translate ─────────── */
+
+/* Render markdown safely from already-escaped HTML */
+function applyMarkdown(escaped){
+  let s=escaped;
+  // Code blocks ``` ... ```
+  s=s.replace(/```([\s\S]*?)```/g, (m,c)=>'<pre>'+c.replace(/^\n/,'').replace(/\n$/,'')+'</pre>');
+  // Inline code `...`
+  s=s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // Bold **...**
+  s=s.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
+  // Italic *...*
+  s=s.replace(/(^|[\s>])\*([^\*\n]+)\*(?=[\s<.,!?;:]|$)/g, '$1<em>$2</em>');
+  // Strike ~~...~~
+  s=s.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
+  // Spoiler ||...||
+  s=s.replace(/\|\|([^|\n]+)\|\|/g, '<span class="bq-spoiler" data-spoiler="1">$1</span>');
+  // Block quote > line
+  s=s.replace(/(^|<br\s*\/?>)&gt;\s?([^<\n]+)/g, '$1<blockquote>$2</blockquote>');
+  return s;
+}
+
+/* Process a freshly-rendered bubble */
+const _linkPrevCache=(()=>{ try{ return JSON.parse(localStorage.getItem('bq_lp_cache')||'{}'); }catch(_){return{};} })();
+function _saveLpCache(){ try{ localStorage.setItem('bq_lp_cache', JSON.stringify(_linkPrevCache)); }catch(_){} }
+
+async function fetchLinkPreview(url){
+  if(_linkPrevCache[url]) return _linkPrevCache[url];
+  try{
+    const r=await fetch('https://api.microlink.io/?url='+encodeURIComponent(url));
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    if(j && j.status==='success' && j.data){
+      const out={ title:j.data.title||url, desc:j.data.description||'', img:j.data.image?.url||'', url };
+      _linkPrevCache[url]=out; _saveLpCache(); return out;
+    }
+  }catch(_){}
+  _linkPrevCache[url]={title:url,desc:'',img:'',url}; _saveLpCache();
+  return _linkPrevCache[url];
+}
+
+function processBubble(bbl){
+  if(!bbl || bbl.dataset.v23ed==='1') return;
+  bbl.dataset.v23ed='1';
+
+  // Markdown — operate ONLY on text nodes outside anchors/already-styled spans
+  // Safest: collect plain spans (excluding mention/link/code already added) and re-process.
+  // Simpler approach: take innerHTML, transform, set back. But this would re-escape `<a>` from linkify.
+  // We'll process per text-segment between tags.
+  try{
+    const html=bbl.innerHTML;
+    // Apply markdown only if any markdown markers exist
+    if(/(\*\*|`|~~|\|\||(^|<br\s*\/?>)&gt;\s)/.test(html)){
+      // The HTML is already escaped+linkified+mentionified; markdown markers are still raw chars.
+      bbl.innerHTML=applyMarkdown(html);
+    }
+  }catch(_){}
+
+  // Spoiler click to reveal
+  bbl.querySelectorAll('.bq-spoiler:not([data-bound])').forEach(sp=>{
+    sp.dataset.bound='1';
+    sp.addEventListener('click', ()=>sp.classList.add('revealed'));
+  });
+
+  // Link preview (only first http link, only if no media in bubble)
+  if(!bbl.classList.contains('media') && !bbl.classList.contains('sticker')){
+    const a=bbl.querySelector('a[href^="http"]');
+    if(a && !bbl.querySelector('.bq-linkprev')){
+      const url=a.href;
+      // Skip if message is JUST a link to a giphy
+      if(!/giphy\.com|tenor\.com/i.test(url)){
+        fetchLinkPreview(url).then(d=>{
+          if(!d || (!d.img && (!d.title || d.title===url))) return;
+          if(bbl.querySelector('.bq-linkprev')) return;
+          const card=document.createElement('a');
+          card.className='bq-linkprev'; card.href=d.url; card.target='_blank'; card.rel='noopener';
+          card.innerHTML=(d.img?'<img src="'+_esc(d.img)+'" loading="lazy" onerror="this.style.display=\'none\'"/>':'')+
+            '<div style="min-width:0"><div class="bq-lp-t">'+_esc(d.title||d.url)+'</div>'+(d.desc?'<div class="bq-lp-d">'+_esc(d.desc)+'</div>':'')+'</div>';
+          bbl.appendChild(card);
+        });
+      }
+    }
+  }
+
+  // Poll rendering: if msg is a poll, the bubble already has marker text; poll bubbles handled separately by render hook.
+}
+
+/* Watch bubbles being inserted */
+const bubbleObs=new MutationObserver(muts=>{
+  muts.forEach(m=>{
+    m.addedNodes.forEach(n=>{
+      if(!(n instanceof HTMLElement)) return;
+      if(n.classList?.contains('bqbbl')) processBubble(n);
+      n.querySelectorAll?.('.bqbbl').forEach(processBubble);
+      // Poll bubble post-process
+      n.querySelectorAll?.('.bqr[data-msg-poll="1"], [data-msg-poll="1"]').forEach(rePaintPoll);
+    });
+  });
+});
+
+/* Translate via context menu (long-press) */
+function translateMessage(text, target='en'){
+  const url='https://lingva.ml/api/v1/auto/'+target+'/'+encodeURIComponent(text.slice(0,500));
+  return fetch(url).then(r=>r.json()).then(j=>j?.translation||null).catch(()=>null);
+}
+function attachTranslateUI(){
+  // Long-press any bubble shows a tiny "Translate" button; tap to translate.
+  let pressTimer=null, pressTarget=null;
+  const start=(e)=>{
+    const bbl=e.target.closest?.('.bqbbl'); if(!bbl) return;
+    const txt=bbl.textContent.trim(); if(txt.length<2) return;
+    pressTarget=bbl;
+    pressTimer=setTimeout(()=>{
+      if(bbl.querySelector('.bq-tr-toggle')) return;
+      const tog=document.createElement('div');
+      tog.className='bq-tr-toggle'; tog.textContent='🌐 Translate';
+      bbl.appendChild(tog);
+      tog.onclick=async(ev)=>{
+        ev.stopPropagation();
+        if(bbl.querySelector('.bq-tr-out')){
+          // toggle off
+          bbl.querySelector('.bq-tr-out').remove(); tog.textContent='🌐 Translate'; return;
+        }
+        tog.textContent='Translating…';
+        const t=await translateMessage(txt);
+        if(!t){ tog.textContent='🌐 Translate failed'; setTimeout(()=>tog.remove(),1500); return; }
+        const out=document.createElement('div'); out.className='bq-tr-out'; out.textContent=t;
+        bbl.appendChild(out); tog.textContent='Show original';
+        tog.onclick=()=>{ out.remove(); tog.textContent='🌐 Translate'; tog.onclick=null; setTimeout(()=>attachTranslateUI(),0); };
+      };
+      setTimeout(()=>{ if(tog.parentNode && !bbl.querySelector('.bq-tr-out')) tog.remove(); }, 6000);
+    }, 600);
+  };
+  const cancel=()=>{ if(pressTimer) clearTimeout(pressTimer); pressTimer=null; };
+  document.addEventListener('pointerdown', start, {passive:true});
+  document.addEventListener('pointerup', cancel, {passive:true});
+  document.addEventListener('pointercancel', cancel, {passive:true});
+  document.addEventListener('pointermove', cancel, {passive:true});
+}
+
+/* ─────────── B) Slash commands ─────────── */
+const SLASH_CMDS = [
+  {cmd:'/me',      desc:'Action message: /me waves',           run:(args,ctx)=>sendText(ctx, '*'+(_uname()||'someone')+' '+args+'*')},
+  {cmd:'/shrug',   desc:'¯\\_(ツ)_/¯',                          run:(args,ctx)=>sendText(ctx, args+' ¯\\_(ツ)_/¯')},
+  {cmd:'/coinflip',desc:'Flip a coin',                          run:(_,ctx)=>sendText(ctx, '🪙 Coin flip: **'+(Math.random()<.5?'Heads':'Tails')+'**')},
+  {cmd:'/roll',    desc:'Roll dice. e.g. /roll 2d6',            run:(args,ctx)=>{
+      const m=(args||'1d6').match(/^(\d{1,2})d(\d{1,3})$/i)||['',1,6];
+      const n=Math.min(20, parseInt(m[1]||1,10)||1), s=Math.min(100, parseInt(m[2]||6,10)||6);
+      const rolls=[]; for(let i=0;i<n;i++) rolls.push(1+Math.floor(Math.random()*s));
+      const total=rolls.reduce((a,b)=>a+b,0);
+      sendText(ctx, '🎲 '+n+'d'+s+': '+rolls.join(', ')+' (sum **'+total+'**)');
+    }},
+  {cmd:'/8ball',   desc:'Magic 8 ball: /8ball will it rain?',   run:(args,ctx)=>{
+      const ans=['Yes','No','Maybe','Definitely','No way','Ask later','Signs point to yes','Outlook not so good','Without a doubt','Very doubtful'];
+      sendText(ctx, '🎱 '+(args?'_'+args+'_ → ':'')+'**'+ans[Math.floor(Math.random()*ans.length)]+'**');
+    }},
+  {cmd:'/poll',    desc:'Create a poll: /poll Q | A | B | C',   run:(args,ctx)=>createPoll(ctx, args)},
+  {cmd:'/clear',   desc:'Clear local view (your screen only)',  run:(_,ctx)=>{
+      const id=ctx==='global'?'bqgmsgs':'bqdmmsgs';
+      const el=$(id); if(el) el.innerHTML='<div id="'+(ctx==='global'?'bqgempty':'bqdmempty')+'" style="text-align:center;opacity:.5;margin:auto">Cleared locally. Refresh to see again.</div>';
+    }},
+  {cmd:'/help',    desc:'Show this list',                       run:(_,ctx)=>{
+      const lines=SLASH_CMDS.map(c=>c.cmd+' — '+c.desc).join('\n');
+      _toast('Commands:\n'+lines);
+    }},
+];
+
+function sendText(ctx, text){
+  if(!text) return;
+  // Reuse the widget's input field + send button: paste text, click send.
+  const inputId = ctx==='global' ? 'bqgi' : 'bqdmi';
+  const sendId  = ctx==='global' ? 'bqgs' : 'bqdms';
+  const inp=$(inputId), btn=$(sendId);
+  if(inp && btn){
+    inp.value=text;
+    // Trigger input event so the widget recognizes the value
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    btn.click();
+  } else {
+    // Fallback: write directly
+    const db=_db(); const u=_uid(); const n=_uname(); if(!db||!u||!n) return;
+    if(ctx==='global'){ db.ref('bq_messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()}); }
+    else { const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()}); }
+  }
+}
+
+function showSlashMenu(input, query){
+  $('bq-slash')?.remove();
+  const matches=SLASH_CMDS.filter(c=>c.cmd.startsWith(query));
+  if(!matches.length) return;
+  const m=document.createElement('div'); m.id='bq-slash';
+  matches.forEach((c,i)=>{
+    const it=document.createElement('div');
+    it.className='bq-sl-item'+(i===0?' active':'');
+    it.innerHTML='<span class="bq-sl-cmd">'+c.cmd+'</span><span class="bq-sl-desc">'+_esc(c.desc)+'</span>';
+    it.onclick=()=>{ executeSlash(input, c.cmd, ''); };
+    m.appendChild(it);
+  });
+  document.body.appendChild(m);
+  const r=input.getBoundingClientRect();
+  m.style.left=Math.max(8,r.left)+'px';
+  m.style.top=(r.top - m.offsetHeight - 6)+'px';
+}
+function hideSlashMenu(){ $('bq-slash')?.remove(); }
+function executeSlash(input, cmd, args){
+  const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
+  const c=SLASH_CMDS.find(x=>x.cmd===cmd);
+  if(!c){ _toast('Unknown command'); return; }
+  hideSlashMenu();
+  // Clear input
+  input.value=''; input.dispatchEvent(new Event('input',{bubbles:true}));
+  c.run((args||'').trim(), ctx);
+}
+
+function wireSlashOnInput(inputId){
+  const inp=$(inputId); if(!inp || inp._bqSlash) return; inp._bqSlash=true;
+  inp.addEventListener('input', ()=>{
+    const v=inp.value;
+    if(v.startsWith('/') && !v.includes(' ')){ showSlashMenu(inp, v); }
+    else { hideSlashMenu(); }
+  });
+  inp.addEventListener('keydown', (e)=>{
+    const v=inp.value.trim();
+    if(e.key==='Enter' && v.startsWith('/')){
+      const sp=v.indexOf(' ');
+      const cmd=sp>0?v.slice(0,sp):v;
+      const args=sp>0?v.slice(sp+1):'';
+      const known=SLASH_CMDS.find(c=>c.cmd===cmd);
+      if(known){ e.preventDefault(); e.stopPropagation(); executeSlash(inp, cmd, args); }
+    } else if(e.key==='Escape'){ hideSlashMenu(); }
+  });
+  inp.addEventListener('blur', ()=>setTimeout(hideSlashMenu, 200));
+}
+
+/* ─────────── C) Polls ─────────── */
+function createPoll(ctx, raw){
+  if(!raw){ _toast('Usage: /poll Question | Option A | Option B'); return; }
+  const parts=raw.split('|').map(s=>s.trim()).filter(Boolean);
+  if(parts.length<3){ _toast('Need a question and at least 2 options.'); return; }
+  const q=parts[0], opts=parts.slice(1,7);
+  const db=_db(); const u=_uid(); const n=_uname(); if(!db||!u||!n) return;
+  const payload={
+    uid:u, uname:n, ts:Date.now(),
+    type:'poll',
+    text:'📊 Poll: '+q,
+    poll:{ q:q, opts:opts, votes:{} }
+  };
+  if(ctx==='global') db.ref('bq_messages').push(payload);
+  else {
+    const id=activeDmId(); const puid=activeDmPuid(); if(!id) return;
+    db.ref('bq_dms/'+id+'/messages').push(payload);
+    db.ref('bq_dms/'+id+'/meta').update({lastMsg:'📊 Poll', lastTs:Date.now()});
+  }
+}
+
+/* Repaint poll bubbles after they appear */
+function rePaintPoll(rowEl){
+  const bbl=rowEl.querySelector?.('.bqbbl'); if(!bbl) return;
+  if(bbl.dataset.pollPainted==='1') return;
+  // Read poll data from DOM dataset (we'll attach it during render hook)
+  const data=bbl.dataset.pollData; if(!data) return;
+  let p; try{ p=JSON.parse(data); }catch(_){ return; }
+  bbl.dataset.pollPainted='1';
+  bbl.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='bq-poll';
+  wrap.innerHTML='<div class="bq-poll-q">📊 '+_esc(p.q)+'</div>';
+  const ctx=p._ctx, key=p._key;
+  const votes=p.votes||{};
+  const counts=p.opts.map((_,i)=>0);
+  let total=0; let myVote=-1;
+  Object.entries(votes).forEach(([uid,idx])=>{ if(idx>=0 && idx<counts.length){ counts[idx]++; total++; if(uid===_uid()) myVote=idx; }});
+  p.opts.forEach((opt,i)=>{
+    const pct=total?Math.round(counts[i]*100/total):0;
+    const row=document.createElement('div');
+    row.className='bq-poll-opt'+(myVote===i?' voted':'');
+    row.innerHTML='<div class="bq-poll-fill" style="transform:scaleX('+(pct/100)+')"></div>'+
+      '<div class="bq-poll-row"><span>'+_esc(opt)+'</span><span style="opacity:.7">'+counts[i]+' • '+pct+'%</span></div>';
+    row.onclick=async()=>{
+      const u=_uid(); if(!u){ _toast('Set a username first'); return; }
+      const path=ctx==='global'?'bq_messages/'+key+'/poll/votes/'+u:'bq_dms/'+activeDmId()+'/messages/'+key+'/poll/votes/'+u;
+      try{ await _db().ref(path).set(myVote===i?null:i); }catch(_){ _toast('Vote failed','err'); }
+    };
+    wrap.appendChild(row);
+  });
+  const meta=document.createElement('div'); meta.className='bq-poll-meta';
+  meta.textContent=total+' vote'+(total===1?'':'s');
+  wrap.appendChild(meta);
+  bbl.appendChild(wrap);
+}
+
+/* Watch poll messages live: scan bubbles, attach data, then live-update */
+function pollScanAndWatch(){
+  // Find new messages with 'Poll:' marker — for that, hook directly into firebase listeners.
+  // Simpler: every bubble whose text starts with '📊 Poll:' becomes a candidate; we re-fetch its data live.
+  document.querySelectorAll('.bqr:not([data-poll-watched])').forEach(row=>{
+    const bbl=row.querySelector('.bqbbl'); if(!bbl) return;
+    const txt=bbl.textContent||'';
+    if(!txt.startsWith('📊 Poll:')) return;
+    row.dataset.pollWatched='1';
+    // derive context + key from row id 'bqmsg-<ctx>-<key>'
+    const m=row.id.match(/^bqmsg-(global|dm)-(.+)$/); if(!m) return;
+    const ctx=m[1], key=m[2];
+    const path=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId()+'/messages/'+key;
+    const db=_db(); if(!db) return;
+    const ref=db.ref(path);
+    ref.on('value', snap=>{
+      const v=snap.val(); if(!v||!v.poll) return;
+      bbl.dataset.pollData=JSON.stringify({...v.poll, _ctx:ctx, _key:key});
+      bbl.dataset.pollPainted='0';
+      rePaintPoll(row);
+    });
+  });
+}
+
+/* ─────────── D) Per-conversation drafts ─────────── */
+function draftKey(){
+  const ctx=activeCtx();
+  if(ctx==='global') return 'bq_draft_global';
+  if(ctx==='dm'){ const id=activeDmId(); return id?'bq_draft_dm_'+id:null; }
+  return null;
+}
+function wireDrafts(){
+  ['bqgi','bqdmi'].forEach(id=>{
+    const inp=$(id); if(!inp || inp._bqDraft) return; inp._bqDraft=true;
+    const save=debounce(()=>{
+      const k=draftKey(); if(!k) return;
+      const v=inp.value||'';
+      // skip if it's a slash command typed
+      if(v.startsWith('/')) { localStorage.removeItem(k); return; }
+      if(v) localStorage.setItem(k, v); else localStorage.removeItem(k);
+    }, 300);
+    inp.addEventListener('input', save);
+    // Clear draft on send (input becomes empty)
+    inp.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter' && !e.shiftKey){
+        const k=draftKey(); if(k) setTimeout(()=>{ if(!inp.value) localStorage.removeItem(k); }, 50);
+      }
+    });
+  });
+  // Restore on view open
+  restoreDraft();
+}
+function restoreDraft(){
+  const k=draftKey(); if(!k) return;
+  const v=localStorage.getItem(k); if(!v) return;
+  const ctx=activeCtx();
+  const inp=$(ctx==='global'?'bqgi':'bqdmi'); if(!inp || inp.value) return;
+  inp.value=v;
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+}
+const draftViewObs=new MutationObserver(()=>{ try{ restoreDraft(); }catch(_){}});
+
+/* ─────────── E) Scheduled messages ─────────── */
+function getScheduled(){ try{ return JSON.parse(localStorage.getItem('bq_sched_v23')||'[]'); }catch(_){ return []; } }
+function setScheduled(arr){ try{ localStorage.setItem('bq_sched_v23', JSON.stringify(arr)); }catch(_){} }
+function scheduleMessage(ctx, dmId, text, atMs){
+  const arr=getScheduled();
+  arr.push({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), ctx, dmId:dmId||'', text, atMs});
+  setScheduled(arr);
+  _toast('Scheduled for '+new Date(atMs).toLocaleString(),'ok');
+}
+function dispatchScheduled(){
+  const now=Date.now();
+  const arr=getScheduled();
+  let changed=false;
+  for(let i=arr.length-1;i>=0;i--){
+    const s=arr[i];
+    if(s.atMs<=now){
+      try{
+        const db=_db(); const u=_uid(); const n=_uname();
+        if(db && u && n){
+          if(s.ctx==='global'){ db.ref('bq_messages').push({uid:u,uname:n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
+          else if(s.dmId){ db.ref('bq_dms/'+s.dmId+'/messages').push({uid:u,uname:n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
+        }
+      }catch(_){}
+      arr.splice(i,1); changed=true;
+    }
+  }
+  if(changed) setScheduled(arr);
+}
+function showScheduleMenu(anchor){
+  $('bq-sched-menu')?.remove();
+  const text=($('bqgi')?.value||$('bqdmi')?.value||'').trim();
+  if(!text){ _toast('Type a message first'); return; }
+  const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
+  const dmId=ctx==='dm'?activeDmId():'';
+  const m=document.createElement('div'); m.id='bq-sched-menu';
+  const opts=[
+    ['In 1 minute', 60*1000],
+    ['In 1 hour', 60*60*1000],
+    ['Tonight 8pm', null],
+    ['Tomorrow 9am', null],
+    ['Custom time…', 'custom']
+  ];
+  opts.forEach(([label,delta])=>{
+    const b=document.createElement('button'); b.textContent=label;
+    b.onclick=()=>{
+      let at=Date.now();
+      if(delta==='custom'){
+        const v=prompt('Send at (YYYY-MM-DD HH:MM, 24h):');
+        if(!v) return;
+        const t=new Date(v.replace(' ','T'));
+        if(isNaN(t)) { _toast('Invalid date','err'); return; }
+        at=t.getTime();
+      } else if(label==='Tonight 8pm'){
+        const d=new Date(); d.setHours(20,0,0,0); if(d<=Date.now()) d.setDate(d.getDate()+1); at=d.getTime();
+      } else if(label==='Tomorrow 9am'){
+        const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); at=d.getTime();
+      } else { at=Date.now()+delta; }
+      if(at<=Date.now()){ _toast('Pick a future time','err'); return; }
+      // Clear input
+      const inp=$(ctx==='global'?'bqgi':'bqdmi'); if(inp){ inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+      scheduleMessage(ctx, dmId, text, at);
+      m.remove();
+    };
+    m.appendChild(b);
+  });
+  document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect();
+  m.style.left=Math.max(8, r.right - 220)+'px';
+  m.style.top=(r.top - m.offsetHeight - 8)+'px';
+  setTimeout(()=>{
+    const off=(e)=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
+    document.addEventListener('pointerdown', off, true);
+  },10);
+}
+function wireScheduleSendButton(){
+  ['bqgs','bqdms'].forEach(id=>{
+    const btn=$(id); if(!btn || btn._bqSched) return; btn._bqSched=true;
+    let pressTimer=null;
+    btn.addEventListener('pointerdown',(e)=>{
+      pressTimer=setTimeout(()=>{ pressTimer=null; showScheduleMenu(btn); }, 600);
+    });
+    const cancel=()=>{ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } };
+    btn.addEventListener('pointerup', cancel);
+    btn.addEventListener('pointerleave', cancel);
+    btn.addEventListener('pointercancel', cancel);
+  });
+}
+
+/* ─────────── F) Per-chat disappearing messages ─────────── */
+function disKey(){ const ctx=activeCtx(); if(ctx==='global') return 'bq_dis_global'; if(ctx==='dm'){ const id=activeDmId(); return id?'bq_dis_dm_'+id:null;} return null; }
+function getDisTtl(){ const k=disKey(); if(!k) return 0; return parseInt(localStorage.getItem(k)||'0',10)||0; }
+function setDisTtl(ms){ const k=disKey(); if(!k) return; if(ms) localStorage.setItem(k,String(ms)); else localStorage.removeItem(k); }
+function showDisappearMenu(anchor){
+  $('bq-disappear-menu')?.remove();
+  const cur=getDisTtl();
+  const opts=[ ['Off',0], ['1 hour',3600000], ['24 hours',86400000], ['7 days',7*86400000] ];
+  const m=document.createElement('div'); m.id='bq-disappear-menu';
+  m.innerHTML='<div style="padding:8px 12px;font:600 12px system-ui;opacity:.7">Disappearing messages</div>';
+  opts.forEach(([label,ms])=>{
+    const b=document.createElement('button');
+    b.textContent=label+(cur===ms?'  ✓':'');
+    if(cur===ms) b.classList.add('active');
+    b.onclick=()=>{ setDisTtl(ms); _toast(ms?'Messages will vanish after '+label:'Disappearing messages off','ok'); m.remove(); };
+    m.appendChild(b);
+  });
+  document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect();
+  m.style.left=Math.max(8, r.left - 60)+'px';
+  m.style.top=(r.bottom + 6)+'px';
+  setTimeout(()=>{
+    const off=(e)=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
+    document.addEventListener('pointerdown', off, true);
+  },10);
+}
+
+/* Inject disappear button into composer */
+function mountDisappearBtn(){
+  ['bqgi','bqdmi'].forEach(id=>{
+    const inp=$(id); if(!inp) return;
+    const composer=inp.closest('.bqcomp')||inp.parentElement;
+    if(!composer || composer.querySelector('.bq-dis-btn')) return;
+    const b=document.createElement('button');
+    b.type='button'; b.className='bq-dis-btn';
+    b.title='Disappearing messages';
+    b.style.cssText='background:none;border:0;color:inherit;cursor:pointer;font-size:16px;padding:6px 8px;opacity:.7';
+    b.innerHTML='⏱';
+    b.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); showDisappearMenu(b); };
+    composer.insertBefore(b, composer.firstChild);
+  });
+}
+
+/* Wrap sendGlobal/sendDm to inject expiresAt based on per-chat TTL */
+function patchSendersForDisappear(){
+  if(window._bqDisPatched) return;
+  // We can't see internal funcs from inside their IIFE. Instead, we observe new messages
+  // sent locally (input cleared right after a send) and update the just-pushed message in DB.
+  // Simpler: hook the click on the send button — read input, after a tick find newest msg by my uid and patch it.
+  ['bqgs','bqdms'].forEach((id,i)=>{
+    const btn=$(id); if(!btn || btn._bqDisHook) return; btn._bqDisHook=true;
+    btn.addEventListener('click',()=>{
+      const ctx=i===0?'global':'dm';
+      const ttl=getDisTtl(); if(!ttl) return;
+      const db=_db(); const u=_uid(); if(!db||!u) return;
+      const path=ctx==='global'?'bq_messages':'bq_dms/'+activeDmId()+'/messages';
+      setTimeout(()=>{
+        try{
+          db.ref(path).orderByChild('uid').equalTo(u).limitToLast(1).once('value', snap=>{
+            snap.forEach(c=>{
+              const v=c.val();
+              if(v && !v.expiresAt && v.ts && (Date.now()-v.ts)<5000){
+                db.ref(path+'/'+c.key).update({expiresAt: v.ts + ttl});
+              }
+            });
+          });
+        }catch(_){}
+      }, 600);
+    });
+  });
+  window._bqDisPatched=true;
+}
+
+/* Cleanup expired messages locally + DB */
+function cleanupExpired(){
+  document.querySelectorAll('.bqr').forEach(row=>{
+    const ts=parseInt(row.dataset.ts||'0',10);
+    // we can't see expiresAt in DOM; rely on widget's own check on render
+  });
+}
+
+/* ─────────── G) Jump-to-unread ─────────── */
+function wireJumpToUnread(){
+  ['bqgmsgs','bqdmmsgs'].forEach(id=>{
+    const sc=$(id); if(!sc || sc._bqJump) return; sc._bqJump=true;
+    let lastSeenIdx=0; let unread=0; let pill=null;
+    const updatePill=()=>{
+      const atBottom = (sc.scrollHeight - sc.scrollTop - sc.clientHeight) < 80;
+      if(atBottom){ pill?.remove(); pill=null; unread=0; lastSeenIdx=sc.children.length; return; }
+      if(unread<=0){ pill?.remove(); pill=null; return; }
+      if(!pill){
+        pill=document.createElement('button'); pill.className='bq-jump';
+        const parent=sc.parentElement; if(getComputedStyle(parent).position==='static') parent.style.position='relative';
+        parent.appendChild(pill);
+        pill.onclick=()=>{
+          sc.scrollTop=sc.scrollHeight;
+          pill.remove(); pill=null; unread=0; lastSeenIdx=sc.children.length;
+        };
+      }
+      pill.textContent='↓ '+unread+' new message'+(unread===1?'':'s');
+    };
+    new MutationObserver(muts=>{
+      muts.forEach(m=>m.addedNodes.forEach(n=>{ if(n.classList?.contains('bqr')) unread++; }));
+      updatePill();
+    }).observe(sc, {childList:true});
+    sc.addEventListener('scroll', updatePill);
+  });
+}
+
+/* ─────────── H) Swipe-to-reply ─────────── */
+function wireSwipeReply(){
+  ['bqgmsgs','bqdmmsgs'].forEach(id=>{
+    const sc=$(id); if(!sc || sc._bqSwipe) return; sc._bqSwipe=true;
+    let startX=0, startY=0, target=null, active=false;
+    sc.addEventListener('pointerdown',(e)=>{
+      if(e.pointerType!=='touch') return;
+      const row=e.target.closest('.bqr'); if(!row) return;
+      target=row; startX=e.clientX; startY=e.clientY; active=false;
+      row.classList.add('bq-swipe');
+    });
+    sc.addEventListener('pointermove',(e)=>{
+      if(!target) return;
+      const dx=e.clientX-startX, dy=e.clientY-startY;
+      if(!active){
+        if(Math.abs(dy)>10){ target=null; return; }
+        if(Math.abs(dx)<6) return;
+        active=true;
+        target.classList.add('bq-swipe-active');
+        if(!target.querySelector('.bq-swipe-icon')){
+          const ic=document.createElement('div'); ic.className='bq-swipe-icon';
+          ic.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>';
+          target.appendChild(ic);
+        }
+      }
+      const tx=Math.max(0, Math.min(72, dx));
+      target.style.transform='translateX('+tx+'px)';
+      if(tx>40) target.classList.add('bq-swipe-show'); else target.classList.remove('bq-swipe-show');
+    });
+    const end=(e)=>{
+      if(!target) return;
+      const dx=(e.clientX||0)-startX;
+      target.style.transform='';
+      target.classList.remove('bq-swipe-active','bq-swipe-show');
+      target.querySelector('.bq-swipe-icon')?.remove();
+      if(active && dx>60){
+        // Trigger reply: simulate clicking the message's reply action.
+        // The widget's action sheet has [data-a="reply"]. Easier: dispatch a custom click
+        // on the bubble + reply via existing menu.
+        try{
+          const m=target.id.match(/^bqmsg-(global|dm)-(.+)$/);
+          if(m){
+            // Open action sheet then auto-click reply
+            const bbl=target.querySelector('.bqbbl');
+            bbl?.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
+            setTimeout(()=>{
+              const r=document.querySelector('#bq-msg-sheet [data-a="reply"]');
+              if(r){ r.click(); }
+              document.getElementById('bq-msg-sheet')?.remove();
+            }, 50);
+          }
+        }catch(_){}
+      }
+      target=null; active=false;
+    };
+    sc.addEventListener('pointerup', end);
+    sc.addEventListener('pointercancel', end);
+    sc.addEventListener('pointerleave', end);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   BOOT
+   ════════════════════════════════════════════════════════════════════════ */
+
+function boot(){
+  try{ maybeShowPendingCode(); }catch(_){}
+  try{ mountRecoveryEntry(); }catch(_){}
+  try{
+    bubbleObs.observe(document.body, {childList:true, subtree:true});
+    document.querySelectorAll('.bqbbl').forEach(processBubble);
+  }catch(_){}
+  try{ attachTranslateUI(); }catch(_){}
+  try{ wireSlashOnInput('bqgi'); wireSlashOnInput('bqdmi'); }catch(_){}
+  try{ wireDrafts(); }catch(_){}
+  try{ wireScheduleSendButton(); }catch(_){}
+  try{ mountDisappearBtn(); }catch(_){}
+  try{ patchSendersForDisappear(); }catch(_){}
+  try{ wireJumpToUnread(); }catch(_){}
+  try{ wireSwipeReply(); }catch(_){}
+  try{ pollScanAndWatch(); }catch(_){}
+  try{
+    // Watch view changes for draft restore
+    ['bqv-global','bqv-dm'].forEach(id=>{ const e=$(id); if(e) draftViewObs.observe(e,{attributes:true,attributeFilter:['class']}); });
+  }catch(_){}
+  // Pending code re-attempt
+  const tryEnsure=()=>{ if(_db() && _uname()) ensureRecoveryCode(); };
+  setTimeout(tryEnsure, 2500);
+  setTimeout(tryEnsure, 6000);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(boot, 700));
+else setTimeout(boot, 700);
+
+// Periodic re-wires (covers DOM that v22's IIFE recreates)
+setInterval(()=>{
+  try{ mountRecoveryEntry(); }catch(_){}
+  try{ wireSlashOnInput('bqgi'); wireSlashOnInput('bqdmi'); }catch(_){}
+  try{ wireDrafts(); }catch(_){}
+  try{ wireScheduleSendButton(); }catch(_){}
+  try{ mountDisappearBtn(); }catch(_){}
+  try{ patchSendersForDisappear(); }catch(_){}
+  try{ wireJumpToUnread(); }catch(_){}
+  try{ wireSwipeReply(); }catch(_){}
+  try{ pollScanAndWatch(); }catch(_){}
+  try{ dispatchScheduled(); }catch(_){}
+}, 3000);
+
+})();
+/* ════════════ end v23 patch ════════════ */
