@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.2-v29';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '9.6.3-v30';                 // v9.6.1: compact working message menu + 4 fixed themes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -11415,3 +11415,244 @@ setInterval(()=>{
   DBG('v28 patch loaded');
 })();
 /* ════════════ end v28 patch ════════════ */
+
+/* ════════════ v30 patch ════════════
+   1. Reduce themes to TWO: "golden" (golden brown) and "pure-black".
+      Hide all other chips in both pickers (in-DM #bq-theme-chips and
+      settings #bq-if-themes). Inject the two chips if missing. Wire
+      clicks to the existing setGlobalTheme().
+   2. Define golden + pure-black CSS for #bqp.bq-theme-golden / .bq-theme-pure-black.
+   3. Living shared reactions: when a reaction is added to a DM message
+      and BOTH participants are currently viewing the thread (presence
+      activeDmId matches), play a flying-emoji burst on every client.
+═══════════════════════════════════════ */
+(function(){
+  'use strict';
+  var THEMES = ['golden','pure-black'];
+  var THEME_LABEL = { 'golden':'Golden Brown', 'pure-black':'Pure Black' };
+
+  /* ── 1. CSS: hide every old chip; style the two new ones; theme styles ── */
+  var css = document.createElement('style');
+  css.id = 'bq-v30-themes';
+  css.textContent = [
+    /* hide every existing chip in both pickers */
+    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:none!important;}',
+    /* show only the two we keep */
+    '#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],',
+    '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],',
+    '#bqp #bq-if-themes .bq-if-th[data-t="golden"],',
+    '#bqp #bq-if-themes .bq-if-th[data-t="pure-black"]{display:inline-block!important;}',
+    /* swatch styles */
+    '#bqp .bq-theme-chip[data-t="golden"],#bqp .bq-if-th[data-t="golden"]{background:linear-gradient(135deg,#d4a056 0%,#6b3a14 100%)!important;border:1px solid rgba(212,160,86,.5)!important;}',
+    '#bqp .bq-theme-chip[data-t="pure-black"],#bqp .bq-if-th[data-t="pure-black"]{background:#000!important;border:1px solid rgba(255,255,255,.25)!important;}',
+    /* ── Theme: Golden Brown ── */
+    '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden .bqdmh,#bqp.bq-theme-golden .bqiw{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:0 4px 18px rgba(212,160,86,.32),inset 0 1px 0 rgba(255,255,255,.22)!important;}',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.10)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden .bqun{color:#d4a056!important;}',
+    '#bqp.bq-theme-golden .bqbbl-meta{color:rgba(244,227,199,.55)!important;}',
+    /* ── Theme: Pure Black ── */
+    '#bqp.bq-theme-pure-black{background:#000!important;color:#e5e5e5!important;}',
+    '#bqp.bq-theme-pure-black .bqdmh,#bqp.bq-theme-pure-black .bqiw{background:#000!important;color:#fff!important;border-color:rgba(255,255,255,.10)!important;}',
+    '#bqp.bq-theme-pure-black .bqr.mine .bqbbl{background:#1a1a1a!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:none!important;}',
+    '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl{background:#0a0a0a!important;color:#e5e5e5!important;border:1px solid rgba(255,255,255,.08)!important;}',
+    '#bqp.bq-theme-pure-black .bqun{color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bqbbl-meta{color:rgba(255,255,255,.45)!important;}',
+    /* ── Living reactions overlay ── */
+    '.bq-rxn-fly{position:fixed;pointer-events:none;font-size:42px;z-index:2147483647;will-change:transform,opacity;animation:bqRxnFly 1400ms cubic-bezier(.22,.61,.36,1) forwards;text-shadow:0 4px 16px rgba(0,0,0,.4);}',
+    '@keyframes bqRxnFly{0%{transform:translate(-50%,0) scale(.4);opacity:0;}15%{transform:translate(-50%,-12px) scale(1.25);opacity:1;}70%{transform:translate(calc(-50% + var(--bq-dx,0px)),calc(-160px + var(--bq-dy,0px))) scale(1) rotate(var(--bq-rot,0deg));opacity:1;}100%{transform:translate(calc(-50% + var(--bq-dx,0px)),-260px) scale(.6) rotate(var(--bq-rot,0deg));opacity:0;}}',
+    '.bq-rxn-pulse{animation:bqRxnPulse 600ms ease-out;}',
+    '@keyframes bqRxnPulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}'
+  ].join('\n');
+  (document.head||document.documentElement).appendChild(css);
+
+  /* ── 2. Ensure chips exist in both pickers ── */
+  function ensureChips(){
+    var dmRow = document.getElementById('bq-theme-chips');
+    if(dmRow){
+      THEMES.forEach(function(t){
+        if(!dmRow.querySelector('[data-t="'+t+'"]')){
+          var c = document.createElement('div');
+          c.className = 'bq-theme-chip';
+          c.dataset.t = t;
+          c.title = THEME_LABEL[t];
+          dmRow.appendChild(c);
+        }
+      });
+    }
+    var setGrid = document.getElementById('bq-if-themes');
+    if(setGrid){
+      THEMES.forEach(function(t){
+        if(!setGrid.querySelector('[data-t="'+t+'"]')){
+          var c = document.createElement('div');
+          c.className = 'bq-if-th';
+          c.dataset.t = t;
+          c.title = THEME_LABEL[t];
+          setGrid.appendChild(c);
+        }
+      });
+    }
+  }
+
+  /* ── 3. Apply a theme everywhere ── */
+  function applyTwoTheme(t){
+    if(THEMES.indexOf(t) < 0) t = 'pure-black';
+    var root = document.getElementById('bqp');
+    if(root){
+      // strip every prior bq-theme-* class
+      root.className = root.className.split(/\s+/).filter(function(c){
+        return c && c.indexOf('bq-theme-') !== 0;
+      }).join(' ') + ' bq-theme-' + t;
+    }
+    try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
+    // sync swatch selection
+    document.querySelectorAll('#bq-theme-chips .bq-theme-chip').forEach(function(x){
+      x.classList.toggle('sel', x.dataset.t === t);
+    });
+    document.querySelectorAll('#bq-if-themes .bq-if-th').forEach(function(x){
+      x.classList.toggle('sel', x.dataset.t === t);
+    });
+  }
+
+  /* ── 4. Wire click handlers (delegated, capture, idempotent) ── */
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest && e.target.closest('#bq-theme-chips .bq-theme-chip,#bq-if-themes .bq-if-th');
+    if(!chip) return;
+    var t = chip.dataset.t;
+    if(THEMES.indexOf(t) < 0) return;
+    e.stopPropagation();
+    applyTwoTheme(t);
+  }, true);
+
+  /* ── 5. Boot: inject chips, restore saved, default to pure-black ── */
+  function boot(){
+    ensureChips();
+    var saved = 'pure-black';
+    try{ saved = localStorage.getItem('bq_theme_v30') || 'pure-black'; }catch(_){}
+    applyTwoTheme(saved);
+  }
+  setTimeout(boot, 600);
+  // Re-apply periodically in case other patches mutate the picker
+  setInterval(function(){
+    ensureChips();
+    var root = document.getElementById('bqp');
+    if(!root) return;
+    var has = THEMES.some(function(t){ return root.classList.contains('bq-theme-'+t); });
+    if(!has){
+      var saved='pure-black';
+      try{ saved=localStorage.getItem('bq_theme_v30')||'pure-black'; }catch(_){}
+      applyTwoTheme(saved);
+    }
+  }, 2500);
+
+  /* ─────────────────────────────────────────
+     LIVING SHARED REACTIONS
+     When someone (re)acts on a DM message and both users are looking
+     at the same thread, fire a flying-emoji burst on every client.
+  ───────────────────────────────────────── */
+  var rxnSeen = Object.create(null);   // dmId|msgKey|emoji|uid -> true (already animated)
+  var rxnPrimed = Object.create(null); // dmId -> true (initial snapshot consumed)
+
+  function spawnFly(emoji, anchorEl){
+    try{
+      var rect = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      var cx, cy;
+      if(rect && rect.width){
+        cx = rect.left + rect.width/2;
+        cy = rect.top + rect.height/2;
+      } else {
+        cx = window.innerWidth/2;
+        cy = window.innerHeight*0.7;
+      }
+      var burst = 6;
+      for(var i=0;i<burst;i++){
+        var n = document.createElement('div');
+        n.className = 'bq-rxn-fly';
+        n.textContent = emoji;
+        n.style.left = cx + 'px';
+        n.style.top  = cy + 'px';
+        var dx = (Math.random()*200 - 100) | 0;
+        var dy = (Math.random()*60 - 30) | 0;
+        var rot = (Math.random()*60 - 30) | 0;
+        n.style.setProperty('--bq-dx', dx + 'px');
+        n.style.setProperty('--bq-dy', dy + 'px');
+        n.style.setProperty('--bq-rot', rot + 'deg');
+        n.style.animationDelay = (i*60) + 'ms';
+        document.body.appendChild(n);
+        setTimeout((function(el){ return function(){ el.remove(); }; })(n), 1700 + i*60);
+      }
+      if(anchorEl){
+        anchorEl.classList.remove('bq-rxn-pulse');
+        // force reflow so the animation can replay
+        void anchorEl.offsetWidth;
+        anchorEl.classList.add('bq-rxn-pulse');
+      }
+    }catch(_){}
+  }
+
+  function bothPresent(dmId, partnerUid){
+    return new Promise(function(resolve){
+      try{
+        if(!window.db || !partnerUid){ resolve(false); return; }
+        window.db.ref('bq_presence/'+partnerUid+'/activeDmId').once('value').then(function(s){
+          resolve(s.val() === dmId);
+        }).catch(function(){ resolve(false); });
+      }catch(_){ resolve(false); }
+    });
+  }
+
+  function attachReactionListener(dmId, partnerUid){
+    if(!window.db || !dmId) return;
+    if(rxnPrimed[dmId]) return;
+    rxnPrimed[dmId] = true;
+    var ref = window.db.ref('bq_dms/'+dmId+'/messages');
+    // Prime: mark all current reactions as seen so we don't replay history
+    ref.once('value').then(function(snap){
+      snap.forEach(function(child){
+        var msg = child.val()||{};
+        var rx  = msg.reactions||{};
+        Object.keys(rx).forEach(function(em){
+          Object.keys(rx[em]||{}).forEach(function(u){
+            rxnSeen[dmId+'|'+child.key+'|'+em+'|'+u] = true;
+          });
+        });
+      });
+      // Now listen for new reactions
+      ref.on('child_changed', function(s){
+        if(window.activeDmId !== dmId) return; // only animate when WE are present
+        var msg = s.val()||{}; var rx = msg.reactions||{};
+        var fresh = [];
+        Object.keys(rx).forEach(function(em){
+          Object.keys(rx[em]||{}).forEach(function(u){
+            var k = dmId+'|'+s.key+'|'+em+'|'+u;
+            if(!rxnSeen[k]){ rxnSeen[k] = true; fresh.push({em:em,u:u,key:s.key}); }
+          });
+        });
+        if(!fresh.length) return;
+        bothPresent(dmId, partnerUid).then(function(both){
+          if(!both) return; // only fire when BOTH are present (living reaction)
+          fresh.forEach(function(r){
+            var anchor = document.getElementById('bqmsg-dm-'+r.key);
+            spawnFly(r.em, anchor);
+          });
+        });
+      });
+    }).catch(function(){});
+  }
+
+  // Hook into showDmConvo by polling activeDmId changes
+  var lastDm = null;
+  setInterval(function(){
+    var did = window.activeDmId;
+    if(did && did !== lastDm){
+      lastDm = did;
+      attachReactionListener(did, window.activeDmPuid);
+    } else if(!did){
+      lastDm = null;
+    }
+  }, 800);
+
+  try{ console.log('[bq] v30 patch loaded — 2 themes + living reactions'); }catch(_){}
+})();
+/* ════════════ end v30 patch ════════════ */
