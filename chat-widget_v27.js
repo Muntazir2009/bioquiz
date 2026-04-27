@@ -10916,3 +10916,444 @@ setInterval(()=>{
 
 })();
 /* ════════════ end v25 patch ════════════ */
+
+/* ════════════════════════════════════════════════════════════════════
+   v28 PATCH — appended 2026-04-27
+   Fixes:
+     1. Recovery "username not found" — adds reverse-scan fallback against
+        bq_recovery/{uid}/username and bq_presence/{uid}/name when bq_usernames
+        mapping is missing for legacy accounts.
+     2. Voice notes — single global player, fixed Infinity-duration bug
+        (webm seek hack on loadedmetadata), accurate progress + duration.
+     3. Deleted messages re-appearing as "new" — track deleted-for-me keys
+        in localStorage and short-circuit renderMsg for them.
+     4. Two new themes — "plain" (pure black, no glassmorphism) and
+        "crimson" (Discord-like dark + crimson accents). Wired into both
+        global theme chips and the in-settings #bq-if-themes grid.
+   ════════════════════════════════════════════════════════════════════ */
+(function bqV28Patch(){
+  'use strict';
+  if(window.__bqV28__) return; window.__bqV28__=true;
+
+  var DBG = function(){ try{ if(window.__BQ_DEBUG__) console.log.apply(console,['[bqV28]'].concat([].slice.call(arguments))); }catch(_){} };
+  function $(id){ return document.getElementById(id); }
+  function _toast(msg, kind){ try{ if(window.toast) window.toast(msg, kind); }catch(_){ console.log('[bqV28]', msg); } }
+
+  /* ───────────────────────── 1) RECOVERY FALLBACK ───────────────────────── */
+  function getDb(){ try{ if(typeof window._db==='function') return window._db(); }catch(_){}
+    try{ return window.firebase && window.firebase.database && window.firebase.database(); }catch(_){ return null; } }
+
+  async function reverseScanUsername(name){
+    var db=getDb(); if(!db||!name) return null;
+    name=String(name).toLowerCase().replace(/[^a-z0-9_]/g,'');
+    // 1) Try bq_recovery/{uid}/username — newer accounts
+    try{
+      var rs=await db.ref('bq_recovery').once('value');
+      var hit=null; rs.forEach(function(c){
+        var v=c.val(); if(!v||hit) return;
+        if(v.username && String(v.username).toLowerCase()===name) hit=c.key;
+      });
+      if(hit){ DBG('reverseScan recovery hit',name,'→',hit);
+        try{ await db.ref('bq_usernames/'+name).set(hit); }catch(_){}
+        return hit;
+      }
+    }catch(_){}
+    // 2) Fallback: bq_presence/{uid}/name (legacy)
+    try{
+      var ps=await db.ref('bq_presence').once('value');
+      var hit2=null; ps.forEach(function(c){
+        var v=c.val(); if(!v||hit2) return;
+        if(v.name && String(v.name).toLowerCase()===name) hit2=c.key;
+      });
+      if(hit2){ DBG('reverseScan presence hit',name,'→',hit2);
+        try{ await db.ref('bq_usernames/'+name).set(hit2); }catch(_){}
+        return hit2;
+      }
+    }catch(_){}
+    return null;
+  }
+
+  // Wrap any existing lookupUidForUsername
+  function wrapLookup(){
+    var orig = window.lookupUidForUsername;
+    if(!orig || orig.__bqV28Wrapped) return;
+    var wrapped = async function(name){
+      try{
+        var u = await orig.apply(this, arguments);
+        if(u) return u;
+      }catch(_){}
+      return await reverseScanUsername(name);
+    };
+    wrapped.__bqV28Wrapped = true;
+    try{ window.lookupUidForUsername = wrapped; }catch(_){}
+  }
+  // Try once now; the original lives in the IIFE scope so we may need to
+  // patch via the click-time entry points. Fallback: monkey-patch all
+  // doRestore* handlers by intercepting the rec-status flow via DOM.
+  setTimeout(wrapLookup, 1500);
+
+  // Fallback: when user clicks any restore button and we see "No matching
+  // account" / "Username and code do not match" with a still-unresolved
+  // username, run reverse-scan and re-trigger the click invisibly is too
+  // invasive — instead, eagerly seed bq_usernames mappings once the modal opens.
+  document.addEventListener('click', function(e){
+    var t = e.target.closest && e.target.closest('[id^="bq-rc-go-"], [data-tab="claim"], #bq-rc-go-claim');
+    if(!t) return;
+    var nameInput = $('bq-rc-uname') || $('bq-rc-name-1') || $('bq-rc-name-3') || $('bq-rc-name-4');
+    var nm = nameInput && nameInput.value ? nameInput.value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'') : '';
+    if(!nm) return;
+    var db = getDb(); if(!db) return;
+    db.ref('bq_usernames/'+nm).once('value').then(function(s){
+      if(!s.val()){
+        DBG('seeding mapping for', nm);
+        reverseScanUsername(nm); // sets the mapping if found
+      }
+    });
+  }, true);
+
+  /* ───────────────────── 2) DELETED-FOR-ME TRACKING ───────────────────── */
+  var DEL_KEY = 'bq_v28_deleted_keys';
+  function loadDeleted(){
+    try{ return new Set(JSON.parse(localStorage.getItem(DEL_KEY)||'[]')); }
+    catch(_){ return new Set(); }
+  }
+  function saveDeleted(set){
+    try{
+      var arr = Array.from(set);
+      if(arr.length>500) arr = arr.slice(-500); // cap
+      localStorage.setItem(DEL_KEY, JSON.stringify(arr));
+    }catch(_){}
+  }
+  var DEL = loadDeleted();
+  window.__bqV28DeletedAdd = function(key){ DEL.add(key); saveDeleted(DEL); };
+
+  // Hook every "Delete for me" UI: when a message row is removed by user
+  // action, remember its id so any subsequent child_added re-render skips it.
+  // We watch DOM removals on the messages containers.
+  function watchRemoves(){
+    ['bqgmsgs','bqdmmsgs'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el || el.__bqV28Watch) return;
+      el.__bqV28Watch = true;
+      new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          m.removedNodes && m.removedNodes.forEach(function(n){
+            if(n.nodeType!==1) return;
+            var rid = n.id||'';
+            // bqmsg-global-<key> or bqmsg-dm-<key>
+            var m2 = /^bqmsg-(?:global|dm)-(.+)$/.exec(rid);
+            if(m2) DEL.add(m2[1]);
+          });
+        });
+        if(muts.length) saveDeleted(DEL);
+      }).observe(el,{childList:true});
+    });
+  }
+  setInterval(watchRemoves, 1500);
+
+  // Wrap renderMsg to drop deleted-for-me keys
+  function wrapRender(){
+    if(!window.renderMsg || window.renderMsg.__bqV28Wrapped) return;
+    var orig = window.renderMsg;
+    var wrapped = function(ctx, msg, key){
+      if(key && DEL.has(key)) { DBG('skip deleted key', key); return; }
+      return orig.apply(this, arguments);
+    };
+    wrapped.__bqV28Wrapped = true;
+    try{ window.renderMsg = wrapped; }catch(_){}
+  }
+  setTimeout(wrapRender, 1500);
+  setInterval(wrapRender, 4000); // re-apply if widget rebinds
+
+  /* ───────────────────── 3) VOICE PLAYBACK — single global player ──────── */
+  var VP = { audio:null, srcKey:null, node:null, raf:0 };
+
+  function fmtTime(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+  // Fix Infinity duration on webm/opus blobs by seeking to a huge offset
+  function resolveDuration(audio){
+    return new Promise(function(resolve){
+      if(audio.duration && isFinite(audio.duration) && audio.duration>0) return resolve(audio.duration);
+      var done=false;
+      var fin=function(){ if(done) return; done=true; try{audio.currentTime=0;}catch(_){}
+        resolve(isFinite(audio.duration)?audio.duration:0); };
+      audio.addEventListener('durationchange', function(){ if(isFinite(audio.duration)&&audio.duration>0) fin(); });
+      audio.addEventListener('loadedmetadata', function(){
+        if(isFinite(audio.duration)&&audio.duration>0) return fin();
+        try{ audio.currentTime = 1e10; }catch(_){ fin(); }
+      }, {once:true});
+      setTimeout(fin, 2500);
+    });
+  }
+
+  function paintBars(node, pct){
+    var bars = node.querySelectorAll('.bq-voice-bar');
+    if(!bars.length) return;
+    var cut = Math.floor(pct * bars.length);
+    bars.forEach(function(b,i){ b.classList.toggle('played', i<cut); b.style.opacity = i<cut?'1':''; });
+    node.style.setProperty('--bq-voice-progress', String(pct));
+    node.style.setProperty('--bq-vp', (pct*100).toFixed(1)+'%');
+  }
+  function setIcon(btn, playing){
+    if(!btn) return;
+    btn.innerHTML = playing
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+    btn.classList.toggle('playing', !!playing);
+  }
+  function stopVP(){
+    if(VP.audio){ try{ VP.audio.pause(); }catch(_){} }
+    if(VP.node){
+      paintBars(VP.node, 0);
+      var b = VP.node.querySelector('.bq-voice-play'); setIcon(b,false);
+    }
+    cancelAnimationFrame(VP.raf);
+    VP.audio=null; VP.node=null; VP.srcKey=null;
+  }
+
+  async function playOn(node){
+    var src = node.dataset.audio || '';
+    var durMs = parseInt(node.dataset.dur||'0',10) || 0;
+    if(!src) return;
+    var key = src.slice(0,64) + '|' + durMs;
+    var btn = node.querySelector('.bq-voice-play');
+    var time = node.querySelector('.bq-voice-time');
+
+    // Toggle pause on same node
+    if(VP.node===node && VP.audio){
+      if(!VP.audio.paused){ VP.audio.pause(); setIcon(btn,false); return; }
+      VP.audio.play().catch(function(){}); setIcon(btn,true); tickVP(); return;
+    }
+    stopVP();
+
+    var a = new Audio();
+    a.preload = 'metadata';
+    a.src = src;
+    VP.audio=a; VP.node=node; VP.srcKey=key;
+
+    var dur = await resolveDuration(a);
+    if(!dur && durMs) dur = durMs/1000;
+    a.addEventListener('ended', function(){
+      paintBars(node,0); setIcon(btn,false);
+      if(time) time.textContent = fmtTime(dur);
+      VP.audio=null; VP.node=null;
+    });
+    a.addEventListener('error', function(){
+      _toast('Voice playback failed','err'); stopVP();
+    });
+
+    if(time) time.textContent = fmtTime(dur||0);
+    try{ await a.play(); }catch(e){ _toast('Tap again to play','err'); stopVP(); return; }
+    setIcon(btn,true); tickVP();
+  }
+
+  function tickVP(){
+    cancelAnimationFrame(VP.raf);
+    var step = function(){
+      if(!VP.audio||!VP.node){ return; }
+      var d = VP.audio.duration;
+      if(!d || !isFinite(d)){ d = (parseInt(VP.node.dataset.dur||'0',10)||0)/1000; }
+      var pct = d ? Math.max(0, Math.min(1, VP.audio.currentTime / d)) : 0;
+      paintBars(VP.node, pct);
+      var time = VP.node.querySelector('.bq-voice-time');
+      if(time && d){
+        var left = Math.max(0, Math.round(d - VP.audio.currentTime));
+        time.textContent = fmtTime(left);
+      }
+      if(!VP.audio.paused) VP.raf = requestAnimationFrame(step);
+    };
+    VP.raf = requestAnimationFrame(step);
+  }
+
+  // Capture-phase handler — beats the older listeners
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.bq-voice-play');
+    if(!btn) return;
+    var node = btn.closest('.bq-voice-msg'); if(!node) return;
+    e.stopPropagation(); e.preventDefault();
+    playOn(node);
+  }, true);
+
+  // Tap-to-seek on bars (capture)
+  document.addEventListener('click', function(e){
+    var bars = e.target.closest && e.target.closest('.bq-voice-bars');
+    if(!bars) return;
+    var node = bars.closest('.bq-voice-msg'); if(!node) return;
+    if(VP.node!==node || !VP.audio) return; // require active to seek
+    var r = bars.getBoundingClientRect();
+    var pct = Math.max(0, Math.min(1, (e.clientX - r.left)/r.width));
+    var d = VP.audio.duration;
+    if(!d || !isFinite(d)) d = (parseInt(node.dataset.dur||'0',10)||0)/1000;
+    if(d) { try{ VP.audio.currentTime = d*pct; }catch(_){} paintBars(node, pct); }
+  }, true);
+
+  // Initial duration label fix on render: paint correct duration even before play
+  function paintInitialDurations(){
+    document.querySelectorAll('.bq-voice-msg').forEach(function(n){
+      if(n.__bqV28Init) return; n.__bqV28Init=true;
+      var t = n.querySelector('.bq-voice-time');
+      var d = parseInt(n.dataset.dur||'0',10);
+      if(t && d) t.textContent = fmtTime(d/1000);
+    });
+  }
+  setInterval(paintInitialDurations, 1200);
+
+  /* ───────────────────────── 4) NEW THEMES ───────────────────────── */
+  var V28_THEMES = {
+    plain:   { label:'Pure Black' },
+    crimson: { label:'Crimson' }
+  };
+
+  var css = document.createElement('style');
+  css.id='bqV28ThemeCss';
+  css.textContent = `
+  /* Chip swatches in both pickers */
+  .bq-theme-chip[data-t="plain"]{background:#000!important;border:1px solid rgba(255,255,255,.25)!important;}
+  .bq-theme-chip[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#1a0407 100%)!important;border:1px solid rgba(220,20,60,.5)!important;}
+  .bq-if-th[data-t="plain"]{background:#000;border:1px solid rgba(255,255,255,.25);}
+  .bq-if-th[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#1a0407 100%);border:1px solid rgba(220,20,60,.5);}
+
+  /* ── Pure Black: no glass, no blur, flat surfaces ── */
+  #bqp.bq-theme-plain{
+    --bq-bg:#000; --bq-bg-soft:#000; --bq-bg-hover:#0a0a0a;
+    --bq-surface:#000; --bq-surface-2:#0a0a0a; --bq-surface-3:#111;
+    --bq-text:#fff; --bq-text-muted:#9aa0a6; --bq-text-dim:#6b7280;
+    --bq-border:#1a1a1a; --bq-border-soft:#141414;
+    --bq-accent:#ffffff; --bq-accent-soft:#e5e7eb;
+    --bq-mine:#1f1f1f; --bq-mine-text:#fff;
+    --bq-other:#0d0d0d; --bq-other-text:#fff;
+    background:#000!important; color:#fff!important;
+  }
+  #bqp.bq-theme-plain *{ backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
+  #bqp.bq-theme-plain .bqbbl{ background:var(--bq-other)!important; box-shadow:none!important; border:1px solid #1a1a1a!important; }
+  #bqp.bq-theme-plain .bqr.mine .bqbbl{ background:var(--bq-mine)!important; }
+  #bqp.bq-theme-plain .bqhead,#bqp.bq-theme-plain .bqcomp,#bqp.bq-theme-plain .bqnav,
+  #bqp.bq-theme-plain .bqdmhead,#bqp.bq-theme-plain .bqdmlist,#bqp.bq-theme-plain .bqgmsgs,
+  #bqp.bq-theme-plain .bqdmmsgs{ background:#000!important; box-shadow:none!important; }
+  #bqp.bq-theme-plain .bqr.mine .bqbbl{ box-shadow:none!important; }
+  #bqp.bq-theme-plain .bqhbtn,#bqp.bq-theme-plain .bqvoice-btn,#bqp.bq-theme-plain .bqgifbtn,
+  #bqp.bq-theme-plain .bqscr{ background:#0a0a0a!important; border:1px solid #1f1f1f!important; color:#fff!important; box-shadow:none!important; }
+
+  /* ── Crimson Black (Discord-like) ── */
+  #bqp.bq-theme-crimson{
+    --bq-bg:#0e0a0c; --bq-bg-soft:#150d10; --bq-bg-hover:#1c1014;
+    --bq-surface:#160f12; --bq-surface-2:#1d1418; --bq-surface-3:#241820;
+    --bq-text:#f4e8ec; --bq-text-muted:#b39aa3; --bq-text-dim:#7a5d67;
+    --bq-border:#2a1a20; --bq-border-soft:#22141a;
+    --bq-accent:#dc143c; --bq-accent-soft:#ff4d6d;
+    --bq-mine:linear-gradient(135deg,#dc143c 0%,#a30b2a 100%);
+    --bq-mine-text:#fff;
+    --bq-other:#1d1418; --bq-other-text:#f4e8ec;
+    background:radial-gradient(ellipse at top,#1a0d12 0%,#0a0608 60%)!important;
+    color:#f4e8ec!important;
+  }
+  #bqp.bq-theme-crimson .bqbbl{
+    background:#1d1418!important; color:#f4e8ec!important;
+    border:1px solid #2a1a20!important;
+    box-shadow:0 2px 10px rgba(0,0,0,.45)!important;
+  }
+  #bqp.bq-theme-crimson .bqr.mine .bqbbl{
+    background:linear-gradient(135deg,#dc143c 0%,#a30b2a 100%)!important;
+    color:#fff!important; border-color:#dc143c!important;
+    box-shadow:0 4px 18px rgba(220,20,60,.35)!important;
+  }
+  #bqp.bq-theme-crimson .bqhead,#bqp.bq-theme-crimson .bqcomp,
+  #bqp.bq-theme-crimson .bqnav,#bqp.bq-theme-crimson .bqdmhead,
+  #bqp.bq-theme-crimson .bqdmlist{
+    background:rgba(20,12,15,.92)!important; border-color:#2a1a20!important;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  }
+  #bqp.bq-theme-crimson .bqgmsgs,#bqp.bq-theme-crimson .bqdmmsgs{
+    background:radial-gradient(ellipse at top,#1a0d12,#0a0608 65%)!important;
+  }
+  #bqp.bq-theme-crimson .bqhbtn,#bqp.bq-theme-crimson .bqvoice-btn,
+  #bqp.bq-theme-crimson .bqgifbtn,#bqp.bq-theme-crimson .bqscr{
+    background:#1d1418!important; border:1px solid #2a1a20!important;
+    color:#f4e8ec!important; box-shadow:none!important;
+  }
+  #bqp.bq-theme-crimson .bqhbtn:hover,#bqp.bq-theme-crimson .bqvoice-btn:hover,
+  #bqp.bq-theme-crimson .bqgifbtn:hover,#bqp.bq-theme-crimson .bqscr:hover{
+    color:#dc143c!important; border-color:#dc143c!important;
+  }
+  #bqp.bq-theme-crimson .bq-voice-bar.played,
+  #bqp.bq-theme-crimson .bq-theme-chip.sel,
+  #bqp.bq-theme-crimson .bq-if-th.sel{ background:#dc143c!important; border-color:#dc143c!important; box-shadow:0 0 0 2px rgba(220,20,60,.35)!important; }
+  #bqp.bq-theme-crimson a{ color:#ff4d6d!important; }
+  `;
+  document.head.appendChild(css);
+
+  // Inject chips into both grids if missing
+  function injectChips(){
+    var defs = [
+      { t:'plain',   title:'Pure Black' },
+      { t:'crimson', title:'Crimson' }
+    ];
+    // Global chip row
+    var chipRow = document.getElementById('bq-theme-chips');
+    if(chipRow){
+      defs.forEach(function(d){
+        if(chipRow.querySelector('.bq-theme-chip[data-t="'+d.t+'"]')) return;
+        var c=document.createElement('div'); c.className='bq-theme-chip';
+        c.dataset.t=d.t; c.title=d.title;
+        chipRow.appendChild(c);
+      });
+    }
+    // Settings grid
+    var grid = document.getElementById('bq-if-themes');
+    if(grid){
+      defs.forEach(function(d){
+        if(grid.querySelector('.bq-if-th[data-t="'+d.t+'"]')) return;
+        var c=document.createElement('div'); c.className='bq-if-th';
+        c.dataset.t=d.t; c.title=d.title;
+        grid.appendChild(c);
+      });
+    }
+  }
+  setInterval(injectChips, 1500);
+  injectChips();
+
+  // Apply / persist theme — works for both pickers
+  var THEME_KEY = 'bq_theme';
+  var KNOWN = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','plain','crimson'];
+
+  function applyTheme(t){
+    if(!t) t='none';
+    var root = document.getElementById('bqp');
+    if(!root) return;
+    KNOWN.forEach(function(k){ root.classList.remove('bq-theme-'+k); });
+    if(t!=='none') root.classList.add('bq-theme-'+t);
+    try{ localStorage.setItem(THEME_KEY, t); }catch(_){}
+    document.querySelectorAll('.bq-theme-chip').forEach(function(c){ c.classList.toggle('sel', c.dataset.t===t); });
+    document.querySelectorAll('.bq-if-th').forEach(function(c){ c.classList.toggle('sel', c.dataset.t===t); });
+    // Notify any listener the original code uses
+    try{ window.dispatchEvent(new CustomEvent('bq-theme-change',{detail:{theme:t}})); }catch(_){}
+  }
+
+  // Click delegation — handles new themes (and keeps existing behavior intact for built-ins)
+  document.addEventListener('click', function(e){
+    var chip = e.target.closest && e.target.closest('.bq-theme-chip[data-t="plain"], .bq-theme-chip[data-t="crimson"], .bq-if-th[data-t="plain"], .bq-if-th[data-t="crimson"]');
+    if(!chip) return;
+    e.stopPropagation();
+    applyTheme(chip.dataset.t);
+  }, true);
+
+  // Restore on boot if previously selected one of the new ones
+  function restoreSaved(){
+    try{
+      var t = localStorage.getItem(THEME_KEY);
+      if(t==='plain' || t==='crimson') applyTheme(t);
+    }catch(_){}
+  }
+  setTimeout(restoreSaved, 1800);
+  setInterval(function(){
+    try{
+      var t = localStorage.getItem(THEME_KEY);
+      var root = document.getElementById('bqp');
+      if(!root) return;
+      if((t==='plain'||t==='crimson') && !root.classList.contains('bq-theme-'+t)) applyTheme(t);
+    }catch(_){}
+  }, 3000);
+
+  DBG('v28 patch loaded');
+})();
+/* ════════════ end v28 patch ════════════ */
