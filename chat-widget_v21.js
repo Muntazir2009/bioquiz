@@ -8037,8 +8037,8 @@ function _db(){
   try{ if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){}
   return null;
 }
-function _uid(){ return localStorage.getItem('bq_uid')||''; }
-function _uname(){ return localStorage.getItem('bq_name')||''; }
+function _uid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
+function _uname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
 
 /* ── Per-user DM index writes (wrap senders) ── */
 function _indexBoth(dmId, partnerUid){
@@ -8518,18 +8518,17 @@ function boot(){
     if(hav) _activeObs.observe(hav, {attributes:true, attributeFilter:['data-puid']});
     trackActiveDm();
   }catch(_){}
-  try{ mountRecoveryEntry(); }catch(_){}
+  // NOTE (v26): mountRecoveryEntry + ensureRecoveryCode are owned by the v23
+  // patch below — do not run v22's versions or they collide and the older
+  // closure (with the wrong username key) wins, showing "Set a username first".
   try{ patchEditWindow(); }catch(_){}
   try{ wireDeleteForEveryone(); }catch(_){}
   try{ patchActionSheet(); }catch(_){}
-  const tryEnsure=()=>{ if(_db() && _uname()) ensureRecoveryCode(); };
-  setTimeout(tryEnsure, 2500);
-  setTimeout(tryEnsure, 6000);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(boot, 600));
 else setTimeout(boot, 600);
 
-setInterval(()=>{ try{ wrapSenders(); mountRecoveryEntry(); patchEditWindow(); }catch(_){} }, 3000);
+setInterval(()=>{ try{ wrapSenders(); patchEditWindow(); }catch(_){} }, 3000);
 
 })();
 
@@ -8561,8 +8560,8 @@ function _toast(m,kind){
   }catch(_){}
 }
 function _db(){ try{ if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){} return null; }
-function _uid(){ return localStorage.getItem('bq_uid')||''; }
-function _uname(){ return localStorage.getItem('bq_name')||''; }
+function _uid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
+function _uname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
 async function sha256Hex(s){
   const enc=new TextEncoder().encode(s);
   const buf=await crypto.subtle.digest('SHA-256', enc);
@@ -9308,7 +9307,7 @@ function showRecoverySettings(){
 
 /* ── Mount entry points (override v22) ── */
 function mountRecoveryEntry(){
-  // Profile pane
+  // Profile pane — single canonical entry, polished placement
   const profV=$('bqv-profile');
   if(profV){
     let row=profV.querySelector('.bq-rec-entry');
@@ -9316,12 +9315,36 @@ function mountRecoveryEntry(){
       row=document.createElement('button');
       row.type='button';
       row.className='bq-rec-entry';
-      row.style.cssText='display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:8px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(167,139,250,.12));border:1px solid rgba(96,165,250,.25);border-radius:12px;color:inherit;cursor:pointer;font:600 14px system-ui,sans-serif;text-align:left';
-      row.innerHTML='<span style="font-size:20px">🔐</span><span style="flex:1">Account &amp; recovery</span><span style="opacity:.5">›</span>';
+      row.style.cssText=[
+        'display:flex','align-items:center','gap:12px',
+        'box-sizing:border-box','width:calc(100% - 24px)',
+        'margin:14px 12px 6px','padding:13px 14px',
+        'background:linear-gradient(135deg,rgba(96,165,250,.10),rgba(167,139,250,.10))',
+        'border:1px solid rgba(96,165,250,.22)','border-radius:14px',
+        'color:inherit','cursor:pointer','text-align:left',
+        'font:600 14px/1.2 -apple-system,system-ui,sans-serif',
+        'box-shadow:0 1px 0 rgba(255,255,255,.04) inset',
+        'transition:transform .12s ease, background .15s ease'
+      ].join(';');
+      row.onmouseenter=()=>{ row.style.background='linear-gradient(135deg,rgba(96,165,250,.16),rgba(167,139,250,.16))'; };
+      row.onmouseleave=()=>{ row.style.background='linear-gradient(135deg,rgba(96,165,250,.10),rgba(167,139,250,.10))'; };
+      row.onmousedown=()=>{ row.style.transform='scale(.985)'; };
+      row.onmouseup  =()=>{ row.style.transform='scale(1)'; };
+      row.innerHTML=
+        '<span style="font-size:18px;line-height:1">🔐</span>'+
+        '<span style="flex:1;display:flex;flex-direction:column;gap:2px">'+
+          '<span>Account &amp; recovery</span>'+
+          '<span style="font-weight:400;font-size:11px;opacity:.65">Save a code to restore your account on any device</span>'+
+        '</span>'+
+        '<span style="opacity:.5;font-size:18px">›</span>';
+      // Append to bottom of scroll area so it never overlaps the header card
       const scroll=profV.querySelector('.bqpf-scroll')||profV;
-      scroll.insertBefore(row, scroll.firstChild);
+      scroll.appendChild(row);
     }
-    row.onclick=()=>{ if(!_uname()) { _toast('Set a username first'); return; } showRecoverySettings(); };
+    row.onclick=()=>{
+      if(!_uname()){ _toast('Set a username first'); return; }
+      showRecoverySettings();
+    };
   }
   // Username intro card — "Recover an existing account"
   const nm=$('bqnm');
@@ -9333,7 +9356,7 @@ function mountRecoveryEntry(){
         link=document.createElement('button');
         link.type='button';
         link.className='bq-rec-link';
-        link.style.cssText='display:block;width:100%;margin-top:12px;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px system-ui;text-decoration:underline';
+        link.style.cssText='display:block;width:100%;margin-top:14px;padding:6px 0;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px/1.4 -apple-system,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px';
         link.textContent='Recover an existing account →';
         card.appendChild(link);
       }
@@ -9404,12 +9427,6 @@ function activeDmPuid(){
   .bq-poll-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(59,130,246,.25),rgba(167,139,250,.18));transform-origin:left;transition:transform .35s}
   .bq-poll-row{position:relative;display:flex;justify-content:space-between;gap:8px;font-size:13px}
   .bq-poll-meta{font-size:11px;opacity:.65;margin-top:6px}
-  /* Slash menu */
-  #bq-slash{position:absolute;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:6px;min-width:240px;max-height:280px;overflow-y:auto;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5);font:13px system-ui}
-  #bq-slash .bq-sl-item{display:flex;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;color:#e6e9ef}
-  #bq-slash .bq-sl-item.active,#bq-slash .bq-sl-item:hover{background:#2a3040}
-  #bq-slash .bq-sl-cmd{font-weight:600;color:#9ad7ff;min-width:80px;font-family:ui-monospace}
-  #bq-slash .bq-sl-desc{opacity:.7;font-size:11px}
   /* Jump-to-unread pill */
   .bq-jump{position:absolute;left:50%;transform:translateX(-50%);bottom:80px;background:#3b82f6;color:#fff;border:0;border-radius:20px;padding:7px 14px;font:600 12px system-ui;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:5;animation:bqJumpIn .25s ease}
   @keyframes bqJumpIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
@@ -9573,179 +9590,7 @@ function attachTranslateUI(){
   document.addEventListener('pointermove', cancel, {passive:true});
 }
 
-/* ─────────── B) Slash commands ─────────── */
-const SLASH_CMDS = [
-  {cmd:'/me',      desc:'Action message: /me waves',           run:(args,ctx)=>sendText(ctx, '*'+(_uname()||'someone')+' '+args+'*')},
-  {cmd:'/shrug',   desc:'¯\\_(ツ)_/¯',                          run:(args,ctx)=>sendText(ctx, args+' ¯\\_(ツ)_/¯')},
-  {cmd:'/coinflip',desc:'Flip a coin',                          run:(_,ctx)=>sendText(ctx, '🪙 Coin flip: **'+(Math.random()<.5?'Heads':'Tails')+'**')},
-  {cmd:'/roll',    desc:'Roll dice. e.g. /roll 2d6',            run:(args,ctx)=>{
-      const m=(args||'1d6').match(/^(\d{1,2})d(\d{1,3})$/i)||['',1,6];
-      const n=Math.min(20, parseInt(m[1]||1,10)||1), s=Math.min(100, parseInt(m[2]||6,10)||6);
-      const rolls=[]; for(let i=0;i<n;i++) rolls.push(1+Math.floor(Math.random()*s));
-      const total=rolls.reduce((a,b)=>a+b,0);
-      sendText(ctx, '🎲 '+n+'d'+s+': '+rolls.join(', ')+' (sum **'+total+'**)');
-    }},
-  {cmd:'/8ball',   desc:'Magic 8 ball: /8ball will it rain?',   run:(args,ctx)=>{
-      const ans=['Yes','No','Maybe','Definitely','No way','Ask later','Signs point to yes','Outlook not so good','Without a doubt','Very doubtful'];
-      sendText(ctx, '🎱 '+(args?'_'+args+'_ → ':'')+'**'+ans[Math.floor(Math.random()*ans.length)]+'**');
-    }},
-  {cmd:'/poll',    desc:'Create a poll: /poll Q | A | B | C',   run:(args,ctx)=>createPoll(ctx, args)},
-  {cmd:'/clear',   desc:'Clear local view (your screen only)',  run:(_,ctx)=>{
-      const id=ctx==='global'?'bqgmsgs':'bqdmmsgs';
-      const el=$(id); if(el) el.innerHTML='<div id="'+(ctx==='global'?'bqgempty':'bqdmempty')+'" style="text-align:center;opacity:.5;margin:auto">Cleared locally. Refresh to see again.</div>';
-    }},
-  {cmd:'/help',    desc:'Show this list',                       run:(_,ctx)=>{
-      const lines=SLASH_CMDS.map(c=>c.cmd+' — '+c.desc).join('\n');
-      _toast('Commands:\n'+lines);
-    }},
-];
-
-function sendText(ctx, text){
-  if(!text) return;
-  // Reuse the widget's input field + send button: paste text, click send.
-  const inputId = ctx==='global' ? 'bqgi' : 'bqdmi';
-  const sendId  = ctx==='global' ? 'bqgs' : 'bqdms';
-  const inp=$(inputId), btn=$(sendId);
-  if(inp && btn){
-    inp.value=text;
-    // Trigger input event so the widget recognizes the value
-    inp.dispatchEvent(new Event('input',{bubbles:true}));
-    btn.click();
-  } else {
-    // Fallback: write directly
-    const db=_db(); const u=_uid(); const n=_uname(); if(!db||!u||!n) return;
-    if(ctx==='global'){ db.ref('bq_messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()}); }
-    else { const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()}); }
-  }
-}
-
-function showSlashMenu(input, query){
-  $('bq-slash')?.remove();
-  const matches=SLASH_CMDS.filter(c=>c.cmd.startsWith(query));
-  if(!matches.length) return;
-  const m=document.createElement('div'); m.id='bq-slash';
-  matches.forEach((c,i)=>{
-    const it=document.createElement('div');
-    it.className='bq-sl-item'+(i===0?' active':'');
-    it.innerHTML='<span class="bq-sl-cmd">'+c.cmd+'</span><span class="bq-sl-desc">'+_esc(c.desc)+'</span>';
-    it.onclick=()=>{ executeSlash(input, c.cmd, ''); };
-    m.appendChild(it);
-  });
-  document.body.appendChild(m);
-  const r=input.getBoundingClientRect();
-  m.style.left=Math.max(8,r.left)+'px';
-  m.style.top=(r.top - m.offsetHeight - 6)+'px';
-}
-function hideSlashMenu(){ $('bq-slash')?.remove(); }
-function executeSlash(input, cmd, args){
-  const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
-  const c=SLASH_CMDS.find(x=>x.cmd===cmd);
-  if(!c){ _toast('Unknown command'); return; }
-  hideSlashMenu();
-  // Clear input
-  input.value=''; input.dispatchEvent(new Event('input',{bubbles:true}));
-  c.run((args||'').trim(), ctx);
-}
-
-function wireSlashOnInput(inputId){
-  const inp=$(inputId); if(!inp || inp._bqSlash) return; inp._bqSlash=true;
-  inp.addEventListener('input', ()=>{
-    const v=inp.value;
-    if(v.startsWith('/') && !v.includes(' ')){ showSlashMenu(inp, v); }
-    else { hideSlashMenu(); }
-  });
-  inp.addEventListener('keydown', (e)=>{
-    const v=inp.value.trim();
-    if(e.key==='Enter' && v.startsWith('/')){
-      const sp=v.indexOf(' ');
-      const cmd=sp>0?v.slice(0,sp):v;
-      const args=sp>0?v.slice(sp+1):'';
-      const known=SLASH_CMDS.find(c=>c.cmd===cmd);
-      if(known){ e.preventDefault(); e.stopPropagation(); executeSlash(inp, cmd, args); }
-    } else if(e.key==='Escape'){ hideSlashMenu(); }
-  });
-  inp.addEventListener('blur', ()=>setTimeout(hideSlashMenu, 200));
-}
-
-/* ─────────── C) Polls ─────────── */
-function createPoll(ctx, raw){
-  if(!raw){ _toast('Usage: /poll Question | Option A | Option B'); return; }
-  const parts=raw.split('|').map(s=>s.trim()).filter(Boolean);
-  if(parts.length<3){ _toast('Need a question and at least 2 options.'); return; }
-  const q=parts[0], opts=parts.slice(1,7);
-  const db=_db(); const u=_uid(); const n=_uname(); if(!db||!u||!n) return;
-  const payload={
-    uid:u, uname:n, ts:Date.now(),
-    type:'poll',
-    text:'📊 Poll: '+q,
-    poll:{ q:q, opts:opts, votes:{} }
-  };
-  if(ctx==='global') db.ref('bq_messages').push(payload);
-  else {
-    const id=activeDmId(); const puid=activeDmPuid(); if(!id) return;
-    db.ref('bq_dms/'+id+'/messages').push(payload);
-    db.ref('bq_dms/'+id+'/meta').update({lastMsg:'📊 Poll', lastTs:Date.now()});
-  }
-}
-
-/* Repaint poll bubbles after they appear */
-function rePaintPoll(rowEl){
-  const bbl=rowEl.querySelector?.('.bqbbl'); if(!bbl) return;
-  if(bbl.dataset.pollPainted==='1') return;
-  // Read poll data from DOM dataset (we'll attach it during render hook)
-  const data=bbl.dataset.pollData; if(!data) return;
-  let p; try{ p=JSON.parse(data); }catch(_){ return; }
-  bbl.dataset.pollPainted='1';
-  bbl.innerHTML='';
-  const wrap=document.createElement('div'); wrap.className='bq-poll';
-  wrap.innerHTML='<div class="bq-poll-q">📊 '+_esc(p.q)+'</div>';
-  const ctx=p._ctx, key=p._key;
-  const votes=p.votes||{};
-  const counts=p.opts.map((_,i)=>0);
-  let total=0; let myVote=-1;
-  Object.entries(votes).forEach(([uid,idx])=>{ if(idx>=0 && idx<counts.length){ counts[idx]++; total++; if(uid===_uid()) myVote=idx; }});
-  p.opts.forEach((opt,i)=>{
-    const pct=total?Math.round(counts[i]*100/total):0;
-    const row=document.createElement('div');
-    row.className='bq-poll-opt'+(myVote===i?' voted':'');
-    row.innerHTML='<div class="bq-poll-fill" style="transform:scaleX('+(pct/100)+')"></div>'+
-      '<div class="bq-poll-row"><span>'+_esc(opt)+'</span><span style="opacity:.7">'+counts[i]+' • '+pct+'%</span></div>';
-    row.onclick=async()=>{
-      const u=_uid(); if(!u){ _toast('Set a username first'); return; }
-      const path=ctx==='global'?'bq_messages/'+key+'/poll/votes/'+u:'bq_dms/'+activeDmId()+'/messages/'+key+'/poll/votes/'+u;
-      try{ await _db().ref(path).set(myVote===i?null:i); }catch(_){ _toast('Vote failed','err'); }
-    };
-    wrap.appendChild(row);
-  });
-  const meta=document.createElement('div'); meta.className='bq-poll-meta';
-  meta.textContent=total+' vote'+(total===1?'':'s');
-  wrap.appendChild(meta);
-  bbl.appendChild(wrap);
-}
-
-/* Watch poll messages live: scan bubbles, attach data, then live-update */
-function pollScanAndWatch(){
-  // Find new messages with 'Poll:' marker — for that, hook directly into firebase listeners.
-  // Simpler: every bubble whose text starts with '📊 Poll:' becomes a candidate; we re-fetch its data live.
-  document.querySelectorAll('.bqr:not([data-poll-watched])').forEach(row=>{
-    const bbl=row.querySelector('.bqbbl'); if(!bbl) return;
-    const txt=bbl.textContent||'';
-    if(!txt.startsWith('📊 Poll:')) return;
-    row.dataset.pollWatched='1';
-    // derive context + key from row id 'bqmsg-<ctx>-<key>'
-    const m=row.id.match(/^bqmsg-(global|dm)-(.+)$/); if(!m) return;
-    const ctx=m[1], key=m[2];
-    const path=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId()+'/messages/'+key;
-    const db=_db(); if(!db) return;
-    const ref=db.ref(path);
-    ref.on('value', snap=>{
-      const v=snap.val(); if(!v||!v.poll) return;
-      bbl.dataset.pollData=JSON.stringify({...v.poll, _ctx:ctx, _key:key});
-      bbl.dataset.pollPainted='0';
-      rePaintPoll(row);
-    });
-  });
-}
+/* B) Slash commands + C) Polls — fully removed in v26 */
 
 /* ─────────── D) Per-conversation drafts ─────────── */
 function draftKey(){
@@ -10055,14 +9900,12 @@ function boot(){
     document.querySelectorAll('.bqbbl').forEach(processBubble);
   }catch(_){}
   try{ attachTranslateUI(); }catch(_){}
-  try{ wireSlashOnInput('bqgi'); wireSlashOnInput('bqdmi'); }catch(_){}
   try{ wireDrafts(); }catch(_){}
   try{ wireScheduleSendButton(); }catch(_){}
   try{ mountDisappearBtn(); }catch(_){}
   try{ patchSendersForDisappear(); }catch(_){}
   try{ wireJumpToUnread(); }catch(_){}
   try{ wireSwipeReply(); }catch(_){}
-  try{ pollScanAndWatch(); }catch(_){}
   try{
     // Watch view changes for draft restore
     ['bqv-global','bqv-dm'].forEach(id=>{ const e=$(id); if(e) draftViewObs.observe(e,{attributes:true,attributeFilter:['class']}); });
@@ -10078,14 +9921,12 @@ else setTimeout(boot, 700);
 // Periodic re-wires (covers DOM that v22's IIFE recreates)
 setInterval(()=>{
   try{ mountRecoveryEntry(); }catch(_){}
-  try{ wireSlashOnInput('bqgi'); wireSlashOnInput('bqdmi'); }catch(_){}
   try{ wireDrafts(); }catch(_){}
   try{ wireScheduleSendButton(); }catch(_){}
   try{ mountDisappearBtn(); }catch(_){}
   try{ patchSendersForDisappear(); }catch(_){}
   try{ wireJumpToUnread(); }catch(_){}
   try{ wireSwipeReply(); }catch(_){}
-  try{ pollScanAndWatch(); }catch(_){}
   try{ dispatchScheduled(); }catch(_){}
 }, 3000);
 
@@ -10141,135 +9982,7 @@ function activeCtx(){
 }
 function activeDmId(){ return window.activeDmId||null; }
 
-/* ════════════════════════════════════════════════════════════════════════
-   FIX 3: Slash commands — proper IDs + friendly tip on "/"
-   ════════════════════════════════════════════════════════════════════════ */
-const SLASH=[
-  {c:'/me',       d:'Action message — /me waves'},
-  {c:'/shrug',    d:'Append ¯\\_(ツ)_/¯'},
-  {c:'/coinflip', d:'Heads or tails'},
-  {c:'/roll',     d:'Roll dice — /roll 2d6'},
-  {c:'/8ball',    d:'Magic 8-ball — /8ball will I win?'},
-  {c:'/poll',     d:'Create poll — /poll Q | A | B'},
-  {c:'/clear',    d:'Clear local view'},
-  {c:'/help',     d:'Show all commands'}
-];
-function runSlash(cmd, args, ctx){
-  const send=(t)=>sendTextV24(ctx,t);
-  switch(cmd){
-    case '/me':       send('*'+(_uname()||'someone')+' '+args+'*'); break;
-    case '/shrug':    send((args?args+' ':'')+'¯\\_(ツ)_/¯'); break;
-    case '/coinflip': send('🪙 '+(Math.random()<.5?'**Heads**':'**Tails**')); break;
-    case '/roll': {
-      const m=(args||'1d6').match(/^(\d{1,2})d(\d{1,3})$/i)||[null,1,6];
-      const n=Math.min(20,parseInt(m[1]||1,10)||1), s=Math.min(100,parseInt(m[2]||6,10)||6);
-      const r=[]; for(let i=0;i<n;i++) r.push(1+Math.floor(Math.random()*s));
-      send('🎲 '+n+'d'+s+': '+r.join(', ')+' (sum **'+r.reduce((a,b)=>a+b,0)+'**)'); break;
-    }
-    case '/8ball': {
-      const a=['Yes','No','Maybe','Definitely','No way','Ask later','Signs point to yes','Outlook not so good','Without a doubt','Very doubtful'];
-      send('🎱 '+(args?'_'+args+'_ → ':'')+'**'+a[Math.floor(Math.random()*a.length)]+'**'); break;
-    }
-    case '/poll': createPollV24(ctx, args); break;
-    case '/clear': {
-      const id=ctx==='global'?ID.gmsgs:ID.dmmsgs;
-      const el=$(id); if(el) el.innerHTML='<div style="text-align:center;opacity:.5;margin:auto;padding:20px">Cleared locally. Refresh to see again.</div>';
-      break;
-    }
-    case '/help': _toast('Commands:\n'+SLASH.map(x=>x.c+' — '+x.d).join('\n')); break;
-  }
-}
-function sendTextV24(ctx, text){
-  if(!text) return;
-  const inp=$(ctx==='global'?ID.ginp:ID.dminp);
-  const btn=$(ctx==='global'?ID.gsnd:ID.dmsnd);
-  if(inp){
-    inp.value=text;
-    inp.dispatchEvent(new Event('input',{bubbles:true}));
-    if(btn && !btn.disabled){ btn.click(); return; }
-  }
-  // Fallback: write straight to firebase
-  const db=_db(), u=_uid(), n=_uname();
-  if(!db||!u||!n) return;
-  if(ctx==='global'){
-    db.ref('bq_messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()});
-  } else {
-    const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()});
-  }
-}
-function createPollV24(ctx, raw){
-  const parts=String(raw||'').split('|').map(s=>s.trim()).filter(Boolean);
-  if(parts.length<3){ _toast('Use: /poll Question | A | B','err'); return; }
-  const q=parts[0], opts=parts.slice(1,11);
-  const db=_db(), u=_uid(), n=_uname();
-  if(!db||!u||!n){ _toast('Sign in first','err'); return; }
-  const payload={uid:u,uname:n,ts:Date.now(),poll:{q,opts,votes:{}}, text:'📊 '+q};
-  if(ctx==='global') db.ref('bq_messages').push(payload);
-  else { const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push(payload); }
-}
-
-function showSlashUI(inp){
-  $('bq-slash-v24')?.remove();
-  const v=inp.value||'';
-  if(!v.startsWith('/')){ return; }
-  const sp=v.indexOf(' ');
-  const q=sp>0?v.slice(0,sp).toLowerCase():v.toLowerCase();
-  const matches=SLASH.filter(x=>x.c.startsWith(q));
-  const m=document.createElement('div');
-  m.id='bq-slash-v24';
-  m.style.cssText='position:fixed;background:#0f0f0f;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;min-width:240px;max-width:320px;z-index:2147483646;box-shadow:0 12px 36px rgba(0,0,0,.6);font:13px/1.35 -apple-system,system-ui,sans-serif;color:#e5e5e5;max-height:240px;overflow:auto';
-
-  if(!matches.length){
-    m.innerHTML='<div style="padding:8px 10px;opacity:.6">Tip: type /help to see all slash commands</div>';
-  } else {
-    // Tip header when only "/" typed
-    if(v==='/' || v==='/ '){
-      const tip=document.createElement('div');
-      tip.style.cssText='padding:6px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px';
-      tip.textContent='Slash commands — tap to insert';
-      m.appendChild(tip);
-    }
-    matches.forEach(x=>{
-      const it=document.createElement('div');
-      it.style.cssText='padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px';
-      it.innerHTML='<span style="font-weight:600;color:#fff">'+x.c+'</span><span style="opacity:.6;font-size:11px">'+_esc(x.d)+'</span>';
-      it.onmouseenter=()=>it.style.background='rgba(255,255,255,.06)';
-      it.onmouseleave=()=>it.style.background='';
-      it.onclick=()=>{ inp.value=x.c+' '; inp.focus(); inp.dispatchEvent(new Event('input',{bubbles:true})); };
-      m.appendChild(it);
-    });
-  }
-  document.body.appendChild(m);
-  const r=inp.getBoundingClientRect();
-  m.style.left=Math.max(8, Math.min(window.innerWidth-m.offsetWidth-8, r.left))+'px';
-  m.style.top=(r.top - m.offsetHeight - 8)+'px';
-}
-function hideSlashUI(){ $('bq-slash-v24')?.remove(); }
-
-function wireSlashV24(inputId){
-  const inp=$(inputId); if(!inp || inp._v24Slash) return; inp._v24Slash=true;
-  inp.addEventListener('input', ()=>{
-    const v=inp.value||'';
-    if(v.startsWith('/')) showSlashUI(inp); else hideSlashUI();
-  });
-  inp.addEventListener('keydown',(e)=>{
-    const v=(inp.value||'').trim();
-    if(e.key==='Enter' && v.startsWith('/') && !e.shiftKey){
-      const sp=v.indexOf(' ');
-      const cmd=sp>0?v.slice(0,sp).toLowerCase():v.toLowerCase();
-      const args=sp>0?v.slice(sp+1):'';
-      const known=SLASH.find(x=>x.c===cmd);
-      if(known){
-        e.preventDefault(); e.stopPropagation();
-        const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
-        hideSlashUI();
-        inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true}));
-        runSlash(cmd, args.trim(), ctx);
-      }
-    } else if(e.key==='Escape'){ hideSlashUI(); }
-  });
-  inp.addEventListener('blur', ()=>setTimeout(hideSlashUI, 200));
-}
+/* FIX 3: Slash commands — fully removed in v26 */
 
 /* ════════════════════════════════════════════════════════════════════════
    FIX 4: Scheduled messages — proper IDs + reliable dispatch
@@ -10544,28 +10257,8 @@ function migrateUnsupportedTheme(){
   }catch(_){}
 }
 
-/* ════════════════════════════════════════════════════════════════════════
-   FIX 9: Composer-row enhancements — add a discreet "/" hint button
-   Tapping it inserts "/" so users discover slash commands without typing.
-   ════════════════════════════════════════════════════════════════════════ */
-function injectSlashHintButton(){
-  [ID.ginp, ID.dminp].forEach(id=>{
-    const inp=$(id); if(!inp) return;
-    // Place a tiny chip ABOVE the input the first 3 times the user opens chat
-    if(inp._v24SlashHinted) return;
-    const seen=parseInt(localStorage.getItem('bq_slashtip_seen_v24')||'0',10);
-    if(seen>=3){ inp._v24SlashHinted=true; return; }
-    inp._v24SlashHinted=true;
-    const chip=document.createElement('div');
-    chip.style.cssText='display:inline-flex;align-items:center;gap:6px;background:rgba(96,165,250,.1);color:#93c5fd;border:1px solid rgba(96,165,250,.25);border-radius:999px;padding:4px 10px;font:11px/1 -apple-system,system-ui,sans-serif;cursor:pointer;margin:4px 8px 0;width:fit-content';
-    chip.innerHTML='💡 Type <b style="margin:0 2px">/</b> to use commands';
-    chip.onclick=()=>{ inp.value='/'; inp.focus(); inp.dispatchEvent(new Event('input',{bubbles:true})); chip.remove(); };
-    const wrap=inp.closest('.bqcomp')||inp.parentElement;
-    if(wrap && wrap.parentElement){ wrap.parentElement.insertBefore(chip, wrap); }
-    localStorage.setItem('bq_slashtip_seen_v24', String(seen+1));
-    setTimeout(()=>chip.remove(), 12000);
-  });
-}
+/* FIX 9: composer slash-hint chip — fully removed in v26 */
+try{ localStorage.removeItem('bq_slashtip_seen_v24'); }catch(_){}
 
 /* ════════════════════════════════════════════════════════════════════════
    FIX 10: Re-process bubbles for link previews (replaces v23 broken one)
@@ -10587,13 +10280,11 @@ function bootV24(){
   try{ injectThemeOverrideCss(); }catch(_){}
   try{ migrateUnsupportedTheme(); }catch(_){}
   try{ ensureMonoBlackChips(); }catch(_){}
-  try{ wireSlashV24(ID.ginp); wireSlashV24(ID.dminp); }catch(_){}
   try{ wireSchedV24(); }catch(_){}
   try{ wireDraftsV24(); }catch(_){}
   try{ restoreDraftV24(); }catch(_){}
   try{ watchDmActivate(); }catch(_){}
   try{ fixDmLayout(); }catch(_){}
-  try{ injectSlashHintButton(); }catch(_){}
   try{
     lpObs.observe(document.body, {childList:true, subtree:true});
     document.querySelectorAll('.bqbbl').forEach(renderLinkPreviewV24);
@@ -10605,7 +10296,6 @@ else setTimeout(bootV24, 800);
 // Periodic re-wire — chat DOM is rebuilt by the parent widget
 setInterval(()=>{
   try{ ensureMonoBlackChips(); }catch(_){}
-  try{ wireSlashV24(ID.ginp); wireSlashV24(ID.dminp); }catch(_){}
   try{ wireSchedV24(); }catch(_){}
   try{ wireDraftsV24(); }catch(_){}
   try{ watchDmActivate(); }catch(_){}
@@ -10617,3 +10307,569 @@ window.addEventListener('focus', ()=>{ try{ dispatchSched(); }catch(_){} });
 
 })();
 /* ════════════ end v24 patch ════════════ */
+
+/* ════════════════════════════════════════════════════════════════════════
+   v25 PATCH BLOCK — Apr 2026
+   - Remove ALL slash commands + tip chip + autocomplete dropdowns + polls
+     from the slash-command system (v23 + v24).
+   - Voice Messages V2: up to 5 minutes, live waveform, smoother animations,
+     pause/resume during recording, slide-to-cancel, accurate duration,
+     in-bubble seek-by-tap, playback speed (1x/1.5x/2x), better aesthetics.
+   - DM polish: smoother open/close transitions, fixed half-screen on first
+     DM, header avatar pop animation, unread bubble pulse.
+   - New features (none of these were in v24):
+       * Reply-preview swipe shows sender + snippet
+       * "Typing…" indicator in DMs (broadcast over bq_dms/{id}/typing/{uid})
+       * Tap message timestamp → copy permalink to clipboard
+       * Keyboard ESC closes any open modal/sheet
+       * Composer auto-grow with a 6-line cap + scrollbar
+       * Quick-emoji bar (👍 ❤️ 😂 😮 😢 🙏) above the composer on long-press
+       * Per-DM "scroll to bottom" floating button when scrolled up
+       * Double-tap a message to react with ❤️ instantly (Instagram-style)
+   - Lighter: nukes dead slash CSS, defers heavy work with rIC.
+   ════════════════════════════════════════════════════════════════════════ */
+(function v25Patch(){
+'use strict';
+const V25='26.0.0';
+try{ console.info('[BioQuiz] chat-widget v'+V25+' loaded (v26 — slash + dead code stripped)'); }catch(_){}
+
+const $ = (id)=>document.getElementById(id);
+const _db = ()=>{ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null; }catch(_){ return null; } };
+const _uid = ()=>localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+const _uname = ()=>localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
+const _esc = (s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function _toast(m,kind){
+  try{
+    const t=document.createElement('div'); t.textContent=m;
+    const bg=kind==='err'?'#7f1d1d':kind==='ok'?'#15803d':'#222';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translate(-50%,12px);opacity:0;background:'+bg+';color:#fff;padding:11px 18px;border-radius:10px;z-index:2147483647;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.45);max-width:90vw;text-align:center;transition:opacity .18s ease,transform .18s ease';
+    document.body.appendChild(t);
+    requestAnimationFrame(()=>{ t.style.opacity='1'; t.style.transform='translate(-50%,0)'; });
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translate(-50%,-8px)'; setTimeout(()=>t.remove(),220); }, 2400);
+  }catch(_){}
+}
+const ID = { ginp:'bqginp', gsnd:'bqgsnd', dminp:'bqdmi', dmsnd:'bqdms' };
+
+/* ──────────────────────────────────────────────────────────────────────
+   1) REMOVE SLASH COMMANDS (v23 + v24) — fully neutralise.
+   ────────────────────────────────────────────────────────────────────── */
+function killSlash(){
+  // Slash CSS guard (defence in depth — definitions removed in v26)
+  if(!$('bq-v25-killslash')){
+    const s=document.createElement('style'); s.id='bq-v25-killslash';
+    s.textContent='#bq-slash,#bq-slash-v24{display:none!important}';
+    document.head.appendChild(s);
+  }
+  document.querySelectorAll('#bq-slash, #bq-slash-v24').forEach(n=>n.remove());
+}
+// Single-shot — slash generators were removed in v26, no need to keep firing
+killSlash();
+
+/* ──────────────────────────────────────────────────────────────────────
+   2) VOICE MESSAGES V2 — longer, smoother, prettier, no glitches
+   ────────────────────────────────────────────────────────────────────── */
+const VN2_MAX_MS = 5*60*1000; // 5 minutes
+const VN2_BARS   = 56;
+
+const vn2css = document.createElement('style');
+vn2css.textContent = `
+.bqvoice-rec-bar.show{display:flex!important;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(220,38,38,.05));border:1px solid rgba(220,38,38,.35);border-radius:14px;animation:bqV2RecIn .22s ease}
+.bqvoice-btn.recording{animation:bqV2Pulse 1.4s ease-in-out infinite!important;box-shadow:0 0 0 0 rgba(220,38,38,.55)}
+@keyframes bqV2Pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.55)}50%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
+@keyframes bqV2RecIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.bqv2-live-wave{flex:1;display:flex;align-items:center;gap:2px;height:24px;overflow:hidden}
+.bqv2-live-wave span{flex:1 1 auto;min-width:2px;max-width:3px;background:#dc2626;border-radius:2px;transition:height .08s linear;opacity:.95}
+.bqv2-rec-actions{display:flex;align-items:center;gap:6px}
+.bqv2-rec-actions button{background:none;border:0;cursor:pointer;color:inherit;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease}
+.bqv2-rec-actions button:hover{background:rgba(255,255,255,.08);transform:scale(1.06)}
+.bqv2-rec-actions button.danger{color:#fca5a5}
+.bqv2-rec-actions button.send{background:#16a34a;color:#fff}
+.bqv2-rec-actions button.send:hover{background:#15803d}
+.bqv2-rec-paused{opacity:.6;filter:grayscale(.5)}
+
+.bq-voice-msg{min-width:200px;transition:transform .15s ease}
+.bq-voice-msg:hover{transform:translateY(-1px)}
+.bq-voice-bars{cursor:pointer;position:relative}
+.bq-voice-bars::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--bq-vp,0%);background:linear-gradient(90deg,transparent,rgba(155,215,255,.06));pointer-events:none;transition:width .12s linear}
+.bq-voice-speed{font-size:10px;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:inherit;border-radius:10px;padding:2px 6px;margin-left:6px;cursor:pointer;font-family:ui-monospace,monospace;transition:background .15s ease}
+.bq-voice-speed:hover{background:rgba(255,255,255,.22)}
+.bq-voice-play{transition:transform .15s ease,box-shadow .15s ease}
+.bq-voice-play:hover{box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.bq-voice-play.playing{animation:bqV2PlayPulse 1.6s ease-in-out infinite}
+@keyframes bqV2PlayPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+`;
+document.head.appendChild(vn2css);
+
+let _vn2 = null;
+function vn2Stop(stream){ try{ stream?.getTracks().forEach(t=>t.stop()); }catch(_){} }
+function vn2FmtTime(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function vn2BuildBar(){
+  const bar=$('bq-voice-rec-bar'); if(!bar) return null;
+  bar.innerHTML='';
+  const dot=document.createElement('span'); dot.className='bqvoice-rec-dot'; bar.appendChild(dot);
+  const time=document.createElement('span'); time.className='bqvoice-rec-time'; time.id='bq-voice-rec-time'; time.textContent='0:00'; bar.appendChild(time);
+  const wave=document.createElement('div'); wave.className='bqv2-live-wave'; wave.id='bqv2-live-wave';
+  for(let i=0;i<28;i++){ const s=document.createElement('span'); s.style.height='4px'; wave.appendChild(s); }
+  bar.appendChild(wave);
+  const acts=document.createElement('div'); acts.className='bqv2-rec-actions';
+  acts.innerHTML='<button id="bqv2-pause" title="Pause/resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button>'+
+    '<button id="bqv2-cancel" class="danger" title="Cancel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'+
+    '<button id="bqv2-send" class="send" title="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>';
+  bar.appendChild(acts);
+  return bar;
+}
+async function vn2Start(btn){
+  if(_vn2){ return; }
+  if(!navigator.mediaDevices?.getUserMedia){ _toast('Voice not supported','err'); return; }
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+  catch(e){ _toast('Microphone permission denied','err'); return; }
+  let mime='audio/webm;codecs=opus';
+  if(!MediaRecorder.isTypeSupported(mime)) mime='audio/webm';
+  if(!MediaRecorder.isTypeSupported(mime)) mime='';
+  const rec = mime ? new MediaRecorder(stream,{mimeType:mime,bitsPerSecond:64000}) : new MediaRecorder(stream);
+  const chunks=[]; const peaks=[];
+  let acx,src,an,buf,sampler;
+  try{
+    acx=new (window.AudioContext||window.webkitAudioContext)();
+    src=acx.createMediaStreamSource(stream);
+    an=acx.createAnalyser(); an.fftSize=512;
+    buf=new Uint8Array(an.frequencyBinCount);
+    src.connect(an);
+  }catch(_){}
+  const start=Date.now();
+  let pausedTotal=0, pauseStart=0, paused=false;
+  rec.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
+  rec.onerror=()=>{ _toast('Recording error','err'); vn2Cancel(); };
+  rec.start(250);
+
+  const bar=vn2BuildBar(); bar?.classList.add('show');
+  btn?.classList.add('recording');
+  const wave=$('bqv2-live-wave'); const tEl=$('bq-voice-rec-time');
+  const tick=()=>{
+    if(!_vn2) return;
+    const elapsed=Date.now()-start-pausedTotal-(paused?(Date.now()-pauseStart):0);
+    if(tEl) tEl.textContent=vn2FmtTime(elapsed);
+    if(elapsed>=VN2_MAX_MS){ vn2Send(); return; }
+    if(an && !paused){
+      an.getByteTimeDomainData(buf);
+      let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+      const rms=Math.sqrt(sum/buf.length);
+      const lvl=Math.max(0.06, Math.min(1, rms*3.6));
+      peaks.push(lvl);
+      if(wave){
+        const bars=wave.children;
+        for(let i=0;i<bars.length-1;i++){ bars[i].style.height=bars[i+1].style.height; }
+        bars[bars.length-1].style.height=Math.max(3,Math.round(lvl*22))+'px';
+      }
+    }
+  };
+  sampler=setInterval(tick, 70);
+
+  _vn2 = {
+    rec, stream, chunks, peaks, start, sampler, btn,
+    isPaused(){ return paused; },
+    togglePause(){
+      if(rec.state==='recording'){ rec.pause(); paused=true; pauseStart=Date.now(); bar?.classList.add('bqv2-rec-paused'); }
+      else if(rec.state==='paused'){ rec.resume(); paused=false; pausedTotal+=Date.now()-pauseStart; bar?.classList.remove('bqv2-rec-paused'); }
+    },
+    finalDur(){ return Math.min(VN2_MAX_MS, Date.now()-start-pausedTotal-(paused?(Date.now()-pauseStart):0)); },
+  };
+  $('bqv2-pause')?.addEventListener('click', vn2TogglePause);
+  $('bqv2-cancel')?.addEventListener('click', vn2Cancel);
+  $('bqv2-send')?.addEventListener('click', vn2Send);
+}
+function vn2TogglePause(){ _vn2?.togglePause(); }
+function vn2ResetUI(){
+  $('bq-voice-rec-bar')?.classList.remove('show');
+  $('bq-voice-btn')?.classList.remove('recording');
+}
+function vn2Cancel(){
+  const ctx=_vn2; _vn2=null; if(!ctx) return;
+  clearInterval(ctx.sampler);
+  try{ ctx.rec.onstop=null; if(ctx.rec.state!=='inactive') ctx.rec.stop(); }catch(_){}
+  vn2Stop(ctx.stream); vn2ResetUI();
+}
+function vn2Send(){
+  const ctx=_vn2; if(!ctx) return; _vn2=null;
+  clearInterval(ctx.sampler);
+  ctx.rec.onstop=()=>{
+    vn2Stop(ctx.stream); vn2ResetUI();
+    const blob=new Blob(ctx.chunks,{type:ctx.rec.mimeType||'audio/webm'});
+    if(blob.size<800){ _toast('Recording too short','err'); return; }
+    const dur=ctx.finalDur();
+    const wave=normalizeWaveV2(ctx.peaks, VN2_BARS);
+    const r=new FileReader();
+    r.onload=()=>sendVoiceV2(r.result, dur, wave);
+    r.readAsDataURL(blob);
+  };
+  try{ if(ctx.rec.state!=='inactive') ctx.rec.stop(); }catch(_){ vn2ResetUI(); }
+}
+function normalizeWaveV2(peaks, count){
+  const src=Array.isArray(peaks)?peaks.filter(v=>Number.isFinite(v)):[];
+  if(!src.length) return Array.from({length:count},()=>22);
+  const out=[];
+  for(let i=0;i<count;i++){
+    const idx=Math.min(src.length-1, Math.floor(i*src.length/count));
+    out.push(Math.max(10, Math.min(100, Math.round(src[idx]*100))));
+  }
+  return out;
+}
+function sendVoiceV2(audioData, durMs, waveform){
+  const db=_db(); const u=_uid(); const n=_uname();
+  if(!db||!u||!n||!audioData) return;
+  const dm = window.activeDmId || window.__bqActiveDm?.id || '';
+  const p={uid:u, uname:n, text:'', type:'voice', audio:audioData, duration:durMs, ts:Date.now()};
+  if(Array.isArray(waveform) && waveform.length) p.waveform=waveform.slice(0,64);
+  if(dm){
+    db.ref('bq_dms/'+dm+'/messages').push(p);
+    db.ref('bq_dms/'+dm+'/meta').update({lastMsg:'🎤 Voice note', lastTs:Date.now()});
+    const pu=window.activeDmPuid; if(pu) db.ref('bq_dms/'+dm+'/meta/unread/'+pu).transaction(x=>(x||0)+1);
+  } else {
+    db.ref('bq_messages').push(p);
+  }
+}
+
+// Hook the voice button — replace v3's tap handler with V2 lifecycle.
+function wireVoiceV2(){
+  const btn=$('bq-voice-btn'); if(!btn || btn._v2) return; btn._v2=true;
+  // Strip prior listeners by cloning
+  const fresh=btn.cloneNode(true);
+  btn.parentNode.replaceChild(fresh, btn);
+  fresh._v2=true;
+  fresh.addEventListener('click', e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(_vn2) vn2Send(); else vn2Start(fresh);
+  });
+}
+
+// Voice playback: tap-to-seek + speed cycler + visible progress
+function enhanceVoiceBubble(node){
+  if(!node || node._v2enh) return; node._v2enh=true;
+  const bars=node.querySelector('.bq-voice-bars');
+  const play=node.querySelector('.bq-voice-play');
+  const time=node.querySelector('.bq-voice-time');
+  if(!play || !bars) return;
+  const audioSrc=node.dataset.audio||'';
+  const durMs=parseInt(node.dataset.dur||'0',10)||0;
+  if(!audioSrc) return;
+  let audio=null, speed=1;
+
+  // Speed chip
+  if(!node.querySelector('.bq-voice-speed')){
+    const sp=document.createElement('button'); sp.className='bq-voice-speed'; sp.textContent='1x';
+    sp.onclick=ev=>{ ev.stopPropagation(); speed = speed===1?1.5: speed===1.5?2:1; sp.textContent=speed+'x'; if(audio) audio.playbackRate=speed; };
+    node.appendChild(sp);
+  }
+
+  function ensureAudio(){
+    if(audio) return audio;
+    audio=new Audio(audioSrc);
+    audio.playbackRate=speed;
+    audio.addEventListener('timeupdate',()=>{
+      const p = audio.duration ? (audio.currentTime/audio.duration) : 0;
+      bars.style.setProperty('--bq-vp', (p*100).toFixed(1)+'%');
+      const kids=bars.querySelectorAll('.bq-voice-bar');
+      const cut=Math.floor(p*kids.length);
+      kids.forEach((k,i)=>k.classList.toggle('played', i<cut));
+      if(time && audio.duration && isFinite(audio.duration)){
+        const left=Math.max(0,Math.round(audio.duration-audio.currentTime));
+        time.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
+      }
+    });
+    audio.addEventListener('ended',()=>{
+      play.classList.remove('playing');
+      play.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+      bars.style.setProperty('--bq-vp','0%');
+      bars.querySelectorAll('.bq-voice-bar').forEach(k=>k.classList.remove('played'));
+    });
+    return audio;
+  }
+
+  play.addEventListener('click', e=>{
+    e.stopPropagation();
+    const a=ensureAudio();
+    if(a.paused){
+      // Pause any other voice currently playing
+      document.querySelectorAll('.bq-voice-msg .bq-voice-play.playing').forEach(p=>{ if(p!==play) p.click(); });
+      a.play().catch(()=>{}); play.classList.add('playing');
+      play.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+    } else {
+      a.pause(); play.classList.remove('playing');
+      play.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+    }
+  });
+
+  // Tap-to-seek on bars
+  bars.addEventListener('click', e=>{
+    const a=ensureAudio();
+    const r=bars.getBoundingClientRect();
+    const x=Math.max(0, Math.min(r.width, e.clientX-r.left));
+    const pct=x/r.width;
+    if(a.duration && isFinite(a.duration)) a.currentTime = a.duration*pct;
+    else if(durMs) a.currentTime=(durMs/1000)*pct;
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   3) DM polish — smoother transitions, header pop, unread pulse
+   ────────────────────────────────────────────────────────────────────── */
+const polishCss=document.createElement('style');
+polishCss.textContent=`
+#bqv-dmconv,.bqdmconv{transition:opacity .22s ease,transform .22s ease}
+#bqv-dmconv.bqv-opening{opacity:0;transform:translateY(8px)}
+.bqdmhav,#bqdmhav{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.bqdmhav.pop,#bqdmhav.pop{animation:bqV2HavPop .35s ease}
+@keyframes bqV2HavPop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.bqdml-unread{animation:bqV2UnreadPulse 2.2s ease-in-out infinite}
+@keyframes bqV2UnreadPulse{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.45)}50%{box-shadow:0 0 0 6px rgba(96,165,250,0)}}
+
+.bqv2-scroll-bottom{position:absolute;right:14px;bottom:78px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(20,22,28,.85);color:#e6e9ef;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45);z-index:5;transition:transform .15s ease,opacity .15s ease;backdrop-filter:blur(6px)}
+.bqv2-scroll-bottom.show{display:inline-flex;animation:bqV2FadeIn .2s ease}
+.bqv2-scroll-bottom:hover{transform:scale(1.07)}
+.bqv2-scroll-bottom .badge{position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font:600 10px system-ui;padding:1px 6px;min-width:18px;text-align:center}
+@keyframes bqV2FadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.bqv2-typing{display:flex;align-items:center;gap:4px;padding:4px 10px;font:11px system-ui;opacity:.7}
+.bqv2-typing span{width:5px;height:5px;border-radius:50%;background:currentColor;animation:bqV2TypingDot 1.2s ease-in-out infinite}
+.bqv2-typing span:nth-child(2){animation-delay:.18s}.bqv2-typing span:nth-child(3){animation-delay:.36s}
+@keyframes bqV2TypingDot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-3px);opacity:1}}
+
+.bqv2-quick-emoji{position:absolute;background:rgba(20,22,28,.95);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 8px;display:flex;gap:4px;z-index:2147483646;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:bqV2FadeIn .18s ease}
+.bqv2-quick-emoji button{background:none;border:0;font-size:20px;cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .12s ease,background .12s ease}
+.bqv2-quick-emoji button:hover{background:rgba(255,255,255,.1);transform:scale(1.25)}
+
+.bqbbl{transition:background-color .2s ease}
+.bqbbl.bqv2-doubletapped{animation:bqV2DoubleTap .5s ease}
+@keyframes bqV2DoubleTap{0%{transform:scale(1)}30%{transform:scale(1.04)}100%{transform:scale(1)}}
+`;
+document.head.appendChild(polishCss);
+
+let _lastDmId=null;
+function polishDmOpen(){
+  const conv=$('bqv-dmconv')||document.querySelector('.bqdmconv');
+  const hav =$('bqdmhav') ||document.querySelector('.bqdmhav');
+  const cur = window.activeDmId || window.__bqActiveDm?.id || '';
+  if(cur && cur!==_lastDmId){
+    _lastDmId=cur;
+    if(conv){
+      conv.classList.add('bqv-opening');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>conv.classList.remove('bqv-opening')));
+    }
+    if(hav){ hav.classList.remove('pop'); void hav.offsetWidth; hav.classList.add('pop'); }
+    ensureScrollBottomBtn();
+  }
+}
+
+/* Scroll-to-bottom floating pill */
+function ensureScrollBottomBtn(){
+  const list=$('bqdmmsgs')||document.querySelector('.bqdmmsgs');
+  const wrap=list?.parentElement; if(!list||!wrap) return;
+  if(getComputedStyle(wrap).position==='static') wrap.style.position='relative';
+  let btn=wrap.querySelector('.bqv2-scroll-bottom');
+  if(!btn){
+    btn=document.createElement('button'); btn.className='bqv2-scroll-bottom';
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg><span class="badge" style="display:none">0</span>';
+    btn.onclick=()=>{ list.scrollTop=list.scrollHeight; btn.classList.remove('show'); btn.querySelector('.badge').style.display='none'; };
+    wrap.appendChild(btn);
+  }
+  if(!list._v2scroll){
+    list._v2scroll=true; let unread=0;
+    list.addEventListener('scroll', ()=>{
+      const atBottom = list.scrollHeight-list.scrollTop-list.clientHeight < 80;
+      if(atBottom){ btn.classList.remove('show'); unread=0; btn.querySelector('.badge').style.display='none'; }
+      else { btn.classList.add('show'); }
+    });
+    new MutationObserver(()=>{
+      const atBottom = list.scrollHeight-list.scrollTop-list.clientHeight < 80;
+      if(!atBottom){ unread++; const b=btn.querySelector('.badge'); b.textContent=unread; b.style.display='inline-block'; btn.classList.add('show'); }
+      else { list.scrollTop=list.scrollHeight; }
+    }).observe(list, {childList:true});
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   4) NEW: Typing indicator in DMs (broadcast typing/{uid}=ts)
+   ────────────────────────────────────────────────────────────────────── */
+let _typingSent=0, _typingHandle=null;
+function broadcastTyping(){
+  const db=_db(); const u=_uid();
+  const dm = window.activeDmId || window.__bqActiveDm?.id;
+  if(!db||!u||!dm) return;
+  const now=Date.now();
+  if(now-_typingSent<2000) return;
+  _typingSent=now;
+  db.ref('bq_dms/'+dm+'/typing/'+u).set(now);
+  clearTimeout(_typingHandle);
+  _typingHandle=setTimeout(()=>{ try{ db.ref('bq_dms/'+dm+'/typing/'+u).remove(); }catch(_){ } }, 4500);
+}
+let _typingObs=null, _typingDmRef=null;
+function watchTyping(){
+  const db=_db(); const u=_uid();
+  const dm = window.activeDmId || window.__bqActiveDm?.id;
+  if(!db||!u||!dm) return;
+  if(_typingDmRef===dm) return;
+  if(_typingObs){ try{ _typingObs.off(); }catch(_){} _typingObs=null; }
+  _typingDmRef=dm;
+  const ref=db.ref('bq_dms/'+dm+'/typing');
+  _typingObs=ref;
+  ref.on('value', snap=>{
+    const v=snap.val()||{};
+    let active=false; const now=Date.now();
+    Object.keys(v).forEach(k=>{ if(k!==u && (now - (v[k]||0)) < 6000) active=true; });
+    let pill=document.querySelector('.bqv2-typing');
+    const list=$('bqdmmsgs')||document.querySelector('.bqdmmsgs');
+    if(active){
+      if(!pill && list){ pill=document.createElement('div'); pill.className='bqv2-typing'; pill.innerHTML='<span></span><span></span><span></span> typing'; list.parentElement.appendChild(pill); }
+    } else { pill?.remove(); }
+  });
+}
+function wireTypingInput(){
+  const inp=$(ID.dminp); if(!inp || inp._v2typ) return; inp._v2typ=true;
+  inp.addEventListener('input', broadcastTyping);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   5) NEW: composer auto-grow + ESC closes modals + double-tap react +
+           quick-emoji bar + tap-timestamp-to-copy-permalink
+   ────────────────────────────────────────────────────────────────────── */
+function autoGrow(inp){
+  if(!inp || inp._v2grow) return; inp._v2grow=true;
+  if(inp.tagName!=='TEXTAREA'){
+    // many composers use <input>; convert to textarea-like behavior is risky, just leave
+    return;
+  }
+  const fit=()=>{
+    inp.style.height='auto';
+    inp.style.height=Math.min(inp.scrollHeight, 6*20+16)+'px';
+  };
+  inp.addEventListener('input', fit); fit();
+}
+function wireAutoGrow(){
+  [ID.ginp, ID.dminp].forEach(id=>autoGrow($(id)));
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('#bq-msg-sheet, #bq-rec-modal, #bq-rec-restore-modal, .bqv2-quick-emoji').forEach(n=>n.remove());
+  }
+});
+
+// Double-tap to react ❤️
+function wireDoubleTap(){
+  if(window._bqV2DT) return; window._bqV2DT=true;
+  document.addEventListener('dblclick', e=>{
+    const bbl=e.target.closest('.bqbbl'); if(!bbl) return;
+    if(e.target.closest('a,button,.bq-voice-msg,.bq-img,.bq-gif,.bq-sticker')) return;
+    bbl.classList.add('bqv2-doubletapped');
+    setTimeout(()=>bbl.classList.remove('bqv2-doubletapped'), 500);
+    // Trigger reaction picker if present
+    const key=bbl.dataset.key||bbl.dataset.k||bbl.id?.replace(/^bqm-/,'');
+    if(!key) return;
+    const ctx = (window.activeDmId||window.__bqActiveDm?.id) ? 'dm' : 'global';
+    const db=_db(); const u=_uid(); if(!db||!u) return;
+    const dm=window.activeDmId||window.__bqActiveDm?.id||'';
+    const path = ctx==='global' ? 'bq_messages/'+key+'/reactions/❤️/'+u : 'bq_dms/'+dm+'/messages/'+key+'/reactions/❤️/'+u;
+    db.ref(path).set(Date.now()).catch(()=>{});
+  });
+}
+
+// Long-press → quick emoji bar
+const QUICK_EMOJI=['👍','❤️','😂','😮','😢','🙏'];
+function wireQuickEmoji(){
+  if(window._bqV2QE) return; window._bqV2QE=true;
+  let press=null;
+  const start=(e)=>{
+    const bbl=e.target.closest('.bqbbl'); if(!bbl) return;
+    if(e.target.closest('a,button,.bq-voice-msg,.bq-img,.bq-gif')) return;
+    press={bbl, t:setTimeout(()=>showQE(bbl, e), 480)};
+  };
+  const cancel=()=>{ if(press){ clearTimeout(press.t); press=null; } };
+  document.addEventListener('mousedown', start);
+  document.addEventListener('mouseup', cancel);
+  document.addEventListener('mouseleave', cancel);
+  document.addEventListener('touchstart', e=>start(e.touches?e.touches[0]?{...e,clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,target:e.target}:e:e), {passive:true});
+  document.addEventListener('touchend', cancel);
+  document.addEventListener('touchmove', cancel);
+}
+function showQE(bbl, e){
+  document.querySelectorAll('.bqv2-quick-emoji').forEach(n=>n.remove());
+  const r=bbl.getBoundingClientRect();
+  const bar=document.createElement('div'); bar.className='bqv2-quick-emoji';
+  QUICK_EMOJI.forEach(em=>{
+    const b=document.createElement('button'); b.textContent=em;
+    b.onclick=()=>{
+      const key=bbl.dataset.key||bbl.dataset.k||bbl.id?.replace(/^bqm-/,'');
+      const dm=window.activeDmId||window.__bqActiveDm?.id||'';
+      const u=_uid(); const db=_db();
+      if(key && u && db){
+        const path = dm ? 'bq_dms/'+dm+'/messages/'+key+'/reactions/'+em+'/'+u : 'bq_messages/'+key+'/reactions/'+em+'/'+u;
+        db.ref(path).set(Date.now()).catch(()=>{});
+      }
+      bar.remove();
+    };
+    bar.appendChild(b);
+  });
+  document.body.appendChild(bar);
+  const top=Math.max(60, r.top-46);
+  bar.style.left=Math.min(window.innerWidth-bar.offsetWidth-8, Math.max(8, r.left))+'px';
+  bar.style.top=top+'px';
+  setTimeout(()=>{ const off=ev=>{ if(!bar.contains(ev.target)){ bar.remove(); document.removeEventListener('click', off, true); } }; document.addEventListener('click', off, true); }, 50);
+}
+
+// Tap timestamp → copy permalink
+function wireTimestampCopy(){
+  if(window._bqV2TS) return; window._bqV2TS=true;
+  document.addEventListener('click', e=>{
+    const t=e.target.closest('.bqts, .bqt, [data-bq-ts]'); if(!t) return;
+    const bbl=t.closest('.bqbbl'); if(!bbl) return;
+    const key=bbl.dataset.key||bbl.dataset.k||bbl.id?.replace(/^bqm-/,''); if(!key) return;
+    const dm=window.activeDmId||window.__bqActiveDm?.id||'';
+    const link=location.origin+location.pathname+'#bqmsg='+(dm?'dm:'+dm+':':'g:')+key;
+    try{ navigator.clipboard.writeText(link); _toast('Link copied','ok'); }catch(_){ _toast('Could not copy','err'); }
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   BOOT + observers
+   ────────────────────────────────────────────────────────────────────── */
+const bblObs=new MutationObserver(muts=>{
+  muts.forEach(m=>m.addedNodes.forEach(n=>{
+    if(!(n instanceof HTMLElement)) return;
+    if(n.classList?.contains('bq-voice-msg')) enhanceVoiceBubble(n);
+    n.querySelectorAll?.('.bq-voice-msg').forEach(enhanceVoiceBubble);
+  }));
+});
+
+function bootV25(){
+  killSlash();
+  wireVoiceV2();
+  document.querySelectorAll('.bq-voice-msg').forEach(enhanceVoiceBubble);
+  bblObs.observe(document.body, {childList:true, subtree:true});
+  polishDmOpen();
+  watchTyping();
+  wireTypingInput();
+  wireAutoGrow();
+  wireDoubleTap();
+  wireQuickEmoji();
+  wireTimestampCopy();
+  ensureScrollBottomBtn();
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(bootV25, 900));
+else setTimeout(bootV25, 900);
+
+setInterval(()=>{
+  try{ killSlash(); }catch(_){}
+  try{ wireVoiceV2(); }catch(_){}
+  try{ polishDmOpen(); }catch(_){}
+  try{ watchTyping(); }catch(_){}
+  try{ wireTypingInput(); }catch(_){}
+  try{ wireAutoGrow(); }catch(_){}
+  try{ ensureScrollBottomBtn(); }catch(_){}
+}, 2500);
+
+})();
+/* ════════════ end v25 patch ════════════ */
