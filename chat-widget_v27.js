@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.1';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '9.6.2-v29';                 // v9.6.1: compact working message menu + 4 fixed themes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -1840,6 +1840,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-theme-chip[data-t="whatsapp"]{background:linear-gradient(135deg,#dcf8c6 0%,#075e54 100%);}
 .bq-theme-chip[data-t="wadark"]{background:linear-gradient(135deg,#005c4b 0%,#0b141a 100%);}
 .bq-theme-chip[data-t="black"]{background:linear-gradient(135deg,#0a0a0a 0%,#000 100%);border-color:rgba(255,255,255,.2);}
+.bq-theme-chip[data-t="crimson"]{background:linear-gradient(135deg,#dc143c,#1a0306);}
+.bq-theme-chip[data-t="monochrome"]{background:linear-gradient(135deg,#e5e5e5,#0a0a0a);}
 .bq-theme-chip.sel::after{content:'';position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);}
 
 /* ── SCROLL TO BOTTOM BUTTON improved ── */
@@ -2081,6 +2083,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-if-th[data-t="whatsapp"]{background:linear-gradient(135deg,#dcf8c6,#075e54);}
 .bq-if-th[data-t="wadark"]{background:linear-gradient(135deg,#005c4b,#0b141a);}
 .bq-if-th[data-t="black"]{background:linear-gradient(135deg,#0a0a0a,#000);}
+.bq-if-th[data-t="crimson"]{background:linear-gradient(135deg,#dc143c,#1a0306);}
+.bq-if-th[data-t="monochrome"]{background:linear-gradient(135deg,#e5e5e5,#0a0a0a);}
 
 .bq-if-bubble{display:flex;gap:6px;padding:0 10px;}
 .bq-if-bubble-opt{
@@ -2405,7 +2409,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="monochrome" title="Monochrome"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -2581,6 +2585,8 @@ const HTML = `
          <div class="bq-if-th" data-t="midnight" title="Midnight"></div>
          <div class="bq-if-th" data-t="rose" title="Rose"></div>
          <div class="bq-if-th" data-t="ocean" title="Ocean"></div>
+         <div class="bq-if-th" data-t="crimson" title="Crimson"></div>
+         <div class="bq-if-th" data-t="monochrome" title="Monochrome"></div>
        </div>
      </div>
     <div class="bq-if-sect">
@@ -2669,6 +2675,43 @@ let gUnread   = 0;
 let dmUnread  = {};
 let onlineU   = {};
 let activeDmId= null;
+
+
+/* ─────────────────────────────────────────
+   v29: DM finalize helper — writes per-user index, meta, and only bumps unread
+   for the recipient if they are NOT currently viewing this dm.
+───────────────────────────────────────── */
+function _dmFinalize(dmId, partnerUid, partnerName, lastMsg){
+  if(!db||!uid||!dmId||!partnerUid) return;
+  const sorted=[uid,partnerUid].sort();
+  const meta={
+    p1:sorted[0], p2:sorted[1],
+    n1:sorted[0]===uid?uname:partnerName,
+    n2:sorted[0]===uid?partnerName:uname,
+    lastMsg:(lastMsg||'').slice(0,60),
+    lastTs:Date.now()
+  };
+  const updates={};
+  updates['bq_dms/'+dmId+'/meta/p1']=meta.p1;
+  updates['bq_dms/'+dmId+'/meta/p2']=meta.p2;
+  updates['bq_dms/'+dmId+'/meta/n1']=meta.n1;
+  updates['bq_dms/'+dmId+'/meta/n2']=meta.n2;
+  updates['bq_dms/'+dmId+'/meta/lastMsg']=meta.lastMsg;
+  updates['bq_dms/'+dmId+'/meta/lastTs']=meta.lastTs;
+  // CRITICAL: ensure both users see the thread in their DMs tab immediately
+  updates['bq_user_dms/'+uid+'/'+dmId]=true;
+  updates['bq_user_dms/'+partnerUid+'/'+dmId]=true;
+  db.ref().update(updates).catch(()=>{});
+
+  // Only bump unread if the recipient is NOT currently in this dm.
+  db.ref('bq_presence/'+partnerUid+'/activeDmId').once('value').then(s=>{
+    if(s.val()===dmId) return; // they're looking at it — don't bump
+    db.ref('bq_dms/'+dmId+'/meta/unread/'+partnerUid).transaction(n=>(n||0)+1);
+  }).catch(()=>{
+    // If presence read fails, fall back to bumping (safer than under-counting).
+    db.ref('bq_dms/'+dmId+'/meta/unread/'+partnerUid).transaction(n=>(n||0)+1);
+  });
+}
 let activeDmPuid= null;
 let activeDmPname= null;
 let dmMeta    = {};
@@ -2816,6 +2859,8 @@ function showDmConvo(pUid, pName) {
   const newDmId = dmKey(uid, pUid);
   
   activeDmId = newDmId;
+  // v29: publish active dm to presence so others can avoid bumping our unread.
+  if(db && uid) db.ref('bq_presence/'+uid+'/activeDmId').set(newDmId).catch(()=>{});
   activeDmPuid = pUid;
   activeDmPname = pName;
   dLastU = null;
@@ -3479,6 +3524,7 @@ function deleteDmConvo(did){
   if(_dmMetaRefs && _dmMetaRefs[did]){ try{_dmMetaRefs[did].off();}catch(_){} delete _dmMetaRefs[did]; }
   if(activeDmId===did&&activeView==='dmconv'){
     activeDmId=null;activeDmPuid=null;activeDmPname=null;
+    if(db && uid) db.ref('bq_presence/'+uid+'/activeDmId').set(null).catch(()=>{});
     bqNav('dms');
   }
   renderDmList();updateBadges();toast('Conversation deleted');
@@ -3499,15 +3545,7 @@ function sendDm(text){
   const dis=getDisappear();
   if(activeDmId&&dis[activeDmId]) p.expiresAt=Date.now()+5*60*1000;
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  const sorted=[uid,activeDmPuid].sort();
-  db.ref('bq_dms/'+activeDmId+'/meta').update({
-    p1:sorted[0],p2:sorted[1],
-    n1:sorted[0]===uid?uname:pname,
-    n2:sorted[0]===uid?pname:uname,
-    lastMsg:text.trim().slice(0,60),lastTs:Date.now(),
-  });
-  db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).transaction(n=>(n||0)+1);
-  
+  _dmFinalize(activeDmId, activeDmPuid, pname, trimmed||(p.imageData?'📷 Image':''));
   clearReply('dm');
 }
 
@@ -3557,13 +3595,7 @@ function sendGifDm(gifUrl, w, h){
   const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  const sorted=[uid,activeDmPuid].sort();
-  db.ref('bq_dms/'+activeDmId+'/meta').update({
-    p1:sorted[0],p2:sorted[1],
-    n1:sorted[0]===uid?uname:pname,
-    n2:sorted[0]===uid?pname:uname,
-    lastMsg:'🎞️ GIF', lastTs:Date.now(),
-  });
+  _dmFinalize(activeDmId, activeDmPuid, pname, '🎞️ GIF');
 }
 
 /* Sticker (one-tap big-emoji) — sends as type:'sticker' */
@@ -3580,14 +3612,7 @@ function sendStickerDm(emoji){
   const p={uid,uname,text:'',type:'sticker',sticker:emoji,ts:Date.now()};
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  const sorted=[uid,activeDmPuid].sort();
-  db.ref('bq_dms/'+activeDmId+'/meta').update({
-    p1:sorted[0],p2:sorted[1],
-    n1:sorted[0]===uid?uname:pname,
-    n2:sorted[0]===uid?pname:uname,
-    lastMsg:emoji+' Sticker', lastTs:Date.now(),
-  });
-  db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).transaction(n=>(n||0)+1);
+  _dmFinalize(activeDmId, activeDmPuid, pname, emoji+' Sticker');
   clearReply('dm');
 }
 
@@ -3756,7 +3781,10 @@ function setDmTheme(did,theme){
   applyDmTheme(did,theme);
 }
 function applyDmTheme(did,theme){
-  theme=(theme==='light'||theme==='whatsapp'||theme==='wadark'||theme==='walight'||theme==='black'||theme==='none')?(theme==='whatsapp'?'walight':theme):(theme==='paper'?'light':'none');
+  // v29: accept any theme id with a matching CSS rule. Only normalise legacy aliases.
+  if(!theme) theme='none';
+  if(theme==='whatsapp') theme='walight';
+  else if(theme==='paper') theme='light';
   const v=document.getElementById('bqv-dmconv'); if(!v) return;
   v.className='bqv bq-active bq-theme-'+theme;
   const panel=document.getElementById('bqp');
@@ -4518,7 +4546,27 @@ function startEditMsg(ctx,key,msg,pfx){
    BADGES
 ───────────────────────────────────────── */
 function updateBadges(){
-  const dmTotal=Object.values(dmUnread).reduce((s,n)=>s+n,0);
+  // v29: derive unread truth from dmMeta (not the locally cached dmUnread
+  // counter, which can drift). For each thread sum meta.unread[uid] but
+  // discard stale counts where lastTs is older than our last read marker.
+  let dmTotal=0;
+  try{
+    Object.keys(dmMeta||{}).forEach(did=>{
+      const m=dmMeta[did]; if(!m||!m.unread) return;
+      const n=Number(m.unread[uid]||0); if(!n||n<=0) return;
+      // Skip the conversation we're actively reading.
+      if(activeView==='dmconv' && did===activeDmId) return;
+      const lastTs=Number(m.lastTs||0);
+      const myRead=Number((dmReadCache && dmReadCache[did] && dmReadCache[did][uid])||0);
+      if(lastTs && myRead && lastTs<=myRead){
+        // Stale counter — heal it in the background.
+        if(db) db.ref('bq_dms/'+did+'/meta/unread/'+uid).set(0).catch(()=>{});
+        return;
+      }
+      dmTotal+=n;
+      dmUnread[did]=n;
+    });
+  }catch(_){ dmTotal=Object.values(dmUnread).reduce((s,n)=>s+n,0); }
   const nb=document.getElementById('bqdmnb');
   if(nb){if(dmTotal>0){nb.textContent=dmTotal>9?'9+':dmTotal;nb.classList.add('show');}else nb.classList.remove('show');}
   const total=gUnread+dmTotal;
@@ -4526,6 +4574,23 @@ function updateBadges(){
   if(!badge)return;
   if(total>0){badge.textContent=total>9?'9+':total;badge.classList.add('show');}else badge.classList.remove('show');
 }
+
+// v29: clear unread for the active conversation when the tab regains focus.
+(function bqWireFocusRead(){
+  if(window.__bqFocusReadWired) return; window.__bqFocusReadWired=true;
+  const onFocus=()=>{
+    try{
+      if(activeView==='dmconv' && activeDmId && db && uid){
+        markDmRead(activeDmId);
+        db.ref('bq_dms/'+activeDmId+'/meta/unread/'+uid).set(0).catch(()=>{});
+        if(dmUnread) dmUnread[activeDmId]=0;
+        updateBadges();
+      }
+    }catch(_){}
+  };
+  window.addEventListener('focus', onFocus);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) onFocus(); });
+})();
 
 /* ─────────────────────────────────────────
   IMAGE PREVIEW
@@ -5356,14 +5421,7 @@ function sendVoiceDm(audioData,durMs,waveform){
   const p={uid,uname,text:'',type:'voice',audio:audioData,duration:durMs,ts:Date.now()};
   if(Array.isArray(waveform) && waveform.length) p.waveform=waveform.slice(0,64);
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  const sorted=[uid,activeDmPuid].sort();
-  db.ref('bq_dms/'+activeDmId+'/meta').update({
-    p1:sorted[0],p2:sorted[1],
-    n1:sorted[0]===uid?uname:pname,
-    n2:sorted[0]===uid?pname:uname,
-    lastMsg:'🎤 Voice note', lastTs:Date.now(),
-  });
-  db.ref('bq_dms/'+activeDmId+'/meta/unread/'+activeDmPuid).transaction(n=>(n||0)+1);
+  _dmFinalize(activeDmId, activeDmPuid, pname, '🎤 Voice note');
 }
 
 function sendVoiceGlobal(audioData,durMs,waveform){
