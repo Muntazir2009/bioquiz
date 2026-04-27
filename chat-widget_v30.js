@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.4-v32';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '9.6.4-v33';                 // v9.6.1: compact working message menu + 4 fixed themes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -12132,3 +12132,146 @@ setInterval(()=>{
 })();
 /* ════════════ end v32 patch ════════════ */
 
+
+
+/* ════════════ v33 patch — visible My Song button in DM Settings + Profile redesign ════════════ */
+(function(){
+  'use strict';
+  if(window.__bqV33SongButton) return; window.__bqV33SongButton = true;
+
+  var LS_SONG='bq_my_song_v31';
+  var songs=[
+    {id:'s1',title:'Blinding Lights',artist:'The Weeknd',emoji:'🌃'},
+    {id:'s2',title:'As It Was',artist:'Harry Styles',emoji:'🌅'},
+    {id:'s3',title:'Cruel Summer',artist:'Taylor Swift',emoji:'☀️'},
+    {id:'s4',title:'Flowers',artist:'Miley Cyrus',emoji:'🌸'},
+    {id:'s5',title:'Anti-Hero',artist:'Taylor Swift',emoji:'🦹'},
+    {id:'s6',title:'Unholy',artist:'Sam Smith & Kim Petras',emoji:'🔥'},
+    {id:'s7',title:'Vampire',artist:'Olivia Rodrigo',emoji:'🧛'},
+    {id:'s8',title:'Kill Bill',artist:'SZA',emoji:'⚔️'},
+    {id:'s9',title:'Calm Down',artist:'Rema',emoji:'🧘'},
+    {id:'s10',title:'Espresso',artist:'Sabrina Carpenter',emoji:'☕'},
+    {id:'s11',title:'Lovely',artist:'Billie Eilish',emoji:'🖤'},
+    {id:'s12',title:'Bad Habit',artist:'Steve Lacy',emoji:'🌀'},
+    {id:'s13',title:'Snooze',artist:'SZA',emoji:'😴'},
+    {id:'s14',title:'Paint The Town Red',artist:'Doja Cat',emoji:'🎨'},
+    {id:'s15',title:'greedy',artist:'Tate McRae',emoji:'💎'},
+    {id:'s16',title:'Cruel',artist:'The Marías',emoji:'🥀'},
+    {id:'s17',title:'Heat Waves',artist:'Glass Animals',emoji:'🌊'},
+    {id:'s18',title:'Stay',artist:'The Kid LAROI & Justin Bieber',emoji:'⏳'},
+    {id:'s19',title:'Levitating',artist:'Dua Lipa',emoji:'🪐'},
+    {id:'s20',title:'Watermelon Sugar',artist:'Harry Styles',emoji:'🍉'},
+    {id:'s21',title:'Drivers License',artist:'Olivia Rodrigo',emoji:'🚗'},
+    {id:'s22',title:'Save Your Tears',artist:'The Weeknd',emoji:'💧'},
+    {id:'s23',title:'Industry Baby',artist:'Lil Nas X',emoji:'🏭'},
+    {id:'s24',title:'Peaches',artist:'Justin Bieber',emoji:'🍑'},
+    {id:'s25',title:'Shivers',artist:'Ed Sheeran',emoji:'❄️'}
+  ];
+  var pending=null, modal=null;
+
+  function db(){ try{ if(window.db) return window.db; if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){} return null; }
+  function uid(){ return window.uid || localStorage.getItem('bq_chat_uid') || localStorage.getItem('bq_uid') || ''; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function song(id){ for(var i=0;i<songs.length;i++) if(songs[i].id===id) return songs[i]; return null; }
+  function currentSong(){ try{return song(localStorage.getItem(LS_SONG));}catch(_){return null;} }
+  function label(){ var s=currentSong(); return s ? (s.emoji+' '+s.title+' — '+s.artist) : 'Choose a song'; }
+
+  var st=document.createElement('style');
+  st.id='bq-v33-song-visible';
+  st.textContent=[
+    '#bq-my-song-section-v33{display:block!important;}',
+    '.bq-song-direct-btn{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;padding:12px 14px;border-radius:12px;border:1px solid rgba(29,185,84,.35);background:rgba(29,185,84,.10);color:#1db954;font:700 13px/1.25 Inter,system-ui,sans-serif;cursor:pointer;text-align:left;box-sizing:border-box;}',
+    '.bq-song-direct-btn span:first-child{display:flex;align-items:center;gap:8px;white-space:nowrap;}',
+    '.bq-song-direct-cur{font-weight:600;font-size:11px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;text-align:right;}',
+    '#bqp.bq-theme-golden .bq-song-direct-btn{background:rgba(212,160,86,.12)!important;border-color:rgba(212,160,86,.42)!important;color:#d4a056!important;box-shadow:none!important;}',
+    '#bqp.bq-theme-golden .bq-song-direct-cur{color:rgba(244,227,199,.78)!important;}',
+    '#bqp.bq-theme-pure-black .bq-song-direct-btn{background:#080808!important;border-color:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important;}',
+    '#bqp.bq-theme-pure-black .bq-song-direct-cur{color:rgba(255,255,255,.62)!important;}',
+    '.bq-song-v33-bd{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;}',
+    '.bq-song-v33-bd.open{display:flex;}',
+    '.bq-song-v33{width:min(390px,100%);max-height:82vh;background:#101010;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif;box-shadow:0 24px 80px rgba(0,0,0,.55);}',
+    '.bq-song-v33-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:800;font-size:15px;}',
+    '.bq-song-v33-x{border:0;background:transparent;color:rgba(255,255,255,.65);font-size:24px;line-height:1;cursor:pointer;}',
+    '.bq-song-v33-search{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);}',
+    '.bq-song-v33-search input{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#000;color:#fff;padding:9px 11px;font-size:13px;outline:none;}',
+    '.bq-song-v33-list{overflow:auto;min-height:160px;}',
+    '.bq-song-v33-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;}',
+    '.bq-song-v33-item:hover{background:rgba(255,255,255,.06);}',
+    '.bq-song-v33-item.sel{background:rgba(29,185,84,.16);}',
+    '.bq-song-v33-art{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1db954,#0d7a37);display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;}',
+    '.bq-song-v33-meta{min-width:0;flex:1;}',
+    '.bq-song-v33-title{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.bq-song-v33-artist{font-size:11px;color:rgba(255,255,255,.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
+    '.bq-song-v33-foot{display:flex;gap:8px;padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);}',
+    '.bq-song-v33-clear,.bq-song-v33-save{flex:1;border-radius:10px;padding:10px;border:0;font-weight:800;font-size:13px;cursor:pointer;}',
+    '.bq-song-v33-clear{background:transparent;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.16);}',
+    '.bq-song-v33-save{background:#1db954;color:#031007;}'
+  ].join('\n');
+  (document.head||document.documentElement).appendChild(st);
+
+  function updateLabels(){ document.querySelectorAll('.bq-song-direct-cur').forEach(function(n){ n.textContent=label(); }); }
+  function saveSong(id){
+    var s=song(id), d=db(), u=uid(), payload=s?{id:s.id,title:s.title,artist:s.artist,emoji:s.emoji}:null;
+    try{ if(s) localStorage.setItem(LS_SONG,s.id); else localStorage.removeItem(LS_SONG); }catch(_){}
+    if(d && u){ try{ d.ref('bq_users/'+u+'/song').set(payload).catch(function(){}); d.ref('bq_presence/'+u+'/song').set(payload).catch(function(){}); }catch(_){} }
+    updateLabels();
+    try{ if(typeof toast==='function') toast(s?'My Song updated':'My Song removed'); }catch(_){}
+  }
+
+  function buildModal(){
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.className='bq-song-v33-bd';
+    modal.innerHTML='<div class="bq-song-v33"><div class="bq-song-v33-head"><span>♪ My Song</span><button type="button" class="bq-song-v33-x">×</button></div><div class="bq-song-v33-search"><input type="text" placeholder="Search songs or artists…"></div><div class="bq-song-v33-list"></div><div class="bq-song-v33-foot"><button type="button" class="bq-song-v33-clear">Remove</button><button type="button" class="bq-song-v33-save">Set song</button></div></div>';
+    document.body.appendChild(modal);
+    var list=modal.querySelector('.bq-song-v33-list'), search=modal.querySelector('input');
+    function render(q){
+      q=(q||'').toLowerCase().trim(); list.innerHTML='';
+      songs.forEach(function(s){
+        if(q && (s.title+' '+s.artist).toLowerCase().indexOf(q)<0) return;
+        var row=document.createElement('div'); row.className='bq-song-v33-item'+(pending===s.id?' sel':''); row.dataset.id=s.id;
+        row.innerHTML='<div class="bq-song-v33-art">'+esc(s.emoji)+'</div><div class="bq-song-v33-meta"><div class="bq-song-v33-title">'+esc(s.title)+'</div><div class="bq-song-v33-artist">'+esc(s.artist)+'</div></div>';
+        row.addEventListener('click',function(){ pending=s.id; render(search.value); });
+        list.appendChild(row);
+      });
+    }
+    modal._render=render;
+    search.addEventListener('input',function(){ render(search.value); });
+    modal.querySelector('.bq-song-v33-x').addEventListener('click',function(){ modal.classList.remove('open'); });
+    modal.addEventListener('click',function(e){ if(e.target===modal) modal.classList.remove('open'); });
+    modal.querySelector('.bq-song-v33-clear').addEventListener('click',function(){ saveSong(null); modal.classList.remove('open'); });
+    modal.querySelector('.bq-song-v33-save').addEventListener('click',function(){ saveSong(pending); modal.classList.remove('open'); });
+    return modal;
+  }
+  function openModal(){ var m=buildModal(); var cur=currentSong(); pending=cur?cur.id:null; var inp=m.querySelector('input'); if(inp) inp.value=''; m._render(''); m.classList.add('open'); }
+  function makeButton(){ var b=document.createElement('button'); b.type='button'; b.className='bq-song-direct-btn'; b.innerHTML='<span>♪ My Song</span><span class="bq-song-direct-cur">'+esc(label())+'</span>'; b.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); openModal(); }); return b; }
+
+  function injectDmSettings(){
+    var scroll=document.querySelector('#bq-dm-info .bq-info-scroll'); if(!scroll) return;
+    var sect=document.getElementById('bq-my-song-section-v33');
+    if(!sect){
+      sect=document.createElement('div'); sect.className='bq-info-section'; sect.id='bq-my-song-section-v33';
+      sect.innerHTML='<div class="bq-info-section-title">My Song</div>';
+      var first=scroll.querySelector('.bq-info-section');
+      if(first && first.nextSibling) scroll.insertBefore(sect, first.nextSibling); else scroll.insertBefore(sect, scroll.firstChild);
+    }
+    if(!sect.querySelector('.bq-song-direct-btn')) sect.appendChild(makeButton());
+  }
+
+  function injectProfileRedesign(){
+    var panel=document.querySelector('.bqp4-panel[data-panel="status"] .bqp4-fields'); if(!panel) return;
+    var box=document.getElementById('bq-profile-song-v33');
+    if(!box){ box=document.createElement('div'); box.className='bqp4-field'; box.id='bq-profile-song-v33'; box.innerHTML='<div class="bqp4-label">My Song</div>'; panel.appendChild(box); }
+    if(!box.querySelector('.bq-song-direct-btn')) box.appendChild(makeButton());
+  }
+
+  function restoreCloud(){
+    var d=db(), u=uid(); if(!d||!u||restoreCloud._u===u) return; restoreCloud._u=u;
+    try{ d.ref('bq_users/'+u+'/song').once('value').then(function(snap){ var v=snap.val(); if(v&&v.id){ localStorage.setItem(LS_SONG,v.id); updateLabels(); } }); }catch(_){}
+  }
+
+  setInterval(function(){ injectDmSettings(); injectProfileRedesign(); restoreCloud(); updateLabels(); }, 700);
+  setTimeout(function(){ injectDmSettings(); injectProfileRedesign(); restoreCloud(); updateLabels(); }, 100);
+  try{ console.log('[bq] v33 patch loaded — My Song button visible in DM settings'); }catch(_){}
+})();
+/* ════════════ end v33 patch ════════════ */
