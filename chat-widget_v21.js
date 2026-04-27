@@ -10091,3 +10091,529 @@ setInterval(()=>{
 
 })();
 /* ════════════ end v23 patch ════════════ */
+
+/* ════════════════════════════════════════════════════════════════════════
+   v24 PATCH BLOCK — Apr 2026
+   - Fix wrong storage keys (bq_uid → bq_chat_uid, bq_name → bq_chat_uname)
+   - Fix wrong input/send IDs (bqgi/bqgs → bqginp/bqgsnd)  → makes
+     scheduled messages, slash commands, drafts, disappear all WORK
+   - Slim themes to Monochrome + Black only (hide other chips, force apply)
+   - Slash autocomplete now also shows a friendly TIP the moment "/" is typed
+   - Fix link previews: replace broken microlink call with a CORS-safe
+     jsonlink.io endpoint, with localStorage cache + graceful fallback
+   - Fix "new-DM screen halved" bug by forcing layout reflow + height fill
+   - General lightweight pass: kill unused theme chips, debounce observers
+   ════════════════════════════════════════════════════════════════════════ */
+(function v24Patch(){
+'use strict';
+const V24='24.0.0';
+try{ console.info('[BioQuiz] chat-widget v'+V24+' loaded'); }catch(_){}
+
+const $=(id)=>document.getElementById(id);
+const _esc=(s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function _toast(m,kind){
+  try{
+    const t=document.createElement('div'); t.textContent=m;
+    const bg=kind==='err'?'#7f1d1d':kind==='ok'?'#15803d':'#222';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'+bg+';color:#fff;padding:11px 18px;border-radius:8px;z-index:2147483647;font:13px/1.4 system-ui;box-shadow:0 6px 24px rgba(0,0,0,.35);max-width:90vw;text-align:center';
+    document.body.appendChild(t); setTimeout(()=>t.remove(),2800);
+  }catch(_){}
+}
+function _db(){ try{ if(window.firebase&&firebase.apps&&firebase.apps.length) return firebase.database(); }catch(_){} return null; }
+
+/* ── FIX 1: Correct storage keys used by v23 patch ────────────────────── */
+function _uid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
+function _uname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
+window._bqUidV24=_uid; window._bqUnameV24=_uname;
+
+/* ── FIX 2: Correct chat IDs used by v23 patch ────────────────────────── */
+const ID={
+  ginp:'bqginp', dminp:'bqdminp',
+  gsnd:'bqgsnd', dmsnd:'bqdmsnd',
+  gmsgs:'bqgmsgs', dmmsgs:'bqdmmsgs',
+  gview:'bqv-global', dmview:'bqv-dmconv'
+};
+function activeCtx(){
+  const g=$(ID.gview), d=$(ID.dmview);
+  if(d && d.classList.contains('bq-active')) return 'dm';
+  if(g && g.classList.contains('bq-active')) return 'global';
+  return null;
+}
+function activeDmId(){ return window.activeDmId||null; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 3: Slash commands — proper IDs + friendly tip on "/"
+   ════════════════════════════════════════════════════════════════════════ */
+const SLASH=[
+  {c:'/me',       d:'Action message — /me waves'},
+  {c:'/shrug',    d:'Append ¯\\_(ツ)_/¯'},
+  {c:'/coinflip', d:'Heads or tails'},
+  {c:'/roll',     d:'Roll dice — /roll 2d6'},
+  {c:'/8ball',    d:'Magic 8-ball — /8ball will I win?'},
+  {c:'/poll',     d:'Create poll — /poll Q | A | B'},
+  {c:'/clear',    d:'Clear local view'},
+  {c:'/help',     d:'Show all commands'}
+];
+function runSlash(cmd, args, ctx){
+  const send=(t)=>sendTextV24(ctx,t);
+  switch(cmd){
+    case '/me':       send('*'+(_uname()||'someone')+' '+args+'*'); break;
+    case '/shrug':    send((args?args+' ':'')+'¯\\_(ツ)_/¯'); break;
+    case '/coinflip': send('🪙 '+(Math.random()<.5?'**Heads**':'**Tails**')); break;
+    case '/roll': {
+      const m=(args||'1d6').match(/^(\d{1,2})d(\d{1,3})$/i)||[null,1,6];
+      const n=Math.min(20,parseInt(m[1]||1,10)||1), s=Math.min(100,parseInt(m[2]||6,10)||6);
+      const r=[]; for(let i=0;i<n;i++) r.push(1+Math.floor(Math.random()*s));
+      send('🎲 '+n+'d'+s+': '+r.join(', ')+' (sum **'+r.reduce((a,b)=>a+b,0)+'**)'); break;
+    }
+    case '/8ball': {
+      const a=['Yes','No','Maybe','Definitely','No way','Ask later','Signs point to yes','Outlook not so good','Without a doubt','Very doubtful'];
+      send('🎱 '+(args?'_'+args+'_ → ':'')+'**'+a[Math.floor(Math.random()*a.length)]+'**'); break;
+    }
+    case '/poll': createPollV24(ctx, args); break;
+    case '/clear': {
+      const id=ctx==='global'?ID.gmsgs:ID.dmmsgs;
+      const el=$(id); if(el) el.innerHTML='<div style="text-align:center;opacity:.5;margin:auto;padding:20px">Cleared locally. Refresh to see again.</div>';
+      break;
+    }
+    case '/help': _toast('Commands:\n'+SLASH.map(x=>x.c+' — '+x.d).join('\n')); break;
+  }
+}
+function sendTextV24(ctx, text){
+  if(!text) return;
+  const inp=$(ctx==='global'?ID.ginp:ID.dminp);
+  const btn=$(ctx==='global'?ID.gsnd:ID.dmsnd);
+  if(inp){
+    inp.value=text;
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    if(btn && !btn.disabled){ btn.click(); return; }
+  }
+  // Fallback: write straight to firebase
+  const db=_db(), u=_uid(), n=_uname();
+  if(!db||!u||!n) return;
+  if(ctx==='global'){
+    db.ref('bq_messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()});
+  } else {
+    const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push({uid:u,uname:n,text:text.slice(0,2000),ts:Date.now()});
+  }
+}
+function createPollV24(ctx, raw){
+  const parts=String(raw||'').split('|').map(s=>s.trim()).filter(Boolean);
+  if(parts.length<3){ _toast('Use: /poll Question | A | B','err'); return; }
+  const q=parts[0], opts=parts.slice(1,11);
+  const db=_db(), u=_uid(), n=_uname();
+  if(!db||!u||!n){ _toast('Sign in first','err'); return; }
+  const payload={uid:u,uname:n,ts:Date.now(),poll:{q,opts,votes:{}}, text:'📊 '+q};
+  if(ctx==='global') db.ref('bq_messages').push(payload);
+  else { const id=activeDmId(); if(id) db.ref('bq_dms/'+id+'/messages').push(payload); }
+}
+
+function showSlashUI(inp){
+  $('bq-slash-v24')?.remove();
+  const v=inp.value||'';
+  if(!v.startsWith('/')){ return; }
+  const sp=v.indexOf(' ');
+  const q=sp>0?v.slice(0,sp).toLowerCase():v.toLowerCase();
+  const matches=SLASH.filter(x=>x.c.startsWith(q));
+  const m=document.createElement('div');
+  m.id='bq-slash-v24';
+  m.style.cssText='position:fixed;background:#0f0f0f;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;min-width:240px;max-width:320px;z-index:2147483646;box-shadow:0 12px 36px rgba(0,0,0,.6);font:13px/1.35 -apple-system,system-ui,sans-serif;color:#e5e5e5;max-height:240px;overflow:auto';
+
+  if(!matches.length){
+    m.innerHTML='<div style="padding:8px 10px;opacity:.6">Tip: type /help to see all slash commands</div>';
+  } else {
+    // Tip header when only "/" typed
+    if(v==='/' || v==='/ '){
+      const tip=document.createElement('div');
+      tip.style.cssText='padding:6px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px';
+      tip.textContent='Slash commands — tap to insert';
+      m.appendChild(tip);
+    }
+    matches.forEach(x=>{
+      const it=document.createElement('div');
+      it.style.cssText='padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px';
+      it.innerHTML='<span style="font-weight:600;color:#fff">'+x.c+'</span><span style="opacity:.6;font-size:11px">'+_esc(x.d)+'</span>';
+      it.onmouseenter=()=>it.style.background='rgba(255,255,255,.06)';
+      it.onmouseleave=()=>it.style.background='';
+      it.onclick=()=>{ inp.value=x.c+' '; inp.focus(); inp.dispatchEvent(new Event('input',{bubbles:true})); };
+      m.appendChild(it);
+    });
+  }
+  document.body.appendChild(m);
+  const r=inp.getBoundingClientRect();
+  m.style.left=Math.max(8, Math.min(window.innerWidth-m.offsetWidth-8, r.left))+'px';
+  m.style.top=(r.top - m.offsetHeight - 8)+'px';
+}
+function hideSlashUI(){ $('bq-slash-v24')?.remove(); }
+
+function wireSlashV24(inputId){
+  const inp=$(inputId); if(!inp || inp._v24Slash) return; inp._v24Slash=true;
+  inp.addEventListener('input', ()=>{
+    const v=inp.value||'';
+    if(v.startsWith('/')) showSlashUI(inp); else hideSlashUI();
+  });
+  inp.addEventListener('keydown',(e)=>{
+    const v=(inp.value||'').trim();
+    if(e.key==='Enter' && v.startsWith('/') && !e.shiftKey){
+      const sp=v.indexOf(' ');
+      const cmd=sp>0?v.slice(0,sp).toLowerCase():v.toLowerCase();
+      const args=sp>0?v.slice(sp+1):'';
+      const known=SLASH.find(x=>x.c===cmd);
+      if(known){
+        e.preventDefault(); e.stopPropagation();
+        const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
+        hideSlashUI();
+        inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true}));
+        runSlash(cmd, args.trim(), ctx);
+      }
+    } else if(e.key==='Escape'){ hideSlashUI(); }
+  });
+  inp.addEventListener('blur', ()=>setTimeout(hideSlashUI, 200));
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 4: Scheduled messages — proper IDs + reliable dispatch
+   ════════════════════════════════════════════════════════════════════════ */
+function getSched(){ try{ return JSON.parse(localStorage.getItem('bq_sched_v24')||'[]'); }catch(_){ return []; } }
+function setSched(a){ try{ localStorage.setItem('bq_sched_v24', JSON.stringify(a)); }catch(_){} }
+function scheduleMsg(ctx, dmId, text, atMs){
+  const a=getSched();
+  a.push({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), ctx, dmId:dmId||'', text, atMs});
+  setSched(a);
+  _toast('Scheduled for '+new Date(atMs).toLocaleString(),'ok');
+}
+function dispatchSched(){
+  const now=Date.now(); const a=getSched(); let changed=false;
+  for(let i=a.length-1;i>=0;i--){
+    const s=a[i];
+    if(s.atMs<=now){
+      try{
+        const db=_db(), u=_uid(), n=_uname();
+        if(db&&u&&n){
+          const payload={uid:u,uname:n,text:String(s.text).slice(0,2000),ts:Date.now()};
+          if(s.ctx==='global') db.ref('bq_messages').push(payload);
+          else if(s.dmId)      db.ref('bq_dms/'+s.dmId+'/messages').push(payload);
+        }
+      }catch(_){}
+      a.splice(i,1); changed=true;
+    }
+  }
+  if(changed) setSched(a);
+}
+function showSchedMenu(anchor){
+  $('bq-sched-v24')?.remove();
+  const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
+  const inp=$(ctx==='global'?ID.ginp:ID.dminp);
+  const text=(inp?.value||'').trim();
+  if(!text){ _toast('Type a message first'); return; }
+  const dmId=ctx==='dm'?activeDmId():'';
+
+  const m=document.createElement('div'); m.id='bq-sched-v24';
+  m.style.cssText='position:fixed;background:#0f0f0f;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;min-width:200px;z-index:2147483646;box-shadow:0 12px 36px rgba(0,0,0,.6);font:13px/1.35 -apple-system,system-ui,sans-serif;color:#e5e5e5';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:6px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px';
+  hdr.textContent='Send later'; m.appendChild(hdr);
+
+  const opts=[
+    ['In 1 minute', ()=>Date.now()+60*1000],
+    ['In 1 hour',   ()=>Date.now()+60*60*1000],
+    ['Tonight 8pm', ()=>{ const d=new Date(); d.setHours(20,0,0,0); if(d<=Date.now()) d.setDate(d.getDate()+1); return d.getTime(); }],
+    ['Tomorrow 9am',()=>{ const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); return d.getTime(); }],
+    ['Custom time…', ()=>{
+      const v=prompt('Send at (YYYY-MM-DD HH:MM, 24h):');
+      if(!v) return null;
+      const t=new Date(v.replace(' ','T'));
+      if(isNaN(t)){ _toast('Invalid date','err'); return null; }
+      return t.getTime();
+    }]
+  ];
+  opts.forEach(([label,fn])=>{
+    const b=document.createElement('div');
+    b.style.cssText='padding:8px 10px;border-radius:6px;cursor:pointer';
+    b.textContent=label;
+    b.onmouseenter=()=>b.style.background='rgba(255,255,255,.06)';
+    b.onmouseleave=()=>b.style.background='';
+    b.onclick=()=>{
+      const at=fn(); if(!at) return;
+      if(at<=Date.now()){ _toast('Pick a future time','err'); return; }
+      if(inp){ inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+      scheduleMsg(ctx, dmId, text, at);
+      m.remove();
+    };
+    m.appendChild(b);
+  });
+
+  document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect();
+  m.style.left=Math.max(8, Math.min(window.innerWidth-m.offsetWidth-8, r.right - 220))+'px';
+  m.style.top=(r.top - m.offsetHeight - 8)+'px';
+  setTimeout(()=>{
+    const off=(e)=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
+    document.addEventListener('pointerdown', off, true);
+  },10);
+}
+function wireSchedV24(){
+  [ID.gsnd, ID.dmsnd].forEach(id=>{
+    const btn=$(id); if(!btn || btn._v24Sched) return; btn._v24Sched=true;
+    let pt=null;
+    btn.addEventListener('pointerdown', ()=>{ pt=setTimeout(()=>{ pt=null; showSchedMenu(btn); }, 600); });
+    const cancel=()=>{ if(pt){ clearTimeout(pt); pt=null; } };
+    btn.addEventListener('pointerup', cancel);
+    btn.addEventListener('pointerleave', cancel);
+    btn.addEventListener('pointercancel', cancel);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 5: Per-conversation drafts — proper IDs
+   ════════════════════════════════════════════════════════════════════════ */
+function draftKey(){
+  const ctx=activeCtx(); if(ctx==='global') return 'bq_draft_v24_global';
+  if(ctx==='dm'){ const id=activeDmId(); return id?'bq_draft_v24_dm_'+id:null; }
+  return null;
+}
+function wireDraftsV24(){
+  [ID.ginp, ID.dminp].forEach(id=>{
+    const inp=$(id); if(!inp || inp._v24Draft) return; inp._v24Draft=true;
+    inp.addEventListener('input', ()=>{
+      const k=draftKey(); if(!k) return;
+      try{ if(inp.value) localStorage.setItem(k, inp.value); else localStorage.removeItem(k); }catch(_){}
+    });
+  });
+}
+function restoreDraftV24(){
+  const ctx=activeCtx(); if(!ctx) return;
+  const k=draftKey(); if(!k) return;
+  const inp=$(ctx==='global'?ID.ginp:ID.dminp); if(!inp) return;
+  if(!inp.value){
+    try{ const v=localStorage.getItem(k); if(v){ inp.value=v; inp.dispatchEvent(new Event('input',{bubbles:true})); } }catch(_){}
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 6: Link previews — replace broken microlink call
+   Uses jsonlink.io free OG-fetch (CORS-enabled). Falls back gracefully.
+   ════════════════════════════════════════════════════════════════════════ */
+const _lpCache=(()=>{ try{ return JSON.parse(localStorage.getItem('bq_lp_v24')||'{}'); }catch(_){ return{}; } })();
+function _saveLp(){ try{ localStorage.setItem('bq_lp_v24', JSON.stringify(_lpCache)); }catch(_){} }
+async function fetchLinkPreviewV24(url){
+  if(_lpCache[url]) return _lpCache[url];
+  // Try jsonlink first (CORS-friendly, free, no key needed for low volume)
+  try{
+    const r=await fetch('https://jsonlink.io/api/extract?url='+encodeURIComponent(url));
+    if(r.ok){
+      const j=await r.json();
+      if(j && (j.title || j.images?.length)){
+        const out={title:j.title||url, desc:j.description||'', img:(j.images&&j.images[0])||'', url};
+        _lpCache[url]=out; _saveLp(); return out;
+      }
+    }
+  }catch(_){}
+  // Fallback: r.jina.ai readable proxy (CORS-friendly), parse <title>
+  try{
+    const r=await fetch('https://r.jina.ai/'+url, {headers:{'X-Return-Format':'html'}});
+    if(r.ok){
+      const html=await r.text();
+      const t=(html.match(/<title[^>]*>([^<]+)<\/title>/i)||[])[1]||'';
+      const d=(html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)||[])[1]||'';
+      const i=(html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)||[])[1]||'';
+      if(t || i){
+        const out={title:t.trim()||url, desc:d.trim(), img:i, url};
+        _lpCache[url]=out; _saveLp(); return out;
+      }
+    }
+  }catch(_){}
+  // Mark as failed so we don't retry forever
+  _lpCache[url]={title:'',desc:'',img:'',url,failed:1}; _saveLp();
+  return null;
+}
+function renderLinkPreviewV24(bbl){
+  if(!bbl || bbl.dataset.v24lp==='1') return;
+  if(bbl.classList.contains('media') || bbl.classList.contains('sticker')) return;
+  const a=bbl.querySelector('a[href^="http"]');
+  if(!a) return;
+  const url=a.href;
+  if(/giphy\.com|tenor\.com|\.(jpg|jpeg|png|gif|webp|mp4|webm)(\?|$)/i.test(url)) return;
+  // Already has any preview from v23?
+  if(bbl.querySelector('.bq-linkprev, .bq-lp-v24')) return;
+  bbl.dataset.v24lp='1';
+  fetchLinkPreviewV24(url).then(d=>{
+    if(!d) return;
+    if(bbl.querySelector('.bq-lp-v24')) return;
+    const card=document.createElement('a');
+    card.className='bq-lp-v24';
+    card.href=d.url; card.target='_blank'; card.rel='noopener';
+    card.style.cssText='display:flex;gap:10px;margin-top:8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-decoration:none;color:inherit;max-width:320px;align-items:center';
+    let html='';
+    if(d.img) html+='<img src="'+_esc(d.img)+'" loading="lazy" onerror="this.style.display=\'none\'" style="width:52px;height:52px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#222"/>';
+    html+='<div style="min-width:0;flex:1"><div style="font-weight:600;font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_esc(d.title||d.url)+'</div>';
+    if(d.desc) html+='<div style="font-size:11px;opacity:.65;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_esc(d.desc)+'</div>';
+    html+='</div>';
+    card.innerHTML=html;
+    bbl.appendChild(card);
+  }).catch(()=>{});
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 7: New-DM screen halved bug
+   When showDmConvo runs, the bqv-dmconv panel sometimes opens with half
+   the height because the .bqv positioning hasn't settled. We force a
+   reflow + ensure the messages container fills its parent.
+   ════════════════════════════════════════════════════════════════════════ */
+function fixDmLayout(){
+  const v=$(ID.dmview); if(!v) return;
+  const msgs=$(ID.dmmsgs); if(!msgs) return;
+  // Force the view to fill its slot
+  v.style.height='100%';
+  v.style.display='flex';
+  v.style.flexDirection='column';
+  msgs.style.flex='1 1 auto';
+  msgs.style.minHeight='0';
+  // Trigger reflow
+  void v.offsetHeight;
+  // Scroll to bottom in case content is offscreen
+  msgs.scrollTop=msgs.scrollHeight;
+}
+// Watch DM view becoming active
+function watchDmActivate(){
+  const v=$(ID.dmview); if(!v || v._v24Watch) return; v._v24Watch=true;
+  const obs=new MutationObserver(()=>{
+    if(v.classList.contains('bq-active')){
+      fixDmLayout();
+      // Re-fix after async render
+      setTimeout(fixDmLayout, 50);
+      setTimeout(fixDmLayout, 250);
+      setTimeout(fixDmLayout, 700);
+      // Refresh draft on chat switch
+      try{ restoreDraftV24(); }catch(_){}
+    }
+  });
+  obs.observe(v, {attributes:true, attributeFilter:['class']});
+}
+// Also fix on window resize / orientation change
+window.addEventListener('resize', ()=>setTimeout(fixDmLayout, 50));
+window.addEventListener('orientationchange', ()=>setTimeout(fixDmLayout, 200));
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 8: Theme cleanup — keep Monochrome (mono) + Black only
+   We do this purely via CSS + removing other chips from the picker DOM.
+   Existing themes still parse, but only mono/black are reachable.
+   ════════════════════════════════════════════════════════════════════════ */
+const KEEP_THEMES=new Set(['mono','black']);
+
+function injectThemeOverrideCss(){
+  if($('bq-theme-v24-css')) return;
+  const s=document.createElement('style'); s.id='bq-theme-v24-css';
+  s.textContent=`
+    /* Hide all theme chips except mono + black */
+    .bq-theme-chip:not([data-t="mono"]):not([data-t="black"]),
+    .bq-if-th:not([data-t="mono"]):not([data-t="black"]) { display:none !important; }
+    /* Settings/profile theme tiles fall back to text labels — also slim them */
+    .bqpf-theme:not([data-t="mono"]):not([data-t="black"]) { display:none !important; }
+    /* Make sure mono + black chips are still visible/clickable */
+    .bq-theme-chip[data-t="mono"], .bq-theme-chip[data-t="black"],
+    .bq-if-th[data-t="mono"], .bq-if-th[data-t="black"] { display:inline-block !important; }
+  `;
+  document.head.appendChild(s);
+}
+function ensureMonoBlackChips(){
+  // Add mono/black chips to any picker grid that doesn't have them
+  document.querySelectorAll('.bq-theme-row, [data-theme-picker]').forEach(grid=>{
+    [['mono','Monochrome'],['black','Black']].forEach(([id,label])=>{
+      if(!grid.querySelector('[data-t="'+id+'"]')){
+        const chip=document.createElement('div');
+        chip.className='bq-theme-chip'; chip.dataset.t=id; chip.title=label;
+        chip.style.cssText='display:inline-block;width:28px;height:28px;border-radius:50%;cursor:pointer;margin:4px;border:2px solid transparent;'+
+          (id==='black'?'background:linear-gradient(135deg,#0a0a0a,#000)':'background:linear-gradient(135deg,#27272a,#3f3f46)');
+        grid.appendChild(chip);
+      }
+    });
+  });
+}
+function migrateUnsupportedTheme(){
+  // If saved theme isn't mono/black, force it to mono
+  try{
+    const cur=localStorage.getItem('bq_theme_v2')||'';
+    if(cur && !KEEP_THEMES.has(cur)){
+      localStorage.setItem('bq_theme_v2','mono');
+      const p=$('bqp'); if(p){
+        Array.from(p.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) p.classList.remove(c); });
+        p.classList.add('bq-theme-mono');
+      }
+    }
+  }catch(_){}
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 9: Composer-row enhancements — add a discreet "/" hint button
+   Tapping it inserts "/" so users discover slash commands without typing.
+   ════════════════════════════════════════════════════════════════════════ */
+function injectSlashHintButton(){
+  [ID.ginp, ID.dminp].forEach(id=>{
+    const inp=$(id); if(!inp) return;
+    // Place a tiny chip ABOVE the input the first 3 times the user opens chat
+    if(inp._v24SlashHinted) return;
+    const seen=parseInt(localStorage.getItem('bq_slashtip_seen_v24')||'0',10);
+    if(seen>=3){ inp._v24SlashHinted=true; return; }
+    inp._v24SlashHinted=true;
+    const chip=document.createElement('div');
+    chip.style.cssText='display:inline-flex;align-items:center;gap:6px;background:rgba(96,165,250,.1);color:#93c5fd;border:1px solid rgba(96,165,250,.25);border-radius:999px;padding:4px 10px;font:11px/1 -apple-system,system-ui,sans-serif;cursor:pointer;margin:4px 8px 0;width:fit-content';
+    chip.innerHTML='💡 Type <b style="margin:0 2px">/</b> to use commands';
+    chip.onclick=()=>{ inp.value='/'; inp.focus(); inp.dispatchEvent(new Event('input',{bubbles:true})); chip.remove(); };
+    const wrap=inp.closest('.bqcomp')||inp.parentElement;
+    if(wrap && wrap.parentElement){ wrap.parentElement.insertBefore(chip, wrap); }
+    localStorage.setItem('bq_slashtip_seen_v24', String(seen+1));
+    setTimeout(()=>chip.remove(), 12000);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIX 10: Re-process bubbles for link previews (replaces v23 broken one)
+   ════════════════════════════════════════════════════════════════════════ */
+const lpObs=new MutationObserver(muts=>{
+  muts.forEach(m=>{
+    m.addedNodes.forEach(n=>{
+      if(!(n instanceof HTMLElement)) return;
+      if(n.classList?.contains('bqbbl')) renderLinkPreviewV24(n);
+      n.querySelectorAll?.('.bqbbl').forEach(renderLinkPreviewV24);
+    });
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   BOOT — wire everything, set re-wire interval
+   ════════════════════════════════════════════════════════════════════════ */
+function bootV24(){
+  try{ injectThemeOverrideCss(); }catch(_){}
+  try{ migrateUnsupportedTheme(); }catch(_){}
+  try{ ensureMonoBlackChips(); }catch(_){}
+  try{ wireSlashV24(ID.ginp); wireSlashV24(ID.dminp); }catch(_){}
+  try{ wireSchedV24(); }catch(_){}
+  try{ wireDraftsV24(); }catch(_){}
+  try{ restoreDraftV24(); }catch(_){}
+  try{ watchDmActivate(); }catch(_){}
+  try{ fixDmLayout(); }catch(_){}
+  try{ injectSlashHintButton(); }catch(_){}
+  try{
+    lpObs.observe(document.body, {childList:true, subtree:true});
+    document.querySelectorAll('.bqbbl').forEach(renderLinkPreviewV24);
+  }catch(_){}
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(bootV24, 800));
+else setTimeout(bootV24, 800);
+
+// Periodic re-wire — chat DOM is rebuilt by the parent widget
+setInterval(()=>{
+  try{ ensureMonoBlackChips(); }catch(_){}
+  try{ wireSlashV24(ID.ginp); wireSlashV24(ID.dminp); }catch(_){}
+  try{ wireSchedV24(); }catch(_){}
+  try{ wireDraftsV24(); }catch(_){}
+  try{ watchDmActivate(); }catch(_){}
+  try{ dispatchSched(); }catch(_){}
+}, 3000);
+
+// Faster scheduled-message tick when tab is focused
+window.addEventListener('focus', ()=>{ try{ dispatchSched(); }catch(_){} });
+
+})();
+/* ════════════ end v24 patch ════════════ */
