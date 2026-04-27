@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.4-v31';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '9.6.4-v32';                 // v9.6.1: compact working message menu + 4 fixed themes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -12039,3 +12039,96 @@ setInterval(()=>{
   try{ console.log('[bq] v31 patch loaded — pure-black widget-wide + listening-to'); }catch(_){}
 })();
 /* ════════════ end v31 patch ════════════ */
+
+/* ════════════ v32 patch — kill stray shadows in golden/pure-black themes,
+                            and make "My Song" button reliably visible
+   ════════════ */
+(function(){
+  if(window.__bqV32Loaded) return; window.__bqV32Loaded = true;
+
+  /* ---- 1. CSS: nuke unwanted shadows in both custom themes ---- */
+  var s = document.createElement('style');
+  s.id = 'bq-v32-fixes';
+  s.textContent = [
+    /* Golden brown — remove black shadows behind bubbles, reaction panel, menus, info card */
+    '#bqp.bq-theme-golden .bqbbl,',
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl,',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl,',
+    '#bqp.bq-theme-golden .bqr.mine:hover .bqbbl,',
+    '#bqp.bq-theme-golden .bqr.theirs:hover .bqbbl,',
+    '#bqp.bq-theme-golden #bqdmmsgs .bqr.mine .bqbbl,',
+    '#bqp.bq-theme-golden #bqdmmsgs .bqr.theirs .bqbbl{box-shadow:none!important;filter:none!important;}',
+    /* keep a soft golden glow ONLY on own bubble (subtle, on-brand) */
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden #bqdmmsgs .bqr.mine .bqbbl{box-shadow:0 2px 10px rgba(212,160,86,.18)!important;}',
+    /* reaction panel — themed shadow instead of black */
+    '#bqp.bq-theme-golden .bq-rx-panel{box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;}',
+    '#bqp.bq-theme-golden .bq-ms-panel{box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden .bq-dm-menu-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.4)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden .bqbbl.msg-menu-open{box-shadow:0 0 0 3px rgba(212,160,86,.22)!important;outline-color:rgba(212,160,86,.35)!important;}',
+
+    /* Pure black — same cleanup */
+    '#bqp.bq-theme-pure-black .bqbbl,',
+    '#bqp.bq-theme-pure-black .bqr.mine .bqbbl,',
+    '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl,',
+    '#bqp.bq-theme-pure-black .bqr.mine:hover .bqbbl,',
+    '#bqp.bq-theme-pure-black .bqr.theirs:hover .bqbbl,',
+    '#bqp.bq-theme-pure-black #bqdmmsgs .bqr.mine .bqbbl,',
+    '#bqp.bq-theme-pure-black #bqdmmsgs .bqr.theirs .bqbbl{box-shadow:none!important;filter:none!important;}',
+    '#bqp.bq-theme-pure-black .bq-rx-panel{box-shadow:0 -8px 28px rgba(0,0,0,.8)!important;background:#000!important;border-color:rgba(255,255,255,.08)!important;}',
+    '#bqp.bq-theme-pure-black .bq-ms-panel{box-shadow:0 -8px 28px rgba(0,0,0,.8)!important;background:#000!important;border-color:rgba(255,255,255,.08)!important;color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bq-dm-menu-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.7)!important;background:#000!important;border-color:rgba(255,255,255,.1)!important;color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bqbbl.msg-menu-open{box-shadow:0 0 0 3px rgba(255,255,255,.12)!important;outline-color:rgba(255,255,255,.25)!important;}',
+
+    /* My Song button — own dedicated section style for visibility */
+    '.bqpf-section .bq-pick-song-btn{margin:0;width:100%;}',
+    '#bq-pick-song-section{padding:0 0 4px;}',
+    '#bqp.bq-theme-golden .bq-pick-song-btn{background:rgba(212,160,86,.10)!important;border-color:rgba(212,160,86,.35)!important;color:#d4a056!important;}',
+    '#bqp.bq-theme-golden .bq-pick-song-btn .bq-pick-song-cur{color:rgba(244,227,199,.7)!important;}',
+    '#bqp.bq-theme-pure-black .bq-pick-song-btn{background:#0a0a0a!important;border-color:rgba(255,255,255,.15)!important;color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bq-pick-song-btn .bq-pick-song-cur{color:rgba(255,255,255,.55)!important;}'
+  ].join('\n');
+  (document.head||document.documentElement).appendChild(s);
+
+  /* ---- 2. Move "My Song" button into its own labeled section
+            (placed right after Bio so it's never hidden / missed) ---- */
+  function ensureSongSection(){
+    var bio = document.getElementById('bqpfbio');
+    if(!bio) return;
+    var bioSection = bio.closest('.bqpf-section');
+    if(!bioSection) return;
+    if(document.getElementById('bq-pick-song-section')) {
+      // make sure button is still inside it
+      var existingBtn = document.getElementById('bq-pick-song-btn');
+      var sect = document.getElementById('bq-pick-song-section');
+      if(existingBtn && existingBtn.parentNode !== sect){
+        sect.appendChild(existingBtn);
+      }
+      return;
+    }
+    var sect = document.createElement('div');
+    sect.className = 'bqpf-section';
+    sect.id = 'bq-pick-song-section';
+    sect.innerHTML = '<div class="bqpf-label">My Song</div>';
+    bioSection.parentNode.insertBefore(sect, bioSection.nextSibling);
+    // v31 button (with proper click handler) is auto-injected by interval — relocate it here when it appears
+    var btn = document.getElementById('bq-pick-song-btn');
+    if(btn) sect.appendChild(btn);
+  }
+
+  // bridge: v31 defined openPicker() in closure. Re-open via a global hook.
+  // The v31 "ensurePickButton" interval keeps re-creating the button before #bqpfsave;
+  // intercept that by removing the dup and using ours.
+  setInterval(function(){
+    ensureSongSection();
+    // remove any duplicate v31-injected button outside our section
+    var sect = document.getElementById('bq-pick-song-section');
+    if(!sect) return;
+    document.querySelectorAll('#bq-pick-song-btn').forEach(function(b){
+      if(b.parentNode !== sect) b.remove();
+    });
+  }, 1000);
+
+  try{ console.log('[bq] v32 patch loaded — shadow cleanup + My Song section'); }catch(_){}
+})();
+/* ════════════ end v32 patch ════════════ */
+
