@@ -8777,11 +8777,51 @@ function showConfirmRestore(){
   });
 }
 
-function restoreToUid(newUid, sourceMsg, freshCode){
+async function restoreToUid(newUid, sourceMsg, freshCode, restoredName){
+  // v27 fix: write canonical AND legacy keys, restore username, repair username registry,
+  // and clear stale device-bound caches so the recovered account fully takes over on reload.
   if(freshCode){ try{ sessionStorage.setItem(PENDING_NEW_CODE_KEY, freshCode); }catch(_){} }
-  try{ const prev=localStorage.getItem('bq_uid'); if(prev) sessionStorage.setItem('bq_uid_pre_restore', prev); }catch(_){}
-  localStorage.setItem('bq_uid', newUid);
-  Object.keys(localStorage).forEach(k=>{ if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k); });
+  try{
+    const prevUid=localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid');
+    if(prevUid) sessionStorage.setItem('bq_uid_pre_restore', prevUid);
+    const prevName=localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name');
+    if(prevName) sessionStorage.setItem('bq_uname_pre_restore', prevName);
+  }catch(_){}
+
+  // Resolve the username to restore: explicit arg → bq_recovery/{uid}.username → reverse-scan registry
+  let nm=(restoredName||'').toLowerCase().replace(/[^a-z0-9_]/g,'');
+  try{
+    if(!nm){
+      const rs=await _db().ref('bq_recovery/'+newUid+'/username').once('value');
+      const v=rs.val(); if(v) nm=String(v).toLowerCase().replace(/[^a-z0-9_]/g,'');
+    }
+  }catch(_){}
+
+  // Write BOTH canonical + legacy uid keys (the app reads bq_chat_uid first)
+  try{
+    localStorage.setItem('bq_chat_uid', newUid);
+    localStorage.setItem('bq_uid', newUid);
+    if(nm){
+      localStorage.setItem('bq_chat_uname', nm);
+      localStorage.setItem('bq_name', nm);
+    }
+  }catch(_){}
+
+  // Repair username → uid mapping in case it drifted (e.g. someone re-registered)
+  if(nm){
+    try{ await _db().ref('bq_usernames/'+nm).set(newUid); }catch(_){}
+    try{ await _db().ref('bq_recovery/'+newUid+'/username').set(nm); }catch(_){}
+  }
+
+  // Clear device-bound caches that would otherwise leak previous account state
+  try{
+    Object.keys(localStorage).forEach(k=>{
+      if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k);
+      if(k.startsWith('bq_dm_lastread_')) localStorage.removeItem(k);
+      if(k.startsWith('bq_unread_')) localStorage.removeItem(k);
+    });
+  }catch(_){}
+
   _toast(sourceMsg||'Account restored — reloading…','ok');
   setTimeout(()=>location.reload(), 800);
 }
@@ -8931,7 +8971,7 @@ async function doRestoreCode(ev){
     const fresh=genRecoveryCode();
     const freshHash=await sha256Hex(fresh);
     try{ await _db().ref('bq_recovery/'+u).update({codeHash:freshHash, codeCreatedAt:Date.now()}); }catch(_){}
-    restoreToUid(u, 'Account restored.', fresh);
+    restoreToUid(u, 'Account restored.', fresh, name);
   })(ev);
 }
 async function doRestorePass(ev){
@@ -8954,7 +8994,10 @@ async function doRestorePass(ev){
     await clearLockout(u);
     if(!await showConfirmRestore()){ setRecStatus(''); return; }
     setRecStatus('Restoring…','ok');
-    restoreToUid(u, 'Account restored.');
+    // Best-effort username (raw may be a uid in passphrase flow)
+    let nm2='';
+    try{ const rs=await _db().ref('bq_recovery/'+u+'/username').once('value'); nm2=rs.val()||''; }catch(_){}
+    restoreToUid(u, 'Account restored.', null, nm2);
   })(ev);
 }
 async function doRestoreQuest(ev){
@@ -8972,7 +9015,7 @@ async function doRestoreQuest(ev){
     await clearLockout(name);
     if(!await showConfirmRestore()){ setRecStatus(''); return; }
     setRecStatus('Restoring…','ok');
-    restoreToUid(u, 'Account restored.');
+    restoreToUid(u, 'Account restored.', null, name);
   })(ev);
 }
 
@@ -9191,7 +9234,7 @@ async function showReclaimQuiz(uid, name, traces){
     const fresh=genRecoveryCode();
     const freshHash=await sha256Hex(fresh);
     try{ await _db().ref('bq_recovery/'+uid).update({codeHash:freshHash, codeCreatedAt:Date.now(), reclaimed:Date.now(), username:name}); }catch(_){}
-    restoreToUid(uid, 'Account restored.', fresh);
+    restoreToUid(uid, 'Account restored.', fresh, name);
   };
 }
 
