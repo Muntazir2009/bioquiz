@@ -18,13 +18,8 @@
 <script>
   /* Apply saved theme before paint to avoid flash */
   (function(){
-    try{
-      var t = localStorage.getItem('bq_theme');
-      if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-    }catch(e){
-      document.documentElement.setAttribute('data-theme','dark');
-    }
+    document.documentElement.setAttribute('data-theme','dark');
+    try{ localStorage.setItem('bq_theme','dark'); }catch(e){}
   })();
 </script>
 
@@ -42,76 +37,45 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 a{color:inherit;text-decoration:none}
 
 /* — Tokens — */
-/* DARK (default) — Deep Space */
+/* CRIMSON NEBULA — only theme */
 :root,
-:root[data-theme="dark"]{
-  --bg:#05060f;
-  --bg-elev:#0b0d1c;
-  --ink:#eef0ff;
-  --ink-soft:rgba(238,240,255,.74);
-  --ink-mute:rgba(238,240,255,.48);
-  --ink-faint:rgba(238,240,255,.22);
+:root[data-theme="dark"],
+:root[data-theme="light"]{
+  --bg:#08030a;
+  --bg-elev:#140716;
+  --ink:#fff0f3;
+  --ink-soft:rgba(255,235,240,.78);
+  --ink-mute:rgba(255,220,228,.52);
+  --ink-faint:rgba(255,210,220,.24);
 
-  --line:rgba(170,180,255,.10);
-  --line-strong:rgba(190,200,255,.20);
+  --line:rgba(225,19,59,.14);
+  --line-strong:rgba(225,19,59,.30);
 
-  --accent:#a98bff;        /* nebula violet */
-  --accent-2:#5cc9ff;      /* starlight cyan */
-  --accent-3:#ff7ad9;      /* magenta nova */
-  --accent-glow:rgba(169,139,255,.5);
+  --accent:#e1133b;        /* crimson */
+  --accent-2:#a855f7;      /* nebula violet */
+  --accent-3:#ff3d7f;      /* magenta glow */
+  --accent-glow:rgba(225,19,59,.55);
 
-  --c-cyan:#5cc9ff;
-  --c-violet:#a98bff;
-  --c-green:#7be3b6;
-  --c-teal:#56e0c8;
-  --c-amber:#ffd27a;
-  --c-coral:#ff8aa6;
-  --c-pink:#ff7ad9;
-  --c-fire:#ff7aa8;        /* shifted away from orange — was the "India map" issue */
+  --c-cyan:#a855f7;        /* violet (was cyan) */
+  --c-violet:#c026d3;      /* fuchsia */
+  --c-green:#ff3d7f;       /* magenta (kept name for legacy refs) */
+  --c-teal:#7c3aed;        /* deep violet */
+  --c-amber:#fb7185;       /* rose */
+  --c-coral:#dc2626;       /* deep red */
+  --c-pink:#ec4899;        /* hot pink */
+  --c-fire:#e1133b;        /* crimson */
 
-  --watermark-color:rgba(169,139,255,.05);
-  --watermark-opacity:.55;
+  --watermark-color:rgba(225,19,59,.06);
+  --watermark-opacity:.45;
 
   --r-sm:10px;
   --r-md:14px;
   --r-lg:20px;
   --r-xl:28px;
 
-  --shadow-glass:0 1px 0 rgba(255,255,255,.05) inset, 0 24px 60px -20px rgba(0,0,0,.6);
+  --shadow-glass:0 1px 0 rgba(255,80,110,.05) inset, 0 24px 60px -20px rgba(0,0,0,.75);
 
   --ease:cubic-bezier(.22,1,.36,1);
-}
-
-/* LIGHT — Daybreak Cosmos */
-:root[data-theme="light"]{
-  --bg:#f5f3ff;
-  --bg-elev:#ffffff;
-  --ink:#15123a;
-  --ink-soft:rgba(21,18,58,.78);
-  --ink-mute:rgba(21,18,58,.55);
-  --ink-faint:rgba(21,18,58,.28);
-
-  --line:rgba(60,40,140,.12);
-  --line-strong:rgba(60,40,140,.22);
-
-  --accent:#6a3df5;
-  --accent-2:#0ea5e9;
-  --accent-3:#d63aff;
-  --accent-glow:rgba(106,61,245,.35);
-
-  --c-cyan:#0ea5e9;
-  --c-violet:#6a3df5;
-  --c-green:#10b981;
-  --c-teal:#0d9488;
-  --c-amber:#d97706;
-  --c-coral:#e11d77;
-  --c-pink:#d63aff;
-  --c-fire:#e11d77;
-
-  --watermark-color:rgba(106,61,245,.06);
-  --watermark-opacity:.7;
-
-  --shadow-glass:0 1px 0 rgba(255,255,255,.6) inset, 0 24px 60px -20px rgba(60,40,140,.18);
 }
 
 html,body{background:var(--bg);color:var(--ink-soft)}
@@ -779,9 +743,267 @@ body{
   .card{opacity:1 !important;transform:none !important}
   .hero-left,.hero-right,.today,.section-head,.kbd-bar,.footer{opacity:1 !important;transform:none !important;animation:none !important}
 }
+
+/* === CRIMSON NEBULA OVERRIDES ============================== */
+
+/* Hide light-theme toggle entirely */
+.theme-toggle{display:none !important}
+
+/* Replace background nebula gradients with crimson + violet */
+.bg-photo::before{
+  background-image:url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1800&q=70&auto=format&fit=crop");
+  filter:blur(2px) saturate(160%) hue-rotate(-30deg) brightness(.7);
+  opacity:.42;
+}
+.bg-photo::after{
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(225,19,59,.32), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 90% 100%, rgba(168,85,247,.26), transparent 60%),
+    radial-gradient(ellipse 90% 70% at 10% 80%, rgba(255,61,127,.18), transparent 60%),
+    linear-gradient(180deg, rgba(8,3,10,.55) 0%, rgba(8,3,10,.82) 60%, rgba(8,3,10,.96) 100%) !important;
+}
+
+/* Animated multi-layer starfield */
+.bg-stars{
+  position:fixed;inset:-50%;z-index:1;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff 50%, transparent),
+    radial-gradient(1px 1px at 80px 120px, rgba(255,200,210,.85) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 160px 60px, #fff 50%, transparent),
+    radial-gradient(1px 1px at 240px 220px, rgba(255,180,200,.7) 50%, transparent),
+    radial-gradient(1px 1px at 320px 90px, #fff 50%, transparent),
+    radial-gradient(2px 2px at 400px 280px, rgba(255,160,180,.9) 50%, transparent);
+  background-repeat:repeat;
+  background-size:480px 360px;
+  opacity:.55;
+  animation:starsDrift 180s linear infinite;
+}
+.bg-stars-2{
+  position:fixed;inset:-50%;z-index:1;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 50px 80px, rgba(225,19,59,.7) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 200px 200px, #fff 50%, transparent),
+    radial-gradient(1px 1px at 350px 50px, rgba(168,85,247,.8) 50%, transparent),
+    radial-gradient(1px 1px at 100px 320px, #fff 50%, transparent);
+  background-repeat:repeat;
+  background-size:400px 400px;
+  opacity:.45;
+  animation:starsDrift 260s linear infinite reverse, starsTwinkle 4s ease-in-out infinite;
+}
+.bg-nebula{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 30%, rgba(225,19,59,.22), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 70%, rgba(168,85,247,.20), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 60% 20%, rgba(255,61,127,.14), transparent 70%);
+  filter:blur(40px);
+  animation:nebulaDrift 40s ease-in-out infinite alternate;
+}
+@keyframes starsDrift{from{transform:translate(0,0)}to{transform:translate(-480px,-360px)}}
+@keyframes starsTwinkle{0%,100%{opacity:.45}50%{opacity:.7}}
+@keyframes nebulaDrift{from{transform:translate(-2%,-1%) scale(1)}to{transform:translate(2%,1%) scale(1.05)}}
+
+/* Crimson selection */
+::selection{background:rgba(225,19,59,.45);color:#fff}
+
+/* === PLANET MODULE CARDS ================================== */
+.card-icon-box{
+  width:84px !important;height:84px !important;border-radius:50% !important;
+  border:none !important;background:transparent !important;
+  margin:6px auto 18px !important;
+  position:relative;overflow:visible !important;
+  display:grid;place-items:center;
+  transition:transform .5s var(--ease);
+}
+/* The planet itself */
+.card-icon-box::before{
+  content:"";position:absolute;inset:18%;border-radius:50%;
+  background:radial-gradient(circle at 32% 30%,
+    color-mix(in oklab, var(--c) 95%, white 30%) 0%,
+    var(--c) 40%,
+    color-mix(in oklab, var(--c) 70%, black) 80%,
+    color-mix(in oklab, var(--c) 50%, black) 100%);
+  box-shadow:
+    0 0 24px color-mix(in oklab, var(--c) 60%, transparent),
+    0 0 60px color-mix(in oklab, var(--c) 30%, transparent),
+    inset -6px -8px 14px rgba(0,0,0,.45),
+    inset 4px 4px 10px color-mix(in oklab, var(--c) 30%, white);
+  z-index:1;
+  transition:box-shadow .4s var(--ease);
+}
+/* Orbit ring 1 (horizontal-tilted ellipse) */
+.card-icon-box::after{
+  content:"";position:absolute;inset:-2px;
+  border-radius:50%;
+  border:1px solid color-mix(in oklab, var(--c) 55%, transparent);
+  border-top-color:transparent;border-bottom-color:transparent;
+  transform:rotate(20deg);
+  box-shadow:0 0 12px color-mix(in oklab, var(--c) 35%, transparent);
+  animation:planetSpin 14s linear infinite;
+  z-index:2;
+}
+/* Inner SVG icon sits ON the planet */
+.card-icon-box>svg.icon-static{
+  width:26px !important;height:26px !important;
+  stroke:#fff !important;
+  position:relative;z-index:3;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));
+  opacity:.92;
+}
+/* Hover: speed up + glow */
+.card:hover .card-icon-box,.card:focus-visible .card-icon-box{
+  transform:scale(1.08) !important;
+  box-shadow:none !important;
+}
+.card:hover .card-icon-box::before,.card:focus-visible .card-icon-box::before{
+  box-shadow:
+    0 0 36px color-mix(in oklab, var(--c) 75%, transparent),
+    0 0 90px color-mix(in oklab, var(--c) 45%, transparent),
+    inset -6px -8px 14px rgba(0,0,0,.45),
+    inset 4px 4px 10px color-mix(in oklab, var(--c) 35%, white);
+}
+.card:hover .card-icon-box::after,.card:focus-visible .card-icon-box::after{
+  animation-duration:5s;
+}
+@keyframes planetSpin{to{transform:rotate(380deg)}}
+/* Hide the per-card preview SVG inside icon-box (the planet replaces it) */
+.card-icon-box .preview{display:none !important}
+/* Wide card: bigger planet */
+.card-wide .card-icon-box{width:110px !important;height:110px !important}
+.card-wide .card-icon-box>svg.icon-static{width:34px !important;height:34px !important}
+
+/* Card surface: tint slightly crimson */
+.card{
+  background:linear-gradient(160deg, rgba(40,8,18,.55), rgba(12,4,10,.78)) !important;
+}
+
+/* === ANNOUNCE BAR — admin button === */
+.announce-bar{
+  background:linear-gradient(90deg, rgba(40,8,18,.85), rgba(20,4,12,.85)) !important;
+  border-bottom:1px solid rgba(225,19,59,.30) !important;
+}
+.announce-admin-btn{
+  position:fixed;top:5px;right:10px;z-index:700;
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(225,19,59,.18);border:1px solid rgba(225,19,59,.45);
+  color:#ffd9e0;display:grid;place-items:center;cursor:pointer;
+  transition:transform .2s, background .2s;
+}
+.announce-admin-btn:hover{background:rgba(225,19,59,.35);transform:rotate(45deg)}
+.announce-admin-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Admin modal */
+.admin-modal{
+  position:fixed;inset:0;z-index:9000;display:none;
+  align-items:center;justify-content:center;
+  background:rgba(8,3,10,.78);backdrop-filter:blur(8px);
+}
+.admin-modal.show{display:flex;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.admin-panel{
+  width:min(420px,92vw);
+  background:linear-gradient(160deg, rgba(40,8,18,.95), rgba(20,4,12,.98));
+  border:1px solid rgba(225,19,59,.4);border-radius:18px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.8), 0 0 60px -20px rgba(225,19,59,.5);
+  padding:24px;color:var(--ink);
+  font-family:'Inter',sans-serif;
+}
+.admin-panel h3{
+  font-family:'Rajdhani',sans-serif;font-size:1.1rem;letter-spacing:.18em;
+  color:#ffb3c0;margin-bottom:6px;text-transform:uppercase;
+}
+.admin-panel .ap-sub{font-size:.75rem;color:var(--ink-mute);margin-bottom:18px;letter-spacing:.06em}
+.admin-panel label{display:block;font-size:.65rem;letter-spacing:.18em;color:var(--ink-mute);text-transform:uppercase;margin:14px 0 6px}
+.admin-panel input[type=text],
+.admin-panel input[type=password]{
+  width:100%;padding:10px 12px;border-radius:10px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(225,19,59,.3);
+  color:var(--ink);font-family:inherit;font-size:.9rem;outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+.admin-panel input:focus{border-color:#e1133b;box-shadow:0 0 0 3px rgba(225,19,59,.18)}
+.admin-panel input[type=color]{
+  width:48px;height:36px;border:1px solid rgba(225,19,59,.3);border-radius:8px;
+  background:transparent;padding:2px;cursor:pointer;
+}
+.admin-panel .ap-row{display:flex;gap:10px;align-items:center}
+.admin-panel .ap-toggle{display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;font-size:.85rem;color:var(--ink-soft)}
+.admin-panel .ap-actions{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
+.admin-panel button{
+  font-family:'Rajdhani',sans-serif;font-size:.7rem;letter-spacing:.18em;
+  padding:9px 16px;border-radius:9px;cursor:pointer;text-transform:uppercase;font-weight:700;
+  transition:transform .15s, background .2s;
+}
+.admin-panel .ap-btn-primary{background:#e1133b;color:#fff;border:1px solid #e1133b}
+.admin-panel .ap-btn-primary:hover{background:#c41032;transform:translateY(-1px)}
+.admin-panel .ap-btn-ghost{background:transparent;color:var(--ink-mute);border:1px solid var(--line-strong)}
+.admin-panel .ap-btn-ghost:hover{color:var(--ink);border-color:rgba(225,19,59,.5)}
+.admin-panel .ap-error{color:#ff6b8a;font-size:.78rem;margin-top:8px;min-height:1em}
+.admin-panel.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
 </style>
 </head>
 <body>
+
+<!-- CRIMSON SPACE BACKDROP -->
+<div class="bg-stars" aria-hidden="true"></div>
+<div class="bg-stars-2" aria-hidden="true"></div>
+<div class="bg-nebula" aria-hidden="true"></div>
+
+<!-- ADMIN BUTTON (notification bar editor) -->
+<button class="announce-admin-btn" id="announceAdminBtn" type="button" aria-label="Edit notification bar" title="Edit notification bar (admin)">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+</button>
+
+<!-- ADMIN MODAL -->
+<div class="admin-modal" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+  <div class="admin-panel" id="adminPanel">
+    <h3 id="adminTitle">Notification Bar</h3>
+    <div class="ap-sub" id="adminSub">Enter admin password to continue</div>
+
+    <!-- LOCK STAGE -->
+    <div id="adminLock">
+      <label>Password</label>
+      <input type="password" id="adminPass" autocomplete="off" placeholder="••••••••" />
+      <div class="ap-error" id="adminError"></div>
+      <div class="ap-actions">
+        <button type="button" class="ap-btn-ghost" id="adminCancel">Cancel</button>
+        <button type="button" class="ap-btn-primary" id="adminUnlock">Unlock</button>
+      </div>
+    </div>
+
+    <!-- EDITOR STAGE -->
+    <div id="adminEditor" style="display:none">
+      <label>Message text</label>
+      <input type="text" id="abText" maxlength="160" />
+      <label>Link URL (optional)</label>
+      <input type="text" id="abLink" placeholder="https://..." />
+      <div class="ap-row" style="margin-top:14px;gap:18px;flex-wrap:wrap">
+        <div>
+          <label style="margin-top:0">Background</label>
+          <input type="color" id="abBg" value="#1a0510" />
+        </div>
+        <div>
+          <label style="margin-top:0">Dot color</label>
+          <input type="color" id="abDot" value="#e1133b" />
+        </div>
+        <div>
+          <label style="margin-top:0">Text color</label>
+          <input type="color" id="abTxt" value="#ffd9e0" />
+        </div>
+      </div>
+      <label class="ap-toggle">
+        <input type="checkbox" id="abVisible" checked />
+        <span>Show notification bar</span>
+      </label>
+      <div class="ap-actions">
+        <button type="button" class="ap-btn-ghost" id="adminClose">Close</button>
+        <button type="button" class="ap-btn-primary" id="adminSave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ANNOUNCE BAR -->
 <a class="announce-bar" id="announceBar" href="#" target="_self">
@@ -1302,6 +1524,123 @@ body{
       })
       .catch(function(){ /* silent */ });
   })();
+
+
+  /* ─── ADMIN PANEL (notification bar editor) ─── */
+  (function(){
+    var ADMIN_PASS = 'bioadmin'; // change in code to update password
+    var STORE_KEY = 'bq_admin_announce';
+    var SESSION_KEY = 'bq_admin_unlocked';
+
+    var btn     = document.getElementById('announceAdminBtn');
+    var modal   = document.getElementById('adminModal');
+    var panel   = document.getElementById('adminPanel');
+    var lock    = document.getElementById('adminLock');
+    var editor  = document.getElementById('adminEditor');
+    var passIn  = document.getElementById('adminPass');
+    var errEl   = document.getElementById('adminError');
+    var sub     = document.getElementById('adminSub');
+    var bar     = document.getElementById('announceBar');
+    var inner   = document.getElementById('announceInner');
+    var dot     = bar && bar.querySelector('.announce-dot');
+    var txtSpan = document.getElementById('announceText');
+    if (!btn || !modal) return;
+
+    var abText = document.getElementById('abText');
+    var abLink = document.getElementById('abLink');
+    var abBg   = document.getElementById('abBg');
+    var abDot  = document.getElementById('abDot');
+    var abTxt  = document.getElementById('abTxt');
+    var abVis  = document.getElementById('abVisible');
+
+    function loadCfg(){
+      try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null') || {}; }
+      catch(e){ return {}; }
+    }
+    function applyAdminCfg(){
+      var cfg = loadCfg();
+      if (!cfg.text && !('visible' in cfg)) return; // never edited yet
+      if (cfg.visible === false){ if (bar) bar.style.display = 'none'; return; }
+      if (!bar) return;
+      bar.style.display = 'flex';
+      if (cfg.bg)  bar.style.background = cfg.bg;
+      if (dot && cfg.dot){ dot.style.background = cfg.dot; dot.style.boxShadow = '0 0 8px ' + cfg.dot; }
+      if (inner && cfg.txt) inner.style.color = cfg.txt;
+      if (txtSpan && cfg.text) txtSpan.textContent = cfg.text;
+      if (cfg.link){ bar.setAttribute('href', cfg.link); bar.target='_self'; }
+      else if (cfg.link === ''){ bar.removeAttribute('href'); bar.style.cursor='default'; }
+    }
+    // Apply on load (after the worker IIFE has populated defaults)
+    setTimeout(applyAdminCfg, 50);
+
+    function showLock(){
+      lock.style.display = ''; editor.style.display = 'none';
+      sub.textContent = 'Enter admin password to continue';
+      errEl.textContent = ''; passIn.value = '';
+      setTimeout(function(){ passIn.focus(); }, 80);
+    }
+    function showEditor(){
+      lock.style.display = 'none'; editor.style.display = '';
+      sub.textContent = 'Edit the notification bar live';
+      var cfg = loadCfg();
+      abText.value = cfg.text || (txtSpan ? txtSpan.textContent : '');
+      abLink.value = cfg.link != null ? cfg.link : (bar.getAttribute('href') || '');
+      abBg.value   = cfg.bg   || '#1a0510';
+      abDot.value  = cfg.dot  || '#e1133b';
+      abTxt.value  = cfg.txt  || '#ffd9e0';
+      abVis.checked = cfg.visible !== false;
+    }
+    function open(){
+      modal.classList.add('show');
+      var unlocked = false;
+      try { unlocked = sessionStorage.getItem(SESSION_KEY) === '1'; } catch(e){}
+      if (unlocked) showEditor(); else showLock();
+    }
+    function close(){ modal.classList.remove('show'); }
+
+    btn.addEventListener('click', open);
+    modal.addEventListener('click', function(e){ if (e.target === modal) close(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && modal.classList.contains('show')) close();
+    });
+
+    document.getElementById('adminCancel').addEventListener('click', close);
+    document.getElementById('adminClose').addEventListener('click', close);
+
+    function tryUnlock(){
+      if (passIn.value === ADMIN_PASS){
+        try { sessionStorage.setItem(SESSION_KEY, '1'); } catch(e){}
+        showEditor();
+      } else {
+        errEl.textContent = 'Incorrect password';
+        panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+      }
+    }
+    document.getElementById('adminUnlock').addEventListener('click', tryUnlock);
+    passIn.addEventListener('keydown', function(e){ if (e.key === 'Enter') tryUnlock(); });
+
+    document.getElementById('adminSave').addEventListener('click', function(){
+      var cfg = {
+        text: abText.value.trim(),
+        link: abLink.value.trim(),
+        bg: abBg.value,
+        dot: abDot.value,
+        txt: abTxt.value,
+        visible: abVis.checked,
+      };
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(cfg)); } catch(e){}
+      applyAdminCfg();
+      var toast = document.getElementById('toast');
+      if (toast){
+        toast.textContent = '✓ Notification bar updated';
+        toast.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function(){ toast.classList.remove('show'); }, 1600);
+      }
+      close();
+    });
+  })();
+
 
 })();
 </script>
