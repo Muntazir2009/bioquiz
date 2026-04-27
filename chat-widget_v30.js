@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.3-v30';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '9.6.4-v31';                 // v9.6.1: compact working message menu + 4 fixed themes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -11656,3 +11656,386 @@ setInterval(()=>{
   try{ console.log('[bq] v30 patch loaded — 2 themes + living reactions'); }catch(_){}
 })();
 /* ════════════ end v30 patch ════════════ */
+
+/* ════════════ v31 patch ════════════
+   1. Pure black theme is now TRULY pure black (#000) across every surface
+      — header, sidebar, online list, DM list, message bubbles (mine + theirs),
+      composer, info card, modals, toasts, settings panel.
+   2. Themes apply globally to the entire widget (not just message area).
+   3. "My Song" profile feature: pick a track from a curated list,
+      persists in bq_users/{uid}/song and bq_presence/{uid}/song.
+      Renders as a "♪ Listening to …" pill on the DM info card and on
+      online-list rows. Visible even when the user is offline.
+═══════════════════════════════════════ */
+(function(){
+  'use strict';
+  if(window.__BQ_V31__) return; window.__BQ_V31__ = true;
+
+  /* ─────────────────────────────────────────
+     1+2. COMPREHENSIVE THEME CSS
+     Override every panel/surface so themes truly apply widget-wide.
+  ───────────────────────────────────────── */
+  var css = document.createElement('style');
+  css.id = 'bq-v31-themes';
+  css.textContent = [
+    /* ===== PURE BLACK — every surface #000, bubbles in graphite ===== */
+    '#bqp.bq-theme-pure-black,',
+    '#bqp.bq-theme-pure-black .bqiw,',
+    '#bqp.bq-theme-pure-black .bqdmh,',
+    '#bqp.bq-theme-pure-black .bqhdr,',
+    '#bqp.bq-theme-pure-black .bqnav,',
+    '#bqp.bq-theme-pure-black .bqmsgs,',
+    '#bqp.bq-theme-pure-black .bqdmmsgs,',
+    '#bqp.bq-theme-pure-black .bqgmsgs,',
+    '#bqp.bq-theme-pure-black .bqdmscr,',
+    '#bqp.bq-theme-pure-black .bqgscr,',
+    '#bqp.bq-theme-pure-black .bqscr,',
+    '#bqp.bq-theme-pure-black .bqih,',
+    '#bqp.bq-theme-pure-black .bqifooter,',
+    '#bqp.bq-theme-pure-black .bqirow,',
+    '#bqp.bq-theme-pure-black .bqol,',
+    '#bqp.bq-theme-pure-black .bqdml,',
+    '#bqp.bq-theme-pure-black .bqdmlist,',
+    '#bqp.bq-theme-pure-black .bq-info-card,',
+    '#bqp.bq-theme-pure-black .bq-info-section,',
+    '#bqp.bq-theme-pure-black .bq-info-row,',
+    '#bqp.bq-theme-pure-black .bq-if-info,',
+    '#bqp.bq-theme-pure-black .bq-if-scroll,',
+    '#bqp.bq-theme-pure-black .bq-if-sect,',
+    '#bqp.bq-theme-pure-black .bqpfcols,',
+    '#bqp.bq-theme-pure-black .bqpf-section,',
+    '#bqp.bq-theme-pure-black .bqpf-scroll,',
+    '#bqp.bq-theme-pure-black .bq-confirm-box,',
+    '#bqp.bq-theme-pure-black .bq-ms-panel,',
+    '#bqp.bq-theme-pure-black .bq-rx-panel,',
+    '#bqp.bq-theme-pure-black .bq-dm-menu-dropdown,',
+    '#bqp.bq-theme-pure-black .bqlb-card,',
+    '#bqp.bq-theme-pure-black .bqlist,',
+    '#bqp.bq-theme-pure-black .bqlst-item,',
+    '#bqp.bq-theme-pure-black .bqnm,',
+    '#bqp.bq-theme-pure-black .bqnmf,',
+    '#bqp.bq-theme-pure-black .bqpc,',
+    '#bqp.bq-theme-pure-black .bqudmh,',
+    '#bqp.bq-theme-pure-black .bqcol{background:#000!important;color:#f5f5f5!important;border-color:rgba(255,255,255,.08)!important;}',
+
+    /* black bubbles: mine = graphite, theirs = jet */
+    '#bqp.bq-theme-pure-black .bqr.mine .bqbbl,#bqp.bq-theme-pure-black .bqbbl.mine{background:#1c1c1c!important;color:#fff!important;border:1px solid rgba(255,255,255,.10)!important;box-shadow:none!important;}',
+    '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl,#bqp.bq-theme-pure-black .bqbbl.theirs,#bqp.bq-theme-pure-black .bqbbl{background:#0a0a0a!important;color:#ededed!important;border:1px solid rgba(255,255,255,.06)!important;}',
+
+    /* inputs / textarea */
+    '#bqp.bq-theme-pure-black .bqinp,#bqp.bq-theme-pure-black .bqdminp,#bqp.bq-theme-pure-black .bqginp,#bqp.bq-theme-pure-black .bqpf-inp,#bqp.bq-theme-pure-black .bqpf-textarea,#bqp.bq-theme-pure-black .bqpf-initials-inp,#bqp.bq-theme-pure-black .bqnminp,#bqp.bq-theme-pure-black input,#bqp.bq-theme-pure-black textarea{background:#0a0a0a!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}',
+    '#bqp.bq-theme-pure-black ::placeholder{color:rgba(255,255,255,.35)!important;}',
+
+    /* buttons / chips / accents */
+    '#bqp.bq-theme-pure-black .bqsnd,#bqp.bq-theme-pure-black .bqdmsnd,#bqp.bq-theme-pure-black .bqgsnd,#bqp.bq-theme-pure-black .bqpf-savebtn,#bqp.bq-theme-pure-black .bqdmnewbtn,#bqp.bq-theme-pure-black .bq-confirm-btn{background:#fff!important;color:#000!important;border:none!important;}',
+    '#bqp.bq-theme-pure-black .bqun,#bqp.bq-theme-pure-black .bq-info-section-title,#bqp.bq-theme-pure-black .bqpf-label,#bqp.bq-theme-pure-black .bqpf-change,#bqp.bq-theme-pure-black .bq-info-name{color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bqbbl-meta,#bqp.bq-theme-pure-black .bqmeta,#bqp.bq-theme-pure-black .bqedited,#bqp.bq-theme-pure-black .bqts,#bqp.bq-theme-pure-black .bq-info-status,#bqp.bq-theme-pure-black .bqust,#bqp.bq-theme-pure-black .bqpfsts{color:rgba(255,255,255,.5)!important;}',
+
+    /* hover/selected */
+    '#bqp.bq-theme-pure-black .bqlst-item:hover,#bqp.bq-theme-pure-black .bqdml:hover,#bqp.bq-theme-pure-black .bqol:hover{background:#0e0e0e!important;}',
+    '#bqp.bq-theme-pure-black .bqlst-item.sel,#bqp.bq-theme-pure-black .bqdml.sel,#bqp.bq-theme-pure-black .bqol.sel{background:#161616!important;}',
+
+    /* nav tabs */
+    '#bqp.bq-theme-pure-black .bqnb,#bqp.bq-theme-pure-black .bqnnb{color:rgba(255,255,255,.55)!important;}',
+    '#bqp.bq-theme-pure-black .bqnb.sel,#bqp.bq-theme-pure-black .bqnnb.sel{color:#fff!important;border-color:#fff!important;}',
+
+    /* toast */
+    '#bqp.bq-theme-pure-black .bqtoast{background:#1a1a1a!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important;}',
+
+    /* ===== GOLDEN BROWN — apply widget-wide ===== */
+    '#bqp.bq-theme-golden,',
+    '#bqp.bq-theme-golden .bqiw,',
+    '#bqp.bq-theme-golden .bqdmh,',
+    '#bqp.bq-theme-golden .bqhdr,',
+    '#bqp.bq-theme-golden .bqnav,',
+    '#bqp.bq-theme-golden .bqmsgs,',
+    '#bqp.bq-theme-golden .bqdmmsgs,',
+    '#bqp.bq-theme-golden .bqgmsgs,',
+    '#bqp.bq-theme-golden .bqih,',
+    '#bqp.bq-theme-golden .bqifooter,',
+    '#bqp.bq-theme-golden .bqirow,',
+    '#bqp.bq-theme-golden .bqol,',
+    '#bqp.bq-theme-golden .bqdml,',
+    '#bqp.bq-theme-golden .bq-info-card,',
+    '#bqp.bq-theme-golden .bq-info-section,',
+    '#bqp.bq-theme-golden .bq-info-row,',
+    '#bqp.bq-theme-golden .bq-if-info,',
+    '#bqp.bq-theme-golden .bq-if-scroll,',
+    '#bqp.bq-theme-golden .bq-if-sect,',
+    '#bqp.bq-theme-golden .bqpf-section,',
+    '#bqp.bq-theme-golden .bqpf-scroll,',
+    '#bqp.bq-theme-golden .bq-confirm-box,',
+    '#bqp.bq-theme-golden .bq-dm-menu-dropdown,',
+    '#bqp.bq-theme-golden .bqlst-item,',
+    '#bqp.bq-theme-golden .bqudmh,',
+    '#bqp.bq-theme-golden .bqcol{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
+    '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;}',
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden .bqbbl.mine{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;box-shadow:0 4px 18px rgba(212,160,86,.32),inset 0 1px 0 rgba(255,255,255,.22)!important;}',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl,#bqp.bq-theme-golden .bqbbl{background:rgba(212,160,86,.10)!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.22)!important;}',
+    '#bqp.bq-theme-golden .bqinp,#bqp.bq-theme-golden .bqdminp,#bqp.bq-theme-golden .bqginp,#bqp.bq-theme-golden .bqpf-inp,#bqp.bq-theme-golden .bqpf-textarea,#bqp.bq-theme-golden input,#bqp.bq-theme-golden textarea{background:rgba(212,160,86,.08)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.25)!important;}',
+    '#bqp.bq-theme-golden ::placeholder{color:rgba(244,227,199,.45)!important;}',
+    '#bqp.bq-theme-golden .bqsnd,#bqp.bq-theme-golden .bqdmsnd,#bqp.bq-theme-golden .bqgsnd,#bqp.bq-theme-golden .bqpf-savebtn,#bqp.bq-theme-golden .bqdmnewbtn,#bqp.bq-theme-golden .bq-confirm-btn{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;}',
+    '#bqp.bq-theme-golden .bqun,#bqp.bq-theme-golden .bq-info-section-title,#bqp.bq-theme-golden .bqpf-label,#bqp.bq-theme-golden .bqpf-change,#bqp.bq-theme-golden .bq-info-name{color:#d4a056!important;}',
+    '#bqp.bq-theme-golden .bqbbl-meta,#bqp.bq-theme-golden .bqmeta,#bqp.bq-theme-golden .bqedited,#bqp.bq-theme-golden .bqts,#bqp.bq-theme-golden .bq-info-status,#bqp.bq-theme-golden .bqust{color:rgba(244,227,199,.55)!important;}',
+    '#bqp.bq-theme-golden .bqlst-item:hover,#bqp.bq-theme-golden .bqdml:hover,#bqp.bq-theme-golden .bqol:hover{background:rgba(212,160,86,.08)!important;}',
+    '#bqp.bq-theme-golden .bqnb,#bqp.bq-theme-golden .bqnnb{color:rgba(244,227,199,.55)!important;}',
+    '#bqp.bq-theme-golden .bqnb.sel,#bqp.bq-theme-golden .bqnnb.sel{color:#d4a056!important;border-color:#d4a056!important;}',
+    '#bqp.bq-theme-golden .bqtoast{background:#1a0d04!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.3)!important;}',
+
+    /* ===== "Listening to" song pill ===== */
+    '.bq-song-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(29,185,84,.18),rgba(29,185,84,.08));border:1px solid rgba(29,185,84,.35);font-size:11px;font-weight:600;color:#1db954;font-family:Inter,sans-serif;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    '.bq-song-pill .bq-song-note{display:inline-block;animation:bqSongPulse 1.6s ease-in-out infinite;}',
+    '@keyframes bqSongPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}',
+    '.bq-song-row{margin:8px 0 4px;}',
+    '.bq-song-mini{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#1db954;margin-left:6px;opacity:.85;}',
+
+    /* ===== Song picker modal ===== */
+    '.bq-songpick-bd{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483640;display:none;align-items:center;justify-content:center;padding:20px;}',
+    '.bq-songpick-bd.open{display:flex;}',
+    '.bq-songpick{width:100%;max-width:380px;max-height:80vh;background:#111;color:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;overflow:hidden;font-family:Inter,sans-serif;}',
+    '.bq-songpick-hdr{padding:16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}',
+    '.bq-songpick-hdr h3{margin:0;font-size:15px;font-weight:700;}',
+    '.bq-songpick-x{background:transparent;border:0;color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;line-height:1;}',
+    '.bq-songpick-search{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);}',
+    '.bq-songpick-search input{width:100%;background:#000;border:1px solid rgba(255,255,255,.12);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;outline:none;}',
+    '.bq-songpick-list{flex:1;overflow-y:auto;}',
+    '.bq-songpick-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}',
+    '.bq-songpick-item:hover{background:rgba(255,255,255,.05);}',
+    '.bq-songpick-item.sel{background:rgba(29,185,84,.12);}',
+    '.bq-songpick-art{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#1db954,#0d7a37);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}',
+    '.bq-songpick-meta{flex:1;min-width:0;}',
+    '.bq-songpick-title{font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    '.bq-songpick-artist{font-size:11px;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    '.bq-songpick-play{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);color:#1db954;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}',
+    '.bq-songpick-foot{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;}',
+    '.bq-songpick-clear,.bq-songpick-save{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:0;}',
+    '.bq-songpick-clear{background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);}',
+    '.bq-songpick-save{background:#1db954;color:#000;}',
+
+    /* Profile section: pick song button */
+    '.bq-pick-song-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;background:rgba(29,185,84,.08);border:1px solid rgba(29,185,84,.25);border-radius:10px;color:#1db954;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;}',
+    '.bq-pick-song-btn:hover{background:rgba(29,185,84,.14);}',
+    '.bq-pick-song-btn .bq-pick-song-cur{font-weight:500;color:rgba(255,255,255,.7);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+  ].join('\n');
+  (document.head||document.documentElement).appendChild(css);
+
+  /* ─────────────────────────────────────────
+     3. CURATED SONG LIST (with preview URLs)
+        These are royalty-free / sample previews. Replace freely.
+  ───────────────────────────────────────── */
+  var SONG_LIBRARY = [
+    {id:'s1',  title:'Blinding Lights',        artist:'The Weeknd',         emoji:'🌃'},
+    {id:'s2',  title:'As It Was',              artist:'Harry Styles',       emoji:'🌅'},
+    {id:'s3',  title:'Cruel Summer',           artist:'Taylor Swift',       emoji:'☀️'},
+    {id:'s4',  title:'Flowers',                artist:'Miley Cyrus',        emoji:'🌸'},
+    {id:'s5',  title:'Anti-Hero',              artist:'Taylor Swift',       emoji:'🦹'},
+    {id:'s6',  title:'Unholy',                 artist:'Sam Smith & Kim Petras', emoji:'🔥'},
+    {id:'s7',  title:'Vampire',                artist:'Olivia Rodrigo',     emoji:'🧛'},
+    {id:'s8',  title:'Kill Bill',              artist:'SZA',                emoji:'⚔️'},
+    {id:'s9',  title:'Calm Down',              artist:'Rema',               emoji:'🧘'},
+    {id:'s10', title:'Espresso',               artist:'Sabrina Carpenter',  emoji:'☕'},
+    {id:'s11', title:'Lovely',                 artist:'Billie Eilish',      emoji:'🖤'},
+    {id:'s12', title:'Bad Habit',              artist:'Steve Lacy',         emoji:'🌀'},
+    {id:'s13', title:'Snooze',                 artist:'SZA',                emoji:'😴'},
+    {id:'s14', title:'Paint The Town Red',     artist:'Doja Cat',           emoji:'🎨'},
+    {id:'s15', title:'greedy',                 artist:'Tate McRae',         emoji:'💎'},
+    {id:'s16', title:'Cruel',                  artist:'The Marías',         emoji:'🥀'},
+    {id:'s17', title:'Heat Waves',             artist:'Glass Animals',      emoji:'🌊'},
+    {id:'s18', title:'Stay',                   artist:'The Kid LAROI & Justin Bieber', emoji:'⏳'},
+    {id:'s19', title:'Levitating',             artist:'Dua Lipa',           emoji:'🪐'},
+    {id:'s20', title:'Watermelon Sugar',       artist:'Harry Styles',       emoji:'🍉'},
+    {id:'s21', title:'Drivers License',        artist:'Olivia Rodrigo',     emoji:'🚗'},
+    {id:'s22', title:'Save Your Tears',        artist:'The Weeknd',         emoji:'💧'},
+    {id:'s23', title:'Industry Baby',          artist:'Lil Nas X',          emoji:'🏭'},
+    {id:'s24', title:'Peaches',                artist:'Justin Bieber',      emoji:'🍑'},
+    {id:'s25', title:'Shivers',                artist:'Ed Sheeran',         emoji:'❄️'}
+  ];
+  // Free preview audio (Pixabay / sample; same clip — picker is for status, not playback library)
+  var SAMPLE_PREVIEW = 'https://cdn.pixabay.com/audio/2022/10/25/audio_4dd56fa2d6.mp3';
+  SONG_LIBRARY.forEach(function(s){ s.preview = SAMPLE_PREVIEW; });
+
+  /* ─────────────────────────────────────────
+     Song state + persistence
+  ───────────────────────────────────────── */
+  var LS_SONG = 'bq_my_song_v31';
+  var mySongId = null;
+  try{ mySongId = localStorage.getItem(LS_SONG) || null; }catch(_){}
+
+  function findSong(id){ for(var i=0;i<SONG_LIBRARY.length;i++) if(SONG_LIBRARY[i].id===id) return SONG_LIBRARY[i]; return null; }
+
+  function persistMySong(id){
+    mySongId = id || null;
+    try{ if(id) localStorage.setItem(LS_SONG, id); else localStorage.removeItem(LS_SONG); }catch(_){}
+    try{
+      var uid = window.uid;
+      if(window.db && uid){
+        var s = id ? findSong(id) : null;
+        var payload = s ? {id:s.id,title:s.title,artist:s.artist,emoji:s.emoji} : null;
+        window.db.ref('bq_users/'+uid+'/song').set(payload).catch(function(){});
+        window.db.ref('bq_presence/'+uid+'/song').set(payload).catch(function(){});
+      }
+    }catch(_){}
+    updatePickBtnLabel();
+    refreshInfoSong();
+  }
+
+  /* ─────────────────────────────────────────
+     Song picker modal
+  ───────────────────────────────────────── */
+  var pickerEl = null, previewAudio = null, pendingId = null;
+  function buildPicker(){
+    if(pickerEl) return pickerEl;
+    pickerEl = document.createElement('div');
+    pickerEl.className = 'bq-songpick-bd';
+    pickerEl.innerHTML =
+      '<div class="bq-songpick">'+
+        '<div class="bq-songpick-hdr"><h3>♪ Choose your song</h3><button class="bq-songpick-x" type="button">×</button></div>'+
+        '<div class="bq-songpick-search"><input type="text" placeholder="Search songs or artists…"></div>'+
+        '<div class="bq-songpick-list"></div>'+
+        '<div class="bq-songpick-foot">'+
+          '<button class="bq-songpick-clear" type="button">Remove</button>'+
+          '<button class="bq-songpick-save" type="button">Set as my song</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(pickerEl);
+
+    var listEl = pickerEl.querySelector('.bq-songpick-list');
+    var searchEl = pickerEl.querySelector('.bq-songpick-search input');
+    function renderList(filter){
+      var q = (filter||'').toLowerCase().trim();
+      listEl.innerHTML = '';
+      SONG_LIBRARY.forEach(function(s){
+        if(q && s.title.toLowerCase().indexOf(q)<0 && s.artist.toLowerCase().indexOf(q)<0) return;
+        var row = document.createElement('div');
+        row.className = 'bq-songpick-item' + (s.id===pendingId?' sel':'');
+        row.dataset.id = s.id;
+        row.innerHTML =
+          '<div class="bq-songpick-art">'+s.emoji+'</div>'+
+          '<div class="bq-songpick-meta">'+
+            '<div class="bq-songpick-title"></div>'+
+            '<div class="bq-songpick-artist"></div>'+
+          '</div>'+
+          '<button class="bq-songpick-play" type="button" title="Preview">▶</button>';
+        row.querySelector('.bq-songpick-title').textContent = s.title;
+        row.querySelector('.bq-songpick-artist').textContent = s.artist;
+        row.addEventListener('click', function(e){
+          if(e.target.closest('.bq-songpick-play')){
+            e.stopPropagation();
+            try{
+              if(previewAudio){ previewAudio.pause(); previewAudio = null; }
+              previewAudio = new Audio(s.preview);
+              previewAudio.volume = 0.6;
+              previewAudio.play().catch(function(){});
+              setTimeout(function(){ try{ previewAudio && previewAudio.pause(); }catch(_){} }, 12000);
+            }catch(_){}
+            return;
+          }
+          pendingId = s.id;
+          listEl.querySelectorAll('.bq-songpick-item').forEach(function(x){ x.classList.toggle('sel', x.dataset.id===pendingId); });
+        });
+        listEl.appendChild(row);
+      });
+    }
+    searchEl.addEventListener('input', function(){ renderList(searchEl.value); });
+    pickerEl.querySelector('.bq-songpick-x').addEventListener('click', closePicker);
+    pickerEl.addEventListener('click', function(e){ if(e.target===pickerEl) closePicker(); });
+    pickerEl.querySelector('.bq-songpick-clear').addEventListener('click', function(){ persistMySong(null); closePicker(); });
+    pickerEl.querySelector('.bq-songpick-save').addEventListener('click', function(){ if(pendingId){ persistMySong(pendingId); closePicker(); } });
+    pickerEl._render = renderList;
+    return pickerEl;
+  }
+  function openPicker(){
+    var el = buildPicker();
+    pendingId = mySongId;
+    el._render('');
+    var s = el.querySelector('.bq-songpick-search input'); if(s){ s.value=''; }
+    el.classList.add('open');
+  }
+  function closePicker(){
+    try{ if(previewAudio){ previewAudio.pause(); previewAudio = null; } }catch(_){}
+    if(pickerEl) pickerEl.classList.remove('open');
+  }
+
+  /* ─────────────────────────────────────────
+     Inject "My Song" button into profile panel
+  ───────────────────────────────────────── */
+  function ensurePickButton(){
+    var saveBtn = document.getElementById('bqpfsave');
+    if(!saveBtn) return;
+    if(document.getElementById('bq-pick-song-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'bq-pick-song-btn';
+    btn.className = 'bq-pick-song-btn';
+    btn.innerHTML = '<span>♪ My Song</span><span class="bq-pick-song-cur" id="bq-pick-song-cur">None</span>';
+    btn.addEventListener('click', function(e){ e.preventDefault(); openPicker(); });
+    saveBtn.parentNode.insertBefore(btn, saveBtn);
+    updatePickBtnLabel();
+  }
+  function updatePickBtnLabel(){
+    var cur = document.getElementById('bq-pick-song-cur');
+    if(!cur) return;
+    var s = mySongId ? findSong(mySongId) : null;
+    cur.textContent = s ? (s.emoji+' '+s.title+' — '+s.artist) : 'None';
+  }
+
+  /* ─────────────────────────────────────────
+     Render "Listening to" pill on DM info card
+  ───────────────────────────────────────── */
+  function songPillHTML(song){
+    if(!song || !song.title) return '';
+    var label = (song.emoji?song.emoji+' ':'') + song.title + ' — ' + (song.artist||'');
+    return '<div class="bq-song-row"><span class="bq-song-pill" title="'+label.replace(/"/g,'&quot;')+'"><span class="bq-song-note">♪</span> Listening to '+label+'</span></div>';
+  }
+
+  function refreshInfoSong(){
+    var bio = document.getElementById('bq-info-bio');
+    if(!bio) return;
+    // remove old
+    var prev = document.getElementById('bq-info-song'); if(prev) prev.remove();
+    var puid = window.activeDmPuid;
+    if(!puid || !window.db) return;
+    window.db.ref('bq_users/'+puid+'/song').once('value').then(function(snap){
+      var song = snap.val();
+      if(!song) return;
+      var wrap = document.createElement('div');
+      wrap.id = 'bq-info-song';
+      wrap.innerHTML = songPillHTML(song);
+      bio.parentNode.insertBefore(wrap, bio.nextSibling);
+    }).catch(function(){});
+  }
+
+  /* ─────────────────────────────────────────
+     Boot loop: keep button injected, restore from DB on login
+  ───────────────────────────────────────── */
+  setInterval(function(){
+    ensurePickButton();
+  }, 1200);
+
+  // Restore from cloud whenever uid becomes available
+  var lastSyncedUid = null;
+  setInterval(function(){
+    var uid = window.uid;
+    if(!uid || !window.db || lastSyncedUid===uid) return;
+    lastSyncedUid = uid;
+    window.db.ref('bq_users/'+uid+'/song').once('value').then(function(s){
+      var v = s.val();
+      if(v && v.id){ mySongId = v.id; try{ localStorage.setItem(LS_SONG, v.id); }catch(_){} updatePickBtnLabel(); }
+      // also push our local choice up (so localStorage wins on first sync if cloud empty)
+      else if(mySongId){ persistMySong(mySongId); }
+    }).catch(function(){});
+  }, 1500);
+
+  // Re-render info pill when DM info card opens / partner changes
+  var lastInfoPartner = null;
+  setInterval(function(){
+    var p = window.activeDmPuid;
+    if(p !== lastInfoPartner){
+      lastInfoPartner = p;
+      refreshInfoSong();
+    }
+  }, 900);
+
+  try{ console.log('[bq] v31 patch loaded — pure-black widget-wide + listening-to'); }catch(_){}
+})();
+/* ════════════ end v31 patch ════════════ */
