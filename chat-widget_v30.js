@@ -11448,7 +11448,7 @@ setInterval(()=>{
     /* ── Theme: Golden Brown ── */
     '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
     '#bqp.bq-theme-golden .bqdmh,#bqp.bq-theme-golden .bqiw{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
-    '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:0 4px 18px rgba(212,160,86,.32),inset 0 1px 0 rgba(255,255,255,.22)!important;}',
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;}',
     '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.10)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
     '#bqp.bq-theme-golden .bqun{color:#d4a056!important;}',
     '#bqp.bq-theme-golden .bqbbl-meta{color:rgba(244,227,199,.55)!important;}',
@@ -11662,10 +11662,6 @@ setInterval(()=>{
       — header, sidebar, online list, DM list, message bubbles (mine + theirs),
       composer, info card, modals, toasts, settings panel.
    2. Themes apply globally to the entire widget (not just message area).
-   3. "My Song" profile feature: pick a track from a curated list,
-      persists in bq_users/{uid}/song and bq_presence/{uid}/song.
-      Renders as a "♪ Listening to …" pill on the DM info card and on
-      online-list rows. Visible even when the user is offline.
 ═══════════════════════════════════════ */
 (function(){
   'use strict';
@@ -11770,7 +11766,7 @@ setInterval(()=>{
     '#bqp.bq-theme-golden .bqudmh,',
     '#bqp.bq-theme-golden .bqcol{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
     '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;}',
-    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden .bqbbl.mine{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;box-shadow:0 4px 18px rgba(212,160,86,.32),inset 0 1px 0 rgba(255,255,255,.22)!important;}',
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden .bqbbl.mine{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;}',
     '#bqp.bq-theme-golden .bqr.theirs .bqbbl,#bqp.bq-theme-golden .bqbbl{background:rgba(212,160,86,.10)!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.22)!important;}',
     '#bqp.bq-theme-golden .bqinp,#bqp.bq-theme-golden .bqdminp,#bqp.bq-theme-golden .bqginp,#bqp.bq-theme-golden .bqpf-inp,#bqp.bq-theme-golden .bqpf-textarea,#bqp.bq-theme-golden input,#bqp.bq-theme-golden textarea{background:rgba(212,160,86,.08)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.25)!important;}',
     '#bqp.bq-theme-golden ::placeholder{color:rgba(244,227,199,.45)!important;}',
@@ -11780,498 +11776,327 @@ setInterval(()=>{
     '#bqp.bq-theme-golden .bqlst-item:hover,#bqp.bq-theme-golden .bqdml:hover,#bqp.bq-theme-golden .bqol:hover{background:rgba(212,160,86,.08)!important;}',
     '#bqp.bq-theme-golden .bqnb,#bqp.bq-theme-golden .bqnnb{color:rgba(244,227,199,.55)!important;}',
     '#bqp.bq-theme-golden .bqnb.sel,#bqp.bq-theme-golden .bqnnb.sel{color:#d4a056!important;border-color:#d4a056!important;}',
-    '#bqp.bq-theme-golden .bqtoast{background:#1a0d04!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.3)!important;}',
+    '#bqp.bq-theme-golden .bqtoast{background:#1a0d04!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.3)!important;}'
 
-    /* ===== "Listening to" song pill ===== */
-    '.bq-song-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(29,185,84,.18),rgba(29,185,84,.08));border:1px solid rgba(29,185,84,.35);font-size:11px;font-weight:600;color:#1db954;font-family:Inter,sans-serif;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-    '.bq-song-pill .bq-song-note{display:inline-block;animation:bqSongPulse 1.6s ease-in-out infinite;}',
-    '@keyframes bqSongPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}',
-    '.bq-song-row{margin:8px 0 4px;}',
-    '.bq-song-mini{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#1db954;margin-left:6px;opacity:.85;}',
-
-    /* ===== Song picker modal ===== */
-    '.bq-songpick-bd{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483640;display:none;align-items:center;justify-content:center;padding:20px;}',
-    '.bq-songpick-bd.open{display:flex;}',
-    '.bq-songpick{width:100%;max-width:380px;max-height:80vh;background:#111;color:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;overflow:hidden;font-family:Inter,sans-serif;}',
-    '.bq-songpick-hdr{padding:16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}',
-    '.bq-songpick-hdr h3{margin:0;font-size:15px;font-weight:700;}',
-    '.bq-songpick-x{background:transparent;border:0;color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;line-height:1;}',
-    '.bq-songpick-search{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);}',
-    '.bq-songpick-search input{width:100%;background:#000;border:1px solid rgba(255,255,255,.12);color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;outline:none;}',
-    '.bq-songpick-list{flex:1;overflow-y:auto;}',
-    '.bq-songpick-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}',
-    '.bq-songpick-item:hover{background:rgba(255,255,255,.05);}',
-    '.bq-songpick-item.sel{background:rgba(29,185,84,.12);}',
-    '.bq-songpick-art{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#1db954,#0d7a37);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}',
-    '.bq-songpick-meta{flex:1;min-width:0;}',
-    '.bq-songpick-title{font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-    '.bq-songpick-artist{font-size:11px;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-    '.bq-songpick-play{background:rgba(29,185,84,.2);border:1px solid rgba(29,185,84,.4);color:#1db954;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}',
-    '.bq-songpick-foot{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;}',
-    '.bq-songpick-clear,.bq-songpick-save{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:0;}',
-    '.bq-songpick-clear{background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);}',
-    '.bq-songpick-save{background:#1db954;color:#000;}',
-
-    /* Profile section: pick song button */
-    '.bq-pick-song-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;background:rgba(29,185,84,.08);border:1px solid rgba(29,185,84,.25);border-radius:10px;color:#1db954;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;}',
-    '.bq-pick-song-btn:hover{background:rgba(29,185,84,.14);}',
-    '.bq-pick-song-btn .bq-pick-song-cur{font-weight:500;color:rgba(255,255,255,.7);font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
   ].join('\n');
   (document.head||document.documentElement).appendChild(css);
 
-  /* ─────────────────────────────────────────
-     3. CURATED SONG LIST (with preview URLs)
-        These are royalty-free / sample previews. Replace freely.
-  ───────────────────────────────────────── */
-  var SONG_LIBRARY = [
-    {id:'s1',  title:'Blinding Lights',        artist:'The Weeknd',         emoji:'🌃'},
-    {id:'s2',  title:'As It Was',              artist:'Harry Styles',       emoji:'🌅'},
-    {id:'s3',  title:'Cruel Summer',           artist:'Taylor Swift',       emoji:'☀️'},
-    {id:'s4',  title:'Flowers',                artist:'Miley Cyrus',        emoji:'🌸'},
-    {id:'s5',  title:'Anti-Hero',              artist:'Taylor Swift',       emoji:'🦹'},
-    {id:'s6',  title:'Unholy',                 artist:'Sam Smith & Kim Petras', emoji:'🔥'},
-    {id:'s7',  title:'Vampire',                artist:'Olivia Rodrigo',     emoji:'🧛'},
-    {id:'s8',  title:'Kill Bill',              artist:'SZA',                emoji:'⚔️'},
-    {id:'s9',  title:'Calm Down',              artist:'Rema',               emoji:'🧘'},
-    {id:'s10', title:'Espresso',               artist:'Sabrina Carpenter',  emoji:'☕'},
-    {id:'s11', title:'Lovely',                 artist:'Billie Eilish',      emoji:'🖤'},
-    {id:'s12', title:'Bad Habit',              artist:'Steve Lacy',         emoji:'🌀'},
-    {id:'s13', title:'Snooze',                 artist:'SZA',                emoji:'😴'},
-    {id:'s14', title:'Paint The Town Red',     artist:'Doja Cat',           emoji:'🎨'},
-    {id:'s15', title:'greedy',                 artist:'Tate McRae',         emoji:'💎'},
-    {id:'s16', title:'Cruel',                  artist:'The Marías',         emoji:'🥀'},
-    {id:'s17', title:'Heat Waves',             artist:'Glass Animals',      emoji:'🌊'},
-    {id:'s18', title:'Stay',                   artist:'The Kid LAROI & Justin Bieber', emoji:'⏳'},
-    {id:'s19', title:'Levitating',             artist:'Dua Lipa',           emoji:'🪐'},
-    {id:'s20', title:'Watermelon Sugar',       artist:'Harry Styles',       emoji:'🍉'},
-    {id:'s21', title:'Drivers License',        artist:'Olivia Rodrigo',     emoji:'🚗'},
-    {id:'s22', title:'Save Your Tears',        artist:'The Weeknd',         emoji:'💧'},
-    {id:'s23', title:'Industry Baby',          artist:'Lil Nas X',          emoji:'🏭'},
-    {id:'s24', title:'Peaches',                artist:'Justin Bieber',      emoji:'🍑'},
-    {id:'s25', title:'Shivers',                artist:'Ed Sheeran',         emoji:'❄️'}
-  ];
-  // Free preview audio (Pixabay / sample; same clip — picker is for status, not playback library)
-  var SAMPLE_PREVIEW = 'https://cdn.pixabay.com/audio/2022/10/25/audio_4dd56fa2d6.mp3';
-  SONG_LIBRARY.forEach(function(s){ s.preview = SAMPLE_PREVIEW; });
 
-  /* ─────────────────────────────────────────
-     Song state + persistence
-  ───────────────────────────────────────── */
-  var LS_SONG = 'bq_my_song_v31';
-  var mySongId = null;
-  try{ mySongId = localStorage.getItem(LS_SONG) || null; }catch(_){}
-
-  function findSong(id){ for(var i=0;i<SONG_LIBRARY.length;i++) if(SONG_LIBRARY[i].id===id) return SONG_LIBRARY[i]; return null; }
-
-  function persistMySong(id){
-    mySongId = id || null;
-    try{ if(id) localStorage.setItem(LS_SONG, id); else localStorage.removeItem(LS_SONG); }catch(_){}
-    try{
-      var uid = window.uid;
-      if(window.db && uid){
-        var s = id ? findSong(id) : null;
-        var payload = s ? {id:s.id,title:s.title,artist:s.artist,emoji:s.emoji} : null;
-        window.db.ref('bq_users/'+uid+'/song').set(payload).catch(function(){});
-        window.db.ref('bq_presence/'+uid+'/song').set(payload).catch(function(){});
-      }
-    }catch(_){}
-    updatePickBtnLabel();
-    refreshInfoSong();
-  }
-
-  /* ─────────────────────────────────────────
-     Song picker modal
-  ───────────────────────────────────────── */
-  var pickerEl = null, previewAudio = null, pendingId = null;
-  function buildPicker(){
-    if(pickerEl) return pickerEl;
-    pickerEl = document.createElement('div');
-    pickerEl.className = 'bq-songpick-bd';
-    pickerEl.innerHTML =
-      '<div class="bq-songpick">'+
-        '<div class="bq-songpick-hdr"><h3>♪ Choose your song</h3><button class="bq-songpick-x" type="button">×</button></div>'+
-        '<div class="bq-songpick-search"><input type="text" placeholder="Search songs or artists…"></div>'+
-        '<div class="bq-songpick-list"></div>'+
-        '<div class="bq-songpick-foot">'+
-          '<button class="bq-songpick-clear" type="button">Remove</button>'+
-          '<button class="bq-songpick-save" type="button">Set as my song</button>'+
-        '</div>'+
-      '</div>';
-    document.body.appendChild(pickerEl);
-
-    var listEl = pickerEl.querySelector('.bq-songpick-list');
-    var searchEl = pickerEl.querySelector('.bq-songpick-search input');
-    function renderList(filter){
-      var q = (filter||'').toLowerCase().trim();
-      listEl.innerHTML = '';
-      SONG_LIBRARY.forEach(function(s){
-        if(q && s.title.toLowerCase().indexOf(q)<0 && s.artist.toLowerCase().indexOf(q)<0) return;
-        var row = document.createElement('div');
-        row.className = 'bq-songpick-item' + (s.id===pendingId?' sel':'');
-        row.dataset.id = s.id;
-        row.innerHTML =
-          '<div class="bq-songpick-art">'+s.emoji+'</div>'+
-          '<div class="bq-songpick-meta">'+
-            '<div class="bq-songpick-title"></div>'+
-            '<div class="bq-songpick-artist"></div>'+
-          '</div>'+
-          '<button class="bq-songpick-play" type="button" title="Preview">▶</button>';
-        row.querySelector('.bq-songpick-title').textContent = s.title;
-        row.querySelector('.bq-songpick-artist').textContent = s.artist;
-        row.addEventListener('click', function(e){
-          if(e.target.closest('.bq-songpick-play')){
-            e.stopPropagation();
-            try{
-              if(previewAudio){ previewAudio.pause(); previewAudio = null; }
-              previewAudio = new Audio(s.preview);
-              previewAudio.volume = 0.6;
-              previewAudio.play().catch(function(){});
-              setTimeout(function(){ try{ previewAudio && previewAudio.pause(); }catch(_){} }, 12000);
-            }catch(_){}
-            return;
-          }
-          pendingId = s.id;
-          listEl.querySelectorAll('.bq-songpick-item').forEach(function(x){ x.classList.toggle('sel', x.dataset.id===pendingId); });
-        });
-        listEl.appendChild(row);
-      });
-    }
-    searchEl.addEventListener('input', function(){ renderList(searchEl.value); });
-    pickerEl.querySelector('.bq-songpick-x').addEventListener('click', closePicker);
-    pickerEl.addEventListener('click', function(e){ if(e.target===pickerEl) closePicker(); });
-    pickerEl.querySelector('.bq-songpick-clear').addEventListener('click', function(){ persistMySong(null); closePicker(); });
-    pickerEl.querySelector('.bq-songpick-save').addEventListener('click', function(){ if(pendingId){ persistMySong(pendingId); closePicker(); } });
-    pickerEl._render = renderList;
-    return pickerEl;
-  }
-  function openPicker(){
-    var el = buildPicker();
-    pendingId = mySongId;
-    el._render('');
-    var s = el.querySelector('.bq-songpick-search input'); if(s){ s.value=''; }
-    el.classList.add('open');
-  }
-  function closePicker(){
-    try{ if(previewAudio){ previewAudio.pause(); previewAudio = null; } }catch(_){}
-    if(pickerEl) pickerEl.classList.remove('open');
-  }
-
-  /* ─────────────────────────────────────────
-     Inject "My Song" button into profile panel
-  ───────────────────────────────────────── */
-  function ensurePickButton(){
-    var saveBtn = document.getElementById('bqpfsave');
-    if(!saveBtn) return;
-    if(document.getElementById('bq-pick-song-btn')) return;
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = 'bq-pick-song-btn';
-    btn.className = 'bq-pick-song-btn';
-    btn.innerHTML = '<span>♪ My Song</span><span class="bq-pick-song-cur" id="bq-pick-song-cur">None</span>';
-    btn.addEventListener('click', function(e){ e.preventDefault(); openPicker(); });
-    saveBtn.parentNode.insertBefore(btn, saveBtn);
-    updatePickBtnLabel();
-  }
-  function updatePickBtnLabel(){
-    var cur = document.getElementById('bq-pick-song-cur');
-    if(!cur) return;
-    var s = mySongId ? findSong(mySongId) : null;
-    cur.textContent = s ? (s.emoji+' '+s.title+' — '+s.artist) : 'None';
-  }
-
-  /* ─────────────────────────────────────────
-     Render "Listening to" pill on DM info card
-  ───────────────────────────────────────── */
-  function songPillHTML(song){
-    if(!song || !song.title) return '';
-    var label = (song.emoji?song.emoji+' ':'') + song.title + ' — ' + (song.artist||'');
-    return '<div class="bq-song-row"><span class="bq-song-pill" title="'+label.replace(/"/g,'&quot;')+'"><span class="bq-song-note">♪</span> Listening to '+label+'</span></div>';
-  }
-
-  function refreshInfoSong(){
-    var bio = document.getElementById('bq-info-bio');
-    if(!bio) return;
-    // remove old
-    var prev = document.getElementById('bq-info-song'); if(prev) prev.remove();
-    var puid = window.activeDmPuid;
-    if(!puid || !window.db) return;
-    window.db.ref('bq_users/'+puid+'/song').once('value').then(function(snap){
-      var song = snap.val();
-      if(!song) return;
-      var wrap = document.createElement('div');
-      wrap.id = 'bq-info-song';
-      wrap.innerHTML = songPillHTML(song);
-      bio.parentNode.insertBefore(wrap, bio.nextSibling);
-    }).catch(function(){});
-  }
-
-  /* ─────────────────────────────────────────
-     Boot loop: keep button injected, restore from DB on login
-  ───────────────────────────────────────── */
-  setInterval(function(){
-    ensurePickButton();
-  }, 1200);
-
-  // Restore from cloud whenever uid becomes available
-  var lastSyncedUid = null;
-  setInterval(function(){
-    var uid = window.uid;
-    if(!uid || !window.db || lastSyncedUid===uid) return;
-    lastSyncedUid = uid;
-    window.db.ref('bq_users/'+uid+'/song').once('value').then(function(s){
-      var v = s.val();
-      if(v && v.id){ mySongId = v.id; try{ localStorage.setItem(LS_SONG, v.id); }catch(_){} updatePickBtnLabel(); }
-      // also push our local choice up (so localStorage wins on first sync if cloud empty)
-      else if(mySongId){ persistMySong(mySongId); }
-    }).catch(function(){});
-  }, 1500);
-
-  // Re-render info pill when DM info card opens / partner changes
-  var lastInfoPartner = null;
-  setInterval(function(){
-    var p = window.activeDmPuid;
-    if(p !== lastInfoPartner){
-      lastInfoPartner = p;
-      refreshInfoSong();
-    }
-  }, 900);
-
-  try{ console.log('[bq] v31 patch loaded — pure-black widget-wide + listening-to'); }catch(_){}
+  try{ console.log('[bq] v31 patch loaded — pure-black widget-wide'); }catch(_){}
 })();
 /* ════════════ end v31 patch ════════════ */
-
-/* ════════════ v32 patch — kill stray shadows in golden/pure-black themes,
-                            and make "My Song" button reliably visible
-   ════════════ */
+/* ════════════ v34 patch — golden-brown shadow scrub, synced burst reactions, micro-animations ════════════ */
 (function(){
-  if(window.__bqV32Loaded) return; window.__bqV32Loaded = true;
+  'use strict';
+  if(window.__bqV34Loaded) return; window.__bqV34Loaded = true;
 
-  /* ---- 1. CSS: nuke unwanted shadows in both custom themes ---- */
+  /* ─────────────────────────────────────────
+     1. CSS — scrub stray bubble shadows on golden-brown,
+              add burst-reaction overlay, micro-animations.
+  ───────────────────────────────────────── */
   var s = document.createElement('style');
-  s.id = 'bq-v32-fixes';
+  s.id = 'bq-v34-styles';
   s.textContent = [
-    /* Golden brown — remove black shadows behind bubbles, reaction panel, menus, info card */
-    '#bqp.bq-theme-golden .bqbbl,',
+    /* ── Golden-brown: kill ALL drop shadows on bubbles, leave only the gradient + inset highlight ── */
     '#bqp.bq-theme-golden .bqr.mine .bqbbl,',
     '#bqp.bq-theme-golden .bqr.theirs .bqbbl,',
     '#bqp.bq-theme-golden .bqr.mine:hover .bqbbl,',
     '#bqp.bq-theme-golden .bqr.theirs:hover .bqbbl,',
     '#bqp.bq-theme-golden #bqdmmsgs .bqr.mine .bqbbl,',
     '#bqp.bq-theme-golden #bqdmmsgs .bqr.theirs .bqbbl{box-shadow:none!important;filter:none!important;}',
-    /* keep a soft golden glow ONLY on own bubble (subtle, on-brand) */
-    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden #bqdmmsgs .bqr.mine .bqbbl{box-shadow:0 2px 10px rgba(212,160,86,.18)!important;}',
-    /* reaction panel — themed shadow instead of black */
-    '#bqp.bq-theme-golden .bq-rx-panel{box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;}',
-    '#bqp.bq-theme-golden .bq-ms-panel{box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;}',
-    '#bqp.bq-theme-golden .bq-dm-menu-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.4)!important;background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;}',
+    /* restore the subtle inset-only highlight on own bubbles */
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden #bqdmmsgs .bqr.mine .bqbbl{box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;}',
+    /* meta-pill on media bubbles — no halo */
+    '#bqp.bq-theme-golden .bqbbl.media:not(.has-text) .bqbbl-meta{box-shadow:none!important;}',
+    /* themed surfaces for popovers (replace the global black drop shadow) */
+    '#bqp.bq-theme-golden .bq-rx-panel{background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;}',
+    '#bqp.bq-theme-golden .bq-ms-panel{background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;box-shadow:0 -8px 28px rgba(138,90,31,.35)!important;}',
+    '#bqp.bq-theme-golden .bq-dm-menu-dropdown{background:#1a0d04!important;border-color:rgba(212,160,86,.25)!important;color:#f4e3c7!important;box-shadow:0 8px 24px rgba(0,0,0,.4)!important;}',
     '#bqp.bq-theme-golden .bqbbl.msg-menu-open{box-shadow:0 0 0 3px rgba(212,160,86,.22)!important;outline-color:rgba(212,160,86,.35)!important;}',
 
-    /* Pure black — same cleanup */
-    '#bqp.bq-theme-pure-black .bqbbl,',
-    '#bqp.bq-theme-pure-black .bqr.mine .bqbbl,',
-    '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl,',
-    '#bqp.bq-theme-pure-black .bqr.mine:hover .bqbbl,',
-    '#bqp.bq-theme-pure-black .bqr.theirs:hover .bqbbl,',
-    '#bqp.bq-theme-pure-black #bqdmmsgs .bqr.mine .bqbbl,',
-    '#bqp.bq-theme-pure-black #bqdmmsgs .bqr.theirs .bqbbl{box-shadow:none!important;filter:none!important;}',
-    '#bqp.bq-theme-pure-black .bq-rx-panel{box-shadow:0 -8px 28px rgba(0,0,0,.8)!important;background:#000!important;border-color:rgba(255,255,255,.08)!important;}',
-    '#bqp.bq-theme-pure-black .bq-ms-panel{box-shadow:0 -8px 28px rgba(0,0,0,.8)!important;background:#000!important;border-color:rgba(255,255,255,.08)!important;color:#fff!important;}',
-    '#bqp.bq-theme-pure-black .bq-dm-menu-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.7)!important;background:#000!important;border-color:rgba(255,255,255,.1)!important;color:#fff!important;}',
-    '#bqp.bq-theme-pure-black .bqbbl.msg-menu-open{box-shadow:0 0 0 3px rgba(255,255,255,.12)!important;outline-color:rgba(255,255,255,.25)!important;}',
+    /* ── Burst reaction overlay ── */
+    '.bq-burst-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:60;}',
+    '.bq-burst-emo{position:absolute;bottom:8%;font-size:48px;line-height:1;will-change:transform,opacity;text-shadow:0 4px 16px rgba(0,0,0,.35);user-select:none;-webkit-user-select:none;}',
+    '@keyframes bqBurstFloat{0%{transform:translate(var(--bx,0px),0) scale(.4) rotate(0deg);opacity:0;}15%{opacity:1;transform:translate(var(--bx,0px),-20px) scale(1.15) rotate(var(--br,8deg));}100%{transform:translate(calc(var(--bx,0px) + var(--bdx,0px)),-65vh) scale(.85) rotate(calc(var(--br,8deg) * 3));opacity:0;}}',
+    '@keyframes bqBurstPop{0%{transform:scale(.2);opacity:0;}40%{transform:scale(1.4);opacity:1;}100%{transform:scale(1);opacity:1;}}',
+    '.bq-burst-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 70%,rgba(255,255,255,.18),transparent 55%);opacity:0;animation:bqBurstPop .6s ease-out;}',
 
-    /* My Song button — own dedicated section style for visibility */
-    '.bqpf-section .bq-pick-song-btn{margin:0;width:100%;}',
-    '#bq-pick-song-section{padding:0 0 4px;}',
-    '#bqp.bq-theme-golden .bq-pick-song-btn{background:rgba(212,160,86,.10)!important;border-color:rgba(212,160,86,.35)!important;color:#d4a056!important;}',
-    '#bqp.bq-theme-golden .bq-pick-song-btn .bq-pick-song-cur{color:rgba(244,227,199,.7)!important;}',
-    '#bqp.bq-theme-pure-black .bq-pick-song-btn{background:#0a0a0a!important;border-color:rgba(255,255,255,.15)!important;color:#fff!important;}',
-    '#bqp.bq-theme-pure-black .bq-pick-song-btn .bq-pick-song-cur{color:rgba(255,255,255,.55)!important;}'
+    /* ── Micro-animations ── */
+    '@keyframes bqBubbleIn{from{transform:translateY(6px) scale(.985);opacity:0;}to{transform:none;opacity:1;}}',
+    '.bqr .bqbbl{animation:bqBubbleIn .18s ease-out both;}',
+    '@keyframes bqRxnOut{to{transform:scale(.6) rotate(-12deg);opacity:0;}}',
+    '.bqrxn.removing{animation:bqRxnOut .22s ease-in both;}',
+    '.bqbbl.sticker:active{transform:scale(.92) rotate(-2deg);transition:transform .08s ease-out;}',
+    '@keyframes bqSendPulse{0%{transform:scale(1);}40%{transform:scale(.86);}100%{transform:scale(1);}}',
+    '.bqsnd.bq-sending{animation:bqSendPulse .32s ease-out;}',
+    '#bqp{transition:background-color .24s ease, color .24s ease;}',
+
+    /* Reduced motion: collapse everything */
+    '@media (prefers-reduced-motion: reduce){',
+      '.bqr .bqbbl,.bqrxn,.bqrxn.removing,.bqsnd.bq-sending,.bq-burst-emo,.bq-burst-flash{animation:none!important;}',
+      '#bqp{transition:none!important;}',
+    '}'
   ].join('\n');
   (document.head||document.documentElement).appendChild(s);
 
-  /* ---- 2. Move "My Song" button into its own labeled section
-            (placed right after Bio so it's never hidden / missed) ---- */
-  function ensureSongSection(){
-    var bio = document.getElementById('bqpfbio');
-    if(!bio) return;
-    var bioSection = bio.closest('.bqpf-section');
-    if(!bioSection) return;
-    if(document.getElementById('bq-pick-song-section')) {
-      // make sure button is still inside it
-      var existingBtn = document.getElementById('bq-pick-song-btn');
-      var sect = document.getElementById('bq-pick-song-section');
-      if(existingBtn && existingBtn.parentNode !== sect){
-        sect.appendChild(existingBtn);
-      }
-      return;
+  /* ─────────────────────────────────────────
+     2. Send-button pulse hook (purely visual)
+  ───────────────────────────────────────── */
+  document.addEventListener('click', function(ev){
+    var t = ev.target && ev.target.closest && ev.target.closest('.bqsnd');
+    if(!t) return;
+    t.classList.remove('bq-sending');
+    // re-flow then re-add for replay
+    void t.offsetWidth;
+    t.classList.add('bq-sending');
+    setTimeout(function(){ t.classList.remove('bq-sending'); }, 360);
+  }, true);
+
+  /* ─────────────────────────────────────────
+     3. SHARED BURST REACTIONS
+        Path: bq_dms/{dmId}/burst = {emoji, from, ts, nonce}
+        Local-first: tapping a sticker bubble (or long-pressing any bubble)
+        triggers a burst on both clients in sync.
+  ───────────────────────────────────────── */
+  var POPULAR_BURST = ['❤️','😂','🔥','😮','😢','👍','🎉','💯'];
+
+  function getDb(){ try{ return window.db || (window.firebase && firebase.database && firebase.database()); }catch(_){ return null; } }
+  function getUid(){ try{ return (window.auth && window.auth.currentUser && window.auth.currentUser.uid) || window.uid || null; }catch(_){ return null; } }
+  function getDmId(){ try{ return window.activeDmId || null; }catch(_){ return null; } }
+
+  function getBurstLayer(){
+    // Anchor on the active DM messages container so the burst floats over the conversation.
+    var container =
+      document.getElementById('bqdmmsgs') ||
+      document.getElementById('bqmsgs') ||
+      document.querySelector('.bqdmmsgs, .bqmsgs') ||
+      document.getElementById('bqp');
+    if(!container) return null;
+    // Layer must sit over the container; container is usually position:relative.
+    var cs = getComputedStyle(container);
+    if(cs.position === 'static'){ container.style.position = 'relative'; }
+    var layer = container.querySelector(':scope > .bq-burst-layer');
+    if(!layer){
+      layer = document.createElement('div');
+      layer.className = 'bq-burst-layer';
+      container.appendChild(layer);
     }
-    var sect = document.createElement('div');
-    sect.className = 'bqpf-section';
-    sect.id = 'bq-pick-song-section';
-    sect.innerHTML = '<div class="bqpf-label">My Song</div>';
-    bioSection.parentNode.insertBefore(sect, bioSection.nextSibling);
-    // v31 button (with proper click handler) is auto-injected by interval — relocate it here when it appears
-    var btn = document.getElementById('bq-pick-song-btn');
-    if(btn) sect.appendChild(btn);
+    return layer;
   }
 
-  // bridge: v31 defined openPicker() in closure. Re-open via a global hook.
-  // The v31 "ensurePickButton" interval keeps re-creating the button before #bqpfsave;
-  // intercept that by removing the dup and using ours.
-  setInterval(function(){
-    ensureSongSection();
-    // remove any duplicate v31-injected button outside our section
-    var sect = document.getElementById('bq-pick-song-section');
-    if(!sect) return;
-    document.querySelectorAll('#bq-pick-song-btn').forEach(function(b){
-      if(b.parentNode !== sect) b.remove();
-    });
-  }, 1000);
+  function playBurst(emoji){
+    if(!emoji) return;
+    var layer = getBurstLayer();
+    if(!layer) return;
+    var w = layer.clientWidth || 320;
 
-  try{ console.log('[bq] v32 patch loaded — shadow cleanup + My Song section'); }catch(_){}
-})();
-/* ════════════ end v32 patch ════════════ */
+    // soft flash
+    var flash = document.createElement('div');
+    flash.className = 'bq-burst-flash';
+    layer.appendChild(flash);
+    setTimeout(function(){ try{ flash.remove(); }catch(_){ } }, 600);
 
-
-
-/* ════════════ v33 patch — visible My Song button in DM Settings + Profile redesign ════════════ */
-(function(){
-  'use strict';
-  if(window.__bqV33SongButton) return; window.__bqV33SongButton = true;
-
-  var LS_SONG='bq_my_song_v31';
-  var songs=[
-    {id:'s1',title:'Blinding Lights',artist:'The Weeknd',emoji:'🌃'},
-    {id:'s2',title:'As It Was',artist:'Harry Styles',emoji:'🌅'},
-    {id:'s3',title:'Cruel Summer',artist:'Taylor Swift',emoji:'☀️'},
-    {id:'s4',title:'Flowers',artist:'Miley Cyrus',emoji:'🌸'},
-    {id:'s5',title:'Anti-Hero',artist:'Taylor Swift',emoji:'🦹'},
-    {id:'s6',title:'Unholy',artist:'Sam Smith & Kim Petras',emoji:'🔥'},
-    {id:'s7',title:'Vampire',artist:'Olivia Rodrigo',emoji:'🧛'},
-    {id:'s8',title:'Kill Bill',artist:'SZA',emoji:'⚔️'},
-    {id:'s9',title:'Calm Down',artist:'Rema',emoji:'🧘'},
-    {id:'s10',title:'Espresso',artist:'Sabrina Carpenter',emoji:'☕'},
-    {id:'s11',title:'Lovely',artist:'Billie Eilish',emoji:'🖤'},
-    {id:'s12',title:'Bad Habit',artist:'Steve Lacy',emoji:'🌀'},
-    {id:'s13',title:'Snooze',artist:'SZA',emoji:'😴'},
-    {id:'s14',title:'Paint The Town Red',artist:'Doja Cat',emoji:'🎨'},
-    {id:'s15',title:'greedy',artist:'Tate McRae',emoji:'💎'},
-    {id:'s16',title:'Cruel',artist:'The Marías',emoji:'🥀'},
-    {id:'s17',title:'Heat Waves',artist:'Glass Animals',emoji:'🌊'},
-    {id:'s18',title:'Stay',artist:'The Kid LAROI & Justin Bieber',emoji:'⏳'},
-    {id:'s19',title:'Levitating',artist:'Dua Lipa',emoji:'🪐'},
-    {id:'s20',title:'Watermelon Sugar',artist:'Harry Styles',emoji:'🍉'},
-    {id:'s21',title:'Drivers License',artist:'Olivia Rodrigo',emoji:'🚗'},
-    {id:'s22',title:'Save Your Tears',artist:'The Weeknd',emoji:'💧'},
-    {id:'s23',title:'Industry Baby',artist:'Lil Nas X',emoji:'🏭'},
-    {id:'s24',title:'Peaches',artist:'Justin Bieber',emoji:'🍑'},
-    {id:'s25',title:'Shivers',artist:'Ed Sheeran',emoji:'❄️'}
-  ];
-  var pending=null, modal=null;
-
-  function db(){ try{ if(window.db) return window.db; if(window.firebase && firebase.apps && firebase.apps.length) return firebase.database(); }catch(_){} return null; }
-  function uid(){ return window.uid || localStorage.getItem('bq_chat_uid') || localStorage.getItem('bq_uid') || ''; }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function song(id){ for(var i=0;i<songs.length;i++) if(songs[i].id===id) return songs[i]; return null; }
-  function currentSong(){ try{return song(localStorage.getItem(LS_SONG));}catch(_){return null;} }
-  function label(){ var s=currentSong(); return s ? (s.emoji+' '+s.title+' — '+s.artist) : 'Choose a song'; }
-
-  var st=document.createElement('style');
-  st.id='bq-v33-song-visible';
-  st.textContent=[
-    '#bq-my-song-section-v33{display:block!important;}',
-    '.bq-song-direct-btn{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;padding:12px 14px;border-radius:12px;border:1px solid rgba(29,185,84,.35);background:rgba(29,185,84,.10);color:#1db954;font:700 13px/1.25 Inter,system-ui,sans-serif;cursor:pointer;text-align:left;box-sizing:border-box;}',
-    '.bq-song-direct-btn span:first-child{display:flex;align-items:center;gap:8px;white-space:nowrap;}',
-    '.bq-song-direct-cur{font-weight:600;font-size:11px;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;text-align:right;}',
-    '#bqp.bq-theme-golden .bq-song-direct-btn{background:rgba(212,160,86,.12)!important;border-color:rgba(212,160,86,.42)!important;color:#d4a056!important;box-shadow:none!important;}',
-    '#bqp.bq-theme-golden .bq-song-direct-cur{color:rgba(244,227,199,.78)!important;}',
-    '#bqp.bq-theme-pure-black .bq-song-direct-btn{background:#080808!important;border-color:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important;}',
-    '#bqp.bq-theme-pure-black .bq-song-direct-cur{color:rgba(255,255,255,.62)!important;}',
-    '.bq-song-v33-bd{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;}',
-    '.bq-song-v33-bd.open{display:flex;}',
-    '.bq-song-v33{width:min(390px,100%);max-height:82vh;background:#101010;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif;box-shadow:0 24px 80px rgba(0,0,0,.55);}',
-    '.bq-song-v33-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:800;font-size:15px;}',
-    '.bq-song-v33-x{border:0;background:transparent;color:rgba(255,255,255,.65);font-size:24px;line-height:1;cursor:pointer;}',
-    '.bq-song-v33-search{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);}',
-    '.bq-song-v33-search input{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#000;color:#fff;padding:9px 11px;font-size:13px;outline:none;}',
-    '.bq-song-v33-list{overflow:auto;min-height:160px;}',
-    '.bq-song-v33-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;}',
-    '.bq-song-v33-item:hover{background:rgba(255,255,255,.06);}',
-    '.bq-song-v33-item.sel{background:rgba(29,185,84,.16);}',
-    '.bq-song-v33-art{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1db954,#0d7a37);display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;}',
-    '.bq-song-v33-meta{min-width:0;flex:1;}',
-    '.bq-song-v33-title{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-    '.bq-song-v33-artist{font-size:11px;color:rgba(255,255,255,.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
-    '.bq-song-v33-foot{display:flex;gap:8px;padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);}',
-    '.bq-song-v33-clear,.bq-song-v33-save{flex:1;border-radius:10px;padding:10px;border:0;font-weight:800;font-size:13px;cursor:pointer;}',
-    '.bq-song-v33-clear{background:transparent;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.16);}',
-    '.bq-song-v33-save{background:#1db954;color:#031007;}'
-  ].join('\n');
-  (document.head||document.documentElement).appendChild(st);
-
-  function updateLabels(){ document.querySelectorAll('.bq-song-direct-cur').forEach(function(n){ n.textContent=label(); }); }
-  function saveSong(id){
-    var s=song(id), d=db(), u=uid(), payload=s?{id:s.id,title:s.title,artist:s.artist,emoji:s.emoji}:null;
-    try{ if(s) localStorage.setItem(LS_SONG,s.id); else localStorage.removeItem(LS_SONG); }catch(_){}
-    if(d && u){ try{ d.ref('bq_users/'+u+'/song').set(payload).catch(function(){}); d.ref('bq_presence/'+u+'/song').set(payload).catch(function(){}); }catch(_){} }
-    updateLabels();
-    try{ if(typeof toast==='function') toast(s?'My Song updated':'My Song removed'); }catch(_){}
+    // floating emoji copies
+    var n = 10;
+    for(var i=0; i<n; i++){
+      (function(idx){
+        var span = document.createElement('span');
+        span.className = 'bq-burst-emo';
+        span.textContent = emoji;
+        var startX = (Math.random() * 0.8 + 0.1) * w; // 10%..90%
+        var driftX = (Math.random() - 0.5) * 140;
+        var rot = (Math.random() - 0.5) * 60;
+        var size = 36 + Math.random() * 32;
+        var dur = 1200 + Math.random() * 600;
+        var delay = idx * 40 + Math.random() * 80;
+        span.style.left = startX + 'px';
+        span.style.fontSize = size + 'px';
+        span.style.setProperty('--bx', '0px');
+        span.style.setProperty('--bdx', driftX + 'px');
+        span.style.setProperty('--br', rot + 'deg');
+        span.style.animation = 'bqBurstFloat ' + dur + 'ms cubic-bezier(.22,.61,.36,1) ' + delay + 'ms both';
+        layer.appendChild(span);
+        setTimeout(function(){ try{ span.remove(); }catch(_){ } }, dur + delay + 80);
+      })(i);
+    }
   }
 
-  function buildModal(){
-    if(modal) return modal;
-    modal=document.createElement('div');
-    modal.className='bq-song-v33-bd';
-    modal.innerHTML='<div class="bq-song-v33"><div class="bq-song-v33-head"><span>♪ My Song</span><button type="button" class="bq-song-v33-x">×</button></div><div class="bq-song-v33-search"><input type="text" placeholder="Search songs or artists…"></div><div class="bq-song-v33-list"></div><div class="bq-song-v33-foot"><button type="button" class="bq-song-v33-clear">Remove</button><button type="button" class="bq-song-v33-save">Set song</button></div></div>';
-    document.body.appendChild(modal);
-    var list=modal.querySelector('.bq-song-v33-list'), search=modal.querySelector('input');
-    function render(q){
-      q=(q||'').toLowerCase().trim(); list.innerHTML='';
-      songs.forEach(function(s){
-        if(q && (s.title+' '+s.artist).toLowerCase().indexOf(q)<0) return;
-        var row=document.createElement('div'); row.className='bq-song-v33-item'+(pending===s.id?' sel':''); row.dataset.id=s.id;
-        row.innerHTML='<div class="bq-song-v33-art">'+esc(s.emoji)+'</div><div class="bq-song-v33-meta"><div class="bq-song-v33-title">'+esc(s.title)+'</div><div class="bq-song-v33-artist">'+esc(s.artist)+'</div></div>';
-        row.addEventListener('click',function(){ pending=s.id; render(search.value); });
-        list.appendChild(row);
+  function sendBurst(emoji){
+    if(!emoji) return;
+    // Always play locally for instant feedback
+    playBurst(emoji);
+    var d = getDb(), dm = getDmId(), u = getUid();
+    if(!d || !dm) return;
+    try{
+      d.ref('bq_dms/' + dm + '/burst').set({
+        emoji: emoji,
+        from: u || 'anon',
+        ts: Date.now(),
+        nonce: Math.random().toString(36).slice(2, 10)
+      }).catch(function(){});
+    }catch(_){}
+  }
+
+  /* Listener: attach per active DM, ignore stale/echoes */
+  var burstListenerDm = null;
+  var burstRef = null;
+  var burstAttachedAt = 0;
+  var lastBurstNonce = null;
+
+  function detachBurst(){
+    if(burstRef){
+      try{ burstRef.off('value'); }catch(_){}
+      burstRef = null;
+    }
+    burstListenerDm = null;
+  }
+
+  function attachBurst(dmId){
+    var d = getDb(); if(!d || !dmId) return;
+    if(burstListenerDm === dmId) return;
+    detachBurst();
+    burstListenerDm = dmId;
+    burstAttachedAt = Date.now();
+    try{
+      burstRef = d.ref('bq_dms/' + dmId + '/burst');
+      burstRef.on('value', function(snap){
+        var v = snap && snap.val(); if(!v || !v.emoji) return;
+        // Skip stale (older than 6s when listener attached) — avoids replay on open
+        if(typeof v.ts === 'number' && v.ts < burstAttachedAt - 1500) return;
+        if(v.nonce && v.nonce === lastBurstNonce) return;
+        lastBurstNonce = v.nonce || (v.ts + ':' + v.emoji);
+        var meUid = getUid();
+        // If WE sent it, we already played locally — skip echo
+        if(v.from && meUid && v.from === meUid) return;
+        playBurst(v.emoji);
       });
+    }catch(_){}
+  }
+
+  // Poll for active DM changes (mirrors patterns used by older patches)
+  setInterval(function(){
+    var dm = getDmId();
+    if(dm && dm !== burstListenerDm){ attachBurst(dm); }
+    else if(!dm && burstListenerDm){ detachBurst(); }
+  }, 800);
+
+  /* ─────────────────────────────────────────
+     4. UI hooks — tap sticker bubble → burst,
+        long-press quick-sticker tray button → burst (instead of send),
+        floating quick-react menu after long-press on any bubble.
+  ───────────────────────────────────────── */
+  // 4a. Tap a sticker bubble → burst its emoji to both users
+  document.addEventListener('click', function(ev){
+    var bbl = ev.target && ev.target.closest && ev.target.closest('.bqbbl.sticker');
+    if(!bbl) return;
+    // Avoid stealing the long-press / context menu
+    if(ev.defaultPrevented) return;
+    var emoChar = (bbl.querySelector('.bqsticker') || {}).textContent;
+    if(!emoChar) return;
+    emoChar = emoChar.trim();
+    if(!emoChar) return;
+    sendBurst(emoChar);
+  }, false);
+
+  // 4b. Long-press the quick-sticker tray buttons → burst instead of sending a sticker message
+  function bindLongPress(el, onLong){
+    var t = null, fired = false;
+    function start(e){
+      fired = false;
+      t = setTimeout(function(){ fired = true; onLong(e); }, 480);
     }
-    modal._render=render;
-    search.addEventListener('input',function(){ render(search.value); });
-    modal.querySelector('.bq-song-v33-x').addEventListener('click',function(){ modal.classList.remove('open'); });
-    modal.addEventListener('click',function(e){ if(e.target===modal) modal.classList.remove('open'); });
-    modal.querySelector('.bq-song-v33-clear').addEventListener('click',function(){ saveSong(null); modal.classList.remove('open'); });
-    modal.querySelector('.bq-song-v33-save').addEventListener('click',function(){ saveSong(pending); modal.classList.remove('open'); });
-    return modal;
-  }
-  function openModal(){ var m=buildModal(); var cur=currentSong(); pending=cur?cur.id:null; var inp=m.querySelector('input'); if(inp) inp.value=''; m._render(''); m.classList.add('open'); }
-  function makeButton(){ var b=document.createElement('button'); b.type='button'; b.className='bq-song-direct-btn'; b.innerHTML='<span>♪ My Song</span><span class="bq-song-direct-cur">'+esc(label())+'</span>'; b.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); openModal(); }); return b; }
-
-  function injectDmSettings(){
-    var scroll=document.querySelector('#bq-dm-info .bq-info-scroll'); if(!scroll) return;
-    var sect=document.getElementById('bq-my-song-section-v33');
-    if(!sect){
-      sect=document.createElement('div'); sect.className='bq-info-section'; sect.id='bq-my-song-section-v33';
-      sect.innerHTML='<div class="bq-info-section-title">My Song</div>';
-      var first=scroll.querySelector('.bq-info-section');
-      if(first && first.nextSibling) scroll.insertBefore(sect, first.nextSibling); else scroll.insertBefore(sect, scroll.firstChild);
+    function cancel(){
+      if(t){ clearTimeout(t); t = null; }
     }
-    if(!sect.querySelector('.bq-song-direct-btn')) sect.appendChild(makeButton());
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', function(e){
+      cancel();
+      if(fired){ e.preventDefault(); e.stopPropagation(); }
+    });
+    el.addEventListener('pointerleave', cancel);
+    el.addEventListener('pointercancel', cancel);
+  }
+  // Walk tray buttons periodically (they re-render)
+  var boundTray = new WeakSet();
+  setInterval(function(){
+    document.querySelectorAll('.bqietb').forEach(function(b){
+      if(boundTray.has(b)) return;
+      boundTray.add(b);
+      bindLongPress(b, function(){
+        var emo = (b.textContent || '').trim();
+        if(emo) sendBurst(emo);
+      });
+    });
+  }, 1200);
+
+  /* ─────────────────────────────────────────
+     5. Quick floating burst-picker (small popover) —
+        accessible via a tiny button injected next to the
+        existing reaction picker trigger when in DM.
+  ───────────────────────────────────────── */
+  function ensureBurstButton(){
+    if(!getDmId()) return;
+    // Mount once near composer (.bqcomposer or .bqih); fall back to body-positioned floating
+    var anchor = document.querySelector('.bqih, .bqifooter, .bqcomposer');
+    if(!anchor) return;
+    if(anchor.querySelector('.bq-burst-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bq-burst-btn bqhbtn';
+    btn.title = 'Send a burst reaction (visible to both)';
+    btn.setAttribute('aria-label', 'Send burst reaction');
+    btn.textContent = '✨';
+    btn.style.cssText = 'font-size:18px;line-height:1;';
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      openBurstPicker(btn);
+    });
+    anchor.appendChild(btn);
   }
 
-  function injectProfileRedesign(){
-    var panel=document.querySelector('.bqp4-panel[data-panel="status"] .bqp4-fields'); if(!panel) return;
-    var box=document.getElementById('bq-profile-song-v33');
-    if(!box){ box=document.createElement('div'); box.className='bqp4-field'; box.id='bq-profile-song-v33'; box.innerHTML='<div class="bqp4-label">My Song</div>'; panel.appendChild(box); }
-    if(!box.querySelector('.bq-song-direct-btn')) box.appendChild(makeButton());
+  function openBurstPicker(anchor){
+    var existing = document.getElementById('bq-burst-picker');
+    if(existing){ existing.remove(); return; }
+    var pop = document.createElement('div');
+    pop.id = 'bq-burst-picker';
+    pop.style.cssText = 'position:fixed;z-index:2147483645;background:var(--bq-bg-elevated,#1a1a1a);border:1px solid var(--bq-border,rgba(255,255,255,.12));border-radius:14px;padding:8px;display:flex;gap:4px;box-shadow:0 12px 36px rgba(0,0,0,.45);animation:bqBurstPop .22s ease-out;';
+    POPULAR_BURST.forEach(function(e){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = e;
+      b.style.cssText = 'width:36px;height:36px;border:0;background:transparent;border-radius:8px;font-size:22px;cursor:pointer;transition:transform .12s,background .12s;';
+      b.addEventListener('mouseenter', function(){ b.style.background='var(--bq-bg-hover,rgba(255,255,255,.08))'; b.style.transform='scale(1.2)'; });
+      b.addEventListener('mouseleave', function(){ b.style.background='transparent'; b.style.transform='none'; });
+      b.addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        sendBurst(e);
+        pop.remove();
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    var r = anchor.getBoundingClientRect();
+    var w = pop.offsetWidth || 320;
+    var x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width/2 - w/2));
+    var y = Math.max(8, r.top - pop.offsetHeight - 8);
+    pop.style.left = x + 'px';
+    pop.style.top = y + 'px';
+    var off = function(ev){
+      if(pop.contains(ev.target) || ev.target === anchor) return;
+      try{ pop.remove(); }catch(_){}
+      document.removeEventListener('mousedown', off, true);
+      document.removeEventListener('touchstart', off, true);
+    };
+    setTimeout(function(){
+      document.addEventListener('mousedown', off, true);
+      document.addEventListener('touchstart', off, true);
+    }, 0);
   }
 
-  function restoreCloud(){
-    var d=db(), u=uid(); if(!d||!u||restoreCloud._u===u) return; restoreCloud._u=u;
-    try{ d.ref('bq_users/'+u+'/song').once('value').then(function(snap){ var v=snap.val(); if(v&&v.id){ localStorage.setItem(LS_SONG,v.id); updateLabels(); } }); }catch(_){}
-  }
+  setInterval(ensureBurstButton, 900);
 
-  setInterval(function(){ injectDmSettings(); injectProfileRedesign(); restoreCloud(); updateLabels(); }, 700);
-  setTimeout(function(){ injectDmSettings(); injectProfileRedesign(); restoreCloud(); updateLabels(); }, 100);
-  try{ console.log('[bq] v33 patch loaded — My Song button visible in DM settings'); }catch(_){}
+  try{ console.log('[bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations'); }catch(_){}
 })();
-/* ════════════ end v33 patch ════════════ */
+/* ════════════ end v34 patch ════════════ */
+
