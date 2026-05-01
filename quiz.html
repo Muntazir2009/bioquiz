@@ -26,6 +26,10 @@
     
     --t-fast: 0.22s ease;
     --t-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* FIX: Added missing border-radius variables */
+    --r-md: 14px;
+    --r-lg: 24px;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -110,7 +114,6 @@
   }
   @keyframes nebulaSpin { to { transform: rotate(360deg); } }
 
-  /* Ensure card contents sit above the spinning nebula */
   .card-inner { position: relative; z-index: 2; }
 
   /* View Routing */
@@ -140,7 +143,6 @@
   .cta:active { transform: scale(0.97); }
   .cta:disabled { opacity: 0.5; pointer-events: none; }
 
-  /* Skip & Next Exact Match from Snippet */
   #q-next { background: linear-gradient(135deg,#3b6cff,#1f3cff); box-shadow: 0 0 26px rgba(60,120,255,.45); }
   #q-next:hover { transform: translateY(-3px); box-shadow: 0 10px 35px rgba(60,120,255,.6); }
   #q-skip { background: linear-gradient(135deg,#ff3b3b,#ffb347); box-shadow: 0 0 22px rgba(255,150,60,.55); }
@@ -583,9 +585,8 @@
    COSMIC ENGINE — AI Quiz (Premium Edition)
 ============================================================ */
 
-// ⬇️⬇️⬇️ PASTE YOUR GEMINI API KEY HERE ⬇️⬇️⬇️
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
-// ⬆️⬆️⬆️ PASTE YOUR GEMINI API KEY HERE ⬆️⬆️⬆️
+// ⬇️ Replace with your API Secret via GitHub Actions OR enter manually for local testing
+const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
 
 (() => {
   'use strict';
@@ -758,12 +759,12 @@ const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
     $('#ll-freeze').disabled = usedFreeze || settings.duration <= 0;
 
     const opts = $('#q-options'); opts.innerHTML='';
-    const labels =['A','B','C','D'];
+    const labels =['A','B','C','D','E','F']; // Fallback options
     
     q.options.forEach((opt,i)=>{
       const btn = document.createElement('button');
       btn.className='opt'; btn.type='button'; btn.dataset.idx = i;
-      btn.innerHTML = `<span class="key">${labels[i]}</span><span>${escapeHTML(opt)}</span>`;
+      btn.innerHTML = `<span class="key">${labels[i] || (i+1)}</span><span>${escapeHTML(opt)}</span>`;
       btn.addEventListener('click', (e) => onAnswer(i, btn, e));
       btn.addEventListener('mouseenter', ()=>sfx.hover());
       opts.appendChild(btn);
@@ -774,14 +775,14 @@ const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
     else stopTimer();
   }
 
-  /* ---------- Lifelines (Perfected) ---------- */
+  /* ---------- Lifelines ---------- */
   $('#ll-5050').addEventListener('click', () => {
     if(used5050 || answered) return;
     used5050 = true; sfx.lifeline();
     $('#ll-5050').disabled = true; 
     
     const correctIdx = questions[qIdx].answer;
-    let wrongIndices = [0, 1, 2, 3].filter(i => i !== correctIdx);
+    let wrongIndices =[0, 1, 2, 3].filter(i => i !== correctIdx);
     wrongIndices.sort(() => Math.random() - 0.5); 
     const toEliminate = [wrongIndices[0], wrongIndices[1]];
     
@@ -931,7 +932,14 @@ const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
     setTimeout(()=>{
       $('#r-fg').style.strokeDashoffset = RC*(1-pct/100);
-      let n=0; const tk=setInterval(()=>{n++; $('#r-pct').textContent=n+'%'; if(n>=pct)clearInterval(tk)}, 15);
+      if (pct === 0) return; // FIX: Prevent interval edge case crash loop
+      
+      let n=0; 
+      const tk=setInterval(()=>{
+        n++; 
+        $('#r-pct').textContent = n + '%'; 
+        if(n >= pct) clearInterval(tk);
+      }, 15);
     }, 150);
   }
 
@@ -971,8 +979,8 @@ const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
   $('#gen-form').addEventListener('submit', async e=>{
     e.preventDefault();
-    if(GEMINI_API_KEY === "AIzaSyBC5VZSPgGRGlBe0plwHEsJYijeyRc-314" || !GEMINI_API_KEY.trim()) {
-      toast("SYSTEM ERROR: Paste Gemini API Key in the source code.", 4000);
+    if(GEMINI_API_KEY === "INJECT_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY.trim()) {
+      toast("SYSTEM ERROR: API Key Missing. Setup Environment Variables.", 4000);
       return;
     }
 
