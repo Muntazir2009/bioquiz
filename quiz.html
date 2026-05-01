@@ -1011,22 +1011,15 @@ const WORKER_URL = "https://billowing-mouse-d2d4.killermunu.workers.dev/";
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are a quiz generator. Always respond with raw JSON only. No markdown, no backticks, no explanation.' },
-            { role: 'user', content: prompt }
-          ]
+          contents: [{ parts:[{ text: prompt }] }],
+          generationConfig: { response_mime_type: "application/json" }
         })
       });
 
+      if(!res.ok) throw new Error(`Worker error (${res.status}). Check Worker logs.`);
+      
       const data = await res.json();
-
-      if(data.error) {
-        const detail = data.error?.message || JSON.stringify(data.error).slice(0, 200);
-        throw new Error(detail);
-      }
-
-      let textOutput = data.choices?.[0]?.message?.content;
-      if(!textOutput) throw new Error('Empty response from AI.');
+      let textOutput = data.candidates[0].content.parts[0].text;
       textOutput = textOutput.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
       
       const parsed = extractJSON(textOutput);
