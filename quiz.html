@@ -984,7 +984,7 @@ const GEMINI_API_KEY = "AIzaSyBC5VZSPgGRGlBe0plwHEsJYijeyRc-314";
 
   $('#gen-form').addEventListener('submit', async e=>{
     e.preventDefault();
-    if(GEMINI_API_KEY === "AIzaSyAsn9ge1sNEOLCwtVcMJP7zMU7saua_JdU" || !GEMINI_API_KEY.trim()) {
+    if(GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY.trim()) {
       toast("SYSTEM ERROR: API Key Missing in source code.", 4000);
       return;
     }
