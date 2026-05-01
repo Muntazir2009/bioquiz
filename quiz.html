@@ -27,7 +27,6 @@
     --t-fast: 0.22s ease;
     --t-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* FIX: Added missing border-radius variables */
     --r-md: 14px;
     --r-lg: 24px;
   }
@@ -126,13 +125,14 @@
   .h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; margin: 0 0 16px; line-height: 1.15; letter-spacing: -0.02em; }
   .lead { color: var(--text-muted); margin: 0 0 40px; font-size: 1.15rem; line-height: 1.6; font-weight: 500; }
   
-  .cta-grid { display: flex; gap: 16px; }
+  .cta-grid { display: flex; gap: 16px; flex-wrap: wrap; }
   .cta-grid.stack { display: grid; grid-template-columns: 1fr; }
   
   .cta {
     flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 28px;
     border-radius: 12px; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 800; letter-spacing: 0.1em;
     transition: all var(--t-fast); cursor: pointer; text-transform: uppercase; border: none; color: #fff;
+    min-width: 200px;
   }
   .cta.primary { background: linear-gradient(135deg, #3b6cff, #1f3cff); box-shadow: 0 0 26px rgba(60,120,255,.45); }
   .cta.primary:hover { filter: brightness(1.15); transform: translateY(-3px); box-shadow: 0 10px 35px rgba(60,120,255,0.6); }
@@ -142,6 +142,9 @@
   
   .cta:active { transform: scale(0.97); }
   .cta:disabled { opacity: 0.5; pointer-events: none; }
+
+  #go-resume { background: linear-gradient(135deg, #a78bfa, #8b5cf6); box-shadow: 0 0 26px rgba(167, 139, 250, .45); }
+  #go-resume:hover { filter: brightness(1.15); transform: translateY(-3px); box-shadow: 0 10px 35px rgba(167, 139, 250, 0.6); }
 
   #q-next { background: linear-gradient(135deg,#3b6cff,#1f3cff); box-shadow: 0 0 26px rgba(60,120,255,.45); }
   #q-next:hover { transform: translateY(-3px); box-shadow: 0 10px 35px rgba(60,120,255,.6); }
@@ -364,7 +367,6 @@
     .stage { padding: 10px; }
     .h1 { font-size: 2rem; }
     .stat-row { grid-template-columns: 1fr; gap: 16px; margin-top: 24px; }
-    .cta-grid { flex-direction: column; }
     .row { grid-template-columns: 1fr; }
     .qtext { font-size: 1.4rem; margin-bottom: 24px; }
     .lifelines { flex-direction: column; }
@@ -405,9 +407,10 @@
         <h1 class="h1">Test your limits.</h1>
         <p class="lead">Take the core intelligence test, or generate a custom module using the AI Forge.</p>
         
-        <div class="cta-grid">
-          <button class="cta primary" id="go-quiz">Start Default Quiz</button>
-          <button class="cta ghost" id="go-gen">Generate Custom</button>
+        <div class="cta-grid" id="home-ctas">
+          <button class="cta primary" id="go-resume" style="display:none;">Resume Session</button>
+          <button class="cta primary" id="go-quiz">Start Default</button>
+          <button class="cta ghost" id="go-gen">AI Forge</button>
         </div>
         
         <div class="stat-row">
@@ -454,7 +457,7 @@
               <label style="margin:0;">Number of Questions</label>
               <span id="g-count-v" class="num-pill">10</span>
             </div>
-            <input type="range" id="g-count" min="3" max="20" value="10" step="1" />
+            <input type="range" id="g-count" min="3" max="50" value="10" step="1" />
           </div>
           
           <div class="cta-grid" style="margin-top: 10px;">
@@ -585,8 +588,9 @@
    COSMIC ENGINE — AI Quiz (Premium Edition)
 ============================================================ */
 
-// ⬇️ Replace with your API Secret via GitHub Actions OR enter manually for local testing
-const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
+// ⬇️ Replace this string with your real API Key. 
+// MAKE SURE to restrict the API key to your website URL in Google Cloud Console.
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
 (() => {
   'use strict';
@@ -612,6 +616,7 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
   let reviewLog =[]; 
   
   let used5050 = false, usedFreeze = false, freezeTimerId = null;
+  let quizActive = false; // Used for Resume feature
 
   function safeJSON(s){ try{return JSON.parse(s)}catch{return null} }
   function saveSettings(){ localStorage.setItem(LS.SET, JSON.stringify(settings)); }
@@ -635,10 +640,9 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
     correctText = String(correctText).replace(/^\s*[a-dA-D1-4][\.\)]\s+/, '').trim();
 
     if(out.options.length > 1) {
-      let shuffled = [...out.options];
+      let shuffled =[...out.options];
       for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] =[shuffled[j], shuffled[i]];
+        const j = Math.floor(Math.random() * (i + 1));[shuffled[i], shuffled[j]] =[shuffled[j], shuffled[i]];
       }
       out.options = shuffled;
       const newIdx = out.options.findIndex(o => o.toLowerCase() === correctText.toLowerCase());
@@ -740,8 +744,8 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
 
   function startQuiz(){
     qIdx = 0; score = 0; correctCount = 0; wrongCount = 0; totalTime = 0; bestStreak = 0; reviewLog =[];
-    used5050 = false; usedFreeze = false;
-    sfx.ensure(); show('view-quiz'); renderQuestion();
+    used5050 = false; usedFreeze = false; quizActive = true;
+    sfx.ensure(); show('view-quiz'); renderQuestion(); refreshHomeStats();
   }
 
   function renderQuestion(){
@@ -759,7 +763,7 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
     $('#ll-freeze').disabled = usedFreeze || settings.duration <= 0;
 
     const opts = $('#q-options'); opts.innerHTML='';
-    const labels =['A','B','C','D','E','F']; // Fallback options
+    const labels =['A','B','C','D','E','F'];
     
     q.options.forEach((opt,i)=>{
       const btn = document.createElement('button');
@@ -910,6 +914,7 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
   });
 
   function finishQuiz(){
+    quizActive = false;
     sfx.finish();
     const total = questions.length; const pct = Math.round(correctCount/total*100);
     const best = Number(localStorage.getItem(LS.BEST)||0);
@@ -932,7 +937,7 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
 
     setTimeout(()=>{
       $('#r-fg').style.strokeDashoffset = RC*(1-pct/100);
-      if (pct === 0) return; // FIX: Prevent interval edge case crash loop
+      if (pct === 0) return;
       
       let n=0; 
       const tk=setInterval(()=>{
@@ -979,8 +984,8 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
 
   $('#gen-form').addEventListener('submit', async e=>{
     e.preventDefault();
-    if(GEMINI_API_KEY === "INJECT_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY.trim()) {
-      toast("SYSTEM ERROR: API Key Missing. Setup Environment Variables.", 4000);
+    if(GEMINI_API_KEY === "AIzaSyAsn9ge1sNEOLCwtVcMJP7zMU7saua_JdU" || !GEMINI_API_KEY.trim()) {
+      toast("SYSTEM ERROR: API Key Missing in source code.", 4000);
       return;
     }
 
@@ -1073,18 +1078,42 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
     $('#set-duration-v').textContent = settings.duration>0 ? settings.duration+'s' : 'Off';
   });
   
-  function openSheet(){ $('#sheet').classList.add('open'); syncSettingsUI(); }
+  function openSheet(){ 
+    // Auto-pause timer when settings are opened during active quiz
+    if ($('#view-quiz').classList.contains('active') && !answered && timerId) {
+        paused = true;
+        timerWrap.style.opacity = '0.5';
+    }
+    $('#sheet').classList.add('open'); 
+    syncSettingsUI(); 
+  }
   function closeSheet(){ $('#sheet').classList.remove('open'); }
   $('#btn-settings').addEventListener('click', openSheet);
   $$('#sheet [data-close]').forEach(el=>el.addEventListener('click', closeSheet));
 
-  $('#btn-home').addEventListener('click',()=>{ stopTimer(); show('view-home'); refreshHomeStats(); });
+  $('#btn-home').addEventListener('click',()=>{ 
+    // Auto-pause timer when returning to home screen
+    if ($('#view-quiz').classList.contains('active') && !answered && timerId) {
+        paused = true;
+        timerWrap.style.opacity = '0.5';
+    }
+    show('view-home'); 
+    refreshHomeStats(); 
+  });
+  
   $('#go-quiz').addEventListener('click',()=>{ questions=[...DEFAULT_QUIZ].map(normalize); localStorage.removeItem(LS.QSET); sfx.click(); startQuiz(); });
   $('#go-gen').addEventListener('click',()=>{ sfx.click(); show('view-gen'); });
   $('#gen-back').addEventListener('click',()=>{ sfx.click(); show('view-home'); });
   $('#r-home').addEventListener('click',()=>{ sfx.click(); show('view-home'); refreshHomeStats(); });
   $('#rev-home').addEventListener('click',()=>{ sfx.click(); show('view-home'); refreshHomeStats(); });
   
+  // Resume Feature Button
+  $('#go-resume').addEventListener('click', () => { 
+    sfx.click(); 
+    show('view-quiz'); 
+    toast("Quiz Resumed. Click the timer to unpause.", 2500); 
+  });
+
   $('#reset-stats').addEventListener('click',()=>{
     if(!confirm('Delete all past quiz scores?')) return;
     localStorage.removeItem(LS.BEST); localStorage.removeItem(LS.PLAYED);
@@ -1095,6 +1124,15 @@ const GEMINI_API_KEY = "INJECT_GEMINI_API_KEY_HERE";
     $('#stat-q').textContent = questions.length;
     $('#stat-best').textContent = Number(localStorage.getItem(LS.BEST)||0);
     $('#stat-played').textContent = Number(localStorage.getItem(LS.PLAYED)||0);
+    
+    // Toggle Resume Session button visibility
+    if (quizActive) {
+      $('#go-resume').style.display = 'flex';
+      $('#go-quiz').style.display = 'none'; // Hide default quiz button to save space
+    } else {
+      $('#go-resume').style.display = 'none';
+      $('#go-quiz').style.display = 'flex';
+    }
   }
 
   /* Keyboard Shortcuts */
