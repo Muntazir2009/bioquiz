@@ -1,21 +1,11 @@
 /**
- * v10.0 — cleaned & optimized (Apr 2026)
- * - Removed legacy .bqacts hover toolbar + inline .bqepick (caused 'half menu' on React)
- * - New centered reaction picker modal (#bq-rx-picker)
- * - Removed banner & avatar uploads (catbox.moe). Initials + accent color only.
- * - Throttled typing/presence writes; lazy GIF loading; single global ticker
- */
-/**
- * BioQuiz Chat Widget v9 (chat-widget_v9.js)
- * Bug fixes: profile avatar/banner, voice hold-to-record, theme persistence, perf, auto-update
+ * BioQuiz Chat Widget v2.1 (chat-widget_v2.1.js)
+ * V2.1 Major Upgrade — Enhanced animations, visuals & real-time features
+ * - Removed PWA features (no longer needed)
+ * - Spring physics micro-interactions, ripple effects, staggered animations
+ * - Enhanced glassmorphism, gradient mesh backgrounds, glow effects
+ * - Real-time activity indicators, live user count, enhanced typing display
  * Drop-in: <script src="chat-widget.js"></script>
- * 
- * Features:
- * - Fixed navigation bugs (profile/customisation works properly)
- * - PWA installable
- * - Modern design with animations
- * - Profiles V2 (avatar/banner upload), voice notes, GIF lightbox
- * - 5 new themes incl. Monochrome, redesigned bubbles, floating info card
  *
  * DB paths:
  *   bq_messages/                 — global chat
@@ -86,11 +76,10 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '9.6.4-v33';                 // v9.6.1: compact working message menu + 4 fixed themes
+const WIDGET_VERSION = '2.1.0';                     // V2.1 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
-const VERSION_CHECK_URL = '/chat-widget-version.json'; // optional; ignored if 404
 const AVATAR_CACHE = Object.create(null);       // v9: uid -> {avatar, banner, initials, displayName}
 
 const STATUS_LIST = [
@@ -142,29 +131,12 @@ function _cacheAvatarFromPresence(uid, d){
 }
 function applyAvatarsFromCache(){
   // Update every rendered .bqav and .bquav for users whose presence avatar changed
+  // v2: avatar URL branches removed — v10 removed avatar URLs, only initials/color
   document.querySelectorAll('.bqav[data-uid]').forEach(el=>{
     const u = el.dataset.uid; if(!u) return;
     const c = AVATAR_CACHE[u]; if(!c) return;
-    if(c.avatar){
-      // Use a real <img> behind the scenes so we can detect onerror -> initials fallback
-      if(el.dataset.avatarUrl !== c.avatar){
-        el.dataset.avatarUrl = c.avatar;
-        el.style.background = "url('"+c.avatar.replace(/'/g,"%27")+"') center/cover";
-        el.style.color = 'transparent';
-        el.textContent = '';
-        // Probe the URL, revert to initials if it fails (expired token)
-        const probe = new Image();
-        probe.onerror = ()=>{
-          if(el.dataset.avatarUrl === c.avatar){
-            el.style.background = ''; el.style.color = '#000';
-            el.textContent = c.initials || el.dataset.uname?.slice(0,2).toUpperCase() || '??';
-            delete el.dataset.avatarUrl;
-          }
-        };
-        probe.src = c.avatar;
-      }
-    } else if(el.dataset.avatarUrl){
-      // Avatar was cleared — revert to initials
+    // v2: only update initials display; avatar URL handling removed
+    if(el.dataset.avatarUrl){
       el.style.background = ''; el.style.color = '#000';
       el.textContent = c.initials || el.dataset.uname?.slice(0,2).toUpperCase() || '??';
       delete el.dataset.avatarUrl;
@@ -234,38 +206,47 @@ const CSS = `
 
 /* ── VARIABLES ── */
 :root {
-  --bq-bg: #0a0a0a;
-  --bq-bg-elevated: #141414;
-  --bq-bg-hover: rgba(255,255,255,.04);
-  --bq-border: rgba(255,255,255,.08);
-  --bq-border-hover: rgba(255,255,255,.15);
-  --bq-text: #fff;
-  --bq-text-muted: rgba(255,255,255,.5);
-  --bq-text-subtle: rgba(255,255,255,.25);
-  --bq-accent: #60a5fa;
-  --bq-accent-glow: rgba(96,165,250,.25);
-  --bq-success: #34d399;
-  --bq-warning: #fbbf24;
-  --bq-danger: #f87171;
-  --bq-radius: 14px;
-  --bq-radius-sm: 8px;
+  --bq-bg: #080b12;
+  --bq-bg-elevated: #0f1420;
+  --bq-bg-hover: rgba(255,255,255,.05);
+  --bq-border: rgba(255,255,255,.07);
+  --bq-border-hover: rgba(255,255,255,.14);
+  --bq-text: #f0f2f5;
+  --bq-text-muted: rgba(240,242,245,.55);
+  --bq-text-subtle: rgba(240,242,245,.28);
+  --bq-accent: #6c5ce7;
+  --bq-accent-secondary: #a29bfe;
+  --bq-accent-glow: rgba(108,92,231,.3);
+  --bq-accent-soft: rgba(108,92,231,.12);
+  --bq-glass-bg: rgba(15,20,32,.8);
+  --bq-glass-border: rgba(255,255,255,.06);
+  --bq-success: #00cec9;
+  --bq-warning: #fdcb6e;
+  --bq-danger: #ff7675;
+  --bq-gradient: linear-gradient(135deg,#6c5ce7,#a29bfe,#74b9ff);
+  --bq-gradient-warm: linear-gradient(135deg,#e17055,#fdcb6e);
+  --bq-gradient-cool: linear-gradient(135deg,#00cec9,#74b9ff);
+  --bq-radius: 16px;
+  --bq-radius-sm: 10px;
+  --bq-radius-xs: 6px;
   --bq-transition: cubic-bezier(.16,1,.3,1);
 }
 
 /* ── BUBBLE ── */
 #bqb{
   position:fixed;bottom:24px;right:24px;z-index:9900;
-  width:56px;height:56px;border-radius:50%;
-  background:#000;
+  width:58px;height:58px;border-radius:50%;
+  background:var(--bq-gradient);
   border:none;cursor:pointer;padding:0;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1) inset;
-  transition:transform .28s var(--bq-transition),box-shadow .25s;
+  box-shadow:0 8px 32px rgba(108,92,231,.35),0 0 0 1px rgba(255,255,255,.08) inset;
+  transition:transform .28s var(--bq-transition),box-shadow .3s ease;
   will-change:transform;
+  animation:bqBtnBreathe 4s ease-in-out infinite;
 }
-#bqb:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.15) inset;}
-#bqb:active{transform:scale(.95);}
-#bqb.open{background:var(--bq-bg-elevated);box-shadow:0 8px 32px rgba(0,0,0,.5);}
+#bqb:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(108,92,231,.5),0 0 0 1px rgba(255,255,255,.15) inset;}
+#bqb:active{transform:scale(.93);filter:brightness(.9);}
+#bqb.open{background:var(--bq-bg-elevated);box-shadow:0 8px 32px rgba(0,0,0,.5);animation:none;}
 .bqi{position:absolute;transition:opacity .22s,transform .22s;}
 .bqi-c{fill:#fff;}
 #bqb.open .bqi-c{opacity:0;transform:scale(.6) rotate(-90deg);}
@@ -280,6 +261,7 @@ const CSS = `
 }
 #bqbadge.show{display:flex;}
 @keyframes bqPop{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes bqBtnBreathe{0%,100%{box-shadow:0 8px 32px rgba(108,92,231,.35),0 0 0 1px rgba(255,255,255,.08) inset}50%{box-shadow:0 8px 32px rgba(108,92,231,.5),0 0 24px rgba(108,92,231,.2),0 0 0 1px rgba(255,255,255,.12) inset}}
 
 /* ── PULSE ANIMATION (REMOVED) ── */
 
@@ -292,16 +274,33 @@ const CSS = `
   box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset;
   transform-origin:bottom right;
   transform:scale(.9) translateY(16px);opacity:0;pointer-events:none;
-  transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s .32s;
+  transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .3s ease,box-shadow .4s ease,visibility 0s .4s;
   will-change:transform,opacity;
   visibility:hidden;
 }
-#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s 0s;}
+#bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .3s ease,box-shadow .4s ease,visibility 0s 0s;box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03) inset,0 0 60px rgba(108,92,231,.1);}
 
 /* Glow effect */
 #bqp::before{
   content:'';position:absolute;top:0;left:10%;width:80%;height:1px;pointer-events:none;
-  background:linear-gradient(to right,transparent,rgba(96,165,250,.5),transparent);
+  background:linear-gradient(to right,transparent,rgba(108,92,231,.6),rgba(162,155,254,.4),transparent);
+}
+
+/* V2.1: Animated gradient mesh background */
+#bqp::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse at 15% 80%,rgba(108,92,231,.05) 0%,transparent 50%),
+    radial-gradient(ellipse at 85% 20%,rgba(162,155,254,.04) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 50%,rgba(0,206,201,.02) 0%,transparent 60%);
+  animation:bqMeshDrift 25s ease-in-out infinite;
+  opacity:0;transition:opacity .6s ease;
+}
+#bqp.open::after{opacity:1;}
+@keyframes bqMeshDrift{
+  0%,100%{background-position:0% 0%,100% 0%,50% 50%;}
+  33%{background-position:30% 20%,70% 40%,60% 30%;}
+  66%{background-position:10% 40%,90% 10%,40% 60%;}
 }
 
 /* Fullscreen mode */
@@ -330,7 +329,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   position:absolute;inset:0;display:flex;flex-direction:column;
   background:var(--bq-bg);
   opacity:0;pointer-events:none;
-  transition:opacity .2s ease,transform .28s var(--bq-transition);
+  transition:opacity .3s ease,transform .4s cubic-bezier(.22,1,.36,1);
   will-change:opacity,transform;
   transform:translateX(24px) scale(.98);
 }
@@ -340,6 +339,38 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* App-like haptic feedback */
 @keyframes bqTap{0%{transform:scale(1)}50%{transform:scale(.97)}100%{transform:scale(1)}}
 .bq-tap{animation:bqTap .15s ease;}
+
+/* V2.2: Alive, organic, breathing animations */
+@keyframes bqPulse{0%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.04);filter:brightness(1.15)}100%{transform:scale(1);filter:brightness(1)}}
+.bq-spring,.bq-alive{animation:bqPulse .6s ease-in-out;}
+
+@keyframes bqBreathe{0%{transform:scale(1);opacity:1}50%{transform:scale(1.02);opacity:.96}100%{transform:scale(1);opacity:1}}
+.bq-spring-soft,.bq-breathe{animation:bqBreathe .5s ease-in-out;}
+
+@keyframes bqBounce{0%{transform:translateY(0)}25%{transform:translateY(-8px)}50%{transform:translateY(-2px)}75%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+.bq-bounce{animation:bqBounce .55s ease;}
+
+@keyframes bqGlow{0%{box-shadow:0 0 0 0 var(--bq-accent-glow)}50%{box-shadow:0 0 20px 4px var(--bq-accent-glow)}100%{box-shadow:0 0 0 0 var(--bq-accent-glow)}}
+.bq-glow{animation:bqGlow .8s ease-out;}
+
+@keyframes bqMorph{0%{border-radius:var(--bq-radius)}50%{border-radius:calc(var(--bq-radius) + 4px)}100%{border-radius:var(--bq-radius)}}
+.bq-morph{animation:bqMorph .4s ease-in-out;}
+
+/* V2.1: Material-style ripple effect */
+.bq-ripple{position:relative;overflow:hidden;}
+.bq-ripple::after{content:'';position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,.25) 10%,transparent 10.01%);background-repeat:no-repeat;background-position:50%;transform:scale(10,10);opacity:0;transition:transform .5s,opacity 1s;}
+.bq-ripple:active::after{transform:scale(0,0);opacity:.2;transition:0s;}
+
+/* V2.1: Staggered message entrance */
+.bqr.bq-stagger-1{animation-delay:.04s;}
+.bqr.bq-stagger-2{animation-delay:.08s;}
+.bqr.bq-stagger-3{animation-delay:.12s;}
+.bqr.bq-stagger-4{animation-delay:.16s;}
+.bqr.bq-stagger-5{animation-delay:.2s;}
+
+/* V2.1: Animated online count badge */
+@keyframes bqCountPop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+.bq-count-pop{animation:bqCountPop .3s ease;}
 
 /* Smooth scroll */
 .bqmsgs{scroll-behavior:smooth;}
@@ -364,9 +395,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── BOTTOM NAV ── */
 #bqnav{
-  display:flex;border-top:1px solid var(--bq-border);
-  flex-shrink:0;background:var(--bq-bg-elevated);
+  display:flex;border-top:1px solid var(--bq-glass-border);
+  flex-shrink:0;background:var(--bq-glass-bg);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   padding:4px;gap:4px;
+  box-shadow:0 -4px 24px rgba(0,0,0,.2);
 }
 .bqnb{
   flex:1;padding:10px 4px;background:none;border:none;cursor:pointer;
@@ -378,8 +411,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqnb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;}
 .bqnb:hover{color:var(--bq-text-muted);background:var(--bq-bg-hover);}
 .bqnb:hover svg{transform:scale(1.1);}
-.bqnb.active{color:var(--bq-accent);background:rgba(96,165,250,.08);}
+.bqnb.active{color:var(--bq-accent);background:var(--bq-accent-soft);animation:bqNavPop .3s ease both;text-shadow:0 0 12px var(--bq-accent-glow);}
 .bqnb.active svg{stroke:var(--bq-accent);}
+@keyframes bqNavPop{0%{transform:scale(.85)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
 .bqnnb{
   position:absolute;top:4px;right:calc(50% - 20px);
   min-width:16px;height:16px;border-radius:8px;background:var(--bq-danger);
@@ -392,13 +426,15 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* ── HEADER ── */
 .bqhdr{
   display:flex;align-items:center;gap:10px;
-  padding:14px 16px;border-bottom:1px solid var(--bq-border);flex-shrink:0;
-  background:var(--bq-bg-elevated);
+  padding:14px 16px;border-bottom:1px solid var(--bq-glass-border);flex-shrink:0;
+  background:var(--bq-glass-bg);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
 }
 .bqlive{
   width:8px;height:8px;border-radius:50%;
   background:var(--bq-success);
-  box-shadow:0 0 10px var(--bq-success);
+  box-shadow:0 0 10px var(--bq-success),0 0 20px rgba(0,206,201,.3);
   flex-shrink:0;
 }
 .bqhtitle{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--bq-text);flex:1;}
@@ -421,9 +457,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── MESSAGES ── */
 .bqmsgs{flex:1;overflow-y:auto;padding:12px 14px 6px;display:flex;flex-direction:column;gap:2px;}
-.bqmsgs::-webkit-scrollbar{width:4px;}
-.bqmsgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
-.bqmsgs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
+.bqmsgs::-webkit-scrollbar{width:6px;}
+.bqmsgs::-webkit-scrollbar-track{background:transparent;}
+.bqmsgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px;transition:background .3s,opacity .3s;}
+.bqmsgs:hover::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);}
+.bqmsgs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22);}
 .bqds{
   display:flex;align-items:center;gap:10px;margin:14px 0 10px;
   font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.1em;font-weight:600;color:var(--bq-text-subtle);text-transform:uppercase;
@@ -441,16 +479,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* v18: directional entrance — theirs slides in from left, mine from right,
    with a soft scale pop and subtle blur fade. Applied only to the newest
    message so existing messages don't re-animate on scroll. */
-.bqr.theirs.bq-new{animation:bqBubbleInL .36s cubic-bezier(.22,1.2,.36,1) both;}
-.bqr.mine.bq-new{animation:bqBubbleInR .36s cubic-bezier(.22,1.2,.36,1) both;}
+.bqr.theirs.bq-new{animation:bqBubbleInL .45s cubic-bezier(.34,1.56,.64,1) both;}
+.bqr.mine.bq-new{animation:bqBubbleInR .45s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes bqBubbleInL{
-  0%{opacity:0;transform:translateX(-14px) translateY(6px) scale(.94);filter:blur(2px);}
-  60%{opacity:1;filter:blur(0);}
+  0%{opacity:0;transform:translateX(-16px) translateY(6px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);transform:translateX(2px) translateY(-1px) scale(1.02);}
   100%{opacity:1;transform:translateX(0) translateY(0) scale(1);filter:blur(0);}
 }
 @keyframes bqBubbleInR{
-  0%{opacity:0;transform:translateX(14px) translateY(6px) scale(.94);filter:blur(2px);}
-  60%{opacity:1;filter:blur(0);}
+  0%{opacity:0;transform:translateX(16px) translateY(6px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);transform:translateX(-2px) translateY(-1px) scale(1.02);}
   100%{opacity:1;transform:translateX(0) translateY(0) scale(1);filter:blur(0);}
 }
 /* v18: reply chip entrance — subtle slide-down from above the bubble */
@@ -464,11 +502,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* v18: soft bubble hover lift on desktop */
 @media (hover:hover){
   .bqr .bqbbl{transition:transform .22s var(--bq-transition),box-shadow .22s ease,filter .22s ease;}
-  .bqr:hover .bqbbl{transform:translateY(-1px);}
+  .bqr.theirs:hover .bqbbl{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.3);}
+  .bqr.mine:hover .bqbbl{transform:translateY(-1px);box-shadow:0 6px 20px rgba(96,165,250,.35);}
 }
 /* v18: tap ripple on bubble press (mobile) */
-.bqbbl{-webkit-tap-highlight-color:transparent;}
-.bqbbl:active{transform:scale(.985);transition:transform .08s ease;}
+.bqbbl:active{transform:scale(.985);transition:transform .08s ease;filter:brightness(.97);}
 .bqr.mine{align-items:flex-end;}
 .bqr.theirs{align-items:flex-start;}
 .bqri{display:flex;align-items:flex-end;gap:8px;max-width:78%;}
@@ -492,6 +530,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqav[data-status="studying"]::after{display:block;background:var(--bq-accent);}
 .bqav[data-status="away"]::after{display:block;background:var(--bq-warning);}
 .bqav[data-status="busy"]::after{display:block;background:var(--bq-danger);}
+/* V2.1: Presence heartbeat glow on avatars */
+.bqav[data-status="online"]{box-shadow:0 0 0 0 rgba(52,211,153,.4);animation:bqAvGlow 2.5s ease-in-out infinite;}
+@keyframes bqAvGlow{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.4)}50%{box-shadow:0 0 0 4px rgba(52,211,153,0)}}
 
 /* Column + meta (sender name only) */
 .bqcol{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:100%;}
@@ -502,7 +543,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqts{display:none;} /* legacy slot — timestamp now lives inside bubble */
 
 /* Reply preview */
-.bqrp{border-left:3px solid var(--bq-accent);padding:5px 9px;margin-bottom:6px;border-radius:0 8px 8px 0;background:rgba(96,165,250,.12);}
+.bqrp{border-left:3px solid var(--bq-accent);padding:5px 9px;margin-bottom:6px;border-radius:0 8px 8px 0;background:var(--bq-accent-soft);}
 .bqrp-n{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--bq-accent);}
 .bqrp-t{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;margin-top:2px;}
 .bqr.mine .bqrp{background:rgba(0,0,0,.18);border-left-color:rgba(255,255,255,.35);}
@@ -510,24 +551,19 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqr.mine .bqrp-t{color:rgba(255,255,255,.7);}
 
 /* Bubble */
-.bqbbl{
-  position:relative;
-  padding:8px 12px 6px;
-  font-family:'Inter',sans-serif;font-size:14px;font-weight:500;line-height:1.45;letter-spacing:.005em;
-  word-break:break-word;max-width:100%;
-}
+.bqbbl{position:relative;padding:8px 12px 6px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;line-height:1.45;letter-spacing:.005em;word-break:break-word;max-width:100%;-webkit-tap-highlight-color:transparent;transition:transform .18s var(--bq-transition),box-shadow .22s ease,background .2s ease,border-color .2s ease;}
 .bqr.theirs .bqbbl{
-  background:var(--bq-bg-elevated);
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
   border:1px solid var(--bq-border);
   border-radius:18px 18px 18px 4px;
   color:var(--bq-text);
 }
 .bqr.theirs.consec .bqbbl{border-radius:18px;}
 .bqr.mine .bqbbl{
-  background:linear-gradient(135deg,var(--bq-accent),#818cf8);
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe);
   color:#fff;
   border-radius:18px 18px 4px 18px;
-  box-shadow:0 4px 14px rgba(96,165,250,.28);
+  box-shadow:0 4px 14px rgba(108,92,231,.3);
 }
 .bqr.mine.consec .bqbbl{border-radius:18px;}
 .bqbbl a{color:var(--bq-accent);text-decoration:underline;text-decoration-color:rgba(96,165,250,.4);}
@@ -564,12 +600,14 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* Bubble hover actions */
 .bqbw{position:relative;display:flex;flex-direction:column;align-items:flex-end;}
 .bqr.theirs .bqbw{align-items:flex-start;}
+.bqacts{
   position:absolute;top:-44px;display:none;align-items:center;gap:4px;
   background:var(--bq-bg-elevated,#1f2937);border:1px solid var(--bq-border,rgba(255,255,255,.12));
   border-radius:var(--bq-radius-sm,10px);padding:5px;box-shadow:0 8px 24px rgba(0,0,0,.5);
   z-index:50;white-space:nowrap;max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:none;
 }
 /* If message is near the top of the chat, flip actions BELOW the bubble so they don't get clipped */
+.bqact{
   width:32px;height:32px;background:rgba(255,255,255,.04);border:none;cursor:pointer;
   border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
   font-size:16px;line-height:1;transition:all .15s;color:var(--bq-text,#e5e7eb);
@@ -597,7 +635,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-msg-inline .bq-ms-btn.danger{color:#ef4444;}
 .bq-msg-inline .bq-ms-btn span{display:none;}
 .bq-msg-inline .bq-ms-btn svg{width:16px;height:16px;}
-.bqbbl.msg-menu-open{outline:1px solid color-mix(in srgb,var(--bq-accent) 30%, transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--bq-accent) 10%, transparent);}
+.bqbbl.msg-menu-open{outline:1px solid color-mix(in srgb,var(--bq-accent) 30%, transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--bq-accent) 10%, transparent),0 2px 12px rgba(0,0,0,.18);}
+.bqr.mine .bqbbl.msg-menu-open{box-shadow:0 0 0 3px color-mix(in srgb,var(--bq-accent) 10%, transparent),0 6px 20px rgba(108,92,231,.30),inset 0 1px 0 rgba(255,255,255,.20);}
 .bq-presence{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,currentColor 12%, transparent);font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.02em;line-height:1.1;}
 .bq-presence-dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 16%, transparent);flex-shrink:0;}
 .bq-presence-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -690,6 +729,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-rx-emo:hover{background:var(--bq-bg-hover);transform:scale(1.25);}
 .bq-rx-emo:active{transform:scale(.95);}
 @media (max-width: 640px){.bq-ms-panel{max-width:min(200px,calc(100vw - 20px));}}
+.bq-gif-picker{
   position:absolute;top:-260px;display:none;flex-direction:column;width:280px;max-width:90vw;height:240px;
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px;padding:0;overflow:hidden;
   box-shadow:0 12px 32px rgba(0,0,0,.6);z-index:15;
@@ -729,9 +769,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqtd span{width:5px;height:5px;background:var(--bq-accent);border-radius:50%;animation:bqTd 1.4s ease infinite;opacity:.4;}
 .bqtd span:nth-child(2){animation-delay:.2s;}.bqtd span:nth-child(3){animation-delay:.4s;}
 @keyframes bqTd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+/* V2.1: Enhanced typing indicator with user names */
+.bq-typing-text{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--bq-text-muted);letter-spacing:.02em;margin-left:2px;}
+.bq-typing-text span{font-weight:700;}
+.bq-typing-active{animation:bqFade .2s ease both;}
 
 /* ── INPUT ── */
-.bqiw{border-top:1px solid var(--bq-border);padding:12px 14px;flex-shrink:0;background:var(--bq-bg-elevated);}
+.bqiw{border-top:1px solid var(--bq-glass-border);padding:12px 14px;flex-shrink:0;background:var(--bq-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 /* Quick Stickers panel (replaces plain emoji tray) */
 .bqiet{
   display:none;flex-wrap:wrap;gap:4px;padding:10px;margin-bottom:10px;
@@ -769,7 +813,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   100%{transform:scale(1) rotate(0);opacity:1;}
 }
 /* Bubble hover lift */
-.bqbbl{transition:transform .18s var(--bq-transition),box-shadow .2s ease;}
 .bqr:hover .bqbbl:not(.sticker){transform:translateY(-1px);}
 .bqr.mine:hover .bqbbl:not(.sticker){box-shadow:0 6px 20px rgba(96,165,250,.38);}
 /* Reaction pop animation */
@@ -787,7 +830,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqinp::-webkit-scrollbar{display:none;}
 .bqinp::placeholder{color:var(--bq-text-subtle);}
-.bqinp:focus{border-color:var(--bq-accent);background:var(--bq-bg);box-shadow:0 0 0 3px var(--bq-accent-glow);}
+.bqinp:focus{border-color:var(--bq-accent);background:var(--bq-bg);box-shadow:0 0 0 3px var(--bq-accent-soft),0 0 20px rgba(96,165,250,.15);}
+/* V2.1: Glow border on focused input */
+.bqnmi:focus,.bqiw textarea:focus{
+  border-color:var(--bq-accent);
+  box-shadow:0 0 0 3px var(--bq-accent-soft),0 0 20px rgba(96,165,250,.15);
+}
 .bqsnd{
   width:40px;height:40px;
   background:linear-gradient(135deg,var(--bq-accent),#818cf8);
@@ -795,7 +843,14 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:all .22s var(--bq-transition);
   box-shadow:0 4px 12px rgba(96,165,250,.3);
+  position:relative;overflow:visible;
 }
+.bqsnd::after{
+  content:'';position:absolute;inset:-3px;border-radius:calc(var(--bq-radius-sm) + 3px);
+  background:linear-gradient(135deg,var(--bq-accent),#818cf8);opacity:0;z-index:-1;
+  animation:bqSndGlow 2s ease-in-out infinite;
+}
+@keyframes bqSndGlow{0%,100%{opacity:0;transform:scale(1)}50%{opacity:.3;transform:scale(1.12);box-shadow:0 0 24px rgba(96,165,250,.4)}}
 .bqsnd:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(96,165,250,.45);}
 .bqsnd:active{transform:scale(.95);}
 .bqsnd:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none;}
@@ -805,11 +860,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqcc.warn{color:var(--bq-warning);}.bqcc.over{color:var(--bq-danger);}
 .bqih{font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.02em;color:var(--bq-text-subtle);opacity:.6;}
 
-/* ── SCROLL BTN ── */
-.bqscr{position:absolute;bottom:110px;right:16px;z-index:6;width:34px;height:34px;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:all .2s;}
-.bqscr.show{display:flex;animation:bqUp .2s ease both;}
-.bqscr:hover{border-color:var(--bq-border-hover);background:var(--bq-bg-hover);}
-.bqscr svg{width:16px;height:16px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+/* ── SCROLL BTN (see improved version below) ── */
 
 /* ── EMPTY ── */
 .bqempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-bottom:24px;animation:bqUp .4s ease both;}
@@ -818,8 +869,22 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(129,140,248,.15));
   border:1px solid rgba(96,165,250,.2);
   display:flex;align-items:center;justify-content:center;
+  position:relative;
 }
 .bqempty-ic svg{width:24px;height:24px;stroke:var(--bq-accent);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.bqempty-ic{animation:bqFloat 3s ease-in-out infinite;}
+@keyframes bqFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+/* V2.1: Subtle floating particle dots in empty states */
+@keyframes bqParticle{
+  0%,100%{transform:translateY(0) scale(1);opacity:.3;}
+  50%{transform:translateY(-12px) scale(1.2);opacity:.6;}
+}
+.bqempty-ic::before,.bqempty-ic::after{
+  content:'';position:absolute;width:4px;height:4px;border-radius:50%;
+  background:var(--bq-accent);opacity:.3;
+}
+.bqempty-ic::before{top:-8px;left:12px;animation:bqParticle 3s ease-in-out infinite;}
+.bqempty-ic::after{bottom:-6px;right:8px;animation:bqParticle 3.5s ease-in-out .5s infinite;}
 .bqempty-tx{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;color:var(--bq-text-subtle);text-transform:uppercase;}
 .bqempty-sub{font-family:'Inter',sans-serif;font-size:12px;letter-spacing:.04em;color:var(--bq-text-subtle);opacity:.7;}
 
@@ -841,6 +906,14 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   transition:transform .3s var(--bq-transition);
 }
 #bqpc.open .bqpc-card{transform:scale(1) translateY(0);}
+
+/* V2.1: Profile card smooth reveal */
+@keyframes bqCardReveal{
+  0%{opacity:0;transform:scale(.92) translateY(8px);}
+  60%{opacity:1;transform:scale(1.02) translateY(-1px);}
+  100%{opacity:1;transform:scale(1) translateY(0);}
+}
+.bqpc-inner{animation:bqCardReveal .4s cubic-bezier(.22,1,.36,1);}
 
 .bqpc-av{
   position:absolute;bottom:-24px;left:18px;
@@ -926,7 +999,14 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqdmr:hover{background:rgba(255,255,255,.03);border-left-color:rgba(96,165,250,.25);}
 .bqdmr.unread-row{border-left-color:var(--bq-accent);}
-.bqdmr.active-row{background:rgba(96,165,250,.06);border-left-color:var(--bq-accent);}
+.bqdmr.active-row{background:var(--bq-accent-soft);border-left-color:var(--bq-accent);}
+/* v2: DM row hover shimmer */
+.bqdmr::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,.06),transparent);
+  transform:translateX(-100%);transition:transform .5s ease;
+}
+.bqdmr:hover::after{transform:translateX(100%);}
 
 /* DM Avatar */
 .bqdmav{
@@ -1064,6 +1144,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqust{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);margin-top:2px;}
 .bquact{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.01em;color:var(--bq-text-subtle);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bqudmh{opacity:0;transition:opacity .2s;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.04em;color:var(--bq-accent);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:4px 10px;border-radius:4px;flex-shrink:0;white-space:nowrap;font-weight:600;}
+/* V2.2: Real-time activity indicator */
+.bq-activity{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;color:var(--bq-accent-secondary);letter-spacing:.02em;opacity:.8;margin-top:2px;display:flex;align-items:center;gap:4px;}
+.bq-activity-dot{width:4px;height:4px;border-radius:50%;background:var(--bq-accent-secondary);animation:bqPresencePulse 2s ease-in-out infinite;}
 
 /* ── NAME MODAL (APP-LIKE) ── */
 #bqnm{
@@ -1094,7 +1177,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqnmf{position:relative;margin-bottom:10px;}
 .bqnmat{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--bq-text-subtle);pointer-events:none;user-select:none;}
 .bqnmi{width:100%;background:var(--bq-bg);border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);padding:14px 16px 14px 30px;color:var(--bq-text);font-family:'Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:.02em;outline:none;transition:all .2s;}
-.bqnmi::placeholder{color:var(--bq-text-subtle);}.bqnmi:focus{border-color:var(--bq-accent);box-shadow:0 0 0 3px var(--bq-accent-glow);}
+.bqnmi::placeholder{color:var(--bq-text-subtle);}.bqnmi:focus{border-color:var(--bq-accent);box-shadow:0 0 0 3px var(--bq-accent-soft),0 0 20px rgba(96,165,250,.15);}
 .bqnmi.chk{border-color:rgba(251,191,36,.4);}.bqnmi.tkn{border-color:rgba(248,113,113,.5);}.bqnmi.ok{border-color:rgba(52,211,153,.5);}
 .bqnmst{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.04em;min-height:20px;margin-bottom:14px;transition:color .2s;}
 .bqnmst.chk{color:rgba(251,191,36,.8);}.bqnmst.tkn{color:var(--bq-danger);}.bqnmst.ok{color:var(--bq-success);}
@@ -1266,7 +1349,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 /* DM theirs bubble — slightly elevated */
 #bqdmmsgs .bqr.theirs .bqbbl{
-  background:linear-gradient(145deg,#1c1c24 0%,#181820 100%);
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.04));
   border-color:rgba(255,255,255,.09);
 }
 
@@ -1299,9 +1382,10 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── TOAST ── */
 #bqtoast{
-  position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:10px 18px;z-index:9999;opacity:0;
+  border-left:3px solid var(--bq-accent);
+  border-radius:0 var(--bq-radius-sm) var(--bq-radius-sm) 0;padding:10px 18px;z-index:9999;opacity:0;
   font-family:'Inter',sans-serif;font-size:13px;letter-spacing:.02em;color:var(--bq-text);font-weight:500;
   white-space:nowrap;pointer-events:none;transition:all .25s var(--bq-transition);
   box-shadow:0 8px 32px rgba(0,0,0,.5);
@@ -1416,8 +1500,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bq-dm-info{
   position:absolute;top:0;right:-100%;bottom:0;
   width:80%;max-width:260px;
-  background:var(--bq-bg-elevated);
-  border-left:1px solid var(--bq-border);
+  background:var(--bq-glass-bg);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-left:1px solid var(--bq-glass-border);
   z-index:120;
   transition:right .3s cubic-bezier(.16,1,.3,1);
   display:flex;flex-direction:column;overflow:hidden;
@@ -1563,11 +1648,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-theme-rose   #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#ec4899 0%,#f472b6 100%)!important;box-shadow:0 4px 16px rgba(236,72,153,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;}
 .bq-theme-mono   #bqdmmsgs .bqr.mine .bqbbl{background:linear-gradient(135deg,#27272a 0%,#3f3f46 100%)!important;box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)!important;}
 #bqp.bq-theme-bubblegum .bqr.mine .bqbbl{background:linear-gradient(135deg,#a855f7 0%,#ec4899 100%)!important;box-shadow:0 4px 18px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.2)!important;}
-/* v9: Crimson theme */
-#bqp.bq-theme-crimson{background:radial-gradient(ellipse at top,#1a0306 0%,#000 75%);}
-#bqp.bq-theme-crimson .bqr.mine .bqbbl{background:linear-gradient(135deg,#dc143c 0%,#9b1230 100%)!important;color:#fff!important;box-shadow:0 4px 18px rgba(220,20,60,.45),inset 0 1px 0 rgba(255,255,255,.18)!important;}
-#bqp.bq-theme-crimson .bqr.theirs .bqbbl{background:rgba(220,20,60,.10)!important;border-color:rgba(220,20,60,.25)!important;color:#fce7eb!important;}
-#bqp.bq-theme-crimson .bqun{color:#fca5a5!important;}
 /* v9: WhatsApp Light theme */
 #bqp.bq-theme-walight{background:#efeae2 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M20 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6z' fill='rgba(0,0,0,.03)'/%3E%3C/svg%3E");}
 #bqp.bq-theme-walight .bqdmh,#bqp.bq-theme-walight .bqiw{background:#075e54!important;color:#fff!important;}
@@ -1644,18 +1724,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqp.bq-theme-wadark .bqlst-item:hover,#bqp.bq-theme-wadark .bqdml:hover{background:#202c33!important;}
 #bqp.bq-theme-wadark .bq-info-section-title{color:#00a884!important;}
 #bqp.bq-theme-wadark input,#bqp.bq-theme-wadark textarea{background:#2a3942!important;color:#e9edef!important;border-color:#222e35!important;}
-
-#bqp.bq-theme-crimson .bqv,
-#bqp.bq-theme-crimson .bqlst,
-#bqp.bq-theme-crimson #bqdmlist,
-#bqp.bq-theme-crimson .bqcomp,
-#bqp.bq-theme-crimson .bqsettings,
-#bqp.bq-theme-crimson .bq-info-scroll,
-#bqp.bq-theme-crimson .bq-profile-scroll{background:transparent!important;color:#fce7eb!important;}
-#bqp.bq-theme-crimson .bqdmh,#bqp.bq-theme-crimson .bqgh,#bqp.bq-theme-crimson .bqsh,#bqp.bq-theme-crimson .bq-info-header,#bqp.bq-theme-crimson .bq-profile-header{background:linear-gradient(180deg,#1a0306,#0a0102)!important;color:#fce7eb!important;border-color:rgba(220,20,60,.25)!important;}
-#bqp.bq-theme-crimson .bqiw,#bqp.bq-theme-crimson .bqgi{background:rgba(220,20,60,.06)!important;border-color:rgba(220,20,60,.2)!important;}
-#bqp.bq-theme-crimson .bqlst-item:hover,#bqp.bq-theme-crimson .bqdml:hover{background:rgba(220,20,60,.08)!important;}
-#bqp.bq-theme-crimson .bq-info-section-title{color:#dc143c!important;}
 
 #bqp.bq-theme-black .bqv,
 #bqp.bq-theme-black .bqlst,
@@ -1789,9 +1857,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-skel{
   break-inside:avoid;margin-bottom:8px;width:100%;border-radius:10px;
   background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
-  background-size:200% 100%;animation:bqShim 1.2s linear infinite;
+  background-size:200% 100%;animation:bqShimSlide 1.2s linear infinite;
 }
-@keyframes bqShim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes bqShimSlide{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .bqgifp-empty{padding:30px 16px;text-align:center;font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-subtle);}
 .bqgifp-foot{padding:6px 10px;border-top:1px solid var(--bq-border);display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.06em;color:var(--bq-text-subtle);text-transform:uppercase;font-weight:700;}
 
@@ -1844,7 +1912,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-theme-chip[data-t="monochrome"]{background:linear-gradient(135deg,#e5e5e5,#0a0a0a);}
 .bq-theme-chip.sel::after{content:'';position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);}
 
-/* ── SCROLL TO BOTTOM BUTTON improved ── */
+/* ── SCROLL TO BOTTOM BUTTON improved (v2) ── */
 .bqscr{
   position:absolute;bottom:8px;right:14px;z-index:6;
   width:34px;height:34px;
@@ -1853,8 +1921,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   cursor:pointer;display:none;align-items:center;justify-content:center;
   box-shadow:0 4px 16px rgba(0,0,0,.5);transition:all .2s;
 }
-.bqscr.show{display:flex;animation:bqPop .2s ease both;}
-.bqscr:hover{border-color:var(--bq-border-hover);transform:scale(1.06);}
+.bqscr.show{display:flex;animation:bqPop .25s var(--bq-transition) both;}
+.bqscr:hover{border-color:var(--bq-border-hover);transform:scale(1.08);background:var(--bq-bg-hover);}
 .bqscr svg{width:15px;height:15px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 
 /* ── SEND ANIMATION ── */
@@ -1868,7 +1936,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── GENERAL SMOOTHNESS ── */
 .bqr{transition:opacity .2s;will-change:opacity;}
-.bqbbl{transition:background .2s,border-color .2s;}
 
 /* DM message entry — slides from side */
 #bqdmmsgs .bqr.mine{animation:bqSlideFromRight .28s var(--bq-transition) both;}
@@ -1929,12 +1996,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── v3: REDESIGNED BUBBLES ── */
 .bqr.mine .bqbbl{
-  background:linear-gradient(135deg,var(--bq-accent) 0%,#818cf8 100%)!important;
+  background:linear-gradient(135deg,#6c5ce7 0%,#a29bfe 100%)!important;
   border-radius:20px 20px 6px 20px;
   box-shadow:
-    0 6px 20px rgba(96,165,250,.30),
-    inset 0 1px 0 rgba(255,255,255,.20),
-    inset 0 -1px 0 rgba(0,0,0,.08);
+    0 6px 20px rgba(108,92,231,.35),
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.1);
   position:relative;overflow:hidden;
 }
 .bqr.mine .bqbbl::before{
@@ -1943,22 +2010,15 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqr.mine.consec .bqbbl{border-radius:20px 8px 8px 20px;}
 .bqr.theirs .bqbbl{
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02))!important;
-  border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
+  border:1px solid var(--bq-border);
   border-radius:20px 20px 20px 6px;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   box-shadow:0 2px 12px rgba(0,0,0,.18);
 }
 .bqr.theirs.consec .bqbbl{border-radius:8px 20px 20px 8px;}
-.bqbbl{transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .22s;}
-.bqr.mine:hover .bqbbl:not(.sticker){transform:translateY(-1px);box-shadow:0 10px 28px rgba(96,165,250,.42),inset 0 1px 0 rgba(255,255,255,.22);}
+.bqr.mine:hover .bqbbl:not(.sticker){transform:translateY(-1px);box-shadow:0 10px 28px rgba(108,92,231,.42),inset 0 1px 0 rgba(255,255,255,.22);}
 .bqr.theirs:hover .bqbbl:not(.sticker){border-color:rgba(255,255,255,.14);}
-@keyframes bqBubbleIn{
-  0%{opacity:0;transform:translateY(8px) scale(.94);}
-  60%{opacity:1;transform:translateY(-1px) scale(1.01);}
-  100%{opacity:1;transform:translateY(0) scale(1);}
-}
-.bqr .bqbbl{animation:bqBubbleIn .32s cubic-bezier(.16,1,.3,1) both;}
+
 
 /* Refined sticker bubble */
 .bqbbl.sticker{
@@ -1970,12 +2030,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   filter:drop-shadow(0 6px 14px rgba(0,0,0,.4));
   animation:bqStickerPop .5s cubic-bezier(.34,1.56,.64,1) both;
 }
-@keyframes bqStickerPop{
-  0%{opacity:0;transform:scale(.3) rotate(-12deg);}
-  60%{opacity:1;transform:scale(1.15) rotate(4deg);}
-  100%{opacity:1;transform:scale(1) rotate(0);}
-}
-
 /* Reply quote chip refinement */
 .bqrp{
   border-left:3px solid var(--bq-accent);
@@ -2210,6 +2264,61 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-theme-chip[data-t="none"]{background:linear-gradient(135deg,#0a0a0a,#1a1a1a);}
 .bq-theme-row{display:flex;flex-wrap:wrap;gap:6px;}
 
+/* ── V2: BUBBLE TAILS ── */
+/* Only theirs — mine uses ::before for gloss overlay so ::after would conflict with disappearing indicator */
+.bqr.theirs:not(.consec) .bqbbl::after{
+  content:'';position:absolute;bottom:8px;left:-6px;
+  width:0;height:0;
+  border-top:6px solid transparent;
+  border-bottom:6px solid transparent;
+  border-right:6px solid var(--bq-bg-elevated);
+}
+
+/* ── V2: SEARCH BAR ── */
+.bq-search-bar{display:none;padding:8px 12px;border-bottom:1px solid var(--bq-border);background:var(--bq-bg-elevated);flex-shrink:0;}
+.bq-search-bar.show{display:flex;align-items:center;gap:8px;animation:bqFade .15s ease both;}
+.bq-search-bar input{flex:1;background:var(--bq-bg);border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);padding:8px 12px;color:var(--bq-text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.bq-search-bar input:focus{border-color:var(--bq-accent);}
+.bq-search-bar input::placeholder{color:var(--bq-text-subtle);}
+.bq-search-close{width:28px;height:28px;background:none;border:none;cursor:pointer;color:var(--bq-text-subtle);display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all .15s;}
+.bq-search-close:hover{color:var(--bq-text);background:var(--bq-bg-hover);}
+.bq-search-close svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+.bq-search-count{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-subtle);white-space:nowrap;}
+.bqr.search-hidden{display:none!important;}
+.bqr.search-highlight .bqbbl{box-shadow:0 0 0 2px var(--bq-accent),0 0 12px var(--bq-accent-glow);}
+
+/* ── V2: LOADING SKELETONS ── */
+.bq-skeleton-row{display:flex;align-items:center;gap:12px;padding:12px 16px;animation:bqShim 1.5s ease infinite;}
+.bq-skeleton-av{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);}
+.bq-skeleton-text{flex:1;height:12px;border-radius:6px;background:rgba(255,255,255,.06);}
+.bq-skeleton-short{width:80px;height:10px;border-radius:5px;background:rgba(255,255,255,.04);}
+@keyframes bqShim{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* V2.2: Ambient floating orbs */
+.bq-ambient{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+.bq-ambient-orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.06;animation:bqOrbFloat 20s ease-in-out infinite;}
+.bq-ambient-orb:nth-child(1){width:200px;height:200px;background:var(--bq-accent);top:-40px;left:-40px;animation-delay:0s;}
+.bq-ambient-orb:nth-child(2){width:160px;height:160px;background:var(--bq-accent-secondary,#a29bfe);bottom:20%;right:-30px;animation-delay:-7s;animation-duration:25s;}
+.bq-ambient-orb:nth-child(3){width:120px;height:120px;background:var(--bq-success);bottom:-20px;left:30%;animation-delay:-14s;animation-duration:22s;}
+@keyframes bqOrbFloat{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(20px,-30px) scale(1.1)}50%{transform:translate(-10px,20px) scale(.9)}75%{transform:translate(15px,10px) scale(1.05)}}
+
+/* V2.2: Message badges */
+.bq-msg-badge{display:inline-block;font-family:'Inter',sans-serif;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;animation:bqPulse 2s ease-in-out infinite;}
+.bq-msg-badge.new{background:var(--bq-accent);color:#fff;}
+.bq-msg-badge.pinned{background:var(--bq-warning);color:#000;}
+
+/* V2.2: Enhanced date separator */
+.bqds{position:relative;}
+.bqds::before{content:'';position:absolute;top:50%;left:0;width:100%;height:1px;background:linear-gradient(to right,transparent,var(--bq-border),var(--bq-accent-soft),var(--bq-border),transparent);}
+
+/* V2.2: Glass card for panels */
+.bq-glass-card{background:var(--bq-glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--bq-glass-border);border-radius:var(--bq-radius);box-shadow:0 8px 32px rgba(0,0,0,.3);}
+
+/* V2.1: Respect reduced motion preferences */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+}
+
 `;
 
 /* ─────────────────────────────────────────
@@ -2223,6 +2332,7 @@ const HTML = `
 </button>
 
 <div id="bqp" role="dialog" aria-label="BioQuiz Chat">
+<div class="bq-ambient"><div class="bq-ambient-orb"></div><div class="bq-ambient-orb"></div><div class="bq-ambient-orb"></div></div>
 
   <!-- Profile card overlay -->
   <div id="bqpc">
@@ -2267,6 +2377,7 @@ const HTML = `
   <div class="bqhdr">
   <div class="bqlive"></div>
   <div class="bqhtitle">Global Chat</div>
+  <div id="bqgtopic" style="display:none;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--bq-text-muted);cursor:pointer;padding:2px 0;letter-spacing:.03em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Tap to set topic"></div>
   <div class="bqhdr-menu">
     <button class="bqhdr-menu-btn" id="bq-chat-menu-btn" title="Options">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
@@ -2281,11 +2392,19 @@ const HTML = `
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
         <span>Clear Chat</span>
       </div>
+      <div class="bqhdr-dropdown-divider"></div>
+      <div class="bqhdr-dropdown-item" id="bq-export-chat">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export Chat</span>
+      </div>
     </div>
   </div>
   <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
   <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
   </button>
+        <button class="bqhbtn" id="bq-search-btn" title="Search messages">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
         <button class="bqhbtn" id="bq-ren-btn" title="Change username">
           <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
         </button>
@@ -2409,7 +2528,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="monochrome" title="Monochrome"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="monochrome" title="Monochrome"></div><div class="bq-theme-chip" data-t="crimsondark" title="Crimson Dark"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -2587,6 +2706,7 @@ const HTML = `
          <div class="bq-if-th" data-t="ocean" title="Ocean"></div>
          <div class="bq-if-th" data-t="crimson" title="Crimson"></div>
          <div class="bq-if-th" data-t="monochrome" title="Monochrome"></div>
+         <div class="bq-if-th" data-t="crimsondark" title="Crimson Dark"></div>
        </div>
      </div>
     <div class="bq-if-sect">
@@ -2674,6 +2794,7 @@ let isOpen    = false;
 let gUnread   = 0;
 let dmUnread  = {};
 let onlineU   = {};
+let activityU={};  // V2.2: uid -> {action, ts, uname}
 let activeDmId= null;
 
 
@@ -2830,6 +2951,11 @@ function bqNav(targetView) {
   });
   
   activeView = targetView;
+  // V2.2: Real-time activity — view switch
+  if(db&&uid&&isOpen) db.ref('bq_activity/'+uid).update({action:'viewing_'+targetView,ts:Date.now(),uname:uname||''}).catch(()=>{});
+  // V2.1: Spring animation on view transition
+  const activeViewEl=document.getElementById('bqv-'+targetView);
+  if(activeViewEl){activeViewEl.classList.add('bq-breathe');setTimeout(()=>activeViewEl.classList.remove('bq-breathe'),500);}
   
   // Update nav buttons
   document.querySelectorAll('.bqnb').forEach(b => {
@@ -3013,7 +3139,19 @@ async function startDB(){
     await loadSDK();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();
+    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeChatTopic();
+    // V2.2: Subscribe to user activity
+    db.ref('bq_activity').on('value',snap=>{
+      activityU={};
+      const now=Date.now();
+      snap.forEach(c=>{
+        const d=c.val();
+        if(d&&now-d.ts<30000) activityU[c.key]=d; // 30s TTL
+        else if(d) c.ref.remove().catch(()=>{});
+      });
+      // Update online list if visible
+      if(activeView==='online') debouncedRenderOnlineList();
+    });
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 
@@ -3107,6 +3245,7 @@ function getColor(userId, userName){
 /* ─────────────────────────────────────────
    PRESENCE
 ───────────────────────────────────────── */
+let _presenceListenerRef = null; // v2: track presence listener ref for cleanup
 function startPresence(){
   if(!db||!uname)return;
   const ref=db.ref('bq_presence/'+uid);
@@ -3128,9 +3267,13 @@ function startPresence(){
   beat();clearInterval(presInt);
   presInt=setInterval(beat,PRESENCE_TTL*.7);
   ref.onDisconnect().remove();
+  // v2: detach previous presence listener before adding a new one to prevent memory leak
+  if(_presenceListenerRef){
+    try{ db.ref('bq_presence').off('value', _presenceListenerRef); }catch(_){}
+  }
   // v9: debounced presence handler (was firing renderOnlineList on every micro-update)
   let _presT=null;
-  db.ref('bq_presence').on('value',snap=>{
+  _presenceListenerRef = db.ref('bq_presence').on('value',snap=>{
     const now=Date.now();onlineU={};
     snap.forEach(c=>{
       const d=c.val();
@@ -3142,12 +3285,29 @@ function startPresence(){
     if(_presT) clearTimeout(_presT);
     _presT=setTimeout(()=>{
       _presT=null;
-      renderOnlineList();updateDmHdrStatus();
+      debouncedRenderOnlineList();updateDmHdrStatus();
       const n=Object.keys(onlineU).length;
-      const el=document.getElementById('bqocnt');if(el) el.textContent=n+' online';
+      const el=document.getElementById('bqocnt');
+      if(el){
+        const prev=parseInt(el.dataset.count||'0',10);
+        if(prev!==n){
+          el.textContent=n+' online';
+          el.dataset.count=String(n);
+          el.classList.remove('bq-count-pop');
+          void el.offsetWidth; // force reflow
+          el.classList.add('bq-count-pop');
+        }
+      }
       const nb=document.getElementById('bqonb');
-      if(nb&&n>0){nb.textContent=n;nb.classList.add('show');}else if(nb) nb.classList.remove('show');
+      if(nb&&n>0){
+        const prevNb=nb.textContent;
+        nb.textContent=n;
+        if(prevNb!==String(n)){nb.classList.remove('bq-count-pop');void nb.offsetWidth;nb.classList.add('bq-count-pop');}
+        nb.classList.add('show');
+      }else if(nb) nb.classList.remove('show');
       _debouncedApplyAvatars();
+      // V2.2: Write aggregate stats to DB
+      if(db) db.ref('bq_stats').update({onlineCount:n,lastUpdated:Date.now()}).catch(()=>{});
     }, 100);
   });
 }
@@ -3177,7 +3337,14 @@ function renderOnlineList(){
   list.innerHTML='';
   const entries=Object.entries(onlineU);
   if(!entries.length){
-    list.innerHTML='<div class="bqempty" style="margin-top:40px"><div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="bqempty-tx">No One Online</div><div class="bqempty-sub">Check back later</div></div>';
+    // v2: use DOM API instead of innerHTML for security
+    const e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
+    const ic=document.createElement('div');ic.className='bqempty-ic';
+    ic.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+    const tx=document.createElement('div');tx.className='bqempty-tx';tx.textContent='No One Online';
+    const sub=document.createElement('div');sub.className='bqempty-sub';sub.textContent='Check back later';
+    e.append(ic,tx,sub);
+    list.appendChild(e);
     return;
   }
   entries.sort((a,b)=>a[0]===uid?-1:b[0]===uid?1:(a[1].uname||'').localeCompare(b[1].uname||''));
@@ -3185,6 +3352,9 @@ function renderOnlineList(){
     const me=id===uid,n=d.uname||'?';
     const c=getColor(id,n);
     const pm=presenceMeta(id,d);
+    // V2.2: Show real-time activity
+    const act=activityU[id];
+    const actHTML=act&&act.action&&id!==uid?('<div class="bq-activity"><span class="bq-activity-dot"></span>'+esc(act.action.replace(/_/g,' '))+'</div>'):'';
     const row=document.createElement('div');
     row.className='bqurow'+(me?' isme':'');
     row.innerHTML=`
@@ -3193,6 +3363,7 @@ function renderOnlineList(){
         <div class="bquu">@${esc(n)}${me?'<span class="bquyou">YOU</span>':''}</div>
         <div class="bqust">${presenceBadgeHTML(pm, pm.label)}</div>
         ${d.activity?`<div class="bquact">${esc(d.activity)}</div>`:''}
+        ${actHTML}
       </div>
       ${!me?'<div class="bqudmh">Message</div>':''}`;
     if(!me) row.addEventListener('click',e=>{
@@ -3282,7 +3453,18 @@ function closeProfileCard(){
 ───────────────────────────────────────── */
 function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
-  ref.on('child_added',s=>renderMsg('global',s.val(),s.key));
+  ref.on('child_added',s=>{
+    const msg=s.val();
+    renderMsg('global',msg,s.key);
+    // V2.2: Mention notification flash
+    if(msg.uid!==uid&&msg.text&&msg.text.toLowerCase().includes('@'+(uname||'').toLowerCase())){
+      const panel=document.getElementById('bqp');
+      if(panel&&!panel.classList.contains('open')){
+        const b=document.getElementById('bqb');
+        if(b){b.classList.add('bq-glow');setTimeout(()=>b.classList.remove('bq-glow'),800);}
+      }
+    }
+  });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>document.getElementById('bqmsg-global-'+s.key)?.remove());
 }
@@ -3290,11 +3472,15 @@ function subscribeGlobal(){
 function subscribeGlobalTyping(){
   db.ref('bq_typing').on('value',snap=>{
     const now=Date.now(),ty=[];
-    snap.forEach(c=>{const d=c.val();if(c.key!==uid&&d&&now-d.ts<3800)ty.push('@'+(d.uname||'?'));});
+    snap.forEach(c=>{const d=c.val();if(c.key!==uid&&d&&now-d.ts<3800)ty.push({name:d.uname||'?',uid:c.key});});
     const el=document.getElementById('bqgtyp');if(!el)return;
-    if(!ty.length){el.innerHTML='';return;}
-    const lb=ty.length>2?ty.slice(0,2).join(', ')+' +'+(ty.length-2):ty.join(' & ');
-    el.innerHTML=`<div class="bqtd"><span></span><span></span><span></span></div><span>${lb} typing</span>`;
+    if(!ty.length){el.innerHTML='';el.classList.remove('bq-typing-active');return;}
+    const names=ty.map(t=>'<span style="color:'+uColor(t.name)+'">@'+esc(t.name)+'</span>');
+    const lb=names.length>3?names.slice(0,3).join(', ')+' +'+(names.length-3):names.join(' & ');
+    el.innerHTML='<div class="bqtd"><span></span><span></span><span></span></div><span class="bq-typing-text">'+lb+' typing</span>';
+    el.classList.add('bq-typing-active');
+    // V2.2: Write our own typing activity to activity path too
+    if(db&&uid&&ty.length>0) db.ref('bq_activity/'+uid).update({action:'typing',ts:Date.now(),uname:uname||''}).catch(()=>{});
   });
 }
 
@@ -3304,7 +3490,20 @@ function sendGlobal(text){
   const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
+  // V2.1: Optimistic scroll to bottom
+  const msgsEl=document.getElementById('bqgmsgs');
+  if(msgsEl) requestAnimationFrame(()=>{msgsEl.scrollTop=msgsEl.scrollHeight;});
+  // V2.2: /me slash command — renders as action message
+  if(text.trim().startsWith('/me ')){
+    p.type='action';
+    p.text=text.trim().slice(4);
+  }
   db.ref('bq_messages').push(p);
+  // V2.2: Real-time activity — user sent message
+  if(db&&uid) db.ref('bq_activity/'+uid).update({action:'sent_message',ts:Date.now(),uname:uname||''}).catch(()=>{});
+  // V2.1: Spring animation on send button
+  const sndBtn=document.getElementById('bqgsnd');
+  if(sndBtn){sndBtn.classList.add('bq-alive');setTimeout(()=>sndBtn.classList.remove('bq-alive'),600);}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
@@ -4110,7 +4309,8 @@ function setGTyp(on){
 }
 function setDmTyp(on){
   if(!db||!uname||!activeDmId)return;
-  on?db.ref('bq_dm_typing/'+activeDmId+'/'+uid).set({uname,ts:Date.now()}):db.ref('bq_dm_typing/'+activeDmId+'/'+uid).remove();
+  // v2: throttle DM typing same as global typing
+  on?_throttledTypingWrite('bq_dm_typing/'+activeDmId+'/'+uid,{uname,ts:Date.now()}):db.ref('bq_dm_typing/'+activeDmId+'/'+uid).remove();
   isDmTyp=on;
 }
 
@@ -4120,6 +4320,25 @@ function setDmTyp(on){
 function sendSys(path,text){
   if(!db)return;
   db.ref(path).push({type:'system',text,ts:Date.now()});
+}
+function setChatTopic(topic){
+  if(!db) return;
+  db.ref('bq_meta/topic').set({text:topic,ts:Date.now(),uname:uname||''}).catch(()=>{});
+}
+function subscribeChatTopic(){
+  if(!db) return;
+  db.ref('bq_meta/topic').on('value',snap=>{
+    const d=snap.val();
+    const el=document.getElementById('bqgtopic');
+    if(!el) return;
+    if(d&&d.text){
+      el.textContent=d.text;
+      el.title='Set by @'+(d.uname||'?')+' — tap to change';
+      el.style.display='block';
+    } else {
+      el.style.display='none';
+    }
+  });
 }
 
 /* ─────────────────────────────────────────
@@ -4160,6 +4379,12 @@ function onMsgChanged(ctx,snap){
       bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
     }
   }
+  // V2.2: Mark message as delivered for other user's messages
+  const isMine=msg.uid===uid;
+  if(!isMine&&db&&msg.uid!==uid){
+    const deliveryPath=(ctx==='global'?'bq_messages':'bq_dms/'+activeDmId+'/messages')+'/'+snap.key+'/delivered/'+uid;
+    db.ref(deliveryPath).set(true).catch(()=>{});
+  }
   el.querySelector('.bqrxns')?.remove();
   if(msg.reactions) renderRxns(ctx,el,msg.reactions,snap.key);
 }
@@ -4175,6 +4400,9 @@ function renderRxns(ctx,rowEl,rxns,key){
     const btn=document.createElement('button');
     btn.className='bqrxn'+(mine?' mr':'');
     btn.innerHTML=`${e}<span class="bqrxn-n">${uids.length}</span>`;
+    btn.title=uids.length+' reaction'+(uids.length!==1?'s':'');
+    // V2.1: Spring animation on new reactions
+    if(!rowEl.querySelector('.bqrxns')){btn.classList.add('bq-alive');setTimeout(()=>btn.classList.remove('bq-alive'),600);}
     btn.addEventListener('click',ev=>{ev.stopPropagation();toggleRxn(ctx,key,e);});
     div.appendChild(btn);
   });
@@ -4231,6 +4459,14 @@ function renderMsg(ctx,msg,key){
     msgsEl.appendChild(d);scrollD(ctx);return;
   }
 
+  // V2.2: /me action message type
+  if(msg.type==='action'){
+    const d=document.createElement('div');d.id=pfx+key;d.className='bqsys';d.style.fontStyle='italic';d.style.color='var(--bq-accent)';
+    const col=getColor(msg.uid,msg.uname||'');
+    d.innerHTML='<span style="color:'+col+';font-weight:700">@'+esc(msg.uname||'?')+'</span> '+esc(msg.text);
+    msgsEl.appendChild(d);scrollD(ctx);return;
+  }
+
   const isMine=msg.uid===uid;
   const ts=msg.ts||Date.now();
   const msgDate=new Date(ts);
@@ -4265,7 +4501,11 @@ function renderMsg(ctx,msg,key){
   // directional slide-in animation; strip the class after it plays.
   if(ts && (Date.now()-ts) < 15000){
     row.classList.add('bq-new');
-    setTimeout(()=>{ try{ row.classList.remove('bq-new'); }catch(_){}},600);
+    // V2.1: Add stagger class based on sibling count for batch loads
+    const siblings=msgsEl.querySelectorAll('.bqr.bq-new').length;
+    const stagger=Math.min(siblings,5);
+    if(stagger>1) row.classList.add('bq-stagger-'+stagger);
+    setTimeout(()=>{ try{ row.classList.remove('bq-new'); row.classList.remove(/bq-stagger-\d/.test(row.className)?row.className.match(/bq-stagger-\d/)[0]:''); }catch(_){}},800);
   }
 
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+msg.imageData+'" alt="" loading="lazy">' : '';
@@ -4305,7 +4545,11 @@ function renderMsg(ctx,msg,key){
   // Mark if starred
   const _stars=getStarred();
   const _sdid=ctx==='global'?'global':(activeDmId||'');
-  if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred'); }
+  if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred');
+    // V2.2: Add visual pin indicator
+    const pinBadge=document.createElement('span');pinBadge.className='bq-msg-badge pinned';pinBadge.textContent='PINNED';
+    const metaEl=row.querySelector('.bqbbl-meta');if(metaEl) metaEl.prepend(pinBadge);
+  }
   msgsEl.appendChild(row);
   // Apply any cached read receipts to this newly rendered message
   if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
@@ -4641,8 +4885,16 @@ function scrollD(ctx, isMyMsg){
 ───────────────────────────────────────── */
 function openPanel(){
   document.getElementById('bqp').classList.add('open');
+  // V2.1: Spring animation on panel open
+  const panel=document.getElementById('bqp');
+  if(panel){panel.classList.add('bq-breathe');setTimeout(()=>panel.classList.remove('bq-breathe'),500);}
+  // V2.2: Real-time activity — user opened chat
+  if(db&&uid) db.ref('bq_activity/'+uid).update({action:'viewing_chat',ts:Date.now(),uname:uname||''}).catch(()=>{});
   document.getElementById('bqb').classList.add('open');
   isOpen=true;gUnread=0;updateBadges();gAtBot=true;
+  // V2.1: Show live indicator pulse
+  const liveDot=document.querySelector('.bqlive');
+  if(liveDot) liveDot.style.animation='bqPresencePulse 1.8s ease-in-out infinite';
   refreshMeAvatar();
   const m=document.getElementById('bqgmsgs');
   if(m) requestAnimationFrame(()=>m.scrollTop=m.scrollHeight);
@@ -4658,6 +4910,11 @@ function closePanel(){
   document.getElementById('bqp').classList.remove('open');
   document.getElementById('bqb').classList.remove('open');
   isOpen=false;setGTyp(false);clearTimeout(gTypT);
+  // V2.2: Real-time activity — user closed chat
+  if(db&&uid) db.ref('bq_activity/'+uid).remove().catch(()=>{});
+  // V2.1: Slow down live indicator when panel closed
+  const liveDot=document.querySelector('.bqlive');
+  if(liveDot) liveDot.style.animation='bqPresencePulse 3s ease-in-out infinite';
   if(activeDmId){setDmTyp(false);clearTimeout(dmTypT);}
   closeProfileCard();
 }
@@ -4897,8 +5154,97 @@ function setupInput(ctx){
 /* ────────────────────────��────────────────
    INIT
 ───────────────────────────────────────── */
+/* ─────────────────────────────────────────
+   V2: MESSAGE SEARCH
+───────────────────────────────────────── */
+let _searchBar = null;
+function toggleSearch(){
+  if(!_searchBar){
+    _searchBar = document.createElement('div');
+    _searchBar.className = 'bq-search-bar';
+    _searchBar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bq-text-subtle)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search messages..." autocomplete="off"><span class="bq-search-count"></span><button class="bq-search-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+    const hdr = document.querySelector('#bqv-chat .bqhdr');
+    if(hdr) hdr.after(_searchBar);
+    const inp = _searchBar.querySelector('input');
+    const countEl = _searchBar.querySelector('.bq-search-count');
+    const closeBtn = _searchBar.querySelector('.bq-search-close');
+    let _searchT = null;
+    inp.addEventListener('input',()=>{
+      clearTimeout(_searchT);
+      _searchT = setTimeout(()=>{
+        const q = inp.value.toLowerCase().trim();
+        const msgs = document.getElementById('bqgmsgs');
+        if(!msgs) return;
+        if(!q){
+          msgs.querySelectorAll('.bqr').forEach(r=>{r.classList.remove('search-hidden','search-highlight');});
+          countEl.textContent = '';
+          return;
+        }
+        let found = 0;
+        msgs.querySelectorAll('.bqr').forEach(r=>{
+          const txt = r.textContent.toLowerCase();
+          if(txt.includes(q)){r.classList.remove('search-hidden');r.classList.add('search-highlight');found++;}
+          else{r.classList.add('search-hidden');r.classList.remove('search-highlight');}
+        });
+        countEl.textContent = found ? found+' found' : 'No results';
+      },200);
+    });
+    closeBtn.addEventListener('click',()=>{closeSearch();});
+  }
+  const isOpen2 = _searchBar.classList.contains('show');
+  if(isOpen2){closeSearch();}
+  else{_searchBar.classList.add('show');_searchBar.querySelector('input').focus();}
+}
+function closeSearch(){
+  if(!_searchBar) return;
+  _searchBar.classList.remove('show');
+  const inp = _searchBar.querySelector('input');
+  if(inp) inp.value = '';
+  const countEl = _searchBar.querySelector('.bq-search-count');
+  if(countEl) countEl.textContent = '';
+  const msgs = document.getElementById('bqgmsgs');
+  if(msgs) msgs.querySelectorAll('.bqr').forEach(r=>r.classList.remove('search-hidden','search-highlight'));
+}
+
+/* ─────────────────────────────────────────
+   V2: CHAT EXPORT
+───────────────────────────────────────── */
+function exportChat(ctx){
+  const isG = ctx==='global';
+  const msgsEl = document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
+  if(!msgsEl) return;
+  const rows = msgsEl.querySelectorAll('.bqr');
+  let text = '=== BioQuiz Chat Export ===\n';
+  text += 'Date: ' + new Date().toLocaleString() + '\n\n';
+  rows.forEach(r=>{
+    const un = r.querySelector('.bqun')?.textContent||'';
+    const msg = r.querySelector('.bqbbl')?.textContent||'';
+    const ts = r.querySelector('.bqbbl-meta')?.textContent?.trim()||'';
+    if(un&&msg) text += '['+ts+'] '+un+': '+msg.trim()+'\n';
+  });
+  const blob = new Blob([text],{type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'chat-export-'+new Date().toISOString().slice(0,10)+'.txt';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Chat exported!');
+}
+
+/* ─────────────────────────────────────────
+   V2: DEBOUNCED RENDER ONLINE LIST
+───────────────────────────────────────── */
+let _renderOnlineT = null;
+function debouncedRenderOnlineList(){
+  clearTimeout(_renderOnlineT);
+  _renderOnlineT = setTimeout(renderOnlineList, 150);
+}
+
 function init(){
   document.getElementById('bqb').addEventListener('click',togglePanel);
+  // V2.1: Add ripple effect to key interactive elements
+  document.querySelectorAll('#bqb,.bqnb,.bqhbtn,.bqsnd,.bqpc-btn,.bqdmr,.bqurow').forEach(el=>{
+    el.classList.add('bq-ripple');
+  });
 
   // Name modal
   document.getElementById('bqnminp').addEventListener('input',e=>ckUN(e.target.value));
@@ -5003,7 +5349,20 @@ function init(){
 
   // Escape key
   document.addEventListener('keydown',e=>{
+    // v2: Ctrl/Cmd+K for search
+    if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+      e.preventDefault();
+      if(!isOpen){openPanel();setTimeout(toggleSearch,200);}
+      else toggleSearch();
+      return;
+    }
+    // v2: Ctrl/Cmd+Shift+F for fullscreen
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='F'){
+      e.preventDefault();toggleFS();return;
+    }
     if(e.key==='Escape'){
+      // v2: close search first if open
+      if(_searchBar&&_searchBar.classList.contains('show')){closeSearch();return;}
       if(document.getElementById('bqpc').classList.contains('open')){closeProfileCard();return;}
       if(activeView==='profile'){bqNav(prevView||'chat');return;}
       if(activeView==='dmconv'){bqNav(prevView||'dms');return;}
@@ -5016,6 +5375,8 @@ function init(){
       db.ref('bq_presence/'+uid).remove();
       db.ref('bq_typing/'+uid).remove();
       if(activeDmId) db.ref('bq_dm_typing/'+activeDmId+'/'+uid).remove();
+      // V2.2: Clean up activity on leave
+      db.ref('bq_activity/'+uid).remove().catch(()=>{});
     }
   });
 
@@ -5103,6 +5464,23 @@ function init(){
   
   // Ensure initial view is active
   document.getElementById('bqv-chat').classList.add('bq-active');
+  
+  // v2: Search button in chat header
+  document.getElementById('bq-search-btn')?.addEventListener('click',e=>{
+    e.stopPropagation();toggleSearch();
+  });
+  
+  // v2: Export chat menu item
+  document.getElementById('bq-export-chat')?.addEventListener('click',()=>{
+    chatMenu?.classList.remove('open');
+    exportChat('global');
+  });
+
+  // V2.2: Chat topic click handler
+  document.getElementById('bqgtopic')?.addEventListener('click',()=>{
+    const topic=prompt('Set chat topic:');
+    if(topic!==null&&topic.trim()) setChatTopic(topic.trim());
+  });
   }
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
@@ -5455,50 +5833,6 @@ document.addEventListener('click',function(e){
   if(e.target.closest('.bqbbl')) return;
   closeMsgActionSheet();
 }, true);
-
-document.addEventListener('click',function(e){
-  const btn=e.target.closest('.bq-voice-play');
-  if(!btn) return;
-  e.stopPropagation();
-  const wrap=btn.closest('.bq-voice-msg');
-  if(!wrap) return;
-  let audio=wrap._audio;
-  if(!audio){
-    audio=new Audio(wrap.dataset.audio);
-    wrap._audio=audio;
-    audio.addEventListener('timeupdate',()=>{
-      const bars=wrap.querySelectorAll('.bq-voice-bar');
-      const pct=Math.max(0, Math.min(1, audio.currentTime/(audio.duration||1)));
-      const cnt=Math.round(bars.length*pct);
-      bars.forEach((b,i)=>{
-        b.classList.toggle('played',i<cnt);
-        b.style.opacity = i<cnt ? '1' : '.42';
-      });
-      wrap.style.setProperty('--bq-voice-progress', String(pct));
-    });
-    audio.addEventListener('ended',()=>{
-      btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-      wrap.querySelectorAll('.bq-voice-bar').forEach(b=>{b.classList.remove('played');b.style.opacity='';});
-      wrap.style.setProperty('--bq-voice-progress', '0');
-    });
-  }
-  if(audio.paused){
-    document.querySelectorAll('.bq-voice-msg').forEach(other=>{
-      if(other!==wrap && other._audio && !other._audio.paused){
-        other._audio.pause();
-        other.querySelectorAll('.bq-voice-bar').forEach(b=>{b.classList.remove('played');b.style.opacity='';});
-        other.style.setProperty('--bq-voice-progress','0');
-        const otherBtn=other.querySelector('.bq-voice-play');
-        if(otherBtn) otherBtn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-      }
-    });
-    audio.play();
-    btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-  } else {
-    audio.pause();
-    btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-  }
-});
 
 /* ── PATCH renderMsg to emit voice bubble: monkeypatch via the fact that
    _gifHtml etc. already concat. We hook via a MutationObserver-free approach:
@@ -8022,40 +8356,7 @@ setTimeout(_injectProfileUploads,1500);
     if(tries>40) clearInterval(iv);
   },150);
 
-  // Version check — soft update, NEVER auto-reload (prevents reload loops when
-  // a CDN/SW keeps serving a stale chat-widget.js but version.json is fresh).
-  // We just clear our SW caches and expose window.BQ_UPDATE_AVAILABLE so the
-  // host page can show a "tap to update" banner if it wants.
-  try{
-    const RELOAD_KEY='bq_widget_reload_attempt';
-    fetch(VERSION_CHECK_URL+'?t='+Date.now(), {cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
-      if(!j || !j.version || j.version === WIDGET_VERSION) return;
-      console.info('[bq-widget] new version available:', j.version, '(running '+WIDGET_VERSION+')');
-      window.BQ_UPDATE_AVAILABLE = j.version;
-      // Best-effort: clear our own SW caches so the NEXT natural navigation
-      // picks up the new file. Do NOT reload here.
-      if('caches' in window){
-        try{ caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('bq-')).map(k=>caches.delete(k)))); }catch(_){}
-      }
-      // One-shot reload guard: only reload if we've never tried this session
-      // AND the host opted in via window.BQ_AUTO_RELOAD === true.
-      if(window.BQ_AUTO_RELOAD === true){
-        try{
-          if(sessionStorage.getItem(RELOAD_KEY)) {
-            console.warn('[bq-widget] update still pending after reload — cached script is stuck. Skipping further reloads.');
-            return;
-          }
-          sessionStorage.setItem(RELOAD_KEY, '1');
-          setTimeout(()=>location.reload(), 300);
-        }catch(_){}
-      }
-    }).catch(()=>{});
-    // Clear the guard once we're actually on the new version
-    try{
-      const stored = sessionStorage.getItem(RELOAD_KEY);
-      if(stored) sessionStorage.removeItem(RELOAD_KEY);
-    }catch(_){}
-  }catch(_){}
+  // PWA version check removed in v2.1
 })();
 
 /* ════════════════════════════════════════════════════════════
@@ -8599,7 +8900,7 @@ setInterval(()=>{ try{ wrapSenders(); patchEditWindow(); }catch(_){} }, 3000);
    - Recovery: bug fixes + Reclaim now uses DM history + profile/preferences
    - New features: ephemeral msgs (per-chat TTL), spoilers, polls,
      slash commands, drafts, scheduled messages, jump-to-unread,
-     swipe-to-reply, markdown, link previews, inline translate
+     swipe-to-reply, markdown, link previews
    ════════════════════════════════════════════════════════════════════════ */
 (function v23Patch(){
 'use strict';
@@ -9516,9 +9817,6 @@ function activeDmPuid(){
   .bq-linkprev img{width:56px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#222}
   .bq-linkprev .bq-lp-t{font-weight:600;font-size:13px;line-height:1.3;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .bq-linkprev .bq-lp-d{font-size:11px;opacity:.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  /* Translate badge */
-  .bq-tr-out{margin-top:6px;padding:6px 8px;background:rgba(96,165,250,.1);border-left:2px solid #60a5fa;border-radius:0 6px 6px 0;font-size:.95em}
-  .bq-tr-toggle{display:inline-block;margin-top:4px;font-size:11px;color:#9ad7ff;cursor:pointer;opacity:.8}
   /* Poll bubble */
   .bq-poll{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;margin:4px 0;min-width:220px;max-width:340px}
   .bq-poll-q{font-weight:700;margin-bottom:10px}
@@ -9551,7 +9849,7 @@ function activeDmPuid(){
   document.head.appendChild(s);
 })();
 
-/* ─────────── A) Markdown + spoiler + link previews + translate ─────────── */
+/* ─────────── A) Markdown + spoiler + link previews ─────────── */
 
 /* Render markdown safely from already-escaped HTML */
 function applyMarkdown(escaped){
@@ -9651,45 +9949,6 @@ const bubbleObs=new MutationObserver(muts=>{
   });
 });
 
-/* Translate via context menu (long-press) */
-function translateMessage(text, target='en'){
-  const url='https://lingva.ml/api/v1/auto/'+target+'/'+encodeURIComponent(text.slice(0,500));
-  return fetch(url).then(r=>r.json()).then(j=>j?.translation||null).catch(()=>null);
-}
-function attachTranslateUI(){
-  // Long-press any bubble shows a tiny "Translate" button; tap to translate.
-  let pressTimer=null, pressTarget=null;
-  const start=(e)=>{
-    const bbl=e.target.closest?.('.bqbbl'); if(!bbl) return;
-    const txt=bbl.textContent.trim(); if(txt.length<2) return;
-    pressTarget=bbl;
-    pressTimer=setTimeout(()=>{
-      if(bbl.querySelector('.bq-tr-toggle')) return;
-      const tog=document.createElement('div');
-      tog.className='bq-tr-toggle'; tog.textContent='🌐 Translate';
-      bbl.appendChild(tog);
-      tog.onclick=async(ev)=>{
-        ev.stopPropagation();
-        if(bbl.querySelector('.bq-tr-out')){
-          // toggle off
-          bbl.querySelector('.bq-tr-out').remove(); tog.textContent='🌐 Translate'; return;
-        }
-        tog.textContent='Translating…';
-        const t=await translateMessage(txt);
-        if(!t){ tog.textContent='🌐 Translate failed'; setTimeout(()=>tog.remove(),1500); return; }
-        const out=document.createElement('div'); out.className='bq-tr-out'; out.textContent=t;
-        bbl.appendChild(out); tog.textContent='Show original';
-        tog.onclick=()=>{ out.remove(); tog.textContent='🌐 Translate'; tog.onclick=null; setTimeout(()=>attachTranslateUI(),0); };
-      };
-      setTimeout(()=>{ if(tog.parentNode && !bbl.querySelector('.bq-tr-out')) tog.remove(); }, 6000);
-    }, 600);
-  };
-  const cancel=()=>{ if(pressTimer) clearTimeout(pressTimer); pressTimer=null; };
-  document.addEventListener('pointerdown', start, {passive:true});
-  document.addEventListener('pointerup', cancel, {passive:true});
-  document.addEventListener('pointercancel', cancel, {passive:true});
-  document.addEventListener('pointermove', cancel, {passive:true});
-}
 
 /* B) Slash commands + C) Polls — fully removed in v26 */
 
@@ -10000,7 +10259,6 @@ function boot(){
     bubbleObs.observe(document.body, {childList:true, subtree:true});
     document.querySelectorAll('.bqbbl').forEach(processBubble);
   }catch(_){}
-  try{ attachTranslateUI(); }catch(_){}
   try{ wireDrafts(); }catch(_){}
   try{ wireScheduleSendButton(); }catch(_){}
   try{ mountDisappearBtn(); }catch(_){}
@@ -10743,7 +11001,6 @@ polishCss.textContent=`
 .bqv2-quick-emoji button{background:none;border:0;font-size:20px;cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .12s ease,background .12s ease}
 .bqv2-quick-emoji button:hover{background:rgba(255,255,255,.1);transform:scale(1.25)}
 
-.bqbbl{transition:background-color .2s ease}
 .bqbbl.bqv2-doubletapped{animation:bqV2DoubleTap .5s ease}
 @keyframes bqV2DoubleTap{0%{transform:scale(1)}30%{transform:scale(1.04)}100%{transform:scale(1)}}
 `;
@@ -11428,8 +11685,8 @@ setInterval(()=>{
 ═══════════════════════════════════════ */
 (function(){
   'use strict';
-  var THEMES = ['golden','pure-black'];
-  var THEME_LABEL = { 'golden':'Golden Brown', 'pure-black':'Pure Black' };
+  var THEMES = ['golden','pure-black','crimsondark'];
+  var THEME_LABEL = { 'golden':'Golden Brown', 'pure-black':'Pure Black', 'crimsondark':'Crimson Dark' };
 
   /* ── 1. CSS: hide every old chip; style the two new ones; theme styles ── */
   var css = document.createElement('style');
@@ -11440,16 +11697,19 @@ setInterval(()=>{
     /* show only the two we keep */
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],',
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],',
+    '#bqp #bq-theme-chips .bq-theme-chip[data-t="crimsondark"],',
     '#bqp #bq-if-themes .bq-if-th[data-t="golden"],',
-    '#bqp #bq-if-themes .bq-if-th[data-t="pure-black"]{display:inline-block!important;}',
+    '#bqp #bq-if-themes .bq-if-th[data-t="pure-black"],',
+    '#bqp #bq-if-themes .bq-if-th[data-t="crimsondark"]{display:inline-block!important;}',
     /* swatch styles */
     '#bqp .bq-theme-chip[data-t="golden"],#bqp .bq-if-th[data-t="golden"]{background:linear-gradient(135deg,#d4a056 0%,#6b3a14 100%)!important;border:1px solid rgba(212,160,86,.5)!important;}',
     '#bqp .bq-theme-chip[data-t="pure-black"],#bqp .bq-if-th[data-t="pure-black"]{background:#000!important;border:1px solid rgba(255,255,255,.25)!important;}',
+    '#bqp .bq-theme-chip[data-t="crimsondark"],#bqp .bq-if-th[data-t="crimsondark"]{background:linear-gradient(135deg,#dc143c,#0a0406)!important;border:1px solid rgba(220,20,60,.5)!important;}',
     /* ── Theme: Golden Brown ── */
-    '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden{--bq-bg-elevated:#1a150d;background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
     '#bqp.bq-theme-golden .bqdmh,#bqp.bq-theme-golden .bqiw{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
     '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;}',
-    '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.10)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.15)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
     '#bqp.bq-theme-golden .bqun{color:#d4a056!important;}',
     '#bqp.bq-theme-golden .bqbbl-meta{color:rgba(244,227,199,.55)!important;}',
     /* ── Theme: Pure Black ── */
@@ -11459,6 +11719,14 @@ setInterval(()=>{
     '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl{background:#0a0a0a!important;color:#e5e5e5!important;border:1px solid rgba(255,255,255,.08)!important;}',
     '#bqp.bq-theme-pure-black .bqun{color:#fff!important;}',
     '#bqp.bq-theme-pure-black .bqbbl-meta{color:rgba(255,255,255,.45)!important;}',
+    /* ── Theme: Crimson Dark ── */
+    '#bqp.bq-theme-crimsondark{--bq-bg:#0a0406;--bq-bg-elevated:#140a0e;--bq-bg-hover:rgba(220,20,60,.06);--bq-border:rgba(220,20,60,.12);--bq-border-hover:rgba(220,20,60,.2);--bq-text:#f4e0e6;--bq-text-muted:rgba(244,224,230,.6);--bq-text-subtle:rgba(244,224,230,.3);--bq-accent:#dc143c;--bq-accent-secondary:#ff4d6d;--bq-accent-glow:rgba(220,20,60,.3);--bq-accent-soft:rgba(220,20,60,.12);--bq-glass-bg:rgba(20,10,14,.85);--bq-glass-border:rgba(220,20,60,.08);--bq-success:#34d399;--bq-warning:#fbbf24;--bq-danger:#ff4d6d;background:radial-gradient(ellipse at top,#1a060c 0%,#0a0406 75%)!important;color:#f4e0e6!important;}',
+    '#bqp.bq-theme-crimsondark .bqr.theirs .bqbbl{background:rgba(220,20,60,.10)!important;border:1px solid rgba(220,20,60,.18)!important;color:#f4e0e6!important;}',
+    '#bqp.bq-theme-crimsondark .bqr.mine .bqbbl{background:linear-gradient(135deg,#dc143c,#8b0000)!important;box-shadow:0 4px 16px rgba(220,20,60,.35)!important;color:#fff!important;}',
+    '#bqp.bq-theme-crimsondark .bqhdr{background:rgba(20,10,14,.9)!important;border-bottom-color:rgba(220,20,60,.15)!important;}',
+    '#bqp.bq-theme-crimsondark #bqnav{background:rgba(20,10,14,.9)!important;border-top-color:rgba(220,20,60,.15)!important;}',
+    '#bqp.bq-theme-crimsondark .bqnb.active{color:#dc143c!important;background:rgba(220,20,60,.12)!important;text-shadow:0 0 12px rgba(220,20,60,.4)!important;}',
+    '#bqp.bq-theme-crimsondark .bqlive{background:#dc143c!important;box-shadow:0 0 10px #dc143c!important;}',
     /* ── Living reactions overlay ── */
     '.bq-rxn-fly{position:fixed;pointer-events:none;font-size:42px;z-index:2147483647;will-change:transform,opacity;animation:bqRxnFly 1400ms cubic-bezier(.22,.61,.36,1) forwards;text-shadow:0 4px 16px rgba(0,0,0,.4);}',
     '@keyframes bqRxnFly{0%{transform:translate(-50%,0) scale(.4);opacity:0;}15%{transform:translate(-50%,-12px) scale(1.25);opacity:1;}70%{transform:translate(calc(-50% + var(--bq-dx,0px)),calc(-160px + var(--bq-dy,0px))) scale(1) rotate(var(--bq-rot,0deg));opacity:1;}100%{transform:translate(calc(-50% + var(--bq-dx,0px)),-260px) scale(.6) rotate(var(--bq-rot,0deg));opacity:0;}}',
@@ -11767,7 +12035,7 @@ setInterval(()=>{
     '#bqp.bq-theme-golden .bqcol{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
     '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;}',
     '#bqp.bq-theme-golden .bqr.mine .bqbbl,#bqp.bq-theme-golden .bqbbl.mine{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;}',
-    '#bqp.bq-theme-golden .bqr.theirs .bqbbl,#bqp.bq-theme-golden .bqbbl{background:rgba(212,160,86,.10)!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.22)!important;}',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl,#bqp.bq-theme-golden .bqbbl{background:rgba(212,160,86,.15)!important;color:#f4e3c7!important;border:1px solid rgba(212,160,86,.22)!important;}',
     '#bqp.bq-theme-golden .bqinp,#bqp.bq-theme-golden .bqdminp,#bqp.bq-theme-golden .bqginp,#bqp.bq-theme-golden .bqpf-inp,#bqp.bq-theme-golden .bqpf-textarea,#bqp.bq-theme-golden input,#bqp.bq-theme-golden textarea{background:rgba(212,160,86,.08)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.25)!important;}',
     '#bqp.bq-theme-golden ::placeholder{color:rgba(244,227,199,.45)!important;}',
     '#bqp.bq-theme-golden .bqsnd,#bqp.bq-theme-golden .bqdmsnd,#bqp.bq-theme-golden .bqgsnd,#bqp.bq-theme-golden .bqpf-savebtn,#bqp.bq-theme-golden .bqdmnewbtn,#bqp.bq-theme-golden .bq-confirm-btn{background:linear-gradient(135deg,#d4a056,#8a5a1f)!important;color:#1a0d04!important;border:none!important;}',
