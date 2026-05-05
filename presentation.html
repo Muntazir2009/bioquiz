@@ -21,7 +21,41 @@
   --ph:#a78bfa;--ph2:#7c3aed;--ph-dim:rgba(167,139,250,.12);--ph-border:rgba(167,139,250,.35);
   /* hormuz accent */
   --hz:#f59e0b;--hz-dim:rgba(245,158,11,.1);--hz-border:rgba(245,158,11,.35);
+  /* bio accent */
+  --bio:#f0f2ff;--bio-dim:rgba(240,242,255,.06);--bio-border:rgba(240,242,255,.22);
 }
+
+/* ── BIO accent (Cell Biology deck) — monochrome black & white ── */
+.pinned-card.bio-card{border-color:var(--bio-border);background:linear-gradient(135deg,#101218 0%,var(--dark2) 60%)}
+.pinned-card.bio-card:hover{box-shadow:0 16px 48px rgba(240,242,255,.06)}
+.bio-card .pinned-badge{background:var(--white);color:#000}
+.bio-card .pinned-eyebrow{color:var(--white)}
+.bio-card .pinned-meta{border-top-color:rgba(240,242,255,.14)}
+.bio-card .pinned-count{color:var(--white)}
+.bio-card .ptag{border-color:rgba(240,242,255,.22);color:rgba(240,242,255,.65)}
+
+.content-card.bio-card{background:linear-gradient(180deg,#0c0e14 0%,#0a0b10 100%);border:1px solid rgba(240,242,255,.12);border-left:3px solid var(--white);padding:34px 38px}
+.bio-card .content-body{font-size:1.18rem;line-height:1.72;color:rgba(240,242,255,.92);font-family:Georgia,'Times New Roman',serif;letter-spacing:.005em}
+.bio-card .content-body b{color:var(--white);font-weight:700}
+.bio-card .content-body ul{list-style:none;padding-left:0;margin:14px 0 6px}
+.bio-card .content-body li{padding:11px 16px 11px 18px;border-left:2px solid rgba(240,242,255,.28);background:rgba(240,242,255,.025);margin-bottom:8px;border-radius:0 6px 6px 0;font-size:1.1rem;transition:all .2s ease}
+.bio-card .content-body li:hover{background:rgba(240,242,255,.05);border-left-color:var(--white)}
+.bio-card .content-body br + br{display:block;content:"";margin-top:6px}
+.bio-card .kf{background:rgba(240,242,255,.04);border:1px solid rgba(240,242,255,.18);color:rgba(240,242,255,.88);font-family:var(--body);letter-spacing:.04em;text-transform:none;font-size:.78rem;padding:6px 12px}
+.bio-card .reveal-inner{border-color:rgba(240,242,255,.5);animation:rPulseBio 2.4s ease-in-out infinite}
+.bio-card .reveal-inner svg{stroke:var(--white)}
+.bio-card .reveal-inner span{color:var(--white)}
+@keyframes rPulseBio{0%,100%{box-shadow:0 0 0 0 rgba(240,242,255,.35)}50%{box-shadow:0 0 0 10px rgba(240,242,255,0)}}
+.panel-side.bio-panel{border-color:rgba(240,242,255,.18);background:#0a0b10;padding:14px}
+.slide-num.bio-num,.bio-num{color:rgba(240,242,255,.55);letter-spacing:.32em}
+.slide-heading.bio-heading,.bio-heading{color:var(--white);font-family:Georgia,'Times New Roman',serif;font-weight:400;font-style:italic;letter-spacing:-.01em}
+.slidesBar.bio-deck,.bio-deck{border-color:rgba(240,242,255,.16)}
+.bio-title{color:var(--white)}
+.bio-counter{color:rgba(240,242,255,.7)}
+.bio-img-fallback{display:flex;align-items:center;justify-content:center;text-align:center;padding:50px 24px;min-height:220px;background:#0a0b10;border:1px dashed rgba(240,242,255,.22);color:rgba(240,242,255,.55);font-family:Georgia,serif;font-style:italic;font-size:.95rem;letter-spacing:.02em;border-radius:6px;line-height:1.5}
+.bio-card .ans-mark{display:inline-block;padding:2px 10px;border:1px solid var(--white);border-radius:3px;font-family:var(--font);font-size:.7rem;letter-spacing:.18em;margin-right:8px;vertical-align:middle}
+.bio-card .ans-divider{height:1px;background:linear-gradient(90deg,rgba(240,242,255,.3),transparent);margin:18px 0}
+.bio-card .ans-correct{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:1px solid var(--white);background:rgba(240,242,255,.06);border-radius:4px;font-family:var(--font);font-size:.85rem;letter-spacing:.12em;color:var(--white);margin:6px 0 14px}
 html,body{height:100%;background:var(--bg);-webkit-font-smoothing:antialiased;color:var(--white);font-family:var(--body)}
 
 /* ── PAGES ── */
@@ -599,7 +633,7 @@ mark.hl:hover{filter:brightness(1.28)}
     <div class="ty-p"></div><div class="ty-p"></div>
   </div>
   <div class="ty-center">
-    <div class="ty-by">PRESENTATION BY FALAK</div>
+    <div class="ty-by"></div>
     <div class="ty-tag"><span class="ty-tag-text" id="ty-deck-name">BIOQUIZ</span></div>
     <div class="ty-main">
       <span class="ty-w1">THANK</span>
@@ -941,13 +975,148 @@ The lighter box accelerates <b>4× faster</b> than the heavier one for the same 
       {heading:'Conclusion', content:'The Strait of Hormuz is <b>tiny on a map</b> — just 33 km wide — yet it holds <b>enormous power over the world economy</b>.<br><br><b>Key takeaways:</b><ul><li>20% of global oil trade flows through it daily</li><li>No viable alternative route exists for most of this oil</li><li>Controlled by Iran on the north, Oman on the south</li><li>A flashpoint between world powers — watched 24/7</li><li><b>Geography really does control global economics</b></li></ul>',
        keyFacts:['Tiny strait, enormous global power','Geography controls economics']}
     ]
+  },
+
+  /* ── BIOLOGY · CELL ── */
+  {
+    id:'cell-biology-mcq',
+    tag:'BIOLOGY · CELL',
+    title:'Cell Biology MCQs',
+    pinned:true,
+    isBio:true,
+    desc:"NEET-style MCQs on cell organelles, membranes, and ribosomal synthesis — with answers and explanations.",
+    slides:[
+      {
+        heading:'Site of Active rRNA Synthesis',
+        content:`<i>Which one of the following is the site for active ribosomal RNA synthesis?</i><br><br>
+<ul>
+<li>(1) Nucleolus</li>
+<li>(2) Chromatin</li>
+<li>(3) Centrosome</li>
+<li>(4) Kinetochore</li>
+</ul>`,
+        keyFacts:['Question 92','Single correct answer']
+      },
+      {
+        heading:'Answer — Nucleolus',
+        imageUrl:'images/nucleolus.png',
+        imageCaption:'The nucleolus sits inside the nucleus',
+        content:`<div class="ans-correct">✓ Correct answer — (1) Nucleolus</div>
+The <b>nucleolus</b> is a small dense region inside the nucleus. Its main job is simple: it builds <b>ribosomal RNA</b> and assembles new ribosomes.<br>
+<div class="ans-divider"></div>
+<b>Why the others are wrong</b>
+<ul>
+<li><b>Chromatin</b> — stores DNA, but does not make rRNA on its own.</li>
+<li><b>Centrosome</b> — organises the spindle during cell division.</li>
+<li><b>Kinetochore</b> — the docking point on a chromosome for spindle fibres.</li>
+</ul>`,
+        keyFacts:['Nucleolus → makes rRNA','Found inside the nucleus']
+      },
+      {
+        heading:'Non-Membrane Organelles in All Cells',
+        content:`<i>Which non-membrane bound cell organelles are found in both prokaryotic and eukaryotic cells?</i><br><br>
+<ul>
+<li>(1) Centrosomes</li>
+<li>(2) Ribosomes</li>
+<li>(3) Lysosomes</li>
+<li>(4) Mitochondria</li>
+</ul>`,
+        keyFacts:['Question 148','Found in both cell types']
+      },
+      {
+        heading:'Answer — Ribosomes',
+        imageUrl:'images/ribosome.png',
+        imageCaption:'Ribosomes — the universal protein factories',
+        content:`<div class="ans-correct">✓ Correct answer — (2) Ribosomes</div>
+<b>Ribosomes</b> are the only organelles found in <i>every</i> living cell. They have no membrane around them and their job is to <b>build proteins</b>.<br>
+<div class="ans-divider"></div>
+<b>Why the others are wrong</b>
+<ul>
+<li><b>Centrosomes</b> — missing in most plant cells and in all prokaryotes.</li>
+<li><b>Lysosomes</b> — membrane-bound, found only in eukaryotes.</li>
+<li><b>Mitochondria</b> — double-membrane bound, eukaryotes only.</li>
+</ul>
+<b>Bonus:</b> prokaryotic ribosomes are <b>70S</b>, eukaryotic ones are <b>80S</b>.`,
+        keyFacts:['Present in every cell','70S in prokaryotes, 80S in eukaryotes']
+      },
+      {
+        heading:'Cell Organelles — Correct Statements',
+        content:`<i>Choose the correct statements about cell organelles:</i><br><br>
+<ul>
+<li><b>A.</b> Endomembrane system includes Golgi, ER and mitochondria.</li>
+<li><b>B.</b> Rough ER carries ribosomes on its surface.</li>
+<li><b>C.</b> Mitochondria and plastids both contain circular DNA.</li>
+<li><b>D.</b> Cytoskeleton is a network of microtubules, microfilaments and intermediate filaments.</li>
+<li><b>E.</b> Mitochondrion has a single membrane.</li>
+</ul>
+<br>
+<ul>
+<li>(1) C, D and E only</li>
+<li>(2) A and B only</li>
+<li>(3) A, B and C only</li>
+<li>(4) B, C and D only</li>
+</ul>`,
+        keyFacts:['Question 152','Five statements to check']
+      },
+      {
+        heading:'Answer — B, C and D',
+        imageUrl:'images/endomembrane.png',
+        imageCaption:'Endomembrane system at a glance',
+        content:`<div class="ans-correct">✓ Correct answer — (4) B, C and D only</div>
+<b>Going through each statement</b>
+<ul>
+<li><b>A — False.</b> Mitochondria are <i>not</i> part of the endomembrane system. That system is only ER, Golgi, lysosomes, vacuoles and the plasma membrane.</li>
+<li><b>B — True.</b> Rough ER gets its name from the ribosomes stuck to its outer surface.</li>
+<li><b>C — True.</b> Both mitochondria and plastids carry their own small circular DNA — a clue to their bacterial origin.</li>
+<li><b>D — True.</b> The cytoskeleton is exactly that — three kinds of fibres working together.</li>
+<li><b>E — False.</b> Mitochondria have a <b>double</b> membrane, not a single one.</li>
+</ul>`,
+        keyFacts:['Mitochondria = double membrane','Endomembrane system excludes mitochondria']
+      },
+      {
+        heading:'Cell Membrane — Correct Statements',
+        content:`<i>Select the correct statements about the eukaryotic cell membrane:</i><br><br>
+<ul>
+<li><b>A.</b> Human RBC membrane is about 52% protein.</li>
+<li><b>B.</b> Phospholipids are arranged in a bilayer.</li>
+<li><b>C.</b> Inward extensions of the plasma membrane form mesosomes.</li>
+<li><b>D.</b> The lipid tails (inside) are hydrophobic and stay away from water.</li>
+<li><b>E.</b> Glycocalyx is on the outer surface of the membrane.</li>
+</ul>
+<br>
+<ul>
+<li>(1) A, C and E only</li>
+<li>(2) B, C and E only</li>
+<li>(3) C, D and E only</li>
+<li>(4) A, B and D only</li>
+</ul>`,
+        keyFacts:['Question 163','Eukaryotic cell membrane']
+      },
+      {
+        heading:'Answer — A, B and D',
+        imageUrl:'images/plasma-membrane.png',
+        imageCaption:'Fluid mosaic model of the plasma membrane',
+        content:`<div class="ans-correct">✓ Correct answer — (4) A, B and D only</div>
+<b>Going through each statement</b>
+<ul>
+<li><b>A — True.</b> An RBC membrane is roughly 52% protein and 40% lipid.</li>
+<li><b>B — True.</b> Phospholipids always form a bilayer — the basic plan of every membrane.</li>
+<li><b>C — False.</b> Mesosomes are a <b>prokaryotic</b> feature, not eukaryotic. This single fact eliminates every option that includes C.</li>
+<li><b>D — True.</b> The fatty acid tails face inward, hidden from water; the polar heads face outward.</li>
+<li><b>E — False here.</b> Glycocalyx <i>is</i> on the outer surface, but the question asks for the option whose statements are <i>all</i> correct, and option (4) is the only such set.</li>
+</ul>
+<div class="ans-divider"></div>
+<b>Shortcut:</b> any option containing C must be wrong, because mesosomes are prokaryotic.`,
+        keyFacts:['Mesosomes = prokaryotes only','RBC membrane ≈ 52% protein']
+      }
+    ]
   }
 ];
 
 /* ══════════════════════════════════
    PAGE ROUTING
 ══════════════════════════════════ */
-var prevPage='menu', currentIsHormuz=false, currentIsPhysics=false, currentDeckTitle='', currentTot=0;
+var prevPage='menu', currentIsHormuz=false, currentIsPhysics=false, currentIsBio=false, currentDeckTitle='', currentTot=0;
 function showPage(id){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById('pg-'+id); if(el) el.classList.add('active');
@@ -960,16 +1129,20 @@ function showPage(id){
   var grid=document.getElementById('pinnedGrid');
   TOPICS.filter(function(t){return t.pinned}).forEach(function(t){
     var isP=!!t.isPhysics;
+    var isB=!!t.isBio;
+    var cls=isB?'bio-card':isP?'ph-card':'hz-card';
+    var badge=isB?'🧬 BIOLOGY':isP?'⚛ PHYSICS':'📍 FEATURED';
+    var tags=isB?'<div class="ptag">MCQs</div><div class="ptag">NEET</div>':isP?'<div class="ptag">EQUATIONS</div><div class="ptag">DIAGRAMS</div>':'<div class="ptag">GEOPOLITICS</div><div class="ptag">GEOGRAPHY</div>';
     var card=document.createElement('div');
-    card.className='pinned-card '+(isP?'ph-card':'hz-card');
+    card.className='pinned-card '+cls;
     card.innerHTML=
-      '<div class="pinned-badge">'+(isP?'⚛ PHYSICS':'📍 FEATURED')+'</div>'+
+      '<div class="pinned-badge">'+badge+'</div>'+
       '<div class="pinned-eyebrow">'+t.tag+'</div>'+
       '<div class="pinned-title">'+t.title+'</div>'+
       '<div class="pinned-desc">'+t.desc+'</div>'+
       '<div class="pinned-meta">'+
         '<div class="pinned-count">▶ '+t.slides.length+' SLIDES</div>'+
-        (isP?'<div class="ptag">EQUATIONS</div><div class="ptag">DIAGRAMS</div>':'<div class="ptag">GEOPOLITICS</div><div class="ptag">GEOGRAPHY</div>')+
+        tags+
       '</div>';
     card.onclick=function(){prevPage='menu';buildDeck(t);showPage('slides');};
     grid.appendChild(card);
@@ -1075,6 +1248,7 @@ function buildDeck(data){
   deck=data.slides;tot=deck.length;cur=0;
   currentIsHormuz=!!(data.id==='hormuz');
   currentIsPhysics=!!(data.isPhysics||data.id==='physics-newton');
+  currentIsBio=!!(data.isBio||data.id==='cell-biology-mcq');
   currentDeckTitle=data.title||'';currentTot=tot;
 
   // Watermark only on physics
@@ -1089,10 +1263,11 @@ function buildDeck(data){
   var bar=document.getElementById('slidesBar');
   var titleEl=document.getElementById('deckTitle');
   var counter=document.getElementById('slideCounter');
-  bar.classList.remove('hz-deck','ph-deck');
-  titleEl.classList.remove('hz-title','ph-title');
-  counter.classList.remove('hz-counter','ph-counter');
-  if(currentIsHormuz){bar.classList.add('hz-deck');titleEl.classList.add('hz-title');counter.classList.add('hz-counter');}
+  bar.classList.remove('hz-deck','ph-deck','bio-deck');
+  titleEl.classList.remove('hz-title','ph-title','bio-title');
+  counter.classList.remove('hz-counter','ph-counter','bio-counter');
+  if(currentIsBio){bar.classList.add('bio-deck');titleEl.classList.add('bio-title');counter.classList.add('bio-counter');}
+  else if(currentIsHormuz){bar.classList.add('hz-deck');titleEl.classList.add('hz-title');counter.classList.add('hz-counter');}
   else if(currentIsPhysics){bar.classList.add('ph-deck');titleEl.classList.add('ph-title');counter.classList.add('ph-counter');}
   titleEl.textContent=data.title||'';
   document.getElementById('totN').textContent=tot;
@@ -1101,25 +1276,31 @@ function buildDeck(data){
   deck.forEach(function(sl,i){
     var isPhSl=currentIsPhysics;
     var isHzSl=currentIsHormuz;
+    var isBioSl=currentIsBio;
     var hasDiagram=!!(sl.diagramKey&&DIAGRAMS[sl.diagramKey]);
     // AI gen: image panel
     var hasImg=!!(sl.imageUrl);
     var hasPanel=hasDiagram||hasImg;
 
-    var cardCls='content-card'+(isPhSl?' ph-card':isHzSl?' hz-card':'');
-    var numCls='slide-num'+(isPhSl?' ph-num':isHzSl?' hz-num':'');
-    var headCls='slide-heading'+(isPhSl?' ph-heading':isHzSl?' hz-heading':'');
-    var revColor=isPhSl?'var(--ph)':isHzSl?'var(--hz)':'var(--white)';
+    var cardCls='content-card'+(isBioSl?' bio-card':isPhSl?' ph-card':isHzSl?' hz-card':'');
+    var numCls='slide-num'+(isBioSl?' bio-num':isPhSl?' ph-num':isHzSl?' hz-num':'');
+    var headCls='slide-heading'+(isBioSl?' bio-heading':isPhSl?' ph-heading':isHzSl?' hz-heading':'');
+    var revColor=isBioSl?'var(--bio)':isPhSl?'var(--ph)':isHzSl?'var(--hz)':'var(--white)';
 
     var kfHtml=sl.keyFacts&&sl.keyFacts.length?'<div class="kf-row">'+sl.keyFacts.map(function(f){return'<span class="kf">'+f+'</span>';}).join('')+'</div>':'';
 
     var panelHtml='';
     if(hasDiagram){
-      var pCls='panel-side'+(isPhSl?' ph-panel':isHzSl?' hz-panel':'');
+      var pCls='panel-side'+(isBioSl?' bio-panel':isPhSl?' ph-panel':isHzSl?' hz-panel':'');
       panelHtml='<div class="'+pCls+'">'+DIAGRAMS[sl.diagramKey]+'<div class="panel-label">'+(sl.diagramLabel||'')+'</div></div>';
     }else if(hasImg){
-      panelHtml='<div class="panel-side'+(isHzSl?' hz-panel':isPhSl?' ph-panel':'')+'">'+
-        '<img src="'+sl.imageUrl+'" alt="" style="width:100%;height:auto;display:block;border-radius:4px;object-fit:cover;max-height:260px" loading="lazy" onerror="this.style.display=\'none\'">'+
+      var panelCls='panel-side'+(isBioSl?' bio-panel':isHzSl?' hz-panel':isPhSl?' ph-panel':'');
+      var capText=(sl.imageCaption||'IMAGE').replace(/'/g,"\\'");
+      var onErr=isBioSl
+        ? "this.outerHTML='<div class=\\'bio-img-fallback\\'>"+capText.replace(/"/g,'&quot;')+"</div>'"
+        : "this.style.display='none'";
+      panelHtml='<div class="'+panelCls+'">'+
+        '<img src="'+sl.imageUrl+'" alt="" style="width:100%;height:auto;display:block;border-radius:4px;object-fit:cover;max-height:260px" loading="lazy" onerror="'+onErr+'">'+
         (sl.imageCaption?'<div class="panel-label">'+sl.imageCaption+'</div>':'')+
         '</div>';
     }
