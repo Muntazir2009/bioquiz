@@ -21,41 +21,138 @@
   --ph:#a78bfa;--ph2:#7c3aed;--ph-dim:rgba(167,139,250,.12);--ph-border:rgba(167,139,250,.35);
   /* hormuz accent */
   --hz:#f59e0b;--hz-dim:rgba(245,158,11,.1);--hz-border:rgba(245,158,11,.35);
-  /* bio accent */
-  --bio:#f0f2ff;--bio-dim:rgba(240,242,255,.06);--bio-border:rgba(240,242,255,.22);
+  /* bio accent — refined monochrome with subtle gradient highlighter */
+  --bio:#e5e7eb;                       /* soft off-white accent */
+  --bio-soft:#9ca3af;                  /* muted gray */
+  --bio-ink:#e8eaf0;                   /* body ink */
+  --bio-mute:#a1a5b0;                  /* secondary text */
+  --bio-dim:rgba(255,255,255,.04);
+  --bio-border:rgba(255,255,255,.16);
+  --bio-grad:linear-gradient(135deg,#ffffff 0%,#cfd2d8 45%,#7c818c 100%);
+  --bio-grad-soft:linear-gradient(120deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.08) 60%,rgba(255,255,255,0) 100%);
+  --bio-grad-line:linear-gradient(90deg,#ffffff 0%,#9ca3af 60%,rgba(156,163,175,0) 100%);
 }
 
-/* ── BIO accent (Cell Biology deck) — monochrome black & white ── */
-.pinned-card.bio-card{border-color:var(--bio-border);background:linear-gradient(135deg,#101218 0%,var(--dark2) 60%)}
-.pinned-card.bio-card:hover{box-shadow:0 16px 48px rgba(240,242,255,.06)}
-.bio-card .pinned-badge{background:var(--white);color:#000}
-.bio-card .pinned-eyebrow{color:var(--white)}
-.bio-card .pinned-meta{border-top-color:rgba(240,242,255,.14)}
-.bio-card .pinned-count{color:var(--white)}
-.bio-card .ptag{border-color:rgba(240,242,255,.22);color:rgba(240,242,255,.65)}
+/* ── BIO accent (Cell Biology deck) — Refined Monochrome + Gradient Highlights ── */
+.pinned-card.bio-card{border-color:var(--bio-border);background:linear-gradient(160deg,#0b0b0d 0%,#141418 100%);transition:transform .28s cubic-bezier(.16,1,.3,1),box-shadow .28s,border-color .28s}
+.pinned-card.bio-card:hover{transform:translateY(-4px);box-shadow:0 18px 48px rgba(255,255,255,.06);border-color:rgba(255,255,255,.32)}
+.bio-card .pinned-badge{background:var(--bio-grad);color:#0a0a0a;font-weight:900;border:none}
+.bio-card .pinned-eyebrow{color:#e5e7eb;letter-spacing:.18em}
+.bio-card .pinned-meta{border-top-color:rgba(255,255,255,.1)}
+.bio-card .pinned-count{background:var(--bio-grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+.bio-card .ptag{border-color:rgba(255,255,255,.22);color:#d6d8de;font-weight:600;background:rgba(255,255,255,.03)}
 
-.content-card.bio-card{background:linear-gradient(180deg,#0c0e14 0%,#0a0b10 100%);border:1px solid rgba(240,242,255,.12);border-left:3px solid var(--white);padding:34px 38px}
-.bio-card .content-body{font-size:1.18rem;line-height:1.72;color:rgba(240,242,255,.92);font-family:Georgia,'Times New Roman',serif;letter-spacing:.005em}
-.bio-card .content-body b{color:var(--white);font-weight:700}
-.bio-card .content-body ul{list-style:none;padding-left:0;margin:14px 0 6px}
-.bio-card .content-body li{padding:11px 16px 11px 18px;border-left:2px solid rgba(240,242,255,.28);background:rgba(240,242,255,.025);margin-bottom:8px;border-radius:0 6px 6px 0;font-size:1.1rem;transition:all .2s ease}
-.bio-card .content-body li:hover{background:rgba(240,242,255,.05);border-left-color:var(--white)}
+.content-card.bio-card{background:linear-gradient(180deg,#0c0c0f 0%,#0a0a0c 100%);border:1px solid rgba(255,255,255,.1);border-left:3px solid transparent;border-image:var(--bio-grad) 1;border-image-slice:1;padding:42px 48px;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 60px rgba(0,0,0,.55),inset 1px 0 0 rgba(255,255,255,.04)}
+.bio-card .content-body{font-size:1.28rem;line-height:1.85;color:var(--bio-ink);font-family:'Inter','Helvetica Neue','Segoe UI',Arial,sans-serif;font-weight:400;letter-spacing:.003em}
+/* gradient highlighter — subtle marker pen feel */
+.bio-card .content-body b{
+  background-image:var(--bio-grad-soft);
+  background-repeat:no-repeat;
+  background-size:100% 62%;
+  background-position:0 88%;
+  color:#ffffff;font-weight:700;padding:0 4px;border-radius:2px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  border-bottom:1px solid rgba(255,255,255,.45);
+}
+.bio-card .content-body ul{list-style:none;padding-left:0;margin:18px 0 6px}
+.bio-card .content-body li{
+  position:relative;padding:14px 18px 14px 22px;
+  background:linear-gradient(90deg,rgba(255,255,255,.035),rgba(255,255,255,0));
+  border:1px solid rgba(255,255,255,.07);border-left:none;
+  margin-bottom:10px;border-radius:6px;font-size:1.16rem;font-weight:400;color:var(--bio-ink);
+  transition:all .28s cubic-bezier(.16,1,.3,1)
+}
+.bio-card .content-body li::before{
+  content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;
+  background:var(--bio-grad);
+}
+.bio-card .content-body li:hover{background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,0));transform:translateX(4px);border-color:rgba(255,255,255,.14)}
 .bio-card .content-body br + br{display:block;content:"";margin-top:6px}
-.bio-card .kf{background:rgba(240,242,255,.04);border:1px solid rgba(240,242,255,.18);color:rgba(240,242,255,.88);font-family:var(--body);letter-spacing:.04em;text-transform:none;font-size:.78rem;padding:6px 12px}
-.bio-card .reveal-inner{border-color:rgba(240,242,255,.5);animation:rPulseBio 2.4s ease-in-out infinite}
-.bio-card .reveal-inner svg{stroke:var(--white)}
-.bio-card .reveal-inner span{color:var(--white)}
-@keyframes rPulseBio{0%,100%{box-shadow:0 0 0 0 rgba(240,242,255,.35)}50%{box-shadow:0 0 0 10px rgba(240,242,255,0)}}
-.panel-side.bio-panel{border-color:rgba(240,242,255,.18);background:#0a0b10;padding:14px}
-.slide-num.bio-num,.bio-num{color:rgba(240,242,255,.55);letter-spacing:.32em}
-.slide-heading.bio-heading,.bio-heading{color:var(--white);font-family:Georgia,'Times New Roman',serif;font-weight:400;font-style:italic;letter-spacing:-.01em}
-.slidesBar.bio-deck,.bio-deck{border-color:rgba(240,242,255,.16)}
-.bio-title{color:var(--white)}
-.bio-counter{color:rgba(240,242,255,.7)}
-.bio-img-fallback{display:flex;align-items:center;justify-content:center;text-align:center;padding:50px 24px;min-height:220px;background:#0a0b10;border:1px dashed rgba(240,242,255,.22);color:rgba(240,242,255,.55);font-family:Georgia,serif;font-style:italic;font-size:.95rem;letter-spacing:.02em;border-radius:6px;line-height:1.5}
-.bio-card .ans-mark{display:inline-block;padding:2px 10px;border:1px solid var(--white);border-radius:3px;font-family:var(--font);font-size:.7rem;letter-spacing:.18em;margin-right:8px;vertical-align:middle}
-.bio-card .ans-divider{height:1px;background:linear-gradient(90deg,rgba(240,242,255,.3),transparent);margin:18px 0}
-.bio-card .ans-correct{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:1px solid var(--white);background:rgba(240,242,255,.06);border-radius:4px;font-family:var(--font);font-size:.85rem;letter-spacing:.12em;color:var(--white);margin:6px 0 14px}
+.bio-card .kf{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.22);color:#e5e7eb;font-family:var(--font);letter-spacing:.08em;text-transform:uppercase;font-weight:800;font-size:.78rem;padding:7px 14px;border-radius:4px}
+.bio-card .kf:first-child{background:var(--bio-grad);color:#0a0a0a;border:none}
+.bio-card .reveal-inner{border-color:var(--bio-border);animation:rPulseBio 2.4s ease-in-out infinite}
+.bio-card .reveal-inner svg{stroke:#e5e7eb}
+.bio-card .reveal-inner span{background:var(--bio-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+@keyframes rPulseBio{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.12)}50%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}
+.panel-side.bio-panel{border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,#0a0a0c,#070708);padding:16px;border-radius:6px}
+.panel-side.bio-panel .panel-label{color:#d6d8de;font-weight:700;letter-spacing:.06em}
+.slide-num.bio-num,.bio-num{color:rgba(255,255,255,.45);letter-spacing:.34em;font-weight:800}
+.slide-heading.bio-heading,.bio-heading{
+  background:var(--bio-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  font-family:var(--font);font-weight:900;font-style:normal;letter-spacing:-.015em;
+  font-size:clamp(2.1rem,3.8vw,2.95rem);line-height:1.08
+}
+.slide-heading.bio-heading::after{content:"";display:block;width:88px;height:4px;background:var(--bio-grad-line);margin-top:14px;border-radius:2px;animation:bioHeadingBar .6s cubic-bezier(.16,1,.3,1)}
+@keyframes bioHeadingBar{from{width:0;opacity:0}to{width:88px;opacity:1}}
+.slides-bar.bio-deck,.bio-deck{border-bottom-color:rgba(255,255,255,.18)}
+.bio-title{color:#f0f2ff !important;font-weight:800}
+.bio-counter{background:var(--bio-grad) !important;color:#0a0a0a !important;font-weight:900;border:none !important}
+.bio-img-fallback{display:flex;align-items:center;justify-content:center;text-align:center;padding:50px 24px;min-height:220px;background:linear-gradient(180deg,#0a0a0c,#070708);border:1px dashed rgba(255,255,255,.22);color:#c8cbd3;font-family:'Inter',sans-serif;font-style:italic;font-size:1rem;letter-spacing:.02em;border-radius:6px;line-height:1.55;font-weight:400}
+
+/* Study aids — definition / mnemonic / diagram callouts for better learning */
+.bio-card .study-card{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px 22px;margin:18px 0;position:relative;overflow:hidden}
+.bio-card .study-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bio-grad)}
+.bio-card .study-card .study-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bio-grad);color:#0a0a0a;font-family:var(--font);font-weight:900;font-size:.78rem;letter-spacing:.04em;flex-shrink:0}
+.bio-card .study-card .study-label{font-family:var(--font);font-size:.7rem;letter-spacing:.2em;color:#d6d8de;text-transform:uppercase;font-weight:800;margin-bottom:6px;opacity:.85}
+.bio-card .study-card .study-text{color:var(--bio-ink);font-size:1.05rem;line-height:1.6}
+
+/* MCQ enhanced styles — Monochrome with subtle gradient cues */
+.bio-card .mcq-q-box{background:linear-gradient(180deg,#0a0a0c,#080809);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:24px 26px 22px;margin-bottom:22px;position:relative}
+.bio-card .mcq-q-box::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;background:var(--bio-grad);border-radius:0 2px 2px 0}
+.bio-card .mcq-q-badge{position:absolute;top:-12px;left:18px;background:var(--bio-grad);color:#0a0a0a;font-family:var(--font);font-size:.6rem;font-weight:900;letter-spacing:.14em;padding:5px 14px;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.bio-card .mcq-q-text{font-style:normal;color:#f0f2ff;font-size:1.22rem;line-height:1.65;margin-top:4px;font-weight:500;letter-spacing:.002em}
+.bio-card .mcq-option{display:flex;align-items:flex-start;gap:14px;padding:15px 20px;margin-bottom:9px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0));transition:all .3s cubic-bezier(.16,1,.3,1)}
+.bio-card .mcq-option:hover{border-color:rgba(255,255,255,.28);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));transform:translateX(6px)}
+.bio-card .mcq-opt-num{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bio-grad);font-family:var(--font);font-size:.7rem;font-weight:900;color:#0a0a0a}
+.bio-card .mcq-opt-text{color:#e8eaf0;font-size:1.12rem;line-height:1.5;padding-top:5px;font-weight:400}
+
+/* Answer card styles — Monochrome */
+.bio-card .ans-correct{display:flex;align-items:center;gap:12px;padding:16px 22px;border:1px solid rgba(255,255,255,.28);background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border-radius:8px;font-family:var(--font);font-size:.92rem;letter-spacing:.1em;color:#fff;font-weight:900;margin:6px 0 20px;position:relative;overflow:hidden}
+.bio-card .ans-correct::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bio-grad)}
+.bio-card .ans-correct svg,.bio-card .ans-correct-icon{width:20px;height:20px;flex-shrink:0;color:#fff}
+.bio-card .ans-divider{height:1px;background:var(--bio-grad-line);margin:22px 0}
+.bio-card .ans-wrong-section{margin-top:4px}
+.bio-card .ans-wrong-title{font-family:var(--font);font-size:.72rem;letter-spacing:.16em;color:#d6d8de;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px;opacity:.9}
+.bio-card .ans-wrong-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.25),transparent)}
+.bio-card .ans-wrong-item{padding:13px 16px 13px 18px;border:1px solid rgba(255,255,255,.06);border-left:2px solid rgba(255,255,255,.28);background:linear-gradient(90deg,rgba(255,255,255,.025),rgba(255,255,255,0));margin-bottom:9px;border-radius:0 6px 6px 0;transition:all .25s;color:var(--bio-ink);font-weight:400}
+.bio-card .ans-wrong-item:hover{background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,0));border-left-color:rgba(255,255,255,.55);transform:translateX(3px)}
+.bio-card .ans-wrong-item b{color:#fff !important;font-weight:700;background:none;border:none;padding:0}
+.bio-card .ans-wrong-mark{display:inline-block;color:#d6d8de;font-family:var(--font);font-size:.78rem;font-weight:900;margin-right:8px;opacity:.7}
+.bio-card .ans-bonus,.bio-card .ans-shortcut{background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px 18px 14px 20px;margin-top:16px;font-size:1.08rem;color:var(--bio-ink);font-weight:400;position:relative;overflow:hidden}
+.bio-card .ans-bonus::before,.bio-card .ans-shortcut::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bio-grad)}
+.bio-card .ans-bonus b,.bio-card .ans-shortcut b{color:#fff !important;font-weight:700;background:none;border:none;padding:0}
+
+/* Staggered animations */
+.bio-card .mcq-option.bio-stagger{opacity:0;transform:translateY(14px);animation:bioOptIn .45s cubic-bezier(.16,1,.3,1) forwards}
+.bio-card .mcq-option.bio-stagger:nth-child(1){animation-delay:.06s}
+.bio-card .mcq-option.bio-stagger:nth-child(2){animation-delay:.14s}
+.bio-card .mcq-option.bio-stagger:nth-child(3){animation-delay:.22s}
+.bio-card .mcq-option.bio-stagger:nth-child(4){animation-delay:.30s}
+.bio-card .mcq-option.bio-stagger:nth-child(5){animation-delay:.38s}
+.bio-card .ans-wrong-item.bio-stagger{opacity:0;transform:translateX(-10px);animation:bioWrongIn .4s cubic-bezier(.16,1,.3,1) forwards}
+.bio-card .ans-wrong-item.bio-stagger:nth-child(1){animation-delay:.12s}
+.bio-card .ans-wrong-item.bio-stagger:nth-child(2){animation-delay:.22s}
+.bio-card .ans-wrong-item.bio-stagger:nth-child(3){animation-delay:.32s}
+.bio-card .ans-wrong-item.bio-stagger:nth-child(4){animation-delay:.42s}
+@keyframes bioOptIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes bioWrongIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+
+.bio-card .kf-row .kf{opacity:0;transform:translateY(8px);animation:bioKfIn .4s cubic-bezier(.16,1,.3,1) forwards}
+.bio-card .kf-row .kf:nth-child(1){animation-delay:.18s}
+.bio-card .kf-row .kf:nth-child(2){animation-delay:.30s}
+@keyframes bioKfIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Slide entrance + global micro-animations */
+.slide.active .slide-inner{animation:slideUpFade .45s cubic-bezier(.16,1,.3,1)}
+@keyframes slideUpFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.pinned-card{transition:transform .28s cubic-bezier(.16,1,.3,1),box-shadow .28s,border-color .28s}
+.pinned-card:hover{transform:translateY(-4px)}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+
+/* Bio card selection color */
+.bio-card .content-card ::selection,.content-card.bio-card ::selection{background:rgba(255,255,255,.85);color:#0a0a0a}
 html,body{height:100%;background:var(--bg);-webkit-font-smoothing:antialiased;color:var(--white);font-family:var(--body)}
 
 /* ── PAGES ── */
@@ -988,125 +1085,104 @@ The lighter box accelerates <b>4× faster</b> than the heavier one for the same 
     slides:[
       {
         heading:'Site of Active rRNA Synthesis',
-        content:`<i>Which one of the following is the site for active ribosomal RNA synthesis?</i><br><br>
-<ul>
-<li>(1) Nucleolus</li>
-<li>(2) Chromatin</li>
-<li>(3) Centrosome</li>
-<li>(4) Kinetochore</li>
-</ul>`,
-        keyFacts:['Question 92','Single correct answer']
+        content:`<div class="mcq-q-box"><div class="mcq-q-badge">Q.92</div><div class="mcq-q-text">Which one of the following is the site for active ribosomal RNA synthesis?</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">1</div><div class="mcq-opt-text">Nucleolus</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">2</div><div class="mcq-opt-text">Chromatin</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">3</div><div class="mcq-opt-text">Centrosome</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">4</div><div class="mcq-opt-text">Kinetochore</div></div>`,
+        keyFacts:['NEET Question 92','Single correct answer']
       },
       {
         heading:'Answer — Nucleolus',
         imageUrl:'images/nucleolus.png',
         imageCaption:'The nucleolus sits inside the nucleus',
-        content:`<div class="ans-correct">✓ Correct answer — (1) Nucleolus</div>
-The <b>nucleolus</b> is a small dense region inside the nucleus. Its main job is simple: it builds <b>ribosomal RNA</b> and assembles new ribosomes.<br>
+        content:`<div class="ans-correct">✓ &nbsp;Correct Answer — (1) Nucleolus</div>
+The <b>nucleolus</b> is a dense, spherical body found inside the nucleus. It is the <b>primary site</b> where ribosomal RNA (rRNA) is actively synthesised, and where ribosomal subunits are assembled before export to the cytoplasm.<br><br>
 <div class="ans-divider"></div>
-<b>Why the others are wrong</b>
-<ul>
-<li><b>Chromatin</b> — stores DNA, but does not make rRNA on its own.</li>
-<li><b>Centrosome</b> — organises the spindle during cell division.</li>
-<li><b>Kinetochore</b> — the docking point on a chromosome for spindle fibres.</li>
-</ul>`,
-        keyFacts:['Nucleolus → makes rRNA','Found inside the nucleus']
+<div class="ans-wrong-title">WHY THE OTHERS ARE WRONG</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Chromatin</b> — Houses DNA in a loosely packed form, but does not independently synthesise rRNA.</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Centrosome</b> — Organises the mitotic spindle during cell division; unrelated to RNA synthesis.</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Kinetochore</b> — A protein complex on chromosomes where spindle fibres attach; no role in transcription.</div>`,
+        keyFacts:['Nucleolus → rRNA factory','Found inside the nucleus']
       },
       {
-        heading:'Non-Membrane Organelles in All Cells',
-        content:`<i>Which non-membrane bound cell organelles are found in both prokaryotic and eukaryotic cells?</i><br><br>
-<ul>
-<li>(1) Centrosomes</li>
-<li>(2) Ribosomes</li>
-<li>(3) Lysosomes</li>
-<li>(4) Mitochondria</li>
-</ul>`,
-        keyFacts:['Question 148','Found in both cell types']
+        heading:'Non-Membrane Organelles',
+        content:`<div class="mcq-q-box"><div class="mcq-q-badge">Q.148</div><div class="mcq-q-text">Which non-membrane bound cell organelles are found in both prokaryotic and eukaryotic cells?</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">1</div><div class="mcq-opt-text">Centrosomes</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">2</div><div class="mcq-opt-text">Ribosomes</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">3</div><div class="mcq-opt-text">Lysosomes</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">4</div><div class="mcq-opt-text">Mitochondria</div></div>`,
+        keyFacts:['NEET Question 148','Found in both cell types']
       },
       {
         heading:'Answer — Ribosomes',
         imageUrl:'images/ribosome.png',
         imageCaption:'Ribosomes — the universal protein factories',
-        content:`<div class="ans-correct">✓ Correct answer — (2) Ribosomes</div>
-<b>Ribosomes</b> are the only organelles found in <i>every</i> living cell. They have no membrane around them and their job is to <b>build proteins</b>.<br>
+        content:`<div class="ans-correct">✓ &nbsp;Correct Answer — (2) Ribosomes</div>
+<b>Ribosomes</b> are the only organelles present in <b>every living cell</b> — bacteria, archaea, plants, and animals alike. They lack a surrounding membrane and serve one critical function: <b>translating mRNA into proteins</b>.<br><br>
 <div class="ans-divider"></div>
-<b>Why the others are wrong</b>
-<ul>
-<li><b>Centrosomes</b> — missing in most plant cells and in all prokaryotes.</li>
-<li><b>Lysosomes</b> — membrane-bound, found only in eukaryotes.</li>
-<li><b>Mitochondria</b> — double-membrane bound, eukaryotes only.</li>
-</ul>
-<b>Bonus:</b> prokaryotic ribosomes are <b>70S</b>, eukaryotic ones are <b>80S</b>.`,
-        keyFacts:['Present in every cell','70S in prokaryotes, 80S in eukaryotes']
+<div class="ans-wrong-title">WHY THE OTHERS ARE WRONG</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Centrosomes</b> — Absent in most plant cells and all prokaryotes.</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Lysosomes</b> — Membrane-bound digestive organelles; eukaryotes only.</div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗</span> <b>Mitochondria</b> — Double-membrane bound; exclusively eukaryotic.</div>
+<div class="ans-bonus"><b>💡 Bonus:</b> Prokaryotic ribosomes are <b>70S</b> (50S + 30S), while eukaryotic ones are <b>80S</b> (60S + 40S).</div>`,
+        keyFacts:['Universal to all cells','70S (prokaryotes) vs 80S (eukaryotes)']
       },
       {
-        heading:'Cell Organelles — Correct Statements',
-        content:`<i>Choose the correct statements about cell organelles:</i><br><br>
-<ul>
-<li><b>A.</b> Endomembrane system includes Golgi, ER and mitochondria.</li>
-<li><b>B.</b> Rough ER carries ribosomes on its surface.</li>
-<li><b>C.</b> Mitochondria and plastids both contain circular DNA.</li>
-<li><b>D.</b> Cytoskeleton is a network of microtubules, microfilaments and intermediate filaments.</li>
-<li><b>E.</b> Mitochondrion has a single membrane.</li>
-</ul>
-<br>
-<ul>
-<li>(1) C, D and E only</li>
-<li>(2) A and B only</li>
-<li>(3) A, B and C only</li>
-<li>(4) B, C and D only</li>
-</ul>`,
-        keyFacts:['Question 152','Five statements to check']
+        heading:'Cell Organelles — Statements',
+        content:`<div class="mcq-q-box"><div class="mcq-q-badge">Q.152</div><div class="mcq-q-text">Choose the correct statements about cell organelles:</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">A</div><div class="mcq-opt-text">Endomembrane system includes Golgi, ER and mitochondria</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">B</div><div class="mcq-opt-text">Rough ER carries ribosomes on its surface</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">C</div><div class="mcq-opt-text">Mitochondria and plastids both contain circular DNA</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">D</div><div class="mcq-opt-text">Cytoskeleton is a network of microtubules, microfilaments and intermediate filaments</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">E</div><div class="mcq-opt-text">Mitochondrion has a single membrane</div></div>
+<div class="ans-divider"></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">1</div><div class="mcq-opt-text">C, D and E only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">2</div><div class="mcq-opt-text">A and B only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">3</div><div class="mcq-opt-text">A, B and C only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">4</div><div class="mcq-opt-text">B, C and D only</div></div>`,
+        keyFacts:['NEET Question 152','Five statements to evaluate']
       },
       {
         heading:'Answer — B, C and D',
         imageUrl:'images/endomembrane.png',
-        imageCaption:'Endomembrane system at a glance',
-        content:`<div class="ans-correct">✓ Correct answer — (4) B, C and D only</div>
-<b>Going through each statement</b>
-<ul>
-<li><b>A — False.</b> Mitochondria are <i>not</i> part of the endomembrane system. That system is only ER, Golgi, lysosomes, vacuoles and the plasma membrane.</li>
-<li><b>B — True.</b> Rough ER gets its name from the ribosomes stuck to its outer surface.</li>
-<li><b>C — True.</b> Both mitochondria and plastids carry their own small circular DNA — a clue to their bacterial origin.</li>
-<li><b>D — True.</b> The cytoskeleton is exactly that — three kinds of fibres working together.</li>
-<li><b>E — False.</b> Mitochondria have a <b>double</b> membrane, not a single one.</li>
-</ul>`,
-        keyFacts:['Mitochondria = double membrane','Endomembrane system excludes mitochondria']
+        imageCaption:'Endomembrane system overview',
+        content:`<div class="ans-correct">✓ &nbsp;Correct Answer — (4) B, C and D only</div>
+<b>Statement-by-statement breakdown:</b><br><br>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗ A</span> <b>False</b> — Mitochondria are <b>not</b> part of the endomembrane system. It only includes ER, Golgi, lysosomes, vacuoles, and the plasma membrane.</div>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ B</div><div class="mcq-opt-text"><b>True</b> — Rough ER gets its "rough" appearance from the ribosomes studding its cytoplasmic surface.</div></div>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ C</div><div class="mcq-opt-text"><b>True</b> — Both mitochondria and plastids possess their own circular DNA — evidence supporting the endosymbiotic theory.</div></div>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ D</div><div class="mcq-opt-text"><b>True</b> — The cytoskeleton comprises three types of protein fibres that maintain cell shape and enable movement.</div></div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗ E</span> <b>False</b> — Mitochondria have a <b>double membrane</b> — the outer membrane and a highly folded inner membrane (cristae).</div>`,
+        keyFacts:['Mitochondria = double membrane','Endomembrane ≠ mitochondria']
       },
       {
-        heading:'Cell Membrane — Correct Statements',
-        content:`<i>Select the correct statements about the eukaryotic cell membrane:</i><br><br>
-<ul>
-<li><b>A.</b> Human RBC membrane is about 52% protein.</li>
-<li><b>B.</b> Phospholipids are arranged in a bilayer.</li>
-<li><b>C.</b> Inward extensions of the plasma membrane form mesosomes.</li>
-<li><b>D.</b> The lipid tails (inside) are hydrophobic and stay away from water.</li>
-<li><b>E.</b> Glycocalyx is on the outer surface of the membrane.</li>
-</ul>
-<br>
-<ul>
-<li>(1) A, C and E only</li>
-<li>(2) B, C and E only</li>
-<li>(3) C, D and E only</li>
-<li>(4) A, B and D only</li>
-</ul>`,
-        keyFacts:['Question 163','Eukaryotic cell membrane']
+        heading:'Cell Membrane — Statements',
+        content:`<div class="mcq-q-box"><div class="mcq-q-badge">Q.163</div><div class="mcq-q-text">Select the correct statements about the eukaryotic cell membrane:</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">A</div><div class="mcq-opt-text">Human RBC membrane is about 52% protein</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">B</div><div class="mcq-opt-text">Phospholipids are arranged in a bilayer</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">C</div><div class="mcq-opt-text">Inward extensions of the plasma membrane form mesosomes</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">D</div><div class="mcq-opt-text">The lipid tails (inside) are hydrophobic and stay away from water</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">E</div><div class="mcq-opt-text">Glycocalyx is on the outer surface of the membrane</div></div>
+<div class="ans-divider"></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">1</div><div class="mcq-opt-text">A, C and E only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">2</div><div class="mcq-opt-text">B, C and E only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">3</div><div class="mcq-opt-text">C, D and E only</div></div>
+<div class="mcq-option bio-stagger"><div class="mcq-opt-num">4</div><div class="mcq-opt-text">A, B and D only</div></div>`,
+        keyFacts:['NEET Question 163','Eukaryotic cell membrane']
       },
       {
         heading:'Answer — A, B and D',
         imageUrl:'images/plasma-membrane.png',
         imageCaption:'Fluid mosaic model of the plasma membrane',
-        content:`<div class="ans-correct">✓ Correct answer — (4) A, B and D only</div>
-<b>Going through each statement</b>
-<ul>
-<li><b>A — True.</b> An RBC membrane is roughly 52% protein and 40% lipid.</li>
-<li><b>B — True.</b> Phospholipids always form a bilayer — the basic plan of every membrane.</li>
-<li><b>C — False.</b> Mesosomes are a <b>prokaryotic</b> feature, not eukaryotic. This single fact eliminates every option that includes C.</li>
-<li><b>D — True.</b> The fatty acid tails face inward, hidden from water; the polar heads face outward.</li>
-<li><b>E — False here.</b> Glycocalyx <i>is</i> on the outer surface, but the question asks for the option whose statements are <i>all</i> correct, and option (4) is the only such set.</li>
-</ul>
-<div class="ans-divider"></div>
-<b>Shortcut:</b> any option containing C must be wrong, because mesosomes are prokaryotic.`,
+        content:`<div class="ans-correct">✓ &nbsp;Correct Answer — (4) A, B and D only</div>
+<b>Statement-by-statement breakdown:</b><br><br>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ A</div><div class="mcq-opt-text"><b>True</b> — The RBC membrane is approximately 52% protein and 40% lipid by mass.</div></div>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ B</div><div class="mcq-opt-text"><b>True</b> — Phospholipids naturally arrange in a bilayer — the fundamental architecture of all biological membranes.</div></div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗ C</span> <b>False</b> — Mesosomes are exclusively a <b>prokaryotic</b> feature. This single fact eliminates options 1, 2, and 3.</div>
+<div class="mcq-option bio-stagger" style="border-color:#fde047;background:rgba(253,224,71,.08)"><div class="mcq-opt-num" style="background:#fde047;border-color:#fde047;color:#000">✓ D</div><div class="mcq-opt-text"><b>True</b> — The hydrophobic fatty acid tails face inward, shielded from water; polar heads face outward.</div></div>
+<div class="ans-wrong-item bio-stagger"><span class="ans-wrong-mark">✗ E</span> <b>Note</b> — Glycocalyx <i>is</i> on the outer surface, but option (4) — which excludes E — is the only set where <i>all</i> statements are correct.</div>
+<div class="ans-shortcut"><b>⚡ Shortcut:</b> Any option containing <b>C</b> must be wrong — mesosomes are prokaryotic, not eukaryotic.</div>`,
         keyFacts:['Mesosomes = prokaryotes only','RBC membrane ≈ 52% protein']
       }
     ]
@@ -1169,29 +1245,65 @@ function setSt(txt,isErr,estSecs){
 }
 
 function parseSlideJSON(raw){
-  var s=raw.replace(/```json/gi,'').replace(/```/g,'').trim();
-  var start=s.indexOf('{');if(start===-1)throw new Error('No JSON');
-  s=s.slice(start);var depth=0,end=-1;
-  for(var i=0;i<s.length;i++){if(s[i]==='{')depth++;else if(s[i]==='}'){depth--;if(depth===0){end=i;break;}}}
+  var s=String(raw||'').replace(/```json/gi,'').replace(/```/g,'').trim();
+  var start=s.indexOf('{');if(start===-1)throw new Error('No JSON object found in AI response');
+  s=s.slice(start);
+  // String-aware brace matching
+  var depth=0,end=-1,inStr=false,esc=false;
+  for(var i=0;i<s.length;i++){
+    var c=s[i];
+    if(esc){esc=false;continue;}
+    if(c==='\\'){esc=true;continue;}
+    if(c==='"'){inStr=!inStr;continue;}
+    if(inStr)continue;
+    if(c==='{')depth++;
+    else if(c==='}'){depth--;if(depth===0){end=i;break;}}
+  }
   if(end!==-1)s=s.slice(0,end+1);
+  // strip trailing commas before } or ]
+  s=s.replace(/,(\s*[}\]])/g,'$1');
   try{return JSON.parse(s);}catch(e1){
-    var cut=s.lastIndexOf('},');if(cut>0){try{return JSON.parse(s.slice(0,cut+1)+']}');}catch(e2){}}
+    var cut=s.lastIndexOf('},');
+    if(cut>0){try{return JSON.parse(s.slice(0,cut+1)+']}');}catch(e2){}}
     var opens=(s.match(/\[/g)||[]).length,closes=(s.match(/\]/g)||[]).length,miss='';
     for(var j=0;j<opens-closes;j++)miss+=']';miss+='}';
     try{return JSON.parse(s+miss);}catch(e3){}
-    throw new Error('Malformed JSON: '+e1.message);
+    throw new Error('Could not parse JSON: '+e1.message);
   }
+}
+
+function _fetchWithTimeout(url,opts,ms){
+  return new Promise(function(res,rej){
+    var ctrl=new AbortController();
+    var t=setTimeout(function(){ctrl.abort();rej(new Error('Request timed out after '+Math.round(ms/1000)+'s'));},ms);
+    fetch(url,Object.assign({},opts,{signal:ctrl.signal})).then(function(r){clearTimeout(t);res(r);},function(e){clearTimeout(t);rej(e);});
+  });
 }
 
 async function fetchSlides(topic,count,startNum,det){
   var detMap={concise:'2-3 sentences',standard:'3-5 sentences',detailed:'5-7 sentences'};
-  var prompt='You are an expert educator. Generate exactly '+count+' lesson slides ('+startNum+' to '+(startNum+count-1)+') on "'+topic+'".\nReturn ONLY a valid JSON object. No markdown, no backticks, no explanation.\nSchema: {"title":"string","slides":[{"heading":"string","content":"HTML with <b> and <ul><li>","keyFacts":["2 items max 8 words each"],"imageQuery":"2-3 words"}]}\nEach slide content: '+(detMap[det]||'3-5 sentences')+'\nReturn ALL '+count+' slides. Return ONLY JSON.';
-  var r=await fetch('https://ask-ai.killermunu.workers.dev',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:prompt})});
-  if(!r.ok){var t=await r.text().catch(function(){return '';});throw new Error('HTTP '+r.status+(t?': '+t.slice(0,100):''));}
-  var j=await r.json();
-  var raw=j.answer||j.response||j.content||j.text||j.result||(typeof j==='string'?j:'');
-  if(!raw)throw new Error('Empty AI response');
-  return parseSlideJSON(raw);
+  var prompt='You are an expert educator. Generate exactly '+count+' lesson slides (numbered '+startNum+' to '+(startNum+count-1)+') on the topic: "'+topic+'".\n'+
+    'Return ONLY a single valid JSON object — no markdown, no code fences, no commentary, no trailing text.\n'+
+    'Schema: {"title":"string","slides":[{"heading":"short string","content":"HTML string using <b> and <ul><li>","keyFacts":["max 2 items, max 8 words each"],"imageQuery":"2-3 keywords"}]}\n'+
+    'Rules: Each slide content must be '+(detMap[det]||'3-5 sentences')+'. Use <b> for emphasis and <ul><li> for lists. Escape any double quotes inside strings as \\". Return ALL '+count+' slides.';
+  var attempts=[0,1500,4000],lastErr=null;
+  for(var a=0;a<attempts.length;a++){
+    if(attempts[a])await new Promise(function(r){setTimeout(r,attempts[a]);});
+    try{
+      var r=await _fetchWithTimeout('https://ask-ai.killermunu.workers.dev',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({query:prompt})},45000);
+      if(!r.ok){var t='';try{t=await r.text();}catch(_){}throw new Error('HTTP '+r.status+(t?': '+t.slice(0,120):''));}
+      var j;try{j=await r.json();}catch(_){j={answer:await r.text()};}
+      var raw=j.answer||j.response||j.content||j.text||j.result||j.message||(typeof j==='string'?j:'');
+      if(!raw)throw new Error('Empty response from AI');
+      var parsed=parseSlideJSON(raw);
+      if(!parsed||!Array.isArray(parsed.slides))throw new Error('AI response missing slides[]');
+      // validate
+      parsed.slides=parsed.slides.filter(function(sl){return sl&&typeof sl.heading==='string'&&sl.heading.trim().length>=3&&typeof sl.content==='string'&&sl.content.trim().length>=20;});
+      if(!parsed.slides.length)throw new Error('AI returned no usable slides');
+      return parsed;
+    }catch(e){lastErr=e;console.warn('[AI] attempt '+(a+1)+' failed:',e.message);}
+  }
+  throw lastErr||new Error('AI request failed');
 }
 
 async function doGen(){
@@ -1199,22 +1311,30 @@ async function doGen(){
   if(!topic){document.getElementById('topicIn').focus();return;}
   var n=parseInt(document.getElementById('slideN').value,10),det=document.getElementById('detailN').value;
   var btn=document.getElementById('generateBtn');btn.disabled=true;
-  var BATCH=4,allSlides=[],title='';
+  var BATCH=3,allSlides=[],title='',skipped=0,batchFails=0;
   try{
     for(var i=0;i<n;i+=BATCH){
       var bc=Math.min(BATCH,n-i),sn=i+1;
-      setSt('Generating slides '+sn+'–'+(i+bc)+' of '+n+'…',false,det==='detailed'?48:30);
-      var result=await fetchSlides(topic,bc,sn,det);
-      if(!result.slides||!result.slides.length)throw new Error('Batch returned no slides');
-      if(!title)title=result.title||topic;
-      allSlides=allSlides.concat(result.slides);
+      setSt('Generating slides '+sn+'–'+(i+bc)+' of '+n+'…',false,det==='detailed'?42:26);
+      try{
+        var result=await fetchSlides(topic,bc,sn,det);
+        if(!title)title=result.title||topic;
+        var before=result.slides.length;
+        allSlides=allSlides.concat(result.slides);
+        if(before<bc)skipped+=(bc-before);
+      }catch(be){
+        batchFails++;console.error('[AI] batch '+sn+' failed:',be.message);
+        setSt('Batch '+sn+' failed: '+be.message+' — continuing…',true);
+        await new Promise(function(r){setTimeout(r,1200);});
+      }
     }
   }catch(e){setSt('Failed: '+e.message,true);btn.disabled=false;return;}
   allSlides=allSlides.filter(function(s){return s&&s.heading&&s.content;}).slice(0,n);
-  if(!allSlides.length){setSt('No valid slides returned',true);btn.disabled=false;return;}
-  var data={title:title,slides:allSlides};
+  if(!allSlides.length){setSt('No valid slides returned. Try a simpler topic or fewer slides.',true);btn.disabled=false;return;}
+  var data={title:title||topic,slides:allSlides};
   if(imgSrc==='wiki'){setSt('Fetching images…',false,12);data=await getWikiImgs(data);}
-  setSt('');btn.disabled=false;prevPage='gen';buildDeck(data);showPage('slides');
+  var msg='';if(skipped)msg=' ('+skipped+' invalid skipped)';if(batchFails)msg+=' ('+batchFails+' batch'+(batchFails>1?'es':'')+' failed)';
+  setSt(msg);btn.disabled=false;prevPage='gen';buildDeck(data);showPage('slides');
 }
 
 async function getWikiImgs(data){
@@ -1335,6 +1455,11 @@ function buildDeck(data){
         if(!this.classList.contains('blurred'))return;
         this.classList.remove('blurred');badge.style.display='none';
         if(window.renderMathInElement){try{renderMathInElement(this,{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});}catch(e){}}
+        /* Retrigger stagger animations for bio MCQ options */
+        if(currentIsBio){
+          var els=this.querySelectorAll('.bio-stagger');
+          els.forEach(function(el){el.style.animation='none';el.offsetHeight;el.style.animation='';});
+        }
       });
     })(i);
 
@@ -1393,11 +1518,12 @@ function navNext(){
     stopAutoPlay();
     var dn=document.getElementById('ty-deck-name'),ds=document.getElementById('ty-sub-text'),sc=document.getElementById('ty-slide-count');
     if(dn)dn.textContent=currentDeckTitle||'BIOQUIZ';
-    if(ds)ds.textContent=currentIsPhysics?'MECHANICS · FORCE · MOMENTUM':currentIsHormuz?'GEOPOLITICS · GEOGRAPHY · TRADE':'END OF PRESENTATION';
+    if(ds)ds.textContent=currentIsPhysics?'MECHANICS · FORCE · MOMENTUM':currentIsHormuz?'GEOPOLITICS · GEOGRAPHY · TRADE':currentIsBio?'CELL BIOLOGY · MCQs · NEET':'END OF PRESENTATION';
     if(sc)sc.textContent=tot;
     var o1=document.getElementById('tyOrb1'),o2=document.getElementById('tyOrb2');
     if(currentIsPhysics){if(o1)o1.style.background='rgba(124,58,237,.12)';if(o2)o2.style.background='rgba(167,139,250,.08)';}
     else if(currentIsHormuz){if(o1)o1.style.background='rgba(245,158,11,.1)';if(o2)o2.style.background='rgba(251,191,36,.07)';}
+    else if(currentIsBio){if(o1)o1.style.background='rgba(253,224,71,.10)';if(o2)o2.style.background='rgba(253,224,71,.06)';}
     else{if(o1)o1.style.background='rgba(167,139,250,.08)';if(o2)o2.style.background='rgba(56,189,248,.06)';}
     showPage('thanks');
     document.getElementById('pg-thanks').classList.add('fs-mode');
