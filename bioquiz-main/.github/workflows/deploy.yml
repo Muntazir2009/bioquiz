@@ -1,0 +1,43 @@
+name: Deploy static content to Pages
+
+on:
+  push:
+    branches: ["main"] # Ensure this matches your default branch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        
+      # This step looks for our placeholder string in the HTML file 
+      # and swaps it out for the GitHub secret environment variable.
+      - name: Inject API Key into HTML
+        run: |
+          sed -i "s/INJECT_GEMINI_API_KEY_HERE/${{ secrets.GEMINI_API_KEY }}/g" index.html
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
