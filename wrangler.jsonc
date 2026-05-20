@@ -21,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "bioquiz-db",
-      "database_id": "YOUR_D1_DATABASE_ID"
+      "database_id": "952debd5-4a2c-4ea7-bf19-717ce9abe012"
     }
   ],
   "r2_buckets": [
