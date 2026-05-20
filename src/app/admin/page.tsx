@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { io, Socket } from "socket.io-client";
+// socket.io-client removed — using polling for Cloudflare compatibility
 import {
   ShieldCheck, HardDrive, Files, Download, Trash2, Search, Lock,
   Pencil, Check, X, ArrowLeft, BarChart3, Eye, EyeOff, Filter,
@@ -82,9 +82,8 @@ export default function AdminPage() {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  // Realtime
-  const socketRef = useRef<Socket | null>(null);
-  const [wsConnected, setWsConnected] = useState(false);
+  // Realtime via polling (Cloudflare Workers compatible — no WebSocket server needed)
+  const [wsConnected, setWsConnected] = useState(true); // always "connected" via polling
 
   // ─── Auth ────────────────────────────────────────────────────────────────
 
@@ -125,18 +124,12 @@ export default function AdminPage() {
 
   useEffect(() => { if (isAuthed) fetchData(); }, [isAuthed, fetchData]);
 
-  // ─── Realtime ────────────────────────────────────────────────────────────
+  // ─── Polling (replaces WebSocket) ────────────────────────────────────────
 
   useEffect(() => {
     if (!isAuthed) return;
-    const s = io("/?XTransformPort=3003", { transports: ["websocket"], reconnection: true, reconnectionAttempts: 5 });
-    s.on("connect", () => setWsConnected(true));
-    s.on("disconnect", () => setWsConnected(false));
-    s.on("file:uploaded", () => fetchData());
-    s.on("file:deleted", () => fetchData());
-    s.on("file:updated", () => fetchData());
-    socketRef.current = s;
-    return () => { s.disconnect(); socketRef.current = null; };
+    const interval = setInterval(() => { fetchData(); }, 10000); // poll every 10s
+    return () => { clearInterval(interval); };
   }, [isAuthed, fetchData]);
 
   // ─── File operations ─────────────────────────────────────────────────────
@@ -280,7 +273,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className={`inline-block h-1.5 w-1.5 rounded-full ${wsConnected ? "bg-green-500" : "bg-red-500"}`} />
-              {wsConnected ? "Live" : "Offline"}
+              {wsConnected ? "Polling" : "Offline"}
             </span>
             <button onClick={() => fetchData()} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
