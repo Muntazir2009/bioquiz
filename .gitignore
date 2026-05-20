@@ -60,3 +60,7 @@ server-keeper.sh
 
 # bun
 bun.lock
+
+# open-next
+.open-next/
+cloudflare-env.d.ts
