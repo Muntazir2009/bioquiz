@@ -1,0 +1,28 @@
+// BioQuiz Prisma schema — Cloudflare D1 compatible
+// D1 uses SQLite under the hood, so provider stays "sqlite"
+// The @prisma/adapter-d1 handles the connection
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id           String    @id @default(cuid())
+  name         String
+  originalName String
+  size         Int
+  mimeType     String
+  storagePath  String
+  shareId      String    @unique
+  downloads    Int       @default(0)
+  isPublic     Boolean   @default(false)
+  description  String?
+  uploaderId   String?
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime?
+}
