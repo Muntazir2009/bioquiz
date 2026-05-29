@@ -3177,6 +3177,34 @@ function toggleFS(){
    NAVIGATION (FIXED - completely rewritten)
 ───────────────────────────────────────── */
 function bqNav(targetView) {
+  // ── DM Lock gate ──
+  // If DM lock PIN is set, block navigation to DM views and show lock overlay
+  var _bqDmLockPin = localStorage.getItem('bq_dm_lock_pin') || '';
+  if(_bqDmLockPin){
+    var _fromDm = activeView==='dms'||activeView==='dmconv';
+    var _toDm = targetView==='dms'||targetView==='dmconv';
+    // Navigating TO DMs from a non-DM view → show lock overlay
+    if(_toDm && !_fromDm){
+      // Continue with navigation, then show lock
+      _bqDmLockArmed = true;
+      setTimeout(function(){
+        var el = document.getElementById('bq-dm-lock');
+        if(el){ el.classList.add('show'); _bqDmLockResetDots(); _bqDmLockPinBuffer=''; }
+      }, 60);
+    }
+    // Navigating between DM views while lock is armed → still show lock
+    else if(_bqDmLockArmed && _toDm && _fromDm){
+      setTimeout(function(){
+        var el = document.getElementById('bq-dm-lock');
+        if(el){ el.classList.add('show'); _bqDmLockResetDots(); _bqDmLockPinBuffer=''; }
+      }, 60);
+    }
+    // Leaving DMs — arm the lock (but don't show overlay)
+    else if(_fromDm && !_toDm){
+      _bqDmLockArmed = true;
+    }
+  }
+
   if (targetView === activeView) return;
   
   const views = ['chat', 'dms', 'dmconv', 'online', 'profile'];
@@ -3224,6 +3252,114 @@ function bqNav(targetView) {
     if(typeof _injectProfileUploads==='function') setTimeout(_injectProfileUploads,30);
   }
 }
+
+// ── DM Lock state (accessible from bqNav) ──
+var _bqDmLockArmed = false;
+var _bqDmLockPinBuffer = '';
+function _bqDmLockResetDots(error){
+  var dots = document.querySelectorAll('.bqdml-dot');
+  dots.forEach(function(d,i){
+    d.classList.remove('filled','error');
+    if(error) d.classList.add('error');
+  });
+  if(error) setTimeout(function(){ dots.forEach(function(d){ d.classList.remove('error'); }); _bqDmLockPinBuffer=''; _bqDmLockUpdateDots(); },500);
+}
+function _bqDmLockUpdateDots(){
+  document.querySelectorAll('.bqdml-dot').forEach(function(d,i){
+    d.classList.toggle('filled', i < _bqDmLockPinBuffer.length);
+    d.classList.remove('error');
+  });
+}
+function _bqDmLockHandleKey(k){
+  var pin = localStorage.getItem('bq_dm_lock_pin') || '';
+  if(k==='del'){ _bqDmLockPinBuffer=_bqDmLockPinBuffer.slice(0,-1); _bqDmLockUpdateDots(); return; }
+  if(_bqDmLockPinBuffer.length>=4) return;
+  _bqDmLockPinBuffer+=k; _bqDmLockUpdateDots();
+  if(_bqDmLockPinBuffer.length===4){
+    if(_bqDmLockPinBuffer===pin){
+      // Unlock
+      _bqDmLockArmed = false;
+      var el = document.getElementById('bq-dm-lock');
+      if(el) el.classList.remove('show');
+    } else {
+      _bqDmLockResetDots(true);
+    }
+  }
+}
+
+// Wire keypad clicks on document
+document.addEventListener('click', function(e){
+  var key = e.target.closest('.bqdml-key');
+  if(key){ e.preventDefault(); e.stopPropagation(); _bqDmLockHandleKey(key.dataset.k); }
+});
+
+// Forgot PIN — reset
+document.addEventListener('click', function(e){
+  if(e.target.closest('#bqdml-forgot')){
+    localStorage.removeItem('bq_dm_lock_pin');
+    _bqDmLockArmed = false;
+    var el = document.getElementById('bq-dm-lock');
+    if(el) el.classList.remove('show');
+    if(typeof showToast==='function') showToast('PIN reset. Set a new one in DM settings.');
+  }
+});
+
+// Init DM lock: if PIN is set, always start armed
+setTimeout(function(){
+  var pin = localStorage.getItem('bq_dm_lock_pin');
+  if(pin){
+    _bqDmLockArmed = true;
+    // Update DM lock sub label
+    var sub = document.getElementById('bq-dm-lock-sub');
+    var lbl = document.getElementById('bq-dm-lock-label');
+    if(sub && lbl){ sub.textContent='Enabled · tap to change'; lbl.textContent='DM Lock'; }
+    // If already on DMs view on load, lock immediately
+    if(activeView==='dms'||activeView==='dmconv'){
+      var el = document.getElementById('bq-dm-lock');
+      if(el){ el.classList.add('show'); _bqDmLockResetDots(); _bqDmLockPinBuffer=''; }
+    }
+  }
+}, 400);
+
+// Set PIN modal wiring (from both DM info panels)
+document.addEventListener('click', function(e){
+  if(e.target.closest('#bq-dm-lock-row') || e.target.closest('#bq-if-dmlock')){
+    var modal = document.getElementById('bq-dm-setpin');
+    if(modal) modal.classList.add('show');
+    var inp = document.getElementById('bqdmsp-inp');
+    var conf = document.getElementById('bqdmsp-conf');
+    var err = document.getElementById('bqdmsp-err');
+    if(inp) inp.value='';
+    if(conf) conf.value='';
+    if(err) err.textContent='';
+    // Also close info float if open
+    var infoFloat = document.getElementById('bq-info-float');
+    if(infoFloat) infoFloat.classList.remove('open');
+  }
+});
+document.addEventListener('click', function(e){
+  if(e.target.closest('#bqdmsp-cancel')){
+    var modal = document.getElementById('bq-dm-setpin');
+    if(modal) modal.classList.remove('show');
+  }
+});
+document.addEventListener('click', function(e){
+  if(e.target.closest('#bqdmsp-save')){
+    var p = document.getElementById('bqdmsp-inp')?.value?.trim() || '';
+    var c = document.getElementById('bqdmsp-conf')?.value?.trim() || '';
+    var err = document.getElementById('bqdmsp-err');
+    if(!/^\d{4}$/.test(p)){ if(err) err.textContent='PIN must be exactly 4 digits'; return; }
+    if(p!==c){ if(err) err.textContent='PINs do not match'; return; }
+    localStorage.setItem('bq_dm_lock_pin', p);
+    _bqDmLockArmed = true;
+    var modal = document.getElementById('bq-dm-setpin');
+    if(modal) modal.classList.remove('show');
+    var sub = document.getElementById('bq-dm-lock-sub');
+    var lbl = document.getElementById('bq-dm-lock-label');
+    if(sub && lbl){ sub.textContent='Enabled · tap to change'; lbl.textContent='DM Lock'; }
+    if(typeof showToast==='function') showToast('DM Lock PIN set ✓');
+  }
+});
 
 // Expose globally for nav buttons
 window.bqNav = bqNav;
@@ -5708,21 +5844,10 @@ function openInfoFloat(){
 }
 function closeInfoFloat(){ document.getElementById('bq-info-float')?.classList.remove('open'); }
 
-// DM Lock row in info-float
+// DM Lock row in info-float — just keep label updated
 (function wireDmLockInfoRow(){
   const row = document.getElementById('bq-if-dmlock');
   if(!row) return setTimeout(wireDmLockInfoRow, 400);
-  row.addEventListener('click', ()=>{
-    closeInfoFloat();
-    const modal = document.getElementById('bq-dm-setpin');
-    if(modal){
-      modal.classList.add('show');
-      document.getElementById('bqdmsp-inp').value='';
-      document.getElementById('bqdmsp-conf').value='';
-      const errEl = document.getElementById('bqdmsp-err');
-      if(errEl) errEl.textContent='';
-    }
-  });
   // Update label
   function updateLockLabel(){
     const v = document.getElementById('bq-if-lock-v');
@@ -12642,139 +12767,7 @@ setInterval(()=>{
 
   try{ console.log('[bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations'); }catch(_){}
 
-/* ══════════════ DM LOCK ══════════════ */
-(function(){
-  const LS_KEY = 'bq_dm_lock_pin';
-  let pinBuffer = '';
-  let _locked = false;
-
-  function getPin(){ return localStorage.getItem(LS_KEY)||''; }
-  function setPin(p){ localStorage.setItem(LS_KEY, p); }
-  function hasPin(){ return !!getPin(); }
-
-  function lockDms(){
-    if(!hasPin()) return;
-    _locked = true;
-    // Only show overlay when the user is actually on a DM view
-    if(activeView!=='dms'&&activeView!=='dmconv') return;
-    const el = document.getElementById('bq-dm-lock');
-    if(el){ el.classList.add('show'); resetDots(); pinBuffer=''; }
-  }
-
-  function unlockDms(){
-    _locked = false;
-    const el = document.getElementById('bq-dm-lock');
-    if(el) el.classList.remove('show');
-  }
-
-  function resetDots(error){
-    const dots = document.querySelectorAll('.bqdml-dot');
-    dots.forEach((d,i)=>{
-      d.classList.remove('filled','error');
-      if(error) d.classList.add('error');
-    });
-    if(error) setTimeout(()=>{ dots.forEach(d=>d.classList.remove('error')); pinBuffer=''; updateDots(); },500);
-  }
-
-  function updateDots(){
-    document.querySelectorAll('.bqdml-dot').forEach((d,i)=>{
-      d.classList.toggle('filled', i < pinBuffer.length);
-      d.classList.remove('error');
-    });
-  }
-
-  function handleKey(k){
-    if(k==='del'){ pinBuffer=pinBuffer.slice(0,-1); updateDots(); return; }
-    if(pinBuffer.length>=4) return;
-    pinBuffer+=k; updateDots();
-    if(pinBuffer.length===4){
-      if(pinBuffer===getPin()){ unlockDms(); }
-      else { resetDots(true); }
-    }
-  }
-
-  // Wire keypad — use mousedown/touchstart so it works even if overlay intercepts clicks
-  document.addEventListener('click', e=>{
-    const key = e.target.closest('.bqdml-key');
-    if(key){ e.preventDefault(); e.stopPropagation(); handleKey(key.dataset.k); }
-  });
-
-  // Forgot PIN
-  document.getElementById('bqdml-forgot')?.addEventListener('click',()=>{
-    localStorage.removeItem(LS_KEY);
-    unlockDms();
-    showToast?.('PIN reset. Set a new one in DM settings.');
-  });
-
-  // Intercept navigation — if PIN is set, always lock DMs when navigating to them
-  const origNav = window.bqNav;
-  window.bqNav = function(target){
-    const fromDm = activeView==='dms'||activeView==='dmconv';
-    const toDm = target==='dms'||target==='dmconv';
-
-    // Navigating TO DMs from a non-DM view → show lock overlay if PIN is set
-    if(toDm && !fromDm && hasPin()){
-      origNav(target);
-      setTimeout(()=>lockDms(),50);
-      return;
-    }
-    // Navigating between DM views while lock is armed → still show lock
-    if(_locked && toDm && fromDm){
-      origNav(target);
-      setTimeout(()=>lockDms(),50);
-      return;
-    }
-    // Leaving DMs — arm the lock (but don't show overlay)
-    if(hasPin() && fromDm && !toDm){
-      _locked = true;
-      origNav(target);
-      return;
-    }
-    origNav(target);
-  };
-
-  // Set PIN modal
-  document.getElementById('bq-dm-lock-row')?.addEventListener('click',()=>{
-    document.getElementById('bq-dm-setpin').classList.add('show');
-    document.getElementById('bqdmsp-inp').value='';
-    document.getElementById('bqdmsp-conf').value='';
-    document.getElementById('bqdmsp-err').textContent='';
-    updateLockSubLabel();
-  });
-  document.getElementById('bqdmsp-cancel')?.addEventListener('click',()=>{
-    document.getElementById('bq-dm-setpin').classList.remove('show');
-  });
-  document.getElementById('bqdmsp-save')?.addEventListener('click',()=>{
-    const p = document.getElementById('bqdmsp-inp').value.trim();
-    const c = document.getElementById('bqdmsp-conf').value.trim();
-    const err = document.getElementById('bqdmsp-err');
-    if(!/^\d{4}$/.test(p)){ err.textContent='PIN must be exactly 4 digits'; return; }
-    if(p!==c){ err.textContent='PINs do not match'; return; }
-    setPin(p);
-    document.getElementById('bq-dm-setpin').classList.remove('show');
-    _locked = true; // arm the lock immediately after setting PIN
-    updateLockSubLabel();
-    showToast?.('DM Lock PIN set ✓');
-  });
-
-  function updateLockSubLabel(){
-    const sub = document.getElementById('bq-dm-lock-sub');
-    const lbl = document.getElementById('bq-dm-lock-label');
-    if(!sub||!lbl) return;
-    if(hasPin()){ sub.textContent='Enabled · tap to change'; lbl.textContent='DM Lock'; }
-    else { sub.textContent='Not set'; }
-  }
-
-  // Init: if PIN is set, always start with lock armed
-  setTimeout(()=>{
-    updateLockSubLabel();
-    if(hasPin()){
-      _locked = true; // always start armed
-      if(activeView==='dms'||activeView==='dmconv') lockDms();
-    }
-  },300);
-})();
-/* ════════════ end DM lock ════════════ */
+/* ══════════════ DM LOCK (moved to main scope — see bqNav) ══════════════ */
 
 })();
 /* ════════════ end v34 patch ════════════ */
