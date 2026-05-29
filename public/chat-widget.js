@@ -2098,13 +2098,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── DM HEADER MENU ── */
 .bq-dm-menu-dropdown{
-  position:fixed;top:auto;right:auto;
-  background:rgba(16,16,20,.97);border:1px solid rgba(255,255,255,.1);
+  position:fixed;
+  background:rgba(16,16,20,.98);border:1px solid rgba(255,255,255,.12);
   border-radius:14px;padding:6px;min-width:200px;
-  opacity:0;pointer-events:none;transform:translateY(-8px) scale(.95);
-  transition:all .18s cubic-bezier(.22,1,.36,1);z-index:9999;
-  box-shadow:0 20px 60px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.06) inset;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  opacity:0;pointer-events:none;
+  transform:translateY(-6px) scale(.96);
+  transform-origin:top right;
+  transition:opacity .18s ease,transform .18s cubic-bezier(.22,1,.36,1);
+  z-index:2147483640;
+  box-shadow:0 24px 64px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.07) inset;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
 }
 .bq-dm-menu-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
 .bq-dm-menu-item{
@@ -2169,7 +2172,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqSlideFromLeft{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
 
 /* ── DM CONV HEADER spacing fix ── */
-#bqv-dmconv .bqhdr{padding:10px 12px;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);}
+#bqv-dmconv .bqhdr{padding:10px 12px;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);overflow:visible;position:relative;z-index:10;}
 #bqv-dmconv .bqback{padding:4px 6px;border-radius:var(--bq-radius-sm);background:var(--bq-bg-hover);border:none;width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
 #bqv-dmconv .bqback svg{width:18px;height:18px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 #bqv-dmconv .bqback:hover{background:var(--bq-bg-elevated);border:1px solid var(--bq-border);}
@@ -2989,6 +2992,11 @@ const HTML = `
         <div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><path d="M1 5.5L4.5 9L12 1"/><path d="M8 5.5L11.5 9L19 1"/></svg></div>
         <div class="bq-if-row-l">Read receipts</div>
         <div class="bq-if-row-v" id="bq-if-rr-v">On</div>
+      </div>
+      <div class="bq-if-row" id="bq-if-dmlock">
+        <div class="bq-if-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="bq-if-row-l">DM Lock PIN</div>
+        <div class="bq-if-row-v" id="bq-if-lock-v">Off</div>
       </div>
       <div class="bq-if-row danger" id="bq-if-clear">
         <div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div>
@@ -5700,6 +5708,35 @@ function openInfoFloat(){
 }
 function closeInfoFloat(){ document.getElementById('bq-info-float')?.classList.remove('open'); }
 
+// DM Lock row in info-float
+(function wireDmLockInfoRow(){
+  const row = document.getElementById('bq-if-dmlock');
+  if(!row) return setTimeout(wireDmLockInfoRow, 400);
+  row.addEventListener('click', ()=>{
+    closeInfoFloat();
+    const modal = document.getElementById('bq-dm-setpin');
+    if(modal){
+      modal.classList.add('show');
+      document.getElementById('bqdmsp-inp').value='';
+      document.getElementById('bqdmsp-conf').value='';
+      const errEl = document.getElementById('bqdmsp-err');
+      if(errEl) errEl.textContent='';
+    }
+  });
+  // Update label
+  function updateLockLabel(){
+    const v = document.getElementById('bq-if-lock-v');
+    if(v) v.textContent = localStorage.getItem('bq_dm_lock_pin') ? 'On' : 'Off';
+  }
+  updateLockLabel();
+  // Re-check on open
+  const origOpen = window.openInfoFloat;
+  window.openInfoFloat = function(...a){
+    if(origOpen) origOpen(...a);
+    setTimeout(updateLockLabel, 50);
+  };
+})();
+
 function exportConversation(){
   if(!activeDmId) return;
   const rows=document.querySelectorAll('#bqdmmsgs .bqr');
@@ -6606,11 +6643,17 @@ setTimeout(_injectProfileUploads,1500);
       if(btn){
         e.stopPropagation();
         if(menu){
+          // Move to body to escape stacking context of #bqp
+          if(menu.parentNode !== document.body) document.body.appendChild(menu);
           const r=btn.getBoundingClientRect();
-          const pw=document.getElementById('bqp')?.getBoundingClientRect();
-          menu.style.top=(r.bottom+6)+'px';
-          menu.style.right=pw?(window.innerWidth-pw.right+4)+'px':'12px';
-          menu.classList.toggle('open');
+          const isOpen=menu.classList.contains('open');
+          menu.classList.remove('open');
+          if(!isOpen){
+            menu.style.top=(r.bottom+6)+'px';
+            menu.style.left='auto';
+            menu.style.right=(window.innerWidth-r.right)+'px';
+            requestAnimationFrame(()=>menu.classList.add('open'));
+          }
         }
         return;
       }
@@ -6635,7 +6678,7 @@ setTimeout(_injectProfileUploads,1500);
         if(activeDmId&&db){ db.ref('bq_dms/'+activeDmId+'/messages').remove(); toast('Conversation cleared'); }
         return;
       }
-      if(!e.target.closest('#bq-dm-menu')) menu?.classList.remove('open');
+      if(!e.target.closest('#bq-dm-menu')&&!e.target.closest('#bq-dm-menu-btn')) menu?.classList.remove('open');
     });
   }
 
