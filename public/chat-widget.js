@@ -839,10 +839,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   width:36px;height:36px;background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.08);border-radius:12px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:17px;transition:all .2s;line-height:1;
+  transition:all .2s;line-height:1;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
+.bqieo svg{width:17px;height:17px;stroke:rgba(255,255,255,.5);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s;}
 .bqieo:hover{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.09);transform:scale(1.08);}
+.bqieo:hover svg{stroke:rgba(255,255,255,.85);}
 .bqieo:active{transform:scale(.93);}
 .bqinp{
   flex:1;
@@ -2077,11 +2079,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   width:36px;height:36px;border-radius:12px;
   background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
   cursor:pointer;
-  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);
-  font-family:'Inter',sans-serif;font-size:9.5px;font-weight:900;letter-spacing:.05em;
+  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.45);
   transition:all .15s;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;
 }
+.bqgifbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .bqgifbtn:hover{background:rgba(255,255,255,.09);color:var(--bq-accent);border-color:rgba(96,165,250,.3);}
 .bqgifbtn.active{background:rgba(96,165,250,.15);color:var(--bq-accent);border-color:rgba(96,165,250,.35);box-shadow:0 0 0 2px rgba(96,165,250,.15);}
 .bqirow{position:relative;}
@@ -2096,23 +2098,26 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── DM HEADER MENU ── */
 .bq-dm-menu-dropdown{
-  position:absolute;top:calc(100% + 6px);right:12px;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);
-  border-radius:var(--bq-radius-sm);padding:6px 0;min-width:190px;
-  opacity:0;pointer-events:none;transform:translateY(-6px) scale(.96);
-  transition:all .16s var(--bq-transition);z-index:200;
-  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  position:fixed;top:auto;right:auto;
+  background:rgba(16,16,20,.97);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:6px;min-width:200px;
+  opacity:0;pointer-events:none;transform:translateY(-8px) scale(.95);
+  transition:all .18s cubic-bezier(.22,1,.36,1);z-index:9999;
+  box-shadow:0 20px 60px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.06) inset;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
 }
 .bq-dm-menu-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1);}
 .bq-dm-menu-item{
-  display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
-  font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--bq-text);
-  transition:background .1s;
+  display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:rgba(255,255,255,.85);
+  transition:background .12s;border-radius:10px;
+  -webkit-tap-highlight-color:transparent;
 }
-.bq-dm-menu-item:hover{background:var(--bq-bg-hover);}
-.bq-dm-menu-item.danger{color:#ef4444;}
-.bq-dm-menu-item svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-.bq-dm-menu-div{height:1px;background:var(--bq-border);margin:5px 0;}
+.bq-dm-menu-item:hover{background:rgba(255,255,255,.07);}
+.bq-dm-menu-item:active{background:rgba(255,255,255,.12);}
+.bq-dm-menu-item.danger{color:#f87171;}
+.bq-dm-menu-item svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;opacity:.7;}
+.bq-dm-menu-div{height:1px;background:rgba(255,255,255,.07);margin:4px 0;}
 
 /* ── THEME PICKER in info panel ── */
 .bq-theme-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
@@ -2555,7 +2560,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 ───────────────────────────────────────── */
 const HTML = `
 <button id="bqb" aria-label="Chat">
-  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
   <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   <div id="bqbadge"></div>
 </button>
@@ -2565,7 +2570,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
@@ -2583,7 +2588,7 @@ const HTML = `
 
   <!-- DM Lock Overlay -->
   <div id="bq-dm-lock">
-    <div class="bqdml-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <div class="bqdml-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     <div class="bqdml-title">DMs Locked</div>
     <div class="bqdml-sub">Enter your PIN to unlock</div>
     <div class="bqdml-dots" id="bqdml-dots">
@@ -2643,10 +2648,7 @@ const HTML = `
         <span>Disappearing: OFF</span>
       </div>
       <div class="bqhdr-dropdown-divider"></div>
-      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat">
-        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-        <span>Clear Chat</span>
-      </div>
+      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg><span>Clear Chat</span></div>
       <div class="bqhdr-dropdown-divider"></div>
       <div class="bqhdr-dropdown-item" id="bq-export-chat">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2654,12 +2656,8 @@ const HTML = `
       </div>
     </div>
   </div>
-  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
-  <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-  </button>
-        <button class="bqhbtn" id="bq-ren-btn" title="Change username">
-          <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-        </button>
+  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen"><svg id="bq-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+        <button class="bqhbtn" id="bq-ren-btn" title="Change username"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
       
@@ -2671,19 +2669,19 @@ const HTML = `
         </div>
       </div>
       <div class="bqtyp" id="bqgtyp"></div>
-      <button class="bqscr" id="bqgscr"><svg viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg></button>
+      <button class="bqscr" id="bqgscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqgrbar">
-        <svg class="bqrbic" viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+        <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
         <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><div class="bqrbt" id="bqgrbt"></div></div>
-        <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqiw">
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqgeo">😊</button>
-          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="4"/><text x="6" y="16" font-size="9" font-weight="900" fill="currentColor" stroke="none">GIF</text></svg></button>
+          <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqgcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2694,9 +2692,7 @@ const HTML = `
       <div class="bqhdr">
         <div class="bqlive"></div>
         <div class="bqhtitle">Messages</div>
-        <button class="bqhbtn" id="bqdmnewbtn" title="New DM - go to Online">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
+        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
       </div>
       <div id="bqdml"></div>
@@ -2705,28 +2701,28 @@ const HTML = `
     <!-- VIEW: DM Conversation -->
     <div class="bqv" id="bqv-dmconv">
       <div class="bqhdr">
-        <button class="bqback" id="bqdmback"><svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg></button>
+        <button class="bqback" id="bqdmback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
         <div class="bqdmhav" id="bqdmhav"></div>
         <div class="bqdmhi">
           <div class="bqdmhn" id="bqdmhn"></div>
           <div class="bqdmhs" id="bqdmhs"><span class="bqdmhs-dot" id="bqdmhs-dot" style="display:none"></span><span id="bqdmhs-txt">Offline</span></div>
         </div>
-        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
         <div style="position:relative">
-          <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg></button>
+          <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
-            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Settings</div>
-            <div class="bq-dm-menu-item" id="bq-dm-menu-starred"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Starred Messages</div>
+            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Settings</div>
+            <div class="bq-dm-menu-item" id="bq-dm-menu-starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Starred Messages</div>
             <div class="bq-dm-menu-div"></div>
-                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg>Clear Messages</div>
+                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Messages</div>
           </div>
         </div>
         <div class="bq-me-av" id="bq-me-av-dm" title="My profile"></div>
       </div>
       <div id="bq-pinned-bar">
-        <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-pinbar-text"></div></div>
-        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
@@ -2737,13 +2733,13 @@ const HTML = `
         </div>
       </div>
       <div class="bqtyp" id="bqdmtyp"></div>
-      <button class="bqscr" id="bqdmscr"><svg viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg></button>
+      <button class="bqscr" id="bqdmscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqdmrbar">
-        <svg class="bqrbic" viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+        <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
         <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><div class="bqrbt" id="bqdmrbt"></div></div>
-        <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqiw">
         <!-- v9.3: Voice recording bar lives INSIDE composer to avoid layout shift -->
         <div class="bqvoice-rec-bar" id="bq-voice-rec-bar">
@@ -2753,11 +2749,11 @@ const HTML = `
         </div>
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqdmeo">😊</button>
-          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="4"/><text x="6" y="16" font-size="9" font-weight="900" fill="currentColor" stroke="none">GIF</text></svg></button>
-          <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note (tap to record, tap to stop)"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+          <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
+          <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2765,7 +2761,7 @@ const HTML = `
 
     <!-- DM Info panel (inside dmconv) -->
     <div id="bq-dm-info">
-      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bq-info-av-section">
         <div class="bq-info-av" id="bq-info-av"></div>
         <div class="bq-info-name" id="bq-info-name"></div>
@@ -2780,7 +2776,7 @@ const HTML = `
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
           <div class="bq-info-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="bq-info-row-label">Disappearing messages</div><div class="bq-info-row-sub" id="bq-disappear-sub">Off</div></div></div><label class="bq-toggle"><input type="checkbox" id="bq-disappear-chk"><span class="bq-toggle-slider"></span></label></div>
-          <div class="bq-info-row" id="bq-dm-lock-row" style="cursor:pointer"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><div class="bq-info-row-label" id="bq-dm-lock-label">DM Lock</div><div class="bq-info-row-sub" id="bq-dm-lock-sub">Not set</div></div></div><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          <div class="bq-info-row" id="bq-dm-lock-row" style="cursor:pointer"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><div class="bq-info-row-label" id="bq-dm-lock-label">DM Lock</div><div class="bq-info-row-sub" id="bq-dm-lock-sub">Not set</div></div></div><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Actions</div>
@@ -2791,7 +2787,7 @@ const HTML = `
     </div>
     <!-- Starred panel -->
     <div id="bq-starred-panel">
-      <div class="bqhdr"><button class="bqback" id="bq-starred-back"><svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>Back</button><span class="bqhtitle">Starred Messages</span></div>
+      <div class="bqhdr"><button class="bqback" id="bq-starred-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><span class="bqhtitle">Starred Messages</span></div>
       <div id="bq-starred-list"></div>
     </div>
     <!-- VIEW: Online Users -->
@@ -2887,14 +2883,14 @@ const HTML = `
   <div id="bqnav">
     <div class="bqnav-pill">
       <button class="bqnb active" data-v="chat">
-        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
       </button>
       <button class="bqnb" data-v="dms">
-        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>DMs
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>DMs
         <div class="bqnnb" id="bqdmnb"></div>
       </button>
       <button class="bqnb" data-v="online">
-        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Online
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Online
         <div class="bqnnb" id="bqonb"></div>
       </button>
     </div>
@@ -2903,7 +2899,7 @@ const HTML = `
 </div>
 <div id="bqtoast"></div>
 <div class="bqimg-preview" id="bqimg-preview">
-  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <img id="bqimg-full" src="" alt="Full size image">
   </div>
   <div class="bq-confirm" id="bq-confirm">
@@ -6609,7 +6605,13 @@ setTimeout(_injectProfileUploads,1500);
       const menu=document.getElementById('bq-dm-menu');
       if(btn){
         e.stopPropagation();
-        menu?.classList.toggle('open');
+        if(menu){
+          const r=btn.getBoundingClientRect();
+          const pw=document.getElementById('bqp')?.getBoundingClientRect();
+          menu.style.top=(r.bottom+6)+'px';
+          menu.style.right=pw?(window.innerWidth-pw.right+4)+'px':'12px';
+          menu.classList.toggle('open');
+        }
         return;
       }
       const info=e.target.closest('#bq-dm-menu-info');
