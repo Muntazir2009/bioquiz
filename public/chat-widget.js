@@ -120,7 +120,18 @@ const REACTION_CATEGORIES = {
 };
 const REACTIONS  = REACTION_CATEGORIES['⭐'];     // legacy quick row (kept for compatibility)
 // Quick reaction stickers — one-tap big-emoji message ("burst" bubble)
-const QUICK_STICKERS = ['❤️','🔥','😂','🎉','👏','🥰','😮','💯','🫶','🙏','😭','🤯','💀','✨','👀','🤝'];
+const QUICK_STICKERS = [
+  // Reactions
+  '❤️','🔥','😂','🎉','🥰','😮','💯','✨',
+  // Expressions
+  '🫶','🙏','👏','🤝','💪','🫡','🤌','👌',
+  // Fun
+  '💀','🤯','😭','👀','😈','🤡','💅','🫠',
+  // Nature/Objects
+  '🌙','⚡','🎯','💎','🚀','🌊','🎸','🍀',
+  // Animals
+  '🐉','🦋','🐺','🦊','🐸','🦅','🐬','🌸',
+];
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -405,13 +416,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   color:#fff;
   background:linear-gradient(135deg,rgba(96,165,250,.3),rgba(129,140,248,.2));
   box-shadow:0 0 0 1px rgba(96,165,250,.25) inset, 0 4px 12px rgba(96,165,250,.2);
-  animation:bqNavPillPop .38s cubic-bezier(.22,1.4,.36,1) both;
+  animation:bqNavPillPop .28s ease both;
 }
-.bqnb.active svg{stroke:var(--bq-accent);filter:drop-shadow(0 0 6px rgba(96,165,250,.6));}
+.bqnb.active svg{stroke:var(--bq-accent);}
 @keyframes bqNavPillPop{
-  0%{transform:scale(.8);opacity:.4}
-  60%{transform:scale(1.06)}
-  100%{transform:scale(1);opacity:1}
+  0%{opacity:0;transform:scale(.94)}
+  100%{opacity:1;transform:scale(1)}
 }
 .bqnnb{
   position:absolute;top:3px;right:calc(50% - 18px);
@@ -871,7 +881,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqsnd:hover{transform:scale(1.07);box-shadow:0 8px 22px rgba(99,102,241,.55), 0 1px 0 rgba(255,255,255,.2) inset;}
 .bqsnd:active{transform:scale(.93);}
 .bqsnd:disabled{opacity:.25;cursor:not-allowed;transform:none;box-shadow:none;}
-.bqsnd svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.bqsnd svg{width:16px;height:16px;stroke:#fff;fill:#fff;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));}
 .bqifooter{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
 .bqcc{font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.04em;color:var(--bq-text-subtle);transition:color .2s;}
 .bqcc.warn{color:var(--bq-warning);}.bqcc.over{color:var(--bq-danger);}
@@ -892,71 +902,189 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .bqempty-tx{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;color:var(--bq-text-subtle);text-transform:uppercase;}
 .bqempty-sub{font-family:'Inter',sans-serif;font-size:12px;letter-spacing:.04em;color:var(--bq-text-subtle);opacity:.7;}
+.bqdm-empty-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+.bqdm-empty-chips span{padding:6px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:999px;font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.bqdm-empty-chips span:hover{background:rgba(255,255,255,.09);color:rgba(255,255,255,.7);}
+
+/* ── DM LOCK OVERLAY ── */
+#bq-dm-lock{
+  position:absolute;inset:0;z-index:50;
+  background:rgba(0,0,0,.92);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:var(--bq-radius);
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+  padding:32px;
+}
+#bq-dm-lock.show{opacity:1;pointer-events:all;}
+.bqdml-icon{
+  width:64px;height:64px;border-radius:20px;
+  background:linear-gradient(145deg,rgba(96,165,250,.2),rgba(99,102,241,.2));
+  border:1px solid rgba(96,165,250,.25);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+  box-shadow:0 8px 32px rgba(96,165,250,.2);
+}
+.bqdml-icon svg{width:28px;height:28px;stroke:var(--bq-accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.bqdml-title{font-family:'Inter',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:.01em;}
+.bqdml-sub{font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,.4);margin-bottom:28px;text-align:center;}
+.bqdml-dots{display:flex;gap:12px;margin-bottom:28px;}
+.bqdml-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.2);
+  background:transparent;
+  transition:all .2s;
+}
+.bqdml-dot.filled{background:var(--bq-accent);border-color:var(--bq-accent);box-shadow:0 0 10px rgba(96,165,250,.5);}
+.bqdml-dot.error{background:var(--bq-danger);border-color:var(--bq-danger);animation:bqdmlShake .3s ease;}
+@keyframes bqdmlShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.bqdml-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px;margin-bottom:16px;}
+.bqdml-key{
+  height:52px;border-radius:14px;border:none;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  font-family:'Inter',sans-serif;font-size:20px;font-weight:600;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.bqdml-key:hover{background:rgba(255,255,255,.13);}
+.bqdml-key:active{transform:scale(.92);background:rgba(255,255,255,.18);}
+.bqdml-key.del{font-size:16px;color:rgba(255,255,255,.5);}
+.bqdml-key.zero{grid-column:2;}
+.bqdml-forgot{font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;margin-top:4px;}
+.bqdml-forgot:hover{color:rgba(255,255,255,.6);}
+
+/* ── DM Lock Set PIN modal ── */
+#bq-dm-setpin{
+  position:absolute;inset:0;z-index:55;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(20px);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:var(--bq-radius);padding:28px;
+}
+#bq-dm-setpin.show{display:flex;}
+.bqdmsp-title{font-family:'Inter',sans-serif;font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;}
+.bqdmsp-sub{font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.4);margin-bottom:22px;text-align:center;}
+.bqdmsp-input{
+  width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:12px 16px;color:#fff;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:.3em;
+  outline:none;text-align:center;margin-bottom:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.bqdmsp-input:focus{border-color:rgba(96,165,250,.4);box-shadow:0 0 0 3px rgba(96,165,250,.12);}
+.bqdmsp-btn{
+  width:100%;padding:12px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(145deg,#3b82f6,#6366f1);color:#fff;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:700;
+  box-shadow:0 4px 14px rgba(99,102,241,.4);
+  transition:all .2s;margin-bottom:8px;
+}
+.bqdmsp-btn:hover{box-shadow:0 6px 20px rgba(99,102,241,.55);}
+.bqdmsp-cancel{font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;margin-top:4px;}
+.bqdmsp-cancel:hover{color:rgba(255,255,255,.6);}
 
 /* ── PROFILE CARD OVERLAY ── */
 #bqpc{
   position:absolute;inset:0;z-index:40;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(0,0,0,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:flex-end;justify-content:center;padding:0;
   border-radius:var(--bq-radius);
   opacity:0;pointer-events:none;
   transition:opacity .25s ease;
 }
 #bqpc.open{opacity:1;pointer-events:all;}
 .bqpc-card{
-  width:100%;max-width:300px;
-  background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:var(--bq-radius);overflow:hidden;
-  box-shadow:0 24px 72px rgba(0,0,0,.7);
-  transform:scale(.92) translateY(16px);
-  transition:transform .3s var(--bq-transition);
+  width:100%;
+  background:rgba(14,14,16,.98);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:22px 22px 0 0;
+  overflow:hidden;
+  box-shadow:0 -8px 40px rgba(0,0,0,.6), 0 -1px 0 rgba(255,255,255,.06) inset;
+  transform:translateY(100%);
+  transition:transform .38s cubic-bezier(.22,1,.36,1);
 }
-#bqpc.open .bqpc-card{transform:scale(1) translateY(0);}
-
+#bqpc.open .bqpc-card{transform:translateY(0);}
+.bqpc-banner{
+  height:90px;
+  background:linear-gradient(135deg,#1e3a5f,#2d1b69,#0f172a);
+  position:relative;flex-shrink:0;
+}
+.bqpc-banner-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 120%,rgba(96,165,250,.25),transparent 70%);
+}
+.bqpc-drag-handle{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);
+}
 .bqpc-av{
-  position:absolute;bottom:-24px;left:18px;
-  width:56px;height:56px;border-radius:50%;
+  position:absolute;bottom:-28px;left:20px;
+  width:60px;height:60px;border-radius:18px;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',sans-serif;font-size:18px;font-weight:800;
-  border:4px solid var(--bq-bg-elevated);box-shadow:0 6px 20px rgba(0,0,0,.4);
+  font-family:'Inter',sans-serif;font-size:20px;font-weight:800;
+  border:3px solid rgba(14,14,16,.98);
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
 }
 .bqpc-close{
   position:absolute;top:10px;right:12px;
-  width:28px;height:28px;background:rgba(0,0,0,.5);border:none;border-radius:50%;
+  width:30px;height:30px;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.15);
+  border-none:none;border-radius:50%;
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;
 }
-.bqpc-close:hover{background:rgba(0,0,0,.7);transform:scale(1.1);}
+.bqpc-close:hover{background:rgba(0,0,0,.65);}
 .bqpc-close svg{width:13px;height:13px;stroke:rgba(255,255,255,.8);fill:none;stroke-width:2.5;stroke-linecap:round;}
-.bqpc-body{padding:32px 18px 18px;}
-.bqpc-name{font-family:'Inter',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em;color:var(--bq-text);margin-bottom:6px;}
-.bqpc-status{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
-.bqpc-sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.bqpc-slabel{font-family:'Inter',sans-serif;font-size:12px;letter-spacing:.04em;font-weight:600;}
+.bqpc-body{padding:38px 20px 20px;}
+.bqpc-name{font-family:'Inter',sans-serif;font-size:19px;font-weight:800;letter-spacing:.01em;color:#fff;margin-bottom:4px;}
+.bqpc-handle{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.02em;margin-bottom:10px;}
+.bqpc-status{display:flex;align-items:center;gap:6px;margin-bottom:12px;}
+.bqpc-sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px currentColor;}
+.bqpc-slabel{font-family:'Inter',sans-serif;font-size:11.5px;letter-spacing:.03em;font-weight:600;}
 .bqpc-activity{
-  font-family:'Inter',sans-serif;font-size:13px;letter-spacing:.02em;
-  color:var(--bq-text-muted);margin-bottom:12px;
+  font-family:'Inter',sans-serif;font-size:12px;letter-spacing:.01em;
+  color:rgba(255,255,255,.4);margin-bottom:12px;
   display:flex;align-items:center;gap:6px;
 }
-.bqpc-activity::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--bq-text-subtle);flex-shrink:0;}
+.bqpc-activity svg{width:12px;height:12px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:2;flex-shrink:0;}
 .bqpc-bio{
   font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;
-  color:var(--bq-text-muted);padding:10px 12px;
-  background:var(--bq-bg);border:1px solid var(--bq-border);border-radius:var(--bq-radius-sm);
-  margin-bottom:14px;word-break:break-word;
+  color:rgba(255,255,255,.5);padding:10px 13px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  margin-bottom:16px;word-break:break-word;
 }
+.bqpc-stats{
+  display:flex;gap:1px;margin-bottom:16px;overflow:hidden;border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+}
+.bqpc-stat{
+  flex:1;padding:10px 8px;text-align:center;
+  background:rgba(255,255,255,.04);
+}
+.bqpc-stat-val{font-family:'Inter',sans-serif;font-size:14px;font-weight:800;color:#fff;}
+.bqpc-stat-lbl{font-family:'Inter',sans-serif;font-size:9px;font-weight:600;letter-spacing:.08em;color:rgba(255,255,255,.3);text-transform:uppercase;margin-top:2px;}
 .bqpc-actions{display:flex;gap:8px;}
 .bqpc-btn{
-  flex:1;padding:10px;border-radius:var(--bq-radius-sm);border:none;cursor:pointer;
+  flex:1;padding:11px 10px;border-radius:12px;border:none;cursor:pointer;
   font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:.04em;
   display:flex;align-items:center;justify-content:center;gap:6px;
   transition:all .2s var(--bq-transition);
+  -webkit-tap-highlight-color:transparent;
 }
-.bqpc-btn:hover{transform:translateY(-2px);}
-.bqpc-btn:active{transform:scale(.96);}
+.bqpc-btn:active{transform:scale(.95);}
 .bqpc-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.bqpc-btn.dm{background:linear-gradient(135deg,var(--bq-accent),#818cf8);color:#fff;box-shadow:0 4px 12px rgba(96,165,250,.3);}
-.bqpc-btn.dm:hover{box-shadow:0 6px 20px rgba(96,165,250,.45);}
-.bqpc-btn.edit{background:var(--bq-bg);color:var(--bq-text-muted);border:1px solid var(--bq-border);}
-.bqpc-btn.edit:hover{background:var(--bq-bg-hover);color:var(--bq-text);}
+.bqpc-btn.dm{background:linear-gradient(145deg,#3b82f6,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.4);}
+.bqpc-btn.dm:hover{box-shadow:0 6px 22px rgba(99,102,241,.55);}
+.bqpc-btn.edit{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1);}
+.bqpc-btn.edit:hover{background:rgba(255,255,255,.11);}
+.bqpc-aliaslbl{font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:6px;margin-top:14px;}
+.bqpc-aliasinp{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:9px 13px;color:#fff;
+  font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:all .2s;
+}
+.bqpc-aliasinp::placeholder{color:rgba(255,255,255,.2);}
+.bqpc-aliasinp:focus{border-color:rgba(96,165,250,.4);box-shadow:0 0 0 3px rgba(96,165,250,.1);}
 
 /* ── DM LIST ── */
 #bqdml{flex:1;overflow-y:auto;padding:0;}
@@ -2036,7 +2164,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqSlideFromLeft{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
 
 /* ── DM CONV HEADER spacing fix ── */
-#bqv-dmconv .bqhdr{padding:10px 12px;gap:8px;}
+#bqv-dmconv .bqhdr{padding:10px 12px;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);}
 #bqv-dmconv .bqback{padding:4px 6px;border-radius:var(--bq-radius-sm);background:var(--bq-bg-hover);border:none;width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
 #bqv-dmconv .bqback svg{width:18px;height:18px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 #bqv-dmconv .bqback:hover{background:var(--bq-bg-elevated);border:1px solid var(--bq-border);}
@@ -2125,13 +2253,30 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   padding:2px 4px!important;
 }
 .bqbbl.sticker .bqsticker{
-  font-size:62px;line-height:1;display:inline-block;
-  filter:drop-shadow(0 6px 14px rgba(0,0,0,.4));
-  animation:bqStickerPop .5s cubic-bezier(.34,1.56,.64,1) both;
+  font-size:64px;line-height:1;display:inline-block;
+  filter:drop-shadow(0 6px 20px rgba(0,0,0,.45));
+  animation:bqStickerPop .55s cubic-bezier(.34,1.56,.64,1) both;
+  cursor:default;user-select:none;
+  position:relative;
+}
+.bqbbl.sticker{
+  background:none!important;border:none!important;box-shadow:none!important;
+  padding:8px 4px!important;position:relative;
+}
+.bqbbl.sticker::after{
+  content:'';position:absolute;inset:-20px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%);
+  animation:bqStickerBurst .6s ease both;pointer-events:none;
+}
+@keyframes bqStickerBurst{
+  0%{transform:scale(.2);opacity:1;}
+  50%{transform:scale(1.4);opacity:.4;}
+  100%{transform:scale(2);opacity:0;}
 }
 @keyframes bqStickerPop{
-  0%{opacity:0;transform:scale(.3) rotate(-12deg);}
-  60%{opacity:1;transform:scale(1.15) rotate(4deg);}
+  0%{opacity:0;transform:scale(.2) rotate(-15deg);}
+  55%{opacity:1;transform:scale(1.2) rotate(5deg);}
+  75%{transform:scale(.92) rotate(-2deg);}
   100%{opacity:1;transform:scale(1) rotate(0);}
 }
 
@@ -2420,7 +2565,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-      <button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
@@ -2434,6 +2579,34 @@ const HTML = `
         <div class="bqpc-actions" id="bqpc-actions"></div>
       </div>
     </div>
+  </div>
+
+  <!-- DM Lock Overlay -->
+  <div id="bq-dm-lock">
+    <div class="bqdml-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <div class="bqdml-title">DMs Locked</div>
+    <div class="bqdml-sub">Enter your PIN to unlock</div>
+    <div class="bqdml-dots" id="bqdml-dots">
+      <div class="bqdml-dot"></div><div class="bqdml-dot"></div>
+      <div class="bqdml-dot"></div><div class="bqdml-dot"></div>
+    </div>
+    <div class="bqdml-pad">
+      <button class="bqdml-key" data-k="1">1</button><button class="bqdml-key" data-k="2">2</button><button class="bqdml-key" data-k="3">3</button>
+      <button class="bqdml-key" data-k="4">4</button><button class="bqdml-key" data-k="5">5</button><button class="bqdml-key" data-k="6">6</button>
+      <button class="bqdml-key" data-k="7">7</button><button class="bqdml-key" data-k="8">8</button><button class="bqdml-key" data-k="9">9</button>
+      <div></div><button class="bqdml-key zero" data-k="0">0</button><button class="bqdml-key del" data-k="del">⌫</button>
+    </div>
+    <div class="bqdml-forgot" id="bqdml-forgot">Forgot PIN? Reset</div>
+  </div>
+  <!-- DM Set PIN Modal -->
+  <div id="bq-dm-setpin">
+    <div class="bqdmsp-title">Set DM Lock PIN</div>
+    <div class="bqdmsp-sub">Enter a 4-digit PIN to lock your DMs<br>when you leave this section</div>
+    <input class="bqdmsp-input" id="bqdmsp-inp" type="password" inputmode="numeric" maxlength="4" placeholder="····" autocomplete="off">
+    <input class="bqdmsp-input" id="bqdmsp-conf" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm PIN" autocomplete="off">
+    <div style="font-family:Inter,sans-serif;font-size:11px;color:rgba(248,113,113,.8);min-height:18px;margin-bottom:8px;text-align:center" id="bqdmsp-err"></div>
+    <button class="bqdmsp-btn" id="bqdmsp-save">Set PIN</button>
+    <div class="bqdmsp-cancel" id="bqdmsp-cancel">Cancel</div>
   </div>
 
   <!-- Name modal -->
@@ -2484,9 +2657,6 @@ const HTML = `
   <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen">
   <svg id="bq-fs-ico" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
   </button>
-        <button class="bqhbtn" id="bq-search-btn" title="Search messages">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
         <button class="bqhbtn" id="bq-ren-btn" title="Change username">
           <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
         </button>
@@ -2511,7 +2681,7 @@ const HTML = `
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqgeo">😊</button>
-          <button class="bqgifbtn" id="bqggif" title="Send a GIF">GIF</button>
+          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="4"/><text x="6" y="16" font-size="9" font-weight="900" fill="currentColor" stroke="none">GIF</text></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
         </div>
@@ -2528,12 +2698,6 @@ const HTML = `
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
         <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
-      </div>
-      <div class="bqdm-search-wrap">
-        <div class="bqdm-search">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input class="bqdm-search-inp" id="bqdm-search-inp" type="text" placeholder="Search conversations..." autocomplete="off" autocapitalize="off" autocorrect="off">
-        </div>
       </div>
       <div id="bqdml"></div>
     </div>
@@ -2569,6 +2733,7 @@ const HTML = `
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="bqempty-tx">Start a Conversation</div>
           <div class="bqempty-sub" id="bqdmesub"></div>
+          <div class="bqdm-empty-chips"><span>👋 Say hi</span><span>❤️ Send love</span><span>🔥 Hype them</span></div>
         </div>
       </div>
       <div class="bqtyp" id="bqdmtyp"></div>
@@ -2589,7 +2754,7 @@ const HTML = `
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqdmeo">😊</button>
-          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF">GIF</button>
+          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="4"/><text x="6" y="16" font-size="9" font-weight="900" fill="currentColor" stroke="none">GIF</text></svg></button>
           <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note (tap to record, tap to stop)"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
@@ -2615,6 +2780,7 @@ const HTML = `
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
           <div class="bq-info-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="bq-info-row-label">Disappearing messages</div><div class="bq-info-row-sub" id="bq-disappear-sub">Off</div></div></div><label class="bq-toggle"><input type="checkbox" id="bq-disappear-chk"><span class="bq-toggle-slider"></span></label></div>
+          <div class="bq-info-row" id="bq-dm-lock-row" style="cursor:pointer"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><div class="bq-info-row-label" id="bq-dm-lock-label">DM Lock</div><div class="bq-info-row-sub" id="bq-dm-lock-sub">Not set</div></div></div><svg viewBox="0 0 24 24" width="14" height="14" style="stroke:var(--bq-text-subtle);fill:none;stroke-width:2;stroke-linecap:round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Actions</div>
@@ -9865,8 +10031,7 @@ function activeDmPuid(){
   .bq-linkprev .bq-lp-t{font-weight:600;font-size:13px;line-height:1.3;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .bq-linkprev .bq-lp-d{font-size:11px;opacity:.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   /* Translate badge */
-  .bq-tr-out{margin-top:6px;padding:6px 8px;background:rgba(96,165,250,.1);border-left:2px solid #60a5fa;border-radius:0 6px 6px 0;font-size:.95em}
-  .bq-tr-toggle{display:inline-block;margin-top:4px;font-size:11px;color:#9ad7ff;cursor:pointer;opacity:.8}
+
   /* Poll bubble */
   .bq-poll{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;margin:4px 0;min-width:220px;max-width:340px}
   .bq-poll-q{font-weight:700;margin-bottom:10px}
@@ -10000,44 +10165,7 @@ const bubbleObs=new MutationObserver(muts=>{
 });
 
 /* Translate via context menu (long-press) */
-function translateMessage(text, target='en'){
-  const url='https://lingva.ml/api/v1/auto/'+target+'/'+encodeURIComponent(text.slice(0,500));
-  return fetch(url).then(r=>r.json()).then(j=>j?.translation||null).catch(()=>null);
-}
-function attachTranslateUI(){
-  // Long-press any bubble shows a tiny "Translate" button; tap to translate.
-  let pressTimer=null, pressTarget=null;
-  const start=(e)=>{
-    const bbl=e.target.closest?.('.bqbbl'); if(!bbl) return;
-    const txt=bbl.textContent.trim(); if(txt.length<2) return;
-    pressTarget=bbl;
-    pressTimer=setTimeout(()=>{
-      if(bbl.querySelector('.bq-tr-toggle')) return;
-      const tog=document.createElement('div');
-      tog.className='bq-tr-toggle'; tog.textContent='🌐 Translate';
-      bbl.appendChild(tog);
-      tog.onclick=async(ev)=>{
-        ev.stopPropagation();
-        if(bbl.querySelector('.bq-tr-out')){
-          // toggle off
-          bbl.querySelector('.bq-tr-out').remove(); tog.textContent='🌐 Translate'; return;
-        }
-        tog.textContent='Translating…';
-        const t=await translateMessage(txt);
-        if(!t){ tog.textContent='🌐 Translate failed'; setTimeout(()=>tog.remove(),1500); return; }
-        const out=document.createElement('div'); out.className='bq-tr-out'; out.textContent=t;
-        bbl.appendChild(out); tog.textContent='Show original';
-        tog.onclick=()=>{ out.remove(); tog.textContent='🌐 Translate'; tog.onclick=null; setTimeout(()=>attachTranslateUI(),0); };
-      };
-      setTimeout(()=>{ if(tog.parentNode && !bbl.querySelector('.bq-tr-out')) tog.remove(); }, 6000);
-    }, 600);
-  };
-  const cancel=()=>{ if(pressTimer) clearTimeout(pressTimer); pressTimer=null; };
-  document.addEventListener('pointerdown', start, {passive:true});
-  document.addEventListener('pointerup', cancel, {passive:true});
-  document.addEventListener('pointercancel', cancel, {passive:true});
-  document.addEventListener('pointermove', cancel, {passive:true});
-}
+// translate feature removed
 
 /* B) Slash commands + C) Polls — fully removed in v26 */
 
@@ -10348,7 +10476,7 @@ function boot(){
     bubbleObs.observe(document.body, {childList:true, subtree:true});
     document.querySelectorAll('.bqbbl').forEach(processBubble);
   }catch(_){}
-  try{ attachTranslateUI(); }catch(_){}
+  // attachTranslateUI removed
   try{ wireDrafts(); }catch(_){}
   try{ wireScheduleSendButton(); }catch(_){}
   try{ mountDisappearBtn(); }catch(_){}
@@ -12445,6 +12573,121 @@ setInterval(()=>{
   setInterval(ensureBurstButton, 900);
 
   try{ console.log('[bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations'); }catch(_){}
+
+/* ══════════════ DM LOCK ══════════════ */
+(function(){
+  const LS_KEY = 'bq_dm_lock_pin';
+  let pinBuffer = '';
+  let _locked = false;
+
+  function getPin(){ return localStorage.getItem(LS_KEY)||''; }
+  function setPin(p){ localStorage.setItem(LS_KEY, p); }
+  function hasPin(){ return !!getPin(); }
+
+  function lockDms(){
+    if(!hasPin()) return;
+    _locked = true;
+    const el = document.getElementById('bq-dm-lock');
+    if(el){ el.classList.add('show'); resetDots(); pinBuffer=''; }
+  }
+
+  function unlockDms(){
+    _locked = false;
+    const el = document.getElementById('bq-dm-lock');
+    if(el) el.classList.remove('show');
+  }
+
+  function resetDots(error){
+    const dots = document.querySelectorAll('.bqdml-dot');
+    dots.forEach((d,i)=>{
+      d.classList.remove('filled','error');
+      if(error) d.classList.add('error');
+    });
+    if(error) setTimeout(()=>{ dots.forEach(d=>d.classList.remove('error')); pinBuffer=''; updateDots(); },500);
+  }
+
+  function updateDots(){
+    document.querySelectorAll('.bqdml-dot').forEach((d,i)=>{
+      d.classList.toggle('filled', i < pinBuffer.length);
+      d.classList.remove('error');
+    });
+  }
+
+  function handleKey(k){
+    if(k==='del'){ pinBuffer=pinBuffer.slice(0,-1); updateDots(); return; }
+    if(pinBuffer.length>=4) return;
+    pinBuffer+=k; updateDots();
+    if(pinBuffer.length===4){
+      if(pinBuffer===getPin()){ unlockDms(); }
+      else { resetDots(true); }
+    }
+  }
+
+  // Wire keypad
+  document.addEventListener('click', e=>{
+    const key = e.target.closest('.bqdml-key');
+    if(key) handleKey(key.dataset.k);
+  });
+
+  // Forgot PIN
+  document.getElementById('bqdml-forgot')?.addEventListener('click',()=>{
+    localStorage.removeItem(LS_KEY);
+    unlockDms();
+    showToast?.('PIN reset. Set a new one in DM settings.');
+  });
+
+  // Lock when leaving DMs tab
+  const origNav = window.bqNav;
+  window.bqNav = function(target){
+    if(_locked && (target==='dms'||target==='dmconv')){
+      origNav(target);
+      setTimeout(()=>lockDms(),50);
+      return;
+    }
+    if(hasPin() && (activeView==='dms'||activeView==='dmconv') && target!=='dms'&&target!=='dmconv'){
+      origNav(target);
+      setTimeout(()=>lockDms(),100);
+      return;
+    }
+    origNav(target);
+  };
+
+  // Set PIN modal
+  document.getElementById('bq-dm-lock-row')?.addEventListener('click',()=>{
+    document.getElementById('bq-dm-setpin').classList.add('show');
+    document.getElementById('bqdmsp-inp').value='';
+    document.getElementById('bqdmsp-conf').value='';
+    document.getElementById('bqdmsp-err').textContent='';
+    updateLockSubLabel();
+  });
+  document.getElementById('bqdmsp-cancel')?.addEventListener('click',()=>{
+    document.getElementById('bq-dm-setpin').classList.remove('show');
+  });
+  document.getElementById('bqdmsp-save')?.addEventListener('click',()=>{
+    const p = document.getElementById('bqdmsp-inp').value.trim();
+    const c = document.getElementById('bqdmsp-conf').value.trim();
+    const err = document.getElementById('bqdmsp-err');
+    if(!/^\d{4}$/.test(p)){ err.textContent='PIN must be exactly 4 digits'; return; }
+    if(p!==c){ err.textContent='PINs do not match'; return; }
+    setPin(p);
+    document.getElementById('bq-dm-setpin').classList.remove('show');
+    updateLockSubLabel();
+    showToast?.('DM Lock PIN set ✓');
+  });
+
+  function updateLockSubLabel(){
+    const sub = document.getElementById('bq-dm-lock-sub');
+    const lbl = document.getElementById('bq-dm-lock-label');
+    if(!sub||!lbl) return;
+    if(hasPin()){ sub.textContent='Enabled · tap to change'; lbl.textContent='DM Lock'; }
+    else { sub.textContent='Not set'; }
+  }
+
+  // Init: lock if has pin and on dms view
+  setTimeout(()=>{ updateLockSubLabel(); if(hasPin()&&(activeView==='dms'||activeView==='dmconv')) lockDms(); },300);
+})();
+/* ════════════ end DM lock ════════════ */
+
 })();
 /* ════════════ end v34 patch ════════════ */
 
