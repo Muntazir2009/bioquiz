@@ -3293,14 +3293,35 @@ document.addEventListener('click', function(e){
   if(key){ e.preventDefault(); e.stopPropagation(); _bqDmLockHandleKey(key.dataset.k); }
 });
 
-// Forgot PIN — reset
+// Forgot PIN — reset (with confirmation)
+var _bqDmLockResetPending = false;
+var _bqDmLockResetTimer = null;
 document.addEventListener('click', function(e){
-  if(e.target.closest('#bqdml-forgot')){
-    localStorage.removeItem('bq_dm_lock_pin');
-    _bqDmLockArmed = false;
-    var el = document.getElementById('bq-dm-lock');
-    if(el) el.classList.remove('show');
-    if(typeof showToast==='function') showToast('PIN reset. Set a new one in DM settings.');
+  var forgotEl = e.target.closest('#bqdml-forgot');
+  if(forgotEl){
+    e.preventDefault(); e.stopPropagation();
+    if(_bqDmLockResetPending){
+      // Second tap — confirmed
+      _bqDmLockResetPending = false;
+      clearTimeout(_bqDmLockResetTimer);
+      forgotEl.textContent = 'Forgot PIN? Reset';
+      forgotEl.style.color = '';
+      localStorage.removeItem('bq_dm_lock_pin');
+      _bqDmLockArmed = false;
+      var el = document.getElementById('bq-dm-lock');
+      if(el) el.classList.remove('show');
+      if(typeof showToast==='function') showToast('PIN reset. Set a new one in DM settings.');
+    } else {
+      // First tap — ask for confirmation
+      _bqDmLockResetPending = true;
+      forgotEl.textContent = 'Tap again to confirm reset';
+      forgotEl.style.color = '#f87171';
+      _bqDmLockResetTimer = setTimeout(function(){
+        _bqDmLockResetPending = false;
+        forgotEl.textContent = 'Forgot PIN? Reset';
+        forgotEl.style.color = '';
+      }, 3000);
+    }
   }
 });
 
