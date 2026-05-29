@@ -6,6 +6,9 @@ import { useEffect } from "react";
  * ChatWidget — loads the BioQuiz chat widget script.
  * The script is a self-contained IIFE that creates its own DOM
  * (floating bubble + panel). We just need to inject the script tag.
+ *
+ * The rePaintPoll stub is defined in layout.tsx's synchronous <script>
+ * tag to ensure it's available before any script runs.
  */
 export function ChatWidget() {
   useEffect(() => {

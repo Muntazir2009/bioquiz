@@ -1,8 +1,10 @@
 /**
  * File storage layer — Cloudflare R2 compatible.
- * Uses the R2 bucket binding available in Cloudflare Workers/Pages.
- * Falls back to no-ops on local dev without R2 (for preview mode).
+ * Uses the R2 bucket binding accessed via getCloudflareContext().
+ * In local dev without R2, files are stored in memory (non-persistent).
  */
+
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 /** Generate a unique share ID (8 chars, URL-safe) */
 export function generateShareId(): string {
@@ -20,41 +22,56 @@ export function generateStorageName(originalName: string): string {
   return `${id}${ext}`;
 }
 
+// In-memory fallback for local dev (non-persistent)
+const memoryStore = new Map<string, Uint8Array>();
+
 /** Get the R2 bucket from the Cloudflare Workers env */
 function getBucket(): R2Bucket | null {
   try {
-    // In Cloudflare Workers, the env is available via process.env or globalThis
-    // @ts-expect-error — CF Workers runtime injects env
-    const env = process.env || globalThis.__env__ || {};
-    return env.BUCKET || null;
+    const { env } = getCloudflareContext();
+    const bucket = env.BUCKET;
+    if (bucket && typeof bucket === "object" && "put" in (bucket as object)) {
+      return bucket as R2Bucket;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
-/** Save a file buffer to R2, returns the storage key */
+/** Save a file buffer to R2 (or memory in dev), returns the storage key */
 export async function saveFile(buffer: Buffer | ArrayBuffer | Uint8Array, storageName: string): Promise<string> {
   const bucket = getBucket();
   if (bucket) {
     await bucket.put(storageName, buffer);
+  } else {
+    // Local dev fallback — store in memory
+    const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    memoryStore.set(storageName, uint8);
   }
   return storageName; // In R2, the key IS the path
 }
 
-/** Read a file from R2 */
+/** Read a file from R2 (or memory in dev) */
 export async function getFile(storageKey: string): Promise<ArrayBuffer> {
   const bucket = getBucket();
-  if (!bucket) {
-    throw new Error("R2 bucket not available");
+  if (bucket) {
+    const object = await bucket.get(storageKey);
+    if (!object) {
+      throw new Error(`File not found in R2: ${storageKey}`);
+    }
+    return object.arrayBuffer();
   }
-  const object = await bucket.get(storageKey);
-  if (!object) {
-    throw new Error(`File not found in R2: ${storageKey}`);
+
+  // Local dev fallback
+  const data = memoryStore.get(storageKey);
+  if (data) {
+    return data.buffer as ArrayBuffer;
   }
-  return object.arrayBuffer();
+  throw new Error("R2 bucket not available and file not in memory store");
 }
 
-/** Delete a file from R2 */
+/** Delete a file from R2 (or memory in dev) */
 export async function deleteFileFromDisk(storageKey: string): Promise<void> {
   const bucket = getBucket();
   if (bucket) {
@@ -63,6 +80,8 @@ export async function deleteFileFromDisk(storageKey: string): Promise<void> {
     } catch {
       // File might already be deleted, ignore
     }
+  } else {
+    memoryStore.delete(storageKey);
   }
 }
 

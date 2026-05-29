@@ -10,6 +10,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
       themes={["dark", "brown"]}
+      value={{
+        dark: "dark",
+        brown: "brown",
+      }}
     >
       {children}
     </NextThemesProvider>

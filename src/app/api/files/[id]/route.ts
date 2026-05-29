@@ -21,7 +21,7 @@ export async function PATCH(
     const { id } = await params;
     const db = getDb();
 
-    const file = await db.file.findUnique({ where: { id } });
+    const file = await db.fileFindUnique({ id });
     if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
@@ -49,17 +49,14 @@ export async function PATCH(
       updateData.description = description.trim() || null;
     }
     if (expiresAt !== undefined) {
-      updateData.expiresAt = expiresAt ? new Date(expiresAt) : null;
+      updateData.expiresAt = expiresAt || null;
     }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No changes provided" }, { status: 400 });
     }
 
-    const updated = await db.file.update({
-      where: { id },
-      data: updateData,
-    });
+    const updated = await db.fileUpdate(id, updateData);
 
     return NextResponse.json({
       file: {
@@ -73,8 +70,8 @@ export async function PATCH(
         downloads: updated.downloads,
         isPublic: updated.isPublic,
         description: updated.description,
-        createdAt: updated.createdAt.toISOString(),
-        expiresAt: updated.expiresAt?.toISOString() ?? null,
+        createdAt: updated.createdAt,
+        expiresAt: updated.expiresAt,
       },
     });
   } catch (err) {
@@ -91,7 +88,7 @@ export async function DELETE(
     const { id } = await params;
     const db = getDb();
 
-    const file = await db.file.findUnique({ where: { id } });
+    const file = await db.fileFindUnique({ id });
 
     if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
@@ -107,7 +104,7 @@ export async function DELETE(
     }
 
     await deleteFileFromDisk(file.storagePath);
-    await db.file.delete({ where: { id } });
+    await db.fileDelete(id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

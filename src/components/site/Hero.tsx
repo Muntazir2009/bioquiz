@@ -3,8 +3,8 @@
 import { ArrowRight, CloudUpload, Zap } from "lucide-react";
 
 /**
- * Hero section — clean, modern, no old-HTML vibes.
- * Simple one-column layout: headline + description + CTAs.
+ * Hero section — 21st.dev inspired smooth design.
+ * Clean layout with gradient text and smooth CTAs.
  */
 export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
   return (
@@ -14,13 +14,9 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
         <div className="hero-spotlight" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="hero-orb hero-orb-1" />
-        <div className="hero-orb hero-orb-2" />
-      </div>
 
       {/* ── Content ── */}
-      <div className="relative mx-auto max-w-7xl px-6 py-28 sm:py-36">
+      <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32">
         {/* Status badge */}
         <div
           className="hero-badge-pulse inline-flex items-center gap-2 rounded-full border border-border bg-card/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground animate-[fade-up_0.5s_ease_both]"
@@ -35,7 +31,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
 
         {/* Heading */}
         <h1
-          className="mt-7 max-w-3xl text-balance text-5xl font-semibold tracking-tight sm:text-6xl animate-[fade-up_0.6s_ease_both]"
+          className="mt-6 max-w-3xl text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "60ms" }}
         >
           The biology workspace.
@@ -45,7 +41,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
 
         {/* Description */}
         <p
-          className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground animate-[fade-up_0.6s_ease_both]"
+          className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "130ms" }}
         >
           Seven beautifully crafted modules — quizzes, AI research, a 3D cell
@@ -54,7 +50,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
 
         {/* CTAs */}
         <div
-          className="mt-8 flex flex-wrap items-center gap-3 animate-[fade-up_0.6s_ease_both]"
+          className="mt-7 flex flex-wrap items-center gap-3 animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "200ms" }}
         >
           <div className="hero-cta-border">
@@ -75,6 +71,26 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
             <CloudUpload className="h-3.5 w-3.5 mr-1.5" />
             Upload files
           </button>
+        </div>
+
+        {/* Quick stats — 21st.dev style pill row */}
+        <div
+          className="mt-10 flex flex-wrap items-center gap-3 animate-[fade-up_0.6s_ease_both]"
+          style={{ animationDelay: "280ms" }}
+        >
+          {[
+            { label: "Modules", value: "7" },
+            { label: "AI Powered", value: "Yes" },
+            { label: "3D Viewer", value: "Live" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1.5 text-[11px]"
+            >
+              <span className="text-muted-foreground">{stat.label}</span>
+              <span className="font-semibold text-foreground">{stat.value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

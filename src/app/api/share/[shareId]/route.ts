@@ -9,18 +9,18 @@ export async function GET(
   try {
     const { shareId } = await params;
     const db = getDb();
-    const file = await db.file.findUnique({ where: { shareId } });
+    const file = await db.fileFindUnique({ shareId });
 
     if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
     // Check if expired
-    if (file.expiresAt && file.expiresAt < new Date()) {
+    if (file.expiresAt && new Date(file.expiresAt) < new Date()) {
       // Auto-delete expired files
       try {
         await deleteFileFromDisk(file.storagePath);
-        await db.file.delete({ where: { id: file.id } });
+        await db.fileDelete(file.id);
       } catch {
         // ignore cleanup errors
       }
@@ -31,11 +31,8 @@ export async function GET(
     const isDownload = url.searchParams.get("download") === "true";
 
     if (isDownload) {
-      // Increment download count
-      await db.file.update({
-        where: { id: file.id },
-        data: { downloads: { increment: 1 } },
-      });
+      // Increment download count manually (D1 client doesn't support increment)
+      await db.fileUpdate(file.id, { downloads: file.downloads + 1 });
 
       const buffer = await getFile(file.storagePath);
       return new Response(buffer, {
@@ -56,7 +53,7 @@ export async function GET(
         mimeType: file.mimeType,
         category: getFileCategory(file.mimeType),
         downloads: file.downloads,
-        createdAt: file.createdAt.toISOString(),
+        createdAt: file.createdAt,
         shareId: file.shareId,
         isPublic: file.isPublic,
         description: file.description,

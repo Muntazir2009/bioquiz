@@ -1,14 +1,26 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Loader } from "@/components/site/Loader";
 import { TopBar } from "@/components/site/TopBar";
 import { Hero } from "@/components/site/Hero";
 import { ModulesGrid } from "@/components/site/ModulesGrid";
 import { Footer } from "@/components/site/Footer";
-import { FilePanel } from "@/components/site/FilePanel";
-import { SharedFileView } from "@/components/site/SharedFileView";
-import { ChatWidget } from "@/components/site/ChatWidget";
+
+// Dynamic imports for heavy / rarely-used components — reduces initial JS bundle
+const FilePanel = dynamic(
+  () => import("@/components/site/FilePanel").then((mod) => ({ default: mod.FilePanel })),
+  { ssr: false }
+);
+const SharedFileView = dynamic(
+  () => import("@/components/site/SharedFileView").then((mod) => ({ default: mod.SharedFileView })),
+  { ssr: false }
+);
+const ChatWidget = dynamic(
+  () => import("@/components/site/ChatWidget").then((mod) => ({ default: mod.ChatWidget })),
+  { ssr: false }
+);
 
 export default function Home() {
   const [filePanelOpen, setFilePanelOpen] = useState(false);

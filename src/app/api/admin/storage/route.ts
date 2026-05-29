@@ -13,11 +13,11 @@ export async function GET(request: Request) {
 
     const db = getDb();
 
-    // Get total size from DB (R2 doesn't have a simple "list all" API for size)
-    const allFiles = await db.file.findMany({ select: { mimeType: true, size: true, downloads: true } });
+    // Get all files for aggregation
+    const allFiles = await db.fileFindMany();
 
     let diskUsed = 0;
-    let fileCount = allFiles.length;
+    const fileCount = allFiles.length;
     const typeMap: Record<string, { count: number; size: number; downloads: number }> = {};
 
     for (const f of allFiles) {
@@ -30,18 +30,10 @@ export async function GET(request: Request) {
     }
 
     // Top downloaded files
-    const topDownloaded = await db.file.findMany({
-      orderBy: { downloads: "desc" },
-      take: 5,
-      select: { id: true, originalName: true, downloads: true, size: true },
-    });
+    const topDownloaded = await db.fileFindMany(undefined, "downloads DESC", 5);
 
     // Largest files
-    const largest = await db.file.findMany({
-      orderBy: { size: "desc" },
-      take: 5,
-      select: { id: true, originalName: true, size: true, mimeType: true },
-    });
+    const largest = await db.fileFindMany(undefined, "size DESC", 5);
 
     return NextResponse.json({
       disk: {

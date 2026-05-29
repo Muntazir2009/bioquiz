@@ -34,16 +34,15 @@ export async function GET(request: Request) {
 
     const db = getDb();
 
-    const totalFiles = await db.file.count();
-    const totalSizeResult = await db.file.aggregate({ _sum: { size: true } });
-    const totalSize = totalSizeResult._sum.size ?? 0;
-    const totalDownloadsResult = await db.file.aggregate({ _sum: { downloads: true } });
-    const totalDownloads = totalDownloadsResult._sum.downloads ?? 0;
-    const publicFiles = await db.file.count({ where: { isPublic: true } });
-    const privateFiles = await db.file.count({ where: { isPublic: false } });
+    const totalFiles = await db.fileCount();
+    const aggregates = await db.fileAggregate();
+    const totalSize = aggregates.totalSize;
+    const totalDownloads = aggregates.totalDownloads;
+    const publicFiles = await db.fileCount({ isPublic: true });
+    const privateFiles = await db.fileCount({ isPublic: false });
 
-    // Category distribution
-    const allFiles = await db.file.findMany({ select: { mimeType: true, size: true } });
+    // Get all files for category distribution
+    const allFiles = await db.fileFindMany(undefined, "createdAt DESC");
     const categoryMap: Record<string, { count: number; size: number }> = {};
     for (const f of allFiles) {
       const cat = getFileCategory(f.mimeType);
@@ -59,21 +58,15 @@ export async function GET(request: Request) {
     }));
 
     // Recent files
-    const recentFiles = await db.file.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+    const recentFiles = await db.fileFindMany(undefined, "createdAt DESC", 50);
 
     // Files by day (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentUploads = await db.file.findMany({
-      where: { createdAt: { gte: sevenDaysAgo } },
-      select: { createdAt: true, size: true },
-    });
+    const recentUploads = allFiles.filter(f => new Date(f.createdAt) >= sevenDaysAgo);
     const byDay: Record<string, { count: number; size: number }> = {};
     for (const f of recentUploads) {
-      const day = f.createdAt.toISOString().split("T")[0];
+      const day = new Date(f.createdAt).toISOString().split("T")[0];
       if (!byDay[day]) byDay[day] = { count: 0, size: 0 };
       byDay[day].count++;
       byDay[day].size += f.size;
@@ -104,8 +97,8 @@ export async function GET(request: Request) {
         downloads: f.downloads,
         isPublic: f.isPublic,
         description: f.description,
-        createdAt: f.createdAt.toISOString(),
-        expiresAt: f.expiresAt?.toISOString() ?? null,
+        createdAt: f.createdAt,
+        expiresAt: f.expiresAt,
       })),
     });
   } catch (err) {

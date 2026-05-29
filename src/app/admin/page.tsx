@@ -102,7 +102,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin-auth");
-    if (saved === "0613") { setIsAuthed(true); setPassword(saved); }
+    if (saved === "0613") { queueMicrotask(() => { setIsAuthed(true); setPassword(saved); }); }
   }, []);
 
   // ─── Fetch data ──────────────────────────────────────────────────────────
@@ -116,13 +116,14 @@ export default function AdminPage() {
         fetch("/api/admin/storage", { headers: { "x-admin-password": pwd } }),
       ]);
       if (mainRes.ok) setData(await mainRes.json());
-      else { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); }
+      else if (mainRes.status === 401) { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); }
+      else { /* Server error (e.g. DB not configured) — don't log out, just show empty state */ }
       if (storageRes.ok) setStorageData(await storageRes.json());
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, [password]);
 
-  useEffect(() => { if (isAuthed) fetchData(); }, [isAuthed, fetchData]);
+  useEffect(() => { if (isAuthed) { queueMicrotask(() => fetchData()); } }, [isAuthed, fetchData]);
 
   // ─── Polling (replaces WebSocket) ────────────────────────────────────────
 
@@ -184,14 +185,6 @@ export default function AdminPage() {
     setTimeout(() => setCopiedShareId(null), 2000);
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
-    const filtered = getFilteredFiles();
-    if (selectedFiles.size === filtered.length) setSelectedFiles(new Set());
-    else setSelectedFiles(new Set(filtered.map((f) => f.id)));
-  }, [selectedFiles]);
-
-  const logout = useCallback(() => { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); setPassword(""); }, []);
-
   // ─── Filtered files ──────────────────────────────────────────────────────
 
   const getFilteredFiles = useCallback(() => {
@@ -211,6 +204,14 @@ export default function AdminPage() {
   }, [data, searchQuery, selectedCategory, sortBy]);
 
   const filteredFiles = getFilteredFiles();
+
+  const toggleSelectAll = useCallback(() => {
+    const filtered = getFilteredFiles();
+    if (selectedFiles.size === filtered.length) setSelectedFiles(new Set());
+    else setSelectedFiles(new Set(filtered.map((f) => f.id)));
+  }, [selectedFiles, getFilteredFiles]);
+
+  const logout = useCallback(() => { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); setPassword(""); }, []);
 
   // ─── Login Screen ────────────────────────────────────────────────────────
 
@@ -577,7 +578,8 @@ export default function AdminPage() {
             )}
 
             {/* ─── STORAGE TAB ──────────────────────────────────────────── */}
-            {tab === "storage" && storageData && (
+            {tab === "storage" && (
+              storageData ? (
               <div className="flex flex-col gap-6">
                 {/* Disk usage */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -642,6 +644,12 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><Database className="h-5 w-5 text-muted-foreground" /></div>
+                  <div><p className="text-sm font-medium">Storage data unavailable</p><p className="mt-1 text-xs text-muted-foreground">Could not load storage analytics. Database may not be configured.</p></div>
+                </div>
+              )
             )}
           </div>
         ) : null}

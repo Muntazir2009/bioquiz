@@ -70,9 +70,20 @@ export function FileUploadZone({ onUploadComplete, uploaderId }: { onUploadCompl
             }
             onUploadComplete();
           } else {
+            // Try to extract the actual error message from the server
+            let errorMsg = "Upload failed";
+            try {
+              const errBody = JSON.parse(xhr.responseText);
+              if (errBody.error) errorMsg = errBody.error;
+              else if (xhr.status === 413) errorMsg = "File too large (max 50MB)";
+              else if (xhr.status === 503) errorMsg = "Service unavailable — try again later";
+            } catch {
+              if (xhr.status === 413) errorMsg = "File too large (max 50MB)";
+              else if (xhr.status === 503) errorMsg = "Service unavailable — try again later";
+            }
             setUploading((prev) =>
               prev.map((f) =>
-                f.id === id ? { ...f, status: "error", error: "Upload failed" } : f
+                f.id === id ? { ...f, status: "error", error: errorMsg } : f
               )
             );
           }
@@ -218,9 +229,12 @@ export function FileUploadZone({ onUploadComplete, uploaderId }: { onUploadCompl
                   />
                 </div>
                 <span className="text-[9px] tabular-nums text-muted-foreground">
-                  {f.status === "done" ? "Done" : f.status === "error" ? "Error" : `${f.progress}%`}
+                  {f.status === "done" ? "Done" : f.status === "error" ? "Failed" : `${f.progress}%`}
                 </span>
               </div>
+              {f.status === "error" && f.error && (
+                <p className="text-[9px] text-red-500 mt-0.5 truncate">{f.error}</p>
+              )}
             </div>
             <button
               onClick={() => removeUpload(f.id)}

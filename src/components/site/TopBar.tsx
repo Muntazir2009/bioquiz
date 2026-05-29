@@ -59,9 +59,9 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                     className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
                   >
                     {theme === "dark" ? (
-                      <Sun className="h-4 w-4 text-amber-500 transition-transform group-hover:rotate-45" />
+                      <Sun className="h-4 w-4 text-amber-500" />
                     ) : (
-                      <Moon className="h-4 w-4 transition-transform group-hover:-rotate-12" />
+                      <Moon className="h-4 w-4" />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -74,10 +74,10 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <a
-                  href="/admin.html"
+                  href="/admin"
                   className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
                 >
-                  <ShieldCheck className="h-4 w-4 transition-transform group-hover:scale-105" />
+                  <ShieldCheck className="h-4 w-4" />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Admin</TooltipContent>
@@ -89,7 +89,7 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                   onClick={onFilePanelOpen}
                   className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
                 >
-                  <CloudUpload className="h-4 w-4 transition-transform group-hover:scale-105" />
+                  <CloudUpload className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Files</TooltipContent>

@@ -11,17 +11,9 @@ import {
   CloudUpload,
   HardDrive,
   Trash2,
-  Eye,
-  EyeOff,
   Globe,
   Lock,
   Check,
-  Copy,
-  Download,
-  Pencil,
-  Info,
-  SortAsc,
-  SortDesc,
 } from "lucide-react";
 import { FileUploadZone } from "./FileUploadZone";
 import { FileList, type FileItem } from "./FileList";
@@ -32,8 +24,6 @@ type Tab = "upload" | "files";
 /**
  * Floating FilePanel — Cloudflare-compatible version.
  * Uses polling instead of WebSocket for real-time updates.
- * Cloudflare Pages does not support persistent WebSocket servers,
- * so we poll the API every 5 seconds when the panel is open.
  */
 export function FilePanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [tab, setTab] = useState<Tab>("upload");
@@ -45,15 +35,12 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Get uploader ID for auth
   const uploaderId = typeof window !== "undefined" ? getUploaderId() : "";
 
-  // Build auth headers (includes admin password if session exists)
+  // Build auth headers
   const getHeaders = useCallback(() => {
     const headers: Record<string, string> = {};
     if (uploaderId) headers["x-uploader-id"] = uploaderId;
-    // Check if user has admin session
     if (typeof window !== "undefined") {
       const adminAuth = sessionStorage.getItem("admin-auth");
       if (adminAuth === "0613") headers["x-admin-password"] = "0613";
@@ -67,7 +54,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
       const res = await fetch("/api/files", { headers: getHeaders() });
       if (res.ok) {
         const data = await res.json();
-        setFiles(data.files);
+        setFiles(data.files || []);
         setConnected(true);
       } else {
         setConnected(false);
@@ -81,9 +68,8 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
   useEffect(() => {
     if (!open) return;
 
-    queueMicrotask(() => { fetchFiles(); });
+    queueMicrotask(() => fetchFiles());
 
-    // Poll every 5 seconds for updates (replaces WebSocket)
     pollRef.current = setInterval(() => {
       fetchFiles();
     }, 5000);
@@ -96,7 +82,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     };
   }, [open, fetchFiles]);
 
-  // Delete a single file (owner or admin)
+  // Delete a single file
   const handleDelete = useCallback(async (id: string) => {
     const res = await fetch(`/api/files/${id}`, {
       method: "DELETE",
@@ -108,7 +94,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [getHeaders]);
 
-  // Batch delete selected files
+  // Batch delete
   const handleBatchDelete = useCallback(async () => {
     if (selectedFiles.size === 0) return;
     const ids = Array.from(selectedFiles);
@@ -119,7 +105,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     setSelectedFiles(new Set());
   }, [selectedFiles, getHeaders]);
 
-  // Toggle file visibility
+  // Toggle visibility
   const toggleVisibility = useCallback(async (id: string, current: boolean) => {
     const res = await fetch(`/api/files/${id}`, {
       method: "PATCH",
@@ -131,7 +117,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [getHeaders]);
 
-  // Rename a file
+  // Rename
   const handleRename = useCallback(async (id: string, newName: string) => {
     if (!newName.trim()) return;
     const res = await fetch(`/api/files/${id}`, {
@@ -150,7 +136,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
   }, [fetchFiles]);
 
   // Filtered & sorted files
-  const getFilteredFiles = useCallback(() => {
+  const filteredFiles = useMemo(() => {
     let result = [...files];
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -169,8 +155,6 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     return result;
   }, [files, searchQuery, categoryFilter, sortBy]);
 
-  const filteredFiles = getFilteredFiles();
-
   // Toggle select all
   const toggleSelectAll = useCallback(() => {
     if (selectedFiles.size === filteredFiles.length) {
@@ -180,7 +164,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [selectedFiles, filteredFiles]);
 
-  const categories = [...new Set(files.map((f) => f.category))].sort();
+  const categories = useMemo(() => [...new Set(files.map((f) => f.category))].sort(), [files]);
 
   // Storage stats
   const totalSize = useMemo(() => files.reduce((sum, f) => sum + f.size, 0), [files]);
@@ -198,13 +182,13 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
 
   return (
     <>
-      {/* Backdrop — subtle dim */}
+      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-foreground/10 backdrop-blur-sm transition-opacity duration-200"
         onClick={onClose}
       />
 
-      {/* Floating panel — centered card */}
+      {/* Floating panel */}
       <div className="file-panel-floating fixed z-50 flex flex-col rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
@@ -402,9 +386,9 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
         {/* Footer */}
         <div className="border-t border-border px-5 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className={`inline-block h-1.5 w-1.5 rounded-full ${connected ? "bg-green-500" : "bg-amber-500"}`} />
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${connected ? "bg-green-500" : "bg-amber-500 animate-pulse"}`} />
             <p className="text-[10px] text-muted-foreground">
-              {connected ? "Connected · Polling" : "Connecting..."}
+              {connected ? "Connected" : "Connecting..."}
             </p>
           </div>
           <p className="text-[10px] text-muted-foreground">

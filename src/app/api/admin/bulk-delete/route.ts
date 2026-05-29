@@ -23,20 +23,17 @@ export async function POST(request: Request) {
 
     const db = getDb();
 
-    const files = await db.file.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, storagePath: true },
-    });
+    // Fetch files to get their storage paths for R2 cleanup
+    const allFiles = await db.fileFindMany();
+    const filesToDelete = allFiles.filter((f) => ids.includes(f.id));
 
     // Delete from R2
-    await Promise.all(files.map((f) => deleteFileFromDisk(f.storagePath)));
+    await Promise.all(filesToDelete.map((f) => deleteFileFromDisk(f.storagePath)));
 
     // Delete from DB
-    const result = await db.file.deleteMany({
-      where: { id: { in: ids } },
-    });
+    const deletedCount = await db.fileDeleteMany(ids);
 
-    return NextResponse.json({ deleted: result.count });
+    return NextResponse.json({ deleted: deletedCount });
   } catch (err) {
     console.error("Bulk delete error:", err);
     return NextResponse.json({ error: "Bulk delete failed" }, { status: 500 });

@@ -30,13 +30,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        {/* Synchronous theme script — runs before paint, no flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="brown"){document.documentElement.className="brown"}else if(t==="dark"){document.documentElement.className="dark"}else{document.documentElement.className="dark"}}catch(e){}})();(function(){if(typeof window.rePaintPoll==="undefined"){window.rePaintPoll=function(){};}})();` }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <div aria-hidden className="grain-overlay" />
         <Toaster />
       </body>
     </html>

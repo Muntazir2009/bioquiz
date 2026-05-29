@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { generateShareId, formatFileSize, getFileCategory } from "@/lib/file-storage";
+import { generateShareId } from "@/lib/file-storage";
 
 const ADMIN_PASSWORD = "0613";
 
@@ -18,23 +18,22 @@ export async function POST(request: Request) {
 
     const db = getDb();
 
-    const original = await db.file.findUnique({ where: { id } });
+    const original = await db.fileFindUnique({ id });
     if (!original) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
     const shareId = generateShareId();
-    const duplicate = await db.file.create({
-      data: {
-        name: original.name,
-        originalName: `${original.originalName} (copy)`,
-        size: original.size,
-        mimeType: original.mimeType,
-        storagePath: original.storagePath,
-        shareId,
-        isPublic: original.isPublic,
-        description: original.description,
-      },
+    const duplicate = await db.fileCreate({
+      name: original.name,
+      originalName: `${original.originalName} (copy)`,
+      size: original.size,
+      mimeType: original.mimeType,
+      storagePath: original.storagePath,
+      shareId,
+      isPublic: original.isPublic,
+      description: original.description,
+      downloads: 0,
     });
 
     return NextResponse.json({
