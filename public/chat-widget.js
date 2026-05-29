@@ -12632,6 +12632,8 @@ setInterval(()=>{
   function lockDms(){
     if(!hasPin()) return;
     _locked = true;
+    // Only show overlay when the user is actually on a DM view
+    if(activeView!=='dms'&&activeView!=='dmconv') return;
     const el = document.getElementById('bq-dm-lock');
     if(el){ el.classList.add('show'); resetDots(); pinBuffer=''; }
   }
@@ -12685,13 +12687,15 @@ setInterval(()=>{
   const origNav = window.bqNav;
   window.bqNav = function(target){
     if(_locked && (target==='dms'||target==='dmconv')){
+      // Navigate to DMs but show lock overlay
       origNav(target);
       setTimeout(()=>lockDms(),50);
       return;
     }
     if(hasPin() && (activeView==='dms'||activeView==='dmconv') && target!=='dms'&&target!=='dmconv'){
+      // Leaving DMs — arm the lock but DON'T show overlay over the destination view
+      _locked = true;
       origNav(target);
-      setTimeout(()=>lockDms(),100);
       return;
     }
     origNav(target);
