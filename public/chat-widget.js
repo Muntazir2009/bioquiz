@@ -6649,10 +6649,33 @@ setTimeout(_injectProfileUploads,1500);
           const isOpen=menu.classList.contains('open');
           menu.classList.remove('open');
           if(!isOpen){
-            menu.style.top=(r.bottom+6)+'px';
+            // Temporarily show off-screen to measure height
+            menu.style.visibility='hidden';
+            menu.style.display='block';
+            const menuH=menu.offsetHeight;
+            menu.style.display='';
+            menu.style.visibility='';
+
+            const spaceBelow=window.innerHeight-r.bottom-6;
+            const spaceAbove=r.top-6;
+            if(spaceBelow < menuH && spaceAbove > spaceBelow){
+              // Not enough space below — flip upward
+              menu.style.top='auto';
+              menu.style.bottom=(window.innerHeight-r.top+6)+'px';
+              menu.style.transformOrigin='bottom right';
+            } else {
+              menu.style.top=(r.bottom+6)+'px';
+              menu.style.bottom='auto';
+              menu.style.transformOrigin='top right';
+            }
             menu.style.left='auto';
             menu.style.right=(window.innerWidth-r.right)+'px';
-            requestAnimationFrame(()=>menu.classList.add('open'));
+            // Clamp right so menu doesn't go off-screen left
+            requestAnimationFrame(()=>{
+              const ml=menu.getBoundingClientRect().left;
+              if(ml<8){ menu.style.right='auto'; menu.style.left='8px'; }
+              menu.classList.add('open');
+            });
           }
         }
         return;
@@ -12670,10 +12693,10 @@ setInterval(()=>{
     }
   }
 
-  // Wire keypad
+  // Wire keypad — use mousedown/touchstart so it works even if overlay intercepts clicks
   document.addEventListener('click', e=>{
     const key = e.target.closest('.bqdml-key');
-    if(key) handleKey(key.dataset.k);
+    if(key){ e.preventDefault(); e.stopPropagation(); handleKey(key.dataset.k); }
   });
 
   // Forgot PIN
@@ -12683,17 +12706,26 @@ setInterval(()=>{
     showToast?.('PIN reset. Set a new one in DM settings.');
   });
 
-  // Lock when leaving DMs tab
+  // Intercept navigation — if PIN is set, always lock DMs when navigating to them
   const origNav = window.bqNav;
   window.bqNav = function(target){
-    if(_locked && (target==='dms'||target==='dmconv')){
-      // Navigate to DMs but show lock overlay
+    const fromDm = activeView==='dms'||activeView==='dmconv';
+    const toDm = target==='dms'||target==='dmconv';
+
+    // Navigating TO DMs from a non-DM view → show lock overlay if PIN is set
+    if(toDm && !fromDm && hasPin()){
       origNav(target);
       setTimeout(()=>lockDms(),50);
       return;
     }
-    if(hasPin() && (activeView==='dms'||activeView==='dmconv') && target!=='dms'&&target!=='dmconv'){
-      // Leaving DMs — arm the lock but DON'T show overlay over the destination view
+    // Navigating between DM views while lock is armed → still show lock
+    if(_locked && toDm && fromDm){
+      origNav(target);
+      setTimeout(()=>lockDms(),50);
+      return;
+    }
+    // Leaving DMs — arm the lock (but don't show overlay)
+    if(hasPin() && fromDm && !toDm){
       _locked = true;
       origNav(target);
       return;
@@ -12720,6 +12752,7 @@ setInterval(()=>{
     if(p!==c){ err.textContent='PINs do not match'; return; }
     setPin(p);
     document.getElementById('bq-dm-setpin').classList.remove('show');
+    _locked = true; // arm the lock immediately after setting PIN
     updateLockSubLabel();
     showToast?.('DM Lock PIN set ✓');
   });
@@ -12732,8 +12765,14 @@ setInterval(()=>{
     else { sub.textContent='Not set'; }
   }
 
-  // Init: lock if has pin and on dms view
-  setTimeout(()=>{ updateLockSubLabel(); if(hasPin()&&(activeView==='dms'||activeView==='dmconv')) lockDms(); },300);
+  // Init: if PIN is set, always start with lock armed
+  setTimeout(()=>{
+    updateLockSubLabel();
+    if(hasPin()){
+      _locked = true; // always start armed
+      if(activeView==='dms'||activeView==='dmconv') lockDms();
+    }
+  },300);
 })();
 /* ════════════ end DM lock ════════════ */
 
