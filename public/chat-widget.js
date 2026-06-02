@@ -3925,6 +3925,8 @@ function sendGlobal(text){
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
+  // v37: trigger web push for offline users
+  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('global', p); }catch(_){}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
@@ -4165,6 +4167,8 @@ function sendDm(text){
   const dis=getDisappear();
   if(activeDmId&&dis[activeDmId]) p.expiresAt=Date.now()+5*60*1000;
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
+  // v37: trigger web push for offline partner
+  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('dm', p, activeDmId, activeDmPuid, activeDmPname); }catch(_){}
   _dmFinalize(activeDmId, activeDmPuid, pname, trimmed||(p.imageData?'📷 Image':''));
   clearReply('dm');
 }
@@ -13874,8 +13878,8 @@ function injectNotifSettings(){
             <svg viewBox="0 0 24 24" style="stroke:#818cf8;fill:none;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
           <div class="bq-notif-row-info">
-            <div class="bq-notif-row-label">Browser Push</div>
-            <div class="bq-notif-row-sub">Desktop notifications when browser is hidden</div>
+            <div class="bq-notif-row-label">Push Notifications</div>
+            <div class="bq-notif-row-sub">Receive alerts even when browser is closed</div>
           </div>
         </div>
         <label class="bq-notif-toggle"><input type="checkbox" data-pref="push" ${prefs.push?'checked':''}><span class="bq-notif-toggle-track"></span></label>
@@ -13884,9 +13888,9 @@ function injectNotifSettings(){
     <div class="bq-notif-push-banner" id="bq-notif-push-banner" style="display:none">
       <div class="bq-notif-push-banner-title">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        Enable Browser Notifications
+        Enable Push Notifications
       </div>
-      <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you desktop notifications. You can change this anytime in browser settings.</div>
+      <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you push notifications even when the browser is closed. You can change this anytime in browser settings.</div>
       <button class="bq-notif-push-btn" id="bq-notif-push-enable">
         <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Allow Notifications
@@ -13915,13 +13919,17 @@ function injectNotifSettings(){
     });
   });
 
-  // Push enable button
+  // Push enable button — also triggers service worker subscription (v37)
   document.getElementById('bq-notif-push-enable')?.addEventListener('click', async () => {
     try{
       const result = await Notification.requestPermission();
       if(result === 'granted'){
         setPref('push', true);
         updatePushPermissionUI();
+        // v37: Also subscribe to web push via service worker
+        if(typeof window._bqSubscribePush === 'function'){
+          await window._bqSubscribePush();
+        }
       } else {
         setPref('push', false);
         updatePushPermissionUI();
@@ -13951,9 +13959,9 @@ function updatePushPermissionUI(){
       banner.innerHTML = `
         <div class="bq-notif-push-banner-title">
           <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Browser Notifications Active
+          Push Notifications Active
         </div>
-        <div class="bq-notif-push-banner-desc">You'll receive desktop notifications when the browser is hidden. Manage in browser settings.</div>
+        <div class="bq-notif-push-banner-desc">You'll receive push notifications even when the browser is closed. Manage in browser settings.</div>
       `;
     } else if(Notification.permission === 'denied'){
       banner.style.display = '';
@@ -14016,4 +14024,300 @@ setInterval(()=>{
 
 })();
 /* ════════════ end v36 patch ════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   v37: Web Push Notifications — Works when tab/browser is closed
+   
+   - Registers service worker (/sw.js)
+   - Manages push subscriptions via push-service (port 3010)
+   - Triggers push on message send (global + DM)
+   - Handles notification clicks from service worker
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+const PUSH_SERVICE_PORT = 3010;
+const VAPID_PUBLIC_KEY = 'BAS_5l1Hr4LsSOnjKHDQSRdv7d9gMJ9H9IGe0ohCYZgIgYP5H7dExpv9W4MJsGY7lOAMyDI3yWKBCy9e5EPfGa4';
+
+const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+const _uname = ()=> localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
+
+/* ── URL-safe base64 → Uint8Array (for VAPID key) ── */
+function urlB64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+/* ── SERVICE WORKER REGISTRATION ── */
+let _swReg = null;
+let _pushSubscription = null;
+
+async function registerServiceWorker(){
+  if(!('serviceWorker' in navigator)){
+    console.log('[bq-push] Service Worker not supported');
+    return false;
+  }
+  try{
+    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    _swReg = reg;
+    console.log('[bq-push] Service Worker registered');
+    
+    // Listen for messages from service worker (notification clicks)
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if(event.data && event.data.type === 'bq-notif-click'){
+        handleNotifClickFromSW(event.data);
+      }
+    });
+    
+    return true;
+  }catch(err){
+    console.error('[bq-push] SW registration failed:', err);
+    return false;
+  }
+}
+
+/* ── PUSH SUBSCRIPTION ── */
+async function subscribeToPush(){
+  if(!_swReg){
+    const ok = await registerServiceWorker();
+    if(!ok) return null;
+  }
+  
+  try{
+    // Check if already subscribed
+    const existing = await _swReg.pushManager.getSubscription();
+    if(existing){
+      _pushSubscription = existing;
+      await sendSubscriptionToServer(existing);
+      return existing;
+    }
+    
+    // Subscribe
+    const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+    const subscription = await _swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey
+    });
+    
+    _pushSubscription = subscription;
+    await sendSubscriptionToServer(subscription);
+    console.log('[bq-push] Subscribed to push notifications');
+    return subscription;
+  }catch(err){
+    console.error('[bq-push] Push subscription failed:', err);
+    return null;
+  }
+}
+
+async function unsubscribeFromPush(){
+  if(!_pushSubscription && _swReg){
+    _pushSubscription = await _swReg.pushManager.getSubscription();
+  }
+  if(!_pushSubscription) return;
+  
+  try{
+    await _pushSubscription.unsubscribe();
+    await removeSubscriptionFromServer();
+    _pushSubscription = null;
+    console.log('[bq-push] Unsubscribed from push notifications');
+  }catch(err){
+    console.error('[bq-push] Unsubscribe failed:', err);
+  }
+}
+
+/* ── SERVER COMMUNICATION ── */
+async function sendSubscriptionToServer(subscription){
+  const uid = _uid();
+  if(!uid) return;
+  try{
+    await fetch('/api/push/subscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid,
+        uname: _uname(),
+        subscription: subscription.toJSON()
+      })
+    });
+  }catch(err){
+    console.error('[bq-push] Failed to send subscription:', err);
+  }
+}
+
+async function removeSubscriptionFromServer(){
+  const uid = _uid();
+  if(!uid) return;
+  try{
+    await fetch('/api/push/unsubscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid })
+    });
+  }catch(err){
+    console.error('[bq-push] Failed to remove subscription:', err);
+  }
+}
+
+/* ── TRIGGER PUSH NOTIFICATIONS ── */
+// This is called after a message is sent to Firebase
+// It tells the push-service to send web push to offline users
+window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
+  const uid = _uid();
+  const uname = _uname();
+  if(!uid) return;
+  
+  // Only trigger push if user has push enabled
+  const prefs = getNotifPrefsSafe();
+  if(!prefs.push) return;
+  
+  try{
+    if(type === 'global'){
+      // Broadcast to all subscribers except sender
+      await fetch('/api/push/broadcast?XTransformPort=' + PUSH_SERVICE_PORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          excludeUid: uid,
+          title: '@' + (msg.uname || uname) + ' in Global Chat',
+          body: (msg.text || '').slice(0, 100),
+          type: 'global'
+        })
+      });
+    } else if(type === 'dm'){
+      // Send to specific DM partner only
+      if(!pUid) return;
+      await fetch('/api/push/notify?XTransformPort=' + PUSH_SERVICE_PORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUids: [pUid],
+          excludeUid: uid,
+          title: '@' + (msg.uname || uname),
+          body: (msg.text || (msg.imageData ? '📷 Image' : 'New message')).slice(0, 100),
+          type: 'dm',
+          dmId: dmId || '',
+          pUid: pUid || '',
+          pName: pName || ''
+        })
+      });
+    }
+  }catch(err){
+    // Silent fail — push is best-effort, not critical
+    console.error('[bq-push] Trigger failed:', err);
+  }
+};
+
+// Expose subscribe function for v36 settings button
+window._bqSubscribePush = subscribeToPush;
+
+/* ── NOTIFICATION CLICK FROM SERVICE WORKER ── */
+function handleNotifClickFromSW(data){
+  // Open the chat widget panel
+  const panel = document.getElementById('bqp');
+  if(panel && !panel.classList.contains('open')){
+    panel.classList.add('open');
+  }
+  
+  if(data.notifType === 'dm' && data.dmId && data.pUid){
+    // Navigate to DM conversation
+    if(typeof window.__bqOpenDm === 'function'){
+      window.__bqOpenDm(data.dmId, data.pUid, data.pName || '');
+    }
+  } else {
+    // Navigate to global chat
+    if(typeof window.bqNav === 'function') window.bqNav('chat');
+  }
+}
+
+/* ── SAFE PREF ACCESS (doesn't depend on v36 scope) ── */
+function getNotifPrefsSafe(){
+  const KEY = 'bq_notif_prefs';
+  const DEFAULTS = { inApp:true, push:false, sound:true, globalChat:true, dms:true, mentions:true };
+  try{
+    const s = localStorage.getItem(KEY);
+    return s ? Object.assign({}, DEFAULTS, JSON.parse(s)) : Object.assign({}, DEFAULTS);
+  }catch(_){ return Object.assign({}, DEFAULTS); }
+}
+
+/* ── UPDATE PROFILE SETTINGS UI FOR PUSH ── */
+function patchPushSettings(){
+  // When push toggle is changed, subscribe/unsubscribe
+  const checkInterval = setInterval(()=>{
+    try{
+      const pushToggle = document.querySelector('.bq-notif-toggle input[data-pref="push"]');
+      if(!pushToggle) return;
+      if(pushToggle.dataset.bqPushWired) return;
+      pushToggle.dataset.bqPushWired = '1';
+      
+      // Override the change handler
+      pushToggle.addEventListener('change', async () => {
+        const enabled = pushToggle.checked;
+        if(enabled){
+          const sub = await subscribeToPush();
+          if(!sub){
+            pushToggle.checked = false;
+            // Save the preference as false
+            try{
+              const p = getNotifPrefsSafe();
+              p.push = false;
+              localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
+            }catch(_){}
+          } else {
+            // Request browser notification permission
+            if('Notification' in window && Notification.permission === 'default'){
+              const result = await Notification.requestPermission();
+              if(result !== 'granted'){
+                pushToggle.checked = false;
+                try{
+                  const p = getNotifPrefsSafe();
+                  p.push = false;
+                  localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
+                }catch(_){}
+              }
+            }
+          }
+        } else {
+          await unsubscribeFromPush();
+        }
+      });
+      
+      clearInterval(checkInterval);
+    }catch(_){}
+  }, 1000);
+}
+
+/* ── BOOT ── */
+async function bootV37(){
+  // Register service worker
+  const swOk = await registerServiceWorker();
+  if(!swOk){
+    console.log('[bq-push] No service worker support — web push unavailable');
+    return;
+  }
+  
+  // If push is already enabled, re-subscribe on load
+  const prefs = getNotifPrefsSafe();
+  if(prefs.push){
+    await subscribeToPush();
+  }
+  
+  // Patch the push toggle in settings
+  patchPushSettings();
+  
+  console.log('[bq] v37 patch loaded — Web Push Notifications');
+}
+
+// Boot after a delay to ensure main widget is ready
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bootV37, 2000));
+} else {
+  setTimeout(bootV37, 2000);
+}
+
+})();
+/* ════════════ end v37 patch ════════════ */
 
