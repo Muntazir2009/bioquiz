@@ -3289,6 +3289,7 @@ function bqNav(targetView) {
   });
   
   activeView = targetView;
+  window.__bqActiveView = targetView;
   
   // Update nav buttons
   document.querySelectorAll('.bqnb').forEach(b => {
@@ -3442,6 +3443,18 @@ document.addEventListener('click', function(e){
 
 // Expose globally for nav buttons
 window.bqNav = bqNav;
+// v36.1: expose active view for notification system cross-IIFE access
+window.__bqActiveView = activeView;
+// Expose DM opener for notification clicks
+window.__bqOpenDm = function(dmId, pUid, pName){
+  // Ensure panel is open first
+  const panel = document.getElementById('bqp');
+  if(panel && !panel.classList.contains('open')){
+    panel.classList.add('open');
+  }
+  if(typeof showDmConvo === 'function') showDmConvo(pUid, pName);
+  else if(typeof bqNav === 'function') bqNav('dms');
+};
 
 function showDmConvo(pUid, pName) {
   const newDmId = dmKey(uid, pUid);
@@ -13552,13 +13565,19 @@ function renderNotifList(){
       const type = item.dataset.type;
       const dm = item.dataset.dm;
       if(type === 'dm' && dm){
-        // Navigate to DM conversation
+        // Navigate to DM conversation via exposed __bqOpenDm
         try{
-          if(typeof openDm === 'function') openDm(dm);
-          else if(window.openDm) window.openDm(dm);
+          if(typeof window.__bqOpenDm === 'function'){
+            // Derive partner UID from DM meta or DM ID
+            const myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+            const parts = dm.split('__');
+            const pUid = parts[0]===myUid ? parts[1] : parts[0];
+            const sender = item.querySelector('.bq-notif-item-sender')?.textContent?.replace('@','')||'';
+            window.__bqOpenDm(dm, pUid, sender);
+          }
         }catch(_){}
       } else if(type === 'global'){
-        try{ if(typeof bqNav === 'function') bqNav('chat'); }catch(_){}
+        try{ if(typeof window.bqNav === 'function') window.bqNav('chat'); }catch(_){}
       }
       // Mark as read
       const id = parseFloat(item.dataset.notifId);
@@ -13614,9 +13633,16 @@ function showNotifBanner(notif){
   // Click to navigate
   banner.addEventListener('click', () => {
     if(notif.type === 'dm' && notif.dmId){
-      try{ if(typeof openDm === 'function') openDm(notif.dmId); }catch(_){}
+      try{
+        if(typeof window.__bqOpenDm === 'function'){
+          const myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+          const parts = notif.dmId.split('__');
+          const pUid = parts[0]===myUid ? parts[1] : parts[0];
+          window.__bqOpenDm(notif.dmId, pUid, notif.sender.replace('@',''));
+        }
+      }catch(_){}
     } else if(notif.type === 'global'){
-      try{ if(typeof bqNav === 'function') bqNav('chat'); }catch(_){}
+      try{ if(typeof window.bqNav === 'function') window.bqNav('chat'); }catch(_){}
     }
     dismissBanner(banner);
   });
@@ -13642,9 +13668,17 @@ function showBrowserNotif(notif){
     n.onclick = () => {
       window.focus();
       try{
-        if(typeof togglePanel === 'function') togglePanel();
-        if(notif.type === 'dm' && notif.dmId && typeof openDm === 'function') openDm(notif.dmId);
-        else if(typeof bqNav === 'function') bqNav('chat');
+        // Try to open the chat widget panel
+        const panel = document.getElementById('bqp');
+        if(panel && !panel.classList.contains('open')){
+          panel.classList.add('open');
+        }
+        if(notif.type === 'dm' && notif.dmId && typeof window.__bqOpenDm === 'function'){
+          const myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+          const parts = notif.dmId.split('__');
+          const pUid = parts[0]===myUid ? parts[1] : parts[0];
+          window.__bqOpenDm(notif.dmId, pUid, notif.sender.replace('@',''));
+        } else if(typeof window.bqNav === 'function') window.bqNav('chat');
       }catch(_){}
       n.close();
     };
@@ -13670,13 +13704,17 @@ function _timeAgo(ts){
 /* ── FIREBASE MESSAGE LISTENERS ── */
 function patchMessageListeners(){
   try{
-    const _db = ()=>{ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null; }catch(_){ return null; } };
+    const _fdb = ()=>{ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null; }catch(_){ return null; } };
     const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+
+    // Helper: get current active view (cross-IIFE safe)
+    const _getView = ()=> window.__bqActiveView || '';
+    const _getActiveDmId = ()=> window.__bqActiveDm?.id || '';
 
     // Listen for new GLOBAL messages when not on global chat view
     let _lastGlobalTs = Date.now();
     function hookGlobalMessages(){
-      const db = _db();
+      const db = _fdb();
       if(!db) return;
       db.ref('bq_messages').limitToLast(1).on('child_added', snap => {
         const msg = snap.val();
@@ -13688,7 +13726,7 @@ function patchMessageListeners(){
           // Don't notify for own messages
           if(msg.uid === myUid) return;
           // Don't notify if currently viewing global chat
-          try{ if(typeof activeView !== 'undefined' && activeView === 'chat') return; }catch(_){}
+          if(_getView() === 'chat') return;
           // Check if mentioned
           const prefs = getNotifPrefs();
           const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
@@ -13702,44 +13740,44 @@ function patchMessageListeners(){
 
     // Listen for new DM messages when not in that DM conversation
     let _dmMsgListeners = {};
+    let _dmMetaCache = {};  // Cache DM meta for partner info
     function hookDmMessages(){
-      const db = _db();
+      const db = _fdb();
       if(!db) return;
       const myUid = _uid();
       if(!myUid) return;
 
-      // Listen for changes in the DM index to detect new DMs
-      db.ref('bq_dm_index/'+myUid).on('value', snap => {
-        if(!snap.exists()) return;
-        snap.forEach(dmSnap => {
-          const dmId = dmSnap.key;
-          if(_dmMsgListeners[dmId]) return; // Already listening
-          const dmData = dmSnap.val() || {};
-          _lastDmTs[dmId] = Date.now();
-          _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
-            const msg = msgSnap.val();
-            if(!msg) return;
-            const now = Date.now();
-            if(msg.ts > _lastDmTs[dmId] && now - msg.ts < 10000){
-              _lastDmTs[dmId] = msg.ts;
-              if(msg.uid === myUid) return;
-              // Don't notify if currently in this DM conversation
-              try{
-                if(typeof activeView !== 'undefined' && activeView === 'dmconv' && typeof activeDmId !== 'undefined' && activeDmId === dmId) return;
-              }catch(_){}
-              addNotification('@'+(msg.uname||'?'), msg.text||'Sent you a message', 'dm', dmId);
-            }
-          });
+      // Listen for changes in the DM index (correct path: bq_user_dms, NOT bq_dm_index)
+      db.ref('bq_user_dms/'+myUid).on('child_added', dmSnap => {
+        const dmId = dmSnap.key;
+        if(_dmMsgListeners[dmId]) return; // Already listening
+        _lastDmTs[dmId] = Date.now();
+        // Fetch DM meta to get partner info for navigation
+        db.ref('bq_dms/'+dmId+'/meta').once('value', metaSnap => {
+          const meta = metaSnap.val();
+          if(meta) _dmMetaCache[dmId] = meta;
+        });
+        _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
+          const msg = msgSnap.val();
+          if(!msg) return;
+          const now = Date.now();
+          if(msg.ts > _lastDmTs[dmId] && now - msg.ts < 10000){
+            _lastDmTs[dmId] = msg.ts;
+            if(msg.uid === myUid) return;
+            // Don't notify if currently in this DM conversation
+            if(_getView() === 'dmconv' && _getActiveDmId() === dmId) return;
+            addNotification('@'+(msg.uname||'?'), msg.text||'Sent you a message', 'dm', dmId);
+          }
         });
       });
     }
     let _lastDmTs = {};
 
-    // Start listening after a delay
+    // Start listening after a delay to ensure Firebase is ready
     setTimeout(()=>{
       hookGlobalMessages();
       hookDmMessages();
-    }, 2000);
+    }, 3000);
 
   }catch(_){}
 }
@@ -13952,7 +13990,12 @@ function bootV36(){
   injectNotifBell();
   injectNotifSettings();
   patchMessageListeners();
-  try{ console.log('[bq] v36 patch loaded — real-time notification system'); }catch(_){}
+  // Retry bell injection if widget wasn't ready yet
+  if(!document.getElementById('bq-notif-bell')){
+    setTimeout(()=>{ injectNotifBell(); }, 3000);
+    setTimeout(()=>{ injectNotifBell(); }, 6000);
+  }
+  try{ console.log('[bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)'); }catch(_){}
 }
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(bootV36, 1200));
