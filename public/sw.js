@@ -17,6 +17,16 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Handle messages from the main page
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'bq-ping') {
+    event.source.postMessage({ type: 'bq-pong', version: SW_VERSION });
+  }
+});
+
 // Push event — receive push message and show notification
 self.addEventListener('push', (event) => {
   console.log('[bq-sw] Push received');
@@ -79,11 +89,4 @@ self.addEventListener('notificationclick', (event) => {
       return self.clients.openWindow(targetUrl);
     })
   );
-});
-
-// Message from the main page
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'bq-ping') {
-    event.source.postMessage({ type: 'bq-pong', version: SW_VERSION });
-  }
 });

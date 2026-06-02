@@ -14062,9 +14062,24 @@ async function registerServiceWorker(){
     return false;
   }
   try{
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    // Register the service worker
+    const reg = await navigator.serviceWorker.register('/sw.js');
     _swReg = reg;
-    console.log('[bq-push] Service Worker registered');
+    
+    // Wait for the service worker to be active
+    if(reg.installing){
+      await new Promise((resolve) => {
+        reg.installing.addEventListener('statechange', () => {
+          if(reg.waiting || reg.active) resolve(null);
+        });
+      });
+    }
+    if(reg.waiting){
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    if(reg.active){
+      console.log('[bq-push] Service Worker registered and active');
+    }
     
     // Listen for messages from service worker (notification clicks)
     navigator.serviceWorker.addEventListener('message', (event) => {
@@ -14088,11 +14103,27 @@ async function subscribeToPush(){
   }
   
   try{
+    // Request notification permission first
+    if('Notification' in window){
+      if(Notification.permission === 'denied'){
+        console.warn('[bq-push] Notification permission denied');
+        return null;
+      }
+      if(Notification.permission === 'default'){
+        const perm = await Notification.requestPermission();
+        if(perm !== 'granted'){
+          console.warn('[bq-push] Notification permission not granted:', perm);
+          return null;
+        }
+      }
+    }
+    
     // Check if already subscribed
     const existing = await _swReg.pushManager.getSubscription();
     if(existing){
       _pushSubscription = existing;
       await sendSubscriptionToServer(existing);
+      console.log('[bq-push] Using existing push subscription');
       return existing;
     }
     
@@ -14165,19 +14196,21 @@ async function removeSubscriptionFromServer(){
 /* ── TRIGGER PUSH NOTIFICATIONS ── */
 // This is called after a message is sent to Firebase
 // It tells the push-service to send web push to offline users
+// NOTE: We always trigger pushes — the push-service handles whether
+// the recipient is actually subscribed. The sender's pref only controls
+// whether THEY receive pushes, not whether they trigger pushes for others.
 window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
   const uid = _uid();
   const uname = _uname();
   if(!uid) return;
   
-  // Only trigger push if user has push enabled
-  const prefs = getNotifPrefsSafe();
-  if(!prefs.push) return;
+  // Check if push service is reachable (quick health check cache)
+  if(window._bqPushServiceDown) return;
   
   try{
     if(type === 'global'){
       // Broadcast to all subscribers except sender
-      await fetch('/api/push/broadcast?XTransformPort=' + PUSH_SERVICE_PORT, {
+      const res = await fetch('/api/push/broadcast?XTransformPort=' + PUSH_SERVICE_PORT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -14187,10 +14220,11 @@ window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
           type: 'global'
         })
       });
+      if(!res.ok) console.warn('[bq-push] Broadcast failed:', res.status);
     } else if(type === 'dm'){
       // Send to specific DM partner only
       if(!pUid) return;
-      await fetch('/api/push/notify?XTransformPort=' + PUSH_SERVICE_PORT, {
+      const res = await fetch('/api/push/notify?XTransformPort=' + PUSH_SERVICE_PORT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -14204,10 +14238,13 @@ window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
           pName: pName || ''
         })
       });
+      if(!res.ok) console.warn('[bq-push] Notify failed:', res.status);
     }
   }catch(err){
-    // Silent fail — push is best-effort, not critical
-    console.error('[bq-push] Trigger failed:', err);
+    // Push service unreachable — mark as down to avoid spamming
+    window._bqPushServiceDown = true;
+    setTimeout(()=>{ window._bqPushServiceDown = false; }, 60000); // retry after 60s
+    console.warn('[bq-push] Service unreachable, will retry in 60s');
   }
 };
 
@@ -14257,9 +14294,17 @@ function patchPushSettings(){
       pushToggle.addEventListener('change', async () => {
         const enabled = pushToggle.checked;
         if(enabled){
+          // Show a brief status indicator
+          const row = pushToggle.closest('.bq-notif-row');
+          const label = row?.querySelector('.bq-notif-row-sub');
+          const origText = label?.textContent || '';
+          if(label) label.textContent = 'Setting up push notifications...';
+          
           const sub = await subscribeToPush();
           if(!sub){
             pushToggle.checked = false;
+            if(label) label.textContent = 'Push setup failed — check browser permissions';
+            setTimeout(()=>{ if(label) label.textContent = origText; }, 3000);
             // Save the preference as false
             try{
               const p = getNotifPrefsSafe();
@@ -14267,18 +14312,8 @@ function patchPushSettings(){
               localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
             }catch(_){}
           } else {
-            // Request browser notification permission
-            if('Notification' in window && Notification.permission === 'default'){
-              const result = await Notification.requestPermission();
-              if(result !== 'granted'){
-                pushToggle.checked = false;
-                try{
-                  const p = getNotifPrefsSafe();
-                  p.push = false;
-                  localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
-                }catch(_){}
-              }
-            }
+            if(label) label.textContent = 'Push notifications active ✓';
+            setTimeout(()=>{ if(label) label.textContent = origText; }, 2000);
           }
         } else {
           await unsubscribeFromPush();
