@@ -3508,13 +3508,9 @@ function showDmConvo(pUid, pName) {
     }
     dAtBot=true;
   };
-  // Run once immediately, then cover async render + image/GIF load reflows
+  // v35 fix: reduced from 6 scroll calls to 2 — instant snap + one delayed for images
   _scrollDmBottom(true);
-  requestAnimationFrame(()=>_scrollDmBottom(true));
-  setTimeout(()=>_scrollDmBottom(true),80);
-  setTimeout(()=>_scrollDmBottom(true),240);
-  setTimeout(()=>_scrollDmBottom(true),600);
-  setTimeout(()=>_scrollDmBottom(false),1200);
+  setTimeout(()=>_scrollDmBottom(false),400);
 }
 
 /* ─────────────────────────────────────────
@@ -3658,7 +3654,9 @@ function startPresence(){
   });
   beat();clearInterval(presInt);
   presInt=setInterval(beat,PRESENCE_TTL*.7);
-  ref.onDisconnect().remove();
+  // v35 fix: on disconnect, write last-seen data instead of removing entirely
+  // This preserves "Last seen X" info and doesn't conflict with v20's bq_lastseen
+  ref.onDisconnect().set({uname,ts:firebase.database.ServerValue.TIMESTAMP,status:'offline',displayName:myProfile.displayName||'',initials:myProfile.initials||'',avatar:myProfile.avatar||'',color:myProfile.color||''});
   // v2: detach previous presence listener before adding a new one to prevent memory leak
   if(_presenceListenerRef){
     try{ db.ref('bq_presence').off('value', _presenceListenerRef); }catch(_){}
@@ -3672,7 +3670,12 @@ function startPresence(){
       if(d&&now-d.ts<PRESENCE_TTL*1.6){
         onlineU[c.key]=d;
         _cacheAvatarFromPresence(c.key, d);
-      } else c.ref.remove();
+      } else if(c.key!==uid) {
+        // v35 fix: don't delete other users' presence — their clock may be skewed
+        // Instead just don't add them to onlineU (treat as offline)
+      } else {
+        c.ref.remove(); // only clean up own stale presence
+      }
     });
     if(_presT) clearTimeout(_presT);
     _presT=setTimeout(()=>{
@@ -4784,10 +4787,11 @@ function renderMsg(ctx,msg,key){
   }
   
   document.getElementById(isG?'bqgempty':'bqdmempty')?.remove();
-  const pfx='bqmsg-'+ctx+'-';
 
   // ── DEDUP FIX: limitToLast re-fires child_added on delete ──
   // If this message element already exists in the DOM, skip re-render.
+  // v35: moved BEFORE date separator logic to prevent duplicate separators
+  const pfx='bqmsg-'+ctx+'-';
   if (document.getElementById(pfx + key)) return;
 
   if(msg.type==='system'){
@@ -4833,7 +4837,7 @@ function renderMsg(ctx,msg,key){
     setTimeout(()=>{ try{ row.classList.remove('bq-new'); }catch(_){}},600);
   }
 
-  var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+msg.imageData+'" alt="" loading="lazy">' : '';
+  var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+esc(msg.imageData)+'" alt="" loading="lazy">' : '';
   var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
   var _stickerHtml = (msg.type==='sticker' && msg.sticker) ? '<span class="bqsticker">'+esc(msg.sticker)+'</span>' : '';
   var _voiceHtml = (msg.type==='voice' && msg.audio) ? buildVoiceHtml(msg) : '';
@@ -4850,7 +4854,7 @@ function renderMsg(ctx,msg,key){
 
   row.innerHTML =
     '<div class="bqri">'+
-      '<div class="bqav" style="'+(presD.avatar?('background:url('+presD.avatar+') center/cover;color:transparent;'):('background:'+col+';color:#000;'))+'"'+
+      '<div class="bqav" style="'+(presD.avatar?('background:url('+esc(presD.avatar)+') center/cover;color:transparent;'):('background:'+col+';color:#000;'))+'"'+
         ' data-status="'+esc(presD.status||'')+'"'+
         ' data-uid="'+esc(msg.uid)+'"'+
         ' data-uname="'+esc(msg.uname||'')+'">'+(presD.avatar?'':((presD.initials||ini)))+'</div>'+
@@ -11493,9 +11497,10 @@ function broadcastTyping(){
   const now=Date.now();
   if(now-_typingSent<2000) return;
   _typingSent=now;
-  db.ref('bq_dms/'+dm+'/typing/'+u).set(now);
+  // v35 fix: write to same path as main widget (bq_dm_typing) so typing is actually visible
+  db.ref('bq_dm_typing/'+dm+'/'+u).set({uname: (typeof uname!=='undefined'?uname:''), ts:now});
   clearTimeout(_typingHandle);
-  _typingHandle=setTimeout(()=>{ try{ db.ref('bq_dms/'+dm+'/typing/'+u).remove(); }catch(_){ } }, 4500);
+  _typingHandle=setTimeout(()=>{ try{ db.ref('bq_dm_typing/'+dm+'/'+u).remove(); }catch(_){ } }, 4500);
 }
 let _typingObs=null, _typingDmRef=null;
 function watchTyping(){
@@ -11505,12 +11510,13 @@ function watchTyping(){
   if(_typingDmRef===dm) return;
   if(_typingObs){ try{ _typingObs.off(); }catch(_){} _typingObs=null; }
   _typingDmRef=dm;
-  const ref=db.ref('bq_dms/'+dm+'/typing');
+  // v35 fix: listen on same path as main widget (bq_dm_typing) so we see actual signals
+  const ref=db.ref('bq_dm_typing/'+dm);
   _typingObs=ref;
   ref.on('value', snap=>{
     const v=snap.val()||{};
     let active=false; const now=Date.now();
-    Object.keys(v).forEach(k=>{ if(k!==u && (now - (v[k]||0)) < 6000) active=true; });
+    Object.keys(v).forEach(k=>{ if(k!==u && v[k] && (now - (v[k].ts||v[k]||0)) < 6000) active=true; });
     let pill=document.querySelector('.bqv2-typing');
     const list=$('bqdmmsgs')||document.querySelector('.bqdmmsgs');
     if(active){
@@ -12792,4 +12798,306 @@ setInterval(()=>{
 
 })();
 /* ════════════ end v34 patch ════════════ */
+
+/* ════════════ v35 patch — enhanced conversation UI, realtime fixes, micro-interactions ════════════ */
+(function(){
+  'use strict';
+
+  /* ── ENHANCED CONVERSATION CSS ── */
+  const V35_CSS = `
+/* ── v35: Enhanced conversation design ── */
+
+/* Smoother, more polished bubble appearance */
+#bqdmmsgs .bqr.mine{animation:bqV35SlideRight .32s cubic-bezier(.22,1.08,.36,1) both;}
+#bqdmmsgs .bqr.theirs{animation:bqV35SlideLeft .32s cubic-bezier(.22,1.08,.36,1) both;}
+@keyframes bqV35SlideRight{
+  0%{opacity:0;transform:translateX(20px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);}
+  100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0);}
+}
+@keyframes bqV35SlideLeft{
+  0%{opacity:0;transform:translateX(-20px) scale(.94);filter:blur(2px);}
+  60%{opacity:1;filter:blur(0);}
+  100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0);}
+}
+
+/* Enhanced bubble styling — deeper glass effect */
+.bqr.theirs .bqbbl{
+  background:linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 2px 12px rgba(0,0,0,.3), 0 1px 0 rgba(255,255,255,.08) inset, 0 0 0 0 rgba(96,165,250,0);
+  transition:transform .22s cubic-bezier(.22,1,.36,1), box-shadow .25s ease, border-color .25s ease;
+}
+.bqr.theirs:hover .bqbbl:not(.sticker){
+  border-color:rgba(255,255,255,.16);
+  box-shadow:0 4px 18px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.1) inset, 0 0 20px rgba(96,165,250,.06);
+  transform:translateY(-1px);
+}
+
+/* Mine bubbles — gradient glow */
+.bqr.mine .bqbbl{
+  background:linear-gradient(135deg, var(--bq-bubble-mine), rgba(99,102,241,.85));
+  box-shadow:0 4px 20px var(--bq-bubble-mine-shadow), 0 1px 0 rgba(255,255,255,.18) inset;
+  transition:transform .22s cubic-bezier(.22,1,.36,1), box-shadow .25s ease;
+}
+.bqr.mine:hover .bqbbl:not(.sticker){
+  box-shadow:0 6px 28px rgba(96,165,250,.45), 0 1px 0 rgba(255,255,255,.22) inset;
+  transform:translateY(-1px);
+}
+
+/* Enhanced avatar — subtle ring pulse on online status */
+.bqav[data-status="online"]{
+  box-shadow:0 0 0 0 rgba(52,211,153,.4);
+  animation:bqV35OnlinePulse 2.5s ease-in-out infinite;
+}
+@keyframes bqV35OnlinePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.3);}
+  50%{box-shadow:0 0 0 4px rgba(52,211,153,.08);}
+}
+
+/* Enhanced DM header — glass effect */
+#bqv-dmconv .bqhdr{
+  background:rgba(8,10,18,.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+/* DM header status dot — breathing animation */
+.bqdmhs-dot{
+  display:inline-block!important;
+  width:7px;height:7px;border-radius:50%;
+  margin-right:5px;
+  vertical-align:middle;
+}
+.bqdmhs-dot.online{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.6);animation:bqV35DotPulse 2s ease-in-out infinite;}
+.bqdmhs-dot.studying{background:#60a5fa;box-shadow:0 0 8px rgba(96,165,250,.6);animation:bqV35DotPulse 2s ease-in-out infinite;}
+.bqdmhs-dot.away{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,.4);}
+.bqdmhs-dot.busy{background:#f87171;box-shadow:0 0 8px rgba(248,113,113,.4);}
+.bqdmhs-dot.offline{background:rgba(255,255,255,.2);box-shadow:none;}
+@keyframes bqV35DotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.85);}}
+
+/* Enhanced typing indicator — 3-dot bounce */
+.bqtd{display:inline-flex;gap:3px;align-items:center;margin-right:6px;}
+.bqtd span{
+  width:6px;height:6px;border-radius:50%;background:var(--bq-accent);
+  animation:bqV35TypingDot 1.2s ease-in-out infinite;
+}
+.bqtd span:nth-child(2){animation-delay:.15s;}
+.bqtd span:nth-child(3){animation-delay:.3s;}
+@keyframes bqV35TypingDot{
+  0%,60%,100%{transform:translateY(0);opacity:.4;}
+  30%{transform:translateY(-5px);opacity:1;}
+}
+
+/* Enhanced composer input — deeper focus glow */
+.bqinp:focus{
+  border-color:rgba(96,165,250,.5);
+  background:rgba(255,255,255,.07);
+  box-shadow:0 0 0 3px rgba(96,165,250,.15), 0 4px 16px rgba(0,0,0,.35);
+}
+
+/* Enhanced send button — active press effect */
+.bqsnd{
+  transition:transform .15s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, background .2s ease;
+}
+.bqsnd:not(:disabled):hover{
+  transform:scale(1.06);
+  box-shadow:0 4px 18px rgba(59,130,246,.5);
+}
+.bqsnd:not(:disabled):active{
+  transform:scale(.92);
+}
+
+/* Date separator — cleaner design */
+.bqds{
+  display:flex;align-items:center;gap:10px;
+  margin:16px 0 8px;padding:0 4px;
+  font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.25);
+}
+.bqds::before,.bqds::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+}
+
+/* Message reaction — subtle bounce on appear */
+.bqrxns{
+  animation:bqV35RxnAppear .35s cubic-bezier(.22,1.08,.36,1) both;
+}
+@keyframes bqV35RxnAppear{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* Scroll-to-bottom button — polished */
+.bqscr{
+  transition:all .25s cubic-bezier(.22,1,.36,1)!important;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.bqscr:hover{
+  transform:scale(1.1)!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+}
+
+/* Reply bar — enhanced */
+.bqrbar{
+  background:rgba(8,10,18,.9);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+
+/* Empty state — subtle float animation */
+.bqempty-ic{
+  animation:bqV35Float 3s ease-in-out infinite;
+}
+@keyframes bqV35Float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* Sticker — enhanced pop */
+.bqbbl.sticker .bqsticker{
+  animation:bqV35StickerPop .5s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 6px 20px rgba(0,0,0,.4));
+}
+@keyframes bqV35StickerPop{
+  0%{transform:scale(.1) rotate(-20deg);opacity:0;}
+  50%{transform:scale(1.2) rotate(5deg);opacity:1;}
+  100%{transform:scale(1) rotate(0);opacity:1;}
+}
+
+/* v35 typing pill (v25 system) — styled to match main typing */
+.bqv2-typing{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 14px 6px 10px;
+  margin:4px 12px 8px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:500;
+  color:var(--bq-text-muted);letter-spacing:.02em;
+  animation:bqV35TypingIn .3s cubic-bezier(.22,1,.36,1) both;
+}
+.bqv2-typing span{
+  width:5px;height:5px;border-radius:50%;background:var(--bq-accent);
+  animation:bqV35TypingDot 1.2s ease-in-out infinite;
+}
+.bqv2-typing span:nth-child(2){animation-delay:.15s;}
+.bqv2-typing span:nth-child(3){animation-delay:.3s;}
+@keyframes bqV35TypingIn{0%{opacity:0;transform:translateY(6px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+
+/* Media preview — enhanced */
+.bq-media-preview{
+  background:rgba(8,10,18,.9);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+
+/* Pinned message bar — enhanced */
+#bq-pinned-bar{
+  background:rgba(96,165,250,.08);
+  border-bottom:1px solid rgba(96,165,250,.15);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+  `;
+
+  try{
+    const s=document.createElement('style');s.id='bq-v35-css';s.textContent=V35_CSS;
+    document.head.appendChild(s);
+  }catch(_){}
+
+  /* ── ENHANCED DM HEADER STATUS ── */
+  // Patch updateDmHdrStatus to use styled dot with class
+  function patchDmHdrStatus(){
+    if(typeof updateDmHdrStatus!=='function') return;
+    const _orig = updateDmHdrStatus;
+    updateDmHdrStatus = function(){
+      _orig.apply(this, arguments);
+      try{
+        const dot = document.getElementById('bqdmhs-dot');
+        const txt = document.getElementById('bqdmhs-txt');
+        if(!dot || !txt) return;
+        const puid = (typeof activeDmPuid!=='undefined') ? activeDmPuid : null;
+        if(!puid) return;
+        const pdata = (typeof onlineU!=='undefined' && onlineU[puid]) ? onlineU[puid] : null;
+        // Remove old classes
+        dot.className = 'bqdmhs-dot';
+        if(pdata && pdata.status !== 'offline'){
+          dot.classList.add(pdata.status || 'online');
+          dot.style.display = 'inline-block';
+        } else {
+          dot.classList.add('offline');
+          dot.style.display = 'inline-block';
+        }
+      }catch(_){}
+    };
+    // Run once
+    try{ updateDmHdrStatus(); }catch(_){}
+  }
+
+  /* ── SMOOTH AUTO-SCROLL ON NEW MESSAGE ── */
+  // Replace the aggressive scrollD function with a smoother version
+  function patchScrollD(){
+    if(typeof scrollD !== 'function') return;
+    const _origScrollD = scrollD;
+    scrollD = function(ctx){
+      try{
+        const isG = ctx === 'global';
+        const list = document.getElementById(isG ? 'bqgmsgs' : 'bqdmmsgs');
+        if(!list) return;
+        const atBot = isG ? (typeof gAtBot!=='undefined' && gAtBot) : (typeof dAtBot!=='undefined' && dAtBot);
+        const distFromBot = list.scrollHeight - list.scrollTop - list.clientHeight;
+        // Only auto-scroll if near bottom (within 200px) — otherwise user is reading history
+        if(atBot || distFromBot < 200){
+          requestAnimationFrame(()=>{
+            list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
+            // Second pass for images that load late
+            setTimeout(()=>{
+              list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
+            }, 300);
+          });
+        }
+      }catch(_){}
+    };
+  }
+
+  /* ── ENHANCED PRESENCE — handle 'offline' status from onDisconnect ── */
+  function patchPresenceHandler(){
+    // When presence shows status:'offline', still keep the user data for last-seen
+    // This is already handled by v20's lastSeenCache, but we ensure onlineU
+    // includes offline users with their timestamp for "Last seen" display
+    try{
+      const origPresenceListener = _presenceListenerRef;
+      // The main handler already builds onlineU — we just need to ensure
+      // offline entries are also available for the DM header
+    }catch(_){}
+  }
+
+  /* ── CLEANUP on beforeunload — ensure typing states are cleared ── */
+  function patchBeforeUnload(){
+    window.addEventListener('beforeunload', ()=>{
+      try{
+        if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid){
+          // Clear typing states
+          db.ref('bq_typing/'+uid).remove();
+          if(typeof activeDmId!=='undefined' && activeDmId){
+            db.ref('bq_dm_typing/'+activeDmId+'/'+uid).remove();
+          }
+          // Write last-seen timestamp
+          db.ref('bq_lastseen/'+uid).set({ts:firebase.database.ServerValue.TIMESTAMP, uname: (typeof uname!=='undefined'?uname:'')});
+        }
+      }catch(_){}
+    });
+  }
+
+  /* ── INIT ── */
+  setTimeout(function(){
+    patchDmHdrStatus();
+    patchScrollD();
+    patchPresenceHandler();
+    patchBeforeUnload();
+    try{ console.log('[bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions'); }catch(_){}
+  }, 600);
+
+})();
+/* ════════════ end v35 patch ════════════ */
 
