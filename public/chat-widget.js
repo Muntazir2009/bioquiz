@@ -144,6 +144,17 @@ const QUICK_STICKERS = [
   '✈️','🗼','🏖️','🌍','🏔️','🌅','🌋','🏰',
   // Sports & Activities
   '⚽','🏀','🎸','🎨','🎮','🎲','🧩','🎭',
+  // v36: New sticker categories with enhanced animations
+  // Science & Discovery
+  '🧪','🔬','🧬','🔭','🌡️','🧫','💡','🪐',
+  // Music & Dance
+  '🎵','🎶','🎤','💃','🕺','🪗','🎹','🥁',
+  // Weather & Cosmos
+  '☀️','🌈','⭐','❄️','🌪️','☄️','🌤️','🪶',
+  // Greetings & Gestures
+  '👋','🤞','✌️','🤙','🫰','🫱','🫲','🤟',
+  // Magic & Fantasy
+  '🔮','🧙','🪄','🐉','🦄','🌟','👑','🪬',
 ];
 
 /* ─────────────────────────────────────────
@@ -848,6 +859,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqbbl.sticker .bqsticker.stk-sport{animation:bqStkSport .55s cubic-bezier(.34,1.56,.64,1) both;}
 .bqbbl.sticker .bqsticker.stk-nature{animation:bqStkNature .7s cubic-bezier(.22,1,.36,1) both;}
 .bqbbl.sticker .bqsticker.stk-animal{animation:bqStkAnimal .6s cubic-bezier(.34,1.56,.64,1) both;}
+/* v36: New sticker category animations */
+.bqbbl.sticker .bqsticker.stk-science{animation:bqStkScience .65s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-music{animation:bqStkMusic .7s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-weather{animation:bqStkWeather .65s cubic-bezier(.22,1,.36,1) both;}
+.bqbbl.sticker .bqsticker.stk-greet{animation:bqStkGreet .55s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-magic{animation:bqStkMagic .75s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes bqStkLove{0%{transform:scale(0);opacity:0}40%{transform:scale(1.3);opacity:1}60%{transform:scale(.9)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
 @keyframes bqStkParty{0%{transform:scale(0) rotate(-30deg);opacity:0}50%{transform:scale(1.25) rotate(10deg);opacity:1}70%{transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes bqStkMood{0%{transform:translateY(20px) scale(.5);opacity:0}60%{transform:translateY(-4px) scale(1.1);opacity:1}100%{transform:translateY(0) scale(1)}}
@@ -856,6 +873,12 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqStkSport{0%{transform:scale(.2);opacity:0}40%{transform:scale(1.3);opacity:1}60%{transform:scale(.85)}100%{transform:scale(1)}}
 @keyframes bqStkNature{0%{transform:scale(0) translateY(10px);opacity:0}50%{transform:scale(1.15) translateY(-5px);opacity:1}100%{transform:scale(1) translateY(0)}}
 @keyframes bqStkAnimal{0%{transform:scale(.1) rotate(-20deg);opacity:0}50%{transform:scale(1.2) rotate(5deg);opacity:1}70%{transform:scale(.95) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+/* v36: New sticker keyframes */
+@keyframes bqStkScience{0%{transform:scale(0) translateY(-20px);opacity:0;filter:blur(4px)}40%{transform:scale(1.2) translateY(4px);opacity:1;filter:blur(0)}60%{transform:scale(.9) translateY(-2px)}100%{transform:scale(1) translateY(0)}}
+@keyframes bqStkMusic{0%{transform:scale(0) rotate(-15deg);opacity:0}30%{transform:scale(.6) rotate(10deg);opacity:.6}50%{transform:scale(1.25) rotate(-5deg);opacity:1}70%{transform:scale(.92) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bqStkWeather{0%{transform:translateY(-30px) scale(.3);opacity:0;filter:blur(6px)}50%{transform:translateY(4px) scale(1.15);opacity:1;filter:blur(0)}70%{transform:translateY(-2px) scale(.95)}100%{transform:translateY(0) scale(1)}}
+@keyframes bqStkGreet{0%{transform:scale(0) translateX(20px);opacity:0}40%{transform:scale(1.3) translateX(-4px);opacity:1}60%{transform:scale(.88) translateX(2px)}80%{transform:scale(1.06) translateX(-1px)}100%{transform:scale(1) translateX(0)}}
+@keyframes bqStkMagic{0%{transform:scale(0) rotate(0);opacity:0;filter:brightness(2) blur(8px)}25%{transform:scale(.5) rotate(90deg);opacity:.5;filter:brightness(1.5) blur(2px)}50%{transform:scale(1.3) rotate(180deg);opacity:1;filter:brightness(1.2) blur(0)}75%{transform:scale(.9) rotate(340deg)}100%{transform:scale(1) rotate(360deg);filter:brightness(1) blur(0)}}
 .bqbbl.sticker .bqbbl-meta{color:var(--bq-text-subtle)!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important;position:static!important;float:right;margin-top:4px!important;}
 @keyframes bqStickerPop{
   0%{transform:scale(.2) rotate(-12deg);opacity:0;}
@@ -2553,8 +2576,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-voice-bar.played{opacity:1;}
 .bq-voice-time{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;opacity:.85;flex-shrink:0;}
 
-/* Hide legacy push notification UI */
-.bqpf-push-section,#bqpf-push-btn{display:none!important;}
+/* v36: Removed legacy push notification UI hide — now handled by v36 notification settings */
 
 /* Theme chip swatches in old info panel — keep working */
 .bq-theme-chip{width:28px;height:28px;border-radius:8px;cursor:pointer;border:2px solid transparent;}
@@ -3180,10 +3202,10 @@ function refreshMeAvatar(){
   }
 }
 
-/* PUSH NOTIFICATIONS REMOVED — kept stubs to avoid reference errors */
-function updatePushUI(){}
-function subscribeToPush(){}
-function showNotification(){}
+/* NOTIFICATION STUBS — v36 delegates to real implementations */
+function updatePushUI(){ try{ if(typeof window._bqUpdatePushUI==='function') window._bqUpdatePushUI(); }catch(_){} }
+function subscribeToPush(){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd('System','Notifications enabled!','global'); }catch(_){} }
+function showNotification(sender,msg,type,dmId){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd(sender||'?',msg||'',type||'global',dmId); }catch(_){} }
 
 /* ────���────────────────────────────────────
    TOAST
@@ -4894,6 +4916,12 @@ function renderMsg(ctx,msg,key){
       '🍕':'stk-food','🍜':'stk-food','🧋':'stk-food','☕':'stk-food','🍰':'stk-food','🌮':'stk-food','🍱':'stk-food','🥂':'stk-food',
       '✈️':'stk-travel','🗼':'stk-travel','🏖️':'stk-travel','🌍':'stk-travel','🏔️':'stk-travel','🌅':'stk-travel','🌋':'stk-nature','🏰':'stk-travel',
       '⚽':'stk-sport','🏀':'stk-sport','🎨':'stk-sport','🎮':'stk-sport','🎲':'stk-sport','🧩':'stk-sport','🎭':'stk-sport',
+      // v36: New sticker animation mappings
+      '🧪':'stk-science','🔬':'stk-science','🧬':'stk-science','🔭':'stk-science','🌡️':'stk-science','🧫':'stk-science','💡':'stk-science','🪐':'stk-science',
+      '🎵':'stk-music','🎶':'stk-music','🎤':'stk-music','💃':'stk-music','🕺':'stk-music','🪗':'stk-music','🎹':'stk-music','🥁':'stk-music',
+      '☀️':'stk-weather','🌈':'stk-weather','⭐':'stk-weather','❄️':'stk-weather','🌪️':'stk-weather','☄️':'stk-weather','🌤️':'stk-weather','🪶':'stk-weather',
+      '👋':'stk-greet','🤞':'stk-greet','✌️':'stk-greet','🤙':'stk-greet','🫰':'stk-greet','🫱':'stk-greet','🫲':'stk-greet','🤟':'stk-greet',
+      '🔮':'stk-magic','🧙':'stk-magic','🪄':'stk-magic','🦄':'stk-magic','🌟':'stk-magic','👑':'stk-magic','🪬':'stk-magic',
     };
     _stkClass = _stkAnimMap[msg.sticker] || '';
   }
@@ -5453,6 +5481,12 @@ function setupInput(ctx){
     {label:'Food', start:64, len:8},
     {label:'Travel', start:72, len:8},
     {label:'Sports', start:80, len:7},
+    // v36: New sticker categories
+    {label:'Science', start:87, len:8},
+    {label:'Music', start:95, len:8},
+    {label:'Weather', start:103, len:8},
+    {label:'Greetings', start:111, len:8},
+    {label:'Magic', start:119, len:8},
   ];
   _stkCats.forEach(cat=>{
     const lbl=document.createElement('div');
@@ -11570,16 +11604,9 @@ function ensureScrollBottomBtn(){
    ────────────────────────────────────────────────────────────────────── */
 let _typingSent=0, _typingHandle=null;
 function broadcastTyping(){
-  const db=_db(); const u=_uid();
-  const dm = window.activeDmId || window.__bqActiveDm?.id;
-  if(!db||!u||!dm) return;
-  const now=Date.now();
-  if(now-_typingSent<2000) return;
-  _typingSent=now;
-  // v35 fix: write to same path as main widget (bq_dm_typing) so typing is actually visible
-  db.ref('bq_dm_typing/'+dm+'/'+u).set({uname: (typeof uname!=='undefined'?uname:''), ts:now});
-  clearTimeout(_typingHandle);
-  _typingHandle=setTimeout(()=>{ try{ db.ref('bq_dm_typing/'+dm+'/'+u).remove(); }catch(_){ } }, 4500);
+  // v36: disabled — main widget already handles DM typing via setDmTyp()
+  // This was creating duplicate typing writes alongside the main system
+  return;
 }
 let _typingObs=null, _typingDmRef=null;
 function watchTyping(){
@@ -11588,8 +11615,8 @@ function watchTyping(){
   return;
 }
 function wireTypingInput(){
-  const inp=$(ID.dminp); if(!inp || inp._v2typ) return; inp._v2typ=true;
-  inp.addEventListener('input', broadcastTyping);
+  // v36: disabled — main widget already handles DM typing via setDmTyp()
+  return;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -13163,4 +13190,787 @@ setInterval(()=>{
 
 })();
 /* ════════════ end v35 patch ════════════ */
+
+/* ════════════════════════════════════════════════════════════════════
+   v36 PATCH — Real-Time Notification System
+   - In-app notification banners with slide-in animation
+   - Notification bell with unread count badge
+   - Notification dropdown panel with message previews
+   - Browser push notification support
+   - Sound notification with audio feedback
+   - Per-type toggle switches in profile settings
+   - Firebase real-time listeners for cross-view awareness
+   ════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+const V36 = 'v36';
+
+/* ── NOTIFICATION PREFERENCES ── */
+const NOTIF_PREFS_KEY = 'bq_notif_prefs';
+const DEFAULT_PREFS = {
+  inApp: true,       // In-app notification banners
+  push: false,       // Browser push notifications
+  sound: true,       // Sound notification
+  globalChat: true,  // Notify for global chat messages
+  dms: true,         // Notify for DM messages
+  mentions: true     // Notify when @mentioned
+};
+function getNotifPrefs(){
+  try{ const s=localStorage.getItem(NOTIF_PREFS_KEY); return s?Object.assign({},DEFAULT_PREFS,JSON.parse(s)):Object.assign({},DEFAULT_PREFS); }catch(_){ return Object.assign({},DEFAULT_PREFS); }
+}
+function saveNotifPrefs(p){ try{ localStorage.setItem(NOTIF_PREFS_KEY,JSON.stringify(p)); }catch(_){} }
+function setPref(key,val){ const p=getNotifPrefs(); p[key]=val; saveNotifPrefs(p); return p; }
+
+/* ── NOTIFICATION SOUND ── */
+let _notifAudioCtx = null;
+function playNotifSound(){
+  if(!getNotifPrefs().sound) return;
+  try{
+    if(!_notifAudioCtx) _notifAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = _notifAudioCtx;
+    const now = ctx.currentTime;
+    // Pleasant two-tone chime
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, now);
+    osc2.type = 'sine'; osc2.frequency.setValueAtTime(1100, now+0.1);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now+0.5);
+    osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+    osc1.start(now); osc1.stop(now+0.2);
+    osc2.start(now+0.1); osc2.stop(now+0.5);
+  }catch(_){}
+}
+
+/* ── NOTIFICATION STATE ── */
+let _notifQueue = [];        // Recent notifications for dropdown
+const MAX_NOTIF_HISTORY = 20;
+let _notifBadgeCount = 0;    // Unread count on bell
+let _notifDropdownOpen = false;
+
+/* ── CSS INJECTION ── */
+const _notifCSS = document.createElement('style');
+_notifCSS.textContent = `
+/* ── NOTIFICATION BELL ── */
+.bq-notif-bell{
+  position:relative;width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+}
+.bq-notif-bell:hover{background:rgba(255,255,255,.12);transform:scale(1.05);}
+.bq-notif-bell svg{width:16px;height:16px;stroke:var(--bq-text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bq-notif-bell.has-unread svg{stroke:var(--bq-accent);}
+.bq-notif-badge{
+  position:absolute;top:-3px;right:-3px;
+  min-width:16px;height:16px;padding:0 4px;
+  background:#ef4444;color:#fff;border-radius:999px;
+  font:700 9px/16px 'Inter',system-ui;text-align:center;
+  display:none;animation:bqNotifBadgePop .35s cubic-bezier(.34,1.56,.64,1) both;
+  box-shadow:0 2px 6px rgba(239,68,68,.5);
+}
+.bq-notif-badge.show{display:block;}
+@keyframes bqNotifBadgePop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.bq-notif-bell.ring{animation:bqNotifBellRing .6s cubic-bezier(.36,.07,.19,.97) both;}
+@keyframes bqNotifBellRing{
+  0%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-14deg)}30%{transform:rotate(10deg)}40%{transform:rotate(-10deg)}50%{transform:rotate(4deg)}60%{transform:rotate(0)}100%{transform:rotate(0)}
+}
+
+/* ── NOTIFICATION DROPDOWN ── */
+.bq-notif-dropdown{
+  position:absolute;top:46px;right:0;width:300px;max-height:380px;
+  background:rgba(16,18,28,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04) inset;
+  z-index:2147483645;display:none;flex-direction:column;overflow:hidden;
+  animation:bqNotifDropIn .25s cubic-bezier(.22,1,.36,1) both;
+  transform-origin:top right;
+}
+.bq-notif-dropdown.open{display:flex;}
+@keyframes bqNotifDropIn{0%{opacity:0;transform:scale(.92) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.bq-notif-drop-hdr{
+  padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;
+}
+.bq-notif-drop-hdr-title{font:700 13px/1 'Inter',sans-serif;color:var(--bq-text);letter-spacing:.01em;}
+.bq-notif-drop-clear{
+  font:500 11px/1 'Inter',sans-serif;color:var(--bq-accent);
+  background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;
+  transition:background .15s;
+}
+.bq-notif-drop-clear:hover{background:rgba(96,165,250,.12);}
+.bq-notif-list{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px;}
+.bq-notif-list::-webkit-scrollbar{width:3px;}
+.bq-notif-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+.bq-notif-item{
+  display:flex;gap:10px;padding:10px;border-radius:10px;cursor:pointer;
+  transition:background .15s;align-items:flex-start;position:relative;
+}
+.bq-notif-item:hover{background:rgba(255,255,255,.05);}
+.bq-notif-item.unread::before{
+  content:'';position:absolute;left:4px;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--bq-accent);
+}
+.bq-notif-item-av{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font:700 12px/1 'Inter',sans-serif;flex-shrink:0;color:#000;
+}
+.bq-notif-item-body{flex:1;min-width:0;}
+.bq-notif-item-sender{font:600 11px/1.3 'Inter',sans-serif;color:var(--bq-text);margin-bottom:2px;}
+.bq-notif-item-msg{font:400 11px/1.4 'Inter',sans-serif;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+.bq-notif-item-time{font:400 10px/1 'Inter',sans-serif;color:rgba(255,255,255,.25);flex-shrink:0;margin-top:2px;}
+.bq-notif-empty{
+  padding:40px 20px;text-align:center;
+  font:500 12px/1.6 'Inter',sans-serif;color:var(--bq-text-muted);
+}
+.bq-notif-empty svg{width:32px;height:32px;stroke:rgba(255,255,255,.15);fill:none;stroke-width:1.5;margin-bottom:8px;display:block;margin-inline:auto;}
+
+/* ── IN-APP NOTIFICATION BANNER ── */
+.bq-notif-banner{
+  position:absolute;top:8px;left:8px;right:8px;
+  background:rgba(16,18,28,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  padding:10px 12px;display:flex;gap:10px;align-items:center;
+  z-index:2147483644;cursor:pointer;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:bqNotifBannerIn .4s cubic-bezier(.22,1,.36,1) both;
+  transform-origin:top center;
+}
+.bq-notif-banner.out{animation:bqNotifBannerOut .3s ease both;}
+@keyframes bqNotifBannerIn{0%{opacity:0;transform:translateY(-20px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes bqNotifBannerOut{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-20px) scale(.95)}}
+.bq-notif-banner-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 10px/1 'Inter',sans-serif;color:#000;flex-shrink:0;}
+.bq-notif-banner-body{flex:1;min-width:0;}
+.bq-notif-banner-sender{font:600 11px/1.2 'Inter',sans-serif;color:var(--bq-text);}
+.bq-notif-banner-msg{font:400 11px/1.3 'Inter',sans-serif;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bq-notif-banner-close{
+  width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.08);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .15s;
+}
+.bq-notif-banner-close:hover{background:rgba(255,255,255,.15);}
+.bq-notif-banner-close svg{width:10px;height:10px;stroke:rgba(255,255,255,.5);fill:none;stroke-width:2.5;stroke-linecap:round;}
+
+/* ── PROFILE NOTIFICATION SETTINGS (replace hidden push section) ── */
+.bq-notif-settings{display:flex;flex-direction:column;gap:2px;padding:0;margin-bottom:8px;}
+.bq-notif-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;border-radius:10px;
+  transition:background .15s;
+}
+.bq-notif-row:hover{background:rgba(255,255,255,.03);}
+.bq-notif-row-left{display:flex;align-items:center;gap:10px;}
+.bq-notif-row-ic{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.bq-notif-row-ic svg{width:14px;height:14px;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bq-notif-row-info{display:flex;flex-direction:column;gap:1px;}
+.bq-notif-row-label{font:600 12px/1.2 'Inter',sans-serif;color:var(--bq-text);}
+.bq-notif-row-sub{font:400 10px/1.3 'Inter',sans-serif;color:var(--bq-text-muted);}
+/* Toggle switch */
+.bq-notif-toggle{position:relative;width:38px;height:22px;flex-shrink:0;}
+.bq-notif-toggle input{opacity:0;width:0;height:0;position:absolute;}
+.bq-notif-toggle-track{
+  position:absolute;inset:0;border-radius:999px;
+  background:rgba(255,255,255,.1);cursor:pointer;transition:all .25s;
+}
+.bq-notif-toggle-track::after{
+  content:'';position:absolute;left:2px;top:2px;width:18px;height:18px;
+  border-radius:50%;background:#fff;transition:all .25s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.bq-notif-toggle input:checked+.bq-notif-toggle-track{background:var(--bq-accent);}
+.bq-notif-toggle input:checked+.bq-notif-toggle-track::after{left:18px;}
+.bq-notif-toggle input:focus-visible+.bq-notif-toggle-track{outline:2px solid var(--bq-accent);outline-offset:2px;}
+
+/* ── Browser push permission banner ── */
+.bq-notif-push-banner{
+  padding:12px;background:linear-gradient(135deg,rgba(96,165,250,.08),rgba(129,140,248,.06));
+  border:1px solid rgba(96,165,250,.12);border-radius:10px;margin-top:6px;
+}
+.bq-notif-push-banner-title{font:600 11px/1.3 'Inter',sans-serif;color:var(--bq-text);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.bq-notif-push-banner-title svg{width:12px;height:12px;stroke:var(--bq-accent);fill:none;stroke-width:2;}
+.bq-notif-push-banner-desc{font:400 10px/1.4 'Inter',sans-serif;color:var(--bq-text-muted);margin-bottom:8px;}
+.bq-notif-push-btn{
+  padding:7px 14px;background:linear-gradient(135deg,var(--bq-accent),#818cf8);
+  color:#fff;border:none;border-radius:8px;font:600 10px/1 'Inter',sans-serif;
+  cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:5px;
+}
+.bq-notif-push-btn:hover{opacity:.9;transform:translateY(-1px);}
+.bq-notif-push-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.bq-notif-push-btn.active{background:linear-gradient(135deg,#22c55e,#16a34a);}
+`;
+document.head.appendChild(_notifCSS);
+
+/* ── INJECT NOTIFICATION BELL INTO HEADER ── */
+function injectNotifBell(){
+  // Find the header area — add bell before the fullscreen button
+  const fsBtn = document.getElementById('bq-fs-btn');
+  if(!fsBtn || document.getElementById('bq-notif-bell')) return;
+  const bell = document.createElement('div');
+  bell.className = 'bq-notif-bell';
+  bell.id = 'bq-notif-bell';
+  bell.innerHTML = `
+    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <div class="bq-notif-badge" id="bq-notif-badge">0</div>
+  `;
+  fsBtn.parentNode.insertBefore(bell, fsBtn);
+
+  // Dropdown
+  const drop = document.createElement('div');
+  drop.className = 'bq-notif-dropdown';
+  drop.id = 'bq-notif-dropdown';
+  drop.innerHTML = `
+    <div class="bq-notif-drop-hdr">
+      <div class="bq-notif-drop-hdr-title">Notifications</div>
+      <button class="bq-notif-drop-clear" id="bq-notif-clear">Mark all read</button>
+    </div>
+    <div class="bq-notif-list" id="bq-notif-list">
+      <div class="bq-notif-empty">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        No notifications yet
+      </div>
+    </div>
+  `;
+  bell.style.position = 'relative';
+  bell.appendChild(drop);
+
+  // Toggle dropdown
+  bell.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _notifDropdownOpen = !_notifDropdownOpen;
+    drop.classList.toggle('open', _notifDropdownOpen);
+    if(_notifDropdownOpen) markAllRead();
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if(!bell.contains(e.target)){
+      _notifDropdownOpen = false;
+      drop.classList.remove('open');
+    }
+  });
+
+  // Mark all read
+  document.getElementById('bq-notif-clear')?.addEventListener('click', () => {
+    markAllRead();
+  });
+}
+
+/* ── NOTIFICATION LOGIC ── */
+function addNotification(sender, msg, type, dmId){
+  const prefs = getNotifPrefs();
+  // Check type preferences
+  if(type === 'global' && !prefs.globalChat) return;
+  if(type === 'dm' && !prefs.dms) return;
+
+  // Add to queue
+  const notif = {
+    id: Date.now() + Math.random(),
+    sender: sender || 'Someone',
+    msg: msg || '',
+    type: type,
+    dmId: dmId || null,
+    time: Date.now(),
+    read: false
+  };
+  _notifQueue.unshift(notif);
+  if(_notifQueue.length > MAX_NOTIF_HISTORY) _notifQueue.pop();
+
+  // Update badge
+  _notifBadgeCount++;
+  updateNotifBadge();
+
+  // Bell ring animation
+  const bell = document.getElementById('bq-notif-bell');
+  if(bell){
+    bell.classList.remove('ring');
+    void bell.offsetWidth; // reflow
+    bell.classList.add('ring');
+    setTimeout(()=> bell.classList.remove('ring'), 700);
+  }
+
+  // Update dropdown list
+  renderNotifList();
+
+  // In-app banner
+  if(prefs.inApp) showNotifBanner(notif);
+
+  // Sound
+  playNotifSound();
+
+  // Browser push
+  if(prefs.push && document.hidden) showBrowserNotif(notif);
+}
+
+function updateNotifBadge(){
+  const badge = document.getElementById('bq-notif-badge');
+  const bell = document.getElementById('bq-notif-bell');
+  if(!badge || !bell) return;
+  const unread = _notifQueue.filter(n => !n.read).length;
+  badge.textContent = unread > 99 ? '99+' : unread;
+  badge.classList.toggle('show', unread > 0);
+  bell.classList.toggle('has-unread', unread > 0);
+}
+
+function markAllRead(){
+  _notifQueue.forEach(n => n.read = true);
+  _notifBadgeCount = 0;
+  updateNotifBadge();
+  renderNotifList();
+}
+
+function renderNotifList(){
+  const list = document.getElementById('bq-notif-list');
+  if(!list) return;
+  if(!_notifQueue.length){
+    list.innerHTML = `<div class="bq-notif-empty"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>No notifications yet</div>`;
+    return;
+  }
+  list.innerHTML = _notifQueue.map(n => {
+    const initials = n.sender.replace('@','').slice(0,2).toUpperCase();
+    const color = _uColor(n.sender);
+    const timeStr = _timeAgo(n.time);
+    const escapedMsg = _esc(n.msg).slice(0,60);
+    return `
+      <div class="bq-notif-item${n.read?'':' unread'}" data-notif-id="${n.id}" data-type="${n.type}" data-dm="${n.dmId||''}">
+        <div class="bq-notif-item-av" style="background:${color}">${_esc(initials)}</div>
+        <div class="bq-notif-item-body">
+          <div class="bq-notif-item-sender">${_esc(n.sender)}</div>
+          <div class="bq-notif-item-msg">${escapedMsg}</div>
+        </div>
+        <div class="bq-notif-item-time">${timeStr}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Click to navigate
+  list.querySelectorAll('.bq-notif-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const type = item.dataset.type;
+      const dm = item.dataset.dm;
+      if(type === 'dm' && dm){
+        // Navigate to DM conversation
+        try{
+          if(typeof openDm === 'function') openDm(dm);
+          else if(window.openDm) window.openDm(dm);
+        }catch(_){}
+      } else if(type === 'global'){
+        try{ if(typeof bqNav === 'function') bqNav('chat'); }catch(_){}
+      }
+      // Mark as read
+      const id = parseFloat(item.dataset.notifId);
+      const notif = _notifQueue.find(n => n.id === id);
+      if(notif) notif.read = true;
+      updateNotifBadge();
+      // Close dropdown
+      _notifDropdownOpen = false;
+      document.getElementById('bq-notif-dropdown')?.classList.remove('open');
+    });
+  });
+}
+
+/* ── IN-APP BANNER ── */
+let _bannerTimeout = null;
+function showNotifBanner(notif){
+  // Remove existing banner
+  const existing = document.querySelector('.bq-notif-banner');
+  if(existing) existing.remove();
+  clearTimeout(_bannerTimeout);
+
+  const panel = document.getElementById('bqp');
+  if(!panel) return;
+
+  const initials = notif.sender.replace('@','').slice(0,2).toUpperCase();
+  const color = _uColor(notif.sender);
+
+  const banner = document.createElement('div');
+  banner.className = 'bq-notif-banner';
+  banner.innerHTML = `
+    <div class="bq-notif-banner-av" style="background:${color}">${_esc(initials)}</div>
+    <div class="bq-notif-banner-body">
+      <div class="bq-notif-banner-sender">${_esc(notif.sender)}</div>
+      <div class="bq-notif-banner-msg">${_esc(notif.msg).slice(0,50)}</div>
+    </div>
+    <button class="bq-notif-banner-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  `;
+
+  // Insert at top of panel content area
+  const content = panel.querySelector('#bqs') || panel;
+  content.style.position = 'relative';
+  content.insertBefore(banner, content.firstChild);
+
+  // Auto-dismiss
+  _bannerTimeout = setTimeout(() => dismissBanner(banner), 4500);
+
+  // Close button
+  banner.querySelector('.bq-notif-banner-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismissBanner(banner);
+  });
+
+  // Click to navigate
+  banner.addEventListener('click', () => {
+    if(notif.type === 'dm' && notif.dmId){
+      try{ if(typeof openDm === 'function') openDm(notif.dmId); }catch(_){}
+    } else if(notif.type === 'global'){
+      try{ if(typeof bqNav === 'function') bqNav('chat'); }catch(_){}
+    }
+    dismissBanner(banner);
+  });
+}
+
+function dismissBanner(banner){
+  if(!banner || !banner.parentNode) return;
+  banner.classList.add('out');
+  setTimeout(() => banner.remove(), 300);
+}
+
+/* ── BROWSER PUSH NOTIFICATIONS ── */
+function showBrowserNotif(notif){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  try{
+    const n = new Notification('BioQuiz Chat', {
+      body: notif.sender + ': ' + notif.msg.slice(0,80),
+      icon: '/logo.svg',
+      tag: 'bq-' + notif.type + '-' + Date.now(),
+      silent: true // We play our own sound
+    });
+    n.onclick = () => {
+      window.focus();
+      try{
+        if(typeof togglePanel === 'function') togglePanel();
+        if(notif.type === 'dm' && notif.dmId && typeof openDm === 'function') openDm(notif.dmId);
+        else if(typeof bqNav === 'function') bqNav('chat');
+      }catch(_){}
+      n.close();
+    };
+    setTimeout(() => n.close(), 8000);
+  }catch(_){}
+}
+
+/* ── HELPERS ── */
+function _uColor(name){
+  const PALETTE = ['#f87171','#fb923c','#fbbf24','#4ade80','#34d399','#22d3ee','#60a5fa','#818cf8','#c084fc','#e879f9','#f472b6','#a78bfa'];
+  let h=0; for(let i=0;i<name.length;i++) h=(Math.imul(h,31)+name.charCodeAt(i))>>>0;
+  return PALETTE[h%PALETTE.length];
+}
+function _esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _timeAgo(ts){
+  const diff = Date.now() - ts;
+  if(diff < 60000) return 'now';
+  if(diff < 3600000) return Math.floor(diff/60000) + 'm';
+  if(diff < 86400000) return Math.floor(diff/3600000) + 'h';
+  return Math.floor(diff/86400000) + 'd';
+}
+
+/* ── FIREBASE MESSAGE LISTENERS ── */
+function patchMessageListeners(){
+  try{
+    const _db = ()=>{ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null; }catch(_){ return null; } };
+    const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+
+    // Listen for new GLOBAL messages when not on global chat view
+    let _lastGlobalTs = Date.now();
+    function hookGlobalMessages(){
+      const db = _db();
+      if(!db) return;
+      db.ref('bq_messages').limitToLast(1).on('child_added', snap => {
+        const msg = snap.val();
+        if(!msg) return;
+        const now = Date.now();
+        if(msg.ts > _lastGlobalTs && now - msg.ts < 10000){
+          _lastGlobalTs = msg.ts;
+          const myUid = _uid();
+          // Don't notify for own messages
+          if(msg.uid === myUid) return;
+          // Don't notify if currently viewing global chat
+          try{ if(typeof activeView !== 'undefined' && activeView === 'chat') return; }catch(_){}
+          // Check if mentioned
+          const prefs = getNotifPrefs();
+          const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
+          const isMention = prefs.mentions && myName && msg.text && msg.text.toLowerCase().includes('@'+myName.toLowerCase());
+          if(isMention || prefs.globalChat){
+            addNotification('@'+(msg.uname||'?'), msg.text||'', 'global');
+          }
+        }
+      });
+    }
+
+    // Listen for new DM messages when not in that DM conversation
+    let _dmMsgListeners = {};
+    function hookDmMessages(){
+      const db = _db();
+      if(!db) return;
+      const myUid = _uid();
+      if(!myUid) return;
+
+      // Listen for changes in the DM index to detect new DMs
+      db.ref('bq_dm_index/'+myUid).on('value', snap => {
+        if(!snap.exists()) return;
+        snap.forEach(dmSnap => {
+          const dmId = dmSnap.key;
+          if(_dmMsgListeners[dmId]) return; // Already listening
+          const dmData = dmSnap.val() || {};
+          _lastDmTs[dmId] = Date.now();
+          _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
+            const msg = msgSnap.val();
+            if(!msg) return;
+            const now = Date.now();
+            if(msg.ts > _lastDmTs[dmId] && now - msg.ts < 10000){
+              _lastDmTs[dmId] = msg.ts;
+              if(msg.uid === myUid) return;
+              // Don't notify if currently in this DM conversation
+              try{
+                if(typeof activeView !== 'undefined' && activeView === 'dmconv' && typeof activeDmId !== 'undefined' && activeDmId === dmId) return;
+              }catch(_){}
+              addNotification('@'+(msg.uname||'?'), msg.text||'Sent you a message', 'dm', dmId);
+            }
+          });
+        });
+      });
+    }
+    let _lastDmTs = {};
+
+    // Start listening after a delay
+    setTimeout(()=>{
+      hookGlobalMessages();
+      hookDmMessages();
+    }, 2000);
+
+  }catch(_){}
+}
+
+/* ── PROFILE NOTIFICATION SETTINGS UI ── */
+function injectNotifSettings(){
+  const section = document.querySelector('#bqv-profile .bqpf-scroll');
+  if(!section || document.getElementById('bq-notif-settings')) return;
+
+  // Remove the old hidden push notification section
+  const oldPushSection = section.querySelector('.bqpf-section:last-of-type');
+  // Find the "Push Notifications" section
+  const allSections = section.querySelectorAll('.bqpf-section');
+  allSections.forEach(sec => {
+    const label = sec.querySelector('.bqpf-label');
+    if(label && label.textContent.includes('Push Notifications')){
+      sec.remove();
+    }
+  });
+
+  // Also remove the old hidden CSS override
+  // (We can't easily remove a CSS rule, but we'll use !important in our new styles)
+
+  const prefs = getNotifPrefs();
+  const notifSection = document.createElement('div');
+  notifSection.className = 'bqpf-section';
+  notifSection.id = 'bq-notif-settings';
+  notifSection.innerHTML = `
+    <div class="bqpf-label" style="margin-bottom:12px;">Notifications</div>
+    <div class="bq-notif-settings">
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(96,165,250,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:var(--bq-accent);fill:none;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">In-App Alerts</div>
+            <div class="bq-notif-row-sub">Banner notifications inside the widget</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="inApp" ${prefs.inApp?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(250,204,21,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:#facc15;fill:none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">Sound</div>
+            <div class="bq-notif-row-sub">Chime when new messages arrive</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="sound" ${prefs.sound?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(74,222,128,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:#4ade80;fill:none;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">Global Chat</div>
+            <div class="bq-notif-row-sub">Notify for messages in global chat</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="globalChat" ${prefs.globalChat?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(248,113,113,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:#f87171;fill:none;"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">Direct Messages</div>
+            <div class="bq-notif-row-sub">Notify for new DM messages</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="dms" ${prefs.dms?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(192,132,252,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:#c084fc;fill:none;"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">Mentions</div>
+            <div class="bq-notif-row-sub">Only when someone @mentions you</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="mentions" ${prefs.mentions?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+      <div class="bq-notif-row">
+        <div class="bq-notif-row-left">
+          <div class="bq-notif-row-ic" style="background:rgba(129,140,248,.12);">
+            <svg viewBox="0 0 24 24" style="stroke:#818cf8;fill:none;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="bq-notif-row-info">
+            <div class="bq-notif-row-label">Browser Push</div>
+            <div class="bq-notif-row-sub">Desktop notifications when browser is hidden</div>
+          </div>
+        </div>
+        <label class="bq-notif-toggle"><input type="checkbox" data-pref="push" ${prefs.push?'checked':''}><span class="bq-notif-toggle-track"></span></label>
+      </div>
+    </div>
+    <div class="bq-notif-push-banner" id="bq-notif-push-banner" style="display:none">
+      <div class="bq-notif-push-banner-title">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Enable Browser Notifications
+      </div>
+      <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you desktop notifications. You can change this anytime in browser settings.</div>
+      <button class="bq-notif-push-btn" id="bq-notif-push-enable">
+        <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Allow Notifications
+      </button>
+    </div>
+  `;
+
+  // Insert before the save button
+  const saveBtn = section.querySelector('.bqpf-savebtn');
+  if(saveBtn){
+    section.insertBefore(notifSection, saveBtn);
+  } else {
+    section.appendChild(notifSection);
+  }
+
+  // Wire toggle switches
+  notifSection.querySelectorAll('.bq-notif-toggle input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const key = inp.dataset.pref;
+      const val = inp.checked;
+      const newPrefs = setPref(key, val);
+      // If push was enabled, show permission prompt
+      if(key === 'push' && val){
+        updatePushPermissionUI();
+      }
+    });
+  });
+
+  // Push enable button
+  document.getElementById('bq-notif-push-enable')?.addEventListener('click', async () => {
+    try{
+      const result = await Notification.requestPermission();
+      if(result === 'granted'){
+        setPref('push', true);
+        updatePushPermissionUI();
+      } else {
+        setPref('push', false);
+        updatePushPermissionUI();
+      }
+    }catch(_){
+      setPref('push', false);
+      updatePushPermissionUI();
+    }
+  });
+
+  updatePushPermissionUI();
+}
+
+function updatePushPermissionUI(){
+  const banner = document.getElementById('bq-notif-push-banner');
+  const prefs = getNotifPrefs();
+  if(!banner) return;
+
+  if(!prefs.push){
+    banner.style.display = 'none';
+    return;
+  }
+
+  if('Notification' in window){
+    if(Notification.permission === 'granted'){
+      banner.style.display = '';
+      banner.innerHTML = `
+        <div class="bq-notif-push-banner-title">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Browser Notifications Active
+        </div>
+        <div class="bq-notif-push-banner-desc">You'll receive desktop notifications when the browser is hidden. Manage in browser settings.</div>
+      `;
+    } else if(Notification.permission === 'denied'){
+      banner.style.display = '';
+      banner.innerHTML = `
+        <div class="bq-notif-push-banner-title" style="color:#f87171;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Notifications Blocked
+        </div>
+        <div class="bq-notif-push-banner-desc">Browser notifications are blocked. Enable them in your browser's site settings.</div>
+      `;
+    } else {
+      // default — need to request permission
+      banner.style.display = '';
+    }
+  } else {
+    banner.style.display = '';
+    banner.innerHTML = `
+      <div class="bq-notif-push-banner-title" style="color:var(--bq-text-muted);">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Not Supported
+      </div>
+      <div class="bq-notif-push-banner-desc">Your browser doesn't support push notifications.</div>
+    `;
+  }
+}
+
+/* ── REPLACE STUBS ── */
+// Override the empty stubs with real implementations
+window._bqUpdatePushUI = updatePushPermissionUI;
+window._bqNotifAdd = addNotification;
+
+/* ── INIT ── */
+function bootV36(){
+  injectNotifBell();
+  injectNotifSettings();
+  patchMessageListeners();
+  try{ console.log('[bq] v36 patch loaded — real-time notification system'); }catch(_){}
+}
+
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(bootV36, 1200));
+else setTimeout(bootV36, 1200);
+
+// Re-inject settings when profile view opens (since refreshProfileView may clear them)
+setInterval(()=>{
+  try{
+    const settingsEl = document.getElementById('bq-notif-settings');
+    if(!settingsEl){
+      const profileView = document.getElementById('bqv-profile');
+      if(profileView && profileView.classList.contains('bq-active')){
+        injectNotifSettings();
+      }
+    }
+  }catch(_){}
+}, 3000);
+
+})();
+/* ════════════ end v36 patch ════════════ */
 
