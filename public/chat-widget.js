@@ -131,6 +131,19 @@ const QUICK_STICKERS = [
   '🌙','⚡','🎯','💎','🚀','🌊','🎸','🍀',
   // Animals
   '🐉','🦋','🐺','🦊','🐸','🦅','🐬','🌸',
+  // v35: New sticker categories
+  // Love & Affection
+  '💕','💗','💖','🤗','😘','🥹','💑','🫂',
+  // Celebration & Party
+  '🎊','🥳','🍾','🪩','🪅','🎆','🎈','🏆',
+  // Mood & Vibes
+  '😌','🧘','🥱','😴','🤭','😏','🫣','🤓',
+  // Food & Drink
+  '🍕','🍜','🧋','☕','🍰','🌮','🍱','🥂',
+  // Travel & Places
+  '✈️','🗼','🏖️','🌍','🏔️','🌅','🌋','🏰',
+  // Sports & Activities
+  '⚽','🏀','🎸','🎨','🎮','🎲','🧩','🎭',
 ];
 
 /* ─────────────────────────────────────────
@@ -782,34 +795,40 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrbx svg{width:11px;height:11px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;}
 
 /* ── TYPING ── */
-.bqtyp{min-height:24px;padding:2px 16px 8px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);display:flex;align-items:center;gap:8px;}
-.bqtd{display:flex;gap:4px;align-items:center;padding:6px 10px;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:12px 12px 12px 4px;width:fit-content;}
-.bqtd span{width:5px;height:5px;background:var(--bq-accent);border-radius:50%;animation:bqTd 1.4s ease infinite;opacity:.4;}
-.bqtd span:nth-child(2){animation-delay:.2s;}.bqtd span:nth-child(3){animation-delay:.4s;}
-@keyframes bqTd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.bqtyp{min-height:0;padding:0 16px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);display:flex;align-items:center;gap:8px;overflow:hidden;transition:min-height .25s ease,padding .25s ease,opacity .25s ease;}
+.bqtyp.active{min-height:28px;padding:4px 16px 8px;}
+.bqtd{display:flex;gap:4px;align-items:center;padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;width:fit-content;animation:bqTypIn .3s cubic-bezier(.22,1,.36,1) both;}
+.bqtd span{width:6px;height:6px;background:var(--bq-accent);border-radius:50%;animation:bqTd 1.4s ease infinite;opacity:.4;}
+.bqtd span:nth-child(2){animation-delay:.15s;}.bqtd span:nth-child(3){animation-delay:.3s;}
+@keyframes bqTd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+@keyframes bqTypIn{0%{opacity:0;transform:translateY(6px) scale(.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.bqtd-txt{color:var(--bq-text-muted);font-weight:500;margin-left:2px;}
 
 /* ── INPUT ── */
 .bqiw{border-top:1px solid var(--bq-glass-border);padding:12px 14px;flex-shrink:0;background:var(--bq-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 /* Quick Stickers panel (replaces plain emoji tray) */
 .bqiet{
-  display:none;flex-wrap:wrap;gap:4px;padding:10px;margin-bottom:10px;
+  display:none;flex-wrap:wrap;gap:4px;padding:8px 10px 10px;margin-bottom:8px;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
   border:1px solid var(--bq-border);border-radius:14px;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;
 }
-.bqiet.open{display:flex;animation:bqGifIn .18s var(--bq-transition) both;}
+.bqiet::-webkit-scrollbar{width:4px;}
+.bqiet::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}
+.bqiet.open{display:flex;animation:bqGifIn .22s cubic-bezier(.22,1,.36,1) both;}
 .bqiet::before{
   content:'Tap to send a sticker';display:block;width:100%;
   font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;
-  color:var(--bq-text-subtle);text-transform:uppercase;margin-bottom:4px;padding:0 2px;
+  color:var(--bq-text-subtle);text-transform:uppercase;margin-bottom:6px;padding:0 2px;
 }
 .bqietb{
-  width:38px;height:38px;background:rgba(255,255,255,.04);border:1px solid transparent;
-  cursor:pointer;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;
-  transition:transform .18s var(--bq-transition),background .15s,border-color .15s;line-height:1;
+  width:36px;height:36px;background:rgba(255,255,255,.04);border:1px solid transparent;
+  cursor:pointer;border-radius:10px;font-size:20px;display:flex;align-items:center;justify-content:center;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),background .15s,border-color .15s,box-shadow .15s;line-height:1;
 }
-.bqietb:hover{background:rgba(255,255,255,.09);border-color:var(--bq-accent);transform:scale(1.18) rotate(-6deg);}
-.bqietb:active{transform:scale(.92);}
+.bqietb:hover{background:rgba(255,255,255,.09);border-color:var(--bq-accent);transform:scale(1.2) rotate(-6deg);box-shadow:0 4px 12px rgba(96,165,250,.2);}
+.bqietb:active{transform:scale(.88);transition:transform .08s ease;}
 /* Sticker bubble (large emoji) */
 .bqbbl.sticker{
   background:transparent!important;border:none!important;box-shadow:none!important;padding:2px 0 0!important;
@@ -820,6 +839,23 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   animation:bqStickerPop .55s cubic-bezier(.34,1.56,.64,1) both;
   cursor:default;user-select:none;
 }
+/* v35: Per-category sticker animations */
+.bqbbl.sticker .bqsticker.stk-love{animation:bqStkLove .6s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-party{animation:bqStkParty .7s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-mood{animation:bqStkMood .55s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-food{animation:bqStkFood .6s cubic-bezier(.22,1,.36,1) both;}
+.bqbbl.sticker .bqsticker.stk-travel{animation:bqStkTravel .65s cubic-bezier(.22,1,.36,1) both;}
+.bqbbl.sticker .bqsticker.stk-sport{animation:bqStkSport .55s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-nature{animation:bqStkNature .7s cubic-bezier(.22,1,.36,1) both;}
+.bqbbl.sticker .bqsticker.stk-animal{animation:bqStkAnimal .6s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes bqStkLove{0%{transform:scale(0);opacity:0}40%{transform:scale(1.3);opacity:1}60%{transform:scale(.9)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes bqStkParty{0%{transform:scale(0) rotate(-30deg);opacity:0}50%{transform:scale(1.25) rotate(10deg);opacity:1}70%{transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bqStkMood{0%{transform:translateY(20px) scale(.5);opacity:0}60%{transform:translateY(-4px) scale(1.1);opacity:1}100%{transform:translateY(0) scale(1)}}
+@keyframes bqStkFood{0%{transform:scale(0) rotate(180deg);opacity:0}50%{transform:scale(1.15) rotate(-10deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes bqStkTravel{0%{transform:translateX(-30px) scale(.3);opacity:0}60%{transform:translateX(4px) scale(1.1);opacity:1}100%{transform:translateX(0) scale(1)}}
+@keyframes bqStkSport{0%{transform:scale(.2);opacity:0}40%{transform:scale(1.3);opacity:1}60%{transform:scale(.85)}100%{transform:scale(1)}}
+@keyframes bqStkNature{0%{transform:scale(0) translateY(10px);opacity:0}50%{transform:scale(1.15) translateY(-5px);opacity:1}100%{transform:scale(1) translateY(0)}}
+@keyframes bqStkAnimal{0%{transform:scale(.1) rotate(-20deg);opacity:0}50%{transform:scale(1.2) rotate(5deg);opacity:1}70%{transform:scale(.95) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
 .bqbbl.sticker .bqbbl-meta{color:var(--bq-text-subtle)!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important;position:static!important;float:right;margin-top:4px!important;}
 @keyframes bqStickerPop{
   0%{transform:scale(.2) rotate(-12deg);opacity:0;}
@@ -3445,14 +3481,18 @@ function showDmConvo(pUid, pName) {
   
   // DM typing
   if (dmTypRef) { dmTypRef.off(); dmTypRef = null; }
+  // v35: remove any leftover v25 typing pills
+  document.querySelectorAll('.bqv2-typing').forEach(el=>el.remove());
   if (db) {
     dmTypRef = db.ref('bq_dm_typing/' + activeDmId);
     dmTypRef.on('value', snap => {
       const now = Date.now(), ty = [];
-      snap.forEach(c => { const d = c.val(); if (c.key !== uid && d && now - d.ts < 3800) ty.push('@' + (d.uname || '?')); });
+      snap.forEach(c => { const d = c.val(); if (c.key !== uid && d && now - d.ts < 6000) ty.push('@' + (d.uname || '?')); });
       const el = document.getElementById('bqdmtyp'); if (!el) return;
-      if (!ty.length) { el.innerHTML = ''; return; }
-      el.innerHTML = `<div class="bqtd"><span></span><span></span><span></span></div><span>${ty.join(' & ')} typing</span>`;
+      if (!ty.length) { el.innerHTML = ''; el.classList.remove('active'); return; }
+      // v35: enhanced typing indicator with animated dots
+      el.innerHTML = `<div class="bqtd"><span></span><span></span><span></span></div><span class="bqtd-txt">${ty.join(' & ')} typing</span>`;
+      el.classList.add('active');
     });
   }
   
@@ -4839,7 +4879,25 @@ function renderMsg(ctx,msg,key){
 
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+esc(msg.imageData)+'" alt="" loading="lazy">' : '';
   var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
-  var _stickerHtml = (msg.type==='sticker' && msg.sticker) ? '<span class="bqsticker">'+esc(msg.sticker)+'</span>' : '';
+  var _stkClass = '';
+  if(msg.type==='sticker' && msg.sticker){
+    // v35: assign animation class based on emoji category
+    var _stkAnimMap = {
+      '❤️':'stk-love','🔥':'stk-party','😂':'stk-party','🎉':'stk-party','🥰':'stk-love','😮':'stk-mood','💯':'stk-party','✨':'stk-party',
+      '🫶':'stk-love','🙏':'stk-mood','👏':'stk-party','🤝':'stk-mood','💪':'stk-sport','🫡':'stk-mood','🤌':'stk-mood','👌':'stk-mood',
+      '💀':'stk-mood','🤯':'stk-mood','😭':'stk-mood','👀':'stk-mood','😈':'stk-mood','🤡':'stk-mood','💅':'stk-mood','🫠':'stk-mood',
+      '🌙':'stk-nature','⚡':'stk-nature','🎯':'stk-sport','💎':'stk-nature','🚀':'stk-travel','🌊':'stk-nature','🎸':'stk-sport','🍀':'stk-nature',
+      '🐉':'stk-animal','🦋':'stk-animal','🐺':'stk-animal','🦊':'stk-animal','🐸':'stk-animal','🦅':'stk-animal','🐬':'stk-animal','🌸':'stk-nature',
+      '💕':'stk-love','💗':'stk-love','💖':'stk-love','🤗':'stk-love','😘':'stk-love','🥹':'stk-love','💑':'stk-love','🫂':'stk-love',
+      '🎊':'stk-party','🥳':'stk-party','🍾':'stk-party','🪩':'stk-party','🪅':'stk-party','🎆':'stk-party','🎈':'stk-party','🏆':'stk-party',
+      '😌':'stk-mood','🧘':'stk-mood','🥱':'stk-mood','😴':'stk-mood','🤭':'stk-mood','😏':'stk-mood','🫣':'stk-mood','🤓':'stk-mood',
+      '🍕':'stk-food','🍜':'stk-food','🧋':'stk-food','☕':'stk-food','🍰':'stk-food','🌮':'stk-food','🍱':'stk-food','🥂':'stk-food',
+      '✈️':'stk-travel','🗼':'stk-travel','🏖️':'stk-travel','🌍':'stk-travel','🏔️':'stk-travel','🌅':'stk-travel','🌋':'stk-nature','🏰':'stk-travel',
+      '⚽':'stk-sport','🏀':'stk-sport','🎨':'stk-sport','🎮':'stk-sport','🎲':'stk-sport','🧩':'stk-sport','🎭':'stk-sport',
+    };
+    _stkClass = _stkAnimMap[msg.sticker] || '';
+  }
+  var _stickerHtml = (msg.type==='sticker' && msg.sticker) ? '<span class="bqsticker '+_stkClass+'">'+esc(msg.sticker)+'</span>' : '';
   var _voiceHtml = (msg.type==='voice' && msg.audio) ? buildVoiceHtml(msg) : '';
   var _isSticker = !!_stickerHtml;
   var _hasMedia = !!(_imgHtml || _gifHtml);
@@ -5382,15 +5440,36 @@ function setupInput(ctx){
   if(!inp||!snd)return;
 
   // Quick stickers tray (replaces emoji tray) — tap to send a one-tap sticker message
-  QUICK_STICKERS.forEach(e=>{
-    const b=document.createElement('button');
-    b.className='bqietb';b.textContent=e;b.title='Send '+e+' sticker';
-    b.addEventListener('click',()=>{
-      if(!uname){showModal(false);return;}
-      if(isG) sendStickerGlobal(e); else sendStickerDm(e);
-      tray.classList.remove('open');
-    });
-    tray.appendChild(b);
+  // v35: category labels for the expanded sticker set
+  const _stkCats = [
+    {label:'Reactions', start:0, len:8},
+    {label:'Expressions', start:8, len:8},
+    {label:'Fun', start:16, len:8},
+    {label:'Nature', start:24, len:8},
+    {label:'Animals', start:32, len:8},
+    {label:'Love', start:40, len:8},
+    {label:'Party', start:48, len:8},
+    {label:'Mood', start:56, len:8},
+    {label:'Food', start:64, len:8},
+    {label:'Travel', start:72, len:8},
+    {label:'Sports', start:80, len:7},
+  ];
+  _stkCats.forEach(cat=>{
+    const lbl=document.createElement('div');
+    lbl.className='bqstk-cat';lbl.textContent=cat.label;
+    lbl.style.cssText='width:100%;font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.22);padding:6px 2px 2px;margin-top:2px;';
+    tray.appendChild(lbl);
+    for(let i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
+      const e=QUICK_STICKERS[i];
+      const b=document.createElement('button');
+      b.className='bqietb';b.textContent=e;b.title='Send '+e+' sticker';
+      b.addEventListener('click',()=>{
+        if(!uname){showModal(false);return;}
+        if(isG) sendStickerGlobal(e); else sendStickerDm(e);
+        tray.classList.remove('open');
+      });
+      tray.appendChild(b);
+    }
   });
   if(eoB){
     eoB.textContent='✨';
@@ -11504,25 +11583,9 @@ function broadcastTyping(){
 }
 let _typingObs=null, _typingDmRef=null;
 function watchTyping(){
-  const db=_db(); const u=_uid();
-  const dm = window.activeDmId || window.__bqActiveDm?.id;
-  if(!db||!u||!dm) return;
-  if(_typingDmRef===dm) return;
-  if(_typingObs){ try{ _typingObs.off(); }catch(_){} _typingObs=null; }
-  _typingDmRef=dm;
-  // v35 fix: listen on same path as main widget (bq_dm_typing) so we see actual signals
-  const ref=db.ref('bq_dm_typing/'+dm);
-  _typingObs=ref;
-  ref.on('value', snap=>{
-    const v=snap.val()||{};
-    let active=false; const now=Date.now();
-    Object.keys(v).forEach(k=>{ if(k!==u && v[k] && (now - (v[k].ts||v[k]||0)) < 6000) active=true; });
-    let pill=document.querySelector('.bqv2-typing');
-    const list=$('bqdmmsgs')||document.querySelector('.bqdmmsgs');
-    if(active){
-      if(!pill && list){ pill=document.createElement('div'); pill.className='bqv2-typing'; pill.innerHTML='<span></span><span></span><span></span> typing'; list.parentElement.appendChild(pill); }
-    } else { pill?.remove(); }
-  });
+  // v35: disabled — main widget already handles typing via #bqdmtyp
+  // This function was creating a duplicate .bqv2-typing pill
+  return;
 }
 function wireTypingInput(){
   const inp=$(ID.dminp); if(!inp || inp._v2typ) return; inp._v2typ=true;
