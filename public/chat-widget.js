@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '54.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '55.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -14392,6 +14392,231 @@ if(document.readyState === 'loading'){
   });
 })();
 /* ════════════ end v39 patch ════════════ */
+
+/* ════════════ v40 patch: Widget disguise — maintenance screen + PIN lock ════════════ */
+(function v40Disguise(){
+  'use strict';
+  const WIDGET_PIN = '1306';
+  const LS_UNLOCKED = 'bq_widget_unlocked';
+  console.log('[bq] v40 patch loaded — widget disguise + PIN lock');
+
+  // ── CSS ──
+  const css = document.createElement('style');
+  css.textContent = `
+  /* Disguise overlay — covers entire chat panel */
+  #bq-disguise{
+    position:absolute;inset:0;z-index:9999;
+    background:linear-gradient(160deg,#0f172a 0%,#1e293b 40%,#0f172a 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:var(--bq-radius);
+    transition:opacity .4s ease,transform .4s ease;
+    overflow:hidden;
+  }
+  #bq-disguise.bq-unlocked{
+    opacity:0;transform:scale(1.05);pointer-events:none;
+  }
+  /* Animated construction background stripes */
+  #bq-disguise::before{
+    content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(
+      -45deg,
+      transparent,transparent 40px,
+      rgba(251,191,36,.04) 40px,rgba(251,191,36,.04) 80px
+    );
+    animation:bqStripeMove 20s linear infinite;
+  }
+  @keyframes bqStripeMove{0%{background-position:0 0}100%{background-position:160px 0}}
+  /* Hard hat icon area */
+  .bq-disg-icon{
+    position:relative;z-index:1;
+    width:90px;height:90px;border-radius:24px;
+    background:linear-gradient(145deg,rgba(251,191,36,.15),rgba(245,158,11,.1));
+    border:1px solid rgba(251,191,36,.25);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:20px;
+    box-shadow:0 8px 40px rgba(251,191,36,.15);
+    cursor:pointer;
+    transition:transform .2s,box-shadow .2s;
+  }
+  .bq-disg-icon:hover{transform:scale(1.06);box-shadow:0 12px 48px rgba(251,191,36,.25);}
+  .bq-disg-icon:active{transform:scale(.97);}
+  .bq-disg-emoji{font-size:40px;line-height:1;user-select:none;}
+  /* Title & subtitle */
+  .bq-disg-title{
+    position:relative;z-index:1;
+    font-family:'Inter',sans-serif;font-size:17px;font-weight:800;
+    color:#fbbf24;letter-spacing:.02em;margin-bottom:6px;
+    text-align:center;
+  }
+  .bq-disg-sub{
+    position:relative;z-index:1;
+    font-family:'Inter',sans-serif;font-size:12px;
+    color:rgba(255,255,255,.35);margin-bottom:0;text-align:center;
+    max-width:200px;line-height:1.5;
+  }
+  /* Hidden PIN pad — revealed on tap */
+  #bq-disguise-pin{
+    display:none;flex-direction:column;align-items:center;
+    margin-top:20px;position:relative;z-index:1;
+  }
+  #bq-disguise-pin.show{display:flex;}
+  .bq-disg-dots{display:flex;gap:12px;margin-bottom:16px;}
+  .bq-disg-dot{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.15);
+    background:transparent;transition:all .2s;
+  }
+  .bq-disg-dot.filled{background:#fbbf24;border-color:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,.5);}
+  .bq-disg-dot.error{background:#ef4444;border-color:#ef4444;animation:bqdmlShake .3s ease;}
+  .bq-disg-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px;}
+  .bq-disg-key{
+    height:52px;border-radius:14px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+    font-family:'Inter',sans-serif;font-size:20px;font-weight:600;color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;-webkit-tap-highlight-color:transparent;user-select:none;
+  }
+  .bq-disg-key:hover{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.3);}
+  .bq-disg-key:active{transform:scale(.92);}
+  /* Disguised bubble — looks like a settings gear */
+  #bqb.bq-disguised .bqi-c{display:none!important;}
+  #bqb.bq-disguised::before{
+    content:'⚙️';font-size:20px;line-height:1;
+  }
+  #bqb.bq-disguised{background:rgba(100,116,139,.8)!important;}
+  #bqb.bq-disguised:hover{background:rgba(100,116,139,.95)!important;}
+  #bqb.bq-disguised .bqi-x{stroke:rgba(255,255,255,.8)!important;}
+  #bqb.bq-disguised #bqbadge{display:none!important;}
+  `;
+  document.head.appendChild(css);
+
+  // ── Inject disguise overlay into panel ──
+  const panel = document.getElementById('bqp');
+  if(!panel) return;
+
+  const disguise = document.createElement('div');
+  disguise.id = 'bq-disguise';
+  disguise.innerHTML = `
+    <div class="bq-disg-icon" id="bq-disg-icon" title="">
+      <span class="bq-disg-emoji">🏗️</span>
+    </div>
+    <div class="bq-disg-title">Under Maintenance</div>
+    <div class="bq-disg-sub">This feature is currently being worked on. Check back later.</div>
+    <div id="bq-disguise-pin">
+      <div class="bq-disg-dots" id="bq-disg-dots">
+        <div class="bq-disg-dot"></div><div class="bq-disg-dot"></div>
+        <div class="bq-disg-dot"></div><div class="bq-disg-dot"></div>
+      </div>
+      <div class="bq-disg-pad">
+        <button class="bq-disg-key" data-k="1">1</button><button class="bq-disg-key" data-k="2">2</button><button class="bq-disg-key" data-k="3">3</button>
+        <button class="bq-disg-key" data-k="4">4</button><button class="bq-disg-key" data-k="5">5</button><button class="bq-disg-key" data-k="6">6</button>
+        <button class="bq-disg-key" data-k="7">7</button><button class="bq-disg-key" data-k="8">8</button><button class="bq-disg-key" data-k="9">9</button>
+        <div></div><button class="bq-disg-key" data-k="0">0</button><button class="bq-disg-key" data-k="del">⌫</button>
+      </div>
+    </div>
+  `;
+  panel.appendChild(disguise);
+
+  // ── State ──
+  let pinBuffer = '';
+  let pinShown = false;
+
+  function isUnlocked(){
+    try{ return localStorage.getItem(LS_UNLOCKED) === '1'; }catch(_){ return false; }
+  }
+  function setUnlocked(){
+    try{ localStorage.setItem(LS_UNLOCKED, '1'); }catch(_){}
+  }
+
+  // ── Show/hide disguise ──
+  function applyDisguise(){
+    const bubble = document.getElementById('bqb');
+    if(isUnlocked()){
+      disguise.classList.add('bq-unlocked');
+      if(bubble) bubble.classList.remove('bq-disguised');
+    } else {
+      disguise.classList.remove('bq-unlocked');
+      if(bubble) bubble.classList.add('bq-disguised');
+      // Reset pin state
+      pinBuffer = '';
+      pinShown = false;
+      const pinEl = document.getElementById('bq-disguise-pin');
+      if(pinEl) pinEl.classList.remove('show');
+      updateDots();
+    }
+  }
+
+  // ── PIN dot indicators ──
+  function updateDots(){
+    const dots = document.querySelectorAll('#bq-disg-dots .bq-disg-dot');
+    dots.forEach((d,i)=>{
+      d.classList.toggle('filled', i < pinBuffer.length);
+      d.classList.remove('error');
+    });
+  }
+
+  // ── Tap the construction icon to reveal PIN pad ──
+  document.getElementById('bq-disg-icon')?.addEventListener('click', ()=>{
+    if(isUnlocked()) return;
+    if(!pinShown){
+      pinShown = true;
+      const pinEl = document.getElementById('bq-disguise-pin');
+      if(pinEl) pinEl.classList.add('show');
+    }
+  });
+
+  // ── PIN pad key presses ──
+  disguise.addEventListener('click', e=>{
+    if(isUnlocked()) return;
+    const key = e.target.closest('.bq-disg-key');
+    if(!key) return;
+    const k = key.dataset.k;
+    if(k === 'del'){
+      pinBuffer = pinBuffer.slice(0,-1);
+      updateDots();
+      return;
+    }
+    if(pinBuffer.length >= 4) return;
+    pinBuffer += k;
+    updateDots();
+
+    if(pinBuffer.length === 4){
+      if(pinBuffer === WIDGET_PIN){
+        // Correct PIN!
+        setUnlocked();
+        disguise.classList.add('bq-unlocked');
+        const bubble = document.getElementById('bqb');
+        if(bubble) bubble.classList.remove('bq-disguised');
+        // Remove disguise after animation
+        setTimeout(()=>{ disguise.style.display='none'; }, 450);
+      } else {
+        // Wrong PIN — shake dots
+        const dots = document.querySelectorAll('#bq-disg-dots .bq-disg-dot');
+        dots.forEach(d=>d.classList.add('error'));
+        setTimeout(()=>{
+          pinBuffer = '';
+          updateDots();
+        }, 600);
+      }
+    }
+  });
+
+  // ── Initial state ──
+  applyDisguise();
+  if(isUnlocked()){
+    disguise.style.display = 'none';
+  }
+
+  // ── Hijack panel open to check disguise ──
+  const origOpen = window.togglePanel || null;
+  if(typeof origOpen === 'function'){
+    // Already defined in main scope; we just make sure disguise is applied
+  }
+
+  // ── Reset disguise if localStorage cleared (new device) ──
+  // The disguise auto-shows when bq_widget_unlocked is not '1'
+})();
+/* ════════════ end v40 patch ════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════
    v41: Web Push Notifications — Works when tab/browser is CLOSED
