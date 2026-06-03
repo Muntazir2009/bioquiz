@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '58.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '59.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -2116,14 +2116,10 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-cat:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);}
 .bqgifp-cat.sel{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.12);}
 .bqgifp-grid{
-  flex:1;overflow-y:auto;padding:8px 10px;
+  flex:1;padding:8px 10px;
   display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
-  align-content:start;position:relative;
+  align-content:start;position:relative;overflow:hidden;
 }
-.bqgifp-grid::-webkit-scrollbar{width:4px;}
-.bqgifp-grid::-webkit-scrollbar-track{background:transparent;}
-.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px;}
-.bqgifp-grid::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
 .bqgifp-item{
   display:block;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;
   background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
@@ -2133,10 +2129,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-item:hover{transform:scale(1.03);border-color:rgba(255,255,255,.12);box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:2;}
 .bqgifp-item:active{transform:scale(.97);transition-duration:.1s;}
 .bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
-/* v42: scroll-to-pause GIFs while scrolling picker */
-.bqgifp-scrolling .bqgifp-item img{visibility:hidden;}
-.bqgifp-scrolling .bqgifp-item::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.03);border-radius:8px;}
-/* v42: GIF load error state */
+/* GIF load error state */
 .bqgifp-item.bqgifp-err img{display:none;}
 .bqgifp-item.bqgifp-err::after{content:'⚠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3;}
 .bqgifp-skel{
@@ -2149,11 +2142,22 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   grid-column:1/-1;padding:40px 16px;text-align:center;
   font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,.25);
 }
-.bqgifp-foot{
-  padding:6px 14px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:flex-end;
-  font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.05em;
-  color:rgba(255,255,255,.12);text-transform:uppercase;font-weight:600;
+.bqgifp-nav{
+  padding:8px 14px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  border-top:1px solid rgba(255,255,255,.04);
+}
+.bqgifp-prev,.bqgifp-next{
+  width:30px;height:30px;border-radius:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.5);transition:all .15s;
+}
+.bqgifp-prev:hover:not(:disabled),.bqgifp-next:hover:not(:disabled){background:rgba(255,255,255,.1);color:#fff;}
+.bqgifp-prev:disabled,.bqgifp-next:disabled{opacity:.25;cursor:not-allowed;}
+.bqgifp-page{
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+  color:rgba(255,255,255,.3);letter-spacing:.02em;min-width:40px;text-align:center;
 }
 
 /* GIF button (composer) */
@@ -4300,41 +4304,70 @@ function attachGifPicker(ctx){
     '<div class="bqgifp-head">'+
       '<div class="bqgifp-search">'+
         '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
-        '<input type="text" placeholder="Search GIFs on Giphy..." autocomplete="off" autocapitalize="off" autocorrect="off">'+
+        '<input type="text" placeholder="Search GIFs..." autocomplete="off" autocapitalize="off" autocorrect="off">'+
       '</div>'+
       '<div class="bqgifp-cats">'+
         GIPHY_CATEGORIES.map((c,i)=>'<button class="bqgifp-cat'+(i===0?' sel':'')+'" data-cat="'+c.id+'">'+c.label+'</button>').join('')+
       '</div>'+
     '</div>'+
     '<div class="bqgifp-grid"></div>'+
-    '<div class="bqgifp-foot"><span>Powered by GIPHY</span></div>';
+    '<div class="bqgifp-nav">'+
+      '<button class="bqgifp-prev" disabled><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
+      '<span class="bqgifp-page"></span>'+
+      '<button class="bqgifp-next"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>'+
+    '</div>';
   row.appendChild(panel);
 
   const grid = panel.querySelector('.bqgifp-grid');
   const inp  = panel.querySelector('input');
   const cats = panel.querySelectorAll('.bqgifp-cat');
+  const prevBtn = panel.querySelector('.bqgifp-prev');
+  const nextBtn = panel.querySelector('.bqgifp-next');
+  const pageSpan = panel.querySelector('.bqgifp-page');
   if(!grid || !inp || !cats) return;
-let curCat = 'trending', curQ = '', searchT = null;
-let _gifLoaded = false, curOffset = 0, _loadingMore = false, _hasMore = true;
 
-function showSkeletons(){
+  const PER_PAGE = 6;
+  let curCat = 'trending', curQ = '', searchT = null;
+  let _gifLoaded = false, curPage = 0, _loading = false;
+  let _allData = []; // cache all fetched data for current query
+  let _hasMore = true; // whether the API might have more results
+
+  function showSkeletons(){
     grid.innerHTML = '';
-    for(let i=0;i<6;i++){
+    for(let i=0;i<PER_PAGE;i++){
       const s = document.createElement('div');
       s.className='bqgifp-skel';
       grid.appendChild(s);
     }
+    updateNav();
   }
-  function appendGifs(data){
-    data.forEach(g=>{
+
+  function updateNav(){
+    const totalPages = Math.max(1, Math.ceil(_allData.length / PER_PAGE));
+    const pageNum = curPage + 1;
+    pageSpan.textContent = pageNum + ' / ' + totalPages;
+    prevBtn.disabled = curPage <= 0;
+    // Enable next if there's cached data beyond this page OR the API may have more
+    const cachedBeyond = (curPage + 1) * PER_PAGE < _allData.length;
+    nextBtn.disabled = !cachedBeyond && !_hasMore;
+  }
+
+  function renderPage(){
+    grid.innerHTML = '';
+    const start = curPage * PER_PAGE;
+    const slice = _allData.slice(start, start + PER_PAGE);
+    if(!slice.length){
+      grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
+      updateNav();
+      return;
+    }
+    slice.forEach(g=>{
       const thumb = g.images?.fixed_width_downsampled || g.images?.fixed_width_small || g.images?.fixed_width || g.images?.downsized_small;
       const display = g.images?.fixed_width?.url || g.images?.downsized_medium?.url || (thumb ? thumb.url : null);
       const full = g.images?.original?.url || display;
       if(!thumb||!full) return;
-      const still = g.images?.fixed_width_still?.url || g.images?.fixed_height_still?.url || null;
       const item = document.createElement('div');
       item.className = 'bqgifp-item';
-      if(still) item.dataset.stillUrl = still;
       const img = document.createElement('img');
       img.loading = 'lazy';
       img.decoding = 'async';
@@ -4345,56 +4378,71 @@ function showSkeletons(){
       item.addEventListener('click', ()=>{
         const w = parseInt(g.images?.original?.width||0);
         const h = parseInt(g.images?.original?.height||0);
-        // Store display URL (smaller) as gifUrl, original as gifUrlFull for lightbox
         if(isG) sendGifGlobal(display||full, w, h, full); else sendGifDm(display||full, w, h, full);
         panel.classList.remove('open');
         btn.classList.remove('active');
       });
       grid.appendChild(item);
     });
+    updateNav();
   }
+
   async function load(){
-    curOffset = 0; _hasMore = true;
+    curPage = 0;
+    _loading = true;
+    _hasMore = true;
     showSkeletons();
     const res = await giphyFetch(curCat, curQ, 0);
+    _loading = false;
     if(res.error){
       grid.innerHTML = '<div class="bqgifp-empty">'+esc(res.error)+'</div>';
+      _allData = [];
+      _hasMore = false;
+      updateNav();
       return;
     }
     if(!res.data||!res.data.length){
       grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
+      _allData = [];
+      _hasMore = false;
+      updateNav();
       return;
     }
-    grid.innerHTML = '';
-    appendGifs(res.data);
-    curOffset = res.data.length;
-    _hasMore = (res.pagination?.total_count||0) > curOffset;
+    _allData = res.data;
+    _hasMore = res.data.length >= PER_PAGE;
+    renderPage();
   }
-  async function loadMore(){
-    if(_loadingMore || !_hasMore) return;
-    _loadingMore = true;
-    const res = await giphyFetch(curCat, curQ, curOffset);
+
+  async function loadMoreAndRender(){
+    // Fetch next batch and append to _allData for seamless browsing
+    if(_loading) return;
+    _loading = true;
+    const res = await giphyFetch(curCat, curQ, _allData.length);
+    _loading = false;
     if(res.data && res.data.length){
-      appendGifs(res.data);
-      curOffset += res.data.length;
-      _hasMore = (res.pagination?.total_count||0) > curOffset;
+      _allData = _allData.concat(res.data);
+      _hasMore = res.data.length >= PER_PAGE;
     } else {
       _hasMore = false;
     }
-    _loadingMore = false;
+    curPage++;
+    renderPage();
   }
-  // v42: scroll-to-pause + infinite scroll
-  let _scrollTimer = null;
-  grid.addEventListener('scroll', ()=>{
-    // Infinite scroll
-    if(grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) loadMore();
-    // Scroll-to-pause: hide GIFs while scrolling
-    grid.classList.add('bqgifp-scrolling');
-    clearTimeout(_scrollTimer);
-    _scrollTimer = setTimeout(()=>{
-      grid.classList.remove('bqgifp-scrolling');
-    }, 200);
-  }, {passive: true});
+
+  prevBtn.addEventListener('click', ()=>{
+    if(curPage > 0){ curPage--; renderPage(); }
+  });
+  nextBtn.addEventListener('click', ()=>{
+    if(_loading) return;
+    if((curPage + 1) * PER_PAGE < _allData.length){
+      curPage++;
+      renderPage();
+    } else if(_hasMore){
+      // Need to fetch more
+      loadMoreAndRender();
+    }
+  });
+
   cats.forEach(c=>{
     c.addEventListener('click', ()=>{
       cats.forEach(x=>x.classList.remove('sel'));
@@ -4402,6 +4450,7 @@ function showSkeletons(){
       curCat = c.dataset.cat;
       curQ = '';
       inp.value = '';
+      load();
     });
   });
   inp.addEventListener('input', ()=>{
@@ -4421,19 +4470,19 @@ function showSkeletons(){
   btn.addEventListener('click', e=>{
     e.stopPropagation();
     const opening = !panel.classList.contains('open');
-    // Close any other open gif panels
     document.querySelectorAll('.bqgifp.open').forEach(p=>p.classList.remove('open'));
     document.querySelectorAll('.bqgifbtn.active').forEach(b=>b.classList.remove('active'));
     if(opening){
       panel.classList.add('open');
       btn.classList.add('active');
       if(!_gifLoaded){ _gifLoaded = true; load(); }
-      else if(!grid.children.length) load();
+      else if(!_allData.length) load();
+      else renderPage();
       setTimeout(()=>inp.focus(), 60);
     }
   });
 
-  // Outside click closes (delegated to widget root)
+  // Outside click closes
   document.getElementById('bqp')?.addEventListener('click', e=>{
     if(!panel.classList.contains('open')) return;
     if(panel.contains(e.target) || btn.contains(e.target)) return;
@@ -14861,15 +14910,14 @@ if(document.readyState === 'loading'){
 })();
 /* ════════════ end v41 patch ════════════ */
 
-/* ════════════ v42 patch: GIF UI V2 + clean icons ════════════ */
-(function v42GifUIAndIcons(){
+/* ════════════ v42 patch: Clean icons + GIF label theming ════════════ */
+(function v42CleanIcons(){
   'use strict';
-  console.log('[bq] v42 patch loaded — GIF UI V2 + clean icons');
+  console.log('[bq] v42 patch loaded — clean icons + GIF label theming');
 
-  // ── A. Inject additional CSS for icon fixes ──
+  // ── A. Inject CSS for icon fixes ──
   const css = document.createElement('style');
   css.textContent = `
-    /* v42: GIF button text label theming for WhatsApp themes */
     #bqp.bq-theme-walight .bqgifbtn .gif-label,
     #bqp.bq-theme-wadark .bqgifbtn .gif-label { color: inherit; }
     #bqp.bq-theme-walight .bqgifbtn:hover .gif-label { color: #075e54; }
@@ -14880,7 +14928,6 @@ if(document.readyState === 'loading'){
   document.head.appendChild(css);
 
   // ── B. Dynamic icon patching via MutationObserver ──
-  // Patch dynamically created icons that our static edits can't reach
   function patchDynamicIcons(root) {
     if (!root || !root.querySelectorAll) return;
 
@@ -14941,69 +14988,17 @@ if(document.readyState === 'loading'){
     iconObserver.observe(panel, { childList: true, subtree: true });
   }
 
-  // ── C. IntersectionObserver for GIF picker — only animate visible GIFs ──
-  function enhanceGifPicker() {
-    document.querySelectorAll('.bqgifp-grid').forEach(grid => {
-      if (grid.dataset.v42Enhanced) return;
-      grid.dataset.v42Enhanced = '1';
-
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          const img = entry.target.querySelector('img');
-          if (!img) return;
-          if (entry.isIntersecting) {
-            // Restore animated src from data attribute
-            if (img.dataset.v42Still) {
-              img.src = img.dataset.v42Still;
-              delete img.dataset.v42Still;
-            }
-          } else {
-            // Swap to still image for offscreen GIFs to save CPU
-            if (!img.dataset.v42Still && img.src && !img.src.startsWith('data:')) {
-              const stillUrl = entry.target.dataset.stillUrl;
-              if (stillUrl) {
-                img.dataset.v42Still = img.src;
-                img.src = stillUrl;
-              }
-            }
-          }
-        });
-      }, { root: grid, rootMargin: '200px', threshold: 0 });
-
-      const observeItems = () => {
-        grid.querySelectorAll('.bqgifp-item').forEach(item => {
-          if (!item.dataset.v42Obs) {
-            io.observe(item);
-            item.dataset.v42Obs = '1';
-          }
-        });
-      };
-
-      observeItems();
-      const mo = new MutationObserver(() => observeItems());
-      mo.observe(grid, { childList: true });
-    });
-  }
-
-  // Initialize when DOM is ready
+  // Initial patch
   function initV42() {
     patchDynamicIcons(document.getElementById('bqp') || document.body);
-    enhanceGifPicker();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(initV42, 2500));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initV42, 2000));
   } else {
-    setTimeout(initV42, 2500);
+    setTimeout(initV42, 2000);
   }
 
-  // Re-enhance when GIF picker opens
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.bqgifbtn')) {
-      setTimeout(enhanceGifPicker, 100);
-    }
-  });
-
-  console.log('[bq] v42: GIF grid stacking fixed, scroll-to-pause active, icons cleaned, IntersectionObserver for offscreen GIFs');
+  console.log('[bq] v42: clean icons patched, GIF picker uses pagination (6/page)');
 })();
 /* ════════════ end v42 patch ════════════ */
