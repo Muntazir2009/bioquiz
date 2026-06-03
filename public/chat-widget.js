@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '50.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '51.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -578,12 +578,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqts{display:none;} /* legacy slot — timestamp now lives inside bubble */
 
 /* Reply preview */
-.bqrp{border-left:3px solid var(--bq-accent);padding:5px 9px;margin-bottom:6px;border-radius:0 8px 8px 0;background:rgba(96,165,250,.12);}
+.bqrp{border-left:3px solid var(--bq-accent);padding:5px 9px;margin-bottom:6px;border-radius:0 8px 8px 0;background:rgba(96,165,250,.12);cursor:pointer;transition:background .15s,border-color .15s;}
+.bqrp:hover{background:rgba(96,165,250,.2);border-left-color:rgba(96,165,250,.8);}
 .bqrp-n{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--bq-accent);}
 .bqrp-t{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;margin-top:2px;}
 .bqr.mine .bqrp{background:rgba(0,0,0,.18);border-left-color:rgba(255,255,255,.35);}
 .bqr.mine .bqrp-n{color:rgba(255,255,255,.85);}
 .bqr.mine .bqrp-t{color:rgba(255,255,255,.7);}
+/* v39: Reply type indicator for media replies */
+.bqrp-media{font-size:10px;color:var(--bq-accent);opacity:.7;display:flex;align-items:center;gap:3px;margin-top:2px;}
+.bqrp-media svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;}
 
 /* Bubble */
 .bqbbl{
@@ -4806,8 +4810,8 @@ function onMsgChanged(ctx,snap){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
       // Preserve any reply/voice/image/sticker children — only update text node + edited marker
-      const reply=bbl.querySelector('.bqreply, .bq-replyref');
-      const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
+      const reply=bbl.querySelector('.bqrp');
+      const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
       const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
       const replyHTML=reply?reply.outerHTML:'';
       const mediaHTML=media?media.outerHTML:'';
@@ -4911,7 +4915,7 @@ function renderMsg(ctx,msg,key){
   const col=getColor(msg.uid,msg.uname||'');
   const ini=uInit(msg.uname||'?');
   const tStr=tsStr(ts);
-  const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
   const row=document.createElement('div');
   row.id=pfx+key;
@@ -5153,7 +5157,12 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     openReactionPicker(ctx,key);
   }
   else if(a==='reply'){
-    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:(msg.text || (msg.type==='voice'?'🎤 Voice note':'Media'))});
+    // Extract only actual message text, not reply-preview text
+    let replyText = msg.text || '';
+    if(!replyText){
+      replyText = msg.type==='gif'?'GIF':msg.type==='sticker'?(msg.sticker+' Sticker'):msg.type==='voice'?'🎤 Voice note':msg.imageData?'Image':'';
+    }
+    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:replyText.slice(0,80)});
     document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();
   }
   else if(a==='copy'){
@@ -7916,72 +7925,11 @@ setTimeout(_injectProfileUploads,1500);
     },100);
   }catch(_){}
 
-  /* ── 3. SWIPE-TO-REPLY ── */
+  /* ── 3. SWIPE-TO-REPLY (v39: DISABLED — v21 WA-style handles this) ── */
   const SWIPE_TRIGGER = 60;
   function attachSwipe(container){
-    if(!container || container.dataset.bqSwipe) return;
-    container.dataset.bqSwipe='1';
-    let startX=0,startY=0,curRow=null,dx=0,dy=0,locked=false,active=false;
-
-    function onStart(e){
-      if(document.body.classList.contains('bq-select-mode')) return;
-      const t=e.touches?e.touches[0]:e;
-      const row=e.target.closest('.bqr');
-      if(!row) return;
-      curRow=row; startX=t.clientX; startY=t.clientY;
-      dx=0; dy=0; locked=false; active=true;
-      row.classList.add('bq-swipe-active');
-    }
-    function onMove(e){
-      if(!active||!curRow) return;
-      const t=e.touches?e.touches[0]:e;
-      dx=t.clientX-startX; dy=t.clientY-startY;
-      if(!locked){
-        if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
-        if(Math.abs(dx)>8) locked=true; else return;
-      }
-      const isMine=curRow.classList.contains('mine');
-      // mine swipes left (negative), theirs swipes right (positive)
-      const validDir = isMine ? dx<0 : dx>0;
-      const moveX = validDir ? Math.max(-100,Math.min(100,dx)) : dx*0.15;
-      curRow.style.transform='translateX('+moveX+'px)';
-      if(Math.abs(moveX)>SWIPE_TRIGGER){
-        curRow.classList.add('bq-swipe-show','bq-swipe-trigger');
-      } else {
-        curRow.classList.remove('bq-swipe-show','bq-swipe-trigger');
-      }
-      if(e.cancelable) e.preventDefault();
-    }
-    function onEnd(){
-      if(!active||!curRow){ cancel(); return; }
-      const isMine=curRow.classList.contains('mine');
-      const validDir = isMine ? dx<0 : dx>0;
-      const triggered = validDir && Math.abs(dx)>SWIPE_TRIGGER;
-      curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger');
-      curRow.style.transform='';
-      if(triggered){
-        const id=curRow.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
-        if(m){
-          const ctx=m[1], key=m[2];
-          // Build minimal msg payload from DOM
-          const txt=curRow.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
-          const uname=curRow.querySelector('.bqun')?.textContent?.replace(/^@|^You/,'')||'';
-          if(typeof setReply==='function'){
-            try{ setReply(ctx==='global'?'g':'dm',{key,uname,text:txt}); }catch(_){}
-            const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
-          }
-        }
-      }
-      cancel();
-    }
-    function cancel(){
-      if(curRow){ curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger'); curRow.style.transform=''; }
-      curRow=null; active=false; locked=false;
-    }
-    container.addEventListener('touchstart',onStart,{passive:true});
-    container.addEventListener('touchmove',onMove,{passive:false});
-    container.addEventListener('touchend',onEnd);
-    container.addEventListener('touchcancel',cancel);
+    // v39: Disabled. The v21 WA-style swipe-to-reply with spring physics handles this.
+    return;
   }
 
   /* ── 4. LONG-PRESS → reactions, DOUBLE-TAP → ❤️ ── */
@@ -8534,6 +8482,37 @@ setTimeout(_injectProfileUploads,1500);
   .bqr.mine .bq-wa-reply-ic{right:8px;}
   .bqr.bq-wa-trigger .bq-wa-reply-ic{background:#22c55e;transform:translateY(-50%) scale(1.15);}
 
+  /* v39: Swipe reply preview popup — shows sender+snippet alongside badge */
+  .bq-wa-reply-preview{
+    position:absolute;top:50%;width:140px;
+    background:rgba(15,18,28,.94);border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;padding:6px 10px;pointer-events:none;opacity:0;
+    transform:translateY(-50%) scale(.85);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    box-shadow:0 6px 18px rgba(0,0,0,.45);
+    z-index:11;overflow:hidden;
+  }
+  .bqr.theirs .bq-wa-reply-preview{left:48px;}
+  .bqr.mine .bq-wa-reply-preview{right:48px;}
+  .bq-wa-rp-name{font-family:'Inter',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.03em;color:var(--bq-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bq-wa-rp-text{font-family:'Inter',sans-serif;font-size:10.5px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+  .bqr.bq-wa-trigger .bq-wa-reply-preview{border-color:rgba(34,197,94,.35);}
+
+  /* v39: Swipe glow trail */
+  .bqr.bq-wa-swipe::before{
+    content:'';position:absolute;top:0;bottom:0;width:80px;
+    pointer-events:none;opacity:.6;
+    background:linear-gradient(90deg,rgba(96,165,250,.12),transparent);
+  }
+  .bqr.mine.bq-wa-swipe::before{right:0;background:linear-gradient(270deg,rgba(96,165,250,.12),transparent);}
+  .bqr.theirs.bq-wa-swipe::before{left:0;background:linear-gradient(90deg,rgba(96,165,250,.12),transparent);}
+  .bqr.bq-wa-trigger::before{
+    background:linear-gradient(90deg,rgba(34,197,94,.18),transparent)!important;
+  }
+  .bqr.mine.bq-wa-trigger::before{
+    background:linear-gradient(270deg,rgba(34,197,94,.18),transparent)!important;
+  }
+
   /* Jump-to-bottom button */
   .bq-jtb{
     position:absolute;right:14px;bottom:80px;z-index:50;
@@ -8618,9 +8597,9 @@ setTimeout(_injectProfileUploads,1500);
     }catch(_){}
   }
 
-  /* ── 3. WhatsApp-style swipe-to-reply ── */
+  /* ── 3. WhatsApp-style swipe-to-reply (v39: spring physics + preview) ── */
   const WA_TRIGGER = 70;
-  const WA_MAX = 110;
+  const WA_MAX = 130;
   const REPLY_SVG = '<svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
 
   function detachOldSwipe(container){
@@ -8639,12 +8618,24 @@ setTimeout(_injectProfileUploads,1500);
     return b;
   }
 
+  function ensurePreview(row){
+    let p=row.querySelector('.bq-wa-reply-preview');
+    if(!p){
+      p=document.createElement('div');
+      p.className='bq-wa-reply-preview';
+      p.innerHTML='<div class="bq-wa-rp-name"></div><div class="bq-wa-rp-text"></div>';
+      row.appendChild(p);
+    }
+    return p;
+  }
+
   function attachWASwipe(container){
     if(!container || container.dataset.bqWaSwipe) return;
     container.dataset.bqWaSwipe='1';
 
-    let row=null, badge=null, startX=0, startY=0, dx=0, dy=0;
+    let row=null, badge=null, preview=null, startX=0, startY=0, dx=0, dy=0;
     let locked=false, isMine=false, active=false, triggered=false;
+    let velocity=0, lastX=0, lastTime=0, animFrame=null;
 
     function onStart(e){
       if(document.body.classList.contains('bq-select-mode')) return;
@@ -8655,12 +8646,36 @@ setTimeout(_injectProfileUploads,1500);
       row=r; isMine=row.classList.contains('mine');
       startX=t.clientX; startY=t.clientY; dx=0; dy=0;
       locked=false; active=true; triggered=false;
+      velocity=0; lastX=t.clientX; lastTime=Date.now();
+      if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
       badge=ensureBadge(row);
+      preview=ensurePreview(row);
+      // Populate preview with sender + snippet
+      const bbl=row.querySelector('.bqbbl');
+      if(bbl){
+        const clone=bbl.cloneNode(true);
+        clone.querySelectorAll('.bqrp').forEach(rp=>rp.remove());
+        const txt=clone.innerText?.split('\n')[0]?.slice(0,60)||'';
+        const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
+        const nameEl=preview.querySelector('.bq-wa-rp-name');
+        const textEl=preview.querySelector('.bq-wa-rp-text');
+        if(nameEl) nameEl.textContent=uname;
+        if(textEl) textEl.textContent=txt||'📎 Media';
+      }
     }
     function onMove(e){
       if(!active||!row) return;
       const t=e.touches?e.touches[0]:e;
       dx=t.clientX-startX; dy=t.clientY-startY;
+
+      // Track velocity
+      const now=Date.now();
+      const dt=now-lastTime;
+      if(dt>0){
+        velocity=(velocity*0.6)+((t.clientX-lastX)/dt)*0.4; // smoothed velocity
+        lastX=t.clientX; lastTime=now;
+      }
+
       if(!locked){
         if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
         if(Math.abs(dx)>6) {
@@ -8673,17 +8688,32 @@ setTimeout(_injectProfileUploads,1500);
       const valid = isMine ? dx<0 : dx>0;
       let move;
       if(valid){
-        move = Math.sign(dx) * Math.min(WA_MAX, Math.abs(dx));
+        // Exponential rubber-band resistance beyond WA_MAX
+        const absDx=Math.abs(dx);
+        if(absDx <= WA_MAX){
+          move = Math.sign(dx) * absDx;
+        } else {
+          // Rubber-band: each pixel beyond max has diminishing returns
+          const excess = absDx - WA_MAX;
+          const rubber = WA_MAX + (1 - Math.exp(-excess * 0.04)) * 60;
+          move = Math.sign(dx) * rubber;
+        }
       } else {
         // rubber-band the wrong direction
-        move = dx * 0.18;
+        move = dx * 0.12;
       }
       row.style.transform = 'translateX('+move+'px)';
       // Badge fades in proportionally
-      const prog = Math.min(1, Math.abs(move) / WA_TRIGGER);
+      const absMove=Math.abs(move);
+      const prog = Math.min(1, absMove / WA_TRIGGER);
       badge.style.opacity = prog.toFixed(2);
       badge.style.transform = 'translateY(-50%) scale('+(0.4 + prog*0.6).toFixed(2)+')';
-      const nowTrig = valid && Math.abs(move) >= WA_TRIGGER;
+      // Preview fades in after 30% progress
+      const previewProg = Math.max(0, Math.min(1, (absMove - WA_TRIGGER*0.3) / (WA_TRIGGER*0.7)));
+      preview.style.opacity = previewProg.toFixed(2);
+      preview.style.transform = 'translateY(-50%) translateX('+(isMine?'-':'')+(8 + previewProg*8)+'px) scale('+(0.85 + previewProg*0.15).toFixed(2)+')';
+
+      const nowTrig = valid && absMove >= WA_TRIGGER;
       if(nowTrig !== triggered){
         triggered = nowTrig;
         row.classList.toggle('bq-wa-trigger', triggered);
@@ -8697,42 +8727,106 @@ setTimeout(_injectProfileUploads,1500);
       const id=row.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
       if(!m) return;
       const ctx=m[1], key=m[2];
-      const txt=row.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+      // Extract ONLY the actual message text, excluding reply-preview text
+      const bbl=row.querySelector('.bqbbl');
+      let txt='';
+      if(bbl){
+        // Clone the bubble and remove reply previews to get just the message text
+        const clone=bbl.cloneNode(true);
+        clone.querySelectorAll('.bqrp').forEach(rp=>rp.remove());
+        txt=clone.innerText?.split('\n')[0]?.slice(0,80)||'';
+      }
+      // If no text (e.g. GIF/image/sticker), describe the media type
+      if(!txt){
+        const type=row.querySelector('.bq-msg-gif')?'GIF':row.querySelector('.bq-msg-img')?'Image':row.querySelector('.bq-sticker')?'Sticker':row.querySelector('.bq-voice')?'🎤 Voice note':'';
+        txt=type;
+      }
       const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
       try{
         if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt});
         const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
       }catch(_){}
     }
+
+    // Spring physics for snap-back animation
+    function springBack(el, fromX, wasTriggered){
+      const stiffness=320;  // spring constant
+      const damping=28;     // friction
+      const mass=1;
+      let pos=fromX;
+      let vel=wasTriggered ? velocity*0.3 : 0; // slight flick on trigger
+      let frame=0;
+      const maxFrames=30; // safety limit
+
+      function step(){
+        frame++;
+        const force=-stiffness*pos - damping*vel;
+        const acc=force/mass;
+        vel+=acc*(1/60);
+        pos+=vel*(1/60);
+
+        el.style.transform='translateX('+pos.toFixed(1)+'px)';
+
+        // Update badge/preview opacity during spring
+        const absP=Math.abs(pos);
+        const prog=Math.min(1,absP/WA_TRIGGER);
+        if(badge){
+          badge.style.opacity=prog.toFixed(2);
+          badge.style.transform='translateY(-50%) scale('+(0.4+prog*0.6).toFixed(2)+')';
+        }
+        if(preview){
+          const pp=Math.max(0,Math.min(1,(absP-WA_TRIGGER*0.3)/(WA_TRIGGER*0.7)));
+          preview.style.opacity=pp.toFixed(2);
+        }
+
+        // Check if settled
+        if(Math.abs(pos)<0.5 && Math.abs(vel)<1 || frame>maxFrames){
+          el.style.transform='';
+          el.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
+          if(badge){ badge.style.opacity='0'; badge.style.transform='translateY(-50%) scale(.4)'; }
+          if(preview){ preview.style.opacity='0'; }
+          animFrame=null;
+          return;
+        }
+        animFrame=requestAnimationFrame(step);
+      }
+      animFrame=requestAnimationFrame(step);
+    }
+
     function onEnd(){
       if(!active||!row){ cancel(); return; }
       const didTrigger = triggered;
-      // animate back to 0 with spring
+      const currentDx=dx;
+
+      // Animate back with spring physics
       row.classList.remove('bq-wa-swipe');
       row.classList.add('bq-wa-swipe-release');
-      row.style.transform='translateX(0)';
-      if(badge){
-        badge.style.opacity='0';
-        badge.style.transform='translateY(-50%) scale(.4)';
-      }
-      const r=row;
-      setTimeout(()=>{
-        r.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
-        r.style.transform='';
-      }, 340);
+
+      // Use spring animation instead of CSS transition
+      const fromX=parseFloat(row.style.transform?.replace(/translateX\(([^)]+)\)/,'$1'))||0;
+      row.style.transition='none';
+      springBack(row, fromX, didTrigger);
+
       if(didTrigger) fire();
-      row=null; badge=null; active=false; locked=false; triggered=false;
+      row=null; badge=null; preview=null; active=false; locked=false; triggered=false;
     }
     function cancel(){
       if(row){
         row.classList.remove('bq-wa-swipe','bq-wa-trigger');
         row.classList.add('bq-wa-swipe-release');
-        row.style.transform='';
+        // Spring back from current position
+        const fromX=parseFloat(row.style.transform?.replace(/translateX\(([^)]+)\)/,'$1'))||0;
+        if(Math.abs(fromX)>1){
+          row.style.transition='none';
+          springBack(row, fromX, false);
+        } else {
+          row.style.transform='';
+          row.classList.remove('bq-wa-swipe-release');
+        }
         if(badge){ badge.style.opacity='0'; badge.style.transform='translateY(-50%) scale(.4)'; }
-        const r=row;
-        setTimeout(()=>{ r.classList.remove('bq-wa-swipe-release'); r.style.transform=''; }, 340);
+        if(preview){ preview.style.opacity='0'; }
       }
-      row=null; badge=null; active=false; locked=false; triggered=false;
+      row=null; badge=null; preview=null; active=false; locked=false; triggered=false;
     }
     container.addEventListener('touchstart', onStart, {passive:true});
     container.addEventListener('touchmove', onMove, {passive:false});
@@ -10762,65 +10856,11 @@ function wireJumpToUnread(){
   });
 }
 
-/* ─────────── H) Swipe-to-reply ─────────── */
+/* ─────────── H) Swipe-to-reply (DISABLED — v39 uses WA-style with spring physics) ─────────── */
 function wireSwipeReply(){
-  ['bqgmsgs','bqdmmsgs'].forEach(id=>{
-    const sc=$(id); if(!sc || sc._bqSwipe) return; sc._bqSwipe=true;
-    let startX=0, startY=0, target=null, active=false;
-    sc.addEventListener('pointerdown',(e)=>{
-      if(e.pointerType!=='touch') return;
-      const row=e.target.closest('.bqr'); if(!row) return;
-      target=row; startX=e.clientX; startY=e.clientY; active=false;
-      row.classList.add('bq-swipe');
-    });
-    sc.addEventListener('pointermove',(e)=>{
-      if(!target) return;
-      const dx=e.clientX-startX, dy=e.clientY-startY;
-      if(!active){
-        if(Math.abs(dy)>10){ target=null; return; }
-        if(Math.abs(dx)<6) return;
-        active=true;
-        target.classList.add('bq-swipe-active');
-        if(!target.querySelector('.bq-swipe-icon')){
-          const ic=document.createElement('div'); ic.className='bq-swipe-icon';
-          ic.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>';
-          target.appendChild(ic);
-        }
-      }
-      const tx=Math.max(0, Math.min(72, dx));
-      target.style.transform='translateX('+tx+'px)';
-      if(tx>40) target.classList.add('bq-swipe-show'); else target.classList.remove('bq-swipe-show');
-    });
-    const end=(e)=>{
-      if(!target) return;
-      const dx=(e.clientX||0)-startX;
-      target.style.transform='';
-      target.classList.remove('bq-swipe-active','bq-swipe-show');
-      target.querySelector('.bq-swipe-icon')?.remove();
-      if(active && dx>60){
-        // Trigger reply: simulate clicking the message's reply action.
-        // The widget's action sheet has [data-a="reply"]. Easier: dispatch a custom click
-        // on the bubble + reply via existing menu.
-        try{
-          const m=target.id.match(/^bqmsg-(global|dm)-(.+)$/);
-          if(m){
-            // Open action sheet then auto-click reply
-            const bbl=target.querySelector('.bqbbl');
-            bbl?.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
-            setTimeout(()=>{
-              const r=document.querySelector('#bq-msg-sheet [data-a="reply"]');
-              if(r){ r.click(); }
-              document.getElementById('bq-msg-sheet')?.remove();
-            }, 50);
-          }
-        }catch(_){}
-      }
-      target=null; active=false;
-    };
-    sc.addEventListener('pointerup', end);
-    sc.addEventListener('pointercancel', end);
-    sc.addEventListener('pointerleave', end);
-  });
+  // v39: Disabled. The v21 WA-style swipe-to-reply with spring physics handles this.
+  // Keeping function stub so boot() doesn't error.
+  return;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -14429,4 +14469,36 @@ if(document.readyState === 'loading'){
   }
 })();
 /* ════════════ end v38 patch ════════════ */
+
+/* ════════════ v39 patch: Swipe physics + reply fix ════════════ */
+(function v39SwipePhysics(){
+  'use strict';
+  console.log('[bq] v39 patch loaded — swipe physics + reply text fix');
+
+  // Click on reply preview to scroll to the original message
+  document.getElementById('bqp')?.addEventListener('click', function(e){
+    const rp = e.target.closest('.bqrp');
+    if(!rp) return;
+    const replyKey = rp.dataset.replyKey;
+    if(!replyKey) return;
+    // Find the original message row in the current view
+    const container = document.getElementById('bqgmsgs') || document.getElementById('bqdmmsgs');
+    if(!container) return;
+    const target = container.querySelector('[id$="-'+replyKey+'"]');
+    if(target){
+      e.stopPropagation();
+      try{
+        target.scrollIntoView({behavior:'smooth', block:'center'});
+        // Flash highlight
+        target.style.transition='background .15s';
+        target.style.background='rgba(96,165,250,.15)';
+        setTimeout(()=>{
+          target.style.background='';
+          setTimeout(()=>{ target.style.transition=''; }, 200);
+        }, 1200);
+      }catch(_){}
+    }
+  });
+})();
+/* ════════════ end v39 patch ════════════ */
 
