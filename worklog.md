@@ -195,3 +195,35 @@ Stage Summary:
 - Reply-to-reply now shows "↩ @username" indicating what the original reply was responding to
 - Text extraction for replies now correctly excludes timestamps and meta elements
 - Swipe-to-reply has WhatsApp-like rotation and shadow lift with smooth spring-back
+
+---
+Task ID: 7
+Agent: Main
+Task: Fix GIF stacking, scroll-to-pause, clean icons, GIF picker stability
+
+Work Log:
+- Fixed GIF picker grid stacking: added `contain:layout style` to `.bqgifp-grid` and `contain:content; will-change:transform` to `.bqgifp-item` to prevent items from overlapping
+- Added scroll-to-pause for GIF picker: on scroll, adds `bqgifp-scrolling` class → `visibility:hidden` on all GIF images; after 200ms of no scroll, class is removed and GIFs resume. Uses `{passive:true}` scroll listener
+- Replaced GIF button icon (image icon with circle+mountain that looked like "shapes joined") with clean "GIF" text label `<span class="gif-label">GIF</span>` in bold Inter font
+- Replaced Send button icon (confusing UP arrow ↑) with proper Lucide paper plane Send icon
+- Fixed Sticker/Smile icon eyes: replaced `<line>` dot-eye lines with proper filled circles
+- Fixed X/Close icons throughout (15 instances): replaced `<line>` based X crosses with smooth `<path>` for no visible gap at intersection
+- Fixed New DM button icon: proper path closure
+- Fixed Vertical ellipsis consistency across menus
+- Reduced skeleton count from 24 to 12 for faster perceived load
+- Added GIF load error handling with ⚠ placeholder
+- Added IntersectionObserver in v42 patch to swap offscreen GIFs to still images
+- Added MutationObserver-based dynamic icon patching
+- Added WhatsApp theme CSS rules for GIF text label
+- Version bumped to 57.0.0
+- Pushed to GitHub for Cloudflare auto-deploy
+
+Stage Summary:
+- GIF picker grid no longer stacks items (CSS containment fix)
+- GIFs pause during scrolling for smooth performance
+- Offscreen GIFs auto-swap to still images via IntersectionObserver
+- GIF button shows clean "GIF" text instead of confusing image icon
+- Send button shows paper plane instead of up arrow
+- Smile icons have clean round dot eyes
+- X/Close icons use smooth paths
+- Failed GIF loads show error placeholder
