@@ -588,6 +588,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* v39: Reply type indicator for media replies */
 .bqrp-media{font-size:10px;color:var(--bq-accent);opacity:.7;display:flex;align-items:center;gap:3px;margin-top:2px;}
 .bqrp-media svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;}
+.bqrp-sub{font-weight:400;opacity:.55;font-size:9px;margin-left:4px;}
 
 /* Bubble */
 .bqbbl{
@@ -2742,7 +2743,7 @@ const HTML = `
       <button class="bqscr" id="bqgscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqgrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-        <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><div class="bqrbt" id="bqgrbt"></div></div>
+        <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><span class="bqrp-sub" id="bqgrbsub" style="display:none"></span><div class="bqrbt" id="bqgrbt"></div></div>
         <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqiw">
@@ -2806,7 +2807,7 @@ const HTML = `
       <button class="bqscr" id="bqdmscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqdmrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-        <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><div class="bqrbt" id="bqdmrbt"></div></div>
+        <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><span class="bqrp-sub" id="bqdmrbsub" style="display:none"></span><div class="bqrbt" id="bqdmrbt"></div></div>
         <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -4825,19 +4826,34 @@ function onMsgChanged(ctx,snap){
     return;
   }
   // v22 — sync edited text to ALL clients (was previously sender-only)
+  // v40 — skip innerHTML rewrite for media-only messages to prevent GIF flicker on reaction
   if(typeof msg.text==='string'){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
-      // Preserve any reply/voice/image/sticker children — only update text node + edited marker
-      const reply=bbl.querySelector('.bqrp');
-      const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
-      const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
-      const replyHTML=reply?reply.outerHTML:'';
-      const mediaHTML=media?media.outerHTML:'';
-      const metaHTML=meta?meta.outerHTML:'';
-      const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
-      const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
-      bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
+      const hasMedia=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
+      // For media-only messages with no text, skip the innerHTML rewrite to avoid GIF flicker
+      // Just update reactions below
+      if(!msg.text && hasMedia && !msg.edited){
+        // Skip text update for media-only messages — only reactions changed
+      } else {
+        // Preserve any reply/voice/image/sticker children — only update text node + edited marker
+        const reply=bbl.querySelector('.bqrp');
+        const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
+        const meta=bbl.querySelector('.bqbbl-meta');
+        const metaClear=bbl.querySelector('.bqbbl-meta-clear');
+        const replyHTML=reply?reply.outerHTML:'';
+        // Restore frozen GIF src before capturing outerHTML
+        if(media && media.dataset.frozenSrc){
+          media.src = media.dataset.frozenSrc;
+          delete media.dataset.frozenSrc;
+          media.classList.remove('bq-gif-loading');
+        }
+        const mediaHTML=media?media.outerHTML:'';
+        const metaHTML=meta?meta.outerHTML:'';
+        const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
+        const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
+        bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML+(metaClear?metaClear.outerHTML:'');
+      }
     }
   }
   el.querySelector('.bqrxns')?.remove();
@@ -4869,11 +4885,21 @@ function setReply(ctx,data){
     gReply=data;
     const bar=document.getElementById('bqgrbar');bar.classList.add('show');
     document.getElementById('bqgrbn').textContent='@'+data.uname;
+    const sub=document.getElementById('bqgrbsub');
+    if(sub){
+      if(data.replyTo){sub.textContent='↩ @'+data.replyTo.uname;sub.style.display='block';}
+      else{sub.textContent='';sub.style.display='none';}
+    }
     document.getElementById('bqgrbt').textContent=data.text;
   } else {
     dmReply=data;
     const bar=document.getElementById('bqdmrbar');bar.classList.add('show');
     document.getElementById('bqdmrbn').textContent='@'+data.uname;
+    const sub=document.getElementById('bqdmrbsub');
+    if(sub){
+      if(data.replyTo){sub.textContent='↩ @'+data.replyTo.uname;sub.style.display='block';}
+      else{sub.textContent='';sub.style.display='none';}
+    }
     document.getElementById('bqdmrbt').textContent=data.text;
   }
 }
@@ -4934,7 +4960,7 @@ function renderMsg(ctx,msg,key){
   const col=getColor(msg.uid,msg.uname||'');
   const ini=uInit(msg.uname||'?');
   const tStr=tsStr(ts);
-  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}${msg.replyTo.replyTo?` <span class="bqrp-sub">↩ @${esc(msg.replyTo.replyTo.uname||'')}</span>`:''}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
   const row=document.createElement('div');
   row.id=pfx+key;
@@ -8493,7 +8519,9 @@ setTimeout(_injectProfileUploads,1500);
      This overrides v20's translateX-on-row approach. */
   .bqr{position:relative;}
   .bqr-swipe-wrap{display:contents;}
-  .bqr.bq-wa-swipe{transition:none!important;will-change:transform;}
+  .bqr.bq-wa-swipe{transition:none!important;will-change:transform;box-shadow:0 4px 20px rgba(0,0,0,.15)!important;z-index:10;}
+  .bqr.mine.bq-wa-swipe{transform-origin:right center;}
+  .bqr.theirs.bq-wa-swipe{transform-origin:left center;}
   .bqr.bq-wa-swipe-release{transition:transform .32s cubic-bezier(.34,1.56,.64,1)!important;}
 
   /* Hide v20's ::after icon while WA swipe is engaged */
@@ -8736,6 +8764,9 @@ setTimeout(_injectProfileUploads,1500);
         move = dx * 0.12;
       }
       row.style.transform = 'translateX('+move+'px)';
+      // Slight rotation during swipe for WhatsApp-like feel
+      const rotation = (move / WA_MAX) * 1.5; // max 1.5 degrees
+      row.style.transform = 'translateX('+move+'px) rotate('+rotation.toFixed(2)+'deg)';
       // Badge fades in proportionally
       const absMove=Math.abs(move);
       const prog = Math.min(1, absMove / WA_TRIGGER);
@@ -8762,11 +8793,26 @@ setTimeout(_injectProfileUploads,1500);
       const ctx=m[1], key=m[2];
       // Extract ONLY the actual message text, excluding reply-preview text
       const bbl=row.querySelector('.bqbbl');
-      let txt='';
+      let txt='', replyToInfo=null;
       if(bbl){
-        // Clone the bubble and remove reply previews to get just the message text
+        // Capture nested reply info BEFORE removing
+        const existingRp=bbl.querySelector('.bqrp');
+        if(existingRp){
+          const rpNameEl=existingRp.querySelector('.bqrp-n');
+          // Get only the direct text, excluding .bqrp-sub spans
+          let rpName='';
+          if(rpNameEl){
+            const clone2=rpNameEl.cloneNode(true);
+            clone2.querySelectorAll('.bqrp-sub').forEach(s=>s.remove());
+            rpName=clone2.textContent?.replace(/^@/,'')||'';
+          }
+          const rpText=existingRp.querySelector('.bqrp-t')?.textContent||'';
+          const rpKey=existingRp.dataset.replyKey||'';
+          if(rpName) replyToInfo={uname:rpName,text:rpText,key:rpKey};
+        }
+        // Clone the bubble and remove reply previews + meta to get just the message text
         const clone=bbl.cloneNode(true);
-        clone.querySelectorAll('.bqrp').forEach(rp=>rp.remove());
+        clone.querySelectorAll('.bqrp,.bqbbl-meta,.bqbbl-meta-clear,.bqedited').forEach(el=>el.remove());
         txt=clone.innerText?.split('\n')[0]?.slice(0,80)||'';
       }
       // If no text (e.g. GIF/image/sticker), describe the media type
@@ -8776,7 +8822,7 @@ setTimeout(_injectProfileUploads,1500);
       }
       const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
       try{
-        if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt});
+        if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt,replyTo:replyToInfo});
         const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
       }catch(_){}
     }
@@ -8798,7 +8844,8 @@ setTimeout(_injectProfileUploads,1500);
         vel+=acc*(1/60);
         pos+=vel*(1/60);
 
-        el.style.transform='translateX('+pos.toFixed(1)+'px)';
+        const rot = (pos / WA_MAX) * 1.5;
+        el.style.transform='translateX('+pos.toFixed(1)+'px) rotate('+rot.toFixed(2)+'deg)';
 
         // Update badge/preview opacity during spring
         const absP=Math.abs(pos);

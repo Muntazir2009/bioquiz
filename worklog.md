@@ -133,3 +133,31 @@ Stage Summary:
 - Architecture: Client subscribes to push → stores in Firebase RTDB → sender looks up recipient's sub → calls API route → API route sends push via web-push → service worker shows notification
 - For global messages: push is skipped (too expensive for fan-out) — background tab notifications still work via Firebase RTDB listeners
 - For DMs: full push notification flow works end-to-end
+
+---
+Task ID: 5
+Agent: Main
+Task: Fix reply physics (WhatsApp-style), reply-to-reply text bug, reaction data loss, GIF invisibility on reaction
+
+Work Log:
+- Analyzed `onMsgChanged()` function — found meta selector bug: `'.bqmt, .bqmeta, .bq-msg-meta'` doesn't match `.bqbbl-meta` (the actual class). Timestamps and ticks were lost on every Firebase `child_changed` event (reactions, edits)
+- Fixed meta selector to `.bqbbl-meta` and added `.bqbbl-meta-clear` preservation in innerHTML rewrite
+- Fixed GIF invisibility on reaction: added frozen GIF src restoration before capturing outerHTML (IntersectionObserver sets src to blank 1x1 data URL for offscreen GIFs)
+- Added skip for innerHTML rewrite on media-only messages (no text, has media, not edited) to prevent GIF flicker
+- Fixed reply-to-reply text extraction: `fire()` now captures nested reply info from `.bqrp` BEFORE removing it, passing `replyTo` object with `{uname, text, key}` of the parent reply
+- Fixed `.bqrp-n` text extraction to exclude `.bqrp-sub` spans (clone → remove subs → extract text)
+- Added `.bqrp-sub` elements to reply bars (`bqgrbsub`, `bqdmrbsub`) showing "↩ @username" for nested replies
+- Updated `renderMsg()` rpHTML template to show nested reply context with `↩ @username` in `.bqrp-sub` span
+- Added `.bqrp-sub` CSS: muted, small font, left margin
+- Fixed text extraction to also remove `.bqbbl-meta`, `.bqbbl-meta-clear`, `.bqedited` from clone (was picking up timestamp text for GIF-only messages)
+- Enhanced swipe physics: added slight rotation during swipe (1.5° max), box-shadow lift, transform-origin per message direction (left/right)
+- Updated spring-back animation to include rotation for smooth return
+- Bumped version to 54.0.0
+- Verified all changes via browser: widget loads, elements exist, CSS applied
+
+Stage Summary:
+- Reactions no longer cause message data loss (timestamps, ticks, meta-clear preserved)
+- GIFs no longer go invisible when reacted to (frozen src restored, innerHTML skip for media-only)
+- Reply-to-reply now shows "↩ @username" indicating what the original reply was responding to
+- Text extraction for replies now correctly excludes timestamps and meta elements
+- Swipe-to-reply has WhatsApp-like rotation and shadow lift with smooth spring-back
