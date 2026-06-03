@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '2.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '50.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -2064,8 +2064,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   max-width:240px;width:100%;border-radius:14px;display:block;cursor:pointer;
   border:1px solid rgba(255,255,255,.08);transition:transform .15s,opacity .2s;
   object-fit:cover;background:rgba(255,255,255,.04);
+  min-height:80px;
 }
 .bq-msg-gif:hover{opacity:.95;transform:scale(1.01);}
+.bq-msg-gif.bq-gif-loading{opacity:.6;filter:blur(2px);transition:opacity .3s,filter .3s;}
+.bq-msg-gif.bq-gif-loaded{opacity:1;filter:none;}
 
 /* ── GIF PICKER PANEL ── */
 .bqgifp{
@@ -2110,22 +2113,24 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-cat.sel{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(99,102,241,.4);}
 .bqgifp-grid{
   flex:1;overflow-y:auto;padding:8px;
-  column-count:2;column-gap:8px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
+  align-content:start;
 }
 .bqgifp-grid::-webkit-scrollbar{width:5px;}
 .bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px;}
 .bqgifp-item{
-  break-inside:avoid;margin-bottom:8px;display:block;width:100%;
-  border-radius:12px;overflow:hidden;cursor:pointer;
+  display:block;width:100%;
+  border-radius:10px;overflow:hidden;cursor:pointer;
   background:rgba(255,255,255,.04);border:1px solid transparent;
   transition:transform .18s var(--bq-transition),box-shadow .18s ease;
   -webkit-tap-highlight-color:transparent;
+  aspect-ratio:4/3;position:relative;
 }
 .bqgifp-item:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(0,0,0,.4);border-color:rgba(96,165,250,.35);}
 .bqgifp-item:active{transform:scale(.97);}
-.bqgifp-item img{width:100%;height:auto;display:block;}
+.bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .bqgifp-skel{
-  break-inside:avoid;margin-bottom:8px;width:100%;border-radius:10px;
+  width:100%;border-radius:10px;aspect-ratio:4/3;
   background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
   background-size:200% 100%;animation:bqShim 1.2s linear infinite;
 }
@@ -4206,18 +4211,20 @@ async function giphyFetch(category, query, offset=0){
   }
 }
 
-function sendGifGlobal(gifUrl, w, h){
+function sendGifGlobal(gifUrl, w, h, gifUrlFull){
   if(!db||!uname||!gifUrl) return;
   const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
+  if(gifUrlFull && gifUrlFull !== gifUrl) p.gifUrlFull=gifUrlFull;
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
   clearReply('g');
 }
 
-function sendGifDm(gifUrl, w, h){
+function sendGifDm(gifUrl, w, h, gifUrlFull){
   if(!db||!uname||!activeDmId||!activeDmPuid||!gifUrl) return;
   const pname=activeDmPname||'?';
   const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
+  if(gifUrlFull && gifUrlFull !== gifUrl) p.gifUrlFull=gifUrlFull;
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
   _dmFinalize(activeDmId, activeDmPuid, pname, '🎞️ GIF');
@@ -4278,22 +4285,23 @@ function showSkeletons(){
     for(let i=0;i<24;i++){
       const s = document.createElement('div');
       s.className='bqgifp-skel';
-      s.style.height = (90 + Math.floor(Math.random()*80))+'px';
       grid.appendChild(s);
     }
   }
   function appendGifs(data){
     data.forEach(g=>{
-      const img = g.images?.fixed_width || g.images?.downsized_medium;
-      const full = g.images?.original?.url || img?.url;
-      if(!img||!full) return;
+      const thumb = g.images?.fixed_width_downsampled || g.images?.fixed_width_small || g.images?.fixed_width || g.images?.downsized_small;
+      const display = g.images?.fixed_width?.url || g.images?.downsized_medium?.url || (thumb ? thumb.url : null);
+      const full = g.images?.original?.url || display;
+      if(!thumb||!full) return;
       const item = document.createElement('div');
       item.className = 'bqgifp-item';
-      item.innerHTML = '<img loading="lazy" src="'+esc(img.url)+'" alt="'+esc(g.title||'GIF')+'">';
+      item.innerHTML = '<img loading="lazy" decoding="async" src="'+esc(thumb.url)+'" alt="'+esc(g.title||'GIF')+'">';
       item.addEventListener('click', ()=>{
         const w = parseInt(g.images?.original?.width||0);
         const h = parseInt(g.images?.original?.height||0);
-        if(isG) sendGifGlobal(full, w, h); else sendGifDm(full, w, h);
+        // Store display URL (smaller) as gifUrl, original as gifUrlFull for lightbox
+        if(isG) sendGifGlobal(display||full, w, h, full); else sendGifDm(display||full, w, h, full);
         panel.classList.remove('open');
         btn.classList.remove('active');
       });
@@ -4740,7 +4748,9 @@ function initDmFeatures(){
     const t=e.target;
     if(t.classList.contains('bq-msg-img')||t.classList.contains('bq-msg-gif')){
       e.stopPropagation();
-      openMediaLightbox(t.src, t.classList.contains('bq-msg-gif')?'gif':'image', t.closest('.bqr'));
+      // Use full-quality URL for GIF lightbox if available
+      const src = t.classList.contains('bq-msg-gif') && t.dataset.full ? t.dataset.full : t.src;
+      openMediaLightbox(src, t.classList.contains('bq-msg-gif')?'gif':'image', t.closest('.bqr'));
     }
   });
 }
@@ -4917,7 +4927,7 @@ function renderMsg(ctx,msg,key){
   }
 
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+esc(msg.imageData)+'" alt="" loading="lazy">' : '';
-  var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
+  var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif bq-gif-loading" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy" decoding="async" data-full="'+esc(msg.gifUrlFull||'')+'">' : '';
   var _stkClass = '';
   if(msg.type==='sticker' && msg.sticker){
     // v35: assign animation class based on emoji category
@@ -14355,4 +14365,68 @@ if(document.readyState === 'loading'){
 
 })();
 /* ════════════ end v37 patch ════════════ */
+
+/* ════════════ v38 patch: GIF performance + declutter ════════════ */
+(function v38GifPerf(){
+  'use strict';
+  console.log('[bq] v38 patch loaded — GIF performance + declutter');
+
+  // GIF loaded state: remove blur/opacity when GIF finishes decoding
+  document.getElementById('bqp')?.addEventListener('load', function(e){
+    if(e.target && e.target.classList && e.target.classList.contains('bq-msg-gif')){
+      e.target.classList.remove('bq-gif-loading');
+      e.target.classList.add('bq-gif-loaded');
+    }
+  }, true); // capture phase to catch all img loads
+
+  // IntersectionObserver: unload offscreen GIFs to reduce memory/CPU
+  let _gifObserver = null;
+  function initGifObserver(){
+    if(_gifObserver) return;
+    _gifObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        const img = entry.target;
+        if(!img.classList.contains('bq-msg-gif')) return;
+        if(entry.isIntersecting){
+          // Restore animated src if we had frozen it
+          if(img.dataset.frozenSrc){
+            img.src = img.dataset.frozenSrc;
+            delete img.dataset.frozenSrc;
+          }
+        } else {
+          // Freeze: save src and blank it to free decode memory
+          if(!img.dataset.frozenSrc && img.src && !img.src.startsWith('data:')){
+            img.dataset.frozenSrc = img.src;
+            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          }
+        }
+      });
+    }, { rootMargin: '300px', threshold: 0 });
+    
+    // Observe all existing and future GIF messages
+    const msgArea = document.getElementById('bqp');
+    if(!msgArea) return;
+    
+    const observeGifs = ()=>{
+      msgArea.querySelectorAll('.bq-msg-gif').forEach(img=>{
+        if(!img.dataset.gifObserved){
+          _gifObserver.observe(img);
+          img.dataset.gifObserved = '1';
+        }
+      });
+    };
+    
+    observeGifs();
+    // Re-observe when new messages appear
+    const mo = new MutationObserver(()=> observeGifs());
+    mo.observe(msgArea, { childList: true, subtree: true });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=> setTimeout(initGifObserver, 1500));
+  } else {
+    setTimeout(initGifObserver, 1500);
+  }
+})();
+/* ════════════ end v38 patch ════════════ */
 
