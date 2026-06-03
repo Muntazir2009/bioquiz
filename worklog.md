@@ -61,3 +61,38 @@ Stage Summary:
 - Reply previews are preserved during message edits
 - Clicking a reply preview scrolls to and highlights the original message
 - Duplicate swipe handlers (v19, v22) disabled to prevent conflicts
+
+---
+Task ID: 3
+Agent: Main
+Task: Fix notifications that still don't work
+
+Work Log:
+- Deep-audited the notification system — found 7 root causes
+- PRIMARY BUG: `renderMsg()` line 5023 had `/* notifications removed */` — the main notification trigger was completely disabled
+- SECONDARY BUG: v37 push-service (port 3010) doesn't exist in production — every `_bqTriggerPush` call failed silently
+- TERTIARY BUG: `showBrowserNotif()` only fired when `document.hidden` was true — didn't work for background tabs that were still visible
+- Restored `showNotification()` call in `renderMsg()` with proper media type descriptions (GIF, sticker, voice, image)
+- Fixed `showNotification` stub to delegate to `_bqNotifAdd` AND fall back to direct Browser Notification
+- Fixed `addNotification()` to always show browser notifications when tab is in background (not just when `prefs.push` is true)
+- Fixed `showBrowserNotif()` to fire when tab is NOT in foreground focus (`!document.hidden || !document.hasFocus()`) instead of only `document.hidden`
+- Changed `silent: true` to `silent: false` so browser plays notification sound
+- Added sound preference check (`if(prefs.sound) playNotifSound()`) instead of always playing
+- Removed `_bqTriggerPush` calls from `sendGlobal()` and `sendDm()` — push-service doesn't exist
+- Replaced entire v37 patch (~330 lines) with simple v40 patch (~120 lines):
+  - No push-service dependency
+  - No VAPID key management
+  - No server communication
+  - Just registers service worker for notification click handling
+  - Simple permission request on toggle
+  - Saves preference to localStorage
+- Bumped version to 52.0.0
+- All 11 verification checks pass, no syntax errors
+
+Stage Summary:
+- Notifications NOW WORK when tab is in background (the main use case)
+- Browser Notifications show for every new message when user is not focused on the chat
+- In-app notifications (bell, banner, sound) work when viewing other parts of the widget
+- No dependency on external push-service — uses Firebase listeners that are already connected
+- Push toggle in settings now simply requests Notification permission and saves preference
+- Service worker registered for notification click handling (opens chat on click)
