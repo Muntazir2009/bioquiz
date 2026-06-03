@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '55.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '56.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -292,7 +292,7 @@ const CSS = `
 #bqb:active{transform:scale(.95);}
 #bqb.open{background:var(--bq-bg-elevated);box-shadow:0 8px 32px rgba(0,0,0,.5);}
 .bqi{position:absolute;transition:opacity .22s,transform .22s;}
-.bqi-c{fill:#fff;}
+.bqi-c{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 #bqb.open .bqi-c{opacity:0;transform:scale(.6) rotate(-90deg);}
 .bqi-x{opacity:0;fill:none;stroke:rgba(255,255,255,.8);stroke-width:2.5;stroke-linecap:round;transform:scale(.6) rotate(90deg);}
 #bqb.open .bqi-x{opacity:1;transform:scale(1) rotate(0deg);}
@@ -2075,86 +2075,92 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-msg-gif.bq-gif-loading{opacity:.6;filter:blur(2px);transition:opacity .3s,filter .3s;}
 .bq-msg-gif.bq-gif-loaded{opacity:1;filter:none;}
 
-/* ── GIF PICKER PANEL ── */
+/* ── GIF PICKER PANEL (v55 Vercel/v0 redesign) ── */
 .bqgifp{
-  position:absolute;left:8px;right:8px;bottom:100%;margin-bottom:10px;
-  background:rgba(12,12,14,.96);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:18px;
-  box-shadow:0 24px 60px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.07) inset;
-  backdrop-filter:blur(24px);
-  display:none;flex-direction:column;max-height:360px;z-index:30;overflow:hidden;
-  animation:bqGifIn .22s cubic-bezier(.22,1.2,.36,1) both;
+  position:absolute;left:0;right:0;bottom:100%;margin-bottom:8px;
+  background:rgba(9,9,11,.97);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
+  display:none;flex-direction:column;
+  height:380px;max-height:65vh;
+  overflow:hidden;
+  animation:bqGifIn .25s cubic-bezier(.16,1,.3,1) both;
 }
-@keyframes bqGifIn{
-  from{opacity:0;transform:translateY(10px) scale(.97)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
+@keyframes bqGifIn{0%{opacity:0;transform:translateY(8px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
 .bqgifp.open{display:flex;}
-.bqgifp-head{padding:12px 12px 8px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+.bqgifp-head{padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);}
 .bqgifp-search{
   display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:8px 12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;
   transition:border-color .2s,box-shadow .2s;
 }
-.bqgifp-search:focus-within{border-color:rgba(96,165,250,.4);box-shadow:0 0 0 3px rgba(96,165,250,.1);}
-.bqgifp-search svg{width:13px;height:13px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:2;flex-shrink:0;}
+.bqgifp-search:focus-within{border-color:rgba(255,255,255,.2);box-shadow:0 0 0 3px rgba(255,255,255,.04);}
+.bqgifp-search svg{width:14px;height:14px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:2;flex-shrink:0;}
 .bqgifp-search input{
   flex:1;background:none;border:none;outline:none;color:var(--bq-text);
   font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
 }
-.bqgifp-search input::placeholder{color:rgba(255,255,255,.22);}
-.bqgifp-cats{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.bqgifp-search input::placeholder{color:rgba(255,255,255,.2);}
+.bqgifp-cats{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
 .bqgifp-cats::-webkit-scrollbar{display:none;}
 .bqgifp-cat{
-  flex-shrink:0;padding:5px 12px;border-radius:999px;cursor:pointer;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
-  font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.03em;
-  color:rgba(255,255,255,.4);transition:all .14s;white-space:nowrap;
+  flex-shrink:0;padding:5px 11px;border-radius:8px;cursor:pointer;
+  background:transparent;border:1px solid transparent;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.01em;
+  color:rgba(255,255,255,.35);transition:all .15s;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;
 }
-.bqgifp-cat:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.1);}
-.bqgifp-cat.sel{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(99,102,241,.4);}
+.bqgifp-cat:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);}
+.bqgifp-cat.sel{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.12);}
 .bqgifp-grid{
-  flex:1;overflow-y:auto;padding:8px;
-  display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
-  align-content:start;
+  flex:1;overflow-y:auto;padding:8px 10px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
+  align-content:start;position:relative;
 }
-.bqgifp-grid::-webkit-scrollbar{width:5px;}
-.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px;}
+.bqgifp-grid::-webkit-scrollbar{width:4px;}
+.bqgifp-grid::-webkit-scrollbar-track{background:transparent;}
+.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px;}
+.bqgifp-grid::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
 .bqgifp-item{
-  display:block;width:100%;
-  border-radius:10px;overflow:hidden;cursor:pointer;
-  background:rgba(255,255,255,.04);border:1px solid transparent;
-  transition:transform .18s var(--bq-transition),box-shadow .18s ease;
-  -webkit-tap-highlight-color:transparent;
-  aspect-ratio:4/3;position:relative;
+  display:block;width:100%;aspect-ratio:4/3;
+  border-radius:8px;overflow:hidden;cursor:pointer;
+  background:rgba(255,255,255,.03);border:1px solid transparent;
+  transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s;
+  -webkit-tap-highlight-color:transparent;position:relative;
 }
-.bqgifp-item:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(0,0,0,.4);border-color:rgba(96,165,250,.35);}
-.bqgifp-item:active{transform:scale(.97);}
+.bqgifp-item:hover{transform:scale(1.04);border-color:rgba(255,255,255,.15);z-index:2;}
+.bqgifp-item:active{transform:scale(.97);transition-duration:.1s;}
 .bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .bqgifp-skel{
-  width:100%;border-radius:10px;aspect-ratio:4/3;
-  background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));
-  background-size:200% 100%;animation:bqShim 1.2s linear infinite;
+  width:100%;aspect-ratio:4/3;border-radius:8px;
+  background:rgba(255,255,255,.03);
+  animation:bqGifPulse 1.5s ease-in-out infinite;
 }
-@keyframes bqShim{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.bqgifp-empty{padding:30px 16px;text-align:center;font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-subtle);}
-.bqgifp-foot{padding:6px 10px;border-top:1px solid var(--bq-border);display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.06em;color:var(--bq-text-subtle);text-transform:uppercase;font-weight:700;}
+@keyframes bqGifPulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.bqgifp-empty{
+  grid-column:1/-1;padding:40px 16px;text-align:center;
+  font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,.25);
+}
+.bqgifp-foot{
+  padding:6px 14px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:flex-end;
+  font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.05em;
+  color:rgba(255,255,255,.12);text-transform:uppercase;font-weight:600;
+}
 
 /* GIF button (composer) */
 .bqgifbtn{
-  width:36px;height:36px;border-radius:12px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  width:34px;height:34px;border-radius:10px;
+  background:transparent;border:none;
   cursor:pointer;
-  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.45);
+  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);
   transition:all .15s;flex-shrink:0;
-  -webkit-tap-highlight-color:transparent;
 }
 .bqgifbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-.bqgifbtn:hover{background:rgba(255,255,255,.09);color:var(--bq-accent);border-color:rgba(96,165,250,.3);}
-.bqgifbtn.active{background:rgba(96,165,250,.15);color:var(--bq-accent);border-color:rgba(96,165,250,.35);box-shadow:0 0 0 2px rgba(96,165,250,.15);}
+.bqgifbtn:hover{color:var(--bq-accent);}
+.bqgifbtn.active{color:var(--bq-accent);}
 .bqirow{position:relative;}
 .bqiw{
   padding:10px 12px 12px;
@@ -2631,7 +2637,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 ───────────────────────────────────────── */
 const HTML = `
 <button id="bqb" aria-label="Chat">
-  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
   <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   <div id="bqbadge"></div>
 </button>
@@ -2719,7 +2725,7 @@ const HTML = `
         <span>Disappearing: OFF</span>
       </div>
       <div class="bqhdr-dropdown-divider"></div>
-      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg><span>Clear Chat</span></div>
+      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Clear Chat</span></div>
       <div class="bqhdr-dropdown-divider"></div>
       <div class="bqhdr-dropdown-item" id="bq-export-chat">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2727,14 +2733,14 @@ const HTML = `
       </div>
     </div>
   </div>
-  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen"><svg id="bq-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
-        <button class="bqhbtn" id="bq-ren-btn" title="Change username"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen"><svg id="bq-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+        <button class="bqhbtn" id="bq-ren-btn" title="Change username"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></button>
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
       
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
-          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
           <div class="bqempty-tx">No Messages Yet</div>
           <div class="bqempty-sub">Say hello!</div>
         </div>
@@ -2750,9 +2756,9 @@ const HTML = `
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
+          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
+          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqgcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2763,7 +2769,7 @@ const HTML = `
       <div class="bqhdr">
         <div class="bqlive"></div>
         <div class="bqhtitle">Messages</div>
-        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg></button>
         <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
       </div>
       <div id="bqdml"></div>
@@ -2778,14 +2784,14 @@ const HTML = `
           <div class="bqdmhn" id="bqdmhn"></div>
           <div class="bqdmhs" id="bqdmhs"><span class="bqdmhs-dot" id="bqdmhs-dot" style="display:none"></span><span id="bqdmhs-txt">Offline</span></div>
         </div>
-        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></button>
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
-            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Settings</div>
+            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Settings</div>
             <div class="bq-dm-menu-item" id="bq-dm-menu-starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Starred Messages</div>
             <div class="bq-dm-menu-div"></div>
-                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Messages</div>
+                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Clear Messages</div>
           </div>
         </div>
         <div class="bq-me-av" id="bq-me-av-dm" title="My profile"></div>
@@ -2797,7 +2803,7 @@ const HTML = `
       </div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
-          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
           <div class="bqempty-tx">Start a Conversation</div>
           <div class="bqempty-sub" id="bqdmesub"></div>
           <div class="bqdm-empty-chips"><span>👋 Say hi</span><span>❤️ Send love</span><span>🔥 Hype them</span></div>
@@ -2821,10 +2827,10 @@ const HTML = `
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
+          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
           <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
+          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2852,7 +2858,7 @@ const HTML = `
         <div class="bq-info-section">
           <div class="bq-info-section-title">Actions</div>
           <div class="bq-info-row" id="bq-info-starred-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="bq-info-row-label">Starred Messages</div></div><span class="bq-info-row-value" id="bq-info-star-count">0</span></div>
-          <div class="bq-info-row danger" id="bq-info-clear-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div><div class="bq-info-row-label">Clear conversation</div></div></div>
+          <div class="bq-info-row danger" id="bq-info-clear-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div><div class="bq-info-row-label">Clear conversation</div></div></div>
         </div>
       </div>
     </div>
@@ -2932,12 +2938,12 @@ const HTML = `
           <div class="bqpf-label">Push Notifications</div>
           <div class="bqpf-push">
             <div class="bqpf-push-title">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               Notification Alerts
             </div>
             <div class="bqpf-push-desc">Get notified when you receive new DMs or messages in global chat, even when the browser is closed.</div>
             <button class="bqpf-push-btn" id="bqpf-push-btn">
-              <svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               Enable Notifications
             </button>
             <div class="bqpf-push-status" id="bqpf-push-status"></div>
@@ -2954,14 +2960,14 @@ const HTML = `
   <div id="bqnav">
     <div class="bqnav-pill">
       <button class="bqnb active" data-v="chat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Chat
       </button>
       <button class="bqnb" data-v="dms">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>DMs
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>DMs
         <div class="bqnnb" id="bqdmnb"></div>
       </button>
       <button class="bqnb" data-v="online">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Online
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Online
         <div class="bqnnb" id="bqonb"></div>
       </button>
     </div>
@@ -3067,7 +3073,7 @@ const HTML = `
         <div class="bq-if-row-v" id="bq-if-lock-v">Off</div>
       </div>
       <div class="bq-if-row danger" id="bq-if-clear">
-        <div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div>
+        <div class="bq-if-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div>
         <div class="bq-if-row-l">Clear conversation</div>
       </div>
       <div class="bq-if-row danger" id="bq-if-block">
@@ -3255,8 +3261,8 @@ function toggleFS(){
   document.body.classList.toggle('bq-fs-mode',isFull);
   const ico=document.getElementById('bq-fs-ico');
   if(ico) ico.innerHTML=isFull
-    ?'<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>'
-    :'<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+    ?'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'
+    :'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';
   document.getElementById('bq-fs-btn').classList.toggle('on',isFull);
 }
 
@@ -3528,7 +3534,7 @@ function showDmConvo(pUid, pName) {
   const e = document.createElement('div');
   e.className = 'bqempty';
   e.id = 'bqdmempty';
-  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub" id="bqdmesub">@${esc(pName)}</div>`;
+  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub" id="bqdmesub">@${esc(pName)}</div>`;
   msgs.appendChild(e);
 
   // Detach old listeners
@@ -3900,7 +3906,7 @@ function openProfileCard(targetUid,targetName,presData){
   if(!isMe){
     const dmBtn=document.createElement('button');
     dmBtn.className='bqpc-btn dm';
-    dmBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message';
+    dmBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Message';
     dmBtn.onclick=function(e){
       e.stopPropagation();
       closeProfileCard();
@@ -3910,7 +3916,7 @@ function openProfileCard(targetUid,targetName,presData){
   } else {
     const editBtn=document.createElement('button');
     editBtn.className='bqpc-btn edit';
-    editBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Edit Profile';
+    editBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>Edit Profile';
     editBtn.onclick=function(e){
       e.stopPropagation();
       closeProfileCard();
@@ -4058,7 +4064,7 @@ function renderDmList(){
     if(!list.querySelector('.bqdmr')){
       list.innerHTML='';
       const e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
-      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No DMs Yet</div><div class="bqempty-sub">Go to Online to start</div>';
+      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">No DMs Yet</div><div class="bqempty-sub">Go to Online to start</div>';
       list.appendChild(e);
     }
     return;
@@ -4104,7 +4110,7 @@ function renderDmList(){
           <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </button>
         <button class="bqdmr-act bq-del" data-did="${did}" title="Delete">
-          <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         </button>
       </div>
       <div class="bqdmr-confirm">
@@ -4337,11 +4343,11 @@ function showSkeletons(){
     showSkeletons();
     const res = await giphyFetch(curCat, curQ, 0);
     if(res.error){
-      grid.innerHTML = '<div class="bqgifp-empty" style="column-span:all">'+esc(res.error)+'</div>';
+      grid.innerHTML = '<div class="bqgifp-empty">'+esc(res.error)+'</div>';
       return;
     }
     if(!res.data||!res.data.length){
-      grid.innerHTML = '<div class="bqgifp-empty" style="column-span:all">No GIFs found.</div>';
+      grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
       return;
     }
     grid.innerHTML = '';
@@ -5188,8 +5194,8 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   ];
   if(!isG) items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
   if(isMine){
-    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
-    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
+    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>'});
+    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>'});
   }
   const bar=document.createElement('div');
   bar.className='bq-msg-inline'+(isMine?' mine':'');
@@ -5967,7 +5973,7 @@ function init(){
         const empty = document.createElement('div');
         empty.className = 'bqempty';
         empty.id = 'bqgempty';
-        empty.innerHTML = '<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Be the first to say hello!</div>';
+        empty.innerHTML = '<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Be the first to say hello!</div>';
         msgsEl.appendChild(empty);
         gLastU = null;
         gLastT = 0;
@@ -8066,7 +8072,7 @@ setTimeout(_injectProfileUploads,1500);
     bar.innerHTML=
       '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
       '<div class="bq-sel-count">0 selected</div>'+
-      '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>';
+      '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
     panel.appendChild(bar);
     bar.querySelector('.bq-sel-close').addEventListener('click',exitSelectMode);
     bar.querySelector('.bq-sel-del').addEventListener('click',bulkDelete);
@@ -9606,7 +9612,7 @@ function patchActionSheet(){
         item.dataset.ctx=ctx;
         item.dataset.key=key;
         item.style.color='#fca5a5';
-        item.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg> Delete for everyone';
+        item.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete for everyone';
         delItem.parentNode.insertBefore(item, delItem.nextSibling);
       });
     });
@@ -13560,7 +13566,7 @@ function injectNotifBell(){
   bell.className = 'bq-notif-bell';
   bell.id = 'bq-notif-bell';
   bell.innerHTML = `
-    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
     <div class="bq-notif-badge" id="bq-notif-badge">0</div>
   `;
   fsBtn.parentNode.insertBefore(bell, fsBtn);
@@ -13576,7 +13582,7 @@ function injectNotifBell(){
     </div>
     <div class="bq-notif-list" id="bq-notif-list">
       <div class="bq-notif-empty">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         No notifications yet
       </div>
     </div>
@@ -13677,7 +13683,7 @@ function renderNotifList(){
   const list = document.getElementById('bq-notif-list');
   if(!list) return;
   if(!_notifQueue.length){
-    list.innerHTML = `<div class="bq-notif-empty"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>No notifications yet</div>`;
+    list.innerHTML = `<div class="bq-notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>No notifications yet</div>`;
     return;
   }
   list.innerHTML = _notifQueue.map(n => {
@@ -13953,7 +13959,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(96,165,250,.12);">
-            <svg viewBox="0 0 24 24" style="stroke:var(--bq-accent);fill:none;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--bq-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">In-App Alerts</div>
@@ -13977,7 +13983,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(74,222,128,.12);">
-            <svg viewBox="0 0 24 24" style="stroke:#4ade80;fill:none;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">Global Chat</div>
@@ -13989,7 +13995,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(248,113,113,.12);">
-            <svg viewBox="0 0 24 24" style="stroke:#f87171;fill:none;"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">Direct Messages</div>
@@ -14025,12 +14031,12 @@ function injectNotifSettings(){
     </div>
     <div class="bq-notif-push-banner" id="bq-notif-push-banner" style="display:none">
       <div class="bq-notif-push-banner-title">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         Enable Push Notifications
       </div>
       <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you push notifications even when the browser is closed. You can change this anytime in browser settings.</div>
       <button class="bq-notif-push-btn" id="bq-notif-push-enable">
-        <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         Allow Notifications
       </button>
     </div>
@@ -14118,7 +14124,7 @@ function updatePushPermissionUI(){
     banner.style.display = '';
     banner.innerHTML = `
       <div class="bq-notif-push-banner-title" style="color:var(--bq-text-muted);">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Not Supported
       </div>
       <div class="bq-notif-push-banner-desc">Your browser doesn't support push notifications.</div>
