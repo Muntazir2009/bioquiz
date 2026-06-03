@@ -63,6 +63,40 @@ Stage Summary:
 - Duplicate swipe handlers (v19, v22) disabled to prevent conflicts
 
 ---
+Task ID: 6
+Agent: Main
+Task: GIF UI v42 + icons overhaul
+
+Work Log:
+- Fixed GIF picker grid stacking: added `contain:layout style` to `.bqgifp-grid` and `contain:content; will-change:transform` to `.bqgifp-item` to prevent items from overlapping/stacking
+- Added scroll-to-pause for GIF picker: on scroll, adds `bqgifp-scrolling` class which sets `visibility:hidden` on all GIF images; after 200ms of no scroll, class is removed and GIFs resume. Uses `{passive:true}` scroll listener
+- Replaced GIF button icon (was image icon with circle+mountain that looked like "shapes joined") with clean "GIF" text label `<span class="gif-label">GIF</span>` in bold Inter font
+- Replaced Send button icon (was confusing UP arrow ↑) with proper Lucide paper plane Send icon: `<path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>`
+- Fixed Sticker/Smile icon eyes: replaced `<line x1="9" y1="9" x2="9.01" y2="9"/>` dot-eye lines with proper filled circles `<circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>` for both global and DM sticker buttons, plus the action sheet react icon
+- Fixed X/Close icons throughout (15 instances): replaced `<line>` based X crosses with `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>` for smoother cross without visible gap at intersection
+- Fixed New DM button icon: changed `z` → `Z` in path for proper Lucide MessageSquarePlus rendering
+- Fixed Vertical ellipsis consistency: changed global chat menu dots from `r="1"` to `r="1.5"` with `fill="currentColor"` to match DM menu dots
+- Reduced skeleton count from 24 to 12 for faster perceived load in GIF picker
+- Added GIF load error handling: `img.addEventListener('error')` adds `bqgifp-err` class showing ⚠ placeholder
+- Added `data-stillUrl` attribute to GIF items storing Giphy `fixed_width_still` / `fixed_height_still` URLs for offscreen optimization
+- Added IntersectionObserver in v42 patch to swap offscreen GIFs to still images (saves CPU) and restore animated versions when scrolled into view
+- Added MutationObserver-based dynamic icon patching to catch icons created after initial render
+- Added WhatsApp theme CSS rules for the new GIF text label
+- Added CSS for scroll-to-pause state (`.bqgifp-scrolling .bqgifp-item img{visibility:hidden}`) and error state (`.bqgifp-item.bqgifp-err`)
+- Bumped WIDGET_VERSION to 57.0.0 and version.json to 57.0.0
+
+Stage Summary:
+- GIF picker grid no longer stacks items on top of each other (contain:layout + contain:content fixes)
+- GIFs pause during scrolling for much smoother picker performance
+- Offscreen GIFs auto-swap to still images via IntersectionObserver
+- GIF button now shows clean "GIF" text instead of confusing image icon
+- Send button now shows paper plane instead of up arrow
+- Smile/sticker icons have clean round dot eyes instead of line segments
+- X/Close icons use smooth paths instead of intersecting lines
+- Failed GIF loads show error placeholder instead of broken image
+- All icon fixes also apply to dynamically created elements via MutationObserver
+
+---
 Task ID: 3
 Agent: Main
 Task: Fix notifications that still don't work

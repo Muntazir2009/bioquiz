@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '56.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '57.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -2117,7 +2117,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-grid{
   flex:1;overflow-y:auto;padding:8px 10px;
   display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
-  align-content:start;position:relative;
+  align-content:start;position:relative;contain:layout style;
 }
 .bqgifp-grid::-webkit-scrollbar{width:4px;}
 .bqgifp-grid::-webkit-scrollbar-track{background:transparent;}
@@ -2129,10 +2129,17 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   background:rgba(255,255,255,.03);border:1px solid transparent;
   transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s;
   -webkit-tap-highlight-color:transparent;position:relative;
+  contain:content;will-change:transform;
 }
 .bqgifp-item:hover{transform:scale(1.04);border-color:rgba(255,255,255,.15);z-index:2;}
 .bqgifp-item:active{transform:scale(.97);transition-duration:.1s;}
 .bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
+/* v42: scroll-to-pause GIFs while scrolling picker */
+.bqgifp-scrolling .bqgifp-item img{visibility:hidden;}
+.bqgifp-scrolling .bqgifp-item::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.03);border-radius:8px;}
+/* v42: GIF load error state */
+.bqgifp-item.bqgifp-err img{display:none;}
+.bqgifp-item.bqgifp-err::after{content:'⚠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3;}
 .bqgifp-skel{
   width:100%;aspect-ratio:4/3;border-radius:8px;
   background:rgba(255,255,255,.03);
@@ -2159,6 +2166,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   transition:all .15s;flex-shrink:0;
 }
 .bqgifbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.bqgifbtn .gif-label{font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:-.02em;color:inherit;line-height:1;}
 .bqgifbtn:hover{color:var(--bq-accent);}
 .bqgifbtn.active{color:var(--bq-accent);}
 .bqirow{position:relative;}
@@ -2638,7 +2646,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 const HTML = `
 <button id="bqb" aria-label="Chat">
   <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
   <div id="bqbadge"></div>
 </button>
 
@@ -2647,7 +2655,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
@@ -2717,7 +2725,7 @@ const HTML = `
   <div class="bqhtitle">Global Chat</div>
   <div class="bqhdr-menu">
     <button class="bqhdr-menu-btn" id="bq-chat-menu-btn" title="Options">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
     </button>
     <div class="bqhdr-dropdown" id="bq-chat-menu">
       <div class="bqhdr-dropdown-item" id="bq-toggle-disappear">
@@ -2750,15 +2758,15 @@ const HTML = `
       <div class="bqrbar" id="bqgrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
         <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><span class="bqrp-sub" id="bqgrbsub" style="display:none"></span><div class="bqrbt" id="bqgrbt"></div></div>
-        <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bqiw">
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+          <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg></button>
+          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><span class="gif-label">GIF</span></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqgcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2769,7 +2777,7 @@ const HTML = `
       <div class="bqhdr">
         <div class="bqlive"></div>
         <div class="bqhtitle">Messages</div>
-        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg></button>
+        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg></button>
         <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
       </div>
       <div id="bqdml"></div>
@@ -2799,7 +2807,7 @@ const HTML = `
       <div id="bq-pinned-bar">
         <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-pinbar-text"></div></div>
-        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
@@ -2814,9 +2822,9 @@ const HTML = `
       <div class="bqrbar" id="bqdmrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
         <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><span class="bqrp-sub" id="bqdmrbsub" style="display:none"></span><div class="bqrbt" id="bqdmrbt"></div></div>
-        <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
-      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
       <div class="bqiw">
         <!-- v9.3: Voice recording bar lives INSIDE composer to avoid layout shift -->
         <div class="bqvoice-rec-bar" id="bq-voice-rec-bar">
@@ -2826,11 +2834,11 @@ const HTML = `
         </div>
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+          <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg></button>
+          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><span class="gif-label">GIF</span></button>
           <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2838,7 +2846,7 @@ const HTML = `
 
     <!-- DM Info panel (inside dmconv) -->
     <div id="bq-dm-info">
-      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
       <div class="bq-info-av-section">
         <div class="bq-info-av" id="bq-info-av"></div>
         <div class="bq-info-name" id="bq-info-name"></div>
@@ -2976,7 +2984,7 @@ const HTML = `
 </div>
 <div id="bqtoast"></div>
 <div class="bqimg-preview" id="bqimg-preview">
-  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   <img id="bqimg-full" src="" alt="Full size image">
   </div>
   <div class="bq-confirm" id="bq-confirm">
@@ -2995,7 +3003,7 @@ const HTML = `
 <!-- v3: GIF/Image lightbox -->
 <div id="bq-media-lightbox">
   <div class="bq-lb-card">
-    <button class="bq-lb-close" id="bq-lb-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="bq-lb-close" id="bq-lb-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     <img class="bq-lb-img" id="bq-lb-img" src="" alt="">
     <div class="bq-lb-meta"><b id="bq-lb-from"></b><span class="bq-lb-ts" id="bq-lb-ts"></span></div>
   </div>
@@ -3009,7 +3017,7 @@ const HTML = `
       <div class="bq-if-name" id="bq-if-name"></div>
       <div class="bq-if-st" id="bq-if-st"></div>
     </div>
-    <button class="bq-if-x" id="bq-if-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="bq-if-x" id="bq-if-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="bq-if-scroll">
       <div class="bq-if-sect">
@@ -4312,7 +4320,7 @@ let _gifLoaded = false, curOffset = 0, _loadingMore = false, _hasMore = true;
 
 function showSkeletons(){
     grid.innerHTML = '';
-    for(let i=0;i<24;i++){
+    for(let i=0;i<12;i++){
       const s = document.createElement('div');
       s.className='bqgifp-skel';
       grid.appendChild(s);
@@ -4324,9 +4332,17 @@ function showSkeletons(){
       const display = g.images?.fixed_width?.url || g.images?.downsized_medium?.url || (thumb ? thumb.url : null);
       const full = g.images?.original?.url || display;
       if(!thumb||!full) return;
+      const still = g.images?.fixed_width_still?.url || g.images?.fixed_height_still?.url || null;
       const item = document.createElement('div');
       item.className = 'bqgifp-item';
-      item.innerHTML = '<img loading="lazy" decoding="async" src="'+esc(thumb.url)+'" alt="'+esc(g.title||'GIF')+'">';
+      if(still) item.dataset.stillUrl = still;
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = esc(thumb.url);
+      img.alt = esc(g.title||'GIF');
+      img.addEventListener('error', function(){ item.classList.add('bqgifp-err'); });
+      item.appendChild(img);
       item.addEventListener('click', ()=>{
         const w = parseInt(g.images?.original?.width||0);
         const h = parseInt(g.images?.original?.height||0);
@@ -4368,9 +4384,18 @@ function showSkeletons(){
     }
     _loadingMore = false;
   }
+  // v42: scroll-to-pause + infinite scroll
+  let _scrollTimer = null;
   grid.addEventListener('scroll', ()=>{
+    // Infinite scroll
     if(grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) loadMore();
-  });
+    // Scroll-to-pause: hide GIFs while scrolling
+    grid.classList.add('bqgifp-scrolling');
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(()=>{
+      grid.classList.remove('bqgifp-scrolling');
+    }, 200);
+  }, {passive: true});
   cats.forEach(c=>{
     c.addEventListener('click', ()=>{
       cats.forEach(x=>x.classList.remove('sel'));
@@ -4572,7 +4597,7 @@ function renderStarredList(){
       '<div class="bq-starred-text">'+esc(item.text||'').slice(0,200)+'</div>'+
       '<div class="bq-starred-ts">'+new Date(item.ts||0).toLocaleString()+'</div>'+
       '<button class="bq-starred-unstar" data-key="'+item.key+'" title="Unstar">'+
-      '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+      '<svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'
     );
     d.querySelector('.bq-starred-unstar').onclick=e=>{
       e.stopPropagation();
@@ -5187,7 +5212,7 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   const _sdid=isG?'global':(activeDmId||'');
   const isStarred = !!(_stars[_sdid]&&_stars[_sdid][key]);
   const items = [
-    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg>'},
     {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
     {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
     {a:'star', label:isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
@@ -5688,7 +5713,7 @@ function toggleSearch(){
   if(!_searchBar){
     _searchBar = document.createElement('div');
     _searchBar.className = 'bq-search-bar';
-    _searchBar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bq-text-subtle)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search messages..." autocomplete="off"><span class="bq-search-count"></span><button class="bq-search-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+    _searchBar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bq-text-subtle)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search messages..." autocomplete="off"><span class="bq-search-count"></span><button class="bq-search-close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
     const hdr = document.querySelector('#bqv-chat .bqhdr');
     if(hdr) hdr.after(_searchBar);
     const inp = _searchBar.querySelector('input');
@@ -7215,7 +7240,7 @@ setTimeout(_injectProfileUploads,1500);
       '<button class="bq-vp-replay" id="bq-vp-replay" title="Replay"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>'+
       '<canvas class="bq-vp-wave" id="bq-vp-wave" style="flex:1;height:28px;width:100%;"></canvas>'+
       '<span class="bq-vp-time" id="bq-vp-time">0:00</span>'+
-      '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'+
       '<button class="bq-vp-btn send" id="bq-vp-send" title="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>';
     // Insert at TOP of composer so it sits above the input row but inside it
     composer.insertBefore(wrap, composer.firstChild);
@@ -8070,7 +8095,7 @@ setTimeout(_injectProfileUploads,1500);
     bar=document.createElement('div');
     bar.id='bq-sel-bar';
     bar.innerHTML=
-      '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'+
       '<div class="bq-sel-count">0 selected</div>'+
       '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
     panel.appendChild(bar);
@@ -8988,7 +9013,7 @@ setTimeout(_injectProfileUploads,1500);
       <button class="bq-s-down" title="Next"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
       <input type="text" placeholder="Search in chat…" />
       <span class="bq-search-count">0/0</span>
-      <button class="bq-s-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="bq-s-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     `;
     host.appendChild(bar);
     const inp=bar.querySelector('input');
@@ -13757,7 +13782,7 @@ function showNotifBanner(notif){
       <div class="bq-notif-banner-sender">${_esc(notif.sender)}</div>
       <div class="bq-notif-banner-msg">${_esc(notif.msg).slice(0,50)}</div>
     </div>
-    <button class="bq-notif-banner-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="bq-notif-banner-close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   `;
 
   // Insert at top of panel content area
@@ -14837,3 +14862,149 @@ if(document.readyState === 'loading'){
 })();
 /* ════════════ end v41 patch ════════════ */
 
+/* ════════════ v42 patch: GIF UI V2 + clean icons ════════════ */
+(function v42GifUIAndIcons(){
+  'use strict';
+  console.log('[bq] v42 patch loaded — GIF UI V2 + clean icons');
+
+  // ── A. Inject additional CSS for icon fixes ──
+  const css = document.createElement('style');
+  css.textContent = `
+    /* v42: GIF button text label theming for WhatsApp themes */
+    #bqp.bq-theme-walight .bqgifbtn .gif-label,
+    #bqp.bq-theme-wadark .bqgifbtn .gif-label { color: inherit; }
+    #bqp.bq-theme-walight .bqgifbtn:hover .gif-label { color: #075e54; }
+    #bqp.bq-theme-wadark .bqgifbtn:hover .gif-label { color: #e9edef; }
+    #bqp.bq-theme-walight .bqgifbtn.active .gif-label { color: #075e54; }
+    #bqp.bq-theme-wadark .bqgifbtn.active .gif-label { color: #e9edef; }
+  `;
+  document.head.appendChild(css);
+
+  // ── B. Dynamic icon patching via MutationObserver ──
+  // Patch dynamically created icons that our static edits can't reach
+  function patchDynamicIcons(root) {
+    if (!root || !root.querySelectorAll) return;
+
+    // Fix smiley icon eyes: <line> → <circle> for dot eyes
+    root.querySelectorAll('.bqieo svg, .bq-ms-btn svg').forEach(svg => {
+      const html = svg.innerHTML;
+      if (html && html.includes('9.01') && html.includes('15.01')) {
+        svg.innerHTML = html
+          .replace(/<line[^>]*x1="9"[^>]*y1="9"[^>]*x2="9\.01"[^>]*y2="9"[^>]*\/?>/g,
+            '<circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>')
+          .replace(/<line[^>]*x1="15"[^>]*y1="9"[^>]*x2="15\.01"[^>]*y2="9"[^>]*\/?>/g,
+            '<circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/>');
+      }
+    });
+
+    // Fix X/Close icons in dynamically created elements
+    root.querySelectorAll('svg').forEach(svg => {
+      const html = svg.innerHTML;
+      if (html && html.includes('x1="18"') && html.includes('y1="6"') && html.includes('x2="6"') && html.includes('y2="18"')) {
+        svg.innerHTML = html
+          .replace(/<line[^>]*x1="18"[^>]*y1="6"[^>]*x2="6"[^>]*y2="18"[^>]*\/?>/g, '<path d="M18 6 6 18"/>')
+          .replace(/<line[^>]*x1="6"[^>]*y1="6"[^>]*x2="18"[^>]*y2="18"[^>]*\/?>/g, '<path d="m6 6 12 12"/>');
+      }
+    });
+
+    // Fix send button up-arrows in dynamically created elements
+    root.querySelectorAll('.bqsnd svg').forEach(svg => {
+      const html = svg.innerHTML;
+      if (html && html.includes('m5 12') && html.includes('7-7')) {
+        svg.innerHTML = '<path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>';
+      }
+    });
+
+    // Fix GIF button SVGs → text label in dynamically created elements
+    root.querySelectorAll('.bqgifbtn svg').forEach(svg => {
+      const span = document.createElement('span');
+      span.className = 'gif-label';
+      span.textContent = 'GIF';
+      svg.replaceWith(span);
+    });
+  }
+
+  // Observe for dynamically added content
+  const panel = document.getElementById('bqp');
+  if (panel) {
+    const iconObserver = new MutationObserver(mutations => {
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType === 1) {
+            patchDynamicIcons(node);
+            if (node.querySelectorAll) {
+              patchDynamicIcons({ querySelectorAll: sel => node.querySelectorAll(sel) });
+            }
+          }
+        });
+      });
+    });
+    iconObserver.observe(panel, { childList: true, subtree: true });
+  }
+
+  // ── C. IntersectionObserver for GIF picker — only animate visible GIFs ──
+  function enhanceGifPicker() {
+    document.querySelectorAll('.bqgifp-grid').forEach(grid => {
+      if (grid.dataset.v42Enhanced) return;
+      grid.dataset.v42Enhanced = '1';
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const img = entry.target.querySelector('img');
+          if (!img) return;
+          if (entry.isIntersecting) {
+            // Restore animated src from data attribute
+            if (img.dataset.v42Still) {
+              img.src = img.dataset.v42Still;
+              delete img.dataset.v42Still;
+            }
+          } else {
+            // Swap to still image for offscreen GIFs to save CPU
+            if (!img.dataset.v42Still && img.src && !img.src.startsWith('data:')) {
+              const stillUrl = entry.target.dataset.stillUrl;
+              if (stillUrl) {
+                img.dataset.v42Still = img.src;
+                img.src = stillUrl;
+              }
+            }
+          }
+        });
+      }, { root: grid, rootMargin: '200px', threshold: 0 });
+
+      const observeItems = () => {
+        grid.querySelectorAll('.bqgifp-item').forEach(item => {
+          if (!item.dataset.v42Obs) {
+            io.observe(item);
+            item.dataset.v42Obs = '1';
+          }
+        });
+      };
+
+      observeItems();
+      const mo = new MutationObserver(() => observeItems());
+      mo.observe(grid, { childList: true });
+    });
+  }
+
+  // Initialize when DOM is ready
+  function initV42() {
+    patchDynamicIcons(document.getElementById('bqp') || document.body);
+    enhanceGifPicker();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initV42, 2500));
+  } else {
+    setTimeout(initV42, 2500);
+  }
+
+  // Re-enhance when GIF picker opens
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.bqgifbtn')) {
+      setTimeout(enhanceGifPicker, 100);
+    }
+  });
+
+  console.log('[bq] v42: GIF grid stacking fixed, scroll-to-pause active, icons cleaned, IntersectionObserver for offscreen GIFs');
+})();
+/* ════════════ end v42 patch ════════════ */
