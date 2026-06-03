@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '52.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '53.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3219,8 +3219,8 @@ function showNotification(sender,msg,type,dmId){
   try{ if(typeof window._bqNotifAdd==='function'){ window._bqNotifAdd(sender||'?',msg||'',type||'global',dmId); return; } }catch(_){}
   // Fallback: direct browser notification if v36 not loaded yet
   try{
-    if(!document.hidden && !document.hasFocus()){
-      // Tab is in background — show browser notification directly
+    if(document.hidden || !document.hasFocus()){
+      // Tab is in background or unfocused — show browser notification directly
       if('Notification' in window && Notification.permission === 'granted'){
         const n = new Notification('BioQuiz Chat', {
           body: (sender||'?') + ': ' + (msg||'').slice(0,80),
@@ -3953,8 +3953,8 @@ function sendGlobal(text){
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
-  // v37: trigger web push for offline users
-  // v40: Removed _bqTriggerPush — push-service doesn't exist in production
+  // v41: trigger web push for offline users
+  try{ if(typeof window._bqPushNotify==='function') window._bqPushNotify(null, uname, text.trim().slice(0,80), 'global', null, null, null); }catch(_){}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
@@ -4195,8 +4195,8 @@ function sendDm(text){
   const dis=getDisappear();
   if(activeDmId&&dis[activeDmId]) p.expiresAt=Date.now()+5*60*1000;
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  // v37: trigger web push for offline partner
-  // v40: Removed _bqTriggerPush — push-service doesn't exist in production
+  // v41: trigger web push for offline partner
+  try{ if(typeof window._bqPushNotify==='function') window._bqPushNotify(activeDmPuid, uname, trimmed||(p.imageData?'📷 Image':''), 'dm', activeDmId, activeDmPuid, pname); }catch(_){}
   _dmFinalize(activeDmId, activeDmPuid, pname, trimmed||(p.imageData?'📷 Image':''));
   clearReply('dm');
 }
@@ -13601,10 +13601,10 @@ function addNotification(sender, msg, type, dmId){
   // Sound
   if(prefs.sound) playNotifSound();
 
-  // v40: Browser notification when tab is in background
+  // v41: Browser notification when tab is in background or unfocused
   // Uses Browser Notification API directly — no push-service needed
   // Works when: tab is hidden (background) or window lost focus
-  if(!document.hidden || !document.hasFocus()){
+  if(document.hidden || !document.hasFocus()){
     showBrowserNotif(notif);
   }
 }
@@ -14345,4 +14345,217 @@ if(document.readyState === 'loading'){
   });
 })();
 /* ════════════ end v39 patch ════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   v41: Web Push Notifications — Works when tab/browser is CLOSED
+   
+   - Registers service worker with VAPID push subscription
+   - Stores push subscription in Firebase RTDB
+   - When sending a message, triggers push via /api/push/notify
+   - Recipient's service worker shows notification even if tab is closed
+   - Fixes notification logic bugs (condition was inverted)
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+const VAPID_PUBLIC_KEY = 'BBc3KxoYXLfG6DOiRdrPXTUz6U-kWAsgea98vbixodbbqJObWPBsuG2NlQqhanTuq3sX2eCwvXpYx8LkdNz4tN4';
+const FIREBASE_RTDB_URL = 'https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+
+/* ── URL-safe Base64 → Uint8Array (for VAPID key) ── */
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+/* ── SERVICE WORKER + PUSH SUBSCRIPTION ── */
+let _pushSub = null;  // cached PushSubscription
+
+async function registerAndSubscribe(){
+  if(!('serviceWorker' in navigator)) return null;
+  if(!('PushManager' in window)) return null;
+  
+  try{
+    // Register or get existing service worker registration
+    let reg = await navigator.serviceWorker.getRegistration('/sw.js');
+    if(!reg){
+      reg = await navigator.serviceWorker.register('/sw.js');
+      console.log('[bq-push] Service Worker registered');
+    }
+
+    // Wait for the service worker to be ready
+    await navigator.serviceWorker.ready;
+
+    // Check for existing push subscription
+    let sub = await reg.pushManager.getSubscription();
+    if(sub){
+      _pushSub = sub;
+      console.log('[bq-push] Existing push subscription found');
+      return sub;
+    }
+
+    // Create new push subscription with VAPID key
+    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey
+    });
+
+    _pushSub = sub;
+    console.log('[bq-push] New push subscription created');
+    
+    // Store subscription in Firebase RTDB via API route
+    await storeSubscription(sub);
+    
+    return sub;
+  }catch(err){
+    console.warn('[bq-push] Push subscription failed:', err);
+    return null;
+  }
+}
+
+/* ── STORE SUBSCRIPTION IN FIREBASE RTDB ── */
+async function storeSubscription(sub){
+  const myUid = _uid();
+  if(!myUid) return;
+  
+  try{
+    const subJson = sub.toJSON();
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: myUid,
+        subscription: subJson
+      })
+    });
+    console.log('[bq-push] Subscription stored in Firebase RTDB');
+  }catch(err){
+    console.warn('[bq-push] Failed to store subscription:', err);
+  }
+}
+
+/* ── LISTEN FOR SERVICE WORKER MESSAGES (notification clicks) ── */
+function listenForSwMessages(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if(event.data && event.data.type === 'bq-notif-click'){
+      handleNotifClickFromSW(event.data);
+    }
+  });
+}
+
+function handleNotifClickFromSW(data){
+  const panel = document.getElementById('bqp');
+  if(panel && !panel.classList.contains('open')) panel.classList.add('open');
+  if(data.notifType === 'dm' && data.dmId && data.pUid){
+    if(typeof window.__bqOpenDm === 'function') window.__bqOpenDm(data.dmId, data.pUid, data.pName || '');
+  } else {
+    if(typeof window.bqNav === 'function') window.bqNav('chat');
+  }
+}
+
+/* ── PUSH NOTIFY: Called when a message is sent ── */
+// targetUid = null for global, or partner UID for DMs
+window._bqPushNotify = async function(targetUid, sender, message, type, dmId, pUid, pName){
+  if(!targetUid && type === 'global'){
+    // For global messages: notify ALL users with push subscriptions
+    // We'll send to the API and let it handle fan-out
+    // For now, just skip (global push would be expensive)
+    return;
+  }
+  if(!targetUid) return;
+
+  // Check if target user has a push subscription in Firebase RTDB
+  try{
+    const subSnap = await fetch(FIREBASE_RTDB_URL + '/bq_push_subs/' + targetUid + '.json').then(r=>r.json());
+    if(!subSnap || !subSnap.subscription || !subSnap.subscription.endpoint){
+      // Target user has no push subscription — they haven't enabled notifications
+      return;
+    }
+
+    // Call the push notification API route
+    await fetch('/api/push/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        targetUid: targetUid,
+        subscription: subSnap.subscription,
+        sender: sender || '?',
+        message: (message || 'Sent a message').slice(0, 100),
+        type: type || 'global',
+        dmId: dmId || null,
+        pUid: pUid || null,
+        pName: pName || null
+      })
+    });
+    console.log('[bq-push] Push notification sent to', targetUid);
+  }catch(err){
+    console.warn('[bq-push] Push notification failed:', err);
+  }
+};
+
+/* ── OVERRIDE subscribeToPush — called when user clicks notification toggle ── */
+window._bqSubscribePush = async function(){
+  if(!('Notification' in window)) return;
+  
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    // Register service worker and create push subscription
+    await registerAndSubscribe();
+    
+    // Update preferences
+    try{
+      const KEY = 'bq_notif_prefs';
+      const s = localStorage.getItem(KEY);
+      const p = s ? JSON.parse(s) : {};
+      p.push = true;
+      localStorage.setItem(KEY, JSON.stringify(p));
+    }catch(_){}
+    
+    if(typeof window._bqNotifAdd === 'function'){
+      window._bqNotifAdd('System','Push notifications enabled! ✓','global');
+    }
+    if(typeof window._bqUpdatePushUI === 'function') window._bqUpdatePushUI();
+  }else{
+    if(typeof window._bqNotifAdd === 'function'){
+      window._bqNotifAdd('System','Notification permission denied — check browser settings','global');
+    }
+  }
+};
+
+/* ── BOOT ── */
+async function bootV41(){
+  // Listen for service worker messages
+  listenForSwMessages();
+  
+  // Auto-subscribe if permission is already granted and user has notifications enabled
+  const prefs = (()=>{
+    try{
+      const s = localStorage.getItem('bq_notif_prefs');
+      return s ? JSON.parse(s) : {};
+    }catch(_){ return {}; }
+  })();
+  
+  if(Notification.permission === 'granted' && prefs.push !== false){
+    // Try to create/renew push subscription in the background
+    registerAndSubscribe().catch(()=>{});
+  }
+  
+  console.log('[bq] v41 patch loaded — Web Push Notifications (works when tab is closed)');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bootV41, 2500));
+} else {
+  setTimeout(bootV41, 2500);
+}
+
+})();
+/* ════════════ end v41 patch ════════════ */
 

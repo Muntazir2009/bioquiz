@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    BioQuiz Chat — Service Worker for Push Notifications
    Handles push events when tab/browser is closed
+   v41: Updated for Web Push (VAPID) integration
    ═══════════════════════════════════════════════════════════════ */
 
-const SW_VERSION = '1.0.0';
+const SW_VERSION = '2.0.0';
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -13,7 +14,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event
 self.addEventListener('activate', (event) => {
-  console.log('[bq-sw] Service Worker activated');
+  console.log('[bq-sw] Service Worker activated v' + SW_VERSION);
   event.waitUntil(self.clients.claim());
 });
 
@@ -35,12 +36,14 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
+    // If not JSON, try text
     data = { title: 'BioQuiz Chat', body: event.data ? event.data.text() : 'New message' };
   }
 
   const title = data.title || 'BioQuiz Chat';
+  const body = data.body || 'You have a new message';
   const options = {
-    body: data.body || 'You have a new message',
+    body: body,
     icon: data.icon || '/logo.svg',
     badge: '/logo.svg',
     tag: data.tag || 'bq-chat-' + Date.now(),
@@ -67,13 +70,12 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const data = event.notification.data || {};
-  const targetUrl = '/';
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Try to focus an existing window
       for (const client of clientList) {
-        if (client.url.includes(targetUrl) && 'focus' in client) {
+        if ('focus' in client) {
           // Send navigation message to the focused client
           client.postMessage({
             type: 'bq-notif-click',
@@ -86,7 +88,7 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       // No existing window — open a new one
-      return self.clients.openWindow(targetUrl);
+      return self.clients.openWindow('/');
     })
   );
 });
