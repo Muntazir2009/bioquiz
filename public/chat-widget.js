@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '57.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '58.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -2077,12 +2077,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── GIF PICKER PANEL (v55 Vercel/v0 redesign) ── */
 .bqgifp{
-  position:absolute;left:0;right:0;bottom:100%;margin-bottom:8px;
+  position:absolute;right:0;bottom:100%;margin-bottom:8px;
   background:rgba(9,9,11,.97);
   border:1px solid rgba(255,255,255,.08);
   border-radius:20px;
   box-shadow:0 25px 50px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
   display:none;flex-direction:column;
+  width:340px;max-width:90vw;
   height:380px;max-height:65vh;
   overflow:hidden;
   animation:bqGifIn .25s cubic-bezier(.16,1,.3,1) both;
@@ -2116,22 +2117,20 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-cat.sel{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.12);}
 .bqgifp-grid{
   flex:1;overflow-y:auto;padding:8px 10px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
-  align-content:start;position:relative;contain:layout style;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
+  align-content:start;position:relative;
 }
 .bqgifp-grid::-webkit-scrollbar{width:4px;}
 .bqgifp-grid::-webkit-scrollbar-track{background:transparent;}
 .bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px;}
 .bqgifp-grid::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15);}
 .bqgifp-item{
-  display:block;width:100%;aspect-ratio:4/3;
-  border-radius:8px;overflow:hidden;cursor:pointer;
-  background:rgba(255,255,255,.03);border:1px solid transparent;
-  transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s;
+  display:block;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s,box-shadow .2s;
   -webkit-tap-highlight-color:transparent;position:relative;
-  contain:content;will-change:transform;
 }
-.bqgifp-item:hover{transform:scale(1.04);border-color:rgba(255,255,255,.15);z-index:2;}
+.bqgifp-item:hover{transform:scale(1.03);border-color:rgba(255,255,255,.12);box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:2;}
 .bqgifp-item:active{transform:scale(.97);transition-duration:.1s;}
 .bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
 /* v42: scroll-to-pause GIFs while scrolling picker */
@@ -2141,7 +2140,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqgifp-item.bqgifp-err img{display:none;}
 .bqgifp-item.bqgifp-err::after{content:'⚠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3;}
 .bqgifp-skel{
-  width:100%;aspect-ratio:4/3;border-radius:8px;
+  width:100%;aspect-ratio:1;border-radius:10px;
   background:rgba(255,255,255,.03);
   animation:bqGifPulse 1.5s ease-in-out infinite;
 }
@@ -4228,7 +4227,7 @@ async function giphyFetch(category, query, offset=0){
   const cacheKey = (query||'')+'|'+(category||'trending')+'|'+offset;
   if(_giphyCache[cacheKey]) return { data: _giphyCache[cacheKey].data, pagination: _giphyCache[cacheKey].pagination };
   let url;
-  const limit = 24;
+  const limit = 6;
   if(query && query.trim()){
     url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=pg-13&bundle=messaging_non_clips`;
   } else if(category === 'trending' || !category){
@@ -4320,7 +4319,7 @@ let _gifLoaded = false, curOffset = 0, _loadingMore = false, _hasMore = true;
 
 function showSkeletons(){
     grid.innerHTML = '';
-    for(let i=0;i<12;i++){
+    for(let i=0;i<6;i++){
       const s = document.createElement('div');
       s.className='bqgifp-skel';
       grid.appendChild(s);
@@ -7560,7 +7559,7 @@ setTimeout(_injectProfileUploads,1500);
     const cacheKey='v2|'+(category||'trending')+'|'+selected+'|'+offset;
     if(_giphyCache[cacheKey]) return { data:_giphyCache[cacheKey].data, pagination:_giphyCache[cacheKey].pagination };
     let url='';
-    const limit=24;
+    const limit=6;
     if(selected){
       url=`https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(selected)}&limit=${limit}&offset=${offset}&rating=pg&lang=en&bundle=messaging_non_clips`;
     }else{
