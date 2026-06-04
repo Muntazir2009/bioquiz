@@ -1,17 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { getSubscriptionCount } from "@/lib/push-store";
+import { VAPID_PUBLIC_KEY } from "@/lib/push-config";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({
-    status: 'ok',
+    status: "ok",
+    subscriptions: getSubscriptionCount(),
+    vapidKey: VAPID_PUBLIC_KEY.slice(0, 10) + "...",
     features: {
       inApp: true,
       sound: true,
       browserPush: true,
-      serviceWorkerPush: false,
+      serviceWorkerPush: true,
+      webPushBackend: true,
     },
-    message: 'In-app notifications active. Browser push via Notification API when tab in background. Service worker push requires external push server.',
+    message: "Push notification backend active. VAPID-based Web Push is configured and ready.",
   });
 }
