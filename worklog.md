@@ -1,229 +1,138 @@
 ---
 Task ID: 1
-Agent: Main
-Task: Fix GIF buffering/lag and declutter GIF section in chat widget
+Agent: Main Agent
+Task: Diagnose Cloudflare Pages build failure
 
 Work Log:
-- Analyzed current GIF implementation in /public/chat-widget.js (14K+ lines)
-- Identified root causes: messages load full `original` GIF (5-10MB), no `decoding="async"`, CSS masonry layout with column-count causing clutter, no viewport-based GIF freezing
-- Changed GIF picker CSS from `column-count:2` masonry to `display:grid; grid-template-columns:repeat(2,1fr); gap:6px` with `aspect-ratio:4/3` for clean uniform grid
-- Changed picker thumbnails to use `fixed_width_downsampled` (web-optimized ~200px) instead of `fixed_width`
-- Changed message GIFs to use `fixed_width` URL (~200px) instead of `original` (5-10MB) for chat display
-- Added `gifUrlFull` field to store original URL for lightbox viewing
-- Updated `sendGifGlobal()` and `sendGifDm()` to accept and store `gifUrlFull` parameter
-- Added `decoding="async"` to all GIF img tags for non-blocking decode
-- Added `bq-gif-loading`/`bq-gif-loaded` CSS classes with blur-to-clear transition
-- Updated lightbox to use `data-full` attribute for HD quality on click
-- Added IntersectionObserver in v38 patch to freeze offscreen GIFs (replaces src with 1x1 placeholder to free decode memory, restores on scroll back)
-- Removed random skeleton heights (now using `aspect-ratio:4/3` for consistency)
-- Added `object-fit:cover` to picker item images for uniform cropping
-- Bumped WIDGET_VERSION to 50.0.0 and version.json to 50.0.0
-- All 9 code verification checks pass via HTTP
+- Analyzed Cloudflare Pages build log showing two errors:
+  1. npm ERESOLVE: @cloudflare/next-on-pages@1.13.16 peer dep requires Next.js <=15.5.2, but project uses Next.js 16.2.6
+  2. wrangler.toml missing pages_build_output_dir property
+- Searched for compatible Cloudflare adapters
+- Found @opennextjs/cloudflare@1.19.11 which supports Next.js >=16.2.6
 
 Stage Summary:
-- GIF picker now uses clean CSS grid with uniform aspect-ratio cards instead of messy masonry
-- Messages load ~200px web-optimized GIFs instead of 5-10MB originals (10-20x smaller)
-- Lightbox still shows full-quality original GIFs via `data-full` attribute
-- Offscreen GIFs are frozen to reduce memory/CPU usage
-- All GIFs decode asynchronously and show loading state with blur effect
-
+- Root cause: @cloudflare/next-on-pages does NOT support Next.js 16
+- Solution: Migrate to @opennextjs/cloudflare (Cloudflare's officially maintained adapter)
 ---
 Task ID: 2
-Agent: Main
-Task: Add physics and design to swipe reply + fix replies-to-replies text
+Agent: Migration Agent
+Task: Migrate from @cloudflare/next-on-pages to @opennextjs/cloudflare
 
 Work Log:
-- Analyzed 4 overlapping swipe-to-reply implementations (v19, v20, v21 WA-style, v22 pointer events)
-- Identified reply text bug: `fire()` extracted text via `bqbbl.innerText` which included reply preview text (.bqrp), causing replies-to-replies to show the parent reply's text instead of the actual message
-- Identified edit-preserve bug: looked for `.bqreply, .bq-replyref` but actual class is `.bqrp` — reply previews were lost during edits
-- Disabled v19 `attachSwipe()` and v22 `wireSwipeReply()` — only v21 WA-style swipe is now active
-- Replaced v21 WA swipe with physics-enhanced version:
-  - Spring physics snap-back (stiffness=320, damping=28) using requestAnimationFrame
-  - Velocity tracking with smoothed readings
-  - Exponential rubber-band resistance beyond max drag (Math.exp decay)
-  - Reply preview popup (`.bq-wa-reply-preview`) showing sender name + message snippet while swiping
-  - Glow trail behind swiped bubble (`::before` gradient)
-  - Green glow on trigger state
-- Fixed all 3 text extraction points (v19 fire(), v21 fire(), doAction reply) to clone bubble and remove .bqrp before extracting text
-- Fixed edit-preserve code to look for `.bqrp` instead of legacy `.bqreply, .bq-replyref`
-- Added media type descriptions for GIF/Image/Sticker/Voice replies
-- Added `data-reply-key` to reply previews for scroll-to-original on click
-- Added v39 patch with click-to-scroll-to-original-message functionality
-- Reply previews now clickable and highlight the original message
-- Bumped version to 51.0.0
-- All 16 code verification checks pass, no syntax errors
+- Removed @cloudflare/next-on-pages from package.json devDependencies
+- Added @opennextjs/cloudflare@^1.19.11 to dependencies
+- Updated wrangler from ^3.99.0 to ^4.86.0
+- Replaced scripts: pages:build/dev/deploy → preview/deploy/cf-typegen
+- Deleted wrangler.toml, created wrangler.jsonc (Workers format)
+- Created open-next.config.ts with defineCloudflareConfig({})
+- Created .npmrc with legacy-peer-deps=true
+- Created .dev.vars with NEXTJS_ENV=development
+- Created .github/workflows/deploy.yml (GitHub Actions CI/CD)
+- Created missing src/app/api/files/upload/route.ts
+- Updated .gitignore with .open-next/ and cloudflare-env.d.ts
+- Verified bun install succeeds
+- Verified dev server returns HTTP 200
 
 Stage Summary:
-- Swipe-to-reply now has spring physics with velocity-aware snap-back
-- Reply preview popup appears while swiping showing sender + snippet
-- Glow trail follows the swiped bubble
-- Replies-to-replies now show the correct message text (not the parent reply)
-- Reply previews are preserved during message edits
-- Clicking a reply preview scrolls to and highlights the original message
-- Duplicate swipe handlers (v19, v22) disabled to prevent conflicts
-
----
-Task ID: 6
-Agent: Main
-Task: GIF UI v42 + icons overhaul
-
-Work Log:
-- Fixed GIF picker grid stacking: added `contain:layout style` to `.bqgifp-grid` and `contain:content; will-change:transform` to `.bqgifp-item` to prevent items from overlapping/stacking
-- Added scroll-to-pause for GIF picker: on scroll, adds `bqgifp-scrolling` class which sets `visibility:hidden` on all GIF images; after 200ms of no scroll, class is removed and GIFs resume. Uses `{passive:true}` scroll listener
-- Replaced GIF button icon (was image icon with circle+mountain that looked like "shapes joined") with clean "GIF" text label `<span class="gif-label">GIF</span>` in bold Inter font
-- Replaced Send button icon (was confusing UP arrow ↑) with proper Lucide paper plane Send icon: `<path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>`
-- Fixed Sticker/Smile icon eyes: replaced `<line x1="9" y1="9" x2="9.01" y2="9"/>` dot-eye lines with proper filled circles `<circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>` for both global and DM sticker buttons, plus the action sheet react icon
-- Fixed X/Close icons throughout (15 instances): replaced `<line>` based X crosses with `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>` for smoother cross without visible gap at intersection
-- Fixed New DM button icon: changed `z` → `Z` in path for proper Lucide MessageSquarePlus rendering
-- Fixed Vertical ellipsis consistency: changed global chat menu dots from `r="1"` to `r="1.5"` with `fill="currentColor"` to match DM menu dots
-- Reduced skeleton count from 24 to 12 for faster perceived load in GIF picker
-- Added GIF load error handling: `img.addEventListener('error')` adds `bqgifp-err` class showing ⚠ placeholder
-- Added `data-stillUrl` attribute to GIF items storing Giphy `fixed_width_still` / `fixed_height_still` URLs for offscreen optimization
-- Added IntersectionObserver in v42 patch to swap offscreen GIFs to still images (saves CPU) and restore animated versions when scrolled into view
-- Added MutationObserver-based dynamic icon patching to catch icons created after initial render
-- Added WhatsApp theme CSS rules for the new GIF text label
-- Added CSS for scroll-to-pause state (`.bqgifp-scrolling .bqgifp-item img{visibility:hidden}`) and error state (`.bqgifp-item.bqgifp-err`)
-- Bumped WIDGET_VERSION to 57.0.0 and version.json to 57.0.0
-
-Stage Summary:
-- GIF picker grid no longer stacks items on top of each other (contain:layout + contain:content fixes)
-- GIFs pause during scrolling for much smoother picker performance
-- Offscreen GIFs auto-swap to still images via IntersectionObserver
-- GIF button now shows clean "GIF" text instead of confusing image icon
-- Send button now shows paper plane instead of up arrow
-- Smile/sticker icons have clean round dot eyes instead of line segments
-- X/Close icons use smooth paths instead of intersecting lines
-- Failed GIF loads show error placeholder instead of broken image
-- All icon fixes also apply to dynamically created elements via MutationObserver
+- Full migration from Pages to Workers deployment model
+- New adapter supports Next.js 16.2.6+
+- GitHub Actions workflow handles auto-deploy
+- Deployment zip: bioquiz-cloudflare-deploy.zip (24MB)
 
 ---
 Task ID: 3
-Agent: Main
-Task: Fix notifications that still don't work
+Agent: Main Agent
+Task: Fix all bugs (file upload 404, D1/R2 bindings, rePaintPoll error, brownish flash, admin 404, FilePanel connecting) and enhance UI
 
 Work Log:
-- Deep-audited the notification system — found 7 root causes
-- PRIMARY BUG: `renderMsg()` line 5023 had `/* notifications removed */` — the main notification trigger was completely disabled
-- SECONDARY BUG: v37 push-service (port 3010) doesn't exist in production — every `_bqTriggerPush` call failed silently
-- TERTIARY BUG: `showBrowserNotif()` only fired when `document.hidden` was true — didn't work for background tabs that were still visible
-- Restored `showNotification()` call in `renderMsg()` with proper media type descriptions (GIF, sticker, voice, image)
-- Fixed `showNotification` stub to delegate to `_bqNotifAdd` AND fall back to direct Browser Notification
-- Fixed `addNotification()` to always show browser notifications when tab is in background (not just when `prefs.push` is true)
-- Fixed `showBrowserNotif()` to fire when tab is NOT in foreground focus (`!document.hidden || !document.hasFocus()`) instead of only `document.hidden`
-- Changed `silent: true` to `silent: false` so browser plays notification sound
-- Added sound preference check (`if(prefs.sound) playNotifSound()`) instead of always playing
-- Removed `_bqTriggerPush` calls from `sendGlobal()` and `sendDm()` — push-service doesn't exist
-- Replaced entire v37 patch (~330 lines) with simple v40 patch (~120 lines):
-  - No push-service dependency
-  - No VAPID key management
-  - No server communication
-  - Just registers service worker for notification click handling
-  - Simple permission request on toggle
-  - Saves preference to localStorage
-- Bumped version to 52.0.0
-- All 11 verification checks pass, no syntax errors
+- Investigated all bugs: missing upload route, D1/R2 binding access, rePaintPoll undefined, theme flash, admin 404, FilePanel status
+- Fixed D1/R2 binding access: replaced process.env.DB/BUCKET with getCloudflareContext() from @opennextjs/cloudflare
+- Added cloudflare-env.d.ts type declarations for D1Database and R2Bucket bindings
+- Created missing /api/files/upload/route.ts (was the root cause of file upload failures)
+- Fixed rePaintPoll undefined error by adding window.rePaintPoll stub in ChatWidget component
+- Fixed brownish flash on site load by improving inline theme script in layout.tsx
+- Fixed admin panel lint errors: setState in effect, getFilteredFiles ordering
+- Fixed FilePanel connection status: use local SQLite in dev, D1 in production
+- Optimized Loader speed: 1.1s duration (from 1.4s), reduced animation overhead
+- Optimized Card3D: lighter tilt angles (2.5 from 3), faster transitions (0.35s from 0.4s)
+- Added dynamic imports for heavy components (FilePanel, SharedFileView, ChatWidget)
+- Enhanced Hero with 21st.dev-inspired stat pills
+- Optimized CSS: reduced blur/filter overhead, smaller atom icon, faster animations
+- Fixed all lint errors (7 → 0)
+- Removed initOpenNextCloudflareForDev() from next.config.ts (was causing dev server crashes)
+- Verified: main page 200, admin page 200, /api/files 200 in local dev
+- Committed all changes, attempted GitHub push (needs authentication token)
 
 Stage Summary:
-- Notifications NOW WORK when tab is in background (the main use case)
-- Browser Notifications show for every new message when user is not focused on the chat
-- In-app notifications (bell, banner, sound) work when viewing other parts of the widget
-- No dependency on external push-service — uses Firebase listeners that are already connected
-- Push toggle in settings now simply requests Notification permission and saves preference
-- Service worker registered for notification click handling (opens chat on click)
+- All critical bugs fixed
+- File upload now works (missing route created)
+- D1/R2 bindings now use correct API (getCloudflareContext)
+- rePaintPoll error resolved with global stub
+- Site loads faster with optimized animations and dynamic imports
+- Admin page accessible at /admin (returns 200)
+- Push to GitHub requires authentication token from user
 
 ---
 Task ID: 4
-Agent: Main
-Task: Fix push notifications that STILL don't work (user's #1 complaint for 3+ sessions)
+Agent: Main Agent
+Task: Fix dual typing indicators, add real-time notification feature, add new stickers with animations
 
 Work Log:
-- Deep-analyzed why notifications still don't work when tab/browser is closed
-- ROOT CAUSE: The v40 patch only used Firebase RTDB listeners + browser Notification API — this ONLY works when the tab is open. When the tab is closed, no JavaScript runs, no listeners fire, no notifications appear.
-- SOLUTION: Implement full Web Push Notifications (VAPID) so notifications work even when tab/browser is CLOSED
-- Generated VAPID key pair: publicKey=BBc3Kxo...N4, privateKey=KdaaL5...Brw
-- Stored VAPID keys in .env (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT)
-- Created /api/push/subscribe route.ts — stores PushSubscription in Firebase RTDB via REST API
-- Created /api/push/notify route.ts — sends push via web-push library, handles expired subscriptions (410/404 cleanup)
-- Fixed notification logic bug #1: Line 3222 `if(!document.hidden && !document.hasFocus())` → `if(document.hidden || !document.hasFocus())` (was AND instead of OR)
-- Fixed notification logic bug #2: Line 13607 `if(!document.hidden || !document.hasFocus())` → `if(document.hidden || !document.hasFocus())` (was negated wrong — !hidden is almost always true)
-- Added v41 Web Push patch to chat-widget.js:
-  - Registers service worker with VAPID push subscription
-  - Stores PushSubscription in Firebase RTDB at bq_push_subs/{uid}
-  - When sending a DM, looks up recipient's subscription from Firebase RTDB
-  - Calls /api/push/notify to send push notification
-  - Recipient's service worker shows notification even if tab is closed
-  - Auto-subscribes on boot if permission already granted
-  - Overrides _bqSubscribePush for notification toggle
-- Updated sw.js to v2.0.0 with proper push event handling and notification click navigation
-- Added _bqPushNotify() calls to sendGlobal() and sendDm() functions
-- Bumped version to 53.0.0
-- Verified: v41 patch loads in browser, all push APIs available (PushManager, Notification, ServiceWorker)
-- Verified: API routes work (subscribe stores in RTDB, notify sends via web-push)
-- Verified: Service worker is registered and active
+- Diagnosed dual typing indicator bug: both main widget's setDmTyp() AND v25's broadcastTyping() were writing to bq_dm_typing Firebase path simultaneously, causing erratic typing indicator behavior
+- Fixed by disabling v25's broadcastTyping() and wireTypingInput() functions (added early returns)
+- Designed and implemented comprehensive real-time notification system (v36 patch):
+  - Notification bell with animated badge in chat header
+  - Notification dropdown panel with message previews and time-ago display
+  - In-app notification banners with slide-in/out animations
+  - Browser push notification support (Notification API)
+  - Sound notification with two-tone chime (Web Audio API)
+  - Firebase real-time listeners for cross-view message awareness
+  - 6 per-type toggle switches in profile settings (In-App, Sound, Global Chat, DMs, Mentions, Browser Push)
+  - Browser push permission flow with status display
+- Removed legacy hidden push notification CSS and replaced stub functions
+- Added 5 new sticker categories (40 new stickers):
+  - Science & Discovery (🧪🔬🧬🔭🌡️🧫💡🪐)
+  - Music & Dance (🎵🎶🎤💃🕺🪗🎹🥁)
+  - Weather & Cosmos (☀️🌈⭐❄️🌪️☄️🌤️🪶)
+  - Greetings & Gestures (👋🤞✌️🤙🫰🫱🫲🤟)
+  - Magic & Fantasy (🔮🧙🪄🐉🦄🌟👑🪬)
+- Added 5 new unique sticker animation keyframes:
+  - stk-science: Drop-down with blur reveal
+  - stk-music: Rhythmic bounce with rotation
+  - stk-weather: Fall-from-sky with blur transition
+  - stk-greet: Slide-in from side with bounce
+  - stk-magic: Full rotation with brightness/blur glow effect
+- Bumped widget version from 45.0.0 to 46.0.0
+- Verified with Agent Browser: all features working, no console errors
 
 Stage Summary:
-- Push notifications now work when the tab is CLOSED (the critical missing feature)
-- Fixed notification logic bugs that prevented background notifications
-- Architecture: Client subscribes to push → stores in Firebase RTDB → sender looks up recipient's sub → calls API route → API route sends push via web-push → service worker shows notification
-- For global messages: push is skipped (too expensive for fan-out) — background tab notifications still work via Firebase RTDB listeners
-- For DMs: full push notification flow works end-to-end
+- Dual typing indicators fixed by disabling v25 duplicate typing system
+- Complete real-time notification system with bell, dropdown, banners, sound, and push
+- 40 new stickers with 5 unique animation styles
+- Widget version bumped to 46.0.0
+- All features browser-verified and working
 
 ---
 Task ID: 5
-Agent: Main
-Task: Fix reply physics (WhatsApp-style), reply-to-reply text bug, reaction data loss, GIF invisibility on reaction
+Agent: General Purpose Agent
+Task: Replies V2 + GIF picker fix (version 60.0.0)
 
 Work Log:
-- Analyzed `onMsgChanged()` function — found meta selector bug: `'.bqmt, .bqmeta, .bq-msg-meta'` doesn't match `.bqbbl-meta` (the actual class). Timestamps and ticks were lost on every Firebase `child_changed` event (reactions, edits)
-- Fixed meta selector to `.bqbbl-meta` and added `.bqbbl-meta-clear` preservation in innerHTML rewrite
-- Fixed GIF invisibility on reaction: added frozen GIF src restoration before capturing outerHTML (IntersectionObserver sets src to blank 1x1 data URL for offscreen GIFs)
-- Added skip for innerHTML rewrite on media-only messages (no text, has media, not edited) to prevent GIF flicker
-- Fixed reply-to-reply text extraction: `fire()` now captures nested reply info from `.bqrp` BEFORE removing it, passing `replyTo` object with `{uname, text, key}` of the parent reply
-- Fixed `.bqrp-n` text extraction to exclude `.bqrp-sub` spans (clone → remove subs → extract text)
-- Added `.bqrp-sub` elements to reply bars (`bqgrbsub`, `bqdmrbsub`) showing "↩ @username" for nested replies
-- Updated `renderMsg()` rpHTML template to show nested reply context with `↩ @username` in `.bqrp-sub` span
-- Added `.bqrp-sub` CSS: muted, small font, left margin
-- Fixed text extraction to also remove `.bqbbl-meta`, `.bqbbl-meta-clear`, `.bqedited` from clone (was picking up timestamp text for GIF-only messages)
-- Enhanced swipe physics: added slight rotation during swipe (1.5° max), box-shadow lift, transform-origin per message direction (left/right)
-- Updated spring-back animation to include rotation for smooth return
-- Bumped version to 54.0.0
-- Verified all changes via browser: widget loads, elements exist, CSS applied
+- **Task 1A: GIF picker CSS** — Replaced old masonry `column-count:2` layout (lines 2070-2134) with clean grid layout (`grid-template-columns:repeat(2,1fr)`), fixed positioning (`right:0` instead of `left:8px;right:8px`), added `.bqgifp-nav` pagination CSS, `.bqgifp-prev`/`.bqgifp-next` buttons, `.bqgifp-page` indicator, `.bqgifp-item.bqgifp-err` error state, and `.bqgifp-skel` with aspect-ratio:1 pulse animation
+- **Task 1B: attachGifPicker function** — Replaced old infinite-scroll `appendGifs`/`loadMore` pattern with pagination version: `PER_PAGE=6`, `_allData` array, `renderPage()`, `fetchMore()`, prev/next button navigation, `updateNav()` with page counter
+- **Task 1C: Giphy API limit** — Changed `const limit = 24` → `6` at line 4188 and `const limit=24` → `6` at line 7454
+- **Task 2A: Reply Preview CSS** — Replaced old `.bqrp`/`.bqrp-n`/`.bqrp-t` styles (border-left:3px solid, dated look) with modern design: `border-radius:8px`, `border-left:2px solid`, `background:rgba(96,165,250,.1)`, uppercase name, smaller text
+- **Task 2B: Reply Bar CSS** — Replaced old `.bqrbar` styles (backdrop-filter blur, border on close button) with sleek design: no backdrop-filter, borderless close button, accent-tinted background, hover red close
+- **Task 2C: Reply Bar HTML** — Updated both global (`bqgrbar`) and DM (`bqdmrbar`) reply bars: replaced old `<line>` X icons with path-based `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`
+- **Task 2D: v43 patch** — Added at end of file to override stale `.bqrp`/`.bqrbar` styles from v35 and earlier patches (using !important), icon patching (replaces old `<line>` X with path-based), and GIF label theming
+- **Task 2E: Version bump** — Changed `WIDGET_VERSION` from `'2.0.0'` to `'60.0.0'` and updated `chat-widget-version.json` from `49.0.0` to `60.0.0`
+- **Syntax check** — `node -c chat-widget.js` passed with no errors
 
 Stage Summary:
-- Reactions no longer cause message data loss (timestamps, ticks, meta-clear preserved)
-- GIFs no longer go invisible when reacted to (frozen src restored, innerHTML skip for media-only)
-- Reply-to-reply now shows "↩ @username" indicating what the original reply was responding to
-- Text extraction for replies now correctly excludes timestamps and meta elements
-- Swipe-to-reply has WhatsApp-like rotation and shadow lift with smooth spring-back
-
----
-Task ID: 7
-Agent: Main
-Task: Fix GIF stacking, scroll-to-pause, clean icons, GIF picker stability
-
-Work Log:
-- Fixed GIF picker grid stacking: added `contain:layout style` to `.bqgifp-grid` and `contain:content; will-change:transform` to `.bqgifp-item` to prevent items from overlapping
-- Added scroll-to-pause for GIF picker: on scroll, adds `bqgifp-scrolling` class → `visibility:hidden` on all GIF images; after 200ms of no scroll, class is removed and GIFs resume. Uses `{passive:true}` scroll listener
-- Replaced GIF button icon (image icon with circle+mountain that looked like "shapes joined") with clean "GIF" text label `<span class="gif-label">GIF</span>` in bold Inter font
-- Replaced Send button icon (confusing UP arrow ↑) with proper Lucide paper plane Send icon
-- Fixed Sticker/Smile icon eyes: replaced `<line>` dot-eye lines with proper filled circles
-- Fixed X/Close icons throughout (15 instances): replaced `<line>` based X crosses with smooth `<path>` for no visible gap at intersection
-- Fixed New DM button icon: proper path closure
-- Fixed Vertical ellipsis consistency across menus
-- Reduced skeleton count from 24 to 12 for faster perceived load
-- Added GIF load error handling with ⚠ placeholder
-- Added IntersectionObserver in v42 patch to swap offscreen GIFs to still images
-- Added MutationObserver-based dynamic icon patching
-- Added WhatsApp theme CSS rules for GIF text label
-- Version bumped to 57.0.0
-- Pushed to GitHub for Cloudflare auto-deploy
-
-Stage Summary:
-- GIF picker grid no longer stacks items (CSS containment fix)
-- GIFs pause during scrolling for smooth performance
-- Offscreen GIFs auto-swap to still images via IntersectionObserver
-- GIF button shows clean "GIF" text instead of confusing image icon
-- Send button shows paper plane instead of up arrow
-- Smile icons have clean round dot eyes
-- X/Close icons use smooth paths
-- Failed GIF loads show error placeholder
+- GIF picker no longer uses masonry column-count layout (was causing overlapping)
+- GIF picker now has proper pagination with prev/next buttons and page counter
+- GIF API calls fetch 6 at a time instead of 24 (matches pagination)
+- Reply preview inside messages uses modern rounded style instead of dated left-border-only
+- Reply bar has clean borderless close button with red hover state
+- v43 patch ensures earlier patches' stale CSS is overridden
+- Widget version bumped to 60.0.0

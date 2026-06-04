@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '59.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '60.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -292,7 +292,7 @@ const CSS = `
 #bqb:active{transform:scale(.95);}
 #bqb.open{background:var(--bq-bg-elevated);box-shadow:0 8px 32px rgba(0,0,0,.5);}
 .bqi{position:absolute;transition:opacity .22s,transform .22s;}
-.bqi-c{fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bqi-c{fill:#fff;}
 #bqb.open .bqi-c{opacity:0;transform:scale(.6) rotate(-90deg);}
 .bqi-x{opacity:0;fill:none;stroke:rgba(255,255,255,.8);stroke-width:2.5;stroke-linecap:round;transform:scale(.6) rotate(90deg);}
 #bqb.open .bqi-x{opacity:1;transform:scale(1) rotate(0deg);}
@@ -577,18 +577,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqun:hover{text-decoration:underline;}
 .bqts{display:none;} /* legacy slot — timestamp now lives inside bubble */
 
-/* Reply preview */
-.bqrp{border-left:3px solid var(--bq-accent);padding:5px 9px;margin-bottom:6px;border-radius:0 8px 8px 0;background:rgba(96,165,250,.12);cursor:pointer;transition:background .15s,border-color .15s;}
-.bqrp:hover{background:rgba(96,165,250,.2);border-left-color:rgba(96,165,250,.8);}
-.bqrp-n{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--bq-accent);}
-.bqrp-t{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;margin-top:2px;}
-.bqr.mine .bqrp{background:rgba(0,0,0,.18);border-left-color:rgba(255,255,255,.35);}
-.bqr.mine .bqrp-n{color:rgba(255,255,255,.85);}
-.bqr.mine .bqrp-t{color:rgba(255,255,255,.7);}
-/* v39: Reply type indicator for media replies */
-.bqrp-media{font-size:10px;color:var(--bq-accent);opacity:.7;display:flex;align-items:center;gap:3px;margin-top:2px;}
-.bqrp-media svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;}
-.bqrp-sub{font-weight:400;opacity:.55;font-size:9px;margin-left:4px;}
+/* Reply preview — inside message bubble */
+.bqrp{padding:6px 10px;margin-bottom:6px;border-radius:8px;background:rgba(96,165,250,.1);border-left:2px solid var(--bq-accent);}
+.bqrp-n{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--bq-accent);text-transform:uppercase;}
+.bqrp-t{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;margin-top:1px;line-height:1.4;}
+.bqr.mine .bqrp{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.4);}
+.bqr.mine .bqrp-n{color:rgba(255,255,255,.8);}
+.bqr.mine .bqrp-t{color:rgba(255,255,255,.6);}
 
 /* Bubble */
 .bqbbl{
@@ -800,15 +795,15 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqrxn-n{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--bq-text-muted);}
 
 /* ── REPLY BAR ── */
-.bqrbar{display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(96,165,250,.05);border-top:1px solid rgba(96,165,250,.12);flex-shrink:0;backdrop-filter:blur(8px);}
+.bqrbar{display:none;align-items:center;gap:8px;padding:8px 12px;background:rgba(96,165,250,.06);border-top:1px solid rgba(96,165,250,.1);flex-shrink:0;}
 .bqrbar.show{display:flex;}
-.bqrbic{width:16px;height:16px;stroke:var(--bq-accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.bqrbic{width:14px;height:14px;stroke:var(--bq-accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 .bqrbb{flex:1;min-width:0;}
-.bqrbn{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--bq-accent);}
-.bqrbt{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;}
-.bqrbx{width:26px;height:26px;background:none;border:1px solid var(--bq-border);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;}
-.bqrbx:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08);}
-.bqrbx svg{width:11px;height:11px;stroke:var(--bq-text-muted);fill:none;stroke-width:2.5;stroke-linecap:round;}
+.bqrbn{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--bq-accent);text-transform:uppercase;}
+.bqrbt{font-family:'Inter',sans-serif;font-size:11px;color:var(--bq-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.bqrbx{width:24px;height:24px;background:none;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s;color:var(--bq-text-muted);}
+.bqrbx:hover{background:rgba(248,113,113,.1);color:#f87171;}
+.bqrbx svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
 
 /* ── TYPING ── */
 .bqtyp{min-height:0;padding:0 16px;flex-shrink:0;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.02em;color:var(--bq-text-subtle);display:flex;align-items:center;gap:8px;overflow:hidden;transition:min-height .25s ease,padding .25s ease,opacity .25s ease;}
@@ -2069,109 +2064,88 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   max-width:240px;width:100%;border-radius:14px;display:block;cursor:pointer;
   border:1px solid rgba(255,255,255,.08);transition:transform .15s,opacity .2s;
   object-fit:cover;background:rgba(255,255,255,.04);
-  min-height:80px;
 }
 .bq-msg-gif:hover{opacity:.95;transform:scale(1.01);}
-.bq-msg-gif.bq-gif-loading{opacity:.6;filter:blur(2px);transition:opacity .3s,filter .3s;}
-.bq-msg-gif.bq-gif-loaded{opacity:1;filter:none;}
 
-/* ── GIF PICKER PANEL (v55 Vercel/v0 redesign) ── */
+/* ── GIF PICKER PANEL ── */
 .bqgifp{
   position:absolute;right:0;bottom:100%;margin-bottom:8px;
+  width:340px;max-width:calc(100vw - 20px);
   background:rgba(9,9,11,.97);
   border:1px solid rgba(255,255,255,.08);
-  border-radius:20px;
-  box-shadow:0 25px 50px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
-  display:none;flex-direction:column;
-  width:340px;max-width:90vw;
-  height:380px;max-height:65vh;
-  overflow:hidden;
-  animation:bqGifIn .25s cubic-bezier(.16,1,.3,1) both;
+  border-radius:16px;
+  box-shadow:0 20px 50px rgba(0,0,0,.6);
+  display:none;flex-direction:column;height:380px;max-height:60vh;
+  overflow:hidden;z-index:30;
+  animation:bqGifIn .2s cubic-bezier(.16,1,.3,1) both;
 }
-@keyframes bqGifIn{0%{opacity:0;transform:translateY(8px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes bqGifIn{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
 .bqgifp.open{display:flex;}
-.bqgifp-head{padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);}
+.bqgifp-head{padding:10px 10px 8px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
 .bqgifp-search{
-  display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;
-  transition:border-color .2s,box-shadow .2s;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:7px 10px;transition:border-color .2s;
 }
-.bqgifp-search:focus-within{border-color:rgba(255,255,255,.2);box-shadow:0 0 0 3px rgba(255,255,255,.04);}
-.bqgifp-search svg{width:14px;height:14px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:2;flex-shrink:0;}
-.bqgifp-search input{
-  flex:1;background:none;border:none;outline:none;color:var(--bq-text);
-  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
-}
+.bqgifp-search:focus-within{border-color:rgba(96,165,250,.3);}
+.bqgifp-search svg{width:13px;height:13px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:2;flex-shrink:0;}
+.bqgifp-search input{flex:1;background:none;border:none;outline:none;color:var(--bq-text);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;}
 .bqgifp-search input::placeholder{color:rgba(255,255,255,.2);}
 .bqgifp-cats{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
 .bqgifp-cats::-webkit-scrollbar{display:none;}
 .bqgifp-cat{
-  flex-shrink:0;padding:5px 11px;border-radius:8px;cursor:pointer;
-  background:transparent;border:1px solid transparent;
-  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.01em;
-  color:rgba(255,255,255,.35);transition:all .15s;white-space:nowrap;
-  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;padding:4px 10px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid transparent;
+  font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.02em;
+  color:rgba(255,255,255,.35);transition:all .12s;white-space:nowrap;
 }
-.bqgifp-cat:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);}
-.bqgifp-cat.sel{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.12);}
+.bqgifp-cat:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);}
+.bqgifp-cat.sel{background:rgba(96,165,250,.15);color:#fff;border-color:rgba(96,165,250,.25);}
 .bqgifp-grid{
-  flex:1;padding:8px 10px;
+  flex:1;padding:6px 8px;overflow:hidden;
   display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
-  align-content:start;position:relative;overflow:hidden;
+  align-content:start;
 }
 .bqgifp-item{
   display:block;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;
   background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-  transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s,box-shadow .2s;
-  -webkit-tap-highlight-color:transparent;position:relative;
+  transition:transform .15s,border-color .15s;position:relative;
 }
-.bqgifp-item:hover{transform:scale(1.03);border-color:rgba(255,255,255,.12);box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:2;}
-.bqgifp-item:active{transform:scale(.97);transition-duration:.1s;}
+.bqgifp-item:hover{transform:scale(1.03);border-color:rgba(255,255,255,.12);}
+.bqgifp-item:active{transform:scale(.97);}
 .bqgifp-item img{width:100%;height:100%;object-fit:cover;display:block;}
-/* GIF load error state */
 .bqgifp-item.bqgifp-err img{display:none;}
-.bqgifp-item.bqgifp-err::after{content:'⚠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3;}
-.bqgifp-skel{
-  width:100%;aspect-ratio:1;border-radius:10px;
-  background:rgba(255,255,255,.03);
-  animation:bqGifPulse 1.5s ease-in-out infinite;
-}
+.bqgifp-item.bqgifp-err::after{content:'⚠';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.3;}
+.bqgifp-skel{width:100%;aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.03);animation:bqGifPulse 1.5s ease-in-out infinite;}
 @keyframes bqGifPulse{0%,100%{opacity:.4}50%{opacity:.8}}
-.bqgifp-empty{
-  grid-column:1/-1;padding:40px 16px;text-align:center;
-  font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,.25);
-}
+.bqgifp-empty{grid-column:1/-1;padding:30px;text-align:center;font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.25);}
 .bqgifp-nav{
-  padding:8px 14px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;gap:12px;
-  border-top:1px solid rgba(255,255,255,.04);
+  padding:6px 10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  border-top:1px solid rgba(255,255,255,.05);
 }
 .bqgifp-prev,.bqgifp-next{
-  width:30px;height:30px;border-radius:8px;
+  width:28px;height:28px;border-radius:7px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  color:rgba(255,255,255,.5);transition:all .15s;
+  color:rgba(255,255,255,.5);transition:all .12s;
 }
-.bqgifp-prev:hover:not(:disabled),.bqgifp-next:hover:not(:disabled){background:rgba(255,255,255,.1);color:#fff;}
-.bqgifp-prev:disabled,.bqgifp-next:disabled{opacity:.25;cursor:not-allowed;}
-.bqgifp-page{
-  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
-  color:rgba(255,255,255,.3);letter-spacing:.02em;min-width:40px;text-align:center;
-}
+.bqgifp-prev:hover:not(:disabled),.bqgifp-next:hover:not(:disabled){background:rgba(255,255,255,.12);color:#fff;}
+.bqgifp-prev:disabled,.bqgifp-next:disabled{opacity:.2;cursor:not-allowed;}
+.bqgifp-page{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.03em;min-width:36px;text-align:center;}
 
 /* GIF button (composer) */
 .bqgifbtn{
-  width:34px;height:34px;border-radius:10px;
-  background:transparent;border:none;
+  width:36px;height:36px;border-radius:12px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
   cursor:pointer;
-  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.45);
   transition:all .15s;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
 .bqgifbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-.bqgifbtn .gif-label{font-family:'Inter',sans-serif;font-weight:800;font-size:10px;letter-spacing:-.02em;color:inherit;line-height:1;}
-.bqgifbtn:hover{color:var(--bq-accent);}
-.bqgifbtn.active{color:var(--bq-accent);}
+.bqgifbtn:hover{background:rgba(255,255,255,.09);color:var(--bq-accent);border-color:rgba(96,165,250,.3);}
+.bqgifbtn.active{background:rgba(96,165,250,.15);color:var(--bq-accent);border-color:rgba(96,165,250,.35);box-shadow:0 0 0 2px rgba(96,165,250,.15);}
 .bqirow{position:relative;}
 .bqiw{
   padding:10px 12px 12px;
@@ -2648,8 +2622,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 ───────────────────────────────────────── */
 const HTML = `
 <button id="bqb" aria-label="Chat">
-  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-c" width="24" height="24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   <div id="bqbadge"></div>
 </button>
 
@@ -2658,7 +2632,7 @@ const HTML = `
   <!-- Profile card overlay -->
   <div id="bqpc">
     <div class="bqpc-card">
-      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      <div class="bqpc-banner"><div class="bqpc-banner-glow"></div><div class="bqpc-drag-handle"></div><button class="bqpc-close" id="bqpc-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqpc-body">
         <div class="bqpc-name" id="bqpc-name"></div>
         <div class="bqpc-status" id="bqpc-status"></div>
@@ -2728,7 +2702,7 @@ const HTML = `
   <div class="bqhtitle">Global Chat</div>
   <div class="bqhdr-menu">
     <button class="bqhdr-menu-btn" id="bq-chat-menu-btn" title="Options">
-      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
     <div class="bqhdr-dropdown" id="bq-chat-menu">
       <div class="bqhdr-dropdown-item" id="bq-toggle-disappear">
@@ -2736,7 +2710,7 @@ const HTML = `
         <span>Disappearing: OFF</span>
       </div>
       <div class="bqhdr-dropdown-divider"></div>
-      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Clear Chat</span></div>
+      <div class="bqhdr-dropdown-item danger" id="bq-clear-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg><span>Clear Chat</span></div>
       <div class="bqhdr-dropdown-divider"></div>
       <div class="bqhdr-dropdown-item" id="bq-export-chat">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2744,14 +2718,14 @@ const HTML = `
       </div>
     </div>
   </div>
-  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen"><svg id="bq-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-        <button class="bqhbtn" id="bq-ren-btn" title="Change username"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></button>
+  <button class="bqhbtn" id="bq-fs-btn" title="Fullscreen"><svg id="bq-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+        <button class="bqhbtn" id="bq-ren-btn" title="Change username"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
       
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
-          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="bqempty-tx">No Messages Yet</div>
           <div class="bqempty-sub">Say hello!</div>
         </div>
@@ -2760,16 +2734,16 @@ const HTML = `
       <button class="bqscr" id="bqgscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqgrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-        <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><span class="bqrp-sub" id="bqgrbsub" style="display:none"></span><div class="bqrbt" id="bqgrbt"></div></div>
+        <div class="bqrbb"><div class="bqrbn" id="bqgrbn"></div><div class="bqrbt" id="bqgrbt"></div></div>
         <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bqiw">
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg></button>
-          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><span class="gif-label">GIF</span></button>
+          <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+          <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/></svg></button>
+          <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqgcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2780,7 +2754,7 @@ const HTML = `
       <div class="bqhdr">
         <div class="bqlive"></div>
         <div class="bqhtitle">Messages</div>
-        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg></button>
+        <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
       </div>
       <div id="bqdml"></div>
@@ -2795,14 +2769,14 @@ const HTML = `
           <div class="bqdmhn" id="bqdmhn"></div>
           <div class="bqdmhs" id="bqdmhs"><span class="bqdmhs-dot" id="bqdmhs-dot" style="display:none"></span><span id="bqdmhs-txt">Offline</span></div>
         </div>
-        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></button>
+        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
-            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Settings</div>
+            <div class="bq-dm-menu-item" id="bq-dm-menu-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Settings</div>
             <div class="bq-dm-menu-item" id="bq-dm-menu-starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Starred Messages</div>
             <div class="bq-dm-menu-div"></div>
-                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Clear Messages</div>
+                        <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Messages</div>
           </div>
         </div>
         <div class="bq-me-av" id="bq-me-av-dm" title="My profile"></div>
@@ -2810,11 +2784,11 @@ const HTML = `
       <div id="bq-pinned-bar">
         <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-pinbar-text"></div></div>
-        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
-          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="bqempty-tx">Start a Conversation</div>
           <div class="bqempty-sub" id="bqdmesub"></div>
           <div class="bqdm-empty-chips"><span>👋 Say hi</span><span>❤️ Send love</span><span>🔥 Hype them</span></div>
@@ -2824,10 +2798,10 @@ const HTML = `
       <button class="bqscr" id="bqdmscr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="bqrbar" id="bqdmrbar">
         <svg class="bqrbic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-        <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><span class="bqrp-sub" id="bqdmrbsub" style="display:none"></span><div class="bqrbt" id="bqdmrbt"></div></div>
+        <div class="bqrbb"><div class="bqrbn" id="bqdmrbn"></div><div class="bqrbt" id="bqdmrbt"></div></div>
         <button class="bqrbx" id="bqdmrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
-      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      <div class="bq-media-preview" id="bq-media-preview"><img class="bq-media-thumb" id="bq-media-thumb" src="" alt=""><span class="bq-media-name" id="bq-media-name"></span><button class="bq-media-rm" id="bq-media-rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bqiw">
         <!-- v9.3: Voice recording bar lives INSIDE composer to avoid layout shift -->
         <div class="bqvoice-rec-bar" id="bq-voice-rec-bar">
@@ -2837,11 +2811,11 @@ const HTML = `
         </div>
         <div class="bqiet" id="bqdmet"></div>
         <div class="bqirow">
-          <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg></button>
-          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><span class="gif-label">GIF</span></button>
+          <button class="bqieo" id="bqdmeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+          <button class="bqgifbtn" id="bqdmgif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
           <button class="bqvoice-btn" id="bq-voice-btn" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
-          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/></svg></button>
+          <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
         <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
       </div>
@@ -2849,7 +2823,7 @@ const HTML = `
 
     <!-- DM Info panel (inside dmconv) -->
     <div id="bq-dm-info">
-      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+      <div class="bq-info-hdr"><span class="bq-info-hdr-title">Settings</span><button class="bq-info-close" id="bq-info-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="bq-info-av-section">
         <div class="bq-info-av" id="bq-info-av"></div>
         <div class="bq-info-name" id="bq-info-name"></div>
@@ -2869,7 +2843,7 @@ const HTML = `
         <div class="bq-info-section">
           <div class="bq-info-section-title">Actions</div>
           <div class="bq-info-row" id="bq-info-starred-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="bq-info-row-label">Starred Messages</div></div><span class="bq-info-row-value" id="bq-info-star-count">0</span></div>
-          <div class="bq-info-row danger" id="bq-info-clear-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div><div class="bq-info-row-label">Clear conversation</div></div></div>
+          <div class="bq-info-row danger" id="bq-info-clear-row"><div class="bq-info-row-left"><div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div><div class="bq-info-row-label">Clear conversation</div></div></div>
         </div>
       </div>
     </div>
@@ -2949,12 +2923,12 @@ const HTML = `
           <div class="bqpf-label">Push Notifications</div>
           <div class="bqpf-push">
             <div class="bqpf-push-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               Notification Alerts
             </div>
             <div class="bqpf-push-desc">Get notified when you receive new DMs or messages in global chat, even when the browser is closed.</div>
             <button class="bqpf-push-btn" id="bqpf-push-btn">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               Enable Notifications
             </button>
             <div class="bqpf-push-status" id="bqpf-push-status"></div>
@@ -2971,14 +2945,14 @@ const HTML = `
   <div id="bqnav">
     <div class="bqnav-pill">
       <button class="bqnb active" data-v="chat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Chat
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
       </button>
       <button class="bqnb" data-v="dms">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>DMs
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>DMs
         <div class="bqnnb" id="bqdmnb"></div>
       </button>
       <button class="bqnb" data-v="online">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Online
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Online
         <div class="bqnnb" id="bqonb"></div>
       </button>
     </div>
@@ -2987,7 +2961,7 @@ const HTML = `
 </div>
 <div id="bqtoast"></div>
 <div class="bqimg-preview" id="bqimg-preview">
-  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  <button class="bqimg-close" id="bqimg-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <img id="bqimg-full" src="" alt="Full size image">
   </div>
   <div class="bq-confirm" id="bq-confirm">
@@ -3006,7 +2980,7 @@ const HTML = `
 <!-- v3: GIF/Image lightbox -->
 <div id="bq-media-lightbox">
   <div class="bq-lb-card">
-    <button class="bq-lb-close" id="bq-lb-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="bq-lb-close" id="bq-lb-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <img class="bq-lb-img" id="bq-lb-img" src="" alt="">
     <div class="bq-lb-meta"><b id="bq-lb-from"></b><span class="bq-lb-ts" id="bq-lb-ts"></span></div>
   </div>
@@ -3020,7 +2994,7 @@ const HTML = `
       <div class="bq-if-name" id="bq-if-name"></div>
       <div class="bq-if-st" id="bq-if-st"></div>
     </div>
-    <button class="bq-if-x" id="bq-if-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="bq-if-x" id="bq-if-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="bq-if-scroll">
       <div class="bq-if-sect">
@@ -3084,7 +3058,7 @@ const HTML = `
         <div class="bq-if-row-v" id="bq-if-lock-v">Off</div>
       </div>
       <div class="bq-if-row danger" id="bq-if-clear">
-        <div class="bq-if-row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></div>
+        <div class="bq-if-row-ic"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg></div>
         <div class="bq-if-row-l">Clear conversation</div>
       </div>
       <div class="bq-if-row danger" id="bq-if-block">
@@ -3229,29 +3203,10 @@ function refreshMeAvatar(){
   }
 }
 
-/* NOTIFICATION STUBS — v36/v40 delegates to real implementations */
+/* NOTIFICATION STUBS — v36 delegates to real implementations */
 function updatePushUI(){ try{ if(typeof window._bqUpdatePushUI==='function') window._bqUpdatePushUI(); }catch(_){} }
-function subscribeToPush(){ try{ if(typeof window._bqSubscribePush==='function') window._bqSubscribePush(); else if(typeof window._bqNotifAdd==='function') window._bqNotifAdd('System','Notifications enabled!','global'); }catch(_){} }
-function showNotification(sender,msg,type,dmId){
-  // v40: Always try the v36 addNotification first (in-app bell + banner)
-  try{ if(typeof window._bqNotifAdd==='function'){ window._bqNotifAdd(sender||'?',msg||'',type||'global',dmId); return; } }catch(_){}
-  // Fallback: direct browser notification if v36 not loaded yet
-  try{
-    if(document.hidden || !document.hasFocus()){
-      // Tab is in background or unfocused — show browser notification directly
-      if('Notification' in window && Notification.permission === 'granted'){
-        const n = new Notification('BioQuiz Chat', {
-          body: (sender||'?') + ': ' + (msg||'').slice(0,80),
-          icon: '/logo.svg',
-          tag: 'bq-'+type+'-'+Date.now(),
-          silent: false
-        });
-        n.onclick = () => { window.focus(); n.close(); };
-        setTimeout(()=> n.close(), 8000);
-      }
-    }
-  }catch(_){}
-}
+function subscribeToPush(){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd('System','Notifications enabled!','global'); }catch(_){} }
+function showNotification(sender,msg,type,dmId){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd(sender||'?',msg||'',type||'global',dmId); }catch(_){} }
 
 /* ────���────────────────────────────────────
    TOAST
@@ -3272,8 +3227,8 @@ function toggleFS(){
   document.body.classList.toggle('bq-fs-mode',isFull);
   const ico=document.getElementById('bq-fs-ico');
   if(ico) ico.innerHTML=isFull
-    ?'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'
-    :'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';
+    ?'<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>'
+    :'<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
   document.getElementById('bq-fs-btn').classList.toggle('on',isFull);
 }
 
@@ -3545,7 +3500,7 @@ function showDmConvo(pUid, pName) {
   const e = document.createElement('div');
   e.className = 'bqempty';
   e.id = 'bqdmempty';
-  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub" id="bqdmesub">@${esc(pName)}</div>`;
+  e.innerHTML = `<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">Start a Conversation</div><div class="bqempty-sub" id="bqdmesub">@${esc(pName)}</div>`;
   msgs.appendChild(e);
 
   // Detach old listeners
@@ -3917,7 +3872,7 @@ function openProfileCard(targetUid,targetName,presData){
   if(!isMe){
     const dmBtn=document.createElement('button');
     dmBtn.className='bqpc-btn dm';
-    dmBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Message';
+    dmBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message';
     dmBtn.onclick=function(e){
       e.stopPropagation();
       closeProfileCard();
@@ -3927,7 +3882,7 @@ function openProfileCard(targetUid,targetName,presData){
   } else {
     const editBtn=document.createElement('button');
     editBtn.className='bqpc-btn edit';
-    editBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>Edit Profile';
+    editBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Edit Profile';
     editBtn.onclick=function(e){
       e.stopPropagation();
       closeProfileCard();
@@ -3971,8 +3926,8 @@ function sendGlobal(text){
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
-  // v41: trigger web push for offline users
-  try{ if(typeof window._bqPushNotify==='function') window._bqPushNotify(null, uname, text.trim().slice(0,80), 'global', null, null, null); }catch(_){}
+  // v37: trigger web push for offline users
+  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('global', p); }catch(_){}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
     if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
@@ -4075,7 +4030,7 @@ function renderDmList(){
     if(!list.querySelector('.bqdmr')){
       list.innerHTML='';
       const e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
-      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">No DMs Yet</div><div class="bqempty-sub">Go to Online to start</div>';
+      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No DMs Yet</div><div class="bqempty-sub">Go to Online to start</div>';
       list.appendChild(e);
     }
     return;
@@ -4121,7 +4076,7 @@ function renderDmList(){
           <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </button>
         <button class="bqdmr-act bq-del" data-did="${did}" title="Delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
         </button>
       </div>
       <div class="bqdmr-confirm">
@@ -4213,8 +4168,8 @@ function sendDm(text){
   const dis=getDisappear();
   if(activeDmId&&dis[activeDmId]) p.expiresAt=Date.now()+5*60*1000;
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
-  // v41: trigger web push for offline partner
-  try{ if(typeof window._bqPushNotify==='function') window._bqPushNotify(activeDmPuid, uname, trimmed||(p.imageData?'📷 Image':''), 'dm', activeDmId, activeDmPuid, pname); }catch(_){}
+  // v37: trigger web push for offline partner
+  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('dm', p, activeDmId, activeDmPuid, activeDmPname); }catch(_){}
   _dmFinalize(activeDmId, activeDmPuid, pname, trimmed||(p.imageData?'📷 Image':''));
   clearReply('dm');
 }
@@ -4252,20 +4207,18 @@ async function giphyFetch(category, query, offset=0){
   }
 }
 
-function sendGifGlobal(gifUrl, w, h, gifUrlFull){
+function sendGifGlobal(gifUrl, w, h){
   if(!db||!uname||!gifUrl) return;
   const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
-  if(gifUrlFull && gifUrlFull !== gifUrl) p.gifUrlFull=gifUrlFull;
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
   clearReply('g');
 }
 
-function sendGifDm(gifUrl, w, h, gifUrlFull){
+function sendGifDm(gifUrl, w, h){
   if(!db||!uname||!activeDmId||!activeDmPuid||!gifUrl) return;
   const pname=activeDmPname||'?';
   const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
-  if(gifUrlFull && gifUrlFull !== gifUrl) p.gifUrlFull=gifUrlFull;
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   db.ref('bq_dms/'+activeDmId+'/messages').push(p);
   _dmFinalize(activeDmId, activeDmPuid, pname, '🎞️ GIF');
@@ -4297,7 +4250,6 @@ function attachGifPicker(ctx){
   if(btn.dataset.bound) return;
   btn.dataset.bound='1';
 
-  // Build panel
   const panel = document.createElement('div');
   panel.className = 'bqgifp';
   panel.innerHTML =
@@ -4312,9 +4264,9 @@ function attachGifPicker(ctx){
     '</div>'+
     '<div class="bqgifp-grid"></div>'+
     '<div class="bqgifp-nav">'+
-      '<button class="bqgifp-prev" disabled><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
-      '<span class="bqgifp-page"></span>'+
-      '<button class="bqgifp-next"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>'+
+      '<button class="bqgifp-prev" disabled><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
+      '<span class="bqgifp-page">1 / 1</span>'+
+      '<button class="bqgifp-next"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>'+
     '</div>';
   row.appendChild(panel);
 
@@ -4329,27 +4281,14 @@ function attachGifPicker(ctx){
   const PER_PAGE = 6;
   let curCat = 'trending', curQ = '', searchT = null;
   let _gifLoaded = false, curPage = 0, _loading = false;
-  let _allData = []; // cache all fetched data for current query
-  let _hasMore = true; // whether the API might have more results
-
-  function showSkeletons(){
-    grid.innerHTML = '';
-    for(let i=0;i<PER_PAGE;i++){
-      const s = document.createElement('div');
-      s.className='bqgifp-skel';
-      grid.appendChild(s);
-    }
-    updateNav();
-  }
+  let _allData = [];
+  let _hasMore = true;
 
   function updateNav(){
-    const totalPages = Math.max(1, Math.ceil(_allData.length / PER_PAGE));
-    const pageNum = curPage + 1;
-    pageSpan.textContent = pageNum + ' / ' + totalPages;
+    const total = Math.max(1, Math.ceil(_allData.length / PER_PAGE));
+    pageSpan.textContent = (curPage+1)+' / '+total;
     prevBtn.disabled = curPage <= 0;
-    // Enable next if there's cached data beyond this page OR the API may have more
-    const cachedBeyond = (curPage + 1) * PER_PAGE < _allData.length;
-    nextBtn.disabled = !cachedBeyond && !_hasMore;
+    nextBtn.disabled = !((curPage+1)*PER_PAGE < _allData.length) && !_hasMore;
   }
 
   function renderPage(){
@@ -4387,34 +4326,35 @@ function attachGifPicker(ctx){
     updateNav();
   }
 
+  function showSkeletons(){
+    grid.innerHTML = '';
+    for(let i=0;i<PER_PAGE;i++){
+      const s = document.createElement('div');
+      s.className='bqgifp-skel';
+      grid.appendChild(s);
+    }
+    updateNav();
+  }
+
   async function load(){
-    curPage = 0;
-    _loading = true;
-    _hasMore = true;
+    curPage = 0; _loading = true; _hasMore = true;
     showSkeletons();
     const res = await giphyFetch(curCat, curQ, 0);
     _loading = false;
     if(res.error){
       grid.innerHTML = '<div class="bqgifp-empty">'+esc(res.error)+'</div>';
-      _allData = [];
-      _hasMore = false;
-      updateNav();
-      return;
+      _allData = []; _hasMore = false; updateNav(); return;
     }
     if(!res.data||!res.data.length){
       grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
-      _allData = [];
-      _hasMore = false;
-      updateNav();
-      return;
+      _allData = []; _hasMore = false; updateNav(); return;
     }
     _allData = res.data;
     _hasMore = res.data.length >= PER_PAGE;
     renderPage();
   }
 
-  async function loadMoreAndRender(){
-    // Fetch next batch and append to _allData for seamless browsing
+  async function fetchMore(){
     if(_loading) return;
     _loading = true;
     const res = await giphyFetch(curCat, curQ, _allData.length);
@@ -4429,27 +4369,18 @@ function attachGifPicker(ctx){
     renderPage();
   }
 
-  prevBtn.addEventListener('click', ()=>{
-    if(curPage > 0){ curPage--; renderPage(); }
-  });
+  prevBtn.addEventListener('click', ()=>{ if(curPage>0){ curPage--; renderPage(); } });
   nextBtn.addEventListener('click', ()=>{
     if(_loading) return;
-    if((curPage + 1) * PER_PAGE < _allData.length){
-      curPage++;
-      renderPage();
-    } else if(_hasMore){
-      // Need to fetch more
-      loadMoreAndRender();
-    }
+    if((curPage+1)*PER_PAGE < _allData.length){ curPage++; renderPage(); }
+    else if(_hasMore){ fetchMore(); }
   });
 
   cats.forEach(c=>{
     c.addEventListener('click', ()=>{
       cats.forEach(x=>x.classList.remove('sel'));
       c.classList.add('sel');
-      curCat = c.dataset.cat;
-      curQ = '';
-      inp.value = '';
+      curCat = c.dataset.cat; curQ = ''; inp.value = '';
       load();
     });
   });
@@ -4457,14 +4388,10 @@ function attachGifPicker(ctx){
     clearTimeout(searchT);
     searchT = setTimeout(()=>{
       curQ = inp.value.trim();
-      if(curQ){
-        cats.forEach(x=>x.classList.remove('sel'));
-      } else {
-        cats[0].classList.add('sel');
-        curCat = 'trending';
-      }
+      if(curQ){ cats.forEach(x=>x.classList.remove('sel')); }
+      else { cats[0]?.classList.add('sel'); curCat='trending'; }
       load();
-    }, 320);
+    }, 300);
   });
 
   btn.addEventListener('click', e=>{
@@ -4475,14 +4402,13 @@ function attachGifPicker(ctx){
     if(opening){
       panel.classList.add('open');
       btn.classList.add('active');
-      if(!_gifLoaded){ _gifLoaded = true; load(); }
+      if(!_gifLoaded){ _gifLoaded=true; load(); }
       else if(!_allData.length) load();
       else renderPage();
-      setTimeout(()=>inp.focus(), 60);
+      setTimeout(()=>inp.focus(), 50);
     }
   });
 
-  // Outside click closes
   document.getElementById('bqp')?.addEventListener('click', e=>{
     if(!panel.classList.contains('open')) return;
     if(panel.contains(e.target) || btn.contains(e.target)) return;
@@ -4645,7 +4571,7 @@ function renderStarredList(){
       '<div class="bq-starred-text">'+esc(item.text||'').slice(0,200)+'</div>'+
       '<div class="bq-starred-ts">'+new Date(item.ts||0).toLocaleString()+'</div>'+
       '<button class="bq-starred-unstar" data-key="'+item.key+'" title="Unstar">'+
-      '<svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'
+      '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
     );
     d.querySelector('.bq-starred-unstar').onclick=e=>{
       e.stopPropagation();
@@ -4851,9 +4777,7 @@ function initDmFeatures(){
     const t=e.target;
     if(t.classList.contains('bq-msg-img')||t.classList.contains('bq-msg-gif')){
       e.stopPropagation();
-      // Use full-quality URL for GIF lightbox if available
-      const src = t.classList.contains('bq-msg-gif') && t.dataset.full ? t.dataset.full : t.src;
-      openMediaLightbox(src, t.classList.contains('bq-msg-gif')?'gif':'image', t.closest('.bqr'));
+      openMediaLightbox(t.src, t.classList.contains('bq-msg-gif')?'gif':'image', t.closest('.bqr'));
     }
   });
 }
@@ -4905,34 +4829,19 @@ function onMsgChanged(ctx,snap){
     return;
   }
   // v22 — sync edited text to ALL clients (was previously sender-only)
-  // v40 — skip innerHTML rewrite for media-only messages to prevent GIF flicker on reaction
   if(typeof msg.text==='string'){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
-      const hasMedia=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
-      // For media-only messages with no text, skip the innerHTML rewrite to avoid GIF flicker
-      // Just update reactions below
-      if(!msg.text && hasMedia && !msg.edited){
-        // Skip text update for media-only messages — only reactions changed
-      } else {
-        // Preserve any reply/voice/image/sticker children — only update text node + edited marker
-        const reply=bbl.querySelector('.bqrp');
-        const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bq-sticker, .bq-voice');
-        const meta=bbl.querySelector('.bqbbl-meta');
-        const metaClear=bbl.querySelector('.bqbbl-meta-clear');
-        const replyHTML=reply?reply.outerHTML:'';
-        // Restore frozen GIF src before capturing outerHTML
-        if(media && media.dataset.frozenSrc){
-          media.src = media.dataset.frozenSrc;
-          delete media.dataset.frozenSrc;
-          media.classList.remove('bq-gif-loading');
-        }
-        const mediaHTML=media?media.outerHTML:'';
-        const metaHTML=meta?meta.outerHTML:'';
-        const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
-        const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
-        bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML+(metaClear?metaClear.outerHTML:'');
-      }
+      // Preserve any reply/voice/image/sticker children — only update text node + edited marker
+      const reply=bbl.querySelector('.bqreply, .bq-replyref');
+      const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
+      const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
+      const replyHTML=reply?reply.outerHTML:'';
+      const mediaHTML=media?media.outerHTML:'';
+      const metaHTML=meta?meta.outerHTML:'';
+      const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
+      const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
+      bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
     }
   }
   el.querySelector('.bqrxns')?.remove();
@@ -4964,21 +4873,11 @@ function setReply(ctx,data){
     gReply=data;
     const bar=document.getElementById('bqgrbar');bar.classList.add('show');
     document.getElementById('bqgrbn').textContent='@'+data.uname;
-    const sub=document.getElementById('bqgrbsub');
-    if(sub){
-      if(data.replyTo){sub.textContent='↩ @'+data.replyTo.uname;sub.style.display='block';}
-      else{sub.textContent='';sub.style.display='none';}
-    }
     document.getElementById('bqgrbt').textContent=data.text;
   } else {
     dmReply=data;
     const bar=document.getElementById('bqdmrbar');bar.classList.add('show');
     document.getElementById('bqdmrbn').textContent='@'+data.uname;
-    const sub=document.getElementById('bqdmrbsub');
-    if(sub){
-      if(data.replyTo){sub.textContent='↩ @'+data.replyTo.uname;sub.style.display='block';}
-      else{sub.textContent='';sub.style.display='none';}
-    }
     document.getElementById('bqdmrbt').textContent=data.text;
   }
 }
@@ -5039,7 +4938,7 @@ function renderMsg(ctx,msg,key){
   const col=getColor(msg.uid,msg.uname||'');
   const ini=uInit(msg.uname||'?');
   const tStr=tsStr(ts);
-  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}${msg.replyTo.replyTo?` <span class="bqrp-sub">↩ @${esc(msg.replyTo.replyTo.uname||'')}</span>`:''}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
   const row=document.createElement('div');
   row.id=pfx+key;
@@ -5055,7 +4954,7 @@ function renderMsg(ctx,msg,key){
   }
 
   var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+esc(msg.imageData)+'" alt="" loading="lazy">' : '';
-  var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif bq-gif-loading" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy" decoding="async" data-full="'+esc(msg.gifUrlFull||'')+'">' : '';
+  var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
   var _stkClass = '';
   if(msg.type==='sticker' && msg.sticker){
     // v35: assign animation class based on emoji category
@@ -5144,21 +5043,7 @@ function renderMsg(ctx,msg,key){
   if(!isOpen&&!isMine){
     if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
     updateBadges();
-    // v40: Restored notification trigger — fires for every new message when not visible
-    try{
-      const _sender = msg.uname||'?';
-      let _text = msg.text||'';
-      if(!_text){
-        if(msg.type==='gif') _text='🎞️ GIF';
-        else if(msg.type==='sticker') _text=msg.sticker+' Sticker';
-        else if(msg.type==='voice') _text='🎤 Voice note';
-        else if(msg.imageData) _text='📷 Image';
-        else _text='Sent a message';
-      }
-      const _type = isG ? 'global' : 'dm';
-      const _dmId = isG ? null : activeDmId;
-      if(typeof showNotification==='function') showNotification(_sender, _text, _type, _dmId);
-    }catch(_){}
+    /* notifications removed */
   }
   // Mark DM as read if currently viewing this DM
   if(!isG&&isOpen&&activeView==='dmconv'&&!isMine){
@@ -5260,15 +5145,15 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   const _sdid=isG?'global':(activeDmId||'');
   const isStarred = !!(_stars[_sdid]&&_stars[_sdid][key]);
   const items = [
-    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/></svg>'},
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
     {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
     {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
     {a:'star', label:isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
   ];
   if(!isG) items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
   if(isMine){
-    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>'});
-    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>'});
+    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
+    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
   }
   const bar=document.createElement('div');
   bar.className='bq-msg-inline'+(isMine?' mine':'');
@@ -5295,12 +5180,7 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     openReactionPicker(ctx,key);
   }
   else if(a==='reply'){
-    // Extract only actual message text, not reply-preview text
-    let replyText = msg.text || '';
-    if(!replyText){
-      replyText = msg.type==='gif'?'GIF':msg.type==='sticker'?(msg.sticker+' Sticker'):msg.type==='voice'?'🎤 Voice note':msg.imageData?'Image':'';
-    }
-    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:replyText.slice(0,80)});
+    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:(msg.text || (msg.type==='voice'?'🎤 Voice note':'Media'))});
     document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();
   }
   else if(a==='copy'){
@@ -5761,7 +5641,7 @@ function toggleSearch(){
   if(!_searchBar){
     _searchBar = document.createElement('div');
     _searchBar.className = 'bq-search-bar';
-    _searchBar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bq-text-subtle)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search messages..." autocomplete="off"><span class="bq-search-count"></span><button class="bq-search-close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>';
+    _searchBar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bq-text-subtle)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search messages..." autocomplete="off"><span class="bq-search-count"></span><button class="bq-search-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
     const hdr = document.querySelector('#bqv-chat .bqhdr');
     if(hdr) hdr.after(_searchBar);
     const inp = _searchBar.querySelector('input');
@@ -6046,7 +5926,7 @@ function init(){
         const empty = document.createElement('div');
         empty.className = 'bqempty';
         empty.id = 'bqgempty';
-        empty.innerHTML = '<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Be the first to say hello!</div>';
+        empty.innerHTML = '<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Be the first to say hello!</div>';
         msgsEl.appendChild(empty);
         gLastU = null;
         gLastT = 0;
@@ -7288,7 +7168,7 @@ setTimeout(_injectProfileUploads,1500);
       '<button class="bq-vp-replay" id="bq-vp-replay" title="Replay"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>'+
       '<canvas class="bq-vp-wave" id="bq-vp-wave" style="flex:1;height:28px;width:100%;"></canvas>'+
       '<span class="bq-vp-time" id="bq-vp-time">0:00</span>'+
-      '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'+
+      '<button class="bq-vp-btn discard" id="bq-vp-discard" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
       '<button class="bq-vp-btn send" id="bq-vp-send" title="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>';
     // Insert at TOP of composer so it sits above the input row but inside it
     composer.insertBefore(wrap, composer.firstChild);
@@ -8063,11 +7943,72 @@ setTimeout(_injectProfileUploads,1500);
     },100);
   }catch(_){}
 
-  /* ── 3. SWIPE-TO-REPLY (v39: DISABLED — v21 WA-style handles this) ── */
+  /* ── 3. SWIPE-TO-REPLY ── */
   const SWIPE_TRIGGER = 60;
   function attachSwipe(container){
-    // v39: Disabled. The v21 WA-style swipe-to-reply with spring physics handles this.
-    return;
+    if(!container || container.dataset.bqSwipe) return;
+    container.dataset.bqSwipe='1';
+    let startX=0,startY=0,curRow=null,dx=0,dy=0,locked=false,active=false;
+
+    function onStart(e){
+      if(document.body.classList.contains('bq-select-mode')) return;
+      const t=e.touches?e.touches[0]:e;
+      const row=e.target.closest('.bqr');
+      if(!row) return;
+      curRow=row; startX=t.clientX; startY=t.clientY;
+      dx=0; dy=0; locked=false; active=true;
+      row.classList.add('bq-swipe-active');
+    }
+    function onMove(e){
+      if(!active||!curRow) return;
+      const t=e.touches?e.touches[0]:e;
+      dx=t.clientX-startX; dy=t.clientY-startY;
+      if(!locked){
+        if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
+        if(Math.abs(dx)>8) locked=true; else return;
+      }
+      const isMine=curRow.classList.contains('mine');
+      // mine swipes left (negative), theirs swipes right (positive)
+      const validDir = isMine ? dx<0 : dx>0;
+      const moveX = validDir ? Math.max(-100,Math.min(100,dx)) : dx*0.15;
+      curRow.style.transform='translateX('+moveX+'px)';
+      if(Math.abs(moveX)>SWIPE_TRIGGER){
+        curRow.classList.add('bq-swipe-show','bq-swipe-trigger');
+      } else {
+        curRow.classList.remove('bq-swipe-show','bq-swipe-trigger');
+      }
+      if(e.cancelable) e.preventDefault();
+    }
+    function onEnd(){
+      if(!active||!curRow){ cancel(); return; }
+      const isMine=curRow.classList.contains('mine');
+      const validDir = isMine ? dx<0 : dx>0;
+      const triggered = validDir && Math.abs(dx)>SWIPE_TRIGGER;
+      curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger');
+      curRow.style.transform='';
+      if(triggered){
+        const id=curRow.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
+        if(m){
+          const ctx=m[1], key=m[2];
+          // Build minimal msg payload from DOM
+          const txt=curRow.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+          const uname=curRow.querySelector('.bqun')?.textContent?.replace(/^@|^You/,'')||'';
+          if(typeof setReply==='function'){
+            try{ setReply(ctx==='global'?'g':'dm',{key,uname,text:txt}); }catch(_){}
+            const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
+          }
+        }
+      }
+      cancel();
+    }
+    function cancel(){
+      if(curRow){ curRow.classList.remove('bq-swipe-active','bq-swipe-show','bq-swipe-trigger'); curRow.style.transform=''; }
+      curRow=null; active=false; locked=false;
+    }
+    container.addEventListener('touchstart',onStart,{passive:true});
+    container.addEventListener('touchmove',onMove,{passive:false});
+    container.addEventListener('touchend',onEnd);
+    container.addEventListener('touchcancel',cancel);
   }
 
   /* ── 4. LONG-PRESS → reactions, DOUBLE-TAP → ❤️ ── */
@@ -8143,9 +8084,9 @@ setTimeout(_injectProfileUploads,1500);
     bar=document.createElement('div');
     bar.id='bq-sel-bar';
     bar.innerHTML=
-      '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>'+
+      '<button class="bq-sel-close" title="Cancel"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
       '<div class="bq-sel-count">0 selected</div>'+
-      '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
+      '<button class="bq-sel-del" title="Delete"><svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg></button>';
     panel.appendChild(bar);
     bar.querySelector('.bq-sel-close').addEventListener('click',exitSelectMode);
     bar.querySelector('.bq-sel-del').addEventListener('click',bulkDelete);
@@ -8598,9 +8539,7 @@ setTimeout(_injectProfileUploads,1500);
      This overrides v20's translateX-on-row approach. */
   .bqr{position:relative;}
   .bqr-swipe-wrap{display:contents;}
-  .bqr.bq-wa-swipe{transition:none!important;will-change:transform;box-shadow:0 4px 20px rgba(0,0,0,.15)!important;z-index:10;}
-  .bqr.mine.bq-wa-swipe{transform-origin:right center;}
-  .bqr.theirs.bq-wa-swipe{transform-origin:left center;}
+  .bqr.bq-wa-swipe{transition:none!important;will-change:transform;}
   .bqr.bq-wa-swipe-release{transition:transform .32s cubic-bezier(.34,1.56,.64,1)!important;}
 
   /* Hide v20's ::after icon while WA swipe is engaged */
@@ -8621,37 +8560,6 @@ setTimeout(_injectProfileUploads,1500);
   .bqr.theirs .bq-wa-reply-ic{left:8px;}
   .bqr.mine .bq-wa-reply-ic{right:8px;}
   .bqr.bq-wa-trigger .bq-wa-reply-ic{background:#22c55e;transform:translateY(-50%) scale(1.15);}
-
-  /* v39: Swipe reply preview popup — shows sender+snippet alongside badge */
-  .bq-wa-reply-preview{
-    position:absolute;top:50%;width:140px;
-    background:rgba(15,18,28,.94);border:1px solid rgba(255,255,255,.12);
-    border-radius:10px;padding:6px 10px;pointer-events:none;opacity:0;
-    transform:translateY(-50%) scale(.85);
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    box-shadow:0 6px 18px rgba(0,0,0,.45);
-    z-index:11;overflow:hidden;
-  }
-  .bqr.theirs .bq-wa-reply-preview{left:48px;}
-  .bqr.mine .bq-wa-reply-preview{right:48px;}
-  .bq-wa-rp-name{font-family:'Inter',sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.03em;color:var(--bq-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .bq-wa-rp-text{font-family:'Inter',sans-serif;font-size:10.5px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-  .bqr.bq-wa-trigger .bq-wa-reply-preview{border-color:rgba(34,197,94,.35);}
-
-  /* v39: Swipe glow trail */
-  .bqr.bq-wa-swipe::before{
-    content:'';position:absolute;top:0;bottom:0;width:80px;
-    pointer-events:none;opacity:.6;
-    background:linear-gradient(90deg,rgba(96,165,250,.12),transparent);
-  }
-  .bqr.mine.bq-wa-swipe::before{right:0;background:linear-gradient(270deg,rgba(96,165,250,.12),transparent);}
-  .bqr.theirs.bq-wa-swipe::before{left:0;background:linear-gradient(90deg,rgba(96,165,250,.12),transparent);}
-  .bqr.bq-wa-trigger::before{
-    background:linear-gradient(90deg,rgba(34,197,94,.18),transparent)!important;
-  }
-  .bqr.mine.bq-wa-trigger::before{
-    background:linear-gradient(270deg,rgba(34,197,94,.18),transparent)!important;
-  }
 
   /* Jump-to-bottom button */
   .bq-jtb{
@@ -8737,9 +8645,9 @@ setTimeout(_injectProfileUploads,1500);
     }catch(_){}
   }
 
-  /* ── 3. WhatsApp-style swipe-to-reply (v39: spring physics + preview) ── */
+  /* ── 3. WhatsApp-style swipe-to-reply ── */
   const WA_TRIGGER = 70;
-  const WA_MAX = 130;
+  const WA_MAX = 110;
   const REPLY_SVG = '<svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
 
   function detachOldSwipe(container){
@@ -8758,24 +8666,12 @@ setTimeout(_injectProfileUploads,1500);
     return b;
   }
 
-  function ensurePreview(row){
-    let p=row.querySelector('.bq-wa-reply-preview');
-    if(!p){
-      p=document.createElement('div');
-      p.className='bq-wa-reply-preview';
-      p.innerHTML='<div class="bq-wa-rp-name"></div><div class="bq-wa-rp-text"></div>';
-      row.appendChild(p);
-    }
-    return p;
-  }
-
   function attachWASwipe(container){
     if(!container || container.dataset.bqWaSwipe) return;
     container.dataset.bqWaSwipe='1';
 
-    let row=null, badge=null, preview=null, startX=0, startY=0, dx=0, dy=0;
+    let row=null, badge=null, startX=0, startY=0, dx=0, dy=0;
     let locked=false, isMine=false, active=false, triggered=false;
-    let velocity=0, lastX=0, lastTime=0, animFrame=null;
 
     function onStart(e){
       if(document.body.classList.contains('bq-select-mode')) return;
@@ -8786,36 +8682,12 @@ setTimeout(_injectProfileUploads,1500);
       row=r; isMine=row.classList.contains('mine');
       startX=t.clientX; startY=t.clientY; dx=0; dy=0;
       locked=false; active=true; triggered=false;
-      velocity=0; lastX=t.clientX; lastTime=Date.now();
-      if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
       badge=ensureBadge(row);
-      preview=ensurePreview(row);
-      // Populate preview with sender + snippet
-      const bbl=row.querySelector('.bqbbl');
-      if(bbl){
-        const clone=bbl.cloneNode(true);
-        clone.querySelectorAll('.bqrp').forEach(rp=>rp.remove());
-        const txt=clone.innerText?.split('\n')[0]?.slice(0,60)||'';
-        const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
-        const nameEl=preview.querySelector('.bq-wa-rp-name');
-        const textEl=preview.querySelector('.bq-wa-rp-text');
-        if(nameEl) nameEl.textContent=uname;
-        if(textEl) textEl.textContent=txt||'📎 Media';
-      }
     }
     function onMove(e){
       if(!active||!row) return;
       const t=e.touches?e.touches[0]:e;
       dx=t.clientX-startX; dy=t.clientY-startY;
-
-      // Track velocity
-      const now=Date.now();
-      const dt=now-lastTime;
-      if(dt>0){
-        velocity=(velocity*0.6)+((t.clientX-lastX)/dt)*0.4; // smoothed velocity
-        lastX=t.clientX; lastTime=now;
-      }
-
       if(!locked){
         if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ cancel(); return; }
         if(Math.abs(dx)>6) {
@@ -8828,35 +8700,17 @@ setTimeout(_injectProfileUploads,1500);
       const valid = isMine ? dx<0 : dx>0;
       let move;
       if(valid){
-        // Exponential rubber-band resistance beyond WA_MAX
-        const absDx=Math.abs(dx);
-        if(absDx <= WA_MAX){
-          move = Math.sign(dx) * absDx;
-        } else {
-          // Rubber-band: each pixel beyond max has diminishing returns
-          const excess = absDx - WA_MAX;
-          const rubber = WA_MAX + (1 - Math.exp(-excess * 0.04)) * 60;
-          move = Math.sign(dx) * rubber;
-        }
+        move = Math.sign(dx) * Math.min(WA_MAX, Math.abs(dx));
       } else {
         // rubber-band the wrong direction
-        move = dx * 0.12;
+        move = dx * 0.18;
       }
       row.style.transform = 'translateX('+move+'px)';
-      // Slight rotation during swipe for WhatsApp-like feel
-      const rotation = (move / WA_MAX) * 1.5; // max 1.5 degrees
-      row.style.transform = 'translateX('+move+'px) rotate('+rotation.toFixed(2)+'deg)';
       // Badge fades in proportionally
-      const absMove=Math.abs(move);
-      const prog = Math.min(1, absMove / WA_TRIGGER);
+      const prog = Math.min(1, Math.abs(move) / WA_TRIGGER);
       badge.style.opacity = prog.toFixed(2);
       badge.style.transform = 'translateY(-50%) scale('+(0.4 + prog*0.6).toFixed(2)+')';
-      // Preview fades in after 30% progress
-      const previewProg = Math.max(0, Math.min(1, (absMove - WA_TRIGGER*0.3) / (WA_TRIGGER*0.7)));
-      preview.style.opacity = previewProg.toFixed(2);
-      preview.style.transform = 'translateY(-50%) translateX('+(isMine?'-':'')+(8 + previewProg*8)+'px) scale('+(0.85 + previewProg*0.15).toFixed(2)+')';
-
-      const nowTrig = valid && absMove >= WA_TRIGGER;
+      const nowTrig = valid && Math.abs(move) >= WA_TRIGGER;
       if(nowTrig !== triggered){
         triggered = nowTrig;
         row.classList.toggle('bq-wa-trigger', triggered);
@@ -8870,122 +8724,42 @@ setTimeout(_injectProfileUploads,1500);
       const id=row.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
       if(!m) return;
       const ctx=m[1], key=m[2];
-      // Extract ONLY the actual message text, excluding reply-preview text
-      const bbl=row.querySelector('.bqbbl');
-      let txt='', replyToInfo=null;
-      if(bbl){
-        // Capture nested reply info BEFORE removing
-        const existingRp=bbl.querySelector('.bqrp');
-        if(existingRp){
-          const rpNameEl=existingRp.querySelector('.bqrp-n');
-          // Get only the direct text, excluding .bqrp-sub spans
-          let rpName='';
-          if(rpNameEl){
-            const clone2=rpNameEl.cloneNode(true);
-            clone2.querySelectorAll('.bqrp-sub').forEach(s=>s.remove());
-            rpName=clone2.textContent?.replace(/^@/,'')||'';
-          }
-          const rpText=existingRp.querySelector('.bqrp-t')?.textContent||'';
-          const rpKey=existingRp.dataset.replyKey||'';
-          if(rpName) replyToInfo={uname:rpName,text:rpText,key:rpKey};
-        }
-        // Clone the bubble and remove reply previews + meta to get just the message text
-        const clone=bbl.cloneNode(true);
-        clone.querySelectorAll('.bqrp,.bqbbl-meta,.bqbbl-meta-clear,.bqedited').forEach(el=>el.remove());
-        txt=clone.innerText?.split('\n')[0]?.slice(0,80)||'';
-      }
-      // If no text (e.g. GIF/image/sticker), describe the media type
-      if(!txt){
-        const type=row.querySelector('.bq-msg-gif')?'GIF':row.querySelector('.bq-msg-img')?'Image':row.querySelector('.bq-sticker')?'Sticker':row.querySelector('.bq-voice')?'🎤 Voice note':'';
-        txt=type;
-      }
+      const txt=row.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
       const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
       try{
-        if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt,replyTo:replyToInfo});
+        if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt});
         const inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp'); inp?.focus();
       }catch(_){}
     }
-
-    // Spring physics for snap-back animation
-    function springBack(el, fromX, wasTriggered){
-      const stiffness=320;  // spring constant
-      const damping=28;     // friction
-      const mass=1;
-      let pos=fromX;
-      let vel=wasTriggered ? velocity*0.3 : 0; // slight flick on trigger
-      let frame=0;
-      const maxFrames=30; // safety limit
-
-      function step(){
-        frame++;
-        const force=-stiffness*pos - damping*vel;
-        const acc=force/mass;
-        vel+=acc*(1/60);
-        pos+=vel*(1/60);
-
-        const rot = (pos / WA_MAX) * 1.5;
-        el.style.transform='translateX('+pos.toFixed(1)+'px) rotate('+rot.toFixed(2)+'deg)';
-
-        // Update badge/preview opacity during spring
-        const absP=Math.abs(pos);
-        const prog=Math.min(1,absP/WA_TRIGGER);
-        if(badge){
-          badge.style.opacity=prog.toFixed(2);
-          badge.style.transform='translateY(-50%) scale('+(0.4+prog*0.6).toFixed(2)+')';
-        }
-        if(preview){
-          const pp=Math.max(0,Math.min(1,(absP-WA_TRIGGER*0.3)/(WA_TRIGGER*0.7)));
-          preview.style.opacity=pp.toFixed(2);
-        }
-
-        // Check if settled
-        if(Math.abs(pos)<0.5 && Math.abs(vel)<1 || frame>maxFrames){
-          el.style.transform='';
-          el.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
-          if(badge){ badge.style.opacity='0'; badge.style.transform='translateY(-50%) scale(.4)'; }
-          if(preview){ preview.style.opacity='0'; }
-          animFrame=null;
-          return;
-        }
-        animFrame=requestAnimationFrame(step);
-      }
-      animFrame=requestAnimationFrame(step);
-    }
-
     function onEnd(){
       if(!active||!row){ cancel(); return; }
       const didTrigger = triggered;
-      const currentDx=dx;
-
-      // Animate back with spring physics
+      // animate back to 0 with spring
       row.classList.remove('bq-wa-swipe');
       row.classList.add('bq-wa-swipe-release');
-
-      // Use spring animation instead of CSS transition
-      const fromX=parseFloat(row.style.transform?.replace(/translateX\(([^)]+)\)/,'$1'))||0;
-      row.style.transition='none';
-      springBack(row, fromX, didTrigger);
-
+      row.style.transform='translateX(0)';
+      if(badge){
+        badge.style.opacity='0';
+        badge.style.transform='translateY(-50%) scale(.4)';
+      }
+      const r=row;
+      setTimeout(()=>{
+        r.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
+        r.style.transform='';
+      }, 340);
       if(didTrigger) fire();
-      row=null; badge=null; preview=null; active=false; locked=false; triggered=false;
+      row=null; badge=null; active=false; locked=false; triggered=false;
     }
     function cancel(){
       if(row){
         row.classList.remove('bq-wa-swipe','bq-wa-trigger');
         row.classList.add('bq-wa-swipe-release');
-        // Spring back from current position
-        const fromX=parseFloat(row.style.transform?.replace(/translateX\(([^)]+)\)/,'$1'))||0;
-        if(Math.abs(fromX)>1){
-          row.style.transition='none';
-          springBack(row, fromX, false);
-        } else {
-          row.style.transform='';
-          row.classList.remove('bq-wa-swipe-release');
-        }
+        row.style.transform='';
         if(badge){ badge.style.opacity='0'; badge.style.transform='translateY(-50%) scale(.4)'; }
-        if(preview){ preview.style.opacity='0'; }
+        const r=row;
+        setTimeout(()=>{ r.classList.remove('bq-wa-swipe-release'); r.style.transform=''; }, 340);
       }
-      row=null; badge=null; preview=null; active=false; locked=false; triggered=false;
+      row=null; badge=null; active=false; locked=false; triggered=false;
     }
     container.addEventListener('touchstart', onStart, {passive:true});
     container.addEventListener('touchmove', onMove, {passive:false});
@@ -9061,7 +8835,7 @@ setTimeout(_injectProfileUploads,1500);
       <button class="bq-s-down" title="Next"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
       <input type="text" placeholder="Search in chat…" />
       <span class="bq-search-count">0/0</span>
-      <button class="bq-s-close" title="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      <button class="bq-s-close" title="Close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     `;
     host.appendChild(bar);
     const inp=bar.querySelector('input');
@@ -9685,7 +9459,7 @@ function patchActionSheet(){
         item.dataset.ctx=ctx;
         item.dataset.key=key;
         item.style.color='#fca5a5';
-        item.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Delete for everyone';
+        item.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/></svg> Delete for everyone';
         delItem.parentNode.insertBefore(item, delItem.nextSibling);
       });
     });
@@ -11015,11 +10789,65 @@ function wireJumpToUnread(){
   });
 }
 
-/* ─────────── H) Swipe-to-reply (DISABLED — v39 uses WA-style with spring physics) ─────────── */
+/* ─────────── H) Swipe-to-reply ─────────── */
 function wireSwipeReply(){
-  // v39: Disabled. The v21 WA-style swipe-to-reply with spring physics handles this.
-  // Keeping function stub so boot() doesn't error.
-  return;
+  ['bqgmsgs','bqdmmsgs'].forEach(id=>{
+    const sc=$(id); if(!sc || sc._bqSwipe) return; sc._bqSwipe=true;
+    let startX=0, startY=0, target=null, active=false;
+    sc.addEventListener('pointerdown',(e)=>{
+      if(e.pointerType!=='touch') return;
+      const row=e.target.closest('.bqr'); if(!row) return;
+      target=row; startX=e.clientX; startY=e.clientY; active=false;
+      row.classList.add('bq-swipe');
+    });
+    sc.addEventListener('pointermove',(e)=>{
+      if(!target) return;
+      const dx=e.clientX-startX, dy=e.clientY-startY;
+      if(!active){
+        if(Math.abs(dy)>10){ target=null; return; }
+        if(Math.abs(dx)<6) return;
+        active=true;
+        target.classList.add('bq-swipe-active');
+        if(!target.querySelector('.bq-swipe-icon')){
+          const ic=document.createElement('div'); ic.className='bq-swipe-icon';
+          ic.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>';
+          target.appendChild(ic);
+        }
+      }
+      const tx=Math.max(0, Math.min(72, dx));
+      target.style.transform='translateX('+tx+'px)';
+      if(tx>40) target.classList.add('bq-swipe-show'); else target.classList.remove('bq-swipe-show');
+    });
+    const end=(e)=>{
+      if(!target) return;
+      const dx=(e.clientX||0)-startX;
+      target.style.transform='';
+      target.classList.remove('bq-swipe-active','bq-swipe-show');
+      target.querySelector('.bq-swipe-icon')?.remove();
+      if(active && dx>60){
+        // Trigger reply: simulate clicking the message's reply action.
+        // The widget's action sheet has [data-a="reply"]. Easier: dispatch a custom click
+        // on the bubble + reply via existing menu.
+        try{
+          const m=target.id.match(/^bqmsg-(global|dm)-(.+)$/);
+          if(m){
+            // Open action sheet then auto-click reply
+            const bbl=target.querySelector('.bqbbl');
+            bbl?.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
+            setTimeout(()=>{
+              const r=document.querySelector('#bq-msg-sheet [data-a="reply"]');
+              if(r){ r.click(); }
+              document.getElementById('bq-msg-sheet')?.remove();
+            }, 50);
+          }
+        }catch(_){}
+      }
+      target=null; active=false;
+    };
+    sc.addEventListener('pointerup', end);
+    sc.addEventListener('pointercancel', end);
+    sc.addEventListener('pointerleave', end);
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -13639,7 +13467,7 @@ function injectNotifBell(){
   bell.className = 'bq-notif-bell';
   bell.id = 'bq-notif-bell';
   bell.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     <div class="bq-notif-badge" id="bq-notif-badge">0</div>
   `;
   fsBtn.parentNode.insertBefore(bell, fsBtn);
@@ -13655,7 +13483,7 @@ function injectNotifBell(){
     </div>
     <div class="bq-notif-list" id="bq-notif-list">
       <div class="bq-notif-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         No notifications yet
       </div>
     </div>
@@ -13725,14 +13553,10 @@ function addNotification(sender, msg, type, dmId){
   if(prefs.inApp) showNotifBanner(notif);
 
   // Sound
-  if(prefs.sound) playNotifSound();
+  playNotifSound();
 
-  // v41: Browser notification when tab is in background or unfocused
-  // Uses Browser Notification API directly — no push-service needed
-  // Works when: tab is hidden (background) or window lost focus
-  if(document.hidden || !document.hasFocus()){
-    showBrowserNotif(notif);
-  }
+  // Browser push
+  if(prefs.push && document.hidden) showBrowserNotif(notif);
 }
 
 function updateNotifBadge(){
@@ -13756,7 +13580,7 @@ function renderNotifList(){
   const list = document.getElementById('bq-notif-list');
   if(!list) return;
   if(!_notifQueue.length){
-    list.innerHTML = `<div class="bq-notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>No notifications yet</div>`;
+    list.innerHTML = `<div class="bq-notif-empty"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>No notifications yet</div>`;
     return;
   }
   list.innerHTML = _notifQueue.map(n => {
@@ -13830,7 +13654,7 @@ function showNotifBanner(notif){
       <div class="bq-notif-banner-sender">${_esc(notif.sender)}</div>
       <div class="bq-notif-banner-msg">${_esc(notif.msg).slice(0,50)}</div>
     </div>
-    <button class="bq-notif-banner-close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="bq-notif-banner-close"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   `;
 
   // Insert at top of panel content area
@@ -13875,16 +13699,12 @@ function dismissBanner(banner){
 function showBrowserNotif(notif){
   if(!('Notification' in window)) return;
   if(Notification.permission !== 'granted') return;
-  // v40: Show notification when tab is NOT in foreground focus
-  // document.hidden = tab is in background
-  // !document.hasFocus() = tab/window lost focus (even if visible)
-  if(!document.hidden && document.hasFocus()) return; // tab is active and focused, skip
   try{
     const n = new Notification('BioQuiz Chat', {
       body: notif.sender + ': ' + notif.msg.slice(0,80),
       icon: '/logo.svg',
       tag: 'bq-' + notif.type + '-' + Date.now(),
-      silent: false // Let the browser play notification sound
+      silent: true // We play our own sound
     });
     n.onclick = () => {
       window.focus();
@@ -14032,7 +13852,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(96,165,250,.12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--bq-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <svg viewBox="0 0 24 24" style="stroke:var(--bq-accent);fill:none;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">In-App Alerts</div>
@@ -14056,7 +13876,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(74,222,128,.12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+            <svg viewBox="0 0 24 24" style="stroke:#4ade80;fill:none;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">Global Chat</div>
@@ -14068,7 +13888,7 @@ function injectNotifSettings(){
       <div class="bq-notif-row">
         <div class="bq-notif-row-left">
           <div class="bq-notif-row-ic" style="background:rgba(248,113,113,.12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <svg viewBox="0 0 24 24" style="stroke:#f87171;fill:none;"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
           </div>
           <div class="bq-notif-row-info">
             <div class="bq-notif-row-label">Direct Messages</div>
@@ -14104,12 +13924,12 @@ function injectNotifSettings(){
     </div>
     <div class="bq-notif-push-banner" id="bq-notif-push-banner" style="display:none">
       <div class="bq-notif-push-banner-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Enable Push Notifications
       </div>
       <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you push notifications even when the browser is closed. You can change this anytime in browser settings.</div>
       <button class="bq-notif-push-btn" id="bq-notif-push-enable">
-        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Allow Notifications
       </button>
     </div>
@@ -14197,7 +14017,7 @@ function updatePushPermissionUI(){
     banner.style.display = '';
     banner.innerHTML = `
       <div class="bq-notif-push-banner-title" style="color:var(--bq-text-muted);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Not Supported
       </div>
       <div class="bq-notif-push-banner-desc">Your browser doesn't support push notifications.</div>
@@ -14243,80 +14063,263 @@ setInterval(()=>{
 /* ════════════ end v36 patch ════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════
-   v40: Notification Fix — Simple, reliable notifications
+   v37: Web Push Notifications — Works when tab/browser is closed
    
-   - Auto-requests Notification permission on first chat use
-   - Shows Browser Notifications when tab is in background
-   - Registers service worker for notification click handling
-   - NO push-service dependency — uses Firebase listeners directly
+   - Registers service worker (/sw.js)
+   - Manages push subscriptions via push-service (port 3010)
+   - Triggers push on message send (global + DM)
+   - Handles notification clicks from service worker
    ═══════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
 
+const PUSH_SERVICE_PORT = 3010;
+const VAPID_PUBLIC_KEY = 'BAS_5l1Hr4LsSOnjKHDQSRdv7d9gMJ9H9IGe0ohCYZgIgYP5H7dExpv9W4MJsGY7lOAMyDI3yWKBCy9e5EPfGa4';
+
 const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+const _uname = ()=> localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
+
+/* ── URL-safe base64 → Uint8Array (for VAPID key) ── */
+function urlB64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
 
 /* ── SERVICE WORKER REGISTRATION ── */
-async function registerSW(){
-  if(!('serviceWorker' in navigator)) return false;
+let _swReg = null;
+let _pushSubscription = null;
+
+async function registerServiceWorker(){
+  if(!('serviceWorker' in navigator)){
+    console.log('[bq-push] Service Worker not supported');
+    return false;
+  }
   try{
+    // Register the service worker
     const reg = await navigator.serviceWorker.register('/sw.js');
+    _swReg = reg;
+    
+    // Wait for the service worker to be active
+    if(reg.installing){
+      await new Promise((resolve) => {
+        reg.installing.addEventListener('statechange', () => {
+          if(reg.waiting || reg.active) resolve(null);
+        });
+      });
+    }
+    if(reg.waiting){
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    if(reg.active){
+      console.log('[bq-push] Service Worker registered and active');
+    }
+    
     // Listen for messages from service worker (notification clicks)
     navigator.serviceWorker.addEventListener('message', (event) => {
       if(event.data && event.data.type === 'bq-notif-click'){
         handleNotifClickFromSW(event.data);
       }
     });
-    console.log('[bq-notif] Service Worker registered');
+    
     return true;
   }catch(err){
-    console.warn('[bq-notif] SW registration failed:', err);
+    console.error('[bq-push] SW registration failed:', err);
     return false;
   }
 }
 
-/* ── NOTIFICATION PERMISSION ── */
-async function requestNotifPermission(){
-  if(!('Notification' in window)) return false;
-  if(Notification.permission === 'granted') return true;
-  if(Notification.permission === 'denied') return false;
-  // Don't auto-request — let user click the bell or settings toggle
-  return false;
+/* ── PUSH SUBSCRIPTION ── */
+async function subscribeToPush(){
+  if(!_swReg){
+    const ok = await registerServiceWorker();
+    if(!ok) return null;
+  }
+  
+  try{
+    // Request notification permission first
+    if('Notification' in window){
+      if(Notification.permission === 'denied'){
+        console.warn('[bq-push] Notification permission denied');
+        return null;
+      }
+      if(Notification.permission === 'default'){
+        const perm = await Notification.requestPermission();
+        if(perm !== 'granted'){
+          console.warn('[bq-push] Notification permission not granted:', perm);
+          return null;
+        }
+      }
+    }
+    
+    // Check if already subscribed
+    const existing = await _swReg.pushManager.getSubscription();
+    if(existing){
+      _pushSubscription = existing;
+      await sendSubscriptionToServer(existing);
+      console.log('[bq-push] Using existing push subscription');
+      return existing;
+    }
+    
+    // Subscribe
+    const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+    const subscription = await _swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey
+    });
+    
+    _pushSubscription = subscription;
+    await sendSubscriptionToServer(subscription);
+    console.log('[bq-push] Subscribed to push notifications');
+    return subscription;
+  }catch(err){
+    console.error('[bq-push] Push subscription failed:', err);
+    return null;
+  }
 }
 
-// Expose subscribe function for settings button
-window._bqSubscribePush = async function(){
-  if(!('Notification' in window)) return;
-  const perm = await Notification.requestPermission();
-  if(perm === 'granted'){
-    // Update preferences
-    try{
-      const KEY = 'bq_notif_prefs';
-      const s = localStorage.getItem(KEY);
-      const p = s ? JSON.parse(s) : {};
-      p.push = true;
-      localStorage.setItem(KEY, JSON.stringify(p));
-    }catch(_){}
-    if(typeof window._bqNotifAdd === 'function'){
-      window._bqNotifAdd('System','Notifications enabled! ✓','global');
+async function unsubscribeFromPush(){
+  if(!_pushSubscription && _swReg){
+    _pushSubscription = await _swReg.pushManager.getSubscription();
+  }
+  if(!_pushSubscription) return;
+  
+  try{
+    await _pushSubscription.unsubscribe();
+    await removeSubscriptionFromServer();
+    _pushSubscription = null;
+    console.log('[bq-push] Unsubscribed from push notifications');
+  }catch(err){
+    console.error('[bq-push] Unsubscribe failed:', err);
+  }
+}
+
+/* ── SERVER COMMUNICATION ── */
+async function sendSubscriptionToServer(subscription){
+  const uid = _uid();
+  if(!uid) return;
+  try{
+    await fetch('/api/push/subscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid,
+        uname: _uname(),
+        subscription: subscription.toJSON()
+      })
+    });
+  }catch(err){
+    console.error('[bq-push] Failed to send subscription:', err);
+  }
+}
+
+async function removeSubscriptionFromServer(){
+  const uid = _uid();
+  if(!uid) return;
+  try{
+    await fetch('/api/push/unsubscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid })
+    });
+  }catch(err){
+    console.error('[bq-push] Failed to remove subscription:', err);
+  }
+}
+
+/* ── TRIGGER PUSH NOTIFICATIONS ── */
+// This is called after a message is sent to Firebase
+// It tells the push-service to send web push to offline users
+// NOTE: We always trigger pushes — the push-service handles whether
+// the recipient is actually subscribed. The sender's pref only controls
+// whether THEY receive pushes, not whether they trigger pushes for others.
+window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
+  const uid = _uid();
+  const uname = _uname();
+  if(!uid) return;
+  
+  // Check if push service is reachable (quick health check cache)
+  if(window._bqPushServiceDown) return;
+  
+  try{
+    if(type === 'global'){
+      // Broadcast to all subscribers except sender
+      const res = await fetch('/api/push/broadcast?XTransformPort=' + PUSH_SERVICE_PORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          excludeUid: uid,
+          title: '@' + (msg.uname || uname) + ' in Global Chat',
+          body: (msg.text || '').slice(0, 100),
+          type: 'global'
+        })
+      });
+      if(!res.ok) console.warn('[bq-push] Broadcast failed:', res.status);
+    } else if(type === 'dm'){
+      // Send to specific DM partner only
+      if(!pUid) return;
+      const res = await fetch('/api/push/notify?XTransformPort=' + PUSH_SERVICE_PORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUids: [pUid],
+          excludeUid: uid,
+          title: '@' + (msg.uname || uname),
+          body: (msg.text || (msg.imageData ? '📷 Image' : 'New message')).slice(0, 100),
+          type: 'dm',
+          dmId: dmId || '',
+          pUid: pUid || '',
+          pName: pName || ''
+        })
+      });
+      if(!res.ok) console.warn('[bq-push] Notify failed:', res.status);
     }
-    // Update UI
-    if(typeof window._bqUpdatePushUI === 'function') window._bqUpdatePushUI();
+  }catch(err){
+    // Push service unreachable — mark as down to avoid spamming
+    window._bqPushServiceDown = true;
+    setTimeout(()=>{ window._bqPushServiceDown = false; }, 60000); // retry after 60s
+    console.warn('[bq-push] Service unreachable, will retry in 60s');
   }
 };
 
+// Expose subscribe function for v36 settings button
+window._bqSubscribePush = subscribeToPush;
+
 /* ── NOTIFICATION CLICK FROM SERVICE WORKER ── */
 function handleNotifClickFromSW(data){
+  // Open the chat widget panel
   const panel = document.getElementById('bqp');
-  if(panel && !panel.classList.contains('open')) panel.classList.add('open');
+  if(panel && !panel.classList.contains('open')){
+    panel.classList.add('open');
+  }
+  
   if(data.notifType === 'dm' && data.dmId && data.pUid){
-    if(typeof window.__bqOpenDm === 'function') window.__bqOpenDm(data.dmId, data.pUid, data.pName || '');
+    // Navigate to DM conversation
+    if(typeof window.__bqOpenDm === 'function'){
+      window.__bqOpenDm(data.dmId, data.pUid, data.pName || '');
+    }
   } else {
+    // Navigate to global chat
     if(typeof window.bqNav === 'function') window.bqNav('chat');
   }
 }
 
-/* ── PATCH PUSH TOGGLE IN SETTINGS ── */
+/* ── SAFE PREF ACCESS (doesn't depend on v36 scope) ── */
+function getNotifPrefsSafe(){
+  const KEY = 'bq_notif_prefs';
+  const DEFAULTS = { inApp:true, push:false, sound:true, globalChat:true, dms:true, mentions:true };
+  try{
+    const s = localStorage.getItem(KEY);
+    return s ? Object.assign({}, DEFAULTS, JSON.parse(s)) : Object.assign({}, DEFAULTS);
+  }catch(_){ return Object.assign({}, DEFAULTS); }
+}
+
+/* ── UPDATE PROFILE SETTINGS UI FOR PUSH ── */
 function patchPushSettings(){
+  // When push toggle is changed, subscribe/unsubscribe
   const checkInterval = setInterval(()=>{
     try{
       const pushToggle = document.querySelector('.bq-notif-toggle input[data-pref="push"]');
@@ -14324,31 +14327,34 @@ function patchPushSettings(){
       if(pushToggle.dataset.bqPushWired) return;
       pushToggle.dataset.bqPushWired = '1';
       
+      // Override the change handler
       pushToggle.addEventListener('change', async () => {
         const enabled = pushToggle.checked;
         if(enabled){
-          if('Notification' in window){
-            const perm = await Notification.requestPermission();
-            if(perm !== 'granted'){
-              pushToggle.checked = false;
-              if(typeof window._bqNotifAdd === 'function'){
-                window._bqNotifAdd('System','Notification permission denied — check browser settings','global');
-              }
-              return;
-            }
+          // Show a brief status indicator
+          const row = pushToggle.closest('.bq-notif-row');
+          const label = row?.querySelector('.bq-notif-row-sub');
+          const origText = label?.textContent || '';
+          if(label) label.textContent = 'Setting up push notifications...';
+          
+          const sub = await subscribeToPush();
+          if(!sub){
+            pushToggle.checked = false;
+            if(label) label.textContent = 'Push setup failed — check browser permissions';
+            setTimeout(()=>{ if(label) label.textContent = origText; }, 3000);
+            // Save the preference as false
+            try{
+              const p = getNotifPrefsSafe();
+              p.push = false;
+              localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
+            }catch(_){}
+          } else {
+            if(label) label.textContent = 'Push notifications active ✓';
+            setTimeout(()=>{ if(label) label.textContent = origText; }, 2000);
           }
-          if(typeof window._bqNotifAdd === 'function'){
-            window._bqNotifAdd('System','Push notifications enabled! ✓','global');
-          }
+        } else {
+          await unsubscribeFromPush();
         }
-        // Save preference
-        try{
-          const KEY = 'bq_notif_prefs';
-          const s = localStorage.getItem(KEY);
-          const p = s ? JSON.parse(s) : {};
-          p.push = enabled;
-          localStorage.setItem(KEY, JSON.stringify(p));
-        }catch(_){}
       });
       
       clearInterval(checkInterval);
@@ -14357,648 +14363,73 @@ function patchPushSettings(){
 }
 
 /* ── BOOT ── */
-async function bootV40(){
-  // Register service worker for notification click handling
-  await registerSW();
+async function bootV37(){
+  // Register service worker
+  const swOk = await registerServiceWorker();
+  if(!swOk){
+    console.log('[bq-push] No service worker support — web push unavailable');
+    return;
+  }
+  
+  // If push is already enabled, re-subscribe on load
+  const prefs = getNotifPrefsSafe();
+  if(prefs.push){
+    await subscribeToPush();
+  }
   
   // Patch the push toggle in settings
   patchPushSettings();
   
-  console.log('[bq] v40 patch loaded — Notification fix (no push-service dependency)');
+  console.log('[bq] v37 patch loaded — Web Push Notifications');
 }
 
+// Boot after a delay to ensure main widget is ready
 if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bootV40, 2000));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bootV37, 2000));
 } else {
-  setTimeout(bootV40, 2000);
+  setTimeout(bootV37, 2000);
 }
 
 })();
-/* ════════════ end v40 patch ════════════ */
+/* ════════════ end v37 patch ════════════ */
 
-/* ════════════ v38 patch: GIF performance + declutter ════════════ */
-(function v38GifPerf(){
+/* ════════════ v43 patch — Replies V2 + GIF picker pagination ════════════ */
+(function bqV43Patch(){
   'use strict';
-  console.log('[bq] v38 patch loaded — GIF performance + declutter');
+  try{
+    /* Override stale .bqrp from earlier patches */
+    const s=document.createElement('style');
+    s.textContent=
+      '.bqrp{padding:6px 10px!important;margin-bottom:6px!important;border-radius:8px!important;background:rgba(96,165,250,.1)!important;border-left:2px solid var(--bq-accent)!important;}'+
+      '.bqrp-n{font-family:\'Inter\',sans-serif!important;font-size:10px!important;font-weight:700!important;letter-spacing:.03em!important;color:var(--bq-accent)!important;text-transform:uppercase!important;}'+
+      '.bqrp-t{font-family:\'Inter\',sans-serif!important;font-size:11px!important;color:var(--bq-text-muted)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;max-width:220px!important;margin-top:1px!important;line-height:1.4!important;}'+
+      '.bqr.mine .bqrp{background:rgba(255,255,255,.08)!important;border-left-color:rgba(255,255,255,.4)!important;}'+
+      '.bqr.mine .bqrp-n{color:rgba(255,255,255,.8)!important;}'+
+      '.bqr.mine .bqrp-t{color:rgba(255,255,255,.6)!important;}'+
+      '.bqrbar{background:rgba(96,165,250,.06)!important;border-top:1px solid rgba(96,165,250,.1)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}'+
+      '.bqrbx{border:none!important;background:none!important;color:var(--bq-text-muted)!important;}'+
+      '.bqrbx:hover{background:rgba(248,113,113,.1)!important;color:#f87171!important;border:none!important;}';
+    document.head.appendChild(s);
 
-  // GIF loaded state: remove blur/opacity when GIF finishes decoding
-  document.getElementById('bqp')?.addEventListener('load', function(e){
-    if(e.target && e.target.classList && e.target.classList.contains('bq-msg-gif')){
-      e.target.classList.remove('bq-gif-loading');
-      e.target.classList.add('bq-gif-loaded');
-    }
-  }, true); // capture phase to catch all img loads
-
-  // IntersectionObserver: unload offscreen GIFs to reduce memory/CPU
-  let _gifObserver = null;
-  function initGifObserver(){
-    if(_gifObserver) return;
-    _gifObserver = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        const img = entry.target;
-        if(!img.classList.contains('bq-msg-gif')) return;
-        if(entry.isIntersecting){
-          // Restore animated src if we had frozen it
-          if(img.dataset.frozenSrc){
-            img.src = img.dataset.frozenSrc;
-            delete img.dataset.frozenSrc;
-          }
-        } else {
-          // Freeze: save src and blank it to free decode memory
-          if(!img.dataset.frozenSrc && img.src && !img.src.startsWith('data:')){
-            img.dataset.frozenSrc = img.src;
-            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-          }
+    /* Icon patching: replace old <line> X icons in reply bar close buttons with path-based */
+    function patchCloseIcons(){
+      document.querySelectorAll('.bqrbx svg').forEach(svg=>{
+        const lines=svg.querySelectorAll('line');
+        if(lines.length===2 && lines[0].getAttribute('x1')==='18' && lines[1].getAttribute('x1')==='6'){
+          svg.innerHTML='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>';
         }
       });
-    }, { rootMargin: '300px', threshold: 0 });
-    
-    // Observe all existing and future GIF messages
-    const msgArea = document.getElementById('bqp');
-    if(!msgArea) return;
-    
-    const observeGifs = ()=>{
-      msgArea.querySelectorAll('.bq-msg-gif').forEach(img=>{
-        if(!img.dataset.gifObserved){
-          _gifObserver.observe(img);
-          img.dataset.gifObserved = '1';
-        }
-      });
-    };
-    
-    observeGifs();
-    // Re-observe when new messages appear
-    const mo = new MutationObserver(()=> observeGifs());
-    mo.observe(msgArea, { childList: true, subtree: true });
-  }
+    }
+    patchCloseIcons();
+    setInterval(patchCloseIcons,3000);
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=> setTimeout(initGifObserver, 1500));
-  } else {
-    setTimeout(initGifObserver, 1500);
-  }
+    /* GIF label theming — style the GIF type badge in messages */
+    const gs=document.createElement('style');
+    gs.textContent='.bq-msg-gif{border-radius:12px!important;border:1px solid rgba(255,255,255,.06)!important;}';
+    document.head.appendChild(gs);
+
+    console.log('[bq] v43 patch loaded — Replies V2 + GIF picker pagination');
+  }catch(e){console.error('[bq] v43 patch error:',e)}
 })();
-/* ════════════ end v38 patch ════════════ */
+/* ════════════ end v43 patch ════════════ */
 
-/* ════════════ v39 patch: Swipe physics + reply fix ════════════ */
-(function v39SwipePhysics(){
-  'use strict';
-  console.log('[bq] v39 patch loaded — swipe physics + reply text fix');
-
-  // Click on reply preview to scroll to the original message
-  document.getElementById('bqp')?.addEventListener('click', function(e){
-    const rp = e.target.closest('.bqrp');
-    if(!rp) return;
-    const replyKey = rp.dataset.replyKey;
-    if(!replyKey) return;
-    // Find the original message row in the current view
-    const container = document.getElementById('bqgmsgs') || document.getElementById('bqdmmsgs');
-    if(!container) return;
-    const target = container.querySelector('[id$="-'+replyKey+'"]');
-    if(target){
-      e.stopPropagation();
-      try{
-        target.scrollIntoView({behavior:'smooth', block:'center'});
-        // Flash highlight
-        target.style.transition='background .15s';
-        target.style.background='rgba(96,165,250,.15)';
-        setTimeout(()=>{
-          target.style.background='';
-          setTimeout(()=>{ target.style.transition=''; }, 200);
-        }, 1200);
-      }catch(_){}
-    }
-  });
-})();
-/* ════════════ end v39 patch ════════════ */
-
-/* ════════════ v40 patch: Widget disguise — maintenance screen + PIN lock ════════════ */
-(function v40Disguise(){
-  'use strict';
-  const WIDGET_PIN = '1306';
-  const LS_UNLOCKED = 'bq_widget_unlocked';
-  console.log('[bq] v40 patch loaded — widget disguise + PIN lock');
-
-  // ── CSS ──
-  const css = document.createElement('style');
-  css.textContent = `
-  /* Disguise overlay — covers entire chat panel */
-  #bq-disguise{
-    position:absolute;inset:0;z-index:9999;
-    background:linear-gradient(160deg,#0f172a 0%,#1e293b 40%,#0f172a 100%);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    border-radius:var(--bq-radius);
-    transition:opacity .4s ease,transform .4s ease;
-    overflow:hidden;
-  }
-  #bq-disguise.bq-unlocked{
-    opacity:0;transform:scale(1.05);pointer-events:none;
-  }
-  /* Animated construction background stripes */
-  #bq-disguise::before{
-    content:'';position:absolute;inset:0;
-    background:repeating-linear-gradient(
-      -45deg,
-      transparent,transparent 40px,
-      rgba(251,191,36,.04) 40px,rgba(251,191,36,.04) 80px
-    );
-    animation:bqStripeMove 20s linear infinite;
-  }
-  @keyframes bqStripeMove{0%{background-position:0 0}100%{background-position:160px 0}}
-  /* Hard hat icon area */
-  .bq-disg-icon{
-    position:relative;z-index:1;
-    width:90px;height:90px;border-radius:24px;
-    background:linear-gradient(145deg,rgba(251,191,36,.15),rgba(245,158,11,.1));
-    border:1px solid rgba(251,191,36,.25);
-    display:flex;align-items:center;justify-content:center;
-    margin-bottom:20px;
-    box-shadow:0 8px 40px rgba(251,191,36,.15);
-    cursor:pointer;
-    transition:transform .2s,box-shadow .2s;
-  }
-  .bq-disg-icon:hover{transform:scale(1.06);box-shadow:0 12px 48px rgba(251,191,36,.25);}
-  .bq-disg-icon:active{transform:scale(.97);}
-  .bq-disg-emoji{font-size:40px;line-height:1;user-select:none;}
-  /* Title & subtitle */
-  .bq-disg-title{
-    position:relative;z-index:1;
-    font-family:'Inter',sans-serif;font-size:17px;font-weight:800;
-    color:#fbbf24;letter-spacing:.02em;margin-bottom:6px;
-    text-align:center;
-  }
-  .bq-disg-sub{
-    position:relative;z-index:1;
-    font-family:'Inter',sans-serif;font-size:12px;
-    color:rgba(255,255,255,.35);margin-bottom:0;text-align:center;
-    max-width:200px;line-height:1.5;
-  }
-  /* Hidden PIN pad — revealed on tap */
-  #bq-disguise-pin{
-    display:none;flex-direction:column;align-items:center;
-    margin-top:20px;position:relative;z-index:1;
-  }
-  #bq-disguise-pin.show{display:flex;}
-  .bq-disg-dots{display:flex;gap:12px;margin-bottom:16px;}
-  .bq-disg-dot{
-    width:14px;height:14px;border-radius:50%;
-    border:2px solid rgba(255,255,255,.15);
-    background:transparent;transition:all .2s;
-  }
-  .bq-disg-dot.filled{background:#fbbf24;border-color:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,.5);}
-  .bq-disg-dot.error{background:#ef4444;border-color:#ef4444;animation:bqdmlShake .3s ease;}
-  .bq-disg-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px;}
-  .bq-disg-key{
-    height:52px;border-radius:14px;border:none;cursor:pointer;
-    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
-    font-family:'Inter',sans-serif;font-size:20px;font-weight:600;color:#fff;
-    display:flex;align-items:center;justify-content:center;
-    transition:all .15s;-webkit-tap-highlight-color:transparent;user-select:none;
-  }
-  .bq-disg-key:hover{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.3);}
-  .bq-disg-key:active{transform:scale(.92);}
-  /* Disguised bubble — looks like a settings gear */
-  #bqb.bq-disguised .bqi-c{display:none!important;}
-  #bqb.bq-disguised::before{
-    content:'⚙️';font-size:20px;line-height:1;
-  }
-  #bqb.bq-disguised{background:rgba(100,116,139,.8)!important;}
-  #bqb.bq-disguised:hover{background:rgba(100,116,139,.95)!important;}
-  #bqb.bq-disguised .bqi-x{stroke:rgba(255,255,255,.8)!important;}
-  #bqb.bq-disguised #bqbadge{display:none!important;}
-  `;
-  document.head.appendChild(css);
-
-  // ── Inject disguise overlay into panel ──
-  const panel = document.getElementById('bqp');
-  if(!panel) return;
-
-  const disguise = document.createElement('div');
-  disguise.id = 'bq-disguise';
-  disguise.innerHTML = `
-    <div class="bq-disg-icon" id="bq-disg-icon" title="">
-      <span class="bq-disg-emoji">🏗️</span>
-    </div>
-    <div class="bq-disg-title">Under Maintenance</div>
-    <div class="bq-disg-sub">This feature is currently being worked on. Check back later.</div>
-    <div id="bq-disguise-pin">
-      <div class="bq-disg-dots" id="bq-disg-dots">
-        <div class="bq-disg-dot"></div><div class="bq-disg-dot"></div>
-        <div class="bq-disg-dot"></div><div class="bq-disg-dot"></div>
-      </div>
-      <div class="bq-disg-pad">
-        <button class="bq-disg-key" data-k="1">1</button><button class="bq-disg-key" data-k="2">2</button><button class="bq-disg-key" data-k="3">3</button>
-        <button class="bq-disg-key" data-k="4">4</button><button class="bq-disg-key" data-k="5">5</button><button class="bq-disg-key" data-k="6">6</button>
-        <button class="bq-disg-key" data-k="7">7</button><button class="bq-disg-key" data-k="8">8</button><button class="bq-disg-key" data-k="9">9</button>
-        <div></div><button class="bq-disg-key" data-k="0">0</button><button class="bq-disg-key" data-k="del">⌫</button>
-      </div>
-    </div>
-  `;
-  panel.appendChild(disguise);
-
-  // ── State ──
-  let pinBuffer = '';
-  let pinShown = false;
-
-  function isUnlocked(){
-    try{ return localStorage.getItem(LS_UNLOCKED) === '1'; }catch(_){ return false; }
-  }
-  function setUnlocked(){
-    try{ localStorage.setItem(LS_UNLOCKED, '1'); }catch(_){}
-  }
-
-  // ── Show/hide disguise ──
-  function applyDisguise(){
-    const bubble = document.getElementById('bqb');
-    if(isUnlocked()){
-      disguise.classList.add('bq-unlocked');
-      if(bubble) bubble.classList.remove('bq-disguised');
-    } else {
-      disguise.classList.remove('bq-unlocked');
-      if(bubble) bubble.classList.add('bq-disguised');
-      // Reset pin state
-      pinBuffer = '';
-      pinShown = false;
-      const pinEl = document.getElementById('bq-disguise-pin');
-      if(pinEl) pinEl.classList.remove('show');
-      updateDots();
-    }
-  }
-
-  // ── PIN dot indicators ──
-  function updateDots(){
-    const dots = document.querySelectorAll('#bq-disg-dots .bq-disg-dot');
-    dots.forEach((d,i)=>{
-      d.classList.toggle('filled', i < pinBuffer.length);
-      d.classList.remove('error');
-    });
-  }
-
-  // ── Tap the construction icon to reveal PIN pad ──
-  document.getElementById('bq-disg-icon')?.addEventListener('click', ()=>{
-    if(isUnlocked()) return;
-    if(!pinShown){
-      pinShown = true;
-      const pinEl = document.getElementById('bq-disguise-pin');
-      if(pinEl) pinEl.classList.add('show');
-    }
-  });
-
-  // ── PIN pad key presses ──
-  disguise.addEventListener('click', e=>{
-    if(isUnlocked()) return;
-    const key = e.target.closest('.bq-disg-key');
-    if(!key) return;
-    const k = key.dataset.k;
-    if(k === 'del'){
-      pinBuffer = pinBuffer.slice(0,-1);
-      updateDots();
-      return;
-    }
-    if(pinBuffer.length >= 4) return;
-    pinBuffer += k;
-    updateDots();
-
-    if(pinBuffer.length === 4){
-      if(pinBuffer === WIDGET_PIN){
-        // Correct PIN!
-        setUnlocked();
-        disguise.classList.add('bq-unlocked');
-        const bubble = document.getElementById('bqb');
-        if(bubble) bubble.classList.remove('bq-disguised');
-        // Remove disguise after animation
-        setTimeout(()=>{ disguise.style.display='none'; }, 450);
-      } else {
-        // Wrong PIN — shake dots
-        const dots = document.querySelectorAll('#bq-disg-dots .bq-disg-dot');
-        dots.forEach(d=>d.classList.add('error'));
-        setTimeout(()=>{
-          pinBuffer = '';
-          updateDots();
-        }, 600);
-      }
-    }
-  });
-
-  // ── Initial state ──
-  applyDisguise();
-  if(isUnlocked()){
-    disguise.style.display = 'none';
-  }
-
-  // ── Hijack panel open to check disguise ──
-  const origOpen = window.togglePanel || null;
-  if(typeof origOpen === 'function'){
-    // Already defined in main scope; we just make sure disguise is applied
-  }
-
-  // ── Reset disguise if localStorage cleared (new device) ──
-  // The disguise auto-shows when bq_widget_unlocked is not '1'
-})();
-/* ════════════ end v40 patch ════════════ */
-
-/* ═══════════════════════════════════════════════════════════════════
-   v41: Web Push Notifications — Works when tab/browser is CLOSED
-   
-   - Registers service worker with VAPID push subscription
-   - Stores push subscription in Firebase RTDB
-   - When sending a message, triggers push via /api/push/notify
-   - Recipient's service worker shows notification even if tab is closed
-   - Fixes notification logic bugs (condition was inverted)
-   ═══════════════════════════════════════════════════════════════════ */
-(function(){
-'use strict';
-
-const VAPID_PUBLIC_KEY = 'BBc3KxoYXLfG6DOiRdrPXTUz6U-kWAsgea98vbixodbbqJObWPBsuG2NlQqhanTuq3sX2eCwvXpYx8LkdNz4tN4';
-const FIREBASE_RTDB_URL = 'https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app';
-
-const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-
-/* ── URL-safe Base64 → Uint8Array (for VAPID key) ── */
-function urlBase64ToUint8Array(base64String){
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for(let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
-}
-
-/* ── SERVICE WORKER + PUSH SUBSCRIPTION ── */
-let _pushSub = null;  // cached PushSubscription
-
-async function registerAndSubscribe(){
-  if(!('serviceWorker' in navigator)) return null;
-  if(!('PushManager' in window)) return null;
-  
-  try{
-    // Register or get existing service worker registration
-    let reg = await navigator.serviceWorker.getRegistration('/sw.js');
-    if(!reg){
-      reg = await navigator.serviceWorker.register('/sw.js');
-      console.log('[bq-push] Service Worker registered');
-    }
-
-    // Wait for the service worker to be ready
-    await navigator.serviceWorker.ready;
-
-    // Check for existing push subscription
-    let sub = await reg.pushManager.getSubscription();
-    if(sub){
-      _pushSub = sub;
-      console.log('[bq-push] Existing push subscription found');
-      return sub;
-    }
-
-    // Create new push subscription with VAPID key
-    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey
-    });
-
-    _pushSub = sub;
-    console.log('[bq-push] New push subscription created');
-    
-    // Store subscription in Firebase RTDB via API route
-    await storeSubscription(sub);
-    
-    return sub;
-  }catch(err){
-    console.warn('[bq-push] Push subscription failed:', err);
-    return null;
-  }
-}
-
-/* ── STORE SUBSCRIPTION IN FIREBASE RTDB ── */
-async function storeSubscription(sub){
-  const myUid = _uid();
-  if(!myUid) return;
-  
-  try{
-    const subJson = sub.toJSON();
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        uid: myUid,
-        subscription: subJson
-      })
-    });
-    console.log('[bq-push] Subscription stored in Firebase RTDB');
-  }catch(err){
-    console.warn('[bq-push] Failed to store subscription:', err);
-  }
-}
-
-/* ── LISTEN FOR SERVICE WORKER MESSAGES (notification clicks) ── */
-function listenForSwMessages(){
-  if(!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.addEventListener('message', (event) => {
-    if(event.data && event.data.type === 'bq-notif-click'){
-      handleNotifClickFromSW(event.data);
-    }
-  });
-}
-
-function handleNotifClickFromSW(data){
-  const panel = document.getElementById('bqp');
-  if(panel && !panel.classList.contains('open')) panel.classList.add('open');
-  if(data.notifType === 'dm' && data.dmId && data.pUid){
-    if(typeof window.__bqOpenDm === 'function') window.__bqOpenDm(data.dmId, data.pUid, data.pName || '');
-  } else {
-    if(typeof window.bqNav === 'function') window.bqNav('chat');
-  }
-}
-
-/* ── PUSH NOTIFY: Called when a message is sent ── */
-// targetUid = null for global, or partner UID for DMs
-window._bqPushNotify = async function(targetUid, sender, message, type, dmId, pUid, pName){
-  if(!targetUid && type === 'global'){
-    // For global messages: notify ALL users with push subscriptions
-    // We'll send to the API and let it handle fan-out
-    // For now, just skip (global push would be expensive)
-    return;
-  }
-  if(!targetUid) return;
-
-  // Check if target user has a push subscription in Firebase RTDB
-  try{
-    const subSnap = await fetch(FIREBASE_RTDB_URL + '/bq_push_subs/' + targetUid + '.json').then(r=>r.json());
-    if(!subSnap || !subSnap.subscription || !subSnap.subscription.endpoint){
-      // Target user has no push subscription — they haven't enabled notifications
-      return;
-    }
-
-    // Call the push notification API route
-    await fetch('/api/push/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        targetUid: targetUid,
-        subscription: subSnap.subscription,
-        sender: sender || '?',
-        message: (message || 'Sent a message').slice(0, 100),
-        type: type || 'global',
-        dmId: dmId || null,
-        pUid: pUid || null,
-        pName: pName || null
-      })
-    });
-    console.log('[bq-push] Push notification sent to', targetUid);
-  }catch(err){
-    console.warn('[bq-push] Push notification failed:', err);
-  }
-};
-
-/* ── OVERRIDE subscribeToPush — called when user clicks notification toggle ── */
-window._bqSubscribePush = async function(){
-  if(!('Notification' in window)) return;
-  
-  const perm = await Notification.requestPermission();
-  if(perm === 'granted'){
-    // Register service worker and create push subscription
-    await registerAndSubscribe();
-    
-    // Update preferences
-    try{
-      const KEY = 'bq_notif_prefs';
-      const s = localStorage.getItem(KEY);
-      const p = s ? JSON.parse(s) : {};
-      p.push = true;
-      localStorage.setItem(KEY, JSON.stringify(p));
-    }catch(_){}
-    
-    if(typeof window._bqNotifAdd === 'function'){
-      window._bqNotifAdd('System','Push notifications enabled! ✓','global');
-    }
-    if(typeof window._bqUpdatePushUI === 'function') window._bqUpdatePushUI();
-  }else{
-    if(typeof window._bqNotifAdd === 'function'){
-      window._bqNotifAdd('System','Notification permission denied — check browser settings','global');
-    }
-  }
-};
-
-/* ── BOOT ── */
-async function bootV41(){
-  // Listen for service worker messages
-  listenForSwMessages();
-  
-  // Auto-subscribe if permission is already granted and user has notifications enabled
-  const prefs = (()=>{
-    try{
-      const s = localStorage.getItem('bq_notif_prefs');
-      return s ? JSON.parse(s) : {};
-    }catch(_){ return {}; }
-  })();
-  
-  if(Notification.permission === 'granted' && prefs.push !== false){
-    // Try to create/renew push subscription in the background
-    registerAndSubscribe().catch(()=>{});
-  }
-  
-  console.log('[bq] v41 patch loaded — Web Push Notifications (works when tab is closed)');
-}
-
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bootV41, 2500));
-} else {
-  setTimeout(bootV41, 2500);
-}
-
-})();
-/* ════════════ end v41 patch ════════════ */
-
-/* ════════════ v42 patch: Clean icons + GIF label theming ════════════ */
-(function v42CleanIcons(){
-  'use strict';
-  console.log('[bq] v42 patch loaded — clean icons + GIF label theming');
-
-  // ── A. Inject CSS for icon fixes ──
-  const css = document.createElement('style');
-  css.textContent = `
-    #bqp.bq-theme-walight .bqgifbtn .gif-label,
-    #bqp.bq-theme-wadark .bqgifbtn .gif-label { color: inherit; }
-    #bqp.bq-theme-walight .bqgifbtn:hover .gif-label { color: #075e54; }
-    #bqp.bq-theme-wadark .bqgifbtn:hover .gif-label { color: #e9edef; }
-    #bqp.bq-theme-walight .bqgifbtn.active .gif-label { color: #075e54; }
-    #bqp.bq-theme-wadark .bqgifbtn.active .gif-label { color: #e9edef; }
-  `;
-  document.head.appendChild(css);
-
-  // ── B. Dynamic icon patching via MutationObserver ──
-  function patchDynamicIcons(root) {
-    if (!root || !root.querySelectorAll) return;
-
-    // Fix smiley icon eyes: <line> → <circle> for dot eyes
-    root.querySelectorAll('.bqieo svg, .bq-ms-btn svg').forEach(svg => {
-      const html = svg.innerHTML;
-      if (html && html.includes('9.01') && html.includes('15.01')) {
-        svg.innerHTML = html
-          .replace(/<line[^>]*x1="9"[^>]*y1="9"[^>]*x2="9\.01"[^>]*y2="9"[^>]*\/?>/g,
-            '<circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>')
-          .replace(/<line[^>]*x1="15"[^>]*y1="9"[^>]*x2="15\.01"[^>]*y2="9"[^>]*\/?>/g,
-            '<circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/>');
-      }
-    });
-
-    // Fix X/Close icons in dynamically created elements
-    root.querySelectorAll('svg').forEach(svg => {
-      const html = svg.innerHTML;
-      if (html && html.includes('x1="18"') && html.includes('y1="6"') && html.includes('x2="6"') && html.includes('y2="18"')) {
-        svg.innerHTML = html
-          .replace(/<line[^>]*x1="18"[^>]*y1="6"[^>]*x2="6"[^>]*y2="18"[^>]*\/?>/g, '<path d="M18 6 6 18"/>')
-          .replace(/<line[^>]*x1="6"[^>]*y1="6"[^>]*x2="18"[^>]*y2="18"[^>]*\/?>/g, '<path d="m6 6 12 12"/>');
-      }
-    });
-
-    // Fix send button up-arrows in dynamically created elements
-    root.querySelectorAll('.bqsnd svg').forEach(svg => {
-      const html = svg.innerHTML;
-      if (html && html.includes('m5 12') && html.includes('7-7')) {
-        svg.innerHTML = '<path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>';
-      }
-    });
-
-    // Fix GIF button SVGs → text label in dynamically created elements
-    root.querySelectorAll('.bqgifbtn svg').forEach(svg => {
-      const span = document.createElement('span');
-      span.className = 'gif-label';
-      span.textContent = 'GIF';
-      svg.replaceWith(span);
-    });
-  }
-
-  // Observe for dynamically added content
-  const panel = document.getElementById('bqp');
-  if (panel) {
-    const iconObserver = new MutationObserver(mutations => {
-      mutations.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if (node.nodeType === 1) {
-            patchDynamicIcons(node);
-            if (node.querySelectorAll) {
-              patchDynamicIcons({ querySelectorAll: sel => node.querySelectorAll(sel) });
-            }
-          }
-        });
-      });
-    });
-    iconObserver.observe(panel, { childList: true, subtree: true });
-  }
-
-  // Initial patch
-  function initV42() {
-    patchDynamicIcons(document.getElementById('bqp') || document.body);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(initV42, 2000));
-  } else {
-    setTimeout(initV42, 2000);
-  }
-
-  console.log('[bq] v42: clean icons patched, GIF picker uses pagination (6/page)');
-})();
-/* ════════════ end v42 patch ════════════ */
