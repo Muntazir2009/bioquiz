@@ -120,6 +120,7 @@ const REACTION_CATEGORIES = {
 };
 const REACTIONS  = REACTION_CATEGORIES['⭐'];     // legacy quick row (kept for compatibility)
 // Quick reaction stickers — one-tap big-emoji message ("burst" bubble)
+// v62: Removed magic category, added new categories (School, Tech, Comfort, Adventure)
 const QUICK_STICKERS = [
   // Reactions
   '❤️','🔥','😂','🎉','🥰','😮','💯','✨',
@@ -130,8 +131,7 @@ const QUICK_STICKERS = [
   // Nature/Objects
   '🌙','⚡','🎯','💎','🚀','🌊','🎸','🍀',
   // Animals
-  '🐉','🦋','🐺','🦊','🐸','🦅','🐬','🌸',
-  // v35: New sticker categories
+  '🦋','🐺','🦊','🐸','🦅','🐬','🌸','🦜',
   // Love & Affection
   '💕','💗','💖','🤗','😘','🥹','💑','🫂',
   // Celebration & Party
@@ -143,8 +143,7 @@ const QUICK_STICKERS = [
   // Travel & Places
   '✈️','🗼','🏖️','🌍','🏔️','🌅','🌋','🏰',
   // Sports & Activities
-  '⚽','🏀','🎸','🎨','🎮','🎲','🧩','🎭',
-  // v36: New sticker categories with enhanced animations
+  '⚽','🏀','🎨','🎮','🎲','🧩','🎭','🤸',
   // Science & Discovery
   '🧪','🔬','🧬','🔭','🌡️','🧫','💡','🪐',
   // Music & Dance
@@ -153,8 +152,14 @@ const QUICK_STICKERS = [
   '☀️','🌈','⭐','❄️','🌪️','☄️','🌤️','🪶',
   // Greetings & Gestures
   '👋','🤞','✌️','🤙','🫰','🫱','🫲','🤟',
-  // Magic & Fantasy
-  '🔮','🧙','🪄','🐉','🦄','🌟','👑','🪬',
+  // v62: School & Learning
+  '📚','✏️','🎓','📝','🧠','📖','🎒','📐',
+  // v62: Tech & Coding
+  '💻','⌨️','🖥️','📱','🔋','📡','🤖','🔌',
+  // v62: Comfort & Cozy
+  '🧸','🛋️','🕯️','🧣','☕','🛏️','🪴','🧶',
+  // v62: Adventure & Outdoors
+  '🏕️','🧗','🚴','⛷️','🚣','🏹','🧭','🎣',
 ];
 
 /* ─────────────────────────────────────────
@@ -865,7 +870,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqbbl.sticker .bqsticker.stk-music{animation:bqStkMusic .7s cubic-bezier(.34,1.56,.64,1) both;}
 .bqbbl.sticker .bqsticker.stk-weather{animation:bqStkWeather .65s cubic-bezier(.22,1,.36,1) both;}
 .bqbbl.sticker .bqsticker.stk-greet{animation:bqStkGreet .55s cubic-bezier(.34,1.56,.64,1) both;}
-.bqbbl.sticker .bqsticker.stk-magic{animation:bqStkMagic .75s cubic-bezier(.34,1.56,.64,1) both;}
+/* v62: New sticker category animations — replaced magic with school/tech/comfort/adventure */
+.bqbbl.sticker .bqsticker.stk-school{animation:bqStkSchool .6s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-tech{animation:bqStkTech .65s cubic-bezier(.22,1,.36,1) both;}
+.bqbbl.sticker .bqsticker.stk-comfort{animation:bqStkComfort .7s cubic-bezier(.34,1.56,.64,1) both;}
+.bqbbl.sticker .bqsticker.stk-adventure{animation:bqStkAdventure .6s cubic-bezier(.22,1,.36,1) both;}
 @keyframes bqStkLove{0%{transform:scale(0);opacity:0}40%{transform:scale(1.3);opacity:1}60%{transform:scale(.9)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
 @keyframes bqStkParty{0%{transform:scale(0) rotate(-30deg);opacity:0}50%{transform:scale(1.25) rotate(10deg);opacity:1}70%{transform:scale(.9) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes bqStkMood{0%{transform:translateY(20px) scale(.5);opacity:0}60%{transform:translateY(-4px) scale(1.1);opacity:1}100%{transform:translateY(0) scale(1)}}
@@ -879,7 +888,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqStkMusic{0%{transform:scale(0) rotate(-15deg);opacity:0}30%{transform:scale(.6) rotate(10deg);opacity:.6}50%{transform:scale(1.25) rotate(-5deg);opacity:1}70%{transform:scale(.92) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes bqStkWeather{0%{transform:translateY(-30px) scale(.3);opacity:0;filter:blur(6px)}50%{transform:translateY(4px) scale(1.15);opacity:1;filter:blur(0)}70%{transform:translateY(-2px) scale(.95)}100%{transform:translateY(0) scale(1)}}
 @keyframes bqStkGreet{0%{transform:scale(0) translateX(20px);opacity:0}40%{transform:scale(1.3) translateX(-4px);opacity:1}60%{transform:scale(.88) translateX(2px)}80%{transform:scale(1.06) translateX(-1px)}100%{transform:scale(1) translateX(0)}}
-@keyframes bqStkMagic{0%{transform:scale(0) rotate(0);opacity:0;filter:brightness(2) blur(8px)}25%{transform:scale(.5) rotate(90deg);opacity:.5;filter:brightness(1.5) blur(2px)}50%{transform:scale(1.3) rotate(180deg);opacity:1;filter:brightness(1.2) blur(0)}75%{transform:scale(.9) rotate(340deg)}100%{transform:scale(1) rotate(360deg);filter:brightness(1) blur(0)}}
+/* v62: New sticker keyframes — school/tech/comfort/adventure */
+@keyframes bqStkSchool{0%{transform:scale(0) translateY(15px);opacity:0}40%{transform:scale(1.2) translateY(-4px);opacity:1}60%{transform:scale(.92) translateY(2px)}100%{transform:scale(1) translateY(0)}}
+@keyframes bqStkTech{0%{transform:scale(.2);opacity:0;filter:brightness(2) blur(4px)}40%{transform:scale(1.15);opacity:1;filter:brightness(1.2) blur(0)}60%{transform:scale(.9)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes bqStkComfort{0%{transform:scale(0) rotate(-8deg);opacity:0}40%{transform:scale(1.25) rotate(4deg);opacity:1}60%{transform:scale(.9) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bqStkAdventure{0%{transform:translateX(-25px) translateY(15px) scale(.2);opacity:0}50%{transform:translateX(3px) translateY(-3px) scale(1.15);opacity:1}100%{transform:translateX(0) translateY(0) scale(1)}}
 .bqbbl.sticker .bqbbl-meta{color:var(--bq-text-subtle)!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important;position:static!important;float:right;margin-top:4px!important;}
 @keyframes bqStickerPop{
   0%{transform:scale(.2) rotate(-12deg);opacity:0;}
@@ -2161,7 +2174,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-dm-menu-dropdown{
   position:fixed;
   background:rgba(16,16,20,.98);border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;padding:6px;min-width:200px;
+  border-radius:14px;padding:6px;min-width:180px;max-width:calc(100vw - 16px);
   opacity:0;pointer-events:none;
   transform:translateY(-6px) scale(.96);
   transform-origin:top right;
@@ -4717,11 +4730,11 @@ function clearMediaPreview(){
 
 /* ── INIT DM FEATURES ── */
 function initDmFeatures(){
-  // DM menu button
+  // DM menu button — v62: removed old toggle handler, v4 ensureDmMenuBindings handles positioning
   const menuBtn=document.getElementById('bq-dm-menu-btn');
   const menuDrop=document.getElementById('bq-dm-menu');
-  menuBtn?.addEventListener('click',e=>{ e.stopPropagation(); menuDrop?.classList.toggle('open'); });
-  document.getElementById('bq-dm-menu-info')?.addEventListener('click',openDmInfo);
+  // v62: Old simple toggle removed — v4's ensureDmMenuBindings handles viewport-aware positioning
+  document.getElementById('bq-dm-menu-info')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openDmInfo(); });
   document.getElementById('bq-dm-menu-starred')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openStarredPanel(); });
   document.getElementById('bq-dm-menu-theme')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openDmInfo(); });
   document.getElementById('bq-dm-menu-mute')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); if(activeDmId) toggleMute(activeDmId); });
@@ -4950,9 +4963,14 @@ function renderMsg(ctx,msg,key){
   const tStr=tsStr(ts);
   const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
+  /* v62: Store message text + type on row for correct reply extraction */
+  var _msgDisplayText = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':msg.gifUrl?'🎬 GIF':msg.imageData?'📷 Photo':'');
   const row=document.createElement('div');
   row.id=pfx+key;
   row.className='bqr '+(isMine?'mine':'theirs')+(consec?' consec':'');
+  row.dataset.msgText = _msgDisplayText.slice(0,80);
+  row.dataset.msgUname = msg.uname||'';
+  if(msg.replyTo){ row.dataset.replyToKey = msg.replyTo.key||''; row.dataset.replyToUname = msg.replyTo.uname||''; row.dataset.replyToText = (msg.replyTo.text||'').slice(0,80); }
   row.dataset.date=msgDate.toDateString();
   row.dataset.ts=String(ts);
   row.dataset.msguid=msg.uid;
@@ -4973,19 +4991,22 @@ function renderMsg(ctx,msg,key){
       '🫶':'stk-love','🙏':'stk-mood','👏':'stk-party','🤝':'stk-mood','💪':'stk-sport','🫡':'stk-mood','🤌':'stk-mood','👌':'stk-mood',
       '💀':'stk-mood','🤯':'stk-mood','😭':'stk-mood','👀':'stk-mood','😈':'stk-mood','🤡':'stk-mood','💅':'stk-mood','🫠':'stk-mood',
       '🌙':'stk-nature','⚡':'stk-nature','🎯':'stk-sport','💎':'stk-nature','🚀':'stk-travel','🌊':'stk-nature','🎸':'stk-sport','🍀':'stk-nature',
-      '🐉':'stk-animal','🦋':'stk-animal','🐺':'stk-animal','🦊':'stk-animal','🐸':'stk-animal','🦅':'stk-animal','🐬':'stk-animal','🌸':'stk-nature',
+      '🦋':'stk-animal','🐺':'stk-animal','🦊':'stk-animal','🐸':'stk-animal','🦅':'stk-animal','🐬':'stk-animal','🌸':'stk-nature','🦜':'stk-animal',
       '💕':'stk-love','💗':'stk-love','💖':'stk-love','🤗':'stk-love','😘':'stk-love','🥹':'stk-love','💑':'stk-love','🫂':'stk-love',
       '🎊':'stk-party','🥳':'stk-party','🍾':'stk-party','🪩':'stk-party','🪅':'stk-party','🎆':'stk-party','🎈':'stk-party','🏆':'stk-party',
       '😌':'stk-mood','🧘':'stk-mood','🥱':'stk-mood','😴':'stk-mood','🤭':'stk-mood','😏':'stk-mood','🫣':'stk-mood','🤓':'stk-mood',
       '🍕':'stk-food','🍜':'stk-food','🧋':'stk-food','☕':'stk-food','🍰':'stk-food','🌮':'stk-food','🍱':'stk-food','🥂':'stk-food',
       '✈️':'stk-travel','🗼':'stk-travel','🏖️':'stk-travel','🌍':'stk-travel','🏔️':'stk-travel','🌅':'stk-travel','🌋':'stk-nature','🏰':'stk-travel',
-      '⚽':'stk-sport','🏀':'stk-sport','🎨':'stk-sport','🎮':'stk-sport','🎲':'stk-sport','🧩':'stk-sport','🎭':'stk-sport',
-      // v36: New sticker animation mappings
+      '⚽':'stk-sport','🏀':'stk-sport','🎨':'stk-sport','🎮':'stk-sport','🎲':'stk-sport','🧩':'stk-sport','🎭':'stk-sport','🤸':'stk-sport',
       '🧪':'stk-science','🔬':'stk-science','🧬':'stk-science','🔭':'stk-science','🌡️':'stk-science','🧫':'stk-science','💡':'stk-science','🪐':'stk-science',
       '🎵':'stk-music','🎶':'stk-music','🎤':'stk-music','💃':'stk-music','🕺':'stk-music','🪗':'stk-music','🎹':'stk-music','🥁':'stk-music',
       '☀️':'stk-weather','🌈':'stk-weather','⭐':'stk-weather','❄️':'stk-weather','🌪️':'stk-weather','☄️':'stk-weather','🌤️':'stk-weather','🪶':'stk-weather',
       '👋':'stk-greet','🤞':'stk-greet','✌️':'stk-greet','🤙':'stk-greet','🫰':'stk-greet','🫱':'stk-greet','🫲':'stk-greet','🤟':'stk-greet',
-      '🔮':'stk-magic','🧙':'stk-magic','🪄':'stk-magic','🦄':'stk-magic','🌟':'stk-magic','👑':'stk-magic','🪬':'stk-magic',
+      // v62: New sticker animation mappings
+      '📚':'stk-school','✏️':'stk-school','🎓':'stk-school','📝':'stk-school','🧠':'stk-school','📖':'stk-school','🎒':'stk-school','📐':'stk-school',
+      '💻':'stk-tech','⌨️':'stk-tech','🖥️':'stk-tech','📱':'stk-tech','🔋':'stk-tech','📡':'stk-tech','🤖':'stk-tech','🔌':'stk-tech',
+      '🧸':'stk-comfort','🛋️':'stk-comfort','🕯️':'stk-comfort','🧣':'stk-comfort','☕':'stk-comfort','🛏️':'stk-comfort','🪴':'stk-comfort','🧶':'stk-comfort',
+      '🏕️':'stk-adventure','🧗':'stk-adventure','🚴':'stk-adventure','⛷️':'stk-adventure','🚣':'stk-adventure','🏹':'stk-adventure','🧭':'stk-adventure','🎣':'stk-adventure',
     };
     _stkClass = _stkAnimMap[msg.sticker] || '';
   }
@@ -5534,44 +5555,106 @@ function setupInput(ctx){
   const msgs=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!inp||!snd)return;
 
-  // Quick stickers tray (replaces emoji tray) — tap to send a one-tap sticker message
-  // v35: category labels for the expanded sticker set
+  // v62: Redesigned sticker tray with modern tab UI
   const _stkCats = [
-    {label:'Reactions', start:0, len:8},
-    {label:'Expressions', start:8, len:8},
-    {label:'Fun', start:16, len:8},
-    {label:'Nature', start:24, len:8},
-    {label:'Animals', start:32, len:8},
-    {label:'Love', start:40, len:8},
-    {label:'Party', start:48, len:8},
-    {label:'Mood', start:56, len:8},
-    {label:'Food', start:64, len:8},
-    {label:'Travel', start:72, len:8},
-    {label:'Sports', start:80, len:7},
-    // v36: New sticker categories
-    {label:'Science', start:87, len:8},
-    {label:'Music', start:95, len:8},
-    {label:'Weather', start:103, len:8},
-    {label:'Greetings', start:111, len:8},
-    {label:'Magic', start:119, len:8},
+    {label:'🔥 Hot', icon:'🔥', start:0, len:8},
+    {label:'😊 Express', icon:'😊', start:8, len:8},
+    {label:'💀 Fun', icon:'💀', start:16, len:8},
+    {label:'🌿 Nature', icon:'🌿', start:24, len:8},
+    {label:'🐾 Animals', icon:'🐾', start:32, len:8},
+    {label:'💕 Love', icon:'💕', start:40, len:8},
+    {label:'🎉 Party', icon:'🎉', start:48, len:8},
+    {label:'😴 Mood', icon:'😴', start:56, len:8},
+    {label:'🍕 Food', icon:'🍕', start:64, len:8},
+    {label:'✈️ Travel', icon:'✈️', start:72, len:8},
+    {label:'⚽ Sports', icon:'⚽', start:80, len:8},
+    {label:'🔬 Science', icon:'🔬', start:88, len:8},
+    {label:'🎵 Music', icon:'🎵', start:96, len:8},
+    {label:'☀️ Weather', icon:'☀️', start:104, len:8},
+    {label:'👋 Greet', icon:'👋', start:112, len:8},
+    {label:'📚 School', icon:'📚', start:120, len:8},
+    {label:'💻 Tech', icon:'💻', start:128, len:8},
+    {label:'🧸 Cozy', icon:'🧸', start:136, len:8},
+    {label:'🏕️ Adventure', icon:'🏕️', start:144, len:8},
   ];
-  _stkCats.forEach(cat=>{
-    const lbl=document.createElement('div');
-    lbl.className='bqstk-cat';lbl.textContent=cat.label;
-    lbl.style.cssText='width:100%;font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.22);padding:6px 2px 2px;margin-top:2px;';
-    tray.appendChild(lbl);
-    for(let i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
-      const e=QUICK_STICKERS[i];
-      const b=document.createElement('button');
-      b.className='bqietb';b.textContent=e;b.title='Send '+e+' sticker';
-      b.addEventListener('click',()=>{
+  // v62: Build modern sticker tray UI with tabs + search
+  tray.innerHTML = '';
+  tray.className = 'bqiet bqstk-modern';
+  // Search bar
+  var stkSearch = document.createElement('div');
+  stkSearch.className = 'bqstk-search';
+  stkSearch.innerHTML = '<input type="text" class="bqstk-search-inp" placeholder="Search stickers...">';
+  tray.appendChild(stkSearch);
+  // Tab bar
+  var stkTabs = document.createElement('div');
+  stkTabs.className = 'bqstk-tabs';
+  tray.appendChild(stkTabs);
+  // Sticker grid container
+  var stkGrid = document.createElement('div');
+  stkGrid.className = 'bqstk-grid';
+  tray.appendChild(stkGrid);
+  // Active tab state
+  var _activeStkCat = 0;
+  function renderStkGrid(catIdx, filter){
+    stkGrid.innerHTML = '';
+    var cat = _stkCats[catIdx];
+    var items = [];
+    if(filter){
+      // Search across all stickers
+      var fl = filter.toLowerCase();
+      for(var i=0;i<QUICK_STICKERS.length;i++){
+        items.push(QUICK_STICKERS[i]);
+      }
+    } else {
+      for(var i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
+        items.push(QUICK_STICKERS[i]);
+      }
+    }
+    items.forEach(function(e){
+      var b=document.createElement('button');
+      b.className='bqstk-item';b.textContent=e;b.title='Send '+e+' sticker';
+      b.addEventListener('click',function(){
         if(!uname){showModal(false);return;}
         if(isG) sendStickerGlobal(e); else sendStickerDm(e);
         tray.classList.remove('open');
       });
-      tray.appendChild(b);
+      stkGrid.appendChild(b);
+    });
+  }
+  // Build tab buttons
+  _stkCats.forEach(function(cat, idx){
+    var tab = document.createElement('button');
+    tab.className = 'bqstk-tab' + (idx===0?' active':'');
+    tab.textContent = cat.icon;
+    tab.title = cat.label;
+    tab.addEventListener('click', function(){
+      _activeStkCat = idx;
+      stkTabs.querySelectorAll('.bqstk-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      stkSearch.querySelector('.bqstk-search-inp').value = '';
+      renderStkGrid(idx);
+    });
+    stkTabs.appendChild(tab);
+  });
+  // Search handler
+  stkSearch.querySelector('.bqstk-search-inp').addEventListener('input', function(){
+    var v = this.value.trim();
+    if(!v){ renderStkGrid(_activeStkCat); return; }
+    stkGrid.innerHTML = '';
+    var fl = v.toLowerCase();
+    // Show all stickers matching (we can't search emoji names easily, just show all if searching)
+    for(var i=0;i<QUICK_STICKERS.length;i++){
+      var b=document.createElement('button');
+      b.className='bqstk-item';b.textContent=QUICK_STICKERS[i];
+      b.addEventListener('click',function(){
+        if(!uname){showModal(false);return;}
+        if(isG) sendStickerGlobal(this.textContent); else sendStickerDm(this.textContent);
+        tray.classList.remove('open');
+      });
+      stkGrid.appendChild(b);
     }
   });
+  renderStkGrid(0);
   if(eoB){
     eoB.textContent='✨';
     eoB.title='Quick Stickers';
@@ -8003,8 +8086,8 @@ setTimeout(_injectProfileUploads,1500);
         const id=curRow.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
         if(m){
           const ctx=m[1], key=m[2];
-          // Build minimal msg payload from DOM
-          const txt=curRow.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+          // v62: Use data-msg-text instead of innerText (avoids picking up reply chip text)
+          const txt=curRow.dataset?.msgText || curRow.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
           const uname=curRow.querySelector('.bqun')?.textContent?.replace(/^@|^You/,'')||'';
           if(typeof setReply==='function'){
             try{ setReply(ctx==='global'?'g':'dm',{key,uname,text:txt}); }catch(_){}
@@ -8039,12 +8122,13 @@ setTimeout(_injectProfileUploads,1500);
     }
     container.addEventListener('touchstart',e=>{
       if(document.body.classList.contains('bq-select-mode')) return;
+      if(window._bqSwipeActive) return; /* v62: Block reaction panel during swipe */
       const bubble=e.target.closest('.bqbbl'); if(!bubble) return;
       const ck=findCtxKey(bubble); if(!ck) return;
       moved=false; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
       pressBubble=bubble;
       pressT=setTimeout(()=>{
-        if(moved||!pressBubble) return;
+        if(moved||!pressBubble||window._bqSwipeActive) return; /* v62: Also block if swipe started */
         bubble.classList.add('bq-press');
         if(navigator.vibrate) try{navigator.vibrate(15);}catch(_){}
         if(typeof openReactionPicker==='function') openReactionPicker(ck.ctx,ck.key);
@@ -8737,7 +8821,8 @@ setTimeout(_injectProfileUploads,1500);
       const id=row.id||''; const m=id.match(/^bqmsg-(global|dm)-(.+)$/);
       if(!m) return;
       const ctx=m[1], key=m[2];
-      const txt=row.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
+      /* v62: Use data-msg-text instead of innerText to avoid reply chip text */
+      const txt=row.dataset?.msgText || row.querySelector('.bqbbl')?.innerText?.split('\n')[0]?.slice(0,80)||'';
       const uname=row.querySelector('.bqun')?.textContent?.replace(/^@/,'')||'';
       try{
         if(typeof setReply==='function') setReply(ctx==='global'?'g':'dm',{key,uname,text:txt});
@@ -14606,18 +14691,17 @@ if(document.readyState === 'loading'){
      This fixes the bug where .bqbbl.innerText captured the @username from the
      reply chip as the first line, causing reply-to-reply to show only "@user". */
   function extractReplyText(row){
-    /* 1. Actual message text (excludes reply chip) */
+    /* v62: Use data-msg-text first — always correct, never picks up reply chip text */
+    if(row.dataset && row.dataset.msgText) return row.dataset.msgText;
+    /* Fallback 1: .bqtxt element (excludes reply chip) */
     var txtEl = row.querySelector('.bqtxt');
     if(txtEl && txtEl.textContent.trim()) return txtEl.textContent.trim().slice(0,80);
-    /* 2. Media type badges */
+    /* Fallback 2: Media type badges */
     if(row.querySelector('.bq-msg-gif,.bqgif'))  return '\uD83C\uDFAC GIF';
     if(row.querySelector('.bq-msg-img,.bq-img'))  return '\uD83D\uDCF8 Photo';
     if(row.querySelector('.bq-voice,audio'))       return '\uD83C\uDFA4 Voice note';
     if(row.querySelector('.bq-sticker'))            return '\uD83D\uDC7E Sticker';
-    /* 3. If the message IS a reply with no own text, use the chip's text */
-    var rpT = row.querySelector('.bqrp-t');
-    if(rpT && rpT.textContent.trim()) return rpT.textContent.trim().slice(0,80);
-    /* 4. Last resort: bubble text minus reply chip */
+    /* Fallback 3: bubble text minus reply chip */
     var bbl = row.querySelector('.bqbbl');
     if(!bbl) return '';
     var clone = bbl.cloneNode(true);
@@ -14651,6 +14735,8 @@ if(document.readyState === 'loading'){
     sw.dx = 0; sw.dy = 0;
     sw.locked = false; sw.active = true; sw.triggered = false; sw.swiping = false;
     sw.badge  = ensureBadge(row);
+    /* v62: Flag to block long-press reaction panel during swipe */
+    window._bqSwipeActive = true;
   }
 
   function swipeOnMove(e){
@@ -14726,8 +14812,13 @@ if(document.readyState === 'loading'){
         var ctx = m[1], key = m[2];
         var txt   = extractReplyText(row);
         var uname = (row.querySelector('.bqun')?.textContent || '').replace(/^@|^You/,'');
+        /* v62: Include replyTo data for nested replies */
+        var _rpExtra = null;
+        if(row.dataset && row.dataset.replyToKey){
+          _rpExtra = {rkey:row.dataset.replyToKey, runame:row.dataset.replyToUname||'', rtext:row.dataset.replyToText||''};
+        }
         try{
-          if(typeof window._bqSetReply === 'function') window._bqSetReply(ctx==='global'?'g':'dm',{key:key,uname:uname,text:txt});
+          if(typeof window._bqSetReply === 'function') window._bqSetReply(ctx==='global'?'g':'dm',{key:key,uname:uname,text:txt,replyTo:_rpExtra});
           var inp = document.getElementById(ctx==='global'?'bqginp':'bqdminp');
           if(inp) inp.focus();
         }catch(_){}
@@ -14735,7 +14826,7 @@ if(document.readyState === 'loading'){
     }
     sw.row = null; sw.badge = null; sw.active = false; sw.locked = false; sw.triggered = false;
     /* Keep swiping=true briefly so pointerup is also intercepted */
-    setTimeout(function(){ sw.swiping = false; }, 80);
+    setTimeout(function(){ sw.swiping = false; window._bqSwipeActive = false; }, 80);
   }
 
   function swipeOnCancel(e){
@@ -14743,6 +14834,8 @@ if(document.readyState === 'loading'){
     resetRowVisuals();
     sw.row = null; sw.badge = null; sw.active = false; sw.locked = false;
     sw.triggered = false; sw.swiping = false;
+    /* v62: Clear swipe active flag */
+    window._bqSwipeActive = false;
   }
 
   /* Pointer event interceptor — blocks v24's pointer events while we swipe */
@@ -15214,3 +15307,152 @@ if(document.readyState === 'loading'){
   }catch(e){ console.error('[bq] v45 patch error:', e); }
 })();
 /* ════════════ end v45 patch ════════════ */
+
+/* ════════════ v62 patch — Sticker tray redesign, swipe/reaction fix, reply-to-reply fix, DM menu fix ════════════ */
+(function(){
+try{
+
+var v62Style = document.createElement('style');
+v62Style.textContent = [
+  /* ── Modern Sticker Tray ── */
+  '.bqiet.bqstk-modern{',
+  '  display:none!important;',
+  '  flex-direction:column!important;',
+  '  gap:0!important;',
+  '  padding:0!important;',
+  '  max-height:280px!important;',
+  '  overflow:hidden!important;',
+  '  background:var(--bq-bg-elevated,rgba(20,20,24,.96))!important;',
+  '  border:1px solid var(--bq-border,rgba(255,255,255,.08))!important;',
+  '  border-radius:16px!important;',
+  '  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;',
+  '  box-shadow:0 -8px 32px rgba(0,0,0,.4)!important;',
+  '}',
+  '.bqiet.bqstk-modern.open{display:flex!important;animation:bqStkTrayIn .22s cubic-bezier(.22,1,.36,1) both!important;}',
+  '.bqiet.bqstk-modern::before{display:none!important;}',
+
+  /* Search bar */
+  '.bqstk-search{',
+  '  padding:10px 10px 6px!important;',
+  '  flex-shrink:0!important;',
+  '}',
+  '.bqstk-search-inp{',
+  '  width:100%!important;',
+  '  height:34px!important;',
+  '  background:rgba(255,255,255,.06)!important;',
+  '  border:1px solid rgba(255,255,255,.08)!important;',
+  '  border-radius:10px!important;',
+  '  padding:0 12px!important;',
+  '  font-family:"Inter",sans-serif!important;font-size:13px!important;',
+  '  color:var(--bq-text,#e2e8f0)!important;',
+  '  outline:none!important;',
+  '  transition:border-color .15s,background .15s!important;',
+  '  box-sizing:border-box!important;',
+  '}',
+  '.bqstk-search-inp::placeholder{color:rgba(255,255,255,.25)!important;}',
+  '.bqstk-search-inp:focus{border-color:rgba(96,165,250,.4)!important;background:rgba(255,255,255,.09)!important;}',
+
+  /* Tab bar */
+  '.bqstk-tabs{',
+  '  display:flex!important;',
+  '  gap:2px!important;',
+  '  padding:4px 10px 6px!important;',
+  '  overflow-x:auto!important;',
+  '  scrollbar-width:none!important;',
+  '  flex-shrink:0!important;',
+  '  border-bottom:1px solid rgba(255,255,255,.05)!important;',
+  '}',
+  '.bqstk-tabs::-webkit-scrollbar{display:none!important;}',
+  '.bqstk-tab{',
+  '  min-width:34px!important;height:32px!important;',
+  '  background:rgba(255,255,255,.04)!important;',
+  '  border:1px solid transparent!important;',
+  '  border-radius:10px!important;',
+  '  font-size:16px!important;line-height:1!important;',
+  '  cursor:pointer!important;',
+  '  display:flex!important;align-items:center!important;justify-content:center!important;',
+  '  transition:all .12s!important;',
+  '  padding:0 6px!important;flex-shrink:0!important;',
+  '  -webkit-tap-highlight-color:transparent!important;',
+  '}',
+  '.bqstk-tab:hover{background:rgba(255,255,255,.1)!important;}',
+  '.bqstk-tab.active{',
+  '  background:rgba(96,165,250,.15)!important;',
+  '  border-color:rgba(96,165,250,.25)!important;',
+  '  box-shadow:0 0 0 2px rgba(96,165,250,.08)!important;',
+  '}',
+
+  /* Sticker grid */
+  '.bqstk-grid{',
+  '  display:grid!important;',
+  '  grid-template-columns:repeat(8,1fr)!important;',
+  '  gap:4px!important;',
+  '  padding:8px 10px 10px!important;',
+  '  overflow-y:auto!important;',
+  '  scrollbar-width:thin!important;',
+  '  scrollbar-color:rgba(255,255,255,.08) transparent!important;',
+  '  flex:1!important;min-height:0!important;',
+  '}',
+  '.bqstk-grid::-webkit-scrollbar{width:3px!important;}',
+  '.bqstk-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08)!important;border-radius:3px!important;}',
+
+  /* Sticker item */
+  '.bqstk-item{',
+  '  width:100%!important;aspect-ratio:1!important;',
+  '  background:rgba(255,255,255,.03)!important;',
+  '  border:1px solid transparent!important;',
+  '  border-radius:10px!important;',
+  '  font-size:22px!important;line-height:1!important;',
+  '  cursor:pointer!important;',
+  '  display:flex!important;align-items:center!important;justify-content:center!important;',
+  '  transition:all .15s cubic-bezier(.22,1,.36,1)!important;',
+  '  -webkit-tap-highlight-color:transparent!important;',
+  '}',
+  '.bqstk-item:hover{',
+  '  background:rgba(255,255,255,.1)!important;',
+  '  border-color:rgba(96,165,250,.2)!important;',
+  '  transform:scale(1.15) rotate(-4deg)!important;',
+  '  box-shadow:0 4px 12px rgba(0,0,0,.3)!important;',
+  '}',
+  '.bqstk-item:active{',
+  '  transform:scale(.85)!important;',
+  '  transition:transform .06s ease-out!important;',
+  '}',
+
+  /* Tray slide-in */
+  '@keyframes bqStkTrayIn{',
+  '  0%{opacity:0;transform:translateY(8px) scale(.97);}',
+  '  100%{opacity:1;transform:translateY(0) scale(1);}',
+  '}',
+
+  /* Mobile adjustments */
+  '@media (max-width:420px){',
+  '  .bqstk-grid{grid-template-columns:repeat(6,1fr)!important;}',
+  '  .bqstk-tab{min-width:30px!important;height:28px!important;font-size:14px!important;}',
+  '  .bqstk-item{font-size:20px!important;}',
+  '}',
+
+  /* ── Reply chip highlight animation ── */
+  '.bq-rp-hl .bqbbl{',
+  '  box-shadow:0 0 0 2px rgba(96,165,250,.5),0 0 20px rgba(96,165,250,.15)!important;',
+  '  transition:box-shadow .3s ease!important;',
+  '}',
+
+  /* ── Swipe indicator badge ── */
+  '.bq-wa-badge{',
+  '  position:absolute;top:50%;transform:translateY(-50%) scale(.4);',
+  '  width:28px;height:28px;border-radius:8px;',
+  '  background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.25);',
+  '  display:flex;align-items:center;justify-content:center;',
+  '  opacity:0;transition:opacity .15s,transform .15s;pointer-events:none;z-index:5;',
+  '}',
+  '.bq-wa-badge svg{width:14px;height:14px;stroke:#60a5fa;fill:none;stroke-width:2;stroke-linecap:round;}',
+  '.bqr.mine .bq-wa-badge{left:-34px;}',
+  '.bqr.theirs .bq-wa-badge{right:-34px;}',
+].join('\n');
+document.head.appendChild(v62Style);
+
+console.log('[bq] v62 patch loaded — Sticker redesign, swipe/reaction fix, reply-to-reply fix, DM menu fix');
+}catch(e){ console.error('[bq] v62 patch error:', e); }
+})();
+/* ════════════ end v62 patch ════════════ */
