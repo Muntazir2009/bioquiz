@@ -15652,26 +15652,42 @@ function bqShowDisguise(){
   bqCreateDisguise();
 }
 
-/* Override panel open to show disguise */
-var _origOpenPanel = openPanel;
-openPanel = function(){
-  _origOpenPanel();
-  if(!bqIsUnlocked()){
+/* Watch for panel opening via MutationObserver (openPanel is inside the IIFE so we can't override it) */
+var _bqPanel = document.getElementById('bqp');
+if(_bqPanel){
+  /* Show disguise if panel is already open */
+  if(_bqPanel.classList.contains('open') && !bqIsUnlocked()){
     bqShowDisguise();
   }
-};
+  /* Watch for 'open' class being added */
+  var _bqPanelObserver = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.type === 'attributes' && m.attributeName === 'class'){
+        var target = m.target;
+        if(target.id === 'bqp' && target.classList.contains('open')){
+          if(!bqIsUnlocked()){
+            bqShowDisguise();
+          }
+        }
+      }
+    });
+  });
+  _bqPanelObserver.observe(_bqPanel, { attributes: true, attributeFilter: ['class'] });
+}
 
-/* Also check on init — if panel is somehow already open */
-setTimeout(function(){
-  if(!bqIsUnlocked()){
-    var panel = document.getElementById('bqp');
-    if(panel && panel.classList.contains('open')){
-      bqShowDisguise();
-    }
-  }
-}, 1000);
+/* Also intercept the chat bubble click */
+var _bqBubble = document.getElementById('bqb');
+if(_bqBubble){
+  _bqBubble.addEventListener('click', function(){
+    setTimeout(function(){
+      if(!bqIsUnlocked()){
+        bqShowDisguise();
+      }
+    }, 150);
+  }, true);
+}
 
-console.log('[bq] v65 patch loaded — Fix sticker All tab, Rebuild GIF picker, Widget disguise');
+console.log('[bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise');
 }catch(e){ console.error('[bq] v65 patch error:', e); }
 })();
 /* ════════════ end v65 patch ════════════ */
