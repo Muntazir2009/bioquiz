@@ -4,7 +4,7 @@ bun install v1.3.14 (0d9b296a)
 + express@4.22.2
 + socket.io@4.8.3
 
-83 packages installed [150.00ms]
+83 packages installed [244.00ms]
 [file-ws] Running bun run dev...
 $ bun --hot index.ts
 [file-ws] Realtime service running on port 3003

@@ -3608,18 +3608,30 @@ function showDmConvo(pUid, pName) {
 ───────────────────────────────────────── */
 function loadSDK(){
   return new Promise((res,rej)=>{
-    let done=0;
-['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'].forEach(u=>{
-      const s=document.createElement('script');s.src=u;
-      s.onload=()=>{if(++done===2)res();};s.onerror=rej;
-      document.head.appendChild(s);
-    });
-    // Load messaging SDK non-critically — push won't work without it but core chat will
-    const _mssdk=document.createElement('script');
-    _mssdk.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
-    _mssdk.onerror=()=>console.warn('[Chat] Messaging SDK unavailable');
-    document.head.appendChild(_mssdk);
+    // CRITICAL: firebase-database-compat.js depends on firebase-app-compat.js
+    // being fully loaded first. Loading in parallel causes a race condition
+    // where firebase.database is undefined. Load app FIRST, then database.
+    const s1=document.createElement('script');
+    s1.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
+    s1.onload=()=>{
+      console.log('[Chat] Firebase app-compat loaded');
+      // Now load database compat (requires app-compat to be ready)
+      const s2=document.createElement('script');
+      s2.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js';
+      s2.onload=()=>{
+        console.log('[Chat] Firebase database-compat loaded, firebase.database =', typeof firebase.database);
+        res();
+      };
+      s2.onerror=rej;
+      document.head.appendChild(s2);
+      // Load messaging SDK non-critically — push won't work without it but core chat will
+      const s3=document.createElement('script');
+      s3.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
+      s3.onerror=()=>console.warn('[Chat] Messaging SDK unavailable');
+      document.head.appendChild(s3);
+    };
+    s1.onerror=rej;
+    document.head.appendChild(s1);
   });
 }
 

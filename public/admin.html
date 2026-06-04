@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Question Editor</title>
+
+<style>
+*{box-sizing:border-box;font-family:Inter,system-ui,sans-serif}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:#05070f;
+  color:#eaf1ff;
+  padding:30px;
+}
+
+h1{margin-bottom:8px}
+p{opacity:.7;margin-bottom:20px}
+
+/* GLASS CARD */
+.card{
+  max-width:900px;
+  margin:auto;
+  padding:26px;
+  background:rgba(12,16,32,.8);
+  backdrop-filter:blur(14px);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 40px 120px rgba(0,0,0,.6);
+}
+
+label{
+  font-size:.85rem;
+  opacity:.8;
+  display:block;
+  margin-top:14px;
+}
+
+input,textarea,select{
+  width:100%;
+  margin-top:6px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.04);
+  color:#fff;
+}
+
+textarea{resize:vertical}
+
+button{
+  margin-top:20px;
+  padding:12px 20px;
+  border-radius:12px;
+  border:none;
+  background:#2f5cff;
+  color:#fff;
+  cursor:pointer;
+}
+
+button.secondary{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.2);
+}
+
+.actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.preview{
+  margin-top:30px;
+}
+
+.qbox{
+  padding:16px;
+  margin-bottom:14px;
+  border-radius:14px;
+  background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.1);
+}
+
+.qbox b{color:#6dffcc}
+
+footer{
+  text-align:center;
+  margin-top:30px;
+  font-size:.6rem;
+  opacity:.4;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Quiz Question Editor</h1>
+  <p>Add questions and export JSON for your quiz</p>
+
+  <label>Question</label>
+  <textarea id="question"></textarea>
+
+  <label>Option A</label>
+  <input id="a">
+
+  <label>Option B</label>
+  <input id="b">
+
+  <label>Option C</label>
+  <input id="c">
+
+  <label>Option D</label>
+  <input id="d">
+
+  <label>Correct Answer</label>
+  <select id="answer">
+    <option value="0">A</option>
+    <option value="1">B</option>
+    <option value="2">C</option>
+    <option value="3">D</option>
+  </select>
+
+  <label>Explanation</label>
+  <textarea id="explanation"></textarea>
+
+  <label>Fact (optional)</label>
+  <textarea id="fact"></textarea>
+
+  <label>Difficulty</label>
+  <select id="difficulty">
+    <option>Easy</option>
+    <option>Medium</option>
+    <option>Hard</option>
+  </select>
+
+  <div class="actions">
+    <button onclick="add()">Add Question</button>
+    <button class="secondary" onclick="copy()">Copy JSON</button>
+    <button class="secondary" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <div class="preview" id="preview"></div>
+</div>
+
+<footer>Admin Editor • Made by Muntazir</footer>
+
+<script>
+let data=[];
+
+function add(){
+  const q={
+    question:question.value.trim(),
+    options:[a.value,b.value,c.value,d.value],
+    answer:Number(answer.value),
+    explanation:explanation.value.trim(),
+    fact:fact.value.trim(),
+    difficulty:difficulty.value
+  };
+
+  if(!q.question||q.options.some(o=>!o)||!q.explanation){
+    alert("Please fill all required fields");
+    return;
+  }
+
+  data.push(q);
+  render();
+  clearForm();
+}
+
+function render(){
+  preview.innerHTML="";
+  data.forEach((q,i)=>{
+    const div=document.createElement("div");
+    div.className="qbox";
+    div.innerHTML=`
+      <b>Q${i+1}:</b> ${q.question}<br>
+      A. ${q.options[0]}<br>
+      B. ${q.options[1]}<br>
+      C. ${q.options[2]}<br>
+      D. ${q.options[3]}<br>
+      <small>Answer: ${"ABCD"[q.answer]} • ${q.difficulty}</small>
+    `;
+    preview.appendChild(div);
+  });
+}
+
+function copy(){
+  navigator.clipboard.writeText(JSON.stringify(data,null,2));
+  alert("JSON copied to clipboard");
+}
+
+function clearAll(){
+  if(confirm("Clear all questions?")){
+    data=[];
+    render();
+  }
+}
+
+function clearForm(){
+  question.value=a.value=b.value=c.value=d.value="";
+  explanation.value=fact.value="";
+}
+</script>
+
+</body>
+</html>
