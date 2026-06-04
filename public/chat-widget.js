@@ -15176,16 +15176,21 @@ if(document.readyState === 'loading'){
   ].join('\n');
   document.head.appendChild(v45Style);
 
-  /* ── Patch existing GIF nav buttons: replace arrow-only with labeled buttons ── */
+  /* ── Patch existing GIF nav buttons: replace with labeled "Back"/"Next" buttons ── */
   function patchGifNavV45(){
     var navs = document.querySelectorAll('.bqgifp-nav');
     for(var i = 0; i < navs.length; i++){
       var nav = navs[i];
       if(nav.dataset.bqV45) continue;
       nav.dataset.bqV45 = '1';
+      /* Also mark as v44-patched so v44 stops re-adding old labels */
+      nav.dataset.bqV44 = '1';
 
       var prev = nav.querySelector('.bqgifp-prev');
       var next = nav.querySelector('.bqgifp-next');
+
+      /* Remove old v44 label spans */
+      nav.querySelectorAll('.bqgifp-btn-lbl').forEach(function(el){ el.remove(); });
 
       if(prev){
         prev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back';
