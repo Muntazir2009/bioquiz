@@ -4292,7 +4292,7 @@ function attachGifPicker(ctx){
   const pageSpan = panel.querySelector('.bqgifp-page');
   if(!grid || !inp || !cats) return;
 
-  const PER_PAGE = 6;
+  const PER_PAGE = 4;
   let curCat = 'trending', curQ = '', searchT = null;
   let _gifLoaded = false, curPage = 0, _loading = false;
   let _allData = [];
@@ -5555,106 +5555,74 @@ function setupInput(ctx){
   const msgs=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!inp||!snd)return;
 
-  // v62: Redesigned sticker tray with modern tab UI
+  // v64: Minimal sticker tray — simple flex-wrap like original emoji tray
+  // Categories as scrollable row of small labels, stickers in a flat grid
   const _stkCats = [
-    {label:'🔥 Hot', icon:'🔥', start:0, len:8},
-    {label:'😊 Express', icon:'😊', start:8, len:8},
-    {label:'💀 Fun', icon:'💀', start:16, len:8},
-    {label:'🌿 Nature', icon:'🌿', start:24, len:8},
-    {label:'🐾 Animals', icon:'🐾', start:32, len:8},
-    {label:'💕 Love', icon:'💕', start:40, len:8},
-    {label:'🎉 Party', icon:'🎉', start:48, len:8},
-    {label:'😴 Mood', icon:'😴', start:56, len:8},
-    {label:'🍕 Food', icon:'🍕', start:64, len:8},
-    {label:'✈️ Travel', icon:'✈️', start:72, len:8},
-    {label:'⚽ Sports', icon:'⚽', start:80, len:8},
-    {label:'🔬 Science', icon:'🔬', start:88, len:8},
-    {label:'🎵 Music', icon:'🎵', start:96, len:8},
-    {label:'☀️ Weather', icon:'☀️', start:104, len:8},
-    {label:'👋 Greet', icon:'👋', start:112, len:8},
-    {label:'📚 School', icon:'📚', start:120, len:8},
-    {label:'💻 Tech', icon:'💻', start:128, len:8},
-    {label:'🧸 Cozy', icon:'🧸', start:136, len:8},
-    {label:'🏕️ Adventure', icon:'🏕️', start:144, len:8},
+    {label:'All', start:0, len:QUICK_STICKERS.length},
+    {label:'🔥 Hot', start:0, len:8},
+    {label:'😊 Express', start:8, len:8},
+    {label:'💀 Fun', start:16, len:8},
+    {label:'🌿 Nature', start:24, len:8},
+    {label:'🐾 Animals', start:32, len:8},
+    {label:'💕 Love', start:40, len:8},
+    {label:'🎉 Party', start:48, len:8},
+    {label:'😴 Mood', start:56, len:8},
+    {label:'🍕 Food', start:64, len:8},
+    {label:'✈️ Travel', start:72, len:8},
+    {label:'⚽ Sports', start:80, len:8},
+    {label:'🔬 Science', start:88, len:8},
+    {label:'🎵 Music', start:96, len:8},
+    {label:'☀️ Weather', start:104, len:8},
+    {label:'👋 Greet', start:112, len:8},
+    {label:'📚 School', start:120, len:8},
+    {label:'💻 Tech', start:128, len:8},
+    {label:'🧸 Cozy', start:136, len:8},
+    {label:'🏕️ Adventure', start:144, len:8},
   ];
-  // v62: Build modern sticker tray UI with tabs + search
+  // Build minimal sticker tray
   tray.innerHTML = '';
-  tray.className = 'bqiet bqstk-modern';
-  // Search bar
-  var stkSearch = document.createElement('div');
-  stkSearch.className = 'bqstk-search';
-  stkSearch.innerHTML = '<input type="text" class="bqstk-search-inp" placeholder="Search stickers...">';
-  tray.appendChild(stkSearch);
-  // Tab bar
-  var stkTabs = document.createElement('div');
-  stkTabs.className = 'bqstk-tabs';
-  tray.appendChild(stkTabs);
-  // Sticker grid container
-  var stkGrid = document.createElement('div');
-  stkGrid.className = 'bqstk-grid';
-  tray.appendChild(stkGrid);
-  // Active tab state
+  tray.className = 'bqiet bqstk-min';
+  // Category pill row
+  var stkPills = document.createElement('div');
+  stkPills.className = 'bqstk-pills';
+  tray.appendChild(stkPills);
+  // Sticker button container (flat flex-wrap)
+  var stkWrap = document.createElement('div');
+  stkWrap.className = 'bqstk-wrap';
+  tray.appendChild(stkWrap);
+  // Active category
   var _activeStkCat = 0;
-  function renderStkGrid(catIdx, filter){
-    stkGrid.innerHTML = '';
+  function renderStkCat(catIdx){
+    stkWrap.innerHTML = '';
     var cat = _stkCats[catIdx];
-    var items = [];
-    if(filter){
-      // Search across all stickers
-      var fl = filter.toLowerCase();
-      for(var i=0;i<QUICK_STICKERS.length;i++){
-        items.push(QUICK_STICKERS[i]);
-      }
-    } else {
-      for(var i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
-        items.push(QUICK_STICKERS[i]);
-      }
-    }
-    items.forEach(function(e){
-      var b=document.createElement('button');
-      b.className='bqstk-item';b.textContent=e;b.title='Send '+e+' sticker';
-      b.addEventListener('click',function(){
-        if(!uname){showModal(false);return;}
-        if(isG) sendStickerGlobal(e); else sendStickerDm(e);
-        tray.classList.remove('open');
-      });
-      stkGrid.appendChild(b);
-    });
-  }
-  // Build tab buttons
-  _stkCats.forEach(function(cat, idx){
-    var tab = document.createElement('button');
-    tab.className = 'bqstk-tab' + (idx===0?' active':'');
-    tab.textContent = cat.icon;
-    tab.title = cat.label;
-    tab.addEventListener('click', function(){
-      _activeStkCat = idx;
-      stkTabs.querySelectorAll('.bqstk-tab').forEach(function(t){ t.classList.remove('active'); });
-      tab.classList.add('active');
-      stkSearch.querySelector('.bqstk-search-inp').value = '';
-      renderStkGrid(idx);
-    });
-    stkTabs.appendChild(tab);
-  });
-  // Search handler
-  stkSearch.querySelector('.bqstk-search-inp').addEventListener('input', function(){
-    var v = this.value.trim();
-    if(!v){ renderStkGrid(_activeStkCat); return; }
-    stkGrid.innerHTML = '';
-    var fl = v.toLowerCase();
-    // Show all stickers matching (we can't search emoji names easily, just show all if searching)
-    for(var i=0;i<QUICK_STICKERS.length;i++){
-      var b=document.createElement('button');
-      b.className='bqstk-item';b.textContent=QUICK_STICKERS[i];
-      b.addEventListener('click',function(){
+    for(var i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
+      var e = QUICK_STICKERS[i];
+      var b = document.createElement('button');
+      b.className = 'bqietb';
+      b.textContent = e;
+      b.title = 'Send '+e+' sticker';
+      b.addEventListener('click', function(){
         if(!uname){showModal(false);return;}
         if(isG) sendStickerGlobal(this.textContent); else sendStickerDm(this.textContent);
         tray.classList.remove('open');
       });
-      stkGrid.appendChild(b);
+      stkWrap.appendChild(b);
     }
+  }
+  // Build category pills
+  _stkCats.forEach(function(cat, idx){
+    var pill = document.createElement('button');
+    pill.className = 'bqstk-pill' + (idx===0?' active':'');
+    pill.textContent = cat.label;
+    pill.addEventListener('click', function(){
+      _activeStkCat = idx;
+      stkPills.querySelectorAll('.bqstk-pill').forEach(function(p){ p.classList.remove('active'); });
+      pill.classList.add('active');
+      renderStkCat(idx);
+    });
+    stkPills.appendChild(pill);
   });
-  renderStkGrid(0);
+  renderStkCat(0);
   if(eoB){
     eoB.textContent='✨';
     eoB.title='Quick Stickers';
@@ -15308,129 +15276,82 @@ if(document.readyState === 'loading'){
 })();
 /* ════════════ end v45 patch ════════════ */
 
-/* ════════════ v62 patch — Sticker tray redesign, swipe/reaction fix, reply-to-reply fix, DM menu fix ════════════ */
+/* ════════════ v64 patch — Minimal sticker tray, GIF stacking fix ════════════ */
 (function(){
 try{
 
-var v62Style = document.createElement('style');
-v62Style.textContent = [
-  /* ── Modern Sticker Tray ── */
-  '.bqiet.bqstk-modern{',
-  '  display:none!important;',
+var v64Style = document.createElement('style');
+v64Style.textContent = [
+  /* ── Minimal Sticker Tray (like emoji tray) ── */
+  '.bqiet.bqstk-min{',
   '  flex-direction:column!important;',
   '  gap:0!important;',
   '  padding:0!important;',
-  '  max-height:280px!important;',
+  '  max-height:240px!important;',
   '  overflow:hidden!important;',
-  '  background:var(--bq-bg-elevated,rgba(20,20,24,.96))!important;',
-  '  border:1px solid var(--bq-border,rgba(255,255,255,.08))!important;',
-  '  border-radius:16px!important;',
-  '  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;',
-  '  box-shadow:0 -8px 32px rgba(0,0,0,.4)!important;',
   '}',
-  '.bqiet.bqstk-modern.open{display:flex!important;animation:bqStkTrayIn .22s cubic-bezier(.22,1,.36,1) both!important;}',
-  '.bqiet.bqstk-modern::before{display:none!important;}',
+  '.bqiet.bqstk-min::before{display:none!important;}',
 
-  /* Search bar */
-  '.bqstk-search{',
-  '  padding:10px 10px 6px!important;',
-  '  flex-shrink:0!important;',
+  /* Category pill row */
+  '.bqstk-pills{',
+  '  display:flex!important;gap:4px!important;padding:8px 8px 4px!important;',
+  '  overflow-x:auto!important;scrollbar-width:none!important;flex-shrink:0!important;',
   '}',
-  '.bqstk-search-inp{',
-  '  width:100%!important;',
-  '  height:34px!important;',
-  '  background:rgba(255,255,255,.06)!important;',
-  '  border:1px solid rgba(255,255,255,.08)!important;',
-  '  border-radius:10px!important;',
-  '  padding:0 12px!important;',
-  '  font-family:"Inter",sans-serif!important;font-size:13px!important;',
-  '  color:var(--bq-text,#e2e8f0)!important;',
-  '  outline:none!important;',
-  '  transition:border-color .15s,background .15s!important;',
-  '  box-sizing:border-box!important;',
+  '.bqstk-pills::-webkit-scrollbar{display:none!important;}',
+  '.bqstk-pill{',
+  '  height:26px!important;padding:0 10px!important;border-radius:13px!important;',
+  '  background:rgba(255,255,255,.05)!important;border:1px solid transparent!important;',
+  '  font-family:"Inter",sans-serif!important;font-size:11px!important;font-weight:600!important;',
+  '  color:rgba(255,255,255,.4)!important;cursor:pointer!important;',
+  '  white-space:nowrap!important;flex-shrink:0!important;',
+  '  transition:all .12s!important;-webkit-tap-highlight-color:transparent!important;',
   '}',
-  '.bqstk-search-inp::placeholder{color:rgba(255,255,255,.25)!important;}',
-  '.bqstk-search-inp:focus{border-color:rgba(96,165,250,.4)!important;background:rgba(255,255,255,.09)!important;}',
-
-  /* Tab bar */
-  '.bqstk-tabs{',
-  '  display:flex!important;',
-  '  gap:2px!important;',
-  '  padding:4px 10px 6px!important;',
-  '  overflow-x:auto!important;',
-  '  scrollbar-width:none!important;',
-  '  flex-shrink:0!important;',
-  '  border-bottom:1px solid rgba(255,255,255,.05)!important;',
-  '}',
-  '.bqstk-tabs::-webkit-scrollbar{display:none!important;}',
-  '.bqstk-tab{',
-  '  min-width:34px!important;height:32px!important;',
-  '  background:rgba(255,255,255,.04)!important;',
-  '  border:1px solid transparent!important;',
-  '  border-radius:10px!important;',
-  '  font-size:16px!important;line-height:1!important;',
-  '  cursor:pointer!important;',
-  '  display:flex!important;align-items:center!important;justify-content:center!important;',
-  '  transition:all .12s!important;',
-  '  padding:0 6px!important;flex-shrink:0!important;',
-  '  -webkit-tap-highlight-color:transparent!important;',
-  '}',
-  '.bqstk-tab:hover{background:rgba(255,255,255,.1)!important;}',
-  '.bqstk-tab.active{',
-  '  background:rgba(96,165,250,.15)!important;',
+  '.bqstk-pill:hover{background:rgba(255,255,255,.1)!important;color:rgba(255,255,255,.6)!important;}',
+  '.bqstk-pill.active{',
+  '  background:rgba(96,165,250,.15)!important;color:#93c5fd!important;',
   '  border-color:rgba(96,165,250,.25)!important;',
-  '  box-shadow:0 0 0 2px rgba(96,165,250,.08)!important;',
   '}',
 
-  /* Sticker grid */
-  '.bqstk-grid{',
-  '  display:grid!important;',
-  '  grid-template-columns:repeat(8,1fr)!important;',
-  '  gap:4px!important;',
-  '  padding:8px 10px 10px!important;',
-  '  overflow-y:auto!important;',
-  '  scrollbar-width:thin!important;',
-  '  scrollbar-color:rgba(255,255,255,.08) transparent!important;',
+  /* Sticker wrap — same flex-wrap as original emoji tray */
+  '.bqstk-wrap{',
+  '  display:flex!important;flex-wrap:wrap!important;gap:4px!important;',
+  '  padding:6px 8px 8px!important;overflow-y:auto!important;',
+  '  scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,.1) transparent!important;',
   '  flex:1!important;min-height:0!important;',
   '}',
-  '.bqstk-grid::-webkit-scrollbar{width:3px!important;}',
-  '.bqstk-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08)!important;border-radius:3px!important;}',
+  '.bqstk-wrap::-webkit-scrollbar{width:4px!important;}',
+  '.bqstk-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)!important;border-radius:4px!important;}',
 
-  /* Sticker item */
-  '.bqstk-item{',
-  '  width:100%!important;aspect-ratio:1!important;',
-  '  background:rgba(255,255,255,.03)!important;',
-  '  border:1px solid transparent!important;',
-  '  border-radius:10px!important;',
-  '  font-size:22px!important;line-height:1!important;',
-  '  cursor:pointer!important;',
-  '  display:flex!important;align-items:center!important;justify-content:center!important;',
-  '  transition:all .15s cubic-bezier(.22,1,.36,1)!important;',
-  '  -webkit-tap-highlight-color:transparent!important;',
+  /* ── GIF Picker Fixes ── */
+  /* Prevent GIF stacking — ensure grid items have proper dimensions */
+  '.bqgifp-grid{',
+  '  display:grid!important;',
+  '  grid-template-columns:repeat(2,1fr)!important;',
+  '  gap:8px!important;',
+  '  padding:8px!important;',
+  '  overflow-y:auto!important;overflow-x:hidden!important;',
+  '  align-content:start!important;',
+  '  flex:1!important;min-height:0!important;',
+  '  scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,.08) transparent!important;',
   '}',
-  '.bqstk-item:hover{',
-  '  background:rgba(255,255,255,.1)!important;',
-  '  border-color:rgba(96,165,250,.2)!important;',
-  '  transform:scale(1.15) rotate(-4deg)!important;',
-  '  box-shadow:0 4px 12px rgba(0,0,0,.3)!important;',
+  '.bqgifp-grid::-webkit-scrollbar{width:4px!important;}',
+  '.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)!important;border-radius:4px!important;}',
+  '.bqgifp-item{',
+  '  display:block!important;width:100%!important;',
+  '  min-height:80px!important;max-height:140px!important;',
+  '  border-radius:12px!important;overflow:hidden!important;cursor:pointer!important;',
+  '  background:rgba(255,255,255,.03)!important;border:1px solid rgba(255,255,255,.06)!important;',
+  '  transition:transform .15s cubic-bezier(.16,1,.3,1),border-color .15s,box-shadow .15s!important;',
+  '  position:relative!important;',
   '}',
-  '.bqstk-item:active{',
-  '  transform:scale(.85)!important;',
-  '  transition:transform .06s ease-out!important;',
+  '.bqgifp-item:hover{',
+  '  transform:scale(1.03)!important;border-color:rgba(96,165,250,.25)!important;',
+  '  box-shadow:0 4px 16px rgba(0,0,0,.3)!important;z-index:1!important;',
   '}',
-
-  /* Tray slide-in */
-  '@keyframes bqStkTrayIn{',
-  '  0%{opacity:0;transform:translateY(8px) scale(.97);}',
-  '  100%{opacity:1;transform:translateY(0) scale(1);}',
-  '}',
-
-  /* Mobile adjustments */
-  '@media (max-width:420px){',
-  '  .bqstk-grid{grid-template-columns:repeat(6,1fr)!important;}',
-  '  .bqstk-tab{min-width:30px!important;height:28px!important;font-size:14px!important;}',
-  '  .bqstk-item{font-size:20px!important;}',
-  '}',
+  '.bqgifp-item:active{transform:scale(.97)!important;}',
+  '.bqgifp-item img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;}',
+  '.bqgifp-item.bqgifp-err img{display:none!important;}',
+  '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
 
   /* ── Reply chip highlight animation ── */
   '.bq-rp-hl .bqbbl{',
@@ -15450,9 +15371,9 @@ v62Style.textContent = [
   '.bqr.mine .bq-wa-badge{left:-34px;}',
   '.bqr.theirs .bq-wa-badge{right:-34px;}',
 ].join('\n');
-document.head.appendChild(v62Style);
+document.head.appendChild(v64Style);
 
-console.log('[bq] v62 patch loaded — Sticker redesign, swipe/reaction fix, reply-to-reply fix, DM menu fix');
-}catch(e){ console.error('[bq] v62 patch error:', e); }
+console.log('[bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix');
+}catch(e){ console.error('[bq] v64 patch error:', e); }
 })();
-/* ════════════ end v62 patch ════════════ */
+/* ════════════ end v64 patch ════════════ */
