@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '61.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '62.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -586,6 +586,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqr.mine .bqrp-t{color:rgba(255,255,255,.6);}
 
 /* Bubble */
+.bqtxt{display:inline;}
 .bqbbl{
   position:relative;
   padding:9px 13px 7px;
@@ -4992,7 +4993,7 @@ function renderMsg(ctx,msg,key){
   var _voiceHtml = (msg.type==='voice' && msg.audio) ? buildVoiceHtml(msg) : '';
   var _isSticker = !!_stickerHtml;
   var _hasMedia = !!(_imgHtml || _gifHtml);
-  var _txtHtml  = msg.text ? mentionify(linkify(esc(msg.text))) : '';
+  var _txtHtml  = msg.text ? '<div class="bqtxt">'+mentionify(linkify(esc(msg.text)))+'</div>' : '';
   var _hasText  = !!_txtHtml;
   var _bblCls   = 'bqbbl'+(msg.expiresAt?' disappearing':'')+(_hasMedia?' media':'')+(_hasMedia&&_hasText?' has-text':'')+(_isSticker?' sticker':'');
   var _unName   = isMine ? 'You' : '@'+esc(presD.displayName||msg.uname||'?');
@@ -14992,3 +14993,219 @@ if(document.readyState === 'loading'){
 })();
 /* ════════════ end v44 patch ════════════ */
 
+/* ════════════ v45 patch — Modern GIF Picker + Reply chip fix ════════════ */
+(function bqV45Patch(){
+  'use strict';
+  try{
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     V45 PATCH — Modern GIF Picker (Discord/Tenor style) + Reply chip fix
+
+     1. COMPLETELY restyles the GIF picker with a modern, sleek UI:
+        - Glassmorphic panel with rounded corners
+        - Prominent search bar with icon
+        - Category chips as horizontal scrollable pills with emoji
+        - 2-column masonry-style grid with smooth hover effects
+        - Large, clear pagination controls at the bottom
+        - Loading skeletons with shimmer animation
+        - Smooth open/close animation
+     2. Fixes reply chip text extraction (bqtxt wrapper)
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  var v45Style = document.createElement('style');
+  v45Style.id = 'bq-v45-css';
+  v45Style.textContent = [
+    /* ── GIF Picker Panel — Complete Redesign ── */
+    '.bqgifp{',
+    '  position:absolute!important;right:0!important;bottom:100%!important;margin-bottom:10px!important;',
+    '  width:360px!important;max-width:calc(100vw - 16px)!important;',
+    '  background:rgba(15,15,20,.98)!important;',
+    '  border:1px solid rgba(255,255,255,.08)!important;',
+    '  border-radius:20px!important;',
+    '  box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset!important;',
+    '  display:none!important;flex-direction:column!important;',
+    '  height:420px!important;max-height:65vh!important;',
+    '  overflow:hidden!important;z-index:30!important;',
+    '  backdrop-filter:blur(24px)!important;-webkit-backdrop-filter:blur(24px)!important;',
+    '  animation:bqGifPanelIn .25s cubic-bezier(.16,1,.3,1) both!important;',
+    '}',
+    '@keyframes bqGifPanelIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}',
+    '.bqgifp.open{display:flex!important;}',
+
+    /* ── Search Bar ── */
+    '.bqgifp-search{',
+    '  display:flex!important;align-items:center!important;gap:8px!important;',
+    '  background:rgba(255,255,255,.06)!important;',
+    '  border:1px solid rgba(255,255,255,.1)!important;',
+    '  border-radius:12px!important;padding:9px 12px!important;',
+    '  transition:border-color .2s,box-shadow .2s!important;',
+    '}',
+    '.bqgifp-search:focus-within{',
+    '  border-color:rgba(96,165,250,.4)!important;',
+    '  box-shadow:0 0 0 3px rgba(96,165,250,.1)!important;',
+    '}',
+    '.bqgifp-search svg{width:15px!important;height:15px!important;stroke:rgba(255,255,255,.3)!important;fill:none!important;stroke-width:2!important;flex-shrink:0!important;}',
+    '.bqgifp-search input{',
+    '  flex:1!important;background:none!important;border:none!important;outline:none!important;',
+    '  color:var(--bq-text,#e4e4e7)!important;font-family:"Inter",sans-serif!important;',
+    '  font-size:13px!important;font-weight:500!important;',
+    '}',
+    '.bqgifp-search input::placeholder{color:rgba(255,255,255,.25)!important;}',
+
+    /* ── Category Chips ── */
+    '.bqgifp-cats{',
+    '  display:flex!important;gap:6px!important;overflow-x:auto!important;',
+    '  padding:2px 0!important;scrollbar-width:none!important;',
+    '  -ms-overflow-style:none!important;',
+    '}',
+    '.bqgifp-cats::-webkit-scrollbar{display:none!important;}',
+    '.bqgifp-cat{',
+    '  flex-shrink:0!important;padding:5px 12px!important;border-radius:20px!important;cursor:pointer!important;',
+    '  background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.06)!important;',
+    '  font-family:"Inter",sans-serif!important;font-size:11px!important;font-weight:600!important;',
+    '  letter-spacing:.01em!important;color:rgba(255,255,255,.4)!important;',
+    '  transition:all .15s!important;white-space:nowrap!important;',
+    '}',
+    '.bqgifp-cat:hover{color:rgba(255,255,255,.7)!important;background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.12)!important;}',
+    '.bqgifp-cat.sel{',
+    '  background:rgba(96,165,250,.18)!important;color:#93c5fd!important;',
+    '  border-color:rgba(96,165,250,.3)!important;',
+    '  box-shadow:0 0 0 1px rgba(96,165,250,.15) inset!important;',
+    '}',
+
+    /* ── Grid ── */
+    '.bqgifp-grid{',
+    '  flex:1!important;padding:8px!important;overflow-y:auto!important;overflow-x:hidden!important;',
+    '  display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important;',
+    '  align-content:start!important;',
+    '  scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,.08) transparent!important;',
+    '}',
+    '.bqgifp-grid::-webkit-scrollbar{width:4px!important;}',
+    '.bqgifp-grid::-webkit-scrollbar-track{background:transparent!important;}',
+    '.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)!important;border-radius:4px!important;}',
+
+    /* ── GIF Items ── */
+    '.bqgifp-item{',
+    '  display:block!important;width:100%!important;aspect-ratio:1!important;',
+    '  border-radius:12px!important;overflow:hidden!important;cursor:pointer!important;',
+    '  background:rgba(255,255,255,.03)!important;border:1px solid rgba(255,255,255,.04)!important;',
+    '  transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .2s,box-shadow .2s!important;',
+    '  position:relative!important;',
+    '}',
+    '.bqgifp-item:hover{',
+    '  transform:scale(1.03)!important;border-color:rgba(96,165,250,.3)!important;',
+    '  box-shadow:0 4px 20px rgba(0,0,0,.4)!important;z-index:1!important;',
+    '}',
+    '.bqgifp-item:active{transform:scale(.97)!important;}',
+    '.bqgifp-item img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;}',
+    '.bqgifp-item.bqgifp-err img{display:none!important;}',
+    '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
+
+    /* ── Skeleton Loader (shimmer) ── */
+    '.bqgifp-skel{',
+    '  width:100%!important;aspect-ratio:1!important;border-radius:12px!important;',
+    '  background:linear-gradient(110deg,rgba(255,255,255,.03) 30%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.03) 70%)!important;',
+    '  background-size:200% 100%!important;animation:bqGifShimmer 1.5s ease infinite!important;',
+    '}',
+    '@keyframes bqGifShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}',
+
+    /* ── Empty State ── */
+    '.bqgifp-empty{',
+    '  grid-column:1/-1!important;padding:40px 20px!important;text-align:center!important;',
+    '  font-family:"Inter",sans-serif!important;font-size:13px!important;',
+    '  color:rgba(255,255,255,.2)!important;',
+    '}',
+
+    /* ── Navigation Bar ── */
+    '.bqgifp-nav{',
+    '  padding:10px 12px!important;flex-shrink:0!important;',
+    '  display:flex!important;align-items:center!important;justify-content:center!important;gap:14px!important;',
+    '  border-top:1px solid rgba(255,255,255,.06)!important;',
+    '  background:rgba(255,255,255,.02)!important;',
+    '}',
+    '.bqgifp-prev,.bqgifp-next{',
+    '  height:36px!important;border-radius:10px!important;padding:0 16px!important;',
+    '  background:rgba(96,165,250,.12)!important;',
+    '  border:1px solid rgba(96,165,250,.2)!important;',
+    '  color:#93c5fd!important;cursor:pointer!important;',
+    '  display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;',
+    '  font-family:"Inter",sans-serif!important;font-size:12px!important;font-weight:600!important;',
+    '  transition:all .15s!important;',
+    '  box-shadow:none!important;width:auto!important;',
+    '}',
+    '.bqgifp-prev:hover:not(:disabled),.bqgifp-next:hover:not(:disabled){',
+    '  background:rgba(96,165,250,.25)!important;color:#fff!important;',
+    '  border-color:rgba(96,165,250,.4)!important;',
+    '  box-shadow:0 2px 12px rgba(96,165,250,.15)!important;',
+    '}',
+    '.bqgifp-prev:disabled,.bqgifp-next:disabled{',
+    '  opacity:.2!important;cursor:not-allowed!important;',
+    '}',
+    '.bqgifp-prev svg,.bqgifp-next svg{width:14px!important;height:14px!important;}',
+    '.bqgifp-page{',
+    '  font-family:"Inter",sans-serif!important;font-size:12px!important;font-weight:700!important;',
+    '  color:rgba(255,255,255,.5)!important;min-width:48px!important;text-align:center!important;',
+    '  letter-spacing:.02em!important;',
+    '}',
+    '.bqgifp-btn-lbl{display:none!important;}',
+
+    /* ── GIF Button (composer) ── */
+    '.bqgifbtn{',
+    '  width:36px!important;height:36px!important;border-radius:12px!important;',
+    '  background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.06)!important;',
+    '  cursor:pointer!important;',
+    '  display:flex!important;align-items:center!important;justify-content:center!important;',
+    '  color:rgba(255,255,255,.35)!important;',
+    '  transition:all .15s!important;flex-shrink:0!important;',
+    '  -webkit-tap-highlight-color:transparent!important;',
+    '}',
+    '.bqgifbtn svg{width:18px!important;height:18px!important;stroke:currentColor!important;fill:none!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;}',
+    '.bqgifbtn:hover{background:rgba(96,165,250,.1)!important;color:var(--bq-accent,#60a5fa)!important;border-color:rgba(96,165,250,.2)!important;}',
+    '.bqgifbtn.active{',
+    '  background:rgba(96,165,250,.15)!important;color:var(--bq-accent,#60a5fa)!important;',
+    '  border-color:rgba(96,165,250,.3)!important;',
+    '  box-shadow:0 0 0 3px rgba(96,165,250,.08)!important;',
+    '}',
+
+    /* ── Head area ── */
+    '.bqgifp-head{',
+    '  padding:14px 14px 10px!important;border-bottom:1px solid rgba(255,255,255,.05)!important;',
+    '  display:flex!important;flex-direction:column!important;gap:8px!important;flex-shrink:0!important;',
+    '}',
+    ''
+  ].join('\n');
+  document.head.appendChild(v45Style);
+
+  /* ── Patch existing GIF nav buttons: replace arrow-only with labeled buttons ── */
+  function patchGifNavV45(){
+    var navs = document.querySelectorAll('.bqgifp-nav');
+    for(var i = 0; i < navs.length; i++){
+      var nav = navs[i];
+      if(nav.dataset.bqV45) continue;
+      nav.dataset.bqV45 = '1';
+
+      var prev = nav.querySelector('.bqgifp-prev');
+      var next = nav.querySelector('.bqgifp-next');
+
+      if(prev){
+        prev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back';
+      }
+      if(next){
+        next.innerHTML = 'Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+      }
+    }
+  }
+
+  /* ── Observer for ongoing patching ── */
+  var v45Obs = new MutationObserver(function(){
+    try{ patchGifNavV45(); }catch(_){}
+  });
+  v45Obs.observe(document.body, {childList:true, subtree:true});
+
+  /* ── Initial patch ── */
+  try{ patchGifNavV45(); }catch(_){}
+
+  console.log('[bq] v45 patch loaded — Modern GIF Picker + Reply chip fix');
+  }catch(e){ console.error('[bq] v45 patch error:', e); }
+})();
+/* ════════════ end v45 patch ════════════ */
