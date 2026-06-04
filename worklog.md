@@ -136,3 +136,39 @@ Stage Summary:
 - Reply bar has clean borderless close button with red hover state
 - v43 patch ensures earlier patches' stale CSS is overridden
 - Widget version bumped to 60.0.0
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Replies V2 — Fix every visual and logic aspect of replies, modern sleek design, no duplicate UI elements. Fix GIF section navigation and overlapping. Fix chat lag/glitchiness.
+
+Work Log:
+- Analyzed the full 14K+ line chat-widget.js to identify 4 competing swipe-to-reply systems (v19, v20, v21, v24) causing severe lag
+- Identified reply chip CSS defined 3 times with !important arms race (base, v3, v43)
+- Found reply-to-reply only showing usernames because swipe handlers extracted text from .bqbbl.innerText which captured reply chip @username as first line
+- Found edit handler losing reply chips due to wrong selectors (.bqreply, .bq-replyref instead of .bqrp)
+- Found no click-to-scroll on reply chips
+- Found GIF navigation too small/transparent
+- Created comprehensive v44 patch (~570 lines) with 7 sections:
+  1. CSS: Unified reply chip CSS, suppressed old swipe visuals, bigger GIF nav with labels, fixed GIF grid overlapping
+  2. Unified capture-phase swipe handler replacing all 4 competing systems — uses stopImmediatePropagation() to block old handlers
+  3. Debounced setReply to prevent duplicate triggers from residual handlers
+  4. Click-to-scroll on reply chips with highlight animation
+  5. MutationObserver-based reply preservation on message edit
+  6. GIF nav labels (Prev/Next text added to buttons)
+  7. Global MutationObserver for ongoing DOM maintenance
+- Exported setReply/clearReply/getReply from main IIFE to window._bqSetReply etc.
+- Fixed doAction reply handler to extract proper text with type info (🎬 GIF, 📷 Photo, 👾 Sticker, 🎤 Voice note)
+- Fixed setReply to show nested reply context (↩ @user: original text → reply text)
+- Fixed edit handler selector from .bqreply/.bq-replyref to .bqrp
+- Added data-reply-key attribute to .bqrp elements for efficient click-to-scroll
+- Bumped version to 61.0.0
+- Pushed to GitHub
+
+Stage Summary:
+- v44 patch successfully loads (verified in browser console)
+- All exported functions accessible (window._bqSetReply, _bqClearReply, _bqGetReply)
+- GIF nav labels patched (2 prev + 2 next labels found)
+- v44 CSS stylesheet applied
+- No JS errors in console
+- The 4 competing swipe systems are now suppressed via capture-phase interception + CSS visual hiding
