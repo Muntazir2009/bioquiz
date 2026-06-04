@@ -86,7 +86,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '60.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '61.0.0';                     // V2 Major Upgrade
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -4833,7 +4833,7 @@ function onMsgChanged(ctx,snap){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
       // Preserve any reply/voice/image/sticker children — only update text node + edited marker
-      const reply=bbl.querySelector('.bqreply, .bq-replyref');
+      const reply=bbl.querySelector('.bqrp');
       const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
       const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
       const replyHTML=reply?reply.outerHTML:'';
@@ -4873,18 +4873,27 @@ function setReply(ctx,data){
     gReply=data;
     const bar=document.getElementById('bqgrbar');bar.classList.add('show');
     document.getElementById('bqgrbn').textContent='@'+data.uname;
-    document.getElementById('bqgrbt').textContent=data.text;
+    // Show nested reply context if available
+    var barText = data.text || '';
+    if(data.replyTo && data.replyTo.runame) barText = '↩ @'+data.replyTo.runame+': '+(data.replyTo.rtext||'') + ' → ' + barText;
+    document.getElementById('bqgrbt').textContent=barText;
   } else {
     dmReply=data;
     const bar=document.getElementById('bqdmrbar');bar.classList.add('show');
     document.getElementById('bqdmrbn').textContent='@'+data.uname;
-    document.getElementById('bqdmrbt').textContent=data.text;
+    var barText2 = data.text || '';
+    if(data.replyTo && data.replyTo.runame) barText2 = '↩ @'+data.replyTo.runame+': '+(data.replyTo.rtext||'') + ' → ' + barText2;
+    document.getElementById('bqdmrbt').textContent=barText2;
   }
 }
 function clearReply(ctx){
   if(ctx==='g'){gReply=null;document.getElementById('bqgrbar').classList.remove('show');}
   else{dmReply=null;document.getElementById('bqdmrbar').classList.remove('show');}
 }
+// Export for v44+ patches
+window._bqSetReply = setReply;
+window._bqClearReply = clearReply;
+window._bqGetReply = function(ctx){ return ctx==='g'?gReply:dmReply; };
 
 /* ───────────────────────────────────��─────
    RENDER MESSAGE
@@ -4938,7 +4947,7 @@ function renderMsg(ctx,msg,key){
   const col=getColor(msg.uid,msg.uname||'');
   const ini=uInit(msg.uname||'?');
   const tStr=tsStr(ts);
-  const rpHTML=msg.replyTo?`<div class="bqrp"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
   const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
   const row=document.createElement('div');
   row.id=pfx+key;
@@ -5180,7 +5189,10 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     openReactionPicker(ctx,key);
   }
   else if(a==='reply'){
-    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:(msg.text || (msg.type==='voice'?'🎤 Voice note':'Media'))});
+    var _rpText = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':msg.gifUrl?'🎬 GIF':msg.imageData?'📷 Photo':'');
+    // For replies to replies, include the original reply info
+    var _rpExtra = msg.replyTo ? {rkey:msg.replyTo.key,runame:msg.replyTo.uname,rtext:msg.replyTo.text} : null;
+    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:_rpText,replyTo:_rpExtra});
     document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();
   }
   else if(a==='copy'){
@@ -14432,4 +14444,551 @@ if(document.readyState === 'loading'){
   }catch(e){console.error('[bq] v43 patch error:',e)}
 })();
 /* ════════════ end v43 patch ════════════ */
+
+/* ════════════ v44 patch — Replies V2 + Performance + GIF Fix ════════════ */
+(function bqV44Patch(){
+  'use strict';
+  try{
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     V44 PATCH — Replies V2 + Performance + GIF Fix
+
+     Fixes:
+     1. DISABLES 3 redundant swipe systems (v19, v20, v24), keeping only
+        one unified WA-style capture-phase swipe handler — eliminates 4×
+        touchmove processing that caused severe lag on mobile
+     2. FIXES reply-to-reply showing only @username — extracts text from
+        .bqtxt / media type instead of .bqbbl.innerText which captured
+        the reply chip's @username as the first line
+     3. UNIFIED reply chip CSS — single clean definition overrides all 3
+        competing !important definitions from base/v3/v43
+     4. FIXES reply lost on edit — onMsgChanged uses wrong selectors
+        (.bqreply, .bq-replyref) that don't match actual class (.bqrp);
+        MutationObserver re-injects preserved .bqrp after innerHTML swap
+     5. ADDS click-to-scroll on reply chips — click a .bqrp to scroll to
+        the referenced message with a highlight animation
+     6. FIXES GIF navigation — bigger buttons, labels, better contrast
+     7. FIXES GIF grid overlapping — proper overflow, min-width:0 on items
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §1. CSS
+     ────────────────────────────────────────────────────────────────────── */
+  var v44Style = document.createElement('style');
+  v44Style.id = 'bq-v44-css';
+  v44Style.textContent = [
+    /* ── 1a. Suppress old swipe visuals ── */
+    /* Hide v19's ::after ↩ pseudo-element */
+    '.bqr::after{display:none!important;}',
+    /* Hide v19's trigger outline on bubble */
+    '.bqr.bq-swipe-trigger .bqbbl{box-shadow:none!important;}',
+    /* Hide v24's .bq-swipe-icon element */
+    '.bq-swipe-icon{display:none!important;}',
+    /* Neutralize v20's .bq-swipe-release (capture-phase touchend adds it) */
+    '.bqr.bq-swipe-release{transition:none!important;}',
+    /* Neutralize v19 .bq-swipe-active visual noise */
+    '.bqr.bq-swipe-active{transition:none!important;}',
+    /* Hide v24's bq-swipe class transition override */
+    '.bqr.bq-swipe{transition:none!important;}',
+
+    /* ── 1b. Unified reply chip CSS (overrides base/v3/v43) ── */
+    '.bqrp{',
+    '  padding:6px 10px!important;',
+    '  margin-bottom:6px!important;',
+    '  border-radius:0 10px 10px 0!important;',
+    '  background:linear-gradient(90deg,rgba(96,165,250,.14),rgba(96,165,250,.04))!important;',
+    '  border-left:3px solid var(--bq-accent,#60a5fa)!important;',
+    '  cursor:pointer!important;',
+    '  transition:background .15s ease!important;',
+    '}',
+    '.bqrp:hover{',
+    '  background:linear-gradient(90deg,rgba(96,165,250,.24),rgba(96,165,250,.08))!important;',
+    '}',
+    '.bqrp-n{',
+    '  font-family:"Inter",sans-serif!important;',
+    '  font-size:10px!important;',
+    '  font-weight:700!important;',
+    '  letter-spacing:.03em!important;',
+    '  color:var(--bq-accent,#60a5fa)!important;',
+    '  text-transform:uppercase!important;',
+    '}',
+    '.bqrp-t{',
+    '  font-family:"Inter",sans-serif!important;',
+    '  font-size:11px!important;',
+    '  color:var(--bq-text-muted,rgba(255,255,255,.5))!important;',
+    '  overflow:hidden!important;',
+    '  text-overflow:ellipsis!important;',
+    '  white-space:nowrap!important;',
+    '  max-width:220px!important;',
+    '  margin-top:1px!important;',
+    '  line-height:1.4!important;',
+    '}',
+    '.bqr.mine .bqrp{',
+    '  background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.03))!important;',
+    '  border-left-color:rgba(255,255,255,.45)!important;',
+    '}',
+    '.bqr.mine .bqrp:hover{',
+    '  background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(255,255,255,.06))!important;',
+    '}',
+    '.bqr.mine .bqrp-n{color:rgba(255,255,255,.85)!important;}',
+    '.bqr.mine .bqrp-t{color:rgba(255,255,255,.6)!important;}',
+
+    /* ── 1c. Reply highlight animation (click-to-scroll) ── */
+    '@keyframes bqReplyHighlight{',
+    '  0%,100%{box-shadow:0 0 0 0 transparent;}',
+    '  15%,85%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 14px rgba(96,165,250,.35);}',
+    '}',
+    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 1.6s ease;}',
+
+    /* ── 1d. GIF nav — bigger, labeled, more visible ── */
+    '.bqgifp-prev,.bqgifp-next{',
+    '  width:38px!important;height:38px!important;border-radius:10px!important;',
+    '  background:rgba(96,165,250,.18)!important;',
+    '  border:1px solid rgba(96,165,250,.3)!important;',
+    '  color:#93c5fd!important;',
+    '  flex-direction:column!important;gap:1px!important;',
+    '}',
+    '.bqgifp-prev:hover:not(:disabled),.bqgifp-next:hover:not(:disabled){',
+    '  background:rgba(96,165,250,.35)!important;color:#fff!important;',
+    '}',
+    '.bqgifp-prev:disabled,.bqgifp-next:disabled{',
+    '  opacity:.2!important;cursor:not-allowed!important;',
+    '}',
+    '.bqgifp-page{',
+    '  font-size:12px!important;font-weight:700!important;',
+    '  color:rgba(255,255,255,.6)!important;min-width:52px!important;',
+    '}',
+    '.bqgifp-btn-lbl{',
+    '  font-size:7px!important;font-weight:800!important;',
+    '  letter-spacing:.06em!important;text-transform:uppercase!important;',
+    '  margin-top:1px!important;',
+    '}',
+
+    /* ── 1e. GIF grid — fix overlapping ── */
+    '.bqgifp-grid{overflow-y:auto!important;overflow-x:hidden!important;}',
+    '.bqgifp-item{min-width:0!important;aspect-ratio:1!important;overflow:hidden!important;position:relative!important;}',
+    '.bqgifp-item img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;}'
+  ].join('\n');
+  document.head.appendChild(v44Style);
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §2. UNIFIED CAPTURE-PHASE SWIPE HANDLER
+     Replaces all 4 previous swipe systems with ONE clean implementation.
+     Capture-phase listeners call stopImmediatePropagation() on touchmove
+     once a horizontal swipe is detected, preventing v19/v21 bubble-phase
+     touchmove from firing. Pointer event interception blocks v24.
+     ────────────────────────────────────────────────────────────────────── */
+  var WA_MAX     = 72;
+  var WA_TRIGGER = 52;
+  var REPLY_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>';
+
+  /* Per-session swipe state */
+  var sw = {
+    row: null, badge: null,
+    startX: 0, startY: 0, dx: 0, dy: 0,
+    locked: false, isMine: false, active: false, triggered: false,
+    swiping: false   /* set true once horizontal swipe detected; pointer events check this */
+  };
+
+  function ensureBadge(row){
+    var b = row.querySelector('.bq-wa-reply-ic');
+    if(!b){
+      b = document.createElement('div');
+      b.className = 'bq-wa-reply-ic';
+      b.innerHTML = REPLY_SVG;
+      row.appendChild(b);
+    }
+    return b;
+  }
+
+  /* Extract reply text from a message row, skipping .bqrp reply-chip content.
+     This fixes the bug where .bqbbl.innerText captured the @username from the
+     reply chip as the first line, causing reply-to-reply to show only "@user". */
+  function extractReplyText(row){
+    /* 1. Actual message text (excludes reply chip) */
+    var txtEl = row.querySelector('.bqtxt');
+    if(txtEl && txtEl.textContent.trim()) return txtEl.textContent.trim().slice(0,80);
+    /* 2. Media type badges */
+    if(row.querySelector('.bq-msg-gif,.bqgif'))  return '\uD83C\uDFAC GIF';
+    if(row.querySelector('.bq-msg-img,.bq-img'))  return '\uD83D\uDCF8 Photo';
+    if(row.querySelector('.bq-voice,audio'))       return '\uD83C\uDFA4 Voice note';
+    if(row.querySelector('.bq-sticker'))            return '\uD83D\uDC7E Sticker';
+    /* 3. If the message IS a reply with no own text, use the chip's text */
+    var rpT = row.querySelector('.bqrp-t');
+    if(rpT && rpT.textContent.trim()) return rpT.textContent.trim().slice(0,80);
+    /* 4. Last resort: bubble text minus reply chip */
+    var bbl = row.querySelector('.bqbbl');
+    if(!bbl) return '';
+    var clone = bbl.cloneNode(true);
+    clone.querySelectorAll('.bqrp').forEach(function(el){ el.remove(); });
+    var t = (clone.innerText || '').split('\n')[0] || '';
+    return t.slice(0,80);
+  }
+
+  function resetRowVisuals(){
+    if(sw.row){
+      sw.row.classList.remove('bq-wa-swipe','bq-wa-trigger','bq-wa-swipe-release');
+      sw.row.style.transform = '';
+    }
+    if(sw.badge){
+      sw.badge.style.opacity = '0';
+      sw.badge.style.transform = 'translateY(-50%) scale(.4)';
+    }
+  }
+
+  function swipeOnStart(e){
+    if(document.body.classList.contains('bq-select-mode')) return;
+    var t = e.touches ? e.touches[0] : e;
+    var row = (e.target).closest ? e.target.closest('.bqr') : null;
+    if(!row) return;
+    /* Don't hijack swipe over interactive elements */
+    if((e.target).closest && e.target.closest('audio,video,button,a,input,textarea,.bq-rx-picker,.bqrp')) return;
+    sw.row    = row;
+    sw.isMine = row.classList.contains('mine');
+    sw.startX = t.clientX;
+    sw.startY = t.clientY;
+    sw.dx = 0; sw.dy = 0;
+    sw.locked = false; sw.active = true; sw.triggered = false; sw.swiping = false;
+    sw.badge  = ensureBadge(row);
+  }
+
+  function swipeOnMove(e){
+    if(!sw.active || !sw.row) return;
+    var t = e.touches ? e.touches[0] : e;
+    sw.dx = t.clientX - sw.startX;
+    sw.dy = t.clientY - sw.startY;
+    if(!sw.locked){
+      /* Vertical dominant → scroll, not swipe */
+      if(Math.abs(sw.dy) > 10 && Math.abs(sw.dy) > Math.abs(sw.dx)){
+        sw.active = false; sw.row = null;
+        return;
+      }
+      if(Math.abs(sw.dx) > 6){
+        sw.locked = true;
+        sw.swiping = true;
+        sw.row.classList.add('bq-wa-swipe');
+        sw.row.classList.remove('bq-wa-swipe-release');
+      } else {
+        return;
+      }
+    }
+    /* ── Horizontal swipe confirmed: block ALL other handlers ── */
+    if(e.cancelable) e.preventDefault();
+    e.stopImmediatePropagation();
+
+    var valid = sw.isMine ? sw.dx < 0 : sw.dx > 0;
+    var move;
+    if(valid){
+      move = Math.sign(sw.dx) * Math.min(WA_MAX, Math.abs(sw.dx));
+    } else {
+      move = sw.dx * 0.18; /* rubber-band wrong direction */
+    }
+    sw.row.style.transform = 'translateX(' + move + 'px)';
+
+    var prog = Math.min(1, Math.abs(move) / WA_TRIGGER);
+    sw.badge.style.opacity    = prog.toFixed(2);
+    sw.badge.style.transform  = 'translateY(-50%) scale(' + (0.4 + prog*0.6).toFixed(2) + ')';
+
+    var nowTrig = valid && Math.abs(move) >= WA_TRIGGER;
+    if(nowTrig !== sw.triggered){
+      sw.triggered = nowTrig;
+      sw.row.classList.toggle('bq-wa-trigger', sw.triggered);
+      if(sw.triggered && navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){} }
+    }
+  }
+
+  function swipeOnEnd(e){
+    if(!sw.active || !sw.row){ sw.swiping = false; return; }
+    /* Block v19/v21 bubble-phase touchend handlers */
+    if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+    var didTrigger = sw.triggered;
+    var row = sw.row;
+
+    /* Animate back to resting position */
+    row.classList.remove('bq-wa-swipe');
+    row.classList.add('bq-wa-swipe-release');
+    row.style.transform = 'translateX(0)';
+    if(sw.badge){
+      sw.badge.style.opacity   = '0';
+      sw.badge.style.transform = 'translateY(-50%) scale(.4)';
+    }
+    var r = row;
+    setTimeout(function(){
+      r.classList.remove('bq-wa-swipe-release','bq-wa-trigger');
+      r.style.transform = '';
+    }, 340);
+
+    if(didTrigger){
+      var id = row.id || '';
+      var m  = id.match(/^bqmsg-(global|dm)-(.+)$/);
+      if(m){
+        var ctx = m[1], key = m[2];
+        var txt   = extractReplyText(row);
+        var uname = (row.querySelector('.bqun')?.textContent || '').replace(/^@|^You/,'');
+        try{
+          if(typeof window._bqSetReply === 'function') window._bqSetReply(ctx==='global'?'g':'dm',{key:key,uname:uname,text:txt});
+          var inp = document.getElementById(ctx==='global'?'bqginp':'bqdminp');
+          if(inp) inp.focus();
+        }catch(_){}
+      }
+    }
+    sw.row = null; sw.badge = null; sw.active = false; sw.locked = false; sw.triggered = false;
+    /* Keep swiping=true briefly so pointerup is also intercepted */
+    setTimeout(function(){ sw.swiping = false; }, 80);
+  }
+
+  function swipeOnCancel(e){
+    if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+    resetRowVisuals();
+    sw.row = null; sw.badge = null; sw.active = false; sw.locked = false;
+    sw.triggered = false; sw.swiping = false;
+  }
+
+  /* Pointer event interceptor — blocks v24's pointer events while we swipe */
+  function ptrIntercept(e){
+    if(sw.swiping) e.stopImmediatePropagation();
+  }
+
+  /* Attach unified swipe to both message containers */
+  function attachV44Swipe(){
+    ['bqgmsgs','bqdmmsgs'].forEach(function(id){
+      var sc = document.getElementById(id);
+      if(!sc || sc.dataset.bqV44Swipe) return;
+      sc.dataset.bqV44Swipe = '1';
+
+      /* Touch — capture phase (fires before v19/v21 bubble-phase handlers) */
+      sc.addEventListener('touchstart', swipeOnStart,  {capture:true, passive:true});
+      sc.addEventListener('touchmove',  swipeOnMove,   {capture:true, passive:false});
+      sc.addEventListener('touchend',   swipeOnEnd,    {capture:true});
+      sc.addEventListener('touchcancel',swipeOnCancel,  {capture:true});
+
+      /* Mouse — capture phase for desktop testing */
+      var mouseActive = false;
+      sc.addEventListener('mousedown', function(e){
+        if(e.button !== 0) return;
+        mouseActive = true;
+        swipeOnStart(e);
+      }, {capture:true});
+      sc.addEventListener('mousemove', function(e){
+        if(!mouseActive) return;
+        swipeOnMove(e);
+        /* Block v21's bubble-phase mousemove when swiping */
+        if(sw.swiping) e.stopImmediatePropagation();
+      }, {capture:true});
+      var mouseUp = function(){
+        if(mouseActive){ mouseActive = false; swipeOnEnd(); }
+      };
+      window.addEventListener('mouseup', mouseUp);
+
+      /* Pointer interception — blocks v24's pointer events during swipe */
+      sc.addEventListener('pointerdown',  ptrIntercept, {capture:true});
+      sc.addEventListener('pointermove',  ptrIntercept, {capture:true});
+      sc.addEventListener('pointerup',    ptrIntercept, {capture:true});
+      sc.addEventListener('pointercancel',ptrIntercept, {capture:true});
+      sc.addEventListener('pointerleave', ptrIntercept, {capture:true});
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §3. DEBOUNCE setReply — prevents duplicate reply sets
+     Residual v19/v21/v24 end-handlers may still call setReply (e.g. if
+     capture-phase interception misses an edge case). Dedup by key+time.
+     ────────────────────────────────────────────────────────────────────── */
+  var _origSetReply  = typeof window._bqSetReply === 'function' ? window._bqSetReply : null;
+  var _debounceKey   = '';
+  var _debounceTime  = 0;
+
+  if(_origSetReply){
+    window._bqSetReply = function(ctx, data){
+      var now = Date.now();
+      var key = ctx + ':' + (data && data.key ? data.key : '');
+      if(key === _debounceKey && now - _debounceTime < 200) return; /* dedup */
+      _debounceKey  = key;
+      _debounceTime = now;
+      return _origSetReply.call(this, ctx, data);
+    };
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §4. CLICK-TO-SCROLL on reply chips
+     Click a .bqrp chip to scroll to the referenced message with a
+     highlight animation. Uses data-reply-key attribute (set in renderMsg).
+     ────────────────────────────────────────────────────────────────────── */
+  function handleReplyChipClick(e){
+    var chip = e.target.closest('.bqrp');
+    if(!chip) return;
+    e.stopPropagation();
+
+    var row = chip.closest('.bqr');
+    if(!row) return;
+    var rowId = row.id || '';
+    var m = rowId.match(/^bqmsg-(global|dm)-(.+)$/);
+    if(!m) return;
+    var ctx = m[1];
+    var replyKey = chip.dataset.replyKey;
+
+    if(!replyKey) return;
+
+    var targetId = 'bqmsg-' + ctx + '-' + replyKey;
+    var target = document.getElementById(targetId);
+    if(!target) return;
+    try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+    target.classList.add('bq-rp-hl');
+    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 1700);
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §5. REPLY PRESERVATION ON EDIT
+     onMsgChanged uses selector '.bqreply, .bq-replyref' which doesn't
+     match actual class '.bqrp'. This causes the reply chip to vanish
+     whenever a message is edited. We detect .bqrp removal via
+     MutationObserver and re-inject the preserved HTML.
+     ────────────────────────────────────────────────────────────────────── */
+  var _bblObserver = null; /* observes individual .bqbbl for childList changes */
+
+  function startObservingBbl(bbl){
+    if(!bbl || bbl.dataset.bqV44Obs) return;
+    bbl.dataset.bqV44Obs = '1';
+    if(!_bblObserver) return;
+    try{ _bblObserver.observe(bbl, {childList:true}); }catch(_){}
+  }
+
+  function initEditPreservation(){
+    _bblObserver = new MutationObserver(function(muts){
+      for(var i = 0; i < muts.length; i++){
+        var m = muts[i];
+        if(m.type !== 'childList') continue;
+        var bbl = m.target;
+        if(!bbl.classList || !bbl.classList.contains('bqbbl')) continue;
+        if(bbl.classList.contains('editing')) continue;
+
+        /* Check if a .bqrp was removed */
+        var removedHTML = '';
+        var removedNodes = m.removedNodes;
+        for(var j = 0; j < removedNodes.length; j++){
+          var node = removedNodes[j];
+          if(node.nodeType === 1){
+            if(node.classList && node.classList.contains('bqrp')){
+              removedHTML = node.outerHTML;
+              break;
+            }
+            if(node.querySelector){
+              var rp = node.querySelector('.bqrp');
+              if(rp){ removedHTML = rp.outerHTML; break; }
+            }
+          }
+        }
+
+        if(removedHTML && !bbl.querySelector('.bqrp')){
+          /* Re-inject the reply chip at the start of the bubble */
+          try{
+            var temp = document.createElement('div');
+            temp.innerHTML = removedHTML;
+            var chip = temp.firstElementChild;
+            if(chip) bbl.insertBefore(chip, bbl.firstChild);
+          }catch(_){}
+        }
+      }
+    });
+
+    /* Start observing existing .bqbbl elements */
+    document.querySelectorAll('.bqbbl').forEach(startObservingBbl);
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §6. GIF NAV PATCHING — add text labels to prev/next buttons
+     ────────────────────────────────────────────────────────────────────── */
+  function patchGifNav(){
+    var navs = document.querySelectorAll('.bqgifp-nav');
+    for(var i = 0; i < navs.length; i++){
+      var nav = navs[i];
+      if(nav.dataset.bqV44) continue;
+      nav.dataset.bqV44 = '1';
+
+      var prev = nav.querySelector('.bqgifp-prev');
+      var next = nav.querySelector('.bqgifp-next');
+
+      if(prev && !prev.querySelector('.bqgifp-btn-lbl')){
+        var lbl1 = document.createElement('span');
+        lbl1.className = 'bqgifp-btn-lbl';
+        lbl1.textContent = 'Prev';
+        prev.appendChild(lbl1);
+      }
+      if(next && !next.querySelector('.bqgifp-btn-lbl')){
+        var lbl2 = document.createElement('span');
+        lbl2.className = 'bqgifp-btn-lbl';
+        lbl2.textContent = 'Next';
+        next.appendChild(lbl2);
+      }
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     §7. GLOBAL MUTATION OBSERVER — wiring + ongoing maintenance
+     ────────────────────────────────────────────────────────────────────── */
+  var _v44TopObs = null;
+
+  function onDomMutate(muts){
+    /* Patch GIF navs */
+    try{ patchGifNav(); }catch(_){}
+
+    /* Observe new .bqbbl elements for edit-preservation */
+    if(_bblObserver){
+      for(var i = 0; i < muts.length; i++){
+        var m = muts[i];
+        for(var j = 0; j < m.addedNodes.length; j++){
+          var n = m.addedNodes[j];
+          if(n.nodeType !== 1) continue;
+          if(n.classList && n.classList.contains('bqbbl')) startObservingBbl(n);
+          var bbls = n.querySelectorAll ? n.querySelectorAll('.bqbbl') : [];
+          for(var k = 0; k < bbls.length; k++) startObservingBbl(bbls[k]);
+        }
+      }
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     BOOT
+     ────────────────────────────────────────────────────────────────────── */
+  function bootV44(){
+    /* 1. Attach unified swipe handler */
+    try{ attachV44Swipe(); }catch(e){ console.error('[bq v44] swipe attach error:', e); }
+
+    /* 2. Reply chip click-to-scroll */
+    try{
+      document.addEventListener('click', handleReplyChipClick);
+    }catch(e){ console.error('[bq v44] reply chip click error:', e); }
+
+    /* 3. Edit-preservation observer */
+    try{ initEditPreservation(); }catch(e){ console.error('[bq v44] edit preservation error:', e); }
+
+    /* 4. GIF nav patching */
+    try{ patchGifNav(); }catch(e){ console.error('[bq v44] GIF nav error:', e); }
+
+    /* 5. Top-level DOM observer for ongoing maintenance */
+    try{
+      _v44TopObs = new MutationObserver(onDomMutate);
+      _v44TopObs.observe(document.body, {childList:true, subtree:true});
+    }catch(e){ console.error('[bq v44] top observer error:', e); }
+
+    /* 6. Re-attach swipe if containers appear late (view switches) */
+    try{
+      setInterval(function(){
+        try{ attachV44Swipe(); }catch(_){}
+      }, 3000);
+    }catch(_){}
+
+    console.log('[bq] v44 patch loaded — Replies V2 + Performance + GIF Fix');
+  }
+
+  /* Delay boot to ensure main widget is fully initialised */
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(bootV44, 1800); });
+  } else {
+    setTimeout(bootV44, 1800);
+  }
+
+  }catch(e){ console.error('[bq] v44 patch error:', e); }
+})();
+/* ════════════ end v44 patch ════════════ */
 
