@@ -4264,8 +4264,10 @@ function attachGifPicker(ctx){
   if(btn.dataset.bound) return;
   btn.dataset.bound='1';
 
+  /* v65: Clean GIF picker — infinite scroll, no page nav */
   const panel = document.createElement('div');
   panel.className = 'bqgifp';
+  panel._bqCtx = ctx;
   panel.innerHTML =
     '<div class="bqgifp-head">'+
       '<div class="bqgifp-search">'+
@@ -4276,55 +4278,29 @@ function attachGifPicker(ctx){
         GIPHY_CATEGORIES.map((c,i)=>'<button class="bqgifp-cat'+(i===0?' sel':'')+'" data-cat="'+c.id+'">'+c.label+'</button>').join('')+
       '</div>'+
     '</div>'+
-    '<div class="bqgifp-grid"></div>'+
-    '<div class="bqgifp-nav">'+
-      '<button class="bqgifp-prev" disabled><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
-      '<span class="bqgifp-page">1 / 1</span>'+
-      '<button class="bqgifp-next"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>'+
-    '</div>';
+    '<div class="bqgifp-grid"></div>';
   row.appendChild(panel);
 
   const grid = panel.querySelector('.bqgifp-grid');
   const inp  = panel.querySelector('input');
   const cats = panel.querySelectorAll('.bqgifp-cat');
-  const prevBtn = panel.querySelector('.bqgifp-prev');
-  const nextBtn = panel.querySelector('.bqgifp-next');
-  const pageSpan = panel.querySelector('.bqgifp-page');
   if(!grid || !inp || !cats) return;
 
-  const PER_PAGE = 4;
   let curCat = 'trending', curQ = '', searchT = null;
-  let _gifLoaded = false, curPage = 0, _loading = false;
-  let _allData = [];
-  let _hasMore = true;
+  let _gifLoaded = false, _loading = false, _offset = 0, _hasMore = true;
 
-  function updateNav(){
-    const total = Math.max(1, Math.ceil(_allData.length / PER_PAGE));
-    pageSpan.textContent = (curPage+1)+' / '+total;
-    prevBtn.disabled = curPage <= 0;
-    nextBtn.disabled = !((curPage+1)*PER_PAGE < _allData.length) && !_hasMore;
-  }
-
-  function renderPage(){
-    grid.innerHTML = '';
-    const start = curPage * PER_PAGE;
-    const slice = _allData.slice(start, start + PER_PAGE);
-    if(!slice.length){
-      grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
-      updateNav();
-      return;
-    }
-    slice.forEach(g=>{
+  function appendGifItems(data){
+    data.forEach(g=>{
       const thumb = g.images?.fixed_width_downsampled || g.images?.fixed_width_small || g.images?.fixed_width || g.images?.downsized_small;
       const display = g.images?.fixed_width?.url || g.images?.downsized_medium?.url || (thumb ? thumb.url : null);
       const full = g.images?.original?.url || display;
-      if(!thumb||!full) return;
+      if(!thumb&&!display) return;
       const item = document.createElement('div');
       item.className = 'bqgifp-item';
       const img = document.createElement('img');
       img.loading = 'lazy';
       img.decoding = 'async';
-      img.src = esc(thumb.url);
+      img.src = thumb ? esc(thumb.url) : esc(display);
       img.alt = esc(g.title||'GIF');
       img.addEventListener('error', function(){ item.classList.add('bqgifp-err'); });
       item.appendChild(img);
@@ -4337,57 +4313,61 @@ function attachGifPicker(ctx){
       });
       grid.appendChild(item);
     });
-    updateNav();
   }
 
   function showSkeletons(){
-    grid.innerHTML = '';
-    for(let i=0;i<PER_PAGE;i++){
+    for(let i=0;i<6;i++){
       const s = document.createElement('div');
       s.className='bqgifp-skel';
       grid.appendChild(s);
     }
-    updateNav();
   }
 
   async function load(){
-    curPage = 0; _loading = true; _hasMore = true;
+    grid.innerHTML = '';
+    _offset = 0; _hasMore = true; _loading = true;
     showSkeletons();
     const res = await giphyFetch(curCat, curQ, 0);
     _loading = false;
+    grid.innerHTML = '';
     if(res.error){
       grid.innerHTML = '<div class="bqgifp-empty">'+esc(res.error)+'</div>';
-      _allData = []; _hasMore = false; updateNav(); return;
+      _hasMore = false; return;
     }
     if(!res.data||!res.data.length){
       grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
-      _allData = []; _hasMore = false; updateNav(); return;
+      _hasMore = false; return;
     }
-    _allData = res.data;
-    _hasMore = res.data.length >= PER_PAGE;
-    renderPage();
+    _offset = res.data.length;
+    _hasMore = res.data.length >= 4;
+    appendGifItems(res.data);
   }
 
-  async function fetchMore(){
-    if(_loading) return;
+  async function loadMore(){
+    if(_loading || !_hasMore) return;
     _loading = true;
-    const res = await giphyFetch(curCat, curQ, _allData.length);
+    var loader = document.createElement('div');
+    loader.className = 'bqgifp-loading';
+    loader.textContent = 'Loading more...';
+    grid.appendChild(loader);
+    const res = await giphyFetch(curCat, curQ, _offset);
+    if(loader.parentNode) loader.remove();
     _loading = false;
     if(res.data && res.data.length){
-      _allData = _allData.concat(res.data);
-      _hasMore = res.data.length >= PER_PAGE;
+      _offset += res.data.length;
+      _hasMore = res.data.length >= 4;
+      appendGifItems(res.data);
     } else {
       _hasMore = false;
     }
-    curPage++;
-    renderPage();
   }
 
-  prevBtn.addEventListener('click', ()=>{ if(curPage>0){ curPage--; renderPage(); } });
-  nextBtn.addEventListener('click', ()=>{
-    if(_loading) return;
-    if((curPage+1)*PER_PAGE < _allData.length){ curPage++; renderPage(); }
-    else if(_hasMore){ fetchMore(); }
+  /* Infinite scroll */
+  grid.addEventListener('scroll', function(){
+    if(_loading || !_hasMore) return;
+    if(grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100){
+      loadMore();
+    }
   });
 
   cats.forEach(c=>{
@@ -4417,8 +4397,7 @@ function attachGifPicker(ctx){
       panel.classList.add('open');
       btn.classList.add('active');
       if(!_gifLoaded){ _gifLoaded=true; load(); }
-      else if(!_allData.length) load();
-      else renderPage();
+      else if(!grid.children.length) load();
       setTimeout(()=>inp.focus(), 50);
     }
   });
@@ -15377,3 +15356,322 @@ console.log('[bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix');
 }catch(e){ console.error('[bq] v64 patch error:', e); }
 })();
 /* ════════════ end v64 patch ════════════ */
+
+/* ════════════ v65 patch — Fix sticker All tab, Rebuild GIF picker, Widget disguise ════════════ */
+(function(){
+try{
+
+/* ─────────────────────────────────────────
+   1. FIX: Sticker tray "All" tab shows nothing
+   - The base .bqiet has flex-wrap:wrap which conflicts with
+     flex-direction:column in the v64 patch, causing the pills
+     and wrap to not stack vertically.
+   ───────────────────────────────────────── */
+var v65FixStyle = document.createElement('style');
+v65FixStyle.textContent = [
+  /* Fix sticker tray column layout */
+  '.bqiet.bqstk-min{flex-wrap:nowrap!important;overflow:hidden!important;}',
+  /* Ensure sticker wrap scrolls properly */
+  '.bqstk-wrap{min-height:120px!important;max-height:180px!important;}',
+].join('\n');
+document.head.appendChild(v65FixStyle);
+
+/* ─────────────────────────────────────────
+   2. REBUILD: GIF Picker — gif-picker-react style
+   Clean masonry grid, infinite scroll, no page buttons
+   ───────────────────────────────────────── */
+var v65GifStyle = document.createElement('style');
+v65GifStyle.textContent = [
+  /* ── GIF Picker — gif-picker-react style ── */
+  '.bqgifp{',
+  '  width:320px!important;max-width:calc(100vw - 16px)!important;',
+  '  height:360px!important;max-height:55vh!important;',
+  '  border-radius:16px!important;',
+  '  background:rgba(9,9,11,.98)!important;',
+  '  border:1px solid rgba(255,255,255,.08)!important;',
+  '  box-shadow:0 20px 50px rgba(0,0,0,.6)!important;',
+  '}',
+  '.bqgifp-head{padding:8px 10px 6px!important;gap:6px!important;border-bottom:1px solid rgba(255,255,255,.06)!important;}',
+  '.bqgifp-search{',
+  '  background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.08)!important;',
+  '  border-radius:10px!important;padding:7px 10px!important;gap:6px!important;',
+  '}',
+  '.bqgifp-search:focus-within{border-color:rgba(96,165,250,.3)!important;}',
+  '.bqgifp-search svg{width:14px!important;height:14px!important;stroke:rgba(255,255,255,.3)!important;}',
+  '.bqgifp-search input{font-size:12px!important;font-weight:500!important;}',
+  '.bqgifp-search input::placeholder{color:rgba(255,255,255,.25)!important;}',
+  /* Category chips */
+  '.bqgifp-cats{display:flex!important;gap:4px!important;overflow-x:auto!important;padding:2px 0 0!important;scrollbar-width:none!important;}',
+  '.bqgifp-cats::-webkit-scrollbar{display:none!important;}',
+  '.bqgifp-cat{',
+  '  padding:4px 10px!important;border-radius:8px!important;',
+  '  background:rgba(255,255,255,.05)!important;border:1px solid transparent!important;',
+  '  font-size:10px!important;font-weight:700!important;letter-spacing:.02em!important;',
+  '  color:rgba(255,255,255,.35)!important;white-space:nowrap!important;flex-shrink:0!important;',
+  '  cursor:pointer!important;transition:all .12s!important;',
+  '}',
+  '.bqgifp-cat:hover{color:rgba(255,255,255,.7)!important;background:rgba(255,255,255,.1)!important;}',
+  '.bqgifp-cat.sel{background:rgba(96,165,250,.15)!important;color:#fff!important;border-color:rgba(96,165,250,.25)!important;}',
+  /* Grid — masonry-style two columns with no overlap */
+  '.bqgifp-grid{',
+  '  display:grid!important;grid-template-columns:repeat(2,1fr)!important;',
+  '  gap:6px!important;padding:8px!important;',
+  '  overflow-y:auto!important;overflow-x:hidden!important;',
+  '  flex:1!important;min-height:0!important;',
+  '  align-content:start!important;',
+  '  scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,.08) transparent!important;',
+  '}',
+  '.bqgifp-grid::-webkit-scrollbar{width:4px!important;}',
+  '.bqgifp-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)!important;border-radius:4px!important;}',
+  /* Each GIF item — proper box model, no stacking */
+  '.bqgifp-item{',
+  '  display:block!important;width:100%!important;',
+  '  position:relative!important;overflow:hidden!important;cursor:pointer!important;',
+  '  border-radius:10px!important;',
+  '  background:rgba(255,255,255,.03)!important;border:1px solid rgba(255,255,255,.06)!important;',
+  '  transition:transform .15s cubic-bezier(.16,1,.3,1),border-color .15s,box-shadow .15s!important;',
+  '  margin:0!important;padding:0!important;',
+  '}',
+  '.bqgifp-item:hover{transform:scale(1.02)!important;border-color:rgba(96,165,250,.25)!important;box-shadow:0 4px 16px rgba(0,0,0,.3)!important;z-index:1!important;}',
+  '.bqgifp-item:active{transform:scale(.97)!important;}',
+  '.bqgifp-item img{width:100%!important;height:auto!important;object-fit:cover!important;display:block!important;margin:0!important;padding:0!important;}',
+  '.bqgifp-item.bqgifp-err img{display:none!important;}',
+  '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
+  /* Skeleton */
+  '.bqgifp-skel{width:100%!important;aspect-ratio:1!important;border-radius:10px!important;background:rgba(255,255,255,.03)!important;animation:bqGifPulse 1.5s ease-in-out infinite!important;}',
+  /* Empty */
+  '.bqgifp-empty{grid-column:1/-1!important;padding:30px!important;text-align:center!important;font-family:"Inter",sans-serif!important;font-size:12px!important;color:rgba(255,255,255,.25)!important;}',
+  /* Hide old page navigation */
+  '.bqgifp-nav{display:none!important;}',
+  /* Loading spinner at bottom */
+  '.bqgifp-loading{grid-column:1/-1!important;padding:12px!important;text-align:center!important;font-size:11px!important;color:rgba(255,255,255,.2)!important;font-family:"Inter",sans-serif!important;}',
+].join('\n');
+document.head.appendChild(v65GifStyle);
+
+/* NOTE: The attachGifPicker function was rewritten in v65 to use
+   infinite scroll natively. No monkey-patching needed. */
+
+
+/* ─────────────────────────────────────────
+   3. WIDGET DISGUISE — Calculator cover with PIN unlock
+   PIN: 1306 | localStorage key: bq_widget_unlocked
+   ───────────────────────────────────────── */
+
+var BQ_PIN = '1306';
+var BQ_UNLOCK_KEY = 'bq_widget_unlocked';
+
+function bqIsUnlocked(){
+  try { return localStorage.getItem(BQ_UNLOCK_KEY) === 'true'; } catch(e){ return false; }
+}
+function bqSetUnlocked(val){
+  try { localStorage.setItem(BQ_UNLOCK_KEY, val ? 'true' : ''); } catch(e){}
+}
+
+/* Add disguise styles */
+var disguiseStyle = document.createElement('style');
+disguiseStyle.textContent = [
+  /* Disguise overlay — covers the entire chat panel */
+  '#bq-disguise{',
+  '  position:absolute;inset:0;z-index:100;',
+  '  display:flex;flex-direction:column;align-items:center;justify-content:center;',
+  '  background:linear-gradient(145deg,#1a1a2e,#16213e,#0f3460);',
+  '  border-radius:16px;overflow:hidden;',
+  '  animation:bqDisguiseIn .3s ease both;',
+  '}',
+  '@keyframes bqDisguiseIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}',
+  /* Fake calculator screen */
+  '#bq-disguise .bq-calc-screen{',
+  '  width:90%;max-width:300px;background:rgba(0,0,0,.3);',
+  '  border:1px solid rgba(255,255,255,.08);border-radius:12px;',
+  '  padding:16px 18px;margin-bottom:20px;text-align:right;',
+  '  font-family:"SF Mono","Fira Code",monospace;font-size:32px;font-weight:300;',
+  '  color:rgba(255,255,255,.85);letter-spacing:.02em;',
+  '  min-height:56px;display:flex;align-items:center;justify-content:flex-end;',
+  '  overflow:hidden;',
+  '}',
+  '#bq-disguise .bq-calc-sub{',
+  '  font-size:11px;color:rgba(255,255,255,.2);text-align:right;',
+  '  width:90%;max-width:300px;margin-bottom:12px;',
+  '  font-family:"Inter",sans-serif;letter-spacing:.03em;',
+  '}',
+  /* Calculator keypad */
+  '#bq-disguise .bq-calc-pad{',
+  '  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;',
+  '  width:90%;max-width:300px;',
+  '}',
+  '#bq-disguise .bq-calc-key{',
+  '  height:48px;border-radius:12px;border:none;cursor:pointer;',
+  '  font-family:"Inter",sans-serif;font-size:18px;font-weight:500;',
+  '  display:flex;align-items:center;justify-content:center;',
+  '  transition:transform .1s,background .1s;-webkit-tap-highlight-color:transparent;',
+  '}',
+  '#bq-disguise .bq-calc-key:active{transform:scale(.92);}',
+  '#bq-disguise .bq-calc-key.num{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);}',
+  '#bq-disguise .bq-calc-key.num:hover{background:rgba(255,255,255,.13);}',
+  '#bq-disguise .bq-calc-key.op{background:rgba(96,165,250,.15);color:#60a5fa;}',
+  '#bq-disguise .bq-calc-key.op:hover{background:rgba(96,165,250,.25);}',
+  '#bq-disguise .bq-calc-key.fn{background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);}',
+  '#bq-disguise .bq-calc-key.fn:hover{background:rgba(255,255,255,.08);}',
+  '#bq-disguise .bq-calc-key.eq{background:linear-gradient(135deg,#60a5fa,#818cf8);color:#fff;font-weight:700;}',
+  '#bq-disguise .bq-calc-key.eq:hover{filter:brightness(1.15);}',
+  /* Disguise brand at top */
+  '#bq-disguise .bq-calc-brand{',
+  '  font-family:"Inter",sans-serif;font-size:10px;font-weight:700;',
+  '  letter-spacing:.15em;text-transform:uppercase;',
+  '  color:rgba(255,255,255,.12);margin-bottom:16px;',
+  '}',
+  /* Shake animation for wrong PIN */
+  '@keyframes bqCalcShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}',
+  '#bq-disguise.shake .bq-calc-screen{animation:bqCalcShake .4s ease;border-color:rgba(248,113,113,.5);}',
+  /* Success flash */
+  '@keyframes bqCalcSuccess{0%{background:rgba(52,211,153,.2)}100%{background:transparent}}',
+  '#bq-disguise.success .bq-calc-screen{animation:bqCalcSuccess .5s ease;border-color:rgba(52,211,153,.5);}',
+].join('\n');
+document.head.appendChild(disguiseStyle);
+
+/* Build and inject the disguise overlay */
+function bqCreateDisguise(){
+  var panel = document.getElementById('bqp');
+  if(!panel || document.getElementById('bq-disguise')) return;
+
+  var disguise = document.createElement('div');
+  disguise.id = 'bq-disguise';
+  disguise.innerHTML =
+    '<div class="bq-calc-brand">Calculator Pro</div>'+
+    '<div class="bq-calc-screen">0</div>'+
+    '<div class="bq-calc-sub">STANDARD MODE</div>'+
+    '<div class="bq-calc-pad">'+
+      '<button class="bq-calc-key fn" data-v="C">C</button>'+
+      '<button class="bq-calc-key fn" data-v="±">±</button>'+
+      '<button class="bq-calc-key fn" data-v="%">%</button>'+
+      '<button class="bq-calc-key op" data-v="÷">÷</button>'+
+      '<button class="bq-calc-key num" data-v="7">7</button>'+
+      '<button class="bq-calc-key num" data-v="8">8</button>'+
+      '<button class="bq-calc-key num" data-v="9">9</button>'+
+      '<button class="bq-calc-key op" data-v="×">×</button>'+
+      '<button class="bq-calc-key num" data-v="4">4</button>'+
+      '<button class="bq-calc-key num" data-v="5">5</button>'+
+      '<button class="bq-calc-key num" data-v="6">6</button>'+
+      '<button class="bq-calc-key op" data-v="-">−</button>'+
+      '<button class="bq-calc-key num" data-v="1">1</button>'+
+      '<button class="bq-calc-key num" data-v="2">2</button>'+
+      '<button class="bq-calc-key num" data-v="3">3</button>'+
+      '<button class="bq-calc-key op" data-v="+">+</button>'+
+      '<button class="bq-calc-key fn" data-v="AC">AC</button>'+
+      '<button class="bq-calc-key num" data-v="0">0</button>'+
+      '<button class="bq-calc-key num" data-v=".">.</button>'+
+      '<button class="bq-calc-key eq" data-v="=">=</button>'+
+    '</div>';
+  panel.appendChild(disguise);
+
+  /* Calculator logic */
+  var screen = disguise.querySelector('.bq-calc-screen');
+  var sub = disguise.querySelector('.bq-calc-sub');
+  var display = '0';
+  var prev = '';
+  var op = '';
+  var newNum = true;
+  var pinBuffer = '';
+
+  function updateScreen(){
+    screen.textContent = display;
+  }
+
+  disguise.querySelectorAll('.bq-calc-key').forEach(function(key){
+    key.addEventListener('click', function(){
+      var v = this.dataset.v;
+
+      /* Track PIN entry — any sequence of digits is checked */
+      if(/^[0-9]$/.test(v)){
+        pinBuffer += v;
+        /* Keep only last 4 digits for PIN check */
+        if(pinBuffer.length > 4) pinBuffer = pinBuffer.slice(-4);
+        /* Check PIN */
+        if(pinBuffer === BQ_PIN){
+          bqSetUnlocked(true);
+          disguise.classList.add('success');
+          setTimeout(function(){
+            bqRemoveDisguise();
+          }, 400);
+          return;
+        }
+      }
+
+      /* Calculator operations */
+      if(v === 'C'){
+        display = '0'; prev = ''; op = ''; newNum = true;
+      } else if(v === 'AC'){
+        display = '0'; prev = ''; op = ''; newNum = true; pinBuffer = '';
+      } else if(v === '±'){
+        display = String(-parseFloat(display));
+      } else if(v === '%'){
+        display = String(parseFloat(display) / 100);
+      } else if(['+','-','×','÷'].indexOf(v) > -1){
+        if(prev && op && !newNum){
+          display = String(calc(parseFloat(prev), parseFloat(display), op));
+        }
+        prev = display; op = v; newNum = true;
+        sub.textContent = prev + ' ' + v;
+      } else if(v === '='){
+        if(prev && op){
+          display = String(calc(parseFloat(prev), parseFloat(display), op));
+          sub.textContent = prev + ' ' + op + ' ' + display + ' =';
+          prev = ''; op = '';
+        }
+        newNum = true;
+      } else if(v === '.'){
+        if(newNum){ display = '0.'; newNum = false; }
+        else if(display.indexOf('.') === -1){ display += '.'; }
+      } else {
+        /* Number */
+        if(newNum){ display = v; newNum = false; }
+        else { display += v; }
+      }
+      updateScreen();
+    });
+  });
+
+  function calc(a, b, o){
+    switch(o){
+      case '+': return a + b;
+      case '-': case '−': return a - b;
+      case '×': return a * b;
+      case '÷': return b !== 0 ? a / b : 'Error';
+    }
+    return b;
+  }
+}
+
+function bqRemoveDisguise(){
+  var d = document.getElementById('bq-disguise');
+  if(d) d.remove();
+}
+
+function bqShowDisguise(){
+  if(bqIsUnlocked()) return;
+  bqCreateDisguise();
+}
+
+/* Override panel open to show disguise */
+var _origOpenPanel = openPanel;
+openPanel = function(){
+  _origOpenPanel();
+  if(!bqIsUnlocked()){
+    bqShowDisguise();
+  }
+};
+
+/* Also check on init — if panel is somehow already open */
+setTimeout(function(){
+  if(!bqIsUnlocked()){
+    var panel = document.getElementById('bqp');
+    if(panel && panel.classList.contains('open')){
+      bqShowDisguise();
+    }
+  }
+}, 1000);
+
+console.log('[bq] v65 patch loaded — Fix sticker All tab, Rebuild GIF picker, Widget disguise');
+}catch(e){ console.error('[bq] v65 patch error:', e); }
+})();
+/* ════════════ end v65 patch ════════════ */
