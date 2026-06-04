@@ -172,3 +172,33 @@ Stage Summary:
 - v44 CSS stylesheet applied
 - No JS errors in console
 - The 4 competing swipe systems are now suppressed via capture-phase interception + CSS visual hiding
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix reply-to-reply showing original message instead of the reply's own text. Redesign GIF picker with modern UI.
+
+Work Log:
+- Found root cause of reply-to-reply bug: `extractReplyText()` in v44 patch looks for `.bqtxt` element, but `renderMsg()` in the main IIFE never wraps text in a `.bqtxt` div — it only outputs raw HTML from `mentionify(linkify(esc(msg.text)))`. The `.bqtxt` class was only used in the `onMsgChanged` handler.
+- Fixed by wrapping `msg.text` output in `renderMsg()` with `<div class="bqtxt">` element (line 4995)
+- Added `.bqtxt{display:inline;}` CSS rule to prevent layout breakage
+- Now `extractReplyText()` correctly finds the message's own text via `.bqtxt`, not the reply chip's text
+- Created v45 patch with complete GIF picker redesign (Discord/Tenor style):
+  - Glassmorphic panel with 20px border-radius, blur backdrop
+  - Wider panel (360px), taller (420px)
+  - Enhanced search bar with focus glow effect
+  - Category chips as rounded pill buttons with accent highlight
+  - 2-column grid with shimmer loading skeletons
+  - GIF items with hover scale + border glow effect
+  - Navigation bar with "Back"/"Next" text labels + arrow icons
+  - Custom thin scrollbar for the grid
+  - Smooth panel open animation
+- Fixed GIF nav label duplication between v44 and v45 patches (v45 marks nav as v44-done to prevent re-adding old labels)
+- Bumped version to 62.0.0
+- Pushed to GitHub
+
+Stage Summary:
+- Reply-to-reply now correctly shows the reply's own text, not the original message
+- GIF picker has a modern, sleek Discord/Tenor-inspired design
+- No JS errors, both v44 and v45 patches load successfully
+- GIF picker verified: 360px wide, 6 items, 12 categories, "Back"/"Next" nav working
