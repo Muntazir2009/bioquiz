@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { deleteFileFromDisk, formatFileSize, getFileCategory } from "@/lib/file-storage";
+import { deleteFileFromDisk, getFile, formatFileSize, getFileCategory } from "@/lib/file-storage";
 
 const ADMIN_PASSWORD = "0613";
 
@@ -13,6 +13,73 @@ function getUploaderId(request: Request): string | null {
   return request.headers.get("x-uploader-id");
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const db = getDb();
+    await db.ensureTable();
+
+    const file = await db.fileFindUnique({ id });
+    if (!file) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // If this is a download request (has ?download param), stream the file
+    const url = new URL(request.url);
+    if (url.searchParams.has("download")) {
+      // Access control: public files anyone, private files only for owner/admin
+      if (!file.isPublic) {
+        const admin = isAdmin(request);
+        const uploaderId = getUploaderId(request);
+        const isOwner = uploaderId && file.uploaderId === uploaderId;
+        if (!admin && !isOwner) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+      }
+
+      try {
+        const fileBuffer = await getFile(file.storagePath);
+        // Increment download count
+        await db.fileUpdate(file.id, { downloads: file.downloads + 1 });
+
+        return new Response(fileBuffer, {
+          headers: {
+            "Content-Type": file.mimeType,
+            "Content-Disposition": `attachment; filename="${file.originalName}"`,
+            "Content-Length": String(fileBuffer.byteLength),
+          },
+        });
+      } catch {
+        return NextResponse.json({ error: "File data not found in storage" }, { status: 404 });
+      }
+    }
+
+    // Otherwise return file metadata
+    return NextResponse.json({
+      file: {
+        id: file.id,
+        name: file.originalName,
+        size: file.size,
+        sizeFormatted: formatFileSize(file.size),
+        mimeType: file.mimeType,
+        category: getFileCategory(file.mimeType),
+        shareId: file.shareId,
+        downloads: file.downloads,
+        isPublic: file.isPublic,
+        description: file.description,
+        createdAt: file.createdAt,
+        expiresAt: file.expiresAt,
+      },
+    });
+  } catch (err) {
+    console.error("Get file error:", err);
+    return NextResponse.json({ error: "Failed to get file" }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -20,6 +87,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const db = getDb();
+    await db.ensureTable();
 
     const file = await db.fileFindUnique({ id });
     if (!file) {
@@ -87,6 +155,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const db = getDb();
+    await db.ensureTable();
 
     const file = await db.fileFindUnique({ id });
 

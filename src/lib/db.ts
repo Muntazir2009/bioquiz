@@ -59,9 +59,43 @@ interface D1RunResult {
 
 class DatabaseClient {
   private d1: D1Compat;
+  private _tableReady = false;
 
   constructor(d1: D1Compat) {
     this.d1 = d1;
+  }
+
+  /** Create the File table if it doesn't exist (idempotent) */
+  async ensureTable(): Promise<void> {
+    if (this._tableReady) return;
+    try {
+      await this.d1.prepare(`
+        CREATE TABLE IF NOT EXISTS File (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          originalName TEXT NOT NULL,
+          size INTEGER NOT NULL,
+          mimeType TEXT NOT NULL,
+          storagePath TEXT NOT NULL,
+          shareId TEXT NOT NULL UNIQUE,
+          downloads INTEGER NOT NULL DEFAULT 0,
+          isPublic INTEGER NOT NULL DEFAULT 0,
+          description TEXT,
+          uploaderId TEXT,
+          createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+          expiresAt TEXT
+        )
+      `).run();
+      // Create index on shareId for fast lookups
+      await this.d1.prepare(
+        "CREATE INDEX IF NOT EXISTS idx_file_shareId ON File(shareId)"
+      ).run();
+      this._tableReady = true;
+    } catch (err) {
+      console.warn("[db] ensureTable warning:", err);
+      // Table might already exist, mark as ready anyway
+      this._tableReady = true;
+    }
   }
 
   async fileFindMany(where?: { isPublic?: boolean; uploaderId?: string; shareId?: string }, orderBy?: string, limit?: number): Promise<FileRecord[]> {

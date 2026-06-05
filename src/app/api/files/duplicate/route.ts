@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     }
 
     const db = getDb();
+    await db.ensureTable();
 
     const original = await db.fileFindUnique({ id });
     if (!original) {

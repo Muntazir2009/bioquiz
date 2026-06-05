@@ -13613,7 +13613,7 @@ function addNotification(sender, msg, type, dmId){
   playNotifSound();
 
   // Browser push
-  if(prefs.push && document.hidden) showBrowserNotif(notif);
+  if(prefs.push || document.hidden) showBrowserNotif(notif);
 }
 
 function updateNotifBadge(){
@@ -13761,7 +13761,7 @@ function showBrowserNotif(notif){
       body: notif.sender + ': ' + notif.msg.slice(0,80),
       icon: '/logo.svg',
       tag: 'bq-' + notif.type + '-' + Date.now(),
-      silent: true // We play our own sound
+      silent: !document.hidden // Silent when in foreground (we play our own sound)
     });
     n.onclick = () => {
       window.focus();
@@ -14428,9 +14428,16 @@ async function bootV37(){
     return;
   }
   
-  // If push is already enabled, re-subscribe on load
+  // Auto-enable push if browser permission is already granted
   const prefs = getNotifPrefsSafe();
-  if(prefs.push){
+  if(!prefs.push && 'Notification' in window && Notification.permission === 'granted'){
+    setPref('push', true);
+    console.log('[bq-push] Auto-enabled push (permission already granted)');
+  }
+  
+  // If push is already enabled, re-subscribe on load
+  const updatedPrefs = getNotifPrefsSafe();
+  if(updatedPrefs.push){
     await subscribeToPush();
   }
   
