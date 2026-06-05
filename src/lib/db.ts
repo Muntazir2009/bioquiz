@@ -4,6 +4,8 @@
  * On Cloudflare Workers: uses raw D1 SQL queries via getCloudflareContext().
  * In local dev: uses better-sqlite3 with the same SQL interface.
  *
+ * IMPORTANT: better-sqlite3 is lazy-loaded to avoid crashes on Cloudflare Workers.
+ *
  * Usage in API routes:
  *   import { getDb } from "@/lib/db";
  *   const db = getDb();
@@ -31,7 +33,6 @@ export type FileRecord = {
 };
 
 // ─── D1-compatible interface ──────────────────────────────────────────────────
-// Both D1 and local SQLite produce objects that satisfy this interface.
 
 interface D1Compat {
   prepare(sql: string): D1PreparedStatement;
@@ -54,7 +55,7 @@ interface D1RunResult {
   meta: { changes: number };
 }
 
-// ─── Database implementation ──────────────────────────────────────────────────
+// ─── Database implementation (shared for both D1 and local) ───────────────────
 
 class DatabaseClient {
   private d1: D1Compat;
@@ -63,7 +64,6 @@ class DatabaseClient {
     this.d1 = d1;
   }
 
-  // File operations
   async fileFindMany(where?: { isPublic?: boolean; uploaderId?: string; shareId?: string }, orderBy?: string, limit?: number): Promise<FileRecord[]> {
     let sql = "SELECT * FROM File";
     const conditions: string[] = [];
@@ -168,7 +168,6 @@ class DatabaseClient {
     return result ?? { totalSize: 0, totalDownloads: 0 };
   }
 
-  // Map record (SQLite booleans are 0/1) to proper JS types
   private mapRecord(r: FileRecord): FileRecord {
     return {
       ...r,
@@ -179,18 +178,26 @@ class DatabaseClient {
   }
 }
 
-// ─── Local SQLite D1-compatible adapter ───────────────────────────────────────
+// ─── Local SQLite D1-compatible adapter (lazy-loaded) ─────────────────────────
+
+// These are only instantiated in local dev, never on Cloudflare Workers
+
+interface BetterSqlite3Database {
+  prepare(sql: string): BetterSqlite3Statement;
+  pragma(cmd: string): void;
+}
+
+interface BetterSqlite3Statement {
+  all(...params: unknown[]): Record<string, unknown>[];
+  get(...params: unknown[]): Record<string, unknown> | undefined;
+  run(...params: unknown[]): { changes: number };
+}
 
 class LocalD1Compat implements D1Compat {
-  private db: import("better-sqlite3").Database;
+  private db: BetterSqlite3Database;
 
-  constructor(dbPath: string) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Database = require("better-sqlite3");
-    this.db = new Database(dbPath) as import("better-sqlite3").Database;
-    // Enable WAL mode for better concurrent read performance
-    this.db.pragma("journal_mode = WAL");
-    console.log(`[db] Local SQLite connected: ${dbPath}`);
+  constructor(db: BetterSqlite3Database) {
+    this.db = db;
   }
 
   prepare(sql: string): D1PreparedStatement {
@@ -199,11 +206,11 @@ class LocalD1Compat implements D1Compat {
 }
 
 class LocalPreparedStatement implements D1PreparedStatement {
-  private db: import("better-sqlite3").Database;
+  private db: BetterSqlite3Database;
   private sql: string;
   private params: unknown[] = [];
 
-  constructor(db: import("better-sqlite3").Database, sql: string) {
+  constructor(db: BetterSqlite3Database, sql: string) {
     this.db = db;
     this.sql = sql;
   }
@@ -215,15 +222,14 @@ class LocalPreparedStatement implements D1PreparedStatement {
 
   async all(): Promise<D1Result> {
     const stmt = this.db.prepare(this.sql);
-    const rows = stmt.all(...this.params) as Record<string, unknown>[];
+    const rows = stmt.all(...this.params);
     return { results: rows, success: true, meta: {} };
   }
 
-  async first<T = unknown>(col?: string): Promise<T | null> {
+  async first<T = unknown>(_col?: string): Promise<T | null> {
     const stmt = this.db.prepare(this.sql);
-    const row = stmt.get(...this.params) as Record<string, unknown> | undefined;
+    const row = stmt.get(...this.params);
     if (!row) return null;
-    if (col) return (row[col] as T) ?? null;
     return row as T;
   }
 
@@ -261,9 +267,15 @@ export function getDb(): DatabaseClient {
     return _client;
   }
 
-  // Local dev fallback — use better-sqlite3 with SQLite
+  // Local dev fallback — lazily require better-sqlite3
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require("better-sqlite3") as { new (path: string): BetterSqlite3Database };
   const dbPath = process.env.DATABASE_URL?.replace("file:", "") || "./db/custom.db";
-  const localD1 = new LocalD1Compat(dbPath);
+  const sqliteDb = new Database(dbPath);
+  sqliteDb.pragma("journal_mode = WAL");
+  console.log(`[db] Local SQLite connected: ${dbPath}`);
+
+  const localD1 = new LocalD1Compat(sqliteDb);
   _client = new DatabaseClient(localD1);
   return _client;
 }

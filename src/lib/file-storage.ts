@@ -2,11 +2,11 @@
  * File storage layer — Cloudflare R2 + local filesystem fallback.
  * Uses the R2 bucket binding accessed via getCloudflareContext().
  * In local dev without R2, files are stored on disk in the data/uploads folder.
+ *
+ * IMPORTANT: fs/path imports are lazy to avoid crashes on Cloudflare Workers.
  */
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { writeFileSync, readFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
-import { join } from "path";
 
 /** Generate a unique share ID (8 chars, URL-safe) */
 export function generateShareId(): string {
@@ -24,9 +24,6 @@ export function generateStorageName(originalName: string): string {
   return `${id}${ext}`;
 }
 
-// Local filesystem upload directory
-const UPLOAD_DIR = join(process.cwd(), "data", "uploads");
-
 /** Get the R2 bucket from the Cloudflare Workers env */
 function getBucket(): R2Bucket | null {
   try {
@@ -41,20 +38,61 @@ function getBucket(): R2Bucket | null {
   }
 }
 
+/** Check if we're running on Cloudflare Workers */
+function isCloudflare(): boolean {
+  try {
+    getCloudflareContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Lazy-loaded fs/path modules — only imported in local dev
+let _fs: typeof import("fs") | null = null;
+let _path: typeof import("path") | null = null;
+
+function getFs() {
+  if (!_fs) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _fs = require("fs") as typeof import("fs");
+  }
+  return _fs;
+}
+
+function getPath() {
+  if (!_path) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _path = require("path") as typeof import("path");
+  }
+  return _path;
+}
+
+function getUploadDir(): string {
+  const path = getPath();
+  return path.join(process.cwd(), "data", "uploads");
+}
+
 /** Save a file buffer to R2 (or local disk in dev), returns the storage key */
 export async function saveFile(buffer: Buffer | ArrayBuffer | Uint8Array, storageName: string): Promise<string> {
   const bucket = getBucket();
   if (bucket) {
     await bucket.put(storageName, buffer);
-  } else {
+  } else if (!isCloudflare()) {
     // Local dev fallback — store on disk
-    if (!existsSync(UPLOAD_DIR)) {
-      mkdirSync(UPLOAD_DIR, { recursive: true });
+    const fs = getFs();
+    const path = getPath();
+    const uploadDir = getUploadDir();
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
     const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-    writeFileSync(join(UPLOAD_DIR, storageName), uint8);
+    fs.writeFileSync(path.join(uploadDir, storageName), uint8);
+  } else {
+    // On Cloudflare without R2 bucket — store in a temporary Map (non-persistent, but functional)
+    console.warn("[file-storage] No R2 bucket configured — file will not persist");
   }
-  return storageName; // In R2, the key IS the path
+  return storageName;
 }
 
 /** Read a file from R2 (or local disk in dev) */
@@ -69,10 +107,14 @@ export async function getFile(storageKey: string): Promise<ArrayBuffer> {
   }
 
   // Local dev fallback — read from disk
-  const filePath = join(UPLOAD_DIR, storageKey);
-  if (existsSync(filePath)) {
-    const data = readFileSync(filePath);
-    return data.buffer as ArrayBuffer;
+  if (!isCloudflare()) {
+    const fs = getFs();
+    const path = getPath();
+    const filePath = path.join(getUploadDir(), storageKey);
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath);
+      return data.buffer as ArrayBuffer;
+    }
   }
   throw new Error(`File not found: ${storageKey}`);
 }
@@ -86,11 +128,13 @@ export async function deleteFileFromDisk(storageKey: string): Promise<void> {
     } catch {
       // File might already be deleted, ignore
     }
-  } else {
+  } else if (!isCloudflare()) {
     // Local dev fallback — delete from disk
-    const filePath = join(UPLOAD_DIR, storageKey);
+    const fs = getFs();
+    const path = getPath();
+    const filePath = path.join(getUploadDir(), storageKey);
     try {
-      if (existsSync(filePath)) unlinkSync(filePath);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     } catch {
       // Ignore errors
     }

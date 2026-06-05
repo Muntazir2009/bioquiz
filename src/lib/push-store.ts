@@ -2,11 +2,10 @@
  * Push Subscription Store
  *
  * Stores push subscriptions in a JSON file for local dev.
- * Uses in-memory Map with periodic file persistence.
+ * On Cloudflare Workers, uses in-memory Map only (non-persistent across deploys).
+ *
+ * IMPORTANT: fs/path imports are lazy to avoid crashes on Cloudflare Workers.
  */
-
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
 
 export interface PushSubscriptionRecord {
   uid: string;
@@ -16,15 +15,57 @@ export interface PushSubscriptionRecord {
   subscribedAt: number;
 }
 
-const DATA_DIR = join(process.cwd(), "data");
-const SUBSCRIPTIONS_FILE = join(DATA_DIR, "push-subscriptions.json");
-
 const subscriptions = new Map<string, PushSubscriptionRecord>();
 
-export function loadSubscriptions() {
+// Lazy-loaded fs/path modules — only imported in local dev
+let _fs: typeof import("fs") | null = null;
+let _path: typeof import("path") | null = null;
+
+function isCloudflare(): boolean {
   try {
-    if (existsSync(SUBSCRIPTIONS_FILE)) {
-      const data = JSON.parse(readFileSync(SUBSCRIPTIONS_FILE, "utf-8"));
+    // Check if we're on Cloudflare Workers by testing for the global
+    return typeof (globalThis as any).__OPENNEXT_KV !== "undefined" || 
+           typeof process === "undefined" || 
+           !process.versions?.node;
+  } catch {
+    return false;
+  }
+}
+
+function getFs() {
+  if (!_fs) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _fs = require("fs") as typeof import("fs");
+  }
+  return _fs;
+}
+
+function getPath() {
+  if (!_path) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _path = require("path") as typeof import("path");
+  }
+  return _path;
+}
+
+function getDataDir(): string {
+  const path = getPath();
+  return path.join(process.cwd(), "data");
+}
+
+function getSubscriptionsFile(): string {
+  const path = getPath();
+  return path.join(getDataDir(), "push-subscriptions.json");
+}
+
+export function loadSubscriptions() {
+  if (isCloudflare()) return; // Skip file I/O on Workers
+  
+  try {
+    const fs = getFs();
+    const filePath = getSubscriptionsFile();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
       if (Array.isArray(data)) {
         for (const sub of data) {
           subscriptions.set(sub.uid, sub);
@@ -38,12 +79,16 @@ export function loadSubscriptions() {
 }
 
 export function saveSubscriptions() {
+  if (isCloudflare()) return; // Skip file I/O on Workers
+  
   try {
-    if (!existsSync(DATA_DIR)) {
-      mkdirSync(DATA_DIR, { recursive: true });
+    const fs = getFs();
+    const dataDir = getDataDir();
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
     const data = Array.from(subscriptions.values());
-    writeFileSync(SUBSCRIPTIONS_FILE, JSON.stringify(data, null, 2));
+    fs.writeFileSync(getSubscriptionsFile(), JSON.stringify(data, null, 2));
   } catch (e) {
     console.warn("[push-store] Failed to save subscriptions:", e);
   }
@@ -72,5 +117,5 @@ export function getSubscriptionCount(): number {
   return subscriptions.size;
 }
 
-// Load on module import
+// Load on module import (in local dev only)
 loadSubscriptions();
