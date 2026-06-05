@@ -47,8 +47,8 @@ server.log
 # database
 db/
 
-# uploaded archives
-upload/
+# uploaded file data (local dev)
+data/uploads/
 
 # mini-services (not for CF deployment)
 mini-services/
@@ -64,3 +64,5 @@ bun.lock
 # open-next
 .open-next/
 cloudflare-env.d.ts
+# upload archive (top-level only)
+/upload/
