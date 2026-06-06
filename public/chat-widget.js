@@ -371,8 +371,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 @keyframes bqTap{0%{transform:scale(1)}50%{transform:scale(.97)}100%{transform:scale(1)}}
 .bq-tap{animation:bqTap .15s ease;}
 
-/* Smooth scroll */
-.bqmsgs{scroll-behavior:smooth;}
+/* Scroll — use auto to avoid fighting programmatic scrollTop */
+.bqmsgs{scroll-behavior:auto;}
 
 /* Mobile touch feedback */
 @media (hover:none){
@@ -516,9 +516,11 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   animation:bqUp .28s ease both;
 }
 
-/* Message row — messenger style */
-.bqr{display:flex;flex-direction:column;gap:2px;animation:bqUp .26s var(--bq-transition) both;padding:0 4px;margin-top:8px;}
+/* Message row — messenger style — removed blanket animation (was animating ALL messages on render) */
+.bqr{display:flex;flex-direction:column;gap:2px;padding:0 4px;margin-top:8px;}
 @keyframes bqUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* v18: directional entrance — only animate NEW messages via .bq-new class */
+.bqr.bq-new{animation:bqUp .26s ease both;}
 /* v18: directional entrance — theirs slides in from left, mine from right,
    with a soft scale pop and subtle blur fade. Applied only to the newest
    message so existing messages don't re-animate on scroll. */
@@ -899,8 +901,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   60%{transform:scale(1.15) rotate(4deg);opacity:1;}
   100%{transform:scale(1) rotate(0);opacity:1;}
 }
-/* Bubble hover lift */
-.bqbbl{transition:transform .18s var(--bq-transition),box-shadow .2s ease;}
+/* Bubble hover — only transition on hover, not all the time */
+.bqbbl{transition:none;}
+.bqr:hover .bqbbl{transition:transform .18s ease,box-shadow .15s ease;}
 .bqr:hover .bqbbl:not(.sticker){transform:translateY(-1px);}
 .bqr.mine:hover .bqbbl:not(.sticker){box-shadow:0 6px 20px rgba(96,165,250,.38);}
 /* Reaction pop animation */
@@ -2236,12 +2239,9 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqsnd.sending{animation:bqSendPop .3s ease both;}
 
 /* ── GENERAL SMOOTHNESS ── */
-.bqr{transition:opacity .2s;will-change:opacity;}
-.bqbbl{transition:background .2s,border-color .2s;}
-
-/* DM message entry — slides from side */
-#bqdmmsgs .bqr.mine{animation:bqSlideFromRight .28s var(--bq-transition) both;}
-#bqdmmsgs .bqr.theirs{animation:bqSlideFromLeft .28s var(--bq-transition) both;}
+/* Removed will-change:opacity — it forces GPU layers for ALL messages, causing lag */
+/* Removed DM-specific slide animations — they animate ALL messages on open, not just new ones */
+/* New messages already animate via .bq-new class (lines 525-526) */
 @keyframes bqSlideFromRight{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
 @keyframes bqSlideFromLeft{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
 
@@ -2319,15 +2319,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   box-shadow:0 2px 12px rgba(0,0,0,.18);
 }
 .bqr.theirs.consec .bqbbl{border-radius:8px 20px 20px 8px;}
-.bqbbl{transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .22s;}
-.bqr.mine:hover .bqbbl:not(.sticker){transform:translateY(-1px);box-shadow:0 10px 28px rgba(96,165,250,.42),inset 0 1px 0 rgba(255,255,255,.22);}
+/* Hover lift only on hover — removed always-on transition to reduce scroll jank */
+.bqr.mine:hover .bqbbl:not(.sticker){transform:translateY(-1px);box-shadow:0 10px 28px rgba(96,165,250,.42),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .18s ease,box-shadow .15s ease;}
 .bqr.theirs:hover .bqbbl:not(.sticker){border-color:rgba(255,255,255,.14);}
 @keyframes bqBubbleIn{
   0%{opacity:0;transform:translateY(8px) scale(.94);}
   60%{opacity:1;transform:translateY(-1px) scale(1.01);}
   100%{opacity:1;transform:translateY(0) scale(1);}
 }
-.bqr .bqbbl{animation:bqBubbleIn .32s cubic-bezier(.16,1,.3,1) both;}
+/* Only animate NEW messages, not all on render */
+.bqr.bq-new .bqbbl{animation:bqBubbleIn .32s cubic-bezier(.16,1,.3,1) both;}
 
 /* Refined sticker bubble */
 .bqbbl.sticker{
@@ -4508,24 +4509,33 @@ function subscribeDmRead(dmId){
   db.ref('bq_dms/'+dmId+'/read').on('value', handler);
 }
 
+let _receiptRAF=0;
 function updateAllReadReceipts(dmId){
   dmId = dmId||activeDmId;
   if(!dmId||!activeDmPuid) return;
-  const reads = dmReadCache[dmId]||{};
-  const partnerTs = reads[activeDmPuid]||0;
-  document.querySelectorAll('#bqdmmsgs .bqr.mine').forEach(row=>{
-    const msgTs = parseInt(row.dataset.ts||'0');
-    if(!msgTs) return;
-    const tickEl = row.querySelector('.bqbbl-tick');
-    const metaEl = row.querySelector('.bqbbl-meta');
-    if(!tickEl||!metaEl) return;
-    if(partnerTs && partnerTs >= msgTs){
-      tickEl.innerHTML = TICK_DOUBLE; metaEl.classList.remove('delivered'); metaEl.classList.add('seen'); metaEl.title='Seen';
-    } else if(partnerTs){
-      tickEl.innerHTML = TICK_DOUBLE; metaEl.classList.remove('seen'); metaEl.classList.add('delivered'); metaEl.title='Delivered';
-    } else {
-      tickEl.innerHTML = TICK_SINGLE; metaEl.classList.remove('seen','delivered'); metaEl.title='Sent';
-    }
+  // Debounce with rAF to batch updates and avoid per-message innerHTML cascades
+  if(_receiptRAF) cancelAnimationFrame(_receiptRAF);
+  _receiptRAF=requestAnimationFrame(()=>{
+    _receiptRAF=0;
+    const reads = dmReadCache[dmId]||{};
+    const partnerTs = reads[activeDmPuid]||0;
+    document.querySelectorAll('#bqdmmsgs .bqr.mine').forEach(row=>{
+      const msgTs = parseInt(row.dataset.ts||'0');
+      if(!msgTs) return;
+      const tickEl = row.querySelector('.bqbbl-tick');
+      const metaEl = row.querySelector('.bqbbl-meta');
+      if(!tickEl||!metaEl) return;
+      // Skip if already correct state
+      const isSeen = metaEl.classList.contains('seen');
+      const isDelivered = metaEl.classList.contains('delivered');
+      if(partnerTs && partnerTs >= msgTs){
+        if(!isSeen){ tickEl.innerHTML = TICK_DOUBLE; metaEl.className='bqbbl-meta seen'; metaEl.title='Seen'; }
+      } else if(partnerTs){
+        if(!isDelivered){ tickEl.innerHTML = TICK_DOUBLE; metaEl.className='bqbbl-meta delivered'; metaEl.title='Delivered'; }
+      } else {
+        if(isSeen||isDelivered){ tickEl.innerHTML = TICK_SINGLE; metaEl.className='bqbbl-meta'; metaEl.title='Sent'; }
+      }
+    });
   });
 }
 
@@ -5671,12 +5681,17 @@ function setupInput(ctx){
     if(msgs) requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight;});
   }
 
-  // Scroll tracking
+  // Scroll tracking — throttled with rAF to avoid jank
   if(msgs&&scrB){
+    let _scrollRAF=0;
     msgs.addEventListener('scroll',()=>{
-      const d=msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight;
-      const atB=d<80;if(isG)gAtBot=atB;else dAtBot=atB;
-      scrB.classList.toggle('show',!atB&&d>120);
+      if(_scrollRAF) return;
+      _scrollRAF=requestAnimationFrame(()=>{
+        _scrollRAF=0;
+        const d=msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight;
+        const atB=d<80;if(isG)gAtBot=atB;else dAtBot=atB;
+        scrB.classList.toggle('show',!atB&&d>120);
+      });
     },{passive:true});
     scrB.addEventListener('click',()=>{
       msgs.scrollTop=msgs.scrollHeight;
@@ -7889,7 +7904,6 @@ setTimeout(_injectProfileUploads,1500);
   .bqr.mine .bqbbl-meta.seen{color:#a5f3fc!important;}
 
   /* Swipe-to-reply visual */
-  .bqr{transition:transform .18s ease;position:relative;}
   .bqr.bq-swipe-active{transition:none;}
   .bqr.bq-swipe-trigger .bqbbl{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa)!important;}
   .bqr::after{
@@ -11201,10 +11215,8 @@ function fixDmLayout(){
   v.style.flexDirection='column';
   msgs.style.flex='1 1 auto';
   msgs.style.minHeight='0';
-  // Trigger reflow
-  void v.offsetHeight;
-  // Scroll to bottom in case content is offscreen
-  msgs.scrollTop=msgs.scrollHeight;
+  // Use rAF instead of forced reflow (void v.offsetHeight)
+  requestAnimationFrame(()=>{ msgs.scrollTop=msgs.scrollHeight; });
 }
 // Watch DM view becoming active
 function watchDmActivate(){
@@ -11212,10 +11224,8 @@ function watchDmActivate(){
   const obs=new MutationObserver(()=>{
     if(v.classList.contains('bq-active')){
       fixDmLayout();
-      // Re-fix after async render
-      setTimeout(fixDmLayout, 50);
-      setTimeout(fixDmLayout, 250);
-      setTimeout(fixDmLayout, 700);
+      // Single delayed fix after async render (was 3 calls, reduced to 1)
+      setTimeout(fixDmLayout, 300);
       // Refresh draft on chat switch
       try{ restoreDraftV24(); }catch(_){}
     }
@@ -11661,7 +11671,7 @@ polishCss.textContent=`
 .bqv2-quick-emoji button{background:none;border:0;font-size:20px;cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .12s ease,background .12s ease}
 .bqv2-quick-emoji button:hover{background:rgba(255,255,255,.1);transform:scale(1.25)}
 
-.bqbbl{transition:background-color .2s ease}
+/* Removed blanket transition — only apply when needed (e.g. reaction hover) */
 .bqbbl.bqv2-doubletapped{animation:bqV2DoubleTap .5s ease}
 @keyframes bqV2DoubleTap{0%{transform:scale(1)}30%{transform:scale(1.04)}100%{transform:scale(1)}}
 `;
@@ -13236,11 +13246,13 @@ setInterval(()=>{
   }
 
   /* ── SMOOTH AUTO-SCROLL ON NEW MESSAGE ── */
-  // Replace the aggressive scrollD function with a smoother version
+  // Patch scrollD to use instant snap for own messages, smooth for others
+  // Original scrollD (line 5344) already handles this — the previous v35 patch
+  // was always forcing smooth scroll, causing animation stacking/jank.
   function patchScrollD(){
     if(typeof scrollD !== 'function') return;
     const _origScrollD = scrollD;
-    scrollD = function(ctx){
+    scrollD = function(ctx, isMyMsg){
       try{
         const isG = ctx === 'global';
         const list = document.getElementById(isG ? 'bqgmsgs' : 'bqdmmsgs');
@@ -13250,11 +13262,13 @@ setInterval(()=>{
         // Only auto-scroll if near bottom (within 200px) — otherwise user is reading history
         if(atBot || distFromBot < 200){
           requestAnimationFrame(()=>{
-            list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
-            // Second pass for images that load late
-            setTimeout(()=>{
+            // Own messages: instant snap (no animation lag)
+            // Others: smooth scroll so user sees content arriving
+            if(isMyMsg){
+              list.scrollTop = list.scrollHeight;
+            } else {
               list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
-            }, 300);
+            }
           });
         }
       }catch(_){}
