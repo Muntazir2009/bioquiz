@@ -1,111 +1,112 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendWebPush } from "@/lib/web-push-compat";
 
 /**
  * POST /api/push/notify
- * 
- * Sends a web push notification to a target user.
- * The chat widget calls this when sending a message to trigger
- * a push notification for the recipient (who may have the tab closed).
- * 
- * Body: { targetUid, subscription, sender, message, type, dmId, pUid, pName }
- *   - targetUid: recipient's UID (for logging/cleanup)
- *   - subscription: PushSubscriptionJSON (fetched by sender from Firebase RTDB)
- *   - sender: display name of sender
- *   - message: message text preview
+ *
+ * Sends a web push notification to specific target users.
+ * Looks up their subscriptions from Firebase RTDB.
+ *
+ * Body: { targetUids: string[], excludeUid?, title, body, type, dmId?, pUid?, pName? }
+ *   - targetUids: array of recipient UIDs
+ *   - excludeUid: sender UID to skip
+ *   - title: notification title
+ *   - body: notification body text
  *   - type: 'global' | 'dm'
  *   - dmId: DM conversation ID (for DMs)
  *   - pUid: partner UID (for DMs)
  *   - pName: partner name (for DMs)
  */
 
-// VAPID configuration
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:bioquiz.chat@gmail.com";
-
-// Lazy-load web-push to avoid issues on CF Workers
-let webpush: typeof import("web-push") | null = null;
-
-async function getWebPush() {
-  if (webpush) return webpush;
-  try {
-    const wp = await import("web-push");
-    webpush = wp;
-    wp.default.setVapidDetails(
-      VAPID_SUBJECT,
-      process.env.VAPID_PUBLIC_KEY || "",
-      VAPID_PRIVATE_KEY
-    );
-    return wp;
-  } catch (err) {
-    console.error("[push/notify] Failed to load web-push:", err);
-    return null;
-  }
-}
+const FIREBASE_DB_URL =
+  "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { targetUid, subscription, sender, message, type, dmId, pUid, pName } = body;
+    const { targetUids, excludeUid, title, body: msgBody, type, dmId, pUid, pName } = body;
 
-    if (!subscription || !subscription.endpoint) {
+    if (!targetUids || !Array.isArray(targetUids) || targetUids.length === 0) {
       return NextResponse.json(
-        { error: "Missing push subscription" },
+        { error: "Missing targetUids" },
         { status: 400 }
       );
     }
 
-    if (!VAPID_PRIVATE_KEY) {
-      console.warn("[push/notify] VAPID_PRIVATE_KEY not configured — skipping push");
-      return NextResponse.json({ success: false, reason: "no_vapid_key" });
+    if (!title && !msgBody) {
+      return NextResponse.json(
+        { error: "Missing title or body" },
+        { status: 400 }
+      );
     }
 
-    // Load web-push library
-    const wp = await getWebPush();
-    if (!wp) {
-      console.warn("[push/notify] web-push library not available — skipping push");
-      return NextResponse.json({ success: false, reason: "no_webpush" });
+    // Fetch subscriptions for target UIDs from Firebase RTDB
+    const results = await Promise.allSettled(
+      targetUids
+        .filter((uid: string) => uid !== excludeUid)
+        .map(async (uid: string) => {
+          const res = await fetch(`${FIREBASE_DB_URL}/bq_push_subs/${uid}.json`);
+          if (!res.ok) return { uid, status: "fetch_failed" };
+          const data = await res.json();
+          if (!data?.subscription?.endpoint) return { uid, status: "no_subscription" };
+          return { uid, subscription: data.subscription };
+        })
+    );
+
+    const validSubs = results
+      .filter((r): r is PromiseFulfilledResult<{ uid: string; subscription: any; status?: string }> => r.status === "fulfilled" && !!r.value.subscription)
+      .map((r) => r.value);
+
+    if (validSubs.length === 0) {
+      return NextResponse.json({ sent: 0, noSubscription: targetUids.length });
     }
 
     // Build push payload
     const payload = JSON.stringify({
-      title: "BioQuiz Chat",
-      body: `${sender}: ${message}`.slice(0, 200),
+      title: title || "BioQuiz Chat",
+      body: (msgBody || "New message").slice(0, 200),
       icon: "/logo.svg",
       badge: "/logo.svg",
-      tag: `bq-${type}-${Date.now()}`,
-      type: type || "global",
+      tag: `bq-${type || "dm"}-${Date.now()}`,
+      type: type || "dm",
       dmId: dmId || null,
       pUid: pUid || null,
       pName: pName || null,
       url: "/",
     });
 
-    // Send the push notification
-    try {
-      await wp.default.sendNotification(subscription, payload);
-      console.log(`[push/notify] Push sent to ${targetUid}`);
-      return NextResponse.json({ success: true });
-    } catch (pushErr: unknown) {
-      const err = pushErr as { statusCode?: number; body?: string };
-      console.error(`[push/notify] Push failed (${err.statusCode}):`, err.body || pushErr);
-      
-      // If subscription is expired/gone (410), clean it up
-      if (err.statusCode === 410 || err.statusCode === 404) {
-        try {
-          const firebaseUrl = `https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app/bq_push_subs/${targetUid}.json`;
-          await fetch(firebaseUrl, { method: "DELETE" });
-          console.log(`[push/notify] Cleaned up expired subscription for ${targetUid}`);
-        } catch (_) {
-          // Ignore cleanup errors
-        }
-        return NextResponse.json({ success: false, reason: "subscription_expired" });
-      }
+    let sent = 0;
+    let failed = 0;
+    const expiredUids: string[] = [];
 
-      return NextResponse.json(
-        { error: "Push delivery failed", details: String(pushErr) },
-        { status: 502 }
-      );
+    // Send push to each target
+    for (const { uid, subscription } of validSubs) {
+      const result = await sendWebPush(subscription, payload);
+
+      if (result.success) {
+        sent++;
+      } else {
+        failed++;
+        if (result.statusCode === 410 || result.statusCode === 404) {
+          expiredUids.push(uid);
+        }
+      }
     }
+
+    // Clean up expired subscriptions
+    if (expiredUids.length > 0) {
+      await Promise.allSettled(
+        expiredUids.map((uid) =>
+          fetch(`${FIREBASE_DB_URL}/bq_push_subs/${uid}.json`, {
+            method: "DELETE",
+          })
+        )
+      );
+      console.log(`[push/notify] Cleaned up ${expiredUids.length} expired subscriptions`);
+    }
+
+    console.log(`[push/notify] Sent: ${sent}, Failed: ${failed}`);
+    return NextResponse.json({ sent, failed });
   } catch (err) {
     console.error("[push/notify] Error:", err);
     return NextResponse.json(
@@ -121,6 +122,6 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: "ok",
-    vapidConfigured: !!VAPID_PRIVATE_KEY,
+    version: "2.0",
   });
 }

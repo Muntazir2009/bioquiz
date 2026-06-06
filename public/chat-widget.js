@@ -5102,6 +5102,8 @@ function ensureReactionPicker(){
       '<div class="bq-rx-panes">'+panes+'</div>'+
     '</div>';
   (document.getElementById('bqp')||document.body).appendChild(el);
+  // Prevent mousedown from bubbling to document outside-click handler
+  el.addEventListener('mousedown',e=>e.stopPropagation());
   el.addEventListener('click',e=>{
     if(e.target.dataset.close==='1'||e.target===el) closeReactionPicker();
   });
@@ -5146,6 +5148,8 @@ function ensureMsgActionSheet(){
       '<div class="bq-ms-actions" id="bq-ms-actions"></div>'+
     '</div>';
   (document.getElementById('bqp')||document.body).appendChild(el);
+  // Prevent mousedown from bubbling to document outside-click handler
+  el.addEventListener('mousedown',e=>e.stopPropagation());
   el.addEventListener('pointerdown',e=>{
     if(e.target.closest('.bq-ms-panel')) e.stopPropagation();
   },true);
@@ -5879,7 +5883,10 @@ function init(){
     const p=document.getElementById('bqp');
     const b=document.getElementById('bqb');
     // v3: skip outside-close when interacting with overlays that live outside #bqp
-    if(e.target.closest('#bq-media-lightbox,#bq-pv,#bq-info-float,#bqimg-preview,#bq-confirm,#bq-msg-sheet,#bq-rx-picker,.bqimg-preview,.bqpv-modal,.bq-confirm')) return;
+    // FIX: Added .bqv2-quick-emoji, #bq-burst-picker, #bq-dm-menu, #bq-sched-menu, #bq-disappear-menu
+    // These are appended to document.body but are part of the widget UI — without this,
+    // clicking on them triggers closePanel() because they're outside #bqp.
+    if(e.target.closest('#bq-media-lightbox,#bq-pv,#bq-info-float,#bqimg-preview,#bq-confirm,#bq-msg-sheet,#bq-rx-picker,.bqimg-preview,.bqpv-modal,.bq-confirm,.bqv2-quick-emoji,#bq-burst-picker,#bq-dm-menu,#bq-sched-menu,#bq-disappear-menu')) return;
     if(!p.contains(e.target)&&!b.contains(e.target)) closePanel();
   });
 
@@ -7031,7 +7038,11 @@ setTimeout(_injectProfileUploads,1500);
         e.stopPropagation();
         if(menu){
           // Move to body to escape stacking context of #bqp
-          if(menu.parentNode !== document.body) document.body.appendChild(menu);
+          if(menu.parentNode !== document.body){
+            document.body.appendChild(menu);
+            // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+            menu.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
+          }
           const r=btn.getBoundingClientRect();
           const isOpen=menu.classList.contains('open');
           menu.classList.remove('open');
@@ -10728,6 +10739,8 @@ function showScheduleMenu(anchor){
     };
     m.appendChild(b);
   });
+  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+  m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
   document.body.appendChild(m);
   const r=anchor.getBoundingClientRect();
   m.style.left=Math.max(8, r.right - 220)+'px';
@@ -10768,6 +10781,8 @@ function showDisappearMenu(anchor){
     b.onclick=()=>{ setDisTtl(ms); _toast(ms?'Messages will vanish after '+label:'Disappearing messages off','ok'); m.remove(); };
     m.appendChild(b);
   });
+  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+  m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
   document.body.appendChild(m);
   const r=anchor.getBoundingClientRect();
   m.style.left=Math.max(8, r.left - 60)+'px';
@@ -11089,6 +11104,8 @@ function showSchedMenu(anchor){
     m.appendChild(b);
   });
 
+  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+  m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
   document.body.appendChild(m);
   const r=anchor.getBoundingClientRect();
   m.style.left=Math.max(8, Math.min(window.innerWidth-m.offsetWidth-8, r.right - 220))+'px';
@@ -11821,6 +11838,8 @@ function showQE(bbl, e){
     };
     bar.appendChild(b);
   });
+  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+  bar.addEventListener('mousedown', ev => ev.stopPropagation());
   document.body.appendChild(bar);
   const top=Math.max(60, r.top-46);
   bar.style.left=Math.min(window.innerWidth-bar.offsetWidth-8, Math.max(8, r.left))+'px';
@@ -12982,6 +13001,8 @@ setInterval(()=>{
       });
       pop.appendChild(b);
     });
+    // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
+    pop.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
     document.body.appendChild(pop);
     var r = anchor.getBoundingClientRect();
     var w = pop.offsetWidth || 320;
@@ -14145,7 +14166,7 @@ setInterval(()=>{
 'use strict';
 
 const PUSH_SERVICE_PORT = 3010;
-const VAPID_PUBLIC_KEY = 'BAS_5l1Hr4LsSOnjKHDQSRdv7d9gMJ9H9IGe0ohCYZgIgYP5H7dExpv9W4MJsGY7lOAMyDI3yWKBCy9e5EPfGa4';
+const VAPID_PUBLIC_KEY = 'BJ27yxnYtouEfC4q-1m11AXokuX2B1iIgHqWaQWIps53zRSPq2rgpdndgruhSA65KmwS09LYSjGEK5Q9LArk94Q';
 
 const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
 const _uname = ()=> localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
@@ -14273,7 +14294,7 @@ async function sendSubscriptionToServer(subscription){
   const uid = _uid();
   if(!uid) return;
   try{
-    await fetch('/api/push/subscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+    await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -14291,7 +14312,7 @@ async function removeSubscriptionFromServer(){
   const uid = _uid();
   if(!uid) return;
   try{
-    await fetch('/api/push/unsubscribe?XTransformPort=' + PUSH_SERVICE_PORT, {
+    await fetch('/api/push/unsubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid })
@@ -14318,7 +14339,7 @@ window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
   try{
     if(type === 'global'){
       // Broadcast to all subscribers except sender
-      const res = await fetch('/api/push/broadcast?XTransformPort=' + PUSH_SERVICE_PORT, {
+      const res = await fetch('/api/push/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -14332,7 +14353,7 @@ window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
     } else if(type === 'dm'){
       // Send to specific DM partner only
       if(!pUid) return;
-      const res = await fetch('/api/push/notify?XTransformPort=' + PUSH_SERVICE_PORT, {
+      const res = await fetch('/api/push/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
