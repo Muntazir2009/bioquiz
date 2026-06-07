@@ -15787,21 +15787,15 @@ style.textContent = '\
   100%{background-position:10% 70%,90% 40%,50% 60%;}\
 }\
 \
-/* ═══ Ensure content sits above orbs ═══ */\
-#bqp > *{position:relative;z-index:1!important;}\
-#bqs{position:relative;z-index:1!important;}\
-.bqv{z-index:1!important;}\
-\
-/* ═══ Liquid Glass — Views ═══ */\
-.bqv{\
-  background:transparent!important;\
-}\
+/* ═══ Ensure content sits above orbs — CRITICAL: preserve bqv absolute positioning ═══ */\
+#bqs{position:relative!important;z-index:1!important;}\
+.bqv{z-index:auto!important;background:transparent!important;}\
 \
 /* ═══ Liquid Glass — Messages Area ═══ */\
 .bqmsgs,\
-#bqdmmsgs{\
+#bqdmmsgs,\
+#bqgmsgs{\
   background:transparent!important;\
-  position:relative!important;\
 }\
 \
 /* ═══ Liquid Glass — Header ═══ */\
@@ -15825,7 +15819,7 @@ style.textContent = '\
   border-top:1px solid rgba(255,255,255,.08)!important;\
 }\
 \
-/* ═══ Liquid Glass — Message Bubbles ═══ */\
+/* ═══ Liquid Glass — DM Message Bubbles ═══ */\
 #bqdmmsgs .bqr.mine .bqbbl{\
   background:linear-gradient(135deg,rgba(96,165,250,.55),rgba(129,140,248,.45))!important;\
   backdrop-filter:blur(16px) saturate(1.5)!important;\
@@ -15954,17 +15948,6 @@ style.textContent = '\
   border:1px solid rgba(0,0,0,.08)!important;\
 }\
 \
-#bqp.bq-theme-light::after,\
-#bqp.bq-theme-whatsapp::after,\
-#bqp.bq-theme-walight::after,\
-#bqp.bq-theme-peach::after,\
-#bqp.bq-theme-rose::after{\
-  background:\
-    radial-gradient(ellipse 220px 220px at 15% 20%,rgba(59,130,246,.08) 0%,transparent 70%),\
-    radial-gradient(ellipse 180px 180px at 85% 75%,rgba(139,92,246,.06) 0%,transparent 70%),\
-    radial-gradient(ellipse 200px 200px at 50% 50%,rgba(16,185,129,.04) 0%,transparent 70%)!important;\
-}\
-\
 #bqp.bq-theme-light .bqhdr,\
 #bqp.bq-theme-whatsapp .bqhdr,\
 #bqp.bq-theme-walight .bqhdr,\
@@ -16042,7 +16025,7 @@ style.textContent = '\
   z-index:2!important;\
 }\
 \
-/* ═══ Liquid Glass — Animated second orb layer ═══ */\
+/* ═══ Liquid Glass — Animated orb drift keyframe ═══ */\
 @keyframes bqOrbDrift{\
   0%{transform:translate(0,0) scale(1);}\
   25%{transform:translate(30px,-20px) scale(1.1);}\
@@ -16060,67 +16043,6 @@ style.textContent = '\
 \
 ';
 document.head.appendChild(style);
-
-/* ── Create animated floating orb elements for liquid glass effect ── */
-function bqAddGlassOrbs(){
-  var panel = document.getElementById('bqp');
-  if(!panel) return;
-  if(panel.querySelector('.bq-glass-orb')) return; /* Already added */
-
-  var orbContainer = document.createElement('div');
-  orbContainer.className = 'bq-glass-orb-container';
-  orbContainer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;border-radius:inherit;';
-
-  var orbConfigs = [
-    { x:'12%', y:'18%', w:200, h:200, color:'rgba(96,165,250,.08)', dur:'14s', delay:'0s' },
-    { x:'78%', y:'72%', w:180, h:180, color:'rgba(167,139,250,.07)', dur:'18s', delay:'-4s' },
-    { x:'45%', y:'45%', w:220, h:220, color:'rgba(52,211,153,.05)', dur:'16s', delay:'-8s' },
-    { x:'70%', y:'15%', w:140, h:140, color:'rgba(251,146,60,.06)', dur:'20s', delay:'-6s' },
-    { x:'25%', y:'80%', w:160, h:160, color:'rgba(244,114,182,.05)', dur:'22s', delay:'-10s' },
-  ];
-
-  orbConfigs.forEach(function(cfg){
-    var orb = document.createElement('div');
-    orb.className = 'bq-glass-orb';
-    orb.style.cssText = 'position:absolute;left:'+cfg.x+';top:'+cfg.y+';width:'+cfg.w+'px;height:'+cfg.h+'px;'+
-      'border-radius:50%;background:radial-gradient(circle,'+cfg.color+' 0%,transparent 70%);'+
-      'filter:blur(40px);animation:bqOrbDrift '+cfg.dur+' ease-in-out infinite '+cfg.delay+';'+
-      'pointer-events:none;will-change:transform;';
-    orbContainer.appendChild(orb);
-  });
-
-  /* Insert as first child so it sits behind content */
-  panel.insertBefore(orbContainer, panel.firstChild);
-}
-
-/* ── Watch for panel opening to add orbs ── */
-function bqInitGlass(){
-  bqAddGlassOrbs();
-  var panel = document.getElementById('bqp');
-  if(panel){
-    var obs = new MutationObserver(function(mutations){
-      mutations.forEach(function(m){
-        if(m.type === 'attributes' && m.attributeName === 'class'){
-          if(m.target.classList.contains('open')){
-            bqAddGlassOrbs();
-          }
-        }
-      });
-    });
-    obs.observe(panel, { attributes:true, attributeFilter:['class'] });
-  }
-}
-
-/* ── Init when DOM is ready ── */
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', bqInitGlass);
-} else {
-  bqInitGlass();
-}
-
-/* Also retry periodically in case widget loads late */
-setTimeout(bqInitGlass, 1000);
-setTimeout(bqInitGlass, 3000);
 
 console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats');
 }catch(e){ console.error('[bq] v69 patch error:', e); }
