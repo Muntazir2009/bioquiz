@@ -109,13 +109,13 @@ const EMOJI_LIST = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','�
 // v9.2: Full emoji reaction picker — categorized like WhatsApp's keyboard
 const REACTION_CATEGORIES = {
   '⭐': ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','🫶','🤯','✨'],
-  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
-  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','💋'],
+  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️'],
   '🐶': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🐘','🦛','🦏','🐪','🐫','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🦢','🦩','🕊️','🐇'],
-  '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🥛','☕','🍵','🧃','🥤'],
+  '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🥛','☕','🍵','🧃','🥤'],
   '⚽': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🎱','🏓','🏸','🏒','🏑','🏏','🥅','⛳','🏹','🎣','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','🏂','🏋️','🤸','⛹️','🤾','🏌️','🏇','🧘','🏄','🏊','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎫','🎪','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🎻','🎲','♟️','🎯','🎳','🎮','🧩'],
   '🚗': ['🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛴','🚲','🛵','🏍️','🚨','🚃','🚋','🚞','🚄','🚅','🚂','🚆','🚇','✈️','🛫','🛬','💺','🚀','🛸','🚁','🛶','⛵','🚤','🛳️','🚢','⚓','⛽','🚧','🚦','🗺️','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','🏖️','🏝️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏗️','🏭','🏢','🏬','🏥','🏦','🏨','🏪','🏫','🏛️','⛪','🗾','🎑','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌌','🌉'],
-  '💡': ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🕹️','💾','💿','📀','📷','📸','📹','🎥','📽️','📞','☎️','📟','📺','📻','🎙️','🎚️','🎛️','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','💸','💵','💰','💳','💎','⚖️','🔧','🔨','🛠️','🔩','⚙️','🧱','🧲','🔮','📿','⚗️','🔭','🔬','🩹','🩺','💊','💉','🧬','🦠','🧪','🌡️','🧹','🚽','🚰','🚿','🛁','🧼','🔑','🗝️','🚪','🛋️','🛏️','🧸','🖼️','🛍️','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮'],
+  '💡': ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🕹️','💾','💿','📀','📷','📸','📹','🎥','📽️','📞','☎️','📟','📺','📻','🎙️','🎚️','🎛️','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','💸','💵','💰','💳','💎','⚖️','🔧','🔨','🛠️','🔩','⚙️','🧱','🧲','🔮','📿','⚗️','🔭','🔬','🩹','🩺','💊','🧬','🧪','🌡️','🧹','🚰','🚿','🛁','🧼','🔑','🗝️','🚪','🛋️','🛏️','🧸','🖼️','🛍️','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮'],
   '❤️': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','♻️','✅','❌','⭕','🛑','⛔','💯','💢','❗','❕','❓','❔','‼️','⁉️','⚠️','🔱','⚜️','🔰','🌐','💠','Ⓜ️','🌀','💤','♿','🅿️','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
 };
 const REACTIONS  = REACTION_CATEGORIES['⭐'];     // legacy quick row (kept for compatibility)
@@ -2848,7 +2848,7 @@ const HTML = `
       <div class="bq-info-scroll">
         <div class="bq-info-section">
           <div class="bq-info-section-title">Chat Theme</div>
-          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="none" title="Dark"></div><div class="bq-theme-chip" data-t="light" title="Light"></div><div class="bq-theme-chip" data-t="whatsapp" title="WhatsApp Light"></div><div class="bq-theme-chip" data-t="wadark" title="WhatsApp Dark"></div><div class="bq-theme-chip" data-t="black" title="Pure Black"></div><div class="bq-theme-chip" data-t="noir" title="Noir Black"></div><div class="bq-theme-chip" data-t="aurora" title="Aurora"></div><div class="bq-theme-chip" data-t="peach" title="Peach"></div><div class="bq-theme-chip" data-t="carbon" title="Carbon"></div><div class="bq-theme-chip" data-t="midnight" title="Midnight"></div><div class="bq-theme-chip" data-t="rose" title="Rose"></div><div class="bq-theme-chip" data-t="ocean" title="Ocean"></div><div class="bq-theme-chip" data-t="crimson" title="Crimson"></div><div class="bq-theme-chip" data-t="monochrome" title="Monochrome"></div></div>
+          <div class="bq-theme-row" id="bq-theme-chips" data-theme-picker="dm"><div class="bq-theme-chip sel" data-t="pure-black" title="Pure Black"></div><div class="bq-theme-chip" data-t="golden" title="Golden Brown"></div></div>
         </div>
         <div class="bq-info-section">
           <div class="bq-info-section-title">Settings</div>
@@ -3015,20 +3015,8 @@ const HTML = `
       <div class="bq-if-sect">
        <div class="bq-if-sect-t">Theme</div>
        <div class="bq-if-themes" id="bq-if-themes">
-         <div class="bq-if-th sel" data-t="none" title="Dark"></div>
-         <div class="bq-if-th" data-t="light" title="Light"></div>
-         <div class="bq-if-th" data-t="whatsapp" title="WhatsApp Light"></div>
-         <div class="bq-if-th" data-t="wadark" title="WhatsApp Dark"></div>
-         <div class="bq-if-th" data-t="black" title="Pure Black"></div>
-         <div class="bq-if-th" data-t="noir" title="Noir"></div>
-         <div class="bq-if-th" data-t="aurora" title="Aurora"></div>
-         <div class="bq-if-th" data-t="peach" title="Peach"></div>
-         <div class="bq-if-th" data-t="carbon" title="Carbon"></div>
-         <div class="bq-if-th" data-t="midnight" title="Midnight"></div>
-         <div class="bq-if-th" data-t="rose" title="Rose"></div>
-         <div class="bq-if-th" data-t="ocean" title="Ocean"></div>
-         <div class="bq-if-th" data-t="crimson" title="Crimson"></div>
-         <div class="bq-if-th" data-t="monochrome" title="Monochrome"></div>
+         <div class="bq-if-th sel" data-t="pure-black" title="Pure Black"></div>
+         <div class="bq-if-th" data-t="golden" title="Golden Brown"></div>
        </div>
      </div>
     <div class="bq-if-sect">
@@ -3653,7 +3641,7 @@ function subscribeWidgetConfig(){
       for(var k in vars){if(vars[k]!==undefined&&vars[k]!==null&&vars[k]!==""){panel.style.setProperty(k,vars[k]);}}
       if(c.fontSize==="sm")panel.classList.add("bq-font-sm");else panel.classList.remove("bq-font-sm");
       if(c.fontSize==="lg")panel.classList.add("bq-font-lg");else panel.classList.remove("bq-font-lg");
-      if(c.defaultTheme&&!localStorage.getItem("bq_theme_v2")){localStorage.setItem("bq_theme_v2",c.defaultTheme);applyTheme(c.defaultTheme);}
+      if(c.defaultTheme&&!localStorage.getItem("bq_theme_v2")){localStorage.setItem("bq_theme_v2",c.defaultTheme);if(typeof applyGlobalTheme==='function')applyGlobalTheme(c.defaultTheme);}
       if(c.bubbleStyle)localStorage.setItem("bq_bubble_style",c.bubbleStyle);
       if(c.readReceipts!==undefined)localStorage.setItem("bq_read_receipts",c.readReceipts?"on":"off");
       window.__BQ_ADMIN_CONFIG__=c;
@@ -8340,29 +8328,8 @@ setTimeout(_injectProfileUploads,1500);
   });
 
   /* ── 9. Register new themes in any theme picker that's already rendered ── */
-  function injectThemeChips(){
-    const NEW=[
-      {id:'aurora', label:'Aurora'},
-      {id:'peach',  label:'Peach'},
-      {id:'carbon', label:'Carbon'},
-    ];
-    document.querySelectorAll('.bq-theme-grid, .bq-theme-list, [data-theme-picker]').forEach(grid=>{
-      NEW.forEach(t=>{
-        if(grid.querySelector('.bq-theme-chip[data-t="'+t.id+'"]')) return;
-        const chip=document.createElement('button');
-        chip.className='bq-theme-chip'; chip.dataset.t=t.id; chip.type='button';
-        chip.style.cssText='padding:8px 12px;border-radius:10px;border:1px solid var(--bq-border,rgba(255,255,255,.12));background:var(--bq-bg-elevated,#141414);color:var(--bq-text,#fff);font-family:Inter,sans-serif;font-size:12px;cursor:pointer;margin:4px;';
-        chip.textContent=t.label;
-        chip.addEventListener('click',()=>{
-          if(typeof setGlobalTheme==='function') setGlobalTheme(t.id);
-          else if(typeof applyGlobalTheme==='function') applyGlobalTheme(t.id);
-        });
-        grid.appendChild(chip);
-      });
-    });
-  }
-  // Try a few times after mount
-  let _ti=0; const _themeIv=setInterval(()=>{ injectThemeChips(); if(++_ti>20) clearInterval(_themeIv); },400);
+  // v71: REMOVED — only pure-black and golden themes are supported now.
+  // Chip injection handled by HTML template + v30 CSS override.
 
   /* ── 10. ESC closes select mode ── */
   document.addEventListener('keydown',e=>{
@@ -8560,17 +8527,7 @@ setTimeout(_injectProfileUploads,1500);
     const g=document.getElementById('bqgmsgs'); if(g) installSpringRelease(g);
     const d=document.getElementById('bqdmmsgs'); if(d) installSpringRelease(d);
     dedupeBtn('bqdmsnd'); dedupeBtn('bqgsnd');
-    // Make sure new theme chips also exist in DM info (in case v19 rendered before our HTML edit)
-    const row=document.getElementById('bq-theme-chips');
-    if(row){
-      ['noir','aurora','peach','carbon'].forEach(t=>{
-        if(row.querySelector('.bq-theme-chip[data-t="'+t+'"]')) return;
-        const ch=document.createElement('div');
-        ch.className='bq-theme-chip'; ch.dataset.t=t;
-        ch.title=t.charAt(0).toUpperCase()+t.slice(1);
-        row.appendChild(ch);
-      });
-    }
+    // v71: REMOVED — old theme chip injection (noir/aurora/peach/carbon). Only pure-black & golden supported now.
     injectDmRowLastSeen();
   }
   wireV20();
@@ -11287,45 +11244,17 @@ window.addEventListener('orientationchange', ()=>setTimeout(fixDmLayout, 200));
 /* ════════════════════════════════════════════════════════════════════════
    FIX 8: Theme cleanup — Show ALL themes in the selector
    ════════════════════════════════════════════════════════════════════════ */
-const KEEP_THEMES=new Set(['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','crimson','monochrome','golden','pure-black']);
+const KEEP_THEMES=new Set(['pure-black','golden']);
 
 function injectThemeOverrideCss(){
-  if($('bq-theme-v24-css')) return;
-  const s=document.createElement('style'); s.id='bq-theme-v24-css';
-  s.textContent=`
-    /* Show all theme chips */
-    .bq-theme-chip,
-    .bq-if-th { display:inline-block !important; }
-    /* Settings/profile theme tiles also visible */
-    .bqpf-theme { display:inline-block !important; }
-  `;
-  document.head.appendChild(s);
+  // v71: REMOVED — no longer showing all old theme chips.
+  // Only pure-black and golden are supported now.
 }
 function ensureMonoBlackChips(){
-  // Add mono/black chips to any picker grid that doesn't have them
-  document.querySelectorAll('.bq-theme-row, [data-theme-picker]').forEach(grid=>{
-    [['mono','Monochrome'],['black','Black']].forEach(([id,label])=>{
-      if(!grid.querySelector('[data-t="'+id+'"]')){
-        const chip=document.createElement('div');
-        chip.className='bq-theme-chip'; chip.dataset.t=id; chip.title=label;
-        chip.style.cssText='display:inline-block;width:28px;height:28px;border-radius:50%;cursor:pointer;margin:4px;border:2px solid transparent;'+
-          (id==='black'?'background:linear-gradient(135deg,#0a0a0a,#000)':'background:linear-gradient(135deg,#27272a,#3f3f46)');
-        grid.appendChild(chip);
-      }
-    });
-  });
+  // v71: REMOVED — no longer injecting old mono/black chips.
 }
 function migrateUnsupportedTheme(){
-  // If saved theme isn't in the supported set, default to 'none' (dark)
-  try{
-    const cur=localStorage.getItem('bq_theme_v2')||'';
-    if(cur && !KEEP_THEMES.has(cur)){
-      localStorage.setItem('bq_theme_v2','none');
-      const p=$('bqp'); if(p){
-        Array.from(p.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) p.classList.remove(c); });
-      }
-    }
-  }catch(_){}
+  // v71: REMOVED — old theme migration handled by v71 patch.
 }
 
 /* FIX 9: composer slash-hint chip — fully removed in v26 */
@@ -11366,7 +11295,6 @@ else setTimeout(bootV24, 800);
 
 // Periodic re-wire — chat DOM is rebuilt by the parent widget
 setInterval(()=>{
-  try{ ensureMonoBlackChips(); }catch(_){}
   try{ wireSchedV24(); }catch(_){}
   try{ wireDraftsV24(); }catch(_){}
   try{ watchDmActivate(); }catch(_){}
@@ -12207,182 +12135,54 @@ setInterval(()=>{
   }
   setInterval(paintInitialDurations, 1200);
 
-  /* ───────────────────────── 4) NEW THEMES ───────────────────────── */
-  var V28_THEMES = {
-    plain:   { label:'Pure Black' },
-    crimson: { label:'Crimson' }
-  };
+  /* ───────────────────────── 4) THEMES — v71: only pure-black & golden ───────────────────────── */
+  // v71: Replaced old v28 theme system. No more chip injection, no more intervals.
+  // Theme application is handled by v71 patch at end of file.
 
-  var css = document.createElement('style');
-  css.id='bqV28ThemeCss';
-  css.textContent = `
-  /* Chip swatches in both pickers */
-  .bq-theme-chip[data-t="plain"]{background:#000!important;border:1px solid rgba(255,255,255,.25)!important;}
-  .bq-theme-chip[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#1a0407 100%)!important;border:1px solid rgba(220,20,60,.5)!important;}
-  .bq-if-th[data-t="plain"]{background:#000;border:1px solid rgba(255,255,255,.25);}
-  .bq-if-th[data-t="crimson"]{background:linear-gradient(135deg,#dc143c 0%,#1a0407 100%);border:1px solid rgba(220,20,60,.5);}
-
-  /* ── Pure Black: no glass, no blur, flat surfaces ── */
-  #bqp.bq-theme-plain{
-    --bq-bg:#000; --bq-bg-soft:#000; --bq-bg-hover:#0a0a0a;
-    --bq-surface:#000; --bq-surface-2:#0a0a0a; --bq-surface-3:#111;
-    --bq-text:#fff; --bq-text-muted:#9aa0a6; --bq-text-dim:#6b7280;
-    --bq-border:#1a1a1a; --bq-border-soft:#141414;
-    --bq-accent:#ffffff; --bq-accent-soft:#e5e7eb;
-    --bq-mine:#1f1f1f; --bq-mine-text:#fff;
-    --bq-other:#0d0d0d; --bq-other-text:#fff;
-    background:#000!important; color:#fff!important;
-  }
-  #bqp.bq-theme-plain *{ backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
-  #bqp.bq-theme-plain .bqbbl{ background:var(--bq-other)!important; box-shadow:none!important; border:1px solid #1a1a1a!important; }
-  #bqp.bq-theme-plain .bqr.mine .bqbbl{ background:var(--bq-mine)!important; }
-  #bqp.bq-theme-plain .bqhead,#bqp.bq-theme-plain .bqcomp,#bqp.bq-theme-plain .bqnav,
-  #bqp.bq-theme-plain .bqdmhead,#bqp.bq-theme-plain .bqdmlist,#bqp.bq-theme-plain .bqgmsgs,
-  #bqp.bq-theme-plain .bqdmmsgs{ background:#000!important; box-shadow:none!important; }
-  #bqp.bq-theme-plain .bqr.mine .bqbbl{ box-shadow:none!important; }
-  #bqp.bq-theme-plain .bqhbtn,#bqp.bq-theme-plain .bqvoice-btn,#bqp.bq-theme-plain .bqgifbtn,
-  #bqp.bq-theme-plain .bqscr{ background:#0a0a0a!important; border:1px solid #1f1f1f!important; color:#fff!important; box-shadow:none!important; }
-
-  /* ── Crimson Black (Discord-like) ── */
-  #bqp.bq-theme-crimson{
-    --bq-bg:#0e0a0c; --bq-bg-soft:#150d10; --bq-bg-hover:#1c1014;
-    --bq-surface:#160f12; --bq-surface-2:#1d1418; --bq-surface-3:#241820;
-    --bq-text:#f4e8ec; --bq-text-muted:#b39aa3; --bq-text-dim:#7a5d67;
-    --bq-border:#2a1a20; --bq-border-soft:#22141a;
-    --bq-accent:#dc143c; --bq-accent-soft:#ff4d6d;
-    --bq-mine:linear-gradient(135deg,#dc143c 0%,#a30b2a 100%);
-    --bq-mine-text:#fff;
-    --bq-other:#1d1418; --bq-other-text:#f4e8ec;
-    background:radial-gradient(ellipse at top,#1a0d12 0%,#0a0608 60%)!important;
-    color:#f4e8ec!important;
-  }
-  #bqp.bq-theme-crimson .bqbbl{
-    background:#1d1418!important; color:#f4e8ec!important;
-    border:1px solid #2a1a20!important;
-    box-shadow:0 2px 10px rgba(0,0,0,.45)!important;
-  }
-  #bqp.bq-theme-crimson .bqr.mine .bqbbl{
-    background:linear-gradient(135deg,#dc143c 0%,#a30b2a 100%)!important;
-    color:#fff!important; border-color:#dc143c!important;
-    box-shadow:0 4px 18px rgba(220,20,60,.35)!important;
-  }
-  #bqp.bq-theme-crimson .bqhead,#bqp.bq-theme-crimson .bqcomp,
-  #bqp.bq-theme-crimson .bqnav,#bqp.bq-theme-crimson .bqdmhead,
-  #bqp.bq-theme-crimson .bqdmlist{
-    background:rgba(20,12,15,.92)!important; border-color:#2a1a20!important;
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  }
-  #bqp.bq-theme-crimson .bqgmsgs,#bqp.bq-theme-crimson .bqdmmsgs{
-    background:radial-gradient(ellipse at top,#1a0d12,#0a0608 65%)!important;
-  }
-  #bqp.bq-theme-crimson .bqhbtn,#bqp.bq-theme-crimson .bqvoice-btn,
-  #bqp.bq-theme-crimson .bqgifbtn,#bqp.bq-theme-crimson .bqscr{
-    background:#1d1418!important; border:1px solid #2a1a20!important;
-    color:#f4e8ec!important; box-shadow:none!important;
-  }
-  #bqp.bq-theme-crimson .bqhbtn:hover,#bqp.bq-theme-crimson .bqvoice-btn:hover,
-  #bqp.bq-theme-crimson .bqgifbtn:hover,#bqp.bq-theme-crimson .bqscr:hover{
-    color:#dc143c!important; border-color:#dc143c!important;
-  }
-  #bqp.bq-theme-crimson .bq-voice-bar.played,
-  #bqp.bq-theme-crimson .bq-theme-chip.sel,
-  #bqp.bq-theme-crimson .bq-if-th.sel{ background:#dc143c!important; border-color:#dc143c!important; box-shadow:0 0 0 2px rgba(220,20,60,.35)!important; }
-  #bqp.bq-theme-crimson a{ color:#ff4d6d!important; }
-  `;
-  document.head.appendChild(css);
-
-  // Inject chips into both grids if missing
-  function injectChips(){
-    var defs = [
-      { t:'plain',   title:'Pure Black' },
-      { t:'crimson', title:'Crimson' }
-    ];
-    // Global chip row
-    var chipRow = document.getElementById('bq-theme-chips');
-    if(chipRow){
-      defs.forEach(function(d){
-        if(chipRow.querySelector('.bq-theme-chip[data-t="'+d.t+'"]')) return;
-        var c=document.createElement('div'); c.className='bq-theme-chip';
-        c.dataset.t=d.t; c.title=d.title;
-        chipRow.appendChild(c);
-      });
-    }
-    // Settings grid
-    var grid = document.getElementById('bq-if-themes');
-    if(grid){
-      defs.forEach(function(d){
-        if(grid.querySelector('.bq-if-th[data-t="'+d.t+'"]')) return;
-        var c=document.createElement('div'); c.className='bq-if-th';
-        c.dataset.t=d.t; c.title=d.title;
-        grid.appendChild(c);
-      });
-    }
-  }
-  setInterval(injectChips, 1500);
-  injectChips();
-
-  // Apply / persist theme — works for both pickers
-  var THEME_KEY = 'bq_theme';
-  var KNOWN = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','plain','crimson','golden','pure-black'];
-
-  function applyTheme(t){
-    if(!t) t='none';
+  // Expose applyTheme globally so subscribeWidgetConfig can call it
+  var ALLOWED_V71 = ['pure-black','golden'];
+  var DEFAULT_V71 = 'pure-black';
+  function normV71(t){ if(!t || ALLOWED_V71.indexOf(t)<0) return DEFAULT_V71; return t; }
+  window.applyTheme = function(t){
+    t = normV71(t);
     var root = document.getElementById('bqp');
     if(!root) return;
-    KNOWN.forEach(function(k){ root.classList.remove('bq-theme-'+k); });
-    if(t!=='none') root.classList.add('bq-theme-'+t);
-    try{ localStorage.setItem(THEME_KEY, t); }catch(_){}
+    // Strip ALL bq-theme-* classes
+    var cls = root.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
+    cls.push('bq-theme-'+t);
+    root.className = cls.join(' ');
+    try{ localStorage.setItem('bq_theme_v2', t); }catch(_){}
+    try{ localStorage.setItem('bq_theme', t); }catch(_){}
+    try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
     document.querySelectorAll('.bq-theme-chip').forEach(function(c){ c.classList.toggle('sel', c.dataset.t===t); });
     document.querySelectorAll('.bq-if-th').forEach(function(c){ c.classList.toggle('sel', c.dataset.t===t); });
-    // Notify any listener the original code uses
     try{ window.dispatchEvent(new CustomEvent('bq-theme-change',{detail:{theme:t}})); }catch(_){}
-  }
+  };
 
-  // Click delegation — handles new themes (and keeps existing behavior intact for built-ins)
+  // Click delegation — handles theme chip clicks (pure-black & golden only)
   document.addEventListener('click', function(e){
-    var chip = e.target.closest && e.target.closest('.bq-theme-chip[data-t="plain"], .bq-theme-chip[data-t="crimson"], .bq-if-th[data-t="plain"], .bq-if-th[data-t="crimson"]');
+    var chip = e.target.closest && e.target.closest('.bq-theme-chip, .bq-if-th');
     if(!chip) return;
+    var t = chip.dataset.t;
+    if(ALLOWED_V71.indexOf(t) < 0) return;
     e.stopPropagation();
-    applyTheme(chip.dataset.t);
+    window.applyTheme(t);
   }, true);
 
-  // Restore on boot if previously selected one of the new ones
-  function restoreSaved(){
-    try{
-      var t = localStorage.getItem(THEME_KEY);
-      if(t==='plain' || t==='crimson') applyTheme(t);
-    }catch(_){}
-  }
-  setTimeout(restoreSaved, 1800);
-  setInterval(function(){
-    try{
-      var t = localStorage.getItem(THEME_KEY);
-      var root = document.getElementById('bqp');
-      if(!root) return;
-      if((t==='plain'||t==='crimson') && !root.classList.contains('bq-theme-'+t)) applyTheme(t);
-    }catch(_){}
-  }, 3000);
-
-  DBG('v28 patch loaded');
+  DBG('v28 patch loaded (v71 theme cleanup)');
 })();
 /* ════════════ end v28 patch ════════════ */
 
 /* ════════════ v30 patch ════════════
-   1. Reduce themes to TWO: "golden" (golden brown) and "pure-black".
-      Hide all other chips in both pickers (in-DM #bq-theme-chips and
-      settings #bq-if-themes). Inject the two chips if missing. Wire
-      clicks to the existing setGlobalTheme().
-   2. Define golden + pure-black CSS for #bqp.bq-theme-golden / .bq-theme-pure-black.
-   3. Living shared reactions: when a reaction is added to a DM message
-      and BOTH participants are currently viewing the thread (presence
-      activeDmId matches), play a flying-emoji burst on every client.
+   v71: Simplified — only keeps CSS + living reactions.
+   Theme application is now handled by window.applyTheme (from v28 section above)
+   and the v71 definitive patch at end of file.
 ═══════════════════════════════════════ */
 (function(){
   'use strict';
   var THEMES = ['pure-black','golden'];
-  var THEME_LABEL = { 'pure-black':'Pure Black','golden':'Golden Brown' };
 
-  /* ── 1. CSS: hide every old chip; style the two new ones; theme styles ── */
+  /* ── 1. CSS: hide every old chip; style the two new ones; comprehensive theme styles ── */
   var css = document.createElement('style');
   css.id = 'bq-v30-themes';
   css.textContent = [
@@ -12396,20 +12196,87 @@ setInterval(()=>{
     /* swatch styles */
     '#bqp .bq-theme-chip[data-t="golden"],#bqp .bq-if-th[data-t="golden"]{background:linear-gradient(135deg,#d4a056 0%,#6b3a14 100%)!important;border:1px solid rgba(212,160,86,.5)!important;}',
     '#bqp .bq-theme-chip[data-t="pure-black"],#bqp .bq-if-th[data-t="pure-black"]{background:#000!important;border:1px solid rgba(255,255,255,.25)!important;}',
-    /* ── Theme: Golden Brown ── */
-    '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
-    '#bqp.bq-theme-golden .bqdmh,#bqp.bq-theme-golden .bqiw{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
-    '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:none!important;}',
-    '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.10)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
-    '#bqp.bq-theme-golden .bqun{color:#d4a056!important;}',
-    '#bqp.bq-theme-golden .bqbbl-meta{color:rgba(244,227,199,.55)!important;}',
-    /* ── Theme: Pure Black ── */
+
+    /* ════════════════════════════════════════════════════════════════════
+       THEME: Pure Black — covers ENTIRE widget comprehensively
+       ════════════════════════════════════════════════════════════════════ */
     '#bqp.bq-theme-pure-black{background:#000!important;color:#e5e5e5!important;}',
-    '#bqp.bq-theme-pure-black .bqdmh,#bqp.bq-theme-pure-black .bqiw{background:#000!important;color:#fff!important;border-color:rgba(255,255,255,.10)!important;}',
+    /* All panels & containers */
+    '#bqp.bq-theme-pure-black .bqv,#bqp.bq-theme-pure-black .bqlst,#bqp.bq-theme-pure-black #bqdmlist,',
+    '#bqp.bq-theme-pure-black .bqcomp,#bqp.bq-theme-pure-black .bqsettings,',
+    '#bqp.bq-theme-pure-black .bq-info-scroll,#bqp.bq-theme-pure-black .bq-profile-scroll{background:#000!important;color:#e5e5e5!important;}',
+    /* Headers */
+    '#bqp.bq-theme-pure-black .bqdmh,#bqp.bq-theme-pure-black .bqgh,#bqp.bq-theme-pure-black .bqsh,',
+    '#bqp.bq-theme-pure-black .bq-info-header,#bqp.bq-theme-pure-black .bq-profile-header,',
+    '#bqp.bq-theme-pure-black .bqiw{background:#000!important;color:#fff!important;border-color:rgba(255,255,255,.10)!important;}',
+    /* Input & textarea */
+    '#bqp.bq-theme-pure-black input,#bqp.bq-theme-pure-black textarea{background:#0a0a0a!important;color:#e5e5e5!important;border-color:rgba(255,255,255,.12)!important;}',
+    /* DM & Global message areas */
+    '#bqp.bq-theme-pure-black .bqgmsgs,#bqp.bq-theme-pure-black .bqdmmsgs{background:#000!important;}',
+    /* List items */
+    '#bqp.bq-theme-pure-black .bqlst-item,#bqp.bq-theme-pure-black .bqdml,',
+    '#bqp.bq-theme-pure-black .bq-info-row,#bqp.bq-theme-pure-black .bq-info-section{background:transparent!important;color:#e5e5e5!important;border-color:rgba(255,255,255,.08)!important;}',
+    '#bqp.bq-theme-pure-black .bqlst-item:hover,#bqp.bq-theme-pure-black .bqdml:hover{background:#0a0a0a!important;}',
+    /* Bubbles */
     '#bqp.bq-theme-pure-black .bqr.mine .bqbbl{background:#1a1a1a!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:none!important;}',
     '#bqp.bq-theme-pure-black .bqr.theirs .bqbbl{background:#0a0a0a!important;color:#e5e5e5!important;border:1px solid rgba(255,255,255,.08)!important;}',
-    '#bqp.bq-theme-pure-black .bqun{color:#fff!important;}',
-    '#bqp.bq-theme-pure-black .bqbbl-meta{color:rgba(255,255,255,.45)!important;}',
+    /* Usernames, meta, section titles */
+    '#bqp.bq-theme-pure-black .bqun,#bqp.bq-theme-pure-black .bq-info-section-title{color:#fff!important;}',
+    '#bqp.bq-theme-pure-black .bqbbl-meta,#bqp.bq-theme-pure-black .bqds,',
+    '#bqp.bq-theme-pure-black .bqifooter,#bqp.bq-theme-pure-black .bqih{color:rgba(255,255,255,.45)!important;}',
+    /* Floating info card */
+    '#bqp.bq-theme-pure-black .bqgi{background:#0a0a0a!important;border-color:rgba(255,255,255,.08)!important;}',
+    /* Scroll-to-bottom button */
+    '#bqp.bq-theme-pure-black .bqscr{background:#0a0a0a!important;border:1px solid rgba(255,255,255,.12)!important;color:#fff!important;box-shadow:none!important;}',
+    /* Voice/GIF buttons */
+    '#bqp.bq-theme-pure-black .bqvoice-btn,#bqp.bq-theme-pure-black .bqgifbtn,',
+    '#bqp.bq-theme-pure-black .bqhbtn{background:#0a0a0a!important;border:1px solid rgba(255,255,255,.12)!important;color:#fff!important;box-shadow:none!important;}',
+    /* Links */
+    '#bqp.bq-theme-pure-black a{color:#fff!important;}',
+    /* No backdrop blur in pure-black */
+    '#bqp.bq-theme-pure-black *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}',
+    /* Toggle switch */
+    '#bqp.bq-theme-pure-black .bq-toggle-slider{background:#333!important;}',
+
+    /* ════════════════════════════════════════════════════════════════════
+       THEME: Golden Brown — covers ENTIRE widget comprehensively
+       ════════════════════════════════════════════════════════════════════ */
+    '#bqp.bq-theme-golden{background:radial-gradient(ellipse at top,#2a1808 0%,#0a0503 75%)!important;color:#f4e3c7!important;}',
+    /* All panels & containers */
+    '#bqp.bq-theme-golden .bqv,#bqp.bq-theme-golden .bqlst,#bqp.bq-theme-golden #bqdmlist,',
+    '#bqp.bq-theme-golden .bqcomp,#bqp.bq-theme-golden .bqsettings,',
+    '#bqp.bq-theme-golden .bq-info-scroll,#bqp.bq-theme-golden .bq-profile-scroll{background:transparent!important;color:#f4e3c7!important;}',
+    /* Headers */
+    '#bqp.bq-theme-golden .bqdmh,#bqp.bq-theme-golden .bqgh,#bqp.bq-theme-golden .bqsh,',
+    '#bqp.bq-theme-golden .bq-info-header,#bqp.bq-theme-golden .bq-profile-header,',
+    '#bqp.bq-theme-golden .bqiw{background:linear-gradient(180deg,#1a0d04,#0a0503)!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.18)!important;}',
+    /* Input & textarea */
+    '#bqp.bq-theme-golden input,#bqp.bq-theme-golden textarea{background:#1a0d04!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.22)!important;}',
+    /* DM & Global message areas */
+    '#bqp.bq-theme-golden .bqgmsgs,#bqp.bq-theme-golden .bqdmmsgs{background:radial-gradient(ellipse at top,#1a0d04,#0a0503)!important;}',
+    /* List items */
+    '#bqp.bq-theme-golden .bqlst-item,#bqp.bq-theme-golden .bqdml,',
+    '#bqp.bq-theme-golden .bq-info-row,#bqp.bq-theme-golden .bq-info-section{background:transparent!important;color:#f4e3c7!important;border-color:rgba(212,160,86,.15)!important;}',
+    '#bqp.bq-theme-golden .bqlst-item:hover,#bqp.bq-theme-golden .bqdml:hover{background:rgba(212,160,86,.08)!important;}',
+    /* Bubbles */
+    '#bqp.bq-theme-golden .bqr.mine .bqbbl{background:linear-gradient(135deg,#d4a056 0%,#8a5a1f 100%)!important;color:#1a0d04!important;border:none!important;box-shadow:none!important;}',
+    '#bqp.bq-theme-golden .bqr.theirs .bqbbl{background:rgba(212,160,86,.10)!important;border:1px solid rgba(212,160,86,.22)!important;color:#f4e3c7!important;}',
+    /* Usernames, meta, section titles */
+    '#bqp.bq-theme-golden .bqun,#bqp.bq-theme-golden .bq-info-section-title{color:#d4a056!important;}',
+    '#bqp.bq-theme-golden .bqbbl-meta,#bqp.bq-theme-golden .bqds,',
+    '#bqp.bq-theme-golden .bqifooter,#bqp.bq-theme-golden .bqih{color:rgba(244,227,199,.55)!important;}',
+    /* Floating info card */
+    '#bqp.bq-theme-golden .bqgi{background:#1a0d04!important;border-color:rgba(212,160,86,.18)!important;}',
+    /* Scroll-to-bottom button */
+    '#bqp.bq-theme-golden .bqscr{background:#1a0d04!important;border:1px solid rgba(212,160,86,.22)!important;color:#d4a056!important;box-shadow:none!important;}',
+    /* Voice/GIF buttons */
+    '#bqp.bq-theme-golden .bqvoice-btn,#bqp.bq-theme-golden .bqgifbtn,',
+    '#bqp.bq-theme-golden .bqhbtn{background:#1a0d04!important;border:1px solid rgba(212,160,86,.22)!important;color:#d4a056!important;box-shadow:none!important;}',
+    /* Links */
+    '#bqp.bq-theme-golden a{color:#d4a056!important;}',
+    /* Toggle switch */
+    '#bqp.bq-theme-golden .bq-toggle-slider{background:#6b3a14!important;}',
+
     /* ── Living reactions overlay ── */
     '.bq-rxn-fly{position:fixed;pointer-events:none;font-size:42px;z-index:2147483647;will-change:transform,opacity;animation:bqRxnFly 1400ms cubic-bezier(.22,.61,.36,1) forwards;text-shadow:0 4px 16px rgba(0,0,0,.4);}',
     '@keyframes bqRxnFly{0%{transform:translate(-50%,0) scale(.4);opacity:0;}15%{transform:translate(-50%,-12px) scale(1.25);opacity:1;}70%{transform:translate(calc(-50% + var(--bq-dx,0px)),calc(-160px + var(--bq-dy,0px))) scale(1) rotate(var(--bq-rot,0deg));opacity:1;}100%{transform:translate(calc(-50% + var(--bq-dx,0px)),-260px) scale(.6) rotate(var(--bq-rot,0deg));opacity:0;}}',
@@ -12417,86 +12284,6 @@ setInterval(()=>{
     '@keyframes bqRxnPulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}'
   ].join('\n');
   (document.head||document.documentElement).appendChild(css);
-
-  /* ── 2. Ensure chips exist in both pickers ── */
-  function ensureChips(){
-    var dmRow = document.getElementById('bq-theme-chips');
-    if(dmRow){
-      THEMES.forEach(function(t){
-        if(!dmRow.querySelector('[data-t="'+t+'"]')){
-          var c = document.createElement('div');
-          c.className = 'bq-theme-chip';
-          c.dataset.t = t;
-          c.title = THEME_LABEL[t];
-          dmRow.appendChild(c);
-        }
-      });
-    }
-    var setGrid = document.getElementById('bq-if-themes');
-    if(setGrid){
-      THEMES.forEach(function(t){
-        if(!setGrid.querySelector('[data-t="'+t+'"]')){
-          var c = document.createElement('div');
-          c.className = 'bq-if-th';
-          c.dataset.t = t;
-          c.title = THEME_LABEL[t];
-          setGrid.appendChild(c);
-        }
-      });
-    }
-  }
-
-  /* ── 3. Apply a theme everywhere ── */
-  function applyTwoTheme(t){
-    if(THEMES.indexOf(t) < 0) t = 'pure-black';
-    var root = document.getElementById('bqp');
-    if(root){
-      // strip every prior bq-theme-* class
-      root.className = root.className.split(/\s+/).filter(function(c){
-        return c && c.indexOf('bq-theme-') !== 0;
-      }).join(' ') + ' bq-theme-' + t;
-    }
-    try{ localStorage.setItem('bq_theme_v2', t); }catch(_){}
-    try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
-    // sync swatch selection
-    document.querySelectorAll('#bq-theme-chips .bq-theme-chip').forEach(function(x){
-      x.classList.toggle('sel', x.dataset.t === t);
-    });
-    document.querySelectorAll('#bq-if-themes .bq-if-th').forEach(function(x){
-      x.classList.toggle('sel', x.dataset.t === t);
-    });
-  }
-
-  /* ── 4. Wire click handlers (delegated, capture, idempotent) ── */
-  document.addEventListener('click', function(e){
-    var chip = e.target.closest && e.target.closest('#bq-theme-chips .bq-theme-chip,#bq-if-themes .bq-if-th');
-    if(!chip) return;
-    var t = chip.dataset.t;
-    if(THEMES.indexOf(t) < 0) return;
-    e.stopPropagation();
-    applyTwoTheme(t);
-  }, true);
-
-  /* ── 5. Boot: inject chips, restore saved, default to pure-black ── */
-  function boot(){
-    ensureChips();
-    var saved = 'pure-black';
-    try{ saved = localStorage.getItem('bq_theme_v2') || localStorage.getItem('bq_theme_v30') || 'pure-black'; }catch(_){}
-    applyTwoTheme(saved);
-  }
-  setTimeout(boot, 600);
-  // Re-apply periodically in case other patches mutate the picker
-  setInterval(function(){
-    ensureChips();
-    var root = document.getElementById('bqp');
-    if(!root) return;
-    var has = THEMES.some(function(t){ return root.classList.contains('bq-theme-'+t); });
-    if(!has){
-      var saved='pure-black';
-      try{ saved=localStorage.getItem('bq_theme_v2')||localStorage.getItem('bq_theme_v30')||'pure-black'; }catch(_){}
-      applyTwoTheme(saved);
-    }
-  }, 2500);
 
   /* ─────────────────────────────────────────
      LIVING SHARED REACTIONS
@@ -16123,12 +15910,14 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
 })();
 /* ════════════ end v69 patch ════════════ */
 
-/* ════════════ v70 patch — Theme Blink Fix: single source of truth ════════════
-   1. Override applyGlobalTheme / applyDmTheme to only accept 'pure-black' or 'golden'
-   2. Kill old theme intervals that re-apply stale themes every N seconds
-   3. Remove all old bq-theme-* classes and apply only the valid one
-   4. Override setGlobalTheme / setDmTheme to normalize invalid themes
-══════════════════════════════════════════════════════════════════════════ */
+/* ════════════ v71 patch — DEFINITIVE Theme Fix ════════════
+   Single source of truth for themes. Only 'pure-black' and 'golden' allowed.
+   1. Override core theme functions to reject old themes
+   2. MutationObserver on #bqp to strip invalid theme classes instantly
+   3. Remove competing style elements from old patches
+   4. Normalize ALL localStorage keys
+   5. Apply correct theme on boot + persist via MutationObserver
+═══════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
   var ALLOWED = ['pure-black','golden'];
@@ -16140,122 +15929,139 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
     return t;
   }
 
+  function applyDefinitive(t){
+    t = norm(t);
+    var panel = document.getElementById('bqp');
+    if(panel){
+      var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
+      cls.push('bq-theme-'+t);
+      panel.className = cls.join(' ');
+    }
+    document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
+      ch.classList.toggle('sel', ch.dataset.t===t);
+    });
+  }
+
   // ── 1. Override core theme functions ──
-  if(typeof applyGlobalTheme==='function'){
-    var _origApplyGlobal = applyGlobalTheme;
-    window.applyGlobalTheme = function(theme){
-      theme = norm(theme);
-      var panel = document.getElementById('bqp');
-      if(panel){
-        // Strip ALL bq-theme-* classes cleanly in one pass
-        var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
-        cls.push('bq-theme-'+theme);
-        panel.className = cls.join(' ');
-      }
-      // Sync chip selections
-      document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
-        ch.classList.toggle('sel', ch.dataset.t===theme);
-      });
-    };
-  }
+  window.applyGlobalTheme = function(theme){
+    theme = norm(theme);
+    applyDefinitive(theme);
+  };
 
-  if(typeof applyDmTheme==='function'){
-    window.applyDmTheme = function(did,theme){
-      theme = norm(theme);
-      var v = document.getElementById('bqv-dmconv');
-      if(v) v.className = 'bqv bq-active bq-theme-'+theme;
-      var panel = document.getElementById('bqp');
-      if(panel){
-        var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
-        cls.push('bq-theme-'+theme);
-        panel.className = cls.join(' ');
-      }
-      document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
-        ch.classList.toggle('sel', ch.dataset.t===theme);
-      });
-    };
-  }
+  window.applyDmTheme = function(did, theme){
+    theme = norm(theme);
+    applyDefinitive(theme);
+  };
 
-  if(typeof setGlobalTheme==='function'){
-    window.setGlobalTheme = function(t){
-      t = norm(t);
-      try{ localStorage.setItem(LS_KEY, t); }catch(_){}
-      try{ localStorage.setItem('bq_theme', t); }catch(_){}
-      try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
-      applyGlobalTheme(t);
-      if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(t);
-    };
-  }
+  window.setGlobalTheme = function(t){
+    t = norm(t);
+    try{ localStorage.setItem(LS_KEY, t); }catch(_){}
+    try{ localStorage.setItem('bq_theme', t); }catch(_){}
+    try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
+    applyDefinitive(t);
+    if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(t);
+  };
 
-  if(typeof setDmTheme==='function'){
-    window.setDmTheme = function(did,theme){
-      theme = norm(theme);
-      var t = (typeof getThemes==='function') ? getThemes() : {};
-      t[did] = theme;
-      try{ localStorage.setItem('bq_themes', JSON.stringify(t)); }catch(_){}
-      try{ localStorage.setItem(LS_KEY, theme); }catch(_){}
-      if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(theme);
-      applyDmTheme(did,theme);
-    };
-  }
+  window.setDmTheme = function(did, theme){
+    theme = norm(theme);
+    try{ localStorage.setItem(LS_KEY, theme); }catch(_){}
+    if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(theme);
+    applyDefinitive(theme);
+  };
 
-  if(typeof getGlobalTheme==='function'){
-    window.getGlobalTheme = function(){
-      try{
-        var t = localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme') || DEFAULT;
-        return norm(t);
-      }catch(_){ return DEFAULT; }
-    };
-  }
+  window.getGlobalTheme = function(){
+    try{
+      var t = localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme') || DEFAULT;
+      return norm(t);
+    }catch(_){ return DEFAULT; }
+  };
 
-  // ── 2. Clean up localStorage — normalize old invalid theme values ──
-  try{
-    var cur = localStorage.getItem(LS_KEY);
-    if(cur && ALLOWED.indexOf(cur)<0){
-      localStorage.setItem(LS_KEY, DEFAULT);
-    }
-    var cur2 = localStorage.getItem('bq_theme_v30');
-    if(cur2 && ALLOWED.indexOf(cur2)<0){
-      localStorage.setItem('bq_theme_v30', DEFAULT);
-    }
-    var cur3 = localStorage.getItem('bq_theme');
-    if(cur3 && ALLOWED.indexOf(cur3)<0){
-      localStorage.setItem('bq_theme', DEFAULT);
-    }
-  }catch(_){}
-
-  // ── 3. Apply the correct theme now ──
-  function applyNow(){
+  // ── 2. MutationObserver: instantly reject invalid theme classes on #bqp ──
+  function installObserver(){
     var panel = document.getElementById('bqp');
     if(!panel) return;
+    var observer = new MutationObserver(function(mutations){
+      var needsFix = false;
+      var cls = panel.className.split(/\s+/).filter(function(c){
+        if(c.indexOf('bq-theme-')===0){
+          var id = c.replace('bq-theme-','');
+          if(ALLOWED.indexOf(id)<0){ needsFix = true; return false; }
+        }
+        return true;
+      });
+      if(needsFix){
+        var saved = DEFAULT;
+        try{ saved = norm(localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme')); }catch(_){}
+        cls.push('bq-theme-'+saved);
+        panel.className = cls.join(' ');
+      }
+    });
+    observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // ── 3. Remove competing style elements from old patches ──
+  function removeOldStyles(){
+    // FIX 8's style that shows all chips
+    var v24css = document.getElementById('bq-theme-v24-css');
+    if(v24css) v24css.remove();
+    // v28's style for plain/crimson
+    var v28css = document.getElementById('bqV28ThemeCss');
+    if(v28css) v28css.remove();
+    // Remove old v70 style (we have v30-v71 now)
+    var v70css = document.getElementById('bq-v70-theme-fix');
+    if(v70css) v70css.remove();
+  }
+
+  // ── 4. Normalize ALL localStorage keys ──
+  try{
+    var keys = ['bq_theme_v2','bq_theme_v30','bq_theme'];
+    keys.forEach(function(k){
+      var cur = localStorage.getItem(k);
+      if(cur && ALLOWED.indexOf(cur)<0) localStorage.setItem(k, DEFAULT);
+    });
+    // Also fix bq_themes (per-DM theme map)
+    try{
+      var themes = JSON.parse(localStorage.getItem('bq_themes')||'{}');
+      var changed = false;
+      Object.keys(themes).forEach(function(did){
+        if(ALLOWED.indexOf(themes[did])<0){ themes[did] = DEFAULT; changed = true; }
+      });
+      if(changed) localStorage.setItem('bq_themes', JSON.stringify(themes));
+    }catch(_){}
+  }catch(_){}
+
+  // ── 5. Apply correct theme on boot ──
+  function boot(){
+    removeOldStyles();
+    installObserver();
     var saved = DEFAULT;
     try{ saved = norm(localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme')); }catch(_){}
-    var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
-    cls.push('bq-theme-'+saved);
-    panel.className = cls.join(' ');
+    applyDefinitive(saved);
+    // Also update all theme chips to correct selection
     document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
       ch.classList.toggle('sel', ch.dataset.t===saved);
     });
   }
 
-  // Apply immediately if panel exists, otherwise retry
-  applyNow();
-  var _bootTries = 0;
-  var _bootIv = setInterval(function(){
-    applyNow();
-    _bootTries++;
-    if(_bootTries > 30) clearInterval(_bootIv);
-  }, 200);
+  // Run boot immediately and again after delays to catch late DOM
+  boot();
+  setTimeout(boot, 500);
+  setTimeout(boot, 1500);
+  setTimeout(boot, 3000);
 
-  // ── 4. Hide ALL theme chips except pure-black & golden (CSS override) ──
-  var style = document.createElement('style');
-  style.id = 'bq-v70-theme-fix';
-  style.textContent =
-    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:none!important;}'+
-    '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],'+
-    '#bqp #bq-if-themes .bq-if-th[data-t="pure-black"],#bqp #bq-if-themes .bq-if-th[data-t="golden"]{display:inline-block!important;}';
-  document.head.appendChild(style);
+  // One-time cleanup interval (runs 10 times then stops)
+  var _cleanupCount = 0;
+  var _cleanupIv = setInterval(function(){
+    removeOldStyles();
+    var panel = document.getElementById('bqp');
+    if(panel){
+      var hasValid = ALLOWED.some(function(t){ return panel.classList.contains('bq-theme-'+t); });
+      if(!hasValid) boot();
+    }
+    _cleanupCount++;
+    if(_cleanupCount > 10) clearInterval(_cleanupIv);
+  }, 2000);
 
-  try{ console.log('[bq] v70 patch loaded — theme blink fix, single source of truth'); }catch(_){}
+  try{ console.log('[bq] v71 definitive patch loaded — single source of truth, MutationObserver active'); }catch(_){}
 })();
-/* ════════════ end v70 patch ════════════ */
+/* ════════════ end v71 patch ════════════ */

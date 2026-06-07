@@ -99,3 +99,39 @@ export function onConfigChange(
 
   return () => off(dbRef);
 }
+
+// ─── Streak persistence (account-level) ──────────────────────
+// Path: bq_streaks/{uid}
+export interface StreakData {
+  count: number;
+  lastVisit: string; // ISO date string "YYYY-MM-DD"
+  bestStreak: number;
+}
+
+const STREAK_PATH = (uid: string) => `bq_streaks/${uid}`;
+
+/** Read streak from Firebase. Returns null if not found. */
+export async function getStreak(uid: string): Promise<StreakData | null> {
+  const fb = getFirebaseApp();
+  if (!fb) return null;
+
+  try {
+    const snapshot = await get(ref(fb.db, STREAK_PATH(uid)));
+    if (!snapshot.exists()) return null;
+    return snapshot.val() as StreakData;
+  } catch {
+    return null;
+  }
+}
+
+/** Write streak to Firebase. */
+export async function setStreak(uid: string, data: StreakData): Promise<void> {
+  const fb = getFirebaseApp();
+  if (!fb) return;
+
+  try {
+    await set(ref(fb.db, STREAK_PATH(uid)), data);
+  } catch {
+    // Silently fail — streak is best-effort
+  }
+}
