@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/site/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,10 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BioQuiz — The Biology Workspace",
-  description: "Seven beautifully crafted modules — quizzes, AI research, a 3D cell viewer, organelles, slides and solutions, all in one calm workspace.",
-  keywords: ["BioQuiz", "biology", "quiz", "AI", "3D cell viewer", "organelles"],
-  authors: [{ name: "BioQuiz Team" }],
+  title: "BioQuiz Widget Config",
+  description: "Real-time admin panel for BioQuiz chat widget configuration via Firebase RTDB.",
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
@@ -31,18 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        {/* Synchronous theme script — runs before paint, no flash */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="brown"){document.documentElement.className="brown"}else if(t==="dark"){document.documentElement.className="dark"}else{document.documentElement.className="dark"}}catch(e){}})();(function(){if(typeof window.rePaintPoll==="undefined"){window.rePaintPoll=function(){};}})();` }} />
-      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#060608] text-foreground`}
       >
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-        <div aria-hidden className="grain-overlay" />
-        <Toaster />
+        {children}
+        <Toaster richColors position="bottom-right" />
       </body>
     </html>
   );
