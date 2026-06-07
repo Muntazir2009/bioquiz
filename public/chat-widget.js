@@ -15745,3 +15745,384 @@ console.log('[bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widg
 }catch(e){ console.error('[bq] v65 patch error:', e); }
 })();
 /* ════════════ end v65 patch ════════════ */
+
+/* ════════════ v69 patch: Liquid Glass / Glassmorphism for DM chats ════════════ */
+;(function(){
+try{
+
+/* ── Inject glassmorphism CSS ── */
+var style = document.createElement('style');
+style.id = 'bq-glass-css';
+style.textContent = '\
+\
+/* ═══ LIQUID GLASS — Main Panel ═══ */\
+#bqp{\
+  background:rgba(12,12,18,.72)!important;\
+  backdrop-filter:blur(40px) saturate(1.6)!important;\
+  -webkit-backdrop-filter:blur(40px) saturate(1.6)!important;\
+  border:1px solid rgba(255,255,255,.10)!important;\
+  box-shadow:0 40px 120px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.06) inset,0 -2px 40px rgba(96,165,250,.06),inset 0 1px 0 rgba(255,255,255,.08)!important;\
+}\
+\
+/* ═══ Animated liquid orbs behind content ═══ */\
+#bqp::after{\
+  content:""!important;\
+  position:absolute!important;\
+  inset:0!important;\
+  pointer-events:none!important;\
+  z-index:0!important;\
+  overflow:hidden!important;\
+  border-radius:inherit!important;\
+  background:\
+    radial-gradient(ellipse 220px 220px at 15% 20%,rgba(96,165,250,.12) 0%,transparent 70%),\
+    radial-gradient(ellipse 180px 180px at 85% 75%,rgba(167,139,250,.10) 0%,transparent 70%),\
+    radial-gradient(ellipse 200px 200px at 50% 50%,rgba(52,211,153,.06) 0%,transparent 70%)!important;\
+  animation:bqOrbFloat 12s ease-in-out infinite alternate!important;\
+}\
+\
+@keyframes bqOrbFloat{\
+  0%{background-position:0% 0%,100% 100%,50% 50%;}\
+  33%{background-position:30% 40%,70% 20%,20% 80%;}\
+  66%{background-position:60% 10%,40% 90%,80% 30%;}\
+  100%{background-position:10% 70%,90% 40%,50% 60%;}\
+}\
+\
+/* ═══ Ensure content sits above orbs ═══ */\
+#bqp > *{position:relative;z-index:1!important;}\
+#bqs{position:relative;z-index:1!important;}\
+.bqv{z-index:1!important;}\
+\
+/* ═══ Liquid Glass — Views ═══ */\
+.bqv{\
+  background:transparent!important;\
+}\
+\
+/* ═══ Liquid Glass — Messages Area ═══ */\
+.bqmsgs,\
+#bqdmmsgs{\
+  background:transparent!important;\
+  position:relative!important;\
+}\
+\
+/* ═══ Liquid Glass — Header ═══ */\
+#bqv-dmconv .bqhdr,\
+.bqdmh,\
+.bqgh,\
+.bqsh,\
+.bq-info-header,\
+.bq-profile-header{\
+  background:rgba(255,255,255,.04)!important;\
+  backdrop-filter:blur(20px) saturate(1.4)!important;\
+  -webkit-backdrop-filter:blur(20px) saturate(1.4)!important;\
+  border-bottom:1px solid rgba(255,255,255,.08)!important;\
+}\
+\
+/* ═══ Liquid Glass — Input Area ═══ */\
+.bqiw{\
+  background:rgba(255,255,255,.03)!important;\
+  backdrop-filter:blur(24px) saturate(1.3)!important;\
+  -webkit-backdrop-filter:blur(24px) saturate(1.3)!important;\
+  border-top:1px solid rgba(255,255,255,.08)!important;\
+}\
+\
+/* ═══ Liquid Glass — Message Bubbles ═══ */\
+#bqdmmsgs .bqr.mine .bqbbl{\
+  background:linear-gradient(135deg,rgba(96,165,250,.55),rgba(129,140,248,.45))!important;\
+  backdrop-filter:blur(16px) saturate(1.5)!important;\
+  -webkit-backdrop-filter:blur(16px) saturate(1.5)!important;\
+  border:1px solid rgba(255,255,255,.15)!important;\
+  box-shadow:0 4px 20px rgba(96,165,250,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;\
+}\
+\
+#bqdmmsgs .bqr.theirs .bqbbl{\
+  background:rgba(255,255,255,.06)!important;\
+  backdrop-filter:blur(16px) saturate(1.3)!important;\
+  -webkit-backdrop-filter:blur(16px) saturate(1.3)!important;\
+  border:1px solid rgba(255,255,255,.08)!important;\
+  box-shadow:0 4px 16px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.06)!important;\
+}\
+\
+/* ═══ Liquid Glass — Global Chat Bubbles ═══ */\
+#bqgmsgs .bqr.mine .bqbbl{\
+  background:linear-gradient(135deg,rgba(96,165,250,.55),rgba(129,140,248,.45))!important;\
+  backdrop-filter:blur(16px) saturate(1.5)!important;\
+  -webkit-backdrop-filter:blur(16px) saturate(1.5)!important;\
+  border:1px solid rgba(255,255,255,.15)!important;\
+  box-shadow:0 4px 20px rgba(96,165,250,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;\
+}\
+\
+#bqgmsgs .bqr.theirs .bqbbl{\
+  background:rgba(255,255,255,.06)!important;\
+  backdrop-filter:blur(16px) saturate(1.3)!important;\
+  -webkit-backdrop-filter:blur(16px) saturate(1.3)!important;\
+  border:1px solid rgba(255,255,255,.08)!important;\
+  box-shadow:0 4px 16px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.06)!important;\
+}\
+\
+/* ═══ Liquid Glass — Sidebar panels ═══ */\
+.bq-ms-panel,\
+.bq-rx-panel,\
+.bq-dm-menu-dropdown,\
+.bq-profile-card,\
+.bq-info-panel{\
+  background:rgba(20,20,28,.78)!important;\
+  backdrop-filter:blur(30px) saturate(1.5)!important;\
+  -webkit-backdrop-filter:blur(30px) saturate(1.5)!important;\
+  border:1px solid rgba(255,255,255,.10)!important;\
+}\
+\
+/* ═══ Liquid Glass — Navigation bar ═══ */\
+.bqnb{\
+  background:rgba(255,255,255,.04)!important;\
+  backdrop-filter:blur(12px)!important;\
+  -webkit-backdrop-filter:blur(12px)!important;\
+}\
+\
+/* ═══ Liquid Glass — DM list items ═══ */\
+.bqurow{\
+  background:rgba(255,255,255,.02)!important;\
+  border:1px solid transparent!important;\
+  transition:background .2s,border-color .2s,transform .15s!important;\
+}\
+.bqurow:hover{\
+  background:rgba(255,255,255,.06)!important;\
+  border-color:rgba(255,255,255,.08)!important;\
+  transform:translateX(2px)!important;\
+}\
+\
+/* ═══ Liquid Glass — Input fields ═══ */\
+.bqinp,\
+.bqgi{\
+  background:rgba(255,255,255,.05)!important;\
+  border:1px solid rgba(255,255,255,.08)!important;\
+  backdrop-filter:blur(8px)!important;\
+  -webkit-backdrop-filter:blur(8px)!important;\
+}\
+.bqinp:focus,\
+.bqgi:focus{\
+  border-color:rgba(96,165,250,.4)!important;\
+  box-shadow:0 0 0 2px rgba(96,165,250,.12)!important;\
+}\
+\
+/* ═══ Liquid Glass — Reaction bar ═══ */\
+.bqrb{\
+  background:rgba(255,255,255,.04)!important;\
+  backdrop-filter:blur(12px)!important;\
+  -webkit-backdrop-filter:blur(12px)!important;\
+  border:1px solid rgba(255,255,255,.08)!important;\
+}\
+\
+/* ═══ Liquid Glass — Typing indicator ═══ */\
+.bqtyp{\
+  background:transparent!important;\
+}\
+\
+/* ═══ Liquid Glass — Emoji/Reaction pills ═══ */\
+.bq-msg-inline{\
+  background:rgba(255,255,255,.06)!important;\
+  backdrop-filter:blur(12px)!important;\
+  -webkit-backdrop-filter:blur(12px)!important;\
+  border:1px solid rgba(255,255,255,.10)!important;\
+}\
+\
+/* ═══ Liquid Glass — Empty state ═══ */\
+.bqempty{\
+  background:transparent!important;\
+}\
+\
+/* ═══ Liquid Glass — Pinned bar ═══ */\
+#bq-pinned-bar{\
+  background:rgba(96,165,250,.06)!important;\
+  backdrop-filter:blur(16px)!important;\
+  -webkit-backdrop-filter:blur(16px)!important;\
+  border-bottom:1px solid rgba(96,165,250,.12)!important;\
+}\
+\
+/* ═══ Liquid Glass — Scrollbar ═══ */\
+.bqmsgs::-webkit-scrollbar{width:4px!important;}\
+.bqmsgs::-webkit-scrollbar-track{background:transparent!important;}\
+.bqmsgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.10)!important;border-radius:4px!important;}\
+.bqmsgs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)!important;}\
+\
+/* ═══ Liquid Glass — Theme-aware light mode adjustments ═══ */\
+#bqp.bq-theme-light,\
+#bqp.bq-theme-whatsapp,\
+#bqp.bq-theme-walight,\
+#bqp.bq-theme-peach,\
+#bqp.bq-theme-rose{\
+  background:rgba(255,255,255,.68)!important;\
+  border:1px solid rgba(0,0,0,.08)!important;\
+}\
+\
+#bqp.bq-theme-light::after,\
+#bqp.bq-theme-whatsapp::after,\
+#bqp.bq-theme-walight::after,\
+#bqp.bq-theme-peach::after,\
+#bqp.bq-theme-rose::after{\
+  background:\
+    radial-gradient(ellipse 220px 220px at 15% 20%,rgba(59,130,246,.08) 0%,transparent 70%),\
+    radial-gradient(ellipse 180px 180px at 85% 75%,rgba(139,92,246,.06) 0%,transparent 70%),\
+    radial-gradient(ellipse 200px 200px at 50% 50%,rgba(16,185,129,.04) 0%,transparent 70%)!important;\
+}\
+\
+#bqp.bq-theme-light .bqhdr,\
+#bqp.bq-theme-whatsapp .bqhdr,\
+#bqp.bq-theme-walight .bqhdr,\
+#bqp.bq-theme-peach .bqhdr,\
+#bqp.bq-theme-rose .bqhdr,\
+#bqp.bq-theme-light .bqdmh,\
+#bqp.bq-theme-whatsapp .bqdmh,\
+#bqp.bq-theme-walight .bqdmh,\
+#bqp.bq-theme-peach .bqdmh,\
+#bqp.bq-theme-rose .bqdmh,\
+#bqp.bq-theme-light .bqgh,\
+#bqp.bq-theme-whatsapp .bqgh,\
+#bqp.bq-theme-walight .bqgh,\
+#bqp.bq-theme-peach .bqgh,\
+#bqp.bq-theme-rose .bqgh{\
+  background:rgba(255,255,255,.45)!important;\
+  border-bottom:1px solid rgba(0,0,0,.06)!important;\
+}\
+\
+#bqp.bq-theme-light .bqiw,\
+#bqp.bq-theme-whatsapp .bqiw,\
+#bqp.bq-theme-walight .bqiw,\
+#bqp.bq-theme-peach .bqiw,\
+#bqp.bq-theme-rose .bqiw{\
+  background:rgba(255,255,255,.35)!important;\
+  border-top:1px solid rgba(0,0,0,.06)!important;\
+}\
+\
+#bqp.bq-theme-light .bqinp,\
+#bqp.bq-theme-whatsapp .bqinp,\
+#bqp.bq-theme-walight .bqinp,\
+#bqp.bq-theme-peach .bqinp,\
+#bqp.bq-theme-rose .bqinp{\
+  background:rgba(255,255,255,.5)!important;\
+  border:1px solid rgba(0,0,0,.06)!important;\
+}\
+\
+#bqp.bq-theme-light #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-whatsapp #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-walight #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-peach #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-rose #bqdmmsgs .bqr.theirs .bqbbl{\
+  background:rgba(255,255,255,.45)!important;\
+  border:1px solid rgba(0,0,0,.06)!important;\
+}\
+\
+/* ═══ Theme-aware dark mode adjustments ═══ */\
+#bqp.bq-theme-wadark,\
+#bqp.bq-theme-crimson,\
+#bqp.bq-theme-black,\
+#bqp.bq-theme-noir,\
+#bqp.bq-theme-pure-black,\
+#bqp.bq-theme-mono,\
+#bqp.bq-theme-golden{\
+  background:rgba(8,8,12,.78)!important;\
+}\
+\
+#bqp.bq-theme-ocean,\
+#bqp.bq-theme-oceanv2{\
+  background:rgba(2,30,50,.72)!important;\
+}\
+\
+#bqp.bq-theme-sunset,\
+#bqp.bq-theme-sunsetv2{\
+  background:rgba(40,12,4,.72)!important;\
+}\
+\
+/* ═══ Liquid Glass — Subtle glass reflection on panel ═══ */\
+#bqp::before{\
+  content:""!important;\
+  position:absolute!important;\
+  top:0!important;left:10%!important;width:80%!important;height:1px!important;\
+  pointer-events:none!important;\
+  background:linear-gradient(to right,transparent,rgba(255,255,255,.25),transparent)!important;\
+  z-index:2!important;\
+}\
+\
+/* ═══ Liquid Glass — Animated second orb layer ═══ */\
+@keyframes bqOrbDrift{\
+  0%{transform:translate(0,0) scale(1);}\
+  25%{transform:translate(30px,-20px) scale(1.1);}\
+  50%{transform:translate(-20px,30px) scale(.95);}\
+  75%{transform:translate(15px,15px) scale(1.05);}\
+  100%{transform:translate(0,0) scale(1);}\
+}\
+\
+/* ═══ Ensure fullscreen mode also gets glass ═══ */\
+#bqp.bq-fs{\
+  background:rgba(12,12,18,.72)!important;\
+  backdrop-filter:blur(40px) saturate(1.6)!important;\
+  -webkit-backdrop-filter:blur(40px) saturate(1.6)!important;\
+}\
+\
+';
+document.head.appendChild(style);
+
+/* ── Create animated floating orb elements for liquid glass effect ── */
+function bqAddGlassOrbs(){
+  var panel = document.getElementById('bqp');
+  if(!panel) return;
+  if(panel.querySelector('.bq-glass-orb')) return; /* Already added */
+
+  var orbContainer = document.createElement('div');
+  orbContainer.className = 'bq-glass-orb-container';
+  orbContainer.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;border-radius:inherit;';
+
+  var orbConfigs = [
+    { x:'12%', y:'18%', w:200, h:200, color:'rgba(96,165,250,.08)', dur:'14s', delay:'0s' },
+    { x:'78%', y:'72%', w:180, h:180, color:'rgba(167,139,250,.07)', dur:'18s', delay:'-4s' },
+    { x:'45%', y:'45%', w:220, h:220, color:'rgba(52,211,153,.05)', dur:'16s', delay:'-8s' },
+    { x:'70%', y:'15%', w:140, h:140, color:'rgba(251,146,60,.06)', dur:'20s', delay:'-6s' },
+    { x:'25%', y:'80%', w:160, h:160, color:'rgba(244,114,182,.05)', dur:'22s', delay:'-10s' },
+  ];
+
+  orbConfigs.forEach(function(cfg){
+    var orb = document.createElement('div');
+    orb.className = 'bq-glass-orb';
+    orb.style.cssText = 'position:absolute;left:'+cfg.x+';top:'+cfg.y+';width:'+cfg.w+'px;height:'+cfg.h+'px;'+
+      'border-radius:50%;background:radial-gradient(circle,'+cfg.color+' 0%,transparent 70%);'+
+      'filter:blur(40px);animation:bqOrbDrift '+cfg.dur+' ease-in-out infinite '+cfg.delay+';'+
+      'pointer-events:none;will-change:transform;';
+    orbContainer.appendChild(orb);
+  });
+
+  /* Insert as first child so it sits behind content */
+  panel.insertBefore(orbContainer, panel.firstChild);
+}
+
+/* ── Watch for panel opening to add orbs ── */
+function bqInitGlass(){
+  bqAddGlassOrbs();
+  var panel = document.getElementById('bqp');
+  if(panel){
+    var obs = new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        if(m.type === 'attributes' && m.attributeName === 'class'){
+          if(m.target.classList.contains('open')){
+            bqAddGlassOrbs();
+          }
+        }
+      });
+    });
+    obs.observe(panel, { attributes:true, attributeFilter:['class'] });
+  }
+}
+
+/* ── Init when DOM is ready ── */
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', bqInitGlass);
+} else {
+  bqInitGlass();
+}
+
+/* Also retry periodically in case widget loads late */
+setTimeout(bqInitGlass, 1000);
+setTimeout(bqInitGlass, 3000);
+
+console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats');
+}catch(e){ console.error('[bq] v69 patch error:', e); }
+})();
+/* ════════════ end v69 patch ════════════ */
