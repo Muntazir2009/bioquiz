@@ -5090,12 +5090,13 @@ function renderMsg(ctx,msg,key){
       openProfileCard(tuid,tname,onlineU[tuid]);
     });
   });
-  // v9.3: Mobile/tap support — tap a message bubble to toggle the action toolbar.
-  // Hover still works on desktop; tap is additive for touch devices.
+  // v9.3: Action toolbar — only on right-click (desktop) or long-press (mobile), NOT on regular tap.
+  // Long-press already opens reaction picker; right-click opens the action sheet.
   const _bbl=row.querySelector('.bqbbl');
   if(_bbl){
-    _bbl.addEventListener('click',e=>{
+    _bbl.addEventListener('contextmenu',e=>{
       if(e.target.closest('a,img,.bq-voice-play,.bqrp')) return;
+      e.preventDefault();
       e.stopPropagation();
       renderMsgActionSheet(ctx,key,msg,pfx,_bbl);
     });
@@ -8121,8 +8122,8 @@ setTimeout(_injectProfileUploads,1500);
     container.addEventListener('touchcancel',cancel);
   }
 
-  /* ── 4. LONG-PRESS → reactions, DOUBLE-TAP → ❤️ ── */
-  const LONG_MS=420;
+  /* ── 4. LONG-PRESS → action sheet (React/Reply/Copy/etc), DOUBLE-TAP → ❤️ ── */
+  const LONG_MS=600;
   const DOUBLE_TAP_MS=320;
   function attachPressGestures(container){
     if(!container||container.dataset.bqPress) return;

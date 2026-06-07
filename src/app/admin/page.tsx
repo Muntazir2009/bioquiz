@@ -7,7 +7,6 @@ import { Sidebar, MobileMenuButton, TABS } from "@/components/admin/Sidebar";
 import { ConfigPanel } from "@/components/admin/ConfigPanel";
 import { LivePreview } from "@/components/admin/LivePreview";
 import { SyncBadge } from "@/components/admin/SyncBadge";
-import { BackgroundBeams } from "@/components/admin/BackgroundBeams";
 import { SpotlightCard } from "@/components/admin/SpotlightCard";
 import { Shield, Eye, EyeOff, Bug, Lock, AlertTriangle, PanelRightClose, PanelRight } from "lucide-react";
 
@@ -86,8 +85,6 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
           backgroundSize: "24px 24px",
         }}
       />
-
-      <BackgroundBeams />
 
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -208,8 +205,6 @@ function AdminPanel() {
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#060608]">
-      <BackgroundBeams />
-
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
