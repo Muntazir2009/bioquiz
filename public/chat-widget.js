@@ -11254,24 +11254,19 @@ window.addEventListener('resize', ()=>setTimeout(fixDmLayout, 50));
 window.addEventListener('orientationchange', ()=>setTimeout(fixDmLayout, 200));
 
 /* ════════════════════════════════════════════════════════════════════════
-   FIX 8: Theme cleanup — keep Monochrome (mono) + Black only
-   We do this purely via CSS + removing other chips from the picker DOM.
-   Existing themes still parse, but only mono/black are reachable.
+   FIX 8: Theme cleanup — Show ALL themes in the selector
    ════════════════════════════════════════════════════════════════════════ */
-const KEEP_THEMES=new Set(['mono','black']);
+const KEEP_THEMES=new Set(['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','crimson','monochrome','golden','pure-black']);
 
 function injectThemeOverrideCss(){
   if($('bq-theme-v24-css')) return;
   const s=document.createElement('style'); s.id='bq-theme-v24-css';
   s.textContent=`
-    /* Hide all theme chips except mono + black */
-    .bq-theme-chip:not([data-t="mono"]):not([data-t="black"]),
-    .bq-if-th:not([data-t="mono"]):not([data-t="black"]) { display:none !important; }
-    /* Settings/profile theme tiles fall back to text labels — also slim them */
-    .bqpf-theme:not([data-t="mono"]):not([data-t="black"]) { display:none !important; }
-    /* Make sure mono + black chips are still visible/clickable */
-    .bq-theme-chip[data-t="mono"], .bq-theme-chip[data-t="black"],
-    .bq-if-th[data-t="mono"], .bq-if-th[data-t="black"] { display:inline-block !important; }
+    /* Show all theme chips */
+    .bq-theme-chip,
+    .bq-if-th { display:inline-block !important; }
+    /* Settings/profile theme tiles also visible */
+    .bqpf-theme { display:inline-block !important; }
   `;
   document.head.appendChild(s);
 }
@@ -11290,14 +11285,13 @@ function ensureMonoBlackChips(){
   });
 }
 function migrateUnsupportedTheme(){
-  // If saved theme isn't mono/black, force it to mono
+  // If saved theme isn't in the supported set, default to 'none' (dark)
   try{
     const cur=localStorage.getItem('bq_theme_v2')||'';
     if(cur && !KEEP_THEMES.has(cur)){
-      localStorage.setItem('bq_theme_v2','mono');
+      localStorage.setItem('bq_theme_v2','none');
       const p=$('bqp'); if(p){
         Array.from(p.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) p.classList.remove(c); });
-        p.classList.add('bq-theme-mono');
       }
     }
   }catch(_){}
@@ -12361,9 +12355,9 @@ setInterval(()=>{
   var css = document.createElement('style');
   css.id = 'bq-v30-themes';
   css.textContent = [
-    /* hide every existing chip in both pickers */
-    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:none!important;}',
-    /* show only the two we keep */
+    /* Show all theme chips — do NOT hide any */
+    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:inline-block!important;}',
+    /* show the two new ones too */
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],',
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],',
     '#bqp #bq-if-themes .bq-if-th[data-t="golden"],',
