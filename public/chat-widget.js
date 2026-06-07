@@ -12348,8 +12348,8 @@ setInterval(()=>{
 ═══════════════════════════════════════ */
 (function(){
   'use strict';
-  var THEMES = ['golden','pure-black'];
-  var THEME_LABEL = { 'golden':'Golden Brown', 'pure-black':'Pure Black' };
+  var THEMES = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','crimson','monochrome','golden','pure-black'];
+  var THEME_LABEL = { 'none':'Dark','light':'Light','whatsapp':'WhatsApp Light','wadark':'WhatsApp Dark','black':'Pure Black','noir':'Noir','aurora':'Aurora','peach':'Peach','carbon':'Carbon','midnight':'Midnight','rose':'Rose','ocean':'Ocean','crimson':'Crimson','monochrome':'Monochrome','golden':'Golden Brown','pure-black':'Pure Black' };
 
   /* ── 1. CSS: hide every old chip; style the two new ones; theme styles ── */
   var css = document.createElement('style');
@@ -12417,7 +12417,7 @@ setInterval(()=>{
 
   /* ── 3. Apply a theme everywhere ── */
   function applyTwoTheme(t){
-    if(THEMES.indexOf(t) < 0) t = 'pure-black';
+    if(THEMES.indexOf(t) < 0) t = 'none';
     var root = document.getElementById('bqp');
     if(root){
       // strip every prior bq-theme-* class
@@ -12425,6 +12425,7 @@ setInterval(()=>{
         return c && c.indexOf('bq-theme-') !== 0;
       }).join(' ') + ' bq-theme-' + t;
     }
+    try{ localStorage.setItem('bq_theme_v2', t); }catch(_){}
     try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
     // sync swatch selection
     document.querySelectorAll('#bq-theme-chips .bq-theme-chip').forEach(function(x){
@@ -12445,11 +12446,11 @@ setInterval(()=>{
     applyTwoTheme(t);
   }, true);
 
-  /* ── 5. Boot: inject chips, restore saved, default to pure-black ── */
+  /* ── 5. Boot: inject chips, restore saved, default to none (dark) ── */
   function boot(){
     ensureChips();
-    var saved = 'pure-black';
-    try{ saved = localStorage.getItem('bq_theme_v30') || 'pure-black'; }catch(_){}
+    var saved = 'none';
+    try{ saved = localStorage.getItem('bq_theme_v2') || localStorage.getItem('bq_theme_v30') || 'none'; }catch(_){}
     applyTwoTheme(saved);
   }
   setTimeout(boot, 600);
@@ -12460,8 +12461,8 @@ setInterval(()=>{
     if(!root) return;
     var has = THEMES.some(function(t){ return root.classList.contains('bq-theme-'+t); });
     if(!has){
-      var saved='pure-black';
-      try{ saved=localStorage.getItem('bq_theme_v30')||'pure-black'; }catch(_){}
+      var saved='none';
+      try{ saved=localStorage.getItem('bq_theme_v2')||localStorage.getItem('bq_theme_v30')||'none'; }catch(_){}
       applyTwoTheme(saved);
     }
   }, 2500);
