@@ -5137,7 +5137,7 @@ function renderMsg(ctx,msg,key){
             ' data-uname="'+esc(msg.uname||'')+'">'+_unName+'</span>'+
         '</div>'+
         '<div class="bqbw">'+
-          '<div class="'+_bblCls+'">'+rpHTML+_imgHtml+_gifHtml+_stickerHtml+_voiceHtml+_txtHtml+(msg.edited?'<span class="bqedited">(edited)</span>':'')+timerHTML+_metaHtml+'</div>'+
+          '<div class="'+_bblCls+'" data-key="'+esc(key)+'">'+rpHTML+_imgHtml+_gifHtml+_stickerHtml+_voiceHtml+_txtHtml+(msg.edited?'<span class="bqedited">(edited)</span>':'')+timerHTML+_metaHtml+'</div>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -8042,9 +8042,67 @@ setTimeout(_injectProfileUploads,1500);
   /* Long-press feedback */
   .bqbbl.bq-press{transform:scale(.97);transition:transform .12s ease;}
 
-  /* Double-tap heart pop */
-  @keyframes bqHeartPop{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}40%{transform:translate(-50%,-50%) scale(1.4);opacity:1}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
-  .bq-heart-pop{position:absolute;top:50%;left:50%;font-size:48px;pointer-events:none;animation:bqHeartPop .8s ease forwards;z-index:9999;}
+  /* ── V2 Double-tap heart burst (Instagram-style) ── */
+  .bq-heart-burst{position:absolute;top:50%;left:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+  .bq-heart-burst-main{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:64px;filter:drop-shadow(0 0 24px rgba(255,56,96,.6));
+    animation:bqV2HeartMain .9s cubic-bezier(.17,.89,.32,1.28) forwards;
+  }
+  @keyframes bqV2HeartMain{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+    15%{transform:translate(-50%,-50%) scale(1.5);opacity:1;}
+    30%{transform:translate(-50%,-50%) scale(.9);opacity:1;}
+    45%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}
+    65%{transform:translate(-50%,-50%) scale(1);opacity:1;}
+    100%{transform:translate(-50%,-50%) scale(1.3);opacity:0;}
+  }
+  .bq-heart-burst-ring{
+    position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;
+    border:3px solid rgba(255,56,96,.6);
+    animation:bqV2HeartRing .7s ease-out forwards;
+    pointer-events:none;
+  }
+  @keyframes bqV2HeartRing{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1;width:40px;height:40px;}
+    100%{transform:translate(-50%,-50%) scale(3);opacity:0;width:40px;height:40px;}
+  }
+  .bq-heart-mini{
+    position:absolute;top:50%;left:50%;font-size:22px;pointer-events:none;
+    animation:bqV2HeartFloat 1s ease-out forwards;
+    filter:drop-shadow(0 2px 8px rgba(255,56,96,.4));
+  }
+  @keyframes bqV2HeartFloat{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+    20%{transform:var(--bq-hf-mid) scale(1);opacity:1;}
+    100%{transform:var(--bq-hf-end) scale(.5);opacity:0;}
+  }
+  .bq-heart-sparkle{
+    position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;
+    pointer-events:none;animation:bqV2Sparkle .6s ease-out forwards;
+  }
+  @keyframes bqV2Sparkle{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1;}
+    50%{opacity:1;}
+    100%{transform:var(--bq-sp-end) scale(0);opacity:0;}
+  }
+  /* Bubble glow pulse on double-tap */
+  .bqbbl.bq-dt-glow{
+    animation:bqV2BubbleGlow .6s ease-out;
+  }
+  @keyframes bqV2BubbleGlow{
+    0%{box-shadow:0 0 0 0 rgba(255,56,96,0);}
+    30%{box-shadow:0 0 20px 4px rgba(255,56,96,.35);}
+    100%{box-shadow:0 0 0 0 rgba(255,56,96,0);}
+  }
+  .bqr.mine .bqbbl.bq-dt-glow{
+    animation:bqV2BubbleGlowMine .6s ease-out;
+  }
+  @keyframes bqV2BubbleGlowMine{
+    0%{box-shadow:0 0 0 0 rgba(255,56,96,0);}
+    30%{box-shadow:0 0 20px 4px rgba(99,102,241,.35);}
+    100%{box-shadow:0 0 0 0 rgba(99,102,241,0);}
+  }
 
   /* Multi-select mode */
   .bq-select-mode .bqr{cursor:pointer;padding-left:34px;transition:padding .2s ease;}
@@ -8244,7 +8302,7 @@ setTimeout(_injectProfileUploads,1500);
       if(pressT){clearTimeout(pressT); pressT=null;}
       pressBubble?.classList.remove('bq-press'); pressBubble=null;
     });
-    /* v71: No more double-tap ❤️ — tap now opens action toolbar, long-press opens reaction picker */
+    /* V2: Double-tap ❤️ enhanced (Instagram-style burst, visible to both users). Tap → action toolbar, long-press → reaction picker */
   }
 
   /* v71: Desktop mouse long-press → reaction picker (hold mousedown for 600ms) */
@@ -11755,9 +11813,7 @@ polishCss.textContent=`
 .bqv2-quick-emoji button{background:none;border:0;font-size:20px;cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .12s ease,background .12s ease}
 .bqv2-quick-emoji button:hover{background:rgba(255,255,255,.1);transform:scale(1.25)}
 
-/* Removed blanket transition — only apply when needed (e.g. reaction hover) */
-.bqbbl.bqv2-doubletapped{animation:bqV2DoubleTap .5s ease}
-@keyframes bqV2DoubleTap{0%{transform:scale(1)}30%{transform:scale(1.04)}100%{transform:scale(1)}}
+/* V2 double-tap heart animation enhanced — see main CSS for burst styles */
 `;
 document.head.appendChild(polishCss);
 
@@ -11850,23 +11906,146 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-// Double-tap to react ❤️
+// Double-tap to react ❤️ — V2 Enhanced (Instagram-style burst, visible to BOTH users)
+var _bqBurstSeen = Object.create(null); // track seen burst IDs to avoid replay
 function wireDoubleTap(){
   if(window._bqV2DT) return; window._bqV2DT=true;
   document.addEventListener('dblclick', e=>{
     const bbl=e.target.closest('.bqbbl'); if(!bbl) return;
     if(e.target.closest('a,button,.bq-voice-msg,.bq-img,.bq-gif,.bq-sticker')) return;
-    bbl.classList.add('bqv2-doubletapped');
-    setTimeout(()=>bbl.classList.remove('bqv2-doubletapped'), 500);
-    // Trigger reaction picker if present
     const key=bbl.dataset.key||bbl.dataset.k||bbl.id?.replace(/^bqm-/,'');
     if(!key) return;
     const ctx = (window.activeDmId||window.__bqActiveDm?.id) ? 'dm' : 'global';
     const db=_db(); const u=_uid(); if(!db||!u) return;
     const dm=window.activeDmId||window.__bqActiveDm?.id||'';
+    // 1) Write ❤️ reaction
     const path = ctx==='global' ? 'bq_messages/'+key+'/reactions/❤️/'+u : 'bq_dms/'+dm+'/messages/'+key+'/reactions/❤️/'+u;
     db.ref(path).set(Date.now()).catch(()=>{});
+    // 2) Write burst event so OTHER user sees the animation too
+    const burstData = {emoji:'❤️', uid:u, ts:Date.now()};
+    const burstPath = ctx==='global' ? 'bq_bursts/global/'+key : 'bq_bursts/dm/'+dm+'/'+key;
+    db.ref(burstPath).push(burstData).catch(()=>{});
+    // Auto-clean burst after 3 seconds
+    setTimeout(()=>{
+      try{ db.ref(burstPath).orderByChild('ts').endAt(Date.now()-4000).once('value',s=>{
+        s.forEach(c=>{ c.ref.remove().catch(()=>{}); });
+      }); }catch(_){}
+    }, 3500);
+    // 3) Show local animation immediately
+    showHeartBurst(bbl);
   });
+
+  // Listen for burst events from other users (so animation shows for BOTH)
+  listenForBursts();
+}
+
+function showHeartBurst(bbl){
+  if(!bbl) return;
+  const wrap=bbl.closest('.bqbw')||bbl.parentElement;
+  if(!wrap) return;
+  wrap.style.position='relative';
+  // Container
+  const burst=document.createElement('div');
+  burst.className='bq-heart-burst';
+  // Main big heart
+  const main=document.createElement('div');
+  main.className='bq-heart-burst-main';
+  main.textContent='❤️';
+  burst.appendChild(main);
+  // Expanding ring
+  const ring=document.createElement('div');
+  ring.className='bq-heart-burst-ring';
+  burst.appendChild(ring);
+  // Mini floating hearts
+  var miniAngles=[-70,-40,-10,20,50,80,-55,35];
+  var miniEmojis=['❤️','💕','💗','💖','🩷','❤️','💕','💗'];
+  for(var i=0;i<miniAngles.length;i++){
+    var mini=document.createElement('div');
+    mini.className='bq-heart-mini';
+    mini.textContent=miniEmojis[i%miniEmojis.length];
+    var angle=miniAngles[i]*(Math.PI/180);
+    var dist=50+Math.random()*30;
+    var midX=Math.cos(angle)*dist*0.4;
+    var midY=Math.sin(angle)*dist*0.4 - 15;
+    var endX=Math.cos(angle)*dist;
+    var endY=Math.sin(angle)*dist - 30;
+    mini.style.setProperty('--bq-hf-mid','translate(calc(-50% + '+midX.toFixed(0)+'px),calc(-50% + '+midY.toFixed(0)+'px))');
+    mini.style.setProperty('--bq-hf-end','translate(calc(-50% + '+endX.toFixed(0)+'px),calc(-50% + '+endY.toFixed(0)+'px))');
+    mini.style.animationDelay=(i*50+80)+'ms';
+    burst.appendChild(mini);
+  }
+  // Sparkle dots
+  var sparkleColors=['#ff3860','#ff6b8a','#ffa5c0','#fff','#ff3860','#c9375b','#ff8fa8'];
+  for(var j=0;j<12;j++){
+    var sp=document.createElement('div');
+    sp.className='bq-heart-sparkle';
+    sp.style.background=sparkleColors[j%sparkleColors.length];
+    var spAngle=j*30*(Math.PI/180);
+    var spDist=30+Math.random()*50;
+    var spX=Math.cos(spAngle)*spDist;
+    var spY=Math.sin(spAngle)*spDist;
+    sp.style.setProperty('--bq-sp-end','translate(calc(-50% + '+spX.toFixed(0)+'px),calc(-50% + '+spY.toFixed(0)+'px))');
+    sp.style.animationDelay=(j*30+50)+'ms';
+    burst.appendChild(sp);
+  }
+  wrap.appendChild(burst);
+  // Bubble glow pulse
+  bbl.classList.remove('bq-dt-glow');
+  void bbl.offsetWidth;
+  bbl.classList.add('bq-dt-glow');
+  setTimeout(()=>{ bbl.classList.remove('bq-dt-glow'); },700);
+  // Haptic feedback
+  if(navigator.vibrate) try{navigator.vibrate([10,30,10]);}catch(_){}
+  // Cleanup burst DOM
+  setTimeout(()=>{ try{burst.remove();}catch(_){} },1400);
+}
+
+function listenForBursts(){
+  var db=_db();
+  if(!db){
+    // Firebase not ready yet — retry
+    setTimeout(listenForBursts, 1500);
+    return;
+  }
+  var _dmBurstAttached = Object.create(null); // dmId -> true
+
+  // Listen for global chat bursts
+  db.ref('bq_bursts/global').on('child_added', function(snap){
+    var msgKey=snap.key;
+    snap.ref.on('child_added', function(bSnap){
+      var bData=bSnap.val(); if(!bData) return;
+      var bId='g|'+msgKey+'|'+bSnap.key;
+      if(_bqBurstSeen[bId]) return;
+      _bqBurstSeen[bId]=true;
+      // Only animate if this burst is from ANOTHER user
+      if(bData.uid===_uid()) return;
+      // Find the bubble in the DOM
+      var row=document.getElementById('bqmsg-global-'+msgKey);
+      var bbl=row?.querySelector('.bqbbl');
+      if(bbl) showHeartBurst(bbl);
+    });
+  });
+
+  // Listen for DM bursts — poll for active DM changes (lightweight)
+  setInterval(function(){
+    var dm=window.activeDmId;
+    if(!dm||_dmBurstAttached[dm]) return;
+    _dmBurstAttached[dm]=true;
+
+    db.ref('bq_bursts/dm/'+dm).on('child_added', function(snap){
+      var msgKey=snap.key;
+      snap.ref.on('child_added', function(bSnap){
+        var bData=bSnap.val(); if(!bData) return;
+        var bId='dm|'+dm+'|'+msgKey+'|'+bSnap.key;
+        if(_bqBurstSeen[bId]) return;
+        _bqBurstSeen[bId]=true;
+        if(bData.uid===_uid()) return;
+        var row=document.getElementById('bqmsg-dm-'+msgKey);
+        var bbl=row?.querySelector('.bqbbl');
+        if(bbl) showHeartBurst(bbl);
+      });
+    });
+  }, 2000);
 }
 
 // Long-press → quick emoji bar

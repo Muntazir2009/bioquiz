@@ -190,3 +190,43 @@ Stage Summary:
 - Theme flashing fixed with change detection + transition suppression
 - Streaks are account-persistent via Firebase
 - All themes apply to the entire widget comprehensively
+
+---
+Task ID: 2
+Agent: main
+Task: Enhance double-tap to heart (V2) with Instagram-style burst animation visible to both users
+
+Work Log:
+- Analyzed existing double-tap implementation: wireDoubleTap() in v2 patch, simple bqv2-doubletapped scale animation
+- Analyzed existing heart pop CSS: bqHeartPop keyframe with single 48px emoji
+- Replaced old CSS (bqHeartPop + .bq-heart-pop) with comprehensive V2 burst animation system:
+  - bqV2HeartMain: Instagram-style pop with overshoot, bounce, and fade (64px heart with glow)
+  - bqV2HeartRing: Expanding ring pulse effect
+  - bqV2HeartFloat: 8 mini floating hearts (❤️💕💗💖🩷) radiating outward at different angles
+  - bqV2Sparkle: 12 sparkle dots in pink/red/white radiating from center
+  - bqV2BubbleGlow / bqV2BubbleGlowMine: Bubble glow pulse effect (pink for theirs, indigo for mine)
+- Replaced wireDoubleTap() function with V2 enhanced version:
+  - On double-tap: writes ❤️ reaction to Firebase + writes burst event to bq_bursts/{global|dm}/{msgKey}
+  - Calls showHeartBurst(bbl) immediately for local animation
+  - Auto-cleans burst data from Firebase after 3 seconds
+- Created showHeartBurst(bbl) function:
+  - Builds DOM burst container with main heart, ring, 8 mini hearts, 12 sparkles
+  - Uses CSS custom properties (--bq-hf-mid, --bq-hf-end, --bq-sp-end) for per-particle trajectory
+  - Adds bubble glow pulse + haptic feedback (vibrate pattern [10,30,10])
+  - Self-cleans DOM after 1.4 seconds
+- Created listenForBursts() function for real-time burst event listening:
+  - Listens on bq_bursts/global for global chat bursts
+  - Polls for DM changes and attaches bq_bursts/dm/{dmId} listeners
+  - Tracks seen burst IDs in _bqBurstSeen to prevent replay
+  - Only shows animation for bursts from OTHER users (not self)
+  - Retries Firebase connection if not ready
+- Added data-key attribute to bubble elements for reliable key lookup
+- Updated comment at line 8305 from "No more double-tap ❤️" to reflect V2 enhanced behavior
+- Verified page loads, chat widget opens, no JavaScript errors
+
+Stage Summary:
+- Double-tap to heart V2: Instagram-style burst with main heart pop, expanding ring, 8 floating mini hearts, 12 sparkle particles, bubble glow pulse
+- Animation visible to BOTH users: burst events written to Firebase (bq_bursts/), other user's client detects and plays the same animation
+- Works in both global chat and DMs
+- Haptic feedback on double-tap
+- Auto-cleaning burst data from Firebase after 3 seconds
