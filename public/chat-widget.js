@@ -605,7 +605,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   border:1px solid rgba(255,255,255,.09);
   border-radius:18px 18px 18px 5px;
   color:var(--bq-text);
-  box-shadow:0 2px 8px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.06) inset;
+  box-shadow:none;
   backdrop-filter:blur(8px);
   -webkit-backdrop-filter:blur(8px);
 }
@@ -614,7 +614,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   background:var(--bq-bubble-mine);
   color:#fff;
   border-radius:18px 18px 5px 18px;
-  box-shadow:0 4px 18px var(--bq-bubble-mine-shadow), 0 1px 0 rgba(255,255,255,.15) inset;
+  box-shadow:none;
 }
 .bqr.mine.consec .bqbbl{border-radius:18px;}
 .bqbbl a{color:var(--bq-accent);text-decoration:underline;text-decoration-color:rgba(96,165,250,.4);}
@@ -905,7 +905,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqbbl{transition:none;}
 .bqr:hover .bqbbl{transition:transform .18s ease,box-shadow .15s ease;}
 .bqr:hover .bqbbl:not(.sticker){transform:translateY(-1px);}
-.bqr.mine:hover .bqbbl:not(.sticker){box-shadow:0 6px 20px rgba(96,165,250,.38);}
+.bqr.mine:hover .bqbbl:not(.sticker){box-shadow:none;}
 /* Reaction pop animation */
 .bqrxn{animation:bqRxnPop .35s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes bqRxnPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
@@ -2320,7 +2320,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 .bqr.theirs.consec .bqbbl{border-radius:8px 20px 20px 8px;}
 /* Hover lift only on hover — removed always-on transition to reduce scroll jank */
-.bqr.mine:hover .bqbbl:not(.sticker){transform:translateY(-1px);box-shadow:0 10px 28px rgba(96,165,250,.42),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .18s ease,box-shadow .15s ease;}
+.bqr.mine:hover .bqbbl:not(.sticker){transform:none;box-shadow:none;transition:transform .18s ease,box-shadow .15s ease;}
 .bqr.theirs:hover .bqbbl:not(.sticker){border-color:rgba(255,255,255,.14);}
 @keyframes bqBubbleIn{
   0%{opacity:0;transform:translateY(8px) scale(.94);}
@@ -16055,6 +16055,38 @@ style.textContent = '\
   background:rgba(12,12,18,.72)!important;\
   backdrop-filter:blur(40px) saturate(1.6)!important;\
   -webkit-backdrop-filter:blur(40px) saturate(1.6)!important;\
+}\
+\
+/* ══════════════════════════════════════════════════════════════════════ */\
+/* ═══ NUCLEAR: Kill ALL bubble shadows everywhere — every theme ═══ */\
+/* ══════════════════════════════════════════════════════════════════════ */\
+#bqp .bqr.mine .bqbbl,\
+#bqp .bqr.theirs .bqbbl,\
+#bqp .bqr.mine:hover .bqbbl,\
+#bqp .bqr.theirs:hover .bqbbl,\
+#bqp[class*="bq-theme-"] .bqr.mine .bqbbl,\
+#bqp[class*="bq-theme-"] .bqr.theirs .bqbbl,\
+#bqp[class*="bq-theme-"] .bqr.mine:hover .bqbbl,\
+#bqp[class*="bq-theme-"] .bqr.theirs:hover .bqbbl,\
+#bqdmmsgs .bqr.mine .bqbbl,\
+#bqdmmsgs .bqr.theirs .bqbbl,\
+#bqdmmsgs .bqr.mine:hover .bqbbl,\
+#bqdmmsgs .bqr.theirs:hover .bqbbl,\
+#bqgmsgs .bqr.mine .bqbbl,\
+#bqgmsgs .bqr.theirs .bqbbl,\
+#bqgmsgs .bqr.mine:hover .bqbbl,\
+#bqgmsgs .bqr.theirs:hover .bqbbl,\
+#bqp[class*="bq-theme-"] #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp[class*="bq-theme-"] #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp[class*="bq-theme-"] #bqgmsgs .bqr.mine .bqbbl,\
+#bqp[class*="bq-theme-"] #bqgmsgs .bqr.theirs .bqbbl{\
+  box-shadow:none!important;\
+}\
+\
+/* Also kill hover transform/lift on bubbles */\
+#bqp .bqr:hover .bqbbl,\
+#bqp[class*="bq-theme-"] .bqr:hover .bqbbl{\
+  transform:none!important;\
 }\
 \
 ';
