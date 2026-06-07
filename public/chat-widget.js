@@ -12322,7 +12322,7 @@ setInterval(()=>{
 
   // Apply / persist theme — works for both pickers
   var THEME_KEY = 'bq_theme';
-  var KNOWN = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','plain','crimson'];
+  var KNOWN = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','plain','crimson','golden','pure-black'];
 
   function applyTheme(t){
     if(!t) t='none';
@@ -12378,16 +12378,16 @@ setInterval(()=>{
 ═══════════════════════════════════════ */
 (function(){
   'use strict';
-  var THEMES = ['none','light','whatsapp','wadark','black','noir','aurora','peach','carbon','midnight','rose','ocean','crimson','monochrome','golden','pure-black'];
-  var THEME_LABEL = { 'none':'Dark','light':'Light','whatsapp':'WhatsApp Light','wadark':'WhatsApp Dark','black':'Pure Black','noir':'Noir','aurora':'Aurora','peach':'Peach','carbon':'Carbon','midnight':'Midnight','rose':'Rose','ocean':'Ocean','crimson':'Crimson','monochrome':'Monochrome','golden':'Golden Brown','pure-black':'Pure Black' };
+  var THEMES = ['pure-black','golden'];
+  var THEME_LABEL = { 'pure-black':'Pure Black','golden':'Golden Brown' };
 
   /* ── 1. CSS: hide every old chip; style the two new ones; theme styles ── */
   var css = document.createElement('style');
   css.id = 'bq-v30-themes';
   css.textContent = [
-    /* Show all theme chips — do NOT hide any */
-    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:inline-block!important;}',
-    /* show the two new ones too */
+    /* Hide ALL theme chips first, then show only pure-black & golden */
+    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:none!important;}',
+    /* show only the two we want */
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],',
     '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],',
     '#bqp #bq-if-themes .bq-if-th[data-t="golden"],',
@@ -12447,7 +12447,7 @@ setInterval(()=>{
 
   /* ── 3. Apply a theme everywhere ── */
   function applyTwoTheme(t){
-    if(THEMES.indexOf(t) < 0) t = 'none';
+    if(THEMES.indexOf(t) < 0) t = 'pure-black';
     var root = document.getElementById('bqp');
     if(root){
       // strip every prior bq-theme-* class
@@ -12476,11 +12476,11 @@ setInterval(()=>{
     applyTwoTheme(t);
   }, true);
 
-  /* ── 5. Boot: inject chips, restore saved, default to none (dark) ── */
+  /* ── 5. Boot: inject chips, restore saved, default to pure-black ── */
   function boot(){
     ensureChips();
-    var saved = 'none';
-    try{ saved = localStorage.getItem('bq_theme_v2') || localStorage.getItem('bq_theme_v30') || 'none'; }catch(_){}
+    var saved = 'pure-black';
+    try{ saved = localStorage.getItem('bq_theme_v2') || localStorage.getItem('bq_theme_v30') || 'pure-black'; }catch(_){}
     applyTwoTheme(saved);
   }
   setTimeout(boot, 600);
@@ -12491,8 +12491,8 @@ setInterval(()=>{
     if(!root) return;
     var has = THEMES.some(function(t){ return root.classList.contains('bq-theme-'+t); });
     if(!has){
-      var saved='none';
-      try{ saved=localStorage.getItem('bq_theme_v2')||localStorage.getItem('bq_theme_v30')||'none'; }catch(_){}
+      var saved='pure-black';
+      try{ saved=localStorage.getItem('bq_theme_v2')||localStorage.getItem('bq_theme_v30')||'pure-black'; }catch(_){}
       applyTwoTheme(saved);
     }
   }, 2500);

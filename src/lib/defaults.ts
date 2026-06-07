@@ -76,7 +76,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   bubbleStyle: "rounded",
 
   // Theme
-  defaultTheme: "none",
+  defaultTheme: "pure-black",
 
   // Behavior
   autoOpen: false,
@@ -122,36 +122,10 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   debugMode: false,
 };
 
-// ─── All 28 themes the widget supports ──────────────────────
+// ─── Only two themes: Pure Black and Golden Brown ──────────
 export const WIDGET_THEMES = [
-  { id: "none", name: "Dark", type: "dark" as const, preview: "#080808" },
-  { id: "light", name: "Light", type: "light" as const, preview: "#f8f9fa" },
-  { id: "black", name: "Pure Black", type: "dark" as const, preview: "#000000" },
-  { id: "noir", name: "Noir", type: "dark" as const, preview: "#0a0a0c" },
-  { id: "aurora", name: "Aurora", type: "dark" as const, preview: "#0c1220" },
-  { id: "ocean", name: "Ocean", type: "dark" as const, preview: "#0a1628" },
-  { id: "oceanv2", name: "Ocean V2", type: "dark" as const, preview: "#091a2a" },
-  { id: "midnight", name: "Midnight", type: "dark" as const, preview: "#0c0c1d" },
-  { id: "midnightpurple", name: "Midnight Purple", type: "dark" as const, preview: "#120c20" },
-  { id: "crimson", name: "Crimson", type: "dark" as const, preview: "#150d10" },
-  { id: "sunset", name: "Sunset", type: "dark" as const, preview: "#1a0a2e" },
-  { id: "sunsetv2", name: "Sunset V2", type: "dark" as const, preview: "#1c0e2e" },
-  { id: "forest", name: "Forest", type: "dark" as const, preview: "#0a1a0a" },
-  { id: "bubblegum", name: "Bubblegum", type: "dark" as const, preview: "#1a0a1e" },
-  { id: "rose", name: "Rose", type: "light" as const, preview: "#fce4ec" },
-  { id: "peach", name: "Peach", type: "light" as const, preview: "#fff3e0" },
-  { id: "carbon", name: "Carbon", type: "dark" as const, preview: "#1a1a1a" },
-  { id: "monochrome", name: "Monochrome", type: "dark" as const, preview: "#111111" },
-  { id: "plain", name: "Plain", type: "dark" as const, preview: "#000000" },
-  { id: "golden", name: "Golden", type: "dark" as const, preview: "#1a1508" },
-  { id: "pure-black", name: "Pure Black+", type: "dark" as const, preview: "#000000" },
-  { id: "grid", name: "Grid", type: "dark" as const, preview: "#080808" },
-  { id: "dots", name: "Dots", type: "dark" as const, preview: "#080808" },
-  { id: "wave", name: "Wave", type: "dark" as const, preview: "#0a0a1a" },
-  { id: "whatsapp", name: "WhatsApp", type: "light" as const, preview: "#ece5dd" },
-  { id: "wadark", name: "WhatsApp Dark", type: "dark" as const, preview: "#0b141a" },
-  { id: "walight", name: "WhatsApp Light", type: "light" as const, preview: "#f0f0f0" },
-  { id: "paper", name: "Paper", type: "light" as const, preview: "#faf8f5" },
+  { id: "pure-black", name: "Pure Black", type: "dark" as const, preview: "#000000" },
+  { id: "golden", name: "Golden Brown", type: "dark" as const, preview: "#1a1508" },
 ] as const;
 
 // ─── Status options ─────────────────────────────────────────
