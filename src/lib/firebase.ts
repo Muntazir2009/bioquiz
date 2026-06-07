@@ -16,16 +16,15 @@ import type { WidgetConfig } from "./defaults";
 import { DEFAULT_CONFIG } from "./defaults";
 
 // ─── Firebase Config ────────────────────────────────────────
-// Replace {} with your actual Firebase project config to enable real-time sync.
-// When empty, the admin panel runs in local-only mode (no Firebase reads/writes).
-const FIREBASE_CONFIG: Record<string, string> = {
-  // apiKey: "",
-  // authDomain: "",
-  // databaseURL: "",
-  // projectId: "",
-  // storageBucket: "",
-  // messagingSenderId: "",
-  // appId: "",
+// Uses the existing bioquiz-chat project (same as chat-widget.js & FCM)
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBvsLNXMGsr-XQF-GE-EET1YOnICSMicOA",
+  authDomain:        "bioquiz-chat.firebaseapp.com",
+  databaseURL:       "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "bioquiz-chat",
+  storageBucket:     "bioquiz-chat.firebasestorage.app",
+  messagingSenderId: "616382882153",
+  appId:             "1:616382882153:web:9c8a32401be847468d1df8",
 };
 
 const CONFIG_PATH = "bq_widget_config/settings";
