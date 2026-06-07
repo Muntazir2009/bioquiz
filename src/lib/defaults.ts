@@ -61,6 +61,53 @@ export interface WidgetConfig {
   imageHost: string;
   customCSS: string;
   debugMode: boolean;
+
+  // ── Moderation ──
+  profanityFilter: boolean;
+  slowMode: boolean;
+  slowModeInterval: number;       // seconds between messages in slow mode
+  linkFilter: boolean;
+  maxAccounts: number;            // max accounts per device
+
+  // ── Announcements ──
+  announcementEnabled: boolean;
+  announcementText: string;
+  announcementColor: string;      // banner accent color
+  announcementDismiss: boolean;
+
+  // ── Streaks ──
+  streaksEnabled: boolean;
+  streakFreezeDays: number;       // freeze days per month
+  streakMultiplier: number;
+  streakRewardMessage: string;
+
+  // ── Welcome Message ──
+  welcomeEnabled: boolean;
+  welcomeMessage: string;
+  welcomeDelay: number;           // ms before showing welcome
+
+  // ── Widget Position & Size ──
+  widgetPosition: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  widgetOffsetX: number;          // px from edge
+  widgetOffsetY: number;          // px from edge
+  bubbleSize: number;             // px
+  panelWidth: number;             // px
+  panelHeight: number;            // px
+
+  // ── Rate Limiting ──
+  rateLimitEnabled: boolean;
+  rateLimitMessages: number;      // max messages per interval
+  rateLimitInterval: number;      // seconds
+  spamProtection: boolean;
+
+  // ── Sound & Haptics ──
+  messageSound: string;
+  sendSound: boolean;
+  hapticFeedback: boolean;
+
+  // ── Online Indicators ──
+  showOnlineCount: boolean;
+  showTypingIndicator: boolean;   // show "X is typing" for all users
 }
 
 export const DEFAULT_CONFIG: WidgetConfig = {
@@ -120,12 +167,59 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   imageHost: "",
   customCSS: "",
   debugMode: false,
+
+  // Moderation
+  profanityFilter: true,
+  slowMode: false,
+  slowModeInterval: 5,
+  linkFilter: false,
+  maxAccounts: 3,
+
+  // Announcements
+  announcementEnabled: false,
+  announcementText: "",
+  announcementColor: "#2EB9DF",
+  announcementDismiss: true,
+
+  // Streaks
+  streaksEnabled: true,
+  streakFreezeDays: 3,
+  streakMultiplier: 1,
+  streakRewardMessage: "🔥 Amazing! You're on a {days}-day streak!",
+
+  // Welcome Message
+  welcomeEnabled: true,
+  welcomeMessage: "Welcome to BioQuiz Chat! 🧬 Ask me anything about biology.",
+  welcomeDelay: 2000,
+
+  // Widget Position & Size
+  widgetPosition: "bottom-right",
+  widgetOffsetX: 24,
+  widgetOffsetY: 24,
+  bubbleSize: 56,
+  panelWidth: 400,
+  panelHeight: 600,
+
+  // Rate Limiting
+  rateLimitEnabled: true,
+  rateLimitMessages: 10,
+  rateLimitInterval: 30,
+  spamProtection: true,
+
+  // Sound & Haptics
+  messageSound: "default",
+  sendSound: false,
+  hapticFeedback: true,
+
+  // Online Indicators
+  showOnlineCount: true,
+  showTypingIndicator: true,
 };
 
 // ─── Only two themes: Pure Black and Golden Brown ──────────
 export const WIDGET_THEMES = [
-  { id: "pure-black", name: "Pure Black", type: "dark" as const, preview: "#000000" },
-  { id: "golden", name: "Golden Brown", type: "dark" as const, preview: "#1a1508" },
+  { id: "pure-black", name: "Pure Black", type: "dark" as const, preview: "#000000", accent: "#ffffff", description: "True black background, white accents" },
+  { id: "golden", name: "Golden Brown", type: "dark" as const, preview: "#1a1508", accent: "#d4a056", description: "Warm golden tones on deep brown" },
 ] as const;
 
 // ─── Status options ─────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  LayoutDashboard,
   Palette,
   SwatchBook,
   Settings2,
@@ -11,6 +12,8 @@ import {
   Bug,
   Menu,
   X,
+  Shield,
+  Megaphone,
 } from "lucide-react";
 import { MovingBorder } from "./MovingBorder";
 
@@ -21,11 +24,14 @@ export interface TabDef {
 }
 
 export const TABS: TabDef[] = [
+  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { id: "appearance", label: "Appearance", icon: <Palette size={18} /> },
   { id: "themes", label: "Themes", icon: <SwatchBook size={18} /> },
   { id: "behavior", label: "Behavior", icon: <Settings2 size={18} /> },
   { id: "profile", label: "Profile", icon: <UserCircle size={18} /> },
   { id: "security", label: "Security", icon: <ShieldCheck size={18} /> },
+  { id: "moderation", label: "Moderation", icon: <Shield size={18} /> },
+  { id: "announcements", label: "Announcements", icon: <Megaphone size={18} /> },
   { id: "advanced", label: "Advanced", icon: <Cog size={18} /> },
 ];
 

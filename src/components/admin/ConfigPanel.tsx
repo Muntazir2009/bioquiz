@@ -5,6 +5,7 @@ import type { WidgetConfig, NotifPrefs } from "@/lib/defaults";
 import { WIDGET_THEMES, STATUS_OPTIONS } from "@/lib/defaults";
 import { SpotlightCard } from "./SpotlightCard";
 import { ShimmerButton } from "./ShimmerButton";
+import { DashboardTab } from "./DashboardTab";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ModerationTab } from "./ModerationTab";
+import { AnnouncementsTab } from "./AnnouncementsTab";
 
 interface ConfigPanelProps {
   config: WidgetConfig;
@@ -201,6 +204,97 @@ function AppearanceTab({ config, updateConfig }: ConfigPanelProps) {
           />
         </Field>
       </Section>
+
+      <Section title="Widget Position & Size">
+        <Field label="Bubble Position">
+          <div className="grid grid-cols-2 gap-2">
+            {(["bottom-right", "bottom-left", "top-right", "top-left"] as const).map((pos) => (
+              <button
+                key={pos}
+                onClick={() => updateConfig({ widgetPosition: pos })}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all ${
+                  config.widgetPosition === pos
+                    ? "border-[#2EB9DF]/40 bg-[#2EB9DF]/10 text-white/80"
+                    : "border-white/[0.06] text-white/40 hover:border-white/[0.12]"
+                }`}
+              >
+                <span className="text-[10px]">{pos === "bottom-right" ? "↘️" : pos === "bottom-left" ? "↙️" : pos === "top-right" ? "↗️" : "↖️"}</span>
+                <span className="capitalize">{pos.replace("-", " ")}</span>
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label={`Offset X — ${config.widgetOffsetX}px`} hint="Horizontal distance from edge">
+            <Slider
+              value={[config.widgetOffsetX]}
+              min={8}
+              max={60}
+              step={4}
+              onValueChange={([v]) => updateConfig({ widgetOffsetX: v })}
+            />
+          </Field>
+          <Field label={`Offset Y — ${config.widgetOffsetY}px`} hint="Vertical distance from edge">
+            <Slider
+              value={[config.widgetOffsetY]}
+              min={8}
+              max={60}
+              step={4}
+              onValueChange={([v]) => updateConfig({ widgetOffsetY: v })}
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field label={`Bubble — ${config.bubbleSize}px`} hint="Chat bubble size">
+            <Slider
+              value={[config.bubbleSize]}
+              min={40}
+              max={72}
+              step={4}
+              onValueChange={([v]) => updateConfig({ bubbleSize: v })}
+            />
+          </Field>
+          <Field label={`Width — ${config.panelWidth}px`} hint="Panel width">
+            <Slider
+              value={[config.panelWidth]}
+              min={320}
+              max={520}
+              step={20}
+              onValueChange={([v]) => updateConfig({ panelWidth: v })}
+            />
+          </Field>
+          <Field label={`Height — ${config.panelHeight}px`} hint="Panel height">
+            <Slider
+              value={[config.panelHeight]}
+              min={400}
+              max={800}
+              step={20}
+              onValueChange={([v]) => updateConfig({ panelHeight: v })}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="Sound & Haptics">
+        <Field label="Message Sound">
+          <Select
+            value={config.messageSound}
+            onValueChange={(v) => updateConfig({ messageSound: v })}
+          >
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="none">None (Silent)</SelectItem>
+              <SelectItem value="pop">Pop</SelectItem>
+              <SelectItem value="chime">Chime</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Toggle label="Send Sound" hint="Play sound when sending a message" checked={config.sendSound} onChange={(v) => updateConfig({ sendSound: v })} />
+        <Toggle label="Haptic Feedback" hint="Vibration on mobile interactions" checked={config.hapticFeedback} onChange={(v) => updateConfig({ hapticFeedback: v })} />
+      </Section>
     </div>
   );
 }
@@ -214,24 +308,46 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
         <p className="text-xs text-white/30 mb-3">
           Users can override this in their own settings. This sets the default when they first visit.
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {WIDGET_THEMES.map((theme) => (
             <button
               key={theme.id}
               onClick={() => updateConfig({ defaultTheme: theme.id })}
-              className={`group relative flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all ${
+              className={`group relative flex flex-col gap-3 rounded-xl border p-4 text-left transition-all ${
                 config.defaultTheme === theme.id
                   ? "border-[#2EB9DF]/50 ring-1 ring-[#2EB9DF]/30 bg-[#2EB9DF]/5"
                   : "border-white/[0.06] hover:border-white/[0.12] bg-white/[0.01]"
               }`}
             >
-              <div
-                className="h-5 w-5 shrink-0 rounded-full border border-white/10"
-                style={{ backgroundColor: theme.preview }}
-              />
+              {/* Theme preview strip */}
+              <div className="flex gap-1.5">
+                <div
+                  className="h-10 w-10 rounded-lg border border-white/10 shrink-0"
+                  style={{ backgroundColor: theme.preview }}
+                />
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <div
+                    className="h-3 rounded-full w-3/4"
+                    style={{ backgroundColor: theme.accent, opacity: 0.3 }}
+                  />
+                  <div className="h-2 rounded-full w-1/2 bg-white/10" />
+                  <div className="h-2 rounded-full w-2/3 bg-white/5" />
+                </div>
+                <div
+                  className="h-10 w-16 rounded-lg shrink-0 flex items-center justify-center text-[8px] font-bold"
+                  style={{ background: theme.id === "golden" ? "linear-gradient(135deg,#d4a056,#8a5a1f)" : "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff" }}
+                >
+                  BQ
+                </div>
+              </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-white/70 truncate">{theme.name}</p>
-                <p className="text-[9px] text-white/25 uppercase">{theme.type}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-white/80 truncate">{theme.name}</p>
+                  {config.defaultTheme === theme.id && (
+                    <span className="rounded-full bg-[#2EB9DF]/20 px-2 py-0.5 text-[9px] font-bold text-[#2EB9DF] uppercase">Active</span>
+                  )}
+                </div>
+                <p className="text-[10px] text-white/30 mt-0.5">{theme.description}</p>
               </div>
               {config.defaultTheme === theme.id && (
                 <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#2EB9DF]" />
@@ -239,6 +355,21 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
             </button>
           ))}
         </div>
+      </Section>
+
+      <Section title="Online Indicators">
+        <Toggle
+          label="Show Online Count"
+          hint="Display number of online users in header"
+          checked={config.showOnlineCount}
+          onChange={(v) => updateConfig({ showOnlineCount: v })}
+        />
+        <Toggle
+          label="Show Typing Indicator"
+          hint="Show 'X is typing' for all users"
+          checked={config.showTypingIndicator}
+          onChange={(v) => updateConfig({ showTypingIndicator: v })}
+        />
       </Section>
     </div>
   );
@@ -548,12 +679,15 @@ export function ConfigPanel({ config, updateConfig, activeTab }: ConfigPanelProp
   const props: ConfigPanelProps = { config, updateConfig, activeTab };
 
   const tabMap: Record<string, React.ReactNode> = {
+    dashboard: <DashboardTab config={config} updateConfig={updateConfig} />,
     appearance: <AppearanceTab {...props} />,
     themes: <ThemesTab {...props} />,
     behavior: <BehaviorTab {...props} />,
     profile: <ProfileTab {...props} />,
     security: <SecurityTab {...props} />,
     advanced: <AdvancedTab {...props} />,
+    moderation: <ModerationTab config={config} updateConfig={updateConfig} />,
+    announcements: <AnnouncementsTab config={config} updateConfig={updateConfig} />,
   };
 
   return (

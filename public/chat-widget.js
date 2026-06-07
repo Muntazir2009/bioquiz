@@ -109,8 +109,8 @@ const EMOJI_LIST = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','�
 // v9.2: Full emoji reaction picker — categorized like WhatsApp's keyboard
 const REACTION_CATEGORIES = {
   '⭐': ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','🫶','🤯','✨'],
-  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
-  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️'],
+  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','😝','🤔','🤐','🤨','😐','😑','😶','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬'],
+  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','👀'],
   '🐶': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🐘','🦛','🦏','🐪','🐫','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🦢','🦩','🕊️','🐇'],
   '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🥛','☕','🍵','🧃','🥤'],
   '⚽': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🎱','🏓','🏸','🏒','🏑','🏏','🥅','⛳','🏹','🎣','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','🏂','🏋️','🤸','⛹️','🤾','🏌️','🏇','🧘','🏄','🏊','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎫','🎪','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🎻','🎲','♟️','🎯','🎳','🎮','🧩'],
@@ -3631,10 +3631,16 @@ function loadSDK(){
 ───────────────────────────────────────── */
 function subscribeWidgetConfig(){
   if(!db) return;
+  var __lastWidgetConfig = null;
   try{
     db.ref("bq_widget_config/settings").on("value",function(snap){
       if(!snap || !snap.exists()) return;
       var c = snap.val();
+
+      // Skip if config hasn't changed
+      if(__lastWidgetConfig && JSON.stringify(__lastWidgetConfig) === JSON.stringify(c)) return;
+      __lastWidgetConfig = c;
+
       var panel = document.getElementById("bqp");
       if(!panel) return;
       var vars = {"--bq-accent":c.accentColor,"--bq-accent-2":c.accent2Color,"--bq-bg":c.bgColor,"--bq-bg-elevated":c.bgElevated,"--bq-text":c.textColor,"--bq-radius":c.borderRadius?c.borderRadius+"px":undefined,"--bq-bubble-mine":c.bubbleMine};
@@ -3645,6 +3651,50 @@ function subscribeWidgetConfig(){
       if(c.bubbleStyle)localStorage.setItem("bq_bubble_style",c.bubbleStyle);
       if(c.readReceipts!==undefined)localStorage.setItem("bq_read_receipts",c.readReceipts?"on":"off");
       window.__BQ_ADMIN_CONFIG__=c;
+      // v72: New config fields from admin panel
+      if(c.widgetPosition){
+        var bubble=document.getElementById("bqb");var panel=document.getElementById("bqp");
+        if(bubble){
+          var pos=c.widgetPosition;var ox=(c.widgetOffsetX||24)+"px";var oy=(c.widgetOffsetY||24)+"px";
+          bubble.style.cssText+=";position:fixed;";
+          if(pos==="bottom-right"){bubble.style.bottom=oy;bubble.style.right=ox;bubble.style.top="auto";bubble.style.left="auto";}
+          else if(pos==="bottom-left"){bubble.style.bottom=oy;bubble.style.left=ox;bubble.style.top="auto";bubble.style.right="auto";}
+          else if(pos==="top-right"){bubble.style.top=oy;bubble.style.right=ox;bubble.style.bottom="auto";bubble.style.left="auto";}
+          else if(pos==="top-left"){bubble.style.top=oy;bubble.style.left=ox;bubble.style.bottom="auto";bubble.style.right="auto";}
+        }
+        if(panel){
+          var pos2=c.widgetPosition;var ox2=(c.widgetOffsetX||24)+"px";var oy2=(c.widgetOffsetY||24)+"px";
+          if(pos2==="bottom-right"){panel.style.bottom=(parseInt(oy2)+70)+"px";panel.style.right=ox2;panel.style.top="auto";panel.style.left="auto";panel.style.transformOrigin="bottom right";}
+          else if(pos2==="bottom-left"){panel.style.bottom=(parseInt(oy2)+70)+"px";panel.style.left=ox2;panel.style.top="auto";panel.style.right="auto";panel.style.transformOrigin="bottom left";}
+          else if(pos2==="top-right"){panel.style.top=(parseInt(oy2)+70)+"px";panel.style.right=ox2;panel.style.bottom="auto";panel.style.left="auto";panel.style.transformOrigin="top right";}
+          else if(pos2==="top-left"){panel.style.top=(parseInt(oy2)+70)+"px";panel.style.left=ox2;panel.style.bottom="auto";panel.style.right="auto";panel.style.transformOrigin="top left";}
+        }
+      }
+      if(c.bubbleSize){var bbl=document.getElementById("bqb");if(bbl){bbl.style.width=c.bubbleSize+"px";bbl.style.height=c.bubbleSize+"px";}}
+      if(c.panelWidth){var pnl=document.getElementById("bqp");if(pnl){pnl.style.width=c.panelWidth+"px";}}
+      if(c.panelHeight){var pnl2=document.getElementById("bqp");if(pnl2){pnl2.style.height=c.panelHeight+"px";pnl2.style.maxHeight="calc(100dvh - "+((c.widgetOffsetY||24)+70)+"px)";}}
+      if(c.announcementEnabled&&c.announcementText){if(!document.getElementById("bq-announcement")){var ann=document.createElement("div");ann.id="bq-announcement";ann.style.cssText="padding:6px 12px;font-size:11px;font-weight:600;text-align:center;background:"+(c.announcementColor||"#2EB9DF")+"15;color:"+(c.announcementColor||"#2EB9DF")+";border-bottom:1px solid "+(c.announcementColor||"#2EB9DF")+"30;font-family:Inter,sans-serif;cursor:pointer;";ann.textContent=c.announcementText;var hdr=panel&&panel.querySelector(".bqhdr");if(hdr&&hdr.parentNode)hdr.parentNode.insertBefore(ann,hdr);else if(panel)panel.insertBefore(ann,panel.firstChild);}else{document.getElementById("bq-announcement").textContent=c.announcementText;}}
+      else{var existingAnn=document.getElementById("bq-announcement");if(existingAnn)existingAnn.remove();}
+      if(c.welcomeEnabled!==undefined)localStorage.setItem("bq_welcome_enabled",c.welcomeEnabled?"on":"off");
+      if(c.welcomeMessage)localStorage.setItem("bq_welcome_message",c.welcomeMessage);
+      if(c.welcomeDelay)localStorage.setItem("bq_welcome_delay",c.welcomeDelay);
+      if(c.profanityFilter!==undefined)localStorage.setItem("bq_profanity_filter",c.profanityFilter?"on":"off");
+      if(c.slowMode!==undefined)localStorage.setItem("bq_slow_mode",c.slowMode?"on":"off");
+      if(c.slowModeInterval)localStorage.setItem("bq_slow_interval",c.slowModeInterval);
+      if(c.linkFilter!==undefined)localStorage.setItem("bq_link_filter",c.linkFilter?"on":"off");
+      if(c.spamProtection!==undefined)localStorage.setItem("bq_spam_protection",c.spamProtection?"on":"off");
+      if(c.rateLimitEnabled!==undefined)localStorage.setItem("bq_rate_limit",c.rateLimitEnabled?"on":"off");
+      if(c.rateLimitMessages)localStorage.setItem("bq_rate_limit_msgs",c.rateLimitMessages);
+      if(c.rateLimitInterval)localStorage.setItem("bq_rate_limit_interval",c.rateLimitInterval);
+      if(c.streaksEnabled!==undefined)localStorage.setItem("bq_streaks_enabled",c.streaksEnabled?"on":"off");
+      if(c.streakFreezeDays!==undefined)localStorage.setItem("bq_streak_freeze",c.streakFreezeDays);
+      if(c.streakMultiplier)localStorage.setItem("bq_streak_multiplier",c.streakMultiplier);
+      if(c.streakRewardMessage)localStorage.setItem("bq_streak_reward",c.streakRewardMessage);
+      if(c.showOnlineCount!==undefined)localStorage.setItem("bq_show_online_count",c.showOnlineCount?"on":"off");
+      if(c.showTypingIndicator!==undefined)localStorage.setItem("bq_show_typing_all",c.showTypingIndicator?"on":"off");
+      if(c.messageSound)localStorage.setItem("bq_message_sound",c.messageSound);
+      if(c.sendSound!==undefined)localStorage.setItem("bq_send_sound",c.sendSound?"on":"off");
+      if(c.hapticFeedback!==undefined)localStorage.setItem("bq_haptic",c.hapticFeedback?"on":"off");
       if(c.customCSS){var el=document.getElementById("bq-admin-css");if(!el){el=document.createElement("style");el.id="bq-admin-css";document.head.appendChild(el);}el.textContent=c.customCSS;}
     });
     db.ref("bq_widget_config/settings/widgetEnabled").on("value",function(snap){
@@ -3654,13 +3704,45 @@ function subscribeWidgetConfig(){
   }catch(e){console.warn("[BQ Config Listener]",e);}
 }
 
+/* ─────────────────────────────────────────
+   STREAK FIREBASE SYNC (v72)
+   Syncs streak data to Firebase so users can restore on new devices.
+   Path: bq_streaks/{uid}
+───────────────────────────────────────── */
+function syncStreakToFirebase(){
+  if(!db||!uid) return;
+  try{
+    var raw=localStorage.getItem("bq.streak.v2");
+    if(!raw) return;
+    var data=JSON.parse(raw);
+    if(!data||!data.count) return;
+    db.ref("bq_streaks/"+uid).once("value").then(function(snap){
+      var remote=snap.exists()?snap.val():null;
+      var localData={count:data.count,lastVisit:data.lastVisit,bestStreak:data.bestStreak||data.count};
+      if(remote){
+        // Merge: take the one with higher count or more recent
+        var remoteBest=Math.max(remote.bestStreak||0,remote.count);
+        var localBest=Math.max(localData.bestStreak,localData.count);
+        if(remote.lastVisit>localData.lastVisit&&remote.count>=localData.count){
+          localData={count:remote.count,lastVisit:remote.lastVisit,bestStreak:remoteBest};
+        } else {
+          localData.bestStreak=Math.max(localBest,remoteBest);
+        }
+      }
+      db.ref("bq_streaks/"+uid).set(localData);
+      // Also update localStorage with merged data
+      localStorage.setItem("bq.streak.v2",JSON.stringify(localData));
+    }).catch(function(){});
+  }catch(e){}
+}
+
 async function startDB(){
   if(db)return;
   try{
     await loadSDK();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();
+    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();syncStreakToFirebase();
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 
@@ -15924,6 +16006,12 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
   var DEFAULT = 'pure-black';
   var LS_KEY = 'bq_theme_v2';
 
+  // Flash fix: suppress transitions/animations during theme switches
+  var flashCss = document.createElement('style');
+  flashCss.id = 'bq-v71-flash-fix';
+  flashCss.textContent = '#bqp.bq-theme-switching, #bqp.bq-theme-switching * { transition: none !important; animation: none !important; }';
+  (document.head||document.documentElement).appendChild(flashCss);
+
   function norm(t){
     if(!t || ALLOWED.indexOf(t)<0) return DEFAULT;
     return t;
@@ -15933,9 +16021,17 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
     t = norm(t);
     var panel = document.getElementById('bqp');
     if(panel){
+      // Suppress transitions during theme switch to prevent flash
+      panel.classList.add('bq-theme-switching');
       var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
       cls.push('bq-theme-'+t);
       panel.className = cls.join(' ');
+      // Remove suppression after a frame
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          panel.classList.remove('bq-theme-switching');
+        });
+      });
     }
     document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
       ch.classList.toggle('sel', ch.dataset.t===t);
@@ -16043,13 +16139,11 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
     });
   }
 
-  // Run boot immediately and again after delays to catch late DOM
+  // Run boot immediately and once after a short delay to catch late DOM
   boot();
-  setTimeout(boot, 500);
-  setTimeout(boot, 1500);
-  setTimeout(boot, 3000);
+  setTimeout(boot, 1000);
 
-  // One-time cleanup interval (runs 10 times then stops)
+  // One-time cleanup interval (runs 3 times then stops)
   var _cleanupCount = 0;
   var _cleanupIv = setInterval(function(){
     removeOldStyles();
@@ -16059,8 +16153,8 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
       if(!hasValid) boot();
     }
     _cleanupCount++;
-    if(_cleanupCount > 10) clearInterval(_cleanupIv);
-  }, 2000);
+    if(_cleanupCount > 3) clearInterval(_cleanupIv);
+  }, 5000);
 
   try{ console.log('[bq] v71 definitive patch loaded — single source of truth, MutationObserver active'); }catch(_){}
 })();
