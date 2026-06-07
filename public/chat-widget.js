@@ -5160,10 +5160,21 @@ function renderMsg(ctx,msg,key){
       openProfileCard(tuid,tname,onlineU[tuid]);
     });
   });
-  // v9.3: Action toolbar — only on right-click (desktop) or long-press (mobile), NOT on regular tap.
-  // Long-press already opens reaction picker; right-click opens the action sheet.
+  // v71: TAP on bubble → show action toolbar (React/Reply/Copy/Star/etc)
+  // HOLD (long-press) → show reaction picker (emoji categories) — handled by attachPressGestures
+  // Right-click on desktop → also show action toolbar (same as tap)
   const _bbl=row.querySelector('.bqbbl');
   if(_bbl){
+    // Tap → action toolbar (but skip if long-press just fired)
+    _bbl.addEventListener('click',e=>{
+      if(e.target.closest('a,img,.bq-voice-play,.bqrp,.bqedit-inp,.bqedit-btn,.bq-ms-btn')) return;
+      if(typeof _bqLongPressFired!=='undefined' && _bqLongPressFired){
+        _bqLongPressFired=false; return; /* skip — long-press already opened reaction picker */
+      }
+      e.stopPropagation();
+      renderMsgActionSheet(ctx,key,msg,pfx,_bbl);
+    });
+    // Right-click → action toolbar (desktop)
     _bbl.addEventListener('contextmenu',e=>{
       if(e.target.closest('a,img,.bq-voice-play,.bqrp')) return;
       e.preventDefault();
@@ -8192,13 +8203,13 @@ setTimeout(_injectProfileUploads,1500);
     container.addEventListener('touchcancel',cancel);
   }
 
-  /* ── 4. LONG-PRESS → action sheet (React/Reply/Copy/etc), DOUBLE-TAP → ❤️ ── */
+  /* ── 4. LONG-PRESS → reaction picker, TAP → action toolbar (handled by per-bubble click in renderMsg) ── */
   const LONG_MS=600;
-  const DOUBLE_TAP_MS=320;
+  let _bqLongPressFired=false; /* flag so tap handler knows long-press already fired */
   function attachPressGestures(container){
     if(!container||container.dataset.bqPress) return;
     container.dataset.bqPress='1';
-    let pressT=null,pressBubble=null,lastTap=0,lastTapKey='',moved=false,sx=0,sy=0;
+    let pressT=null,pressBubble=null,moved=false,sx=0,sy=0;
 
     function findCtxKey(el){
       const row=el.closest('.bqr'); if(!row) return null;
@@ -8212,11 +8223,14 @@ setTimeout(_injectProfileUploads,1500);
       const ck=findCtxKey(bubble); if(!ck) return;
       moved=false; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
       pressBubble=bubble;
+      _bqLongPressFired=false;
       pressT=setTimeout(()=>{
         if(moved||!pressBubble||window._bqSwipeActive) return; /* v62: Also block if swipe started */
         bubble.classList.add('bq-press');
         if(navigator.vibrate) try{navigator.vibrate(15);}catch(_){}
+        _bqLongPressFired=true; /* flag that long-press fired, so tap handler skips */
         if(typeof openReactionPicker==='function') openReactionPicker(ck.ctx,ck.key);
+        if(typeof closeMsgActionSheet==='function') closeMsgActionSheet(); /* close any open action bar */
         setTimeout(()=>bubble.classList.remove('bq-press'),200);
         pressBubble=null;
       },LONG_MS);
@@ -8230,29 +8244,47 @@ setTimeout(_injectProfileUploads,1500);
       if(pressT){clearTimeout(pressT); pressT=null;}
       pressBubble?.classList.remove('bq-press'); pressBubble=null;
     });
+    /* v71: No more double-tap ❤️ — tap now opens action toolbar, long-press opens reaction picker */
+  }
 
-    // Double-tap to ❤️ (touch + mouse dblclick)
-    function heart(ctx,key,row){
-      if(typeof toggleRxn==='function'){
-        try{ toggleRxn(ctx,key,'❤️'); }catch(_){}
-      }
-      // pop animation
-      const pop=document.createElement('span'); pop.className='bq-heart-pop'; pop.textContent='❤️';
-      row.appendChild(pop); setTimeout(()=>pop.remove(),800);
+  /* v71: Desktop mouse long-press → reaction picker (hold mousedown for 600ms) */
+  function attachDesktopHoldGesture(container){
+    if(!container||container.dataset.bqDesktopHold) return;
+    container.dataset.bqDesktopHold='1';
+    let holdT=null,holdBubble=null;
+
+    function findCtxKey(el){
+      const row=el.closest('.bqr'); if(!row) return null;
+      const m=(row.id||'').match(/^bqmsg-(global|dm)-(.+)$/);
+      return m?{ctx:m[1],key:m[2],row}:null;
     }
-    container.addEventListener('click',e=>{
+    container.addEventListener('mousedown',e=>{
+      if(e.button!==0) return; /* only left click */
       if(document.body.classList.contains('bq-select-mode')) return;
       const bubble=e.target.closest('.bqbbl'); if(!bubble) return;
       const ck=findCtxKey(bubble); if(!ck) return;
-      const now=Date.now();
-      if(now-lastTap<DOUBLE_TAP_MS && lastTapKey===ck.key){
-        e.stopPropagation(); e.preventDefault();
-        heart(ck.ctx,ck.key,ck.row);
-        lastTap=0; lastTapKey='';
-      } else {
-        lastTap=now; lastTapKey=ck.key;
+      holdBubble=bubble;
+      holdT=setTimeout(()=>{
+        if(!holdBubble) return;
+        holdBubble.classList.add('bq-press');
+        _bqLongPressFired=true; /* flag so click handler skips */
+        if(typeof openReactionPicker==='function') openReactionPicker(ck.ctx,ck.key);
+        if(typeof closeMsgActionSheet==='function') closeMsgActionSheet();
+        setTimeout(()=>holdBubble?.classList.remove('bq-press'),200);
+        holdBubble=null;
+      },LONG_MS);
+    });
+    container.addEventListener('mousemove',e=>{
+      if(!holdT) return;
+      /* cancel if mouse moves too far */
+      if(Math.abs(e.movementX)>4||Math.abs(e.movementY)>4){
+        clearTimeout(holdT); holdT=null; holdBubble?.classList.remove('bq-press'); holdBubble=null;
       }
-    },true);
+    });
+    container.addEventListener('mouseup',e=>{
+      if(holdT){clearTimeout(holdT); holdT=null;}
+      holdBubble?.classList.remove('bq-press'); holdBubble=null;
+    });
   }
 
   /* ── 5. MULTI-SELECT + BULK DELETE ── */
@@ -8374,8 +8406,8 @@ setTimeout(_injectProfileUploads,1500);
 
   /* ── 7. MUTATION OBSERVER — wire gestures whenever lists/panels appear ── */
   function wireAll(){
-    const g=document.getElementById('bqgmsgs'); if(g){ attachSwipe(g); attachPressGestures(g); }
-    const d=document.getElementById('bqdmmsgs'); if(d){ attachSwipe(d); attachPressGestures(d); }
+    const g=document.getElementById('bqgmsgs'); if(g){ attachSwipe(g); attachPressGestures(g); attachDesktopHoldGesture(g); }
+    const d=document.getElementById('bqdmmsgs'); if(d){ attachSwipe(d); attachPressGestures(d); attachDesktopHoldGesture(d); }
     ['bq-emoji-tray','bq-gif-panel','bq-sticker-tray'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) attachSwipeClose(el, ()=>el.classList.remove('open','show'));
