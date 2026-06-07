@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import type { WidgetConfig, NotifPrefs } from "@/lib/defaults";
 import { WIDGET_THEMES, STATUS_OPTIONS } from "@/lib/defaults";
 import { SpotlightCard } from "./SpotlightCard";
-import { ShimmerButton } from "./ShimmerButton";
 import { DashboardTab } from "./DashboardTab";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +20,21 @@ import {
 } from "@/components/ui/select";
 import { ModerationTab } from "./ModerationTab";
 import { AnnouncementsTab } from "./AnnouncementsTab";
+import { ReactionsTab } from "./ReactionsTab";
+import { TemplatesTab } from "./TemplatesTab";
+import { MaintenanceTab } from "./MaintenanceTab";
+import { ActivityLogTab } from "./ActivityLogTab";
+import { ExportTab } from "./ExportTab";
+import {
+  Circle,
+  BookOpen,
+  Clock,
+  Minus,
+  ArrowDownRight,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowUpLeft,
+} from "lucide-react";
 
 interface ConfigPanelProps {
   config: WidgetConfig;
@@ -30,10 +44,13 @@ interface ConfigPanelProps {
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, icon }: { title: string; children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <SpotlightCard className="p-4 sm:p-5">
-      <h3 className="mb-4 text-sm font-semibold text-white/70">{title}</h3>
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/60">
+        {icon}
+        {title}
+      </h3>
       <div className="space-y-5">{children}</div>
     </SpotlightCard>
   );
@@ -43,8 +60,8 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-white/50">{label}</Label>
-        {hint && <span className="text-[10px] text-white/25">{hint}</span>}
+        <Label className="text-xs text-white/40">{label}</Label>
+        {hint && <span className="text-[10px] text-white/20">{hint}</span>}
       </div>
       {children}
     </div>
@@ -55,12 +72,48 @@ function Toggle({ label, hint, checked, onChange }: { label: string; hint?: stri
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <Label className="text-xs text-white/50">{label}</Label>
-        {hint && <p className="text-[10px] text-white/25 mt-0.5">{hint}</p>}
+        <Label className="text-xs text-white/40">{label}</Label>
+        {hint && <p className="text-[10px] text-white/20 mt-0.5">{hint}</p>}
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
+}
+
+// ─── Status Icon Helper ─────────────────────────────────────
+
+function StatusIcon({ type, color }: { type: string; color: string }) {
+  switch (type) {
+    case "circle":
+      return <Circle size={10} fill={color} stroke={color} />;
+    case "book":
+      return <BookOpen size={12} style={{ color }} />;
+    case "clock":
+      return <Clock size={12} style={{ color }} />;
+    case "minus":
+      return <Minus size={12} style={{ color }} />;
+    default:
+      return <Circle size={10} fill={color} stroke={color} />;
+  }
+}
+
+// ─── Position Icon Helper ───────────────────────────────────
+
+function PositionIcon({ pos }: { pos: string }) {
+  const size = 12;
+  const cls = "text-white/40";
+  switch (pos) {
+    case "bottom-right":
+      return <ArrowDownRight size={size} className={cls} />;
+    case "bottom-left":
+      return <ArrowDownLeft size={size} className={cls} />;
+    case "top-right":
+      return <ArrowUpRight size={size} className={cls} />;
+    case "top-left":
+      return <ArrowUpLeft size={size} className={cls} />;
+    default:
+      return <ArrowDownRight size={size} className={cls} />;
+  }
 }
 
 // ─── 1. APPEARANCE ──────────────────────────────────────────
@@ -203,6 +256,36 @@ function AppearanceTab({ config, updateConfig }: ConfigPanelProps) {
             style={{ background: config.bubbleMine }}
           />
         </Field>
+
+        <Field label="Open Animation">
+          <Select
+            value={config.openAnimation}
+            onValueChange={(v) => updateConfig({ openAnimation: v as WidgetConfig["openAnimation"] })}
+          >
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slide">Slide</SelectItem>
+              <SelectItem value="fade">Fade</SelectItem>
+              <SelectItem value="scale">Scale</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="Close Animation">
+          <Select
+            value={config.closeAnimation}
+            onValueChange={(v) => updateConfig({ closeAnimation: v as WidgetConfig["closeAnimation"] })}
+          >
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slide">Slide</SelectItem>
+              <SelectItem value="fade">Fade</SelectItem>
+              <SelectItem value="scale">Scale</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
       </Section>
 
       <Section title="Widget Position & Size">
@@ -214,11 +297,11 @@ function AppearanceTab({ config, updateConfig }: ConfigPanelProps) {
                 onClick={() => updateConfig({ widgetPosition: pos })}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all ${
                   config.widgetPosition === pos
-                    ? "border-[#2EB9DF]/40 bg-[#2EB9DF]/10 text-white/80"
+                    ? "border-white/20 bg-white/[0.06] text-white/80"
                     : "border-white/[0.06] text-white/40 hover:border-white/[0.12]"
                 }`}
               >
-                <span className="text-[10px]">{pos === "bottom-right" ? "↘️" : pos === "bottom-left" ? "↙️" : pos === "top-right" ? "↗️" : "↖️"}</span>
+                <PositionIcon pos={pos} />
                 <span className="capitalize">{pos.replace("-", " ")}</span>
               </button>
             ))}
@@ -305,7 +388,7 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
   return (
     <div className="space-y-4">
       <Section title="Default Theme for New Users">
-        <p className="text-xs text-white/30 mb-3">
+        <p className="text-xs text-white/25 mb-3">
           Users can override this in their own settings. This sets the default when they first visit.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -315,7 +398,7 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
               onClick={() => updateConfig({ defaultTheme: theme.id })}
               className={`group relative flex flex-col gap-3 rounded-xl border p-4 text-left transition-all ${
                 config.defaultTheme === theme.id
-                  ? "border-[#2EB9DF]/50 ring-1 ring-[#2EB9DF]/30 bg-[#2EB9DF]/5"
+                  ? "border-white/20 ring-1 ring-white/10 bg-white/[0.04]"
                   : "border-white/[0.06] hover:border-white/[0.12] bg-white/[0.01]"
               }`}
             >
@@ -335,7 +418,7 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
                 </div>
                 <div
                   className="h-10 w-16 rounded-lg shrink-0 flex items-center justify-center text-[8px] font-bold"
-                  style={{ background: theme.id === "golden" ? "linear-gradient(135deg,#d4a056,#8a5a1f)" : "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff" }}
+                  style={{ background: theme.id === "golden" ? "linear-gradient(135deg,#d4a056,#8a5a1f)" : "linear-gradient(135deg,#fff,#888)", color: "#000" }}
                 >
                   BQ
                 </div>
@@ -344,14 +427,11 @@ function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-white/80 truncate">{theme.name}</p>
                   {config.defaultTheme === theme.id && (
-                    <span className="rounded-full bg-[#2EB9DF]/20 px-2 py-0.5 text-[9px] font-bold text-[#2EB9DF] uppercase">Active</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold text-white/60 uppercase">Active</span>
                   )}
                 </div>
-                <p className="text-[10px] text-white/30 mt-0.5">{theme.description}</p>
+                <p className="text-[10px] text-white/25 mt-0.5">{theme.description}</p>
               </div>
-              {config.defaultTheme === theme.id && (
-                <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#2EB9DF]" />
-              )}
             </button>
           ))}
         </div>
@@ -430,6 +510,12 @@ function BehaviorTab({ config, updateConfig }: ConfigPanelProps) {
         </Field>
       </Section>
 
+      <Section title="Chat Features">
+        <Toggle label="Image Upload" hint="Allow users to send images" checked={config.imageUpload} onChange={(v) => updateConfig({ imageUpload: v })} />
+        <Toggle label="Voice Messages" hint="Allow audio messages" checked={config.voiceMessages} onChange={(v) => updateConfig({ voiceMessages: v })} />
+        <Toggle label="File Sharing" hint="Allow document sharing" checked={config.fileSharing} onChange={(v) => updateConfig({ fileSharing: v })} />
+      </Section>
+
       <Section title="Notifications">
         <Toggle label="In-App Banners" checked={config.notifPrefs.inApp} onChange={(v) => updateNotif("inApp", v)} />
         <Toggle label="Push Notifications" hint="Browser native push" checked={config.notifPrefs.push} onChange={(v) => updateNotif("push", v)} />
@@ -438,6 +524,12 @@ function BehaviorTab({ config, updateConfig }: ConfigPanelProps) {
         <Toggle label="Global Chat Alerts" checked={config.notifPrefs.globalChat} onChange={(v) => updateNotif("globalChat", v)} />
         <Toggle label="DM Alerts" checked={config.notifPrefs.dms} onChange={(v) => updateNotif("dms", v)} />
         <Toggle label="Mention Alerts" hint="@username pings" checked={config.notifPrefs.mentions} onChange={(v) => updateNotif("mentions", v)} />
+      </Section>
+
+      <Section title="Privacy">
+        <Toggle label="Show Read Receipts" hint="Let users see when messages are read" checked={config.showReadReceipts} onChange={(v) => updateConfig({ showReadReceipts: v })} />
+        <Toggle label="Show Presence" hint="Show when users are online" checked={config.showPresence} onChange={(v) => updateConfig({ showPresence: v })} />
+        <Toggle label="Allow Delete Messages" hint="Users can delete their own messages" checked={config.allowDeleteMessages} onChange={(v) => updateConfig({ allowDeleteMessages: v })} />
       </Section>
 
       <Section title="Disappearing Messages">
@@ -478,7 +570,7 @@ function ProfileTab({ config, updateConfig }: ConfigPanelProps) {
             >
               {config.botInitials || "BQ"}
             </div>
-            <span className="text-[10px] text-white/25">Avatar</span>
+            <span className="text-[10px] text-white/20">Avatar</span>
           </div>
           <div className="flex-1 space-y-4">
             <Field label="Display Name">
@@ -509,11 +601,11 @@ function ProfileTab({ config, updateConfig }: ConfigPanelProps) {
                 onClick={() => updateConfig({ botStatus: s.id as WidgetConfig["botStatus"] })}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all ${
                   config.botStatus === s.id
-                    ? "border-[#2EB9DF]/40 bg-[#2EB9DF]/10 text-white/80"
+                    ? "border-white/20 bg-white/[0.06] text-white/80"
                     : "border-white/[0.06] text-white/40 hover:border-white/[0.12]"
                 }`}
               >
-                <span>{s.icon}</span>
+                <StatusIcon type={s.iconType} color={s.color} />
                 <span>{s.label}</span>
               </button>
             ))}
@@ -566,7 +658,7 @@ function SecurityTab({ config, updateConfig }: ConfigPanelProps) {
         />
         <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium text-center ${
           config.widgetEnabled
-            ? "bg-emerald-500/10 text-emerald-400"
+            ? "bg-white/[0.04] text-white/50"
             : "bg-red-500/10 text-red-400"
         }`}>
           {config.widgetEnabled ? "WIDGET ACTIVE" : "WIDGET DISABLED"}
@@ -661,6 +753,26 @@ function AdvancedTab({ config, updateConfig }: ConfigPanelProps) {
         </Field>
       </Section>
 
+      <Section title="Emoji Settings">
+        <Field label="Default Skin Tone">
+          <Select
+            value={config.emojiSkinTone}
+            onValueChange={(v) => updateConfig({ emojiSkinTone: v as WidgetConfig["emojiSkinTone"] })}
+          >
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="medium-light">Medium Light</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="medium-dark">Medium Dark</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Toggle label="Frequent Emoji Tracking" hint="Track and suggest frequently used emojis" checked={config.frequentEmojiTracking} onChange={(v) => updateConfig({ frequentEmojiTracking: v })} />
+      </Section>
+
       <Section title="Debug">
         <Toggle
           label="Debug Mode"
@@ -688,6 +800,11 @@ export function ConfigPanel({ config, updateConfig, activeTab }: ConfigPanelProp
     advanced: <AdvancedTab {...props} />,
     moderation: <ModerationTab config={config} updateConfig={updateConfig} />,
     announcements: <AnnouncementsTab config={config} updateConfig={updateConfig} />,
+    reactions: <ReactionsTab config={config} updateConfig={updateConfig} />,
+    templates: <TemplatesTab config={config} updateConfig={updateConfig} />,
+    maintenance: <MaintenanceTab config={config} updateConfig={updateConfig} />,
+    activity: <ActivityLogTab config={config} updateConfig={updateConfig} />,
+    export: <ExportTab config={config} updateConfig={updateConfig} />,
   };
 
   return (

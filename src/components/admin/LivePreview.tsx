@@ -4,10 +4,25 @@ import { useEffect, useRef } from "react";
 import type { WidgetConfig } from "@/lib/defaults";
 import { WIDGET_THEMES } from "@/lib/defaults";
 import { STATUS_OPTIONS } from "@/lib/defaults";
-import { MessageCircle, X, Send, ChevronDown, Phone, Smile, ImageIcon } from "lucide-react";
+import { MessageCircle, X, Send, ChevronDown, Phone, Smile, ImageIcon, Circle, BookOpen, Clock, Minus } from "lucide-react";
 
 interface LivePreviewProps {
   config: WidgetConfig;
+}
+
+function StatusDot({ id, color }: { id: string; color: string }) {
+  switch (id) {
+    case "online":
+      return <Circle size={6} fill={color} stroke={color} />;
+    case "studying":
+      return <BookOpen size={8} style={{ color }} />;
+    case "away":
+      return <Clock size={8} style={{ color }} />;
+    case "busy":
+      return <Minus size={8} style={{ color }} />;
+    default:
+      return <Circle size={6} fill={color} stroke={color} />;
+  }
 }
 
 export function LivePreview({ config }: LivePreviewProps) {
@@ -51,23 +66,26 @@ export function LivePreview({ config }: LivePreviewProps) {
     ? "linear-gradient(180deg,#1a0d04,#0a0503)"
     : config.bgElevated;
 
+  // Template list
+  const templates = config.messageTemplates?.split("\n").filter(Boolean).slice(0, 3) ?? ["Cell Structure", "Mitosis vs Meiosis", "DNA"];
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-4 py-2.5">
-        <span className="text-xs font-medium text-white/40 uppercase tracking-wider">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+        <span className="text-[11px] font-medium text-white/30 uppercase tracking-wider">
           Live Preview
         </span>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-red-400/60" />
-          <span className="h-2 w-2 rounded-full bg-yellow-400/60" />
-          <span className="h-2 w-2 rounded-full bg-emerald-400/60" />
+        <div className="flex items-center gap-1">
+          <span className="h-[6px] w-[6px] rounded-full bg-white/10" />
+          <span className="h-[6px] w-[6px] rounded-full bg-white/10" />
+          <span className="h-[6px] w-[6px] rounded-full bg-white/10" />
         </div>
       </div>
 
       <div className="flex-1 overflow-auto bg-[#0a0a0f] p-3 sm:p-4">
         {/* Phone frame */}
         <div
-          className="mx-auto flex flex-col h-full max-w-[340px] overflow-hidden border border-white/[0.06]"
+          className="mx-auto flex flex-col h-full max-w-[340px] overflow-hidden border border-white/[0.08]"
           style={{
             borderRadius: config.borderRadius,
             background: bg,
@@ -88,6 +106,16 @@ export function LivePreview({ config }: LivePreviewProps) {
               {config.announcementDismiss && (
                 <X size={10} className="shrink-0 opacity-50" />
               )}
+            </div>
+          )}
+
+          {/* Maintenance banner */}
+          {config.maintenanceEnabled && (
+            <div
+              className="flex items-center justify-center gap-2 px-3 py-4 text-[10px] text-white/40"
+              style={{ background: "rgba(255,255,255,0.03)" }}
+            >
+              <span>{config.maintenanceMessage || "Under maintenance"}</span>
             </div>
           )}
 
@@ -114,10 +142,7 @@ export function LivePreview({ config }: LivePreviewProps) {
                   {config.botName}
                 </p>
                 <div className="flex items-center gap-1">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ backgroundColor: statusInfo?.color }}
-                  />
+                  <StatusDot id={statusInfo?.id ?? "online"} color={statusInfo?.color ?? "#34d399"} />
                   <p className="text-[9px]" style={{ color: statusInfo?.color }}>
                     {statusInfo?.label}
                     {config.showOnlineCount && (
@@ -226,9 +251,9 @@ export function LivePreview({ config }: LivePreviewProps) {
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
                   style={{
-                    background: isGolden ? "rgba(212,160,86,.12)" : "rgba(96,165,250,.08)",
+                    background: "rgba(255,255,255,0.04)",
                     color: themeAccent,
-                    border: `1px solid ${isGolden ? "rgba(212,160,86,.2)" : "rgba(96,165,250,.15)"}`,
+                    border: `1px solid rgba(255,255,255,0.08)`,
                   }}
                 >
                   🔥 5-day streak!
@@ -256,9 +281,9 @@ export function LivePreview({ config }: LivePreviewProps) {
           </div>
 
           {/* Quick replies */}
-          {config.disappearingEnabled === false && (
+          {!config.maintenanceEnabled && (
             <div className="flex flex-wrap gap-1.5 px-3 pb-2 shrink-0">
-              {["Cell Structure", "Mitosis vs Meiosis", "DNA"].map((label) => (
+              {templates.map((label) => (
                 <button
                   key={label}
                   className="rounded-full border px-2.5 py-1 text-[10px] transition-colors"
@@ -274,30 +299,34 @@ export function LivePreview({ config }: LivePreviewProps) {
           )}
 
           {/* Input bar */}
-          <div
-            className="flex items-center gap-2 border-t px-3 py-2 shrink-0"
-            style={{ borderColor: themeInputBorder, background: themeBgElevated }}
-          >
-            <Smile size={16} style={{ color: isGolden ? "#d4a056" : config.accentColor, opacity: 0.6 }} />
+          {!config.maintenanceEnabled && (
             <div
-              className="flex-1 rounded-full px-3 py-1.5 text-[10px]"
-              style={{
-                background: isGolden ? "#1a0d04" : "rgba(255,255,255,0.05)",
-                color: isGolden ? "rgba(244,227,199,.3)" : "rgba(255,255,255,0.3)",
-                borderRadius: config.borderRadius / 2,
-                border: `1px solid ${themeInputBorder}`,
-              }}
+              className="flex items-center gap-2 border-t px-3 py-2 shrink-0"
+              style={{ borderColor: themeInputBorder, background: themeBgElevated }}
             >
-              Type a message...
+              <Smile size={16} style={{ color: themeAccent, opacity: 0.6 }} />
+              <div
+                className="flex-1 rounded-full px-3 py-1.5 text-[10px]"
+                style={{
+                  background: isGolden ? "#1a0d04" : "rgba(255,255,255,0.05)",
+                  color: isGolden ? "rgba(244,227,199,.3)" : "rgba(255,255,255,0.3)",
+                  borderRadius: config.borderRadius / 2,
+                  border: `1px solid ${themeInputBorder}`,
+                }}
+              >
+                Type a message...
+              </div>
+              {config.imageUpload && (
+                <ImageIcon size={16} style={{ color: themeAccent, opacity: 0.6 }} />
+              )}
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ backgroundColor: themeAccent }}
+              >
+                <Send size={12} className="text-white" />
+              </div>
             </div>
-            <ImageIcon size={16} style={{ color: isGolden ? "#d4a056" : config.accentColor, opacity: 0.6 }} />
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full"
-              style={{ backgroundColor: themeAccent }}
-            >
-              <Send size={12} className="text-white" />
-            </div>
-          </div>
+          )}
 
           {/* Bottom nav preview */}
           <div
@@ -305,19 +334,19 @@ export function LivePreview({ config }: LivePreviewProps) {
             style={{ background: themeBgElevated, borderTop: `1px solid ${themeInputBorder}` }}
           >
             {[
-              { label: "Chat", active: true },
-              { label: "DMs", active: false },
-              { label: "Online", active: false },
-              { label: "Settings", active: false },
+              { label: "Chat", Icon: MessageCircle, active: true },
+              { label: "DMs", Icon: Send, active: false },
+              { label: "Online", Icon: Circle, active: false },
+              { label: "Settings", Icon: ChevronDown, active: false },
             ].map((tab) => (
               <div
                 key={tab.label}
                 className="flex flex-col items-center gap-0.5 px-2 py-0.5"
               >
-                <div
-                  className="h-3 w-3 rounded-sm"
+                <tab.Icon
+                  size={10}
                   style={{
-                    background: tab.active ? themeAccent : "rgba(255,255,255,.15)",
+                    color: tab.active ? themeAccent : "rgba(255,255,255,.15)",
                   }}
                 />
                 <span
@@ -335,17 +364,17 @@ export function LivePreview({ config }: LivePreviewProps) {
       </div>
 
       {/* Config summary footer */}
-      <div className="border-t border-white/[0.04] px-4 py-2 space-y-1">
+      <div className="border-t border-white/[0.06] px-4 py-2 space-y-1">
         <div className="flex items-center justify-between text-[9px]">
-          <span className="text-white/25">Position</span>
+          <span className="text-white/20">Position</span>
           <span className="text-white/40 font-medium">{config.widgetPosition.replace("-", " ")}</span>
         </div>
         <div className="flex items-center justify-between text-[9px]">
-          <span className="text-white/25">Panel Size</span>
+          <span className="text-white/20">Panel Size</span>
           <span className="text-white/40 font-medium">{config.panelWidth}×{config.panelHeight}</span>
         </div>
         <div className="flex items-center justify-between text-[9px]">
-          <span className="text-white/25">Bubble</span>
+          <span className="text-white/20">Bubble</span>
           <span className="text-white/40 font-medium">{config.bubbleSize}px</span>
         </div>
       </div>

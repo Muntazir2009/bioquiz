@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Megaphone, MessageSquare, Flame, Hand } from "lucide-react";
 
 interface TabProps {
@@ -17,10 +16,13 @@ interface TabProps {
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, icon }: { title: string; children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <SpotlightCard className="p-4 sm:p-5">
-      <h3 className="mb-4 text-sm font-semibold text-white/70">{title}</h3>
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/60">
+        {icon}
+        {title}
+      </h3>
       <div className="space-y-5">{children}</div>
     </SpotlightCard>
   );
@@ -30,8 +32,8 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-white/50">{label}</Label>
-        {hint && <span className="text-[10px] text-white/25">{hint}</span>}
+        <Label className="text-xs text-white/40">{label}</Label>
+        {hint && <span className="text-[10px] text-white/20">{hint}</span>}
       </div>
       {children}
     </div>
@@ -42,8 +44,8 @@ function Toggle({ label, hint, checked, onChange }: { label: string; hint?: stri
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <Label className="text-xs text-white/50">{label}</Label>
-        {hint && <p className="text-[10px] text-white/25 mt-0.5">{hint}</p>}
+        <Label className="text-xs text-white/40">{label}</Label>
+        {hint && <p className="text-[10px] text-white/20 mt-0.5">{hint}</p>}
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
@@ -56,11 +58,7 @@ export function AnnouncementsTab({ config, updateConfig }: TabProps) {
   return (
     <div className="space-y-4">
       {/* Announcement Banner */}
-      <Section title="Announcement Banner">
-        <div className="flex items-center gap-2 mb-3">
-          <Megaphone size={14} className="text-white/30" />
-          <span className="text-[10px] text-white/25 uppercase tracking-wider">Top banner</span>
-        </div>
+      <Section title="Announcement Banner" icon={<Megaphone size={14} className="text-white/30" />}>
         <Toggle
           label="Enable Announcement"
           hint="Shows a banner at the top of the chat"
@@ -112,11 +110,7 @@ export function AnnouncementsTab({ config, updateConfig }: TabProps) {
       </Section>
 
       {/* Welcome Message */}
-      <Section title="Welcome Message">
-        <div className="flex items-center gap-2 mb-3">
-          <MessageSquare size={14} className="text-white/30" />
-          <span className="text-[10px] text-white/25 uppercase tracking-wider">Greeting</span>
-        </div>
+      <Section title="Welcome Message" icon={<MessageSquare size={14} className="text-white/30" />}>
         <Toggle
           label="Enable Welcome Message"
           hint="Shows a greeting to new users"
@@ -147,11 +141,7 @@ export function AnnouncementsTab({ config, updateConfig }: TabProps) {
       </Section>
 
       {/* Streak Settings */}
-      <Section title="Streak Settings">
-        <div className="flex items-center gap-2 mb-3">
-          <Flame size={14} className="text-white/30" />
-          <span className="text-[10px] text-white/25 uppercase tracking-wider">Daily streaks</span>
-        </div>
+      <Section title="Streak Settings" icon={<Flame size={14} className="text-white/30" />}>
         <Toggle
           label="Enable Streaks"
           hint="Track daily visit streaks"

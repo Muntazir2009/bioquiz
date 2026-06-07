@@ -15,6 +15,12 @@ import {
   Zap,
   Clock,
   Users,
+  Circle,
+  BookOpen,
+  Wrench,
+  Smile,
+  MessageSquareText,
+  Download,
 } from "lucide-react";
 
 // ─── Props ──────────────────────────────────────────────────
@@ -58,20 +64,20 @@ function StatusCard({
   icon,
   label,
   value,
-  color,
+  accent,
   pulse,
 }: {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
-  color?: string;
+  accent?: boolean;
   pulse?: boolean;
 }) {
   return (
     <SpotlightCard className="p-4 sm:p-5 group">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-white/30 mb-1.5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-white/25 mb-1.5">
             {label}
           </p>
           <div className="flex items-center gap-2">{value}</div>
@@ -79,8 +85,8 @@ function StatusCard({
         <div
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors"
           style={{
-            backgroundColor: color ? `${color}15` : "rgba(255,255,255,0.03)",
-            color: color ?? "rgba(255,255,255,0.3)",
+            backgroundColor: accent ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+            color: accent ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)",
           }}
         >
           {icon}
@@ -89,10 +95,10 @@ function StatusCard({
       {pulse && (
         <div className="mt-3 flex items-center gap-1.5">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style={{ backgroundColor: color }} />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40 opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white/60" />
           </span>
-          <span className="text-[10px] text-white/25">Live</span>
+          <span className="text-[10px] text-white/20">Live</span>
         </div>
       )}
     </SpotlightCard>
@@ -107,20 +113,18 @@ function QuickAction({
   description,
   checked,
   onChange,
-  activeColor = "#2EB9DF",
 }: {
   icon: React.ReactNode;
   label: string;
   description: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-  activeColor?: string;
 }) {
   return (
     <div
       className={`flex items-center justify-between gap-3 rounded-lg border px-3.5 py-3 transition-all cursor-pointer ${
         checked
-          ? "border-white/[0.08] bg-white/[0.03]"
+          ? "border-white/[0.08] bg-white/[0.04]"
           : "border-white/[0.04] bg-transparent hover:border-white/[0.08]"
       }`}
       onClick={() => onChange(!checked)}
@@ -129,17 +133,17 @@ function QuickAction({
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors"
           style={{
-            backgroundColor: checked ? `${activeColor}18` : "rgba(255,255,255,0.03)",
-            color: checked ? activeColor : "rgba(255,255,255,0.25)",
+            backgroundColor: checked ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+            color: checked ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)",
           }}
         >
           {icon}
         </div>
         <div className="min-w-0">
-          <p className={`text-xs font-medium truncate ${checked ? "text-white/70" : "text-white/40"}`}>
+          <p className={`text-xs font-medium truncate ${checked ? "text-white/60" : "text-white/35"}`}>
             {label}
           </p>
-          <p className="text-[10px] text-white/20 truncate">{description}</p>
+          <p className="text-[10px] text-white/15 truncate">{description}</p>
         </div>
       </div>
       <Switch
@@ -163,7 +167,7 @@ function SummaryRow({
 }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-xs text-white/30">{label}</span>
+      <span className="text-xs text-white/25">{label}</span>
       <div className="flex items-center gap-2">{children}</div>
     </div>
   );
@@ -172,7 +176,6 @@ function SummaryRow({
 // ─── Main Component ─────────────────────────────────────────
 
 export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
-  // Timestamp of when this dashboard mounted — serves as "config version"
   const [mountedAt] = useState(Date.now);
 
   return (
@@ -184,12 +187,12 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
           <StatusCard
             icon={<Power size={16} />}
             label="Widget Status"
-            color={config.widgetEnabled ? "#34d399" : "#f87171"}
+            accent={config.widgetEnabled}
             pulse={config.widgetEnabled}
             value={
               <span
                 className={`text-sm font-semibold ${
-                  config.widgetEnabled ? "text-emerald-400" : "text-red-400"
+                  config.widgetEnabled ? "text-white/70" : "text-red-400/70"
                 }`}
               >
                 {config.widgetEnabled ? "Active" : "Disabled"}
@@ -201,14 +204,14 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
           <StatusCard
             icon={<Palette size={16} />}
             label="Default Theme"
-            color="#2EB9DF"
+            accent
             value={
               <div className="flex items-center gap-2">
                 <div
                   className="h-4 w-4 shrink-0 rounded-full border border-white/10"
                   style={{ backgroundColor: themePreviewColor(config.defaultTheme) }}
                 />
-                <span className="text-sm font-medium text-white/70 truncate">
+                <span className="text-sm font-medium text-white/60 truncate">
                   {themeName(config.defaultTheme)}
                 </span>
               </div>
@@ -219,15 +222,15 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
           <StatusCard
             icon={<Activity size={16} />}
             label="Sync Status"
-            color="#2EB9DF"
+            accent
             pulse
             value={
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2EB9DF] opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2EB9DF]" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white/60" />
                 </span>
-                <span className="text-sm font-medium text-[#2EB9DF]">Connected</span>
+                <span className="text-sm font-medium text-white/60">Connected</span>
               </div>
             }
           />
@@ -236,9 +239,8 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
           <StatusCard
             icon={<Clock size={16} />}
             label="Last Updated"
-            color="#a78bfa"
             value={
-              <span className="text-sm font-medium text-white/60">
+              <span className="text-sm font-medium text-white/50">
                 {formatTimestamp(mountedAt)}
               </span>
             }
@@ -248,8 +250,8 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
 
       {/* ── Quick Actions ─────────────────────────────────── */}
       <SpotlightCard className="p-4 sm:p-5">
-        <h3 className="mb-4 text-sm font-semibold text-white/70 flex items-center gap-2">
-          <Zap size={14} className="text-[#2EB9DF]" />
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/60">
+          <Zap size={14} className="text-white/40" />
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -259,7 +261,6 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
             description="Master kill switch"
             checked={config.widgetEnabled}
             onChange={(v) => updateConfig({ widgetEnabled: v })}
-            activeColor={config.widgetEnabled ? "#34d399" : "#f87171"}
           />
           <QuickAction
             icon={<ShieldCheck size={14} />}
@@ -296,13 +297,27 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
             checked={config.rateLimitEnabled}
             onChange={(v) => updateConfig({ rateLimitEnabled: v })}
           />
+          <QuickAction
+            icon={<Wrench size={14} />}
+            label="Maintenance Mode"
+            description="Show maintenance banner"
+            checked={config.maintenanceEnabled}
+            onChange={(v) => updateConfig({ maintenanceEnabled: v })}
+          />
+          <QuickAction
+            icon={<Smile size={14} />}
+            label="Streaks"
+            description="Daily visit streaks"
+            checked={config.streaksEnabled}
+            onChange={(v) => updateConfig({ streaksEnabled: v })}
+          />
         </div>
       </SpotlightCard>
 
       {/* ── Configuration Summary ─────────────────────────── */}
       <SpotlightCard className="p-4 sm:p-5">
-        <h3 className="mb-3 text-sm font-semibold text-white/70 flex items-center gap-2">
-          <Palette size={14} className="text-[#2EB9DF]" />
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white/60">
+          <Palette size={14} className="text-white/40" />
           Configuration Summary
         </h3>
         <div className="divide-y divide-white/[0.04]">
@@ -311,29 +326,29 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
               className="h-4 w-4 rounded-full border border-white/10"
               style={{ backgroundColor: config.accentColor }}
             />
-            <span className="text-xs font-mono text-white/50">{config.accentColor}</span>
+            <span className="text-xs font-mono text-white/40">{config.accentColor}</span>
           </SummaryRow>
 
           <SummaryRow label="Bubble Style">
-            <span className="text-xs font-medium text-white/50 capitalize">
+            <span className="text-xs font-medium text-white/40 capitalize">
               {config.bubbleStyle}
             </span>
           </SummaryRow>
 
           <SummaryRow label="Font Size">
-            <span className="text-xs font-medium text-white/50 uppercase">
+            <span className="text-xs font-medium text-white/40 uppercase">
               {config.fontSize}
             </span>
           </SummaryRow>
 
           <SummaryRow label="Character Limit">
-            <span className="text-xs font-medium text-white/50">
+            <span className="text-xs font-medium text-white/40">
               {config.charLimit} chars
             </span>
           </SummaryRow>
 
           <SummaryRow label="Max Messages">
-            <span className="text-xs font-medium text-white/50">
+            <span className="text-xs font-medium text-white/40">
               {config.maxMessages} per chat
             </span>
           </SummaryRow>
@@ -342,17 +357,35 @@ export function DashboardTab({ config, updateConfig }: DashboardTabProps) {
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-medium ${
-                  config.autoOpen ? "text-emerald-400" : "text-white/30"
+                  config.autoOpen ? "text-white/50" : "text-white/25"
                 }`}
               >
                 {config.autoOpen ? "Enabled" : "Disabled"}
               </span>
               {config.autoOpen && (
-                <span className="text-[10px] text-white/25">
+                <span className="text-[10px] text-white/20">
                   ({(config.autoOpenDelay / 1000).toFixed(1)}s delay)
                 </span>
               )}
             </div>
+          </SummaryRow>
+
+          <SummaryRow label="Maintenance">
+            <span className={`text-xs font-medium ${config.maintenanceEnabled ? "text-amber-400/70" : "text-white/25"}`}>
+              {config.maintenanceEnabled ? "Enabled" : "Disabled"}
+            </span>
+          </SummaryRow>
+
+          <SummaryRow label="Reactions">
+            <span className="text-xs font-medium text-white/40">
+              {config.customReactions?.split(",").length ?? 0} emojis
+            </span>
+          </SummaryRow>
+
+          <SummaryRow label="Templates">
+            <span className="text-xs font-medium text-white/40">
+              {config.messageTemplates?.split("\n").filter(Boolean).length ?? 0} quick replies
+            </span>
           </SummaryRow>
         </div>
       </SpotlightCard>

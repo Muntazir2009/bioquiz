@@ -108,6 +108,34 @@ export interface WidgetConfig {
   // ── Online Indicators ──
   showOnlineCount: boolean;
   showTypingIndicator: boolean;   // show "X is typing" for all users
+
+  // ── Custom Reactions ──
+  customReactions: string;        // comma-separated emoji list
+
+  // ── Message Templates ──
+  messageTemplates: string;       // newline-separated quick reply templates
+
+  // ── Maintenance Mode ──
+  maintenanceEnabled: boolean;
+  maintenanceMessage: string;
+
+  // ── Chat Features ──
+  imageUpload: boolean;
+  voiceMessages: boolean;
+  fileSharing: boolean;
+
+  // ── Privacy ──
+  showReadReceipts: boolean;
+  showPresence: boolean;
+  allowDeleteMessages: boolean;
+
+  // ── Widget Animation ──
+  openAnimation: "slide" | "fade" | "scale" | "none";
+  closeAnimation: "slide" | "fade" | "scale" | "none";
+
+  // ── Emoji Settings ──
+  emojiSkinTone: "default" | "light" | "medium-light" | "medium" | "medium-dark" | "dark";
+  frequentEmojiTracking: boolean;
 }
 
 export const DEFAULT_CONFIG: WidgetConfig = {
@@ -214,6 +242,34 @@ export const DEFAULT_CONFIG: WidgetConfig = {
   // Online Indicators
   showOnlineCount: true,
   showTypingIndicator: true,
+
+  // Custom Reactions
+  customReactions: "❤️,😂,👍,😮,🎉,🤔,👏,💯",
+
+  // Message Templates
+  messageTemplates: "Help\nWhat is mitosis?\nExplain DNA replication\nCell division",
+
+  // Maintenance Mode
+  maintenanceEnabled: false,
+  maintenanceMessage: "Under maintenance. Please check back soon.",
+
+  // Chat Features
+  imageUpload: true,
+  voiceMessages: false,
+  fileSharing: false,
+
+  // Privacy
+  showReadReceipts: true,
+  showPresence: true,
+  allowDeleteMessages: true,
+
+  // Widget Animation
+  openAnimation: "slide",
+  closeAnimation: "slide",
+
+  // Emoji Settings
+  emojiSkinTone: "default",
+  frequentEmojiTracking: true,
 };
 
 // ─── Only two themes: Pure Black and Golden Brown ──────────
@@ -224,8 +280,8 @@ export const WIDGET_THEMES = [
 
 // ─── Status options ─────────────────────────────────────────
 export const STATUS_OPTIONS = [
-  { id: "online", label: "Online", color: "#34d399", icon: "🟢" },
-  { id: "studying", label: "Studying", color: "#60a5fa", icon: "📚" },
-  { id: "away", label: "Away", color: "#fbbf24", icon: "🟡" },
-  { id: "busy", label: "Busy", color: "#f87171", icon: "🔴" },
+  { id: "online", label: "Online", color: "#34d399", iconType: "circle" as const },
+  { id: "studying", label: "Studying", color: "#60a5fa", iconType: "book" as const },
+  { id: "away", label: "Away", color: "#fbbf24", iconType: "clock" as const },
+  { id: "busy", label: "Busy", color: "#f87171", iconType: "minus" as const },
 ] as const;

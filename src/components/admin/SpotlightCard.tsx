@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type MouseEvent } from "react";
-import { motion } from "framer-motion";
 
 interface SpotlightCardProps {
   children: ReactNode;
@@ -12,7 +11,7 @@ interface SpotlightCardProps {
 export function SpotlightCard({
   children,
   className = "",
-  spotlightColor = "rgba(46, 185, 223, 0.06)",
+  spotlightColor = "rgba(255, 255, 255, 0.03)",
 }: SpotlightCardProps) {
   const divRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -25,12 +24,12 @@ export function SpotlightCard({
   }
 
   return (
-    <motion.div
+    <div
       ref={divRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setOpacity(1)}
       onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm ${className}`}
+      className={`relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] transition-colors ${className}`}
     >
       {/* Spotlight overlay */}
       <div
@@ -41,6 +40,6 @@ export function SpotlightCard({
         }}
       />
       <div className="relative z-20">{children}</div>
-    </motion.div>
+    </div>
   );
 }

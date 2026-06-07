@@ -2,33 +2,25 @@
 
 import { motion } from "framer-motion";
 import type { SyncStatus } from "@/lib/useWidgetConfig";
+import { Cloud, CloudOff, Loader } from "lucide-react";
 
 interface SyncBadgeProps {
   status: SyncStatus;
 }
 
-const STATUS_CONFIG: Record<SyncStatus, { label: string; color: string; pulse: boolean }> = {
-  synced: { label: "Synced", color: "bg-emerald-400", pulse: false },
-  syncing: { label: "Syncing", color: "bg-[#2EB9DF]", pulse: true },
-  offline: { label: "Offline", color: "bg-red-400", pulse: false },
+const STATUS_CONFIG: Record<SyncStatus, { label: string; icon: React.ReactNode; color: string }> = {
+  synced: { label: "Synced", icon: <Cloud size={12} />, color: "text-white/50" },
+  syncing: { label: "Syncing", icon: <Loader size={12} className="animate-spin" />, color: "text-white/60" },
+  offline: { label: "Offline", icon: <CloudOff size={12} />, color: "text-red-400/70" },
 };
 
 export function SyncBadge({ status }: SyncBadgeProps) {
   const cfg = STATUS_CONFIG[status];
 
   return (
-    <div className="flex items-center gap-2 rounded-full bg-white/[0.03] px-3 py-1.5">
-      <span className="relative flex h-2 w-2">
-        {cfg.pulse && (
-          <motion.span
-            className={`absolute inset-0 rounded-full ${cfg.color} opacity-75`}
-            animate={{ scale: [1, 2.2], opacity: [0.7, 0] }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
-          />
-        )}
-        <span className={`relative inline-flex h-2 w-2 rounded-full ${cfg.color}`} />
-      </span>
-      <span className="text-xs text-white/50">{cfg.label}</span>
+    <div className="flex items-center gap-1.5 rounded-md bg-white/[0.03] px-2.5 py-1.5">
+      <span className={cfg.color}>{cfg.icon}</span>
+      <span className="text-[11px] text-white/40">{cfg.label}</span>
     </div>
   );
 }
