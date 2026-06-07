@@ -15819,38 +15819,33 @@ style.textContent = '\
   border-top:1px solid rgba(255,255,255,.08)!important;\
 }\
 \
-/* ═══ Liquid Glass — DM Message Bubbles ═══ */\
-#bqdmmsgs .bqr.mine .bqbbl{\
-  background:linear-gradient(135deg,rgba(96,165,250,.55),rgba(129,140,248,.45))!important;\
-  backdrop-filter:blur(16px) saturate(1.5)!important;\
-  -webkit-backdrop-filter:blur(16px) saturate(1.5)!important;\
-  border:1px solid rgba(255,255,255,.15)!important;\
-  box-shadow:0 4px 20px rgba(96,165,250,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;\
-}\
-\
-#bqdmmsgs .bqr.theirs .bqbbl{\
-  background:rgba(255,255,255,.06)!important;\
-  backdrop-filter:blur(16px) saturate(1.3)!important;\
-  -webkit-backdrop-filter:blur(16px) saturate(1.3)!important;\
-  border:1px solid rgba(255,255,255,.08)!important;\
-  box-shadow:0 4px 16px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.06)!important;\
-}\
-\
-/* ═══ Liquid Glass — Global Chat Bubbles ═══ */\
+/* ═══ Liquid Glass — ALL Message Bubbles (DM + Global) ═══ */\
+#bqdmmsgs .bqr.mine .bqbbl,\
 #bqgmsgs .bqr.mine .bqbbl{\
-  background:linear-gradient(135deg,rgba(96,165,250,.55),rgba(129,140,248,.45))!important;\
-  backdrop-filter:blur(16px) saturate(1.5)!important;\
-  -webkit-backdrop-filter:blur(16px) saturate(1.5)!important;\
-  border:1px solid rgba(255,255,255,.15)!important;\
-  box-shadow:0 4px 20px rgba(96,165,250,.18),inset 0 1px 0 rgba(255,255,255,.12)!important;\
+  background:rgba(96,165,250,.18)!important;\
+  backdrop-filter:blur(20px) saturate(1.8)!important;\
+  -webkit-backdrop-filter:blur(20px) saturate(1.8)!important;\
+  border:1px solid rgba(96,165,250,.22)!important;\
+  box-shadow:none!important;\
+  color:rgba(255,255,255,.92)!important;\
 }\
 \
+#bqdmmsgs .bqr.theirs .bqbbl,\
 #bqgmsgs .bqr.theirs .bqbbl{\
-  background:rgba(255,255,255,.06)!important;\
-  backdrop-filter:blur(16px) saturate(1.3)!important;\
-  -webkit-backdrop-filter:blur(16px) saturate(1.3)!important;\
+  background:rgba(255,255,255,.04)!important;\
+  backdrop-filter:blur(20px) saturate(1.6)!important;\
+  -webkit-backdrop-filter:blur(20px) saturate(1.6)!important;\
   border:1px solid rgba(255,255,255,.08)!important;\
-  box-shadow:0 4px 16px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.06)!important;\
+  box-shadow:none!important;\
+}\
+\
+/* Remove hover shadow on glass bubbles */\
+#bqdmmsgs .bqr.mine:hover .bqbbl,\
+#bqgmsgs .bqr.mine:hover .bqbbl,\
+#bqdmmsgs .bqr.theirs:hover .bqbbl,\
+#bqgmsgs .bqr.theirs:hover .bqbbl{\
+  box-shadow:none!important;\
+  transform:none!important;\
 }\
 \
 /* ═══ Liquid Glass — Sidebar panels ═══ */\
@@ -15989,9 +15984,30 @@ style.textContent = '\
 #bqp.bq-theme-whatsapp #bqdmmsgs .bqr.theirs .bqbbl,\
 #bqp.bq-theme-walight #bqdmmsgs .bqr.theirs .bqbbl,\
 #bqp.bq-theme-peach #bqdmmsgs .bqr.theirs .bqbbl,\
-#bqp.bq-theme-rose #bqdmmsgs .bqr.theirs .bqbbl{\
-  background:rgba(255,255,255,.45)!important;\
+#bqp.bq-theme-rose #bqdmmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-light #bqgmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-whatsapp #bqgmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-walight #bqgmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-peach #bqgmsgs .bqr.theirs .bqbbl,\
+#bqp.bq-theme-rose #bqgmsgs .bqr.theirs .bqbbl{\
+  background:rgba(255,255,255,.35)!important;\
   border:1px solid rgba(0,0,0,.06)!important;\
+  box-shadow:none!important;\
+}\
+\
+#bqp.bq-theme-light #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-whatsapp #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-walight #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-peach #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-rose #bqdmmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-light #bqgmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-whatsapp #bqgmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-walight #bqgmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-peach #bqgmsgs .bqr.mine .bqbbl,\
+#bqp.bq-theme-rose #bqgmsgs .bqr.mine .bqbbl{\
+  background:rgba(59,130,246,.15)!important;\
+  border:1px solid rgba(59,130,246,.18)!important;\
+  box-shadow:none!important;\
 }\
 \
 /* ═══ Theme-aware dark mode adjustments ═══ */\
