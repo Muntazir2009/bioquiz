@@ -3636,13 +3636,43 @@ function loadSDK(){
   });
 }
 
+/* ─────────────────────────────────────────
+   WIDGET CONFIG LISTENER (Firebase RTDB)
+   Path: bq_widget_config/settings
+   Reads config from admin panel and applies CSS custom properties in real-time.
+───────────────────────────────────────── */
+function subscribeWidgetConfig(){
+  if(!db) return;
+  try{
+    db.ref("bq_widget_config/settings").on("value",function(snap){
+      if(!snap || !snap.exists()) return;
+      var c = snap.val();
+      var panel = document.getElementById("bqp");
+      if(!panel) return;
+      var vars = {"--bq-accent":c.accentColor,"--bq-accent-2":c.accent2Color,"--bq-bg":c.bgColor,"--bq-bg-elevated":c.bgElevated,"--bq-text":c.textColor,"--bq-radius":c.borderRadius?c.borderRadius+"px":undefined,"--bq-bubble-mine":c.bubbleMine};
+      for(var k in vars){if(vars[k]!==undefined&&vars[k]!==null&&vars[k]!==""){panel.style.setProperty(k,vars[k]);}}
+      if(c.fontSize==="sm")panel.classList.add("bq-font-sm");else panel.classList.remove("bq-font-sm");
+      if(c.fontSize==="lg")panel.classList.add("bq-font-lg");else panel.classList.remove("bq-font-lg");
+      if(c.defaultTheme&&!localStorage.getItem("bq_theme_v2")){localStorage.setItem("bq_theme_v2",c.defaultTheme);applyTheme(c.defaultTheme);}
+      if(c.bubbleStyle)localStorage.setItem("bq_bubble_style",c.bubbleStyle);
+      if(c.readReceipts!==undefined)localStorage.setItem("bq_read_receipts",c.readReceipts?"on":"off");
+      window.__BQ_ADMIN_CONFIG__=c;
+      if(c.customCSS){var el=document.getElementById("bq-admin-css");if(!el){el=document.createElement("style");el.id="bq-admin-css";document.head.appendChild(el);}el.textContent=c.customCSS;}
+    });
+    db.ref("bq_widget_config/settings/widgetEnabled").on("value",function(snap){
+      if(!snap)return;var enabled=snap.val();var bubble=document.getElementById("bqb");
+      if(bubble&&enabled===false)bubble.style.display="none";else if(bubble&&enabled!==false)bubble.style.display="";
+    });
+  }catch(e){console.warn("[BQ Config Listener]",e);}
+}
+
 async function startDB(){
   if(db)return;
   try{
     await loadSDK();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();
+    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 

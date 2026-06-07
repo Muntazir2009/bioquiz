@@ -1,100 +1,163 @@
 // ─── WidgetConfig Type & Defaults ───────────────────────────
-// Mirror of the Firebase RTDB path: bq_widget_config/settings
+// Mirrors what chat-widget.js actually uses
+// Firebase RTDB path: bq_widget_config/settings
 
-export interface QuickReply {
-  id: string;
-  label: string;
-  message: string;
+export interface NotifPrefs {
+  inApp: boolean;
+  push: boolean;
+  sound: boolean;
+  globalChat: boolean;
+  dms: boolean;
+  mentions: boolean;
 }
 
 export interface WidgetConfig {
-  // ── Appearance ──
-  primaryColor: string;
-  fontFamily: string;
-  borderRadius: number;        // px
-  position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  widgetSize: "sm" | "md" | "lg";
-  darkMode: boolean;
-  customCSS: string;
+  // ── Appearance (CSS Custom Properties) ──
+  accentColor: string;        // --bq-accent
+  accent2Color: string;       // --bq-accent-2
+  bgColor: string;            // --bq-bg
+  bgElevated: string;         // --bq-bg-elevated
+  textColor: string;          // --bq-text
+  borderRadius: number;       // --bq-radius (px)
+  bubbleMine: string;         // --bq-bubble-mine gradient
+  fontSize: "sm" | "md" | "lg";
+  bubbleStyle: "rounded" | "modern" | "minimal";
+
+  // ── Theme ──
+  defaultTheme: string;       // Theme ID applied to new users
 
   // ── Behavior ──
   autoOpen: boolean;
-  autoOpenDelay: number;       // ms
+  autoOpenDelay: number;      // ms
   typingIndicator: boolean;
-  soundEnabled: boolean;
-  persistHistory: boolean;
-  rateLimit: number;           // messages per minute
+  readReceipts: boolean;
+  charLimit: number;          // max chars per message
+  maxMessages: number;        // max messages fetched per chat
 
-  // ── Welcome Screen ──
+  // ── Notifications ──
+  notifPrefs: NotifPrefs;
+
+  // ── Disappearing Messages ──
+  disappearingEnabled: boolean;
+  disappearDefaultTtl: number; // ms (default 1hr)
+
+  // ── Profile / Bot Identity ──
   botName: string;
-  avatarUrl: string;
-  welcomeTitle: string;
-  welcomeSubtitle: string;
-  bgGradientPreset: string;    // e.g. "ocean", "sunset", "forest", "midnight"
+  botStatus: "online" | "studying" | "away" | "busy";
+  botBio: string;
+  botInitials: string;
+  botBannerColor: string;
 
-  // ── Quick Replies ──
-  quickReplies: QuickReply[];
+  // ── Security ──
+  widgetEnabled: boolean;     // master kill switch
+  disguiseEnabled: boolean;   // calculator cover mode
+  widgetPin: string;          // PIN to unlock disguise
+  dmLockEnabled: boolean;
+  allowedDomains: string;     // newline-separated
 
-  // ── AI Persona ──
-  systemPrompt: string;
-  temperature: number;         // 0-1
-  fallbackMessage: string;
+  // ── Advanced ──
   workerUrl: string;
-
-  // ── Access Control ──
-  enabled: boolean;            // master kill switch
-  allowedDomains: string;      // newline-separated
+  giphyApiKey: string;
+  imageHost: string;
+  customCSS: string;
+  debugMode: boolean;
 }
 
 export const DEFAULT_CONFIG: WidgetConfig = {
   // Appearance
-  primaryColor: "#2EB9DF",
-  fontFamily: "Geist, system-ui, sans-serif",
+  accentColor: "#60a5fa",
+  accent2Color: "#a78bfa",
+  bgColor: "#080808",
+  bgElevated: "#111113",
+  textColor: "#f0f0f0",
   borderRadius: 16,
-  position: "bottom-right",
-  widgetSize: "md",
-  darkMode: true,
-  customCSS: "",
+  bubbleMine: "linear-gradient(145deg,#3b82f6,#6366f1)",
+  fontSize: "md",
+  bubbleStyle: "rounded",
+
+  // Theme
+  defaultTheme: "none",
 
   // Behavior
   autoOpen: false,
   autoOpenDelay: 3000,
   typingIndicator: true,
-  soundEnabled: true,
-  persistHistory: true,
-  rateLimit: 20,
+  readReceipts: true,
+  charLimit: 320,
+  maxMessages: 50,
 
-  // Welcome Screen
+  // Notifications
+  notifPrefs: {
+    inApp: true,
+    push: false,
+    sound: true,
+    globalChat: true,
+    dms: true,
+    mentions: true,
+  },
+
+  // Disappearing
+  disappearingEnabled: false,
+  disappearDefaultTtl: 3600000,
+
+  // Profile
   botName: "BioQuiz AI",
-  avatarUrl: "",
-  welcomeTitle: "Hey there! 👋",
-  welcomeSubtitle: "Ask me anything about biology",
-  bgGradientPreset: "midnight",
+  botStatus: "online",
+  botBio: "Your biology study companion",
+  botInitials: "BQ",
+  botBannerColor: "#60a5fa",
 
-  // Quick Replies
-  quickReplies: [
-    { id: "1", label: "Cell Structure", message: "Explain the basic structure of a cell" },
-    { id: "2", label: "Mitosis vs Meiosis", message: "What's the difference between mitosis and meiosis?" },
-    { id: "3", label: "DNA Replication", message: "How does DNA replication work?" },
-  ],
-
-  // AI Persona
-  systemPrompt:
-    "You are BioQuiz AI, a helpful and knowledgeable biology tutor. Answer questions clearly and concisely, using examples where appropriate. Keep responses friendly and encouraging.",
-  temperature: 0.7,
-  fallbackMessage: "Sorry, I couldn't process that. Please try again!",
-  workerUrl: "ask-ai.killermunu.workers.dev",
-
-  // Access Control
-  enabled: true,
+  // Security
+  widgetEnabled: true,
+  disguiseEnabled: false,
+  widgetPin: "1306",
+  dmLockEnabled: false,
   allowedDomains: "",
+
+  // Advanced
+  workerUrl: "ask-ai.killermunu.workers.dev",
+  giphyApiKey: "hylHrfS6vc3Hnbc6R6QRgpbHfWbwSCWY",
+  imageHost: "",
+  customCSS: "",
+  debugMode: false,
 };
 
-export const GRADIENT_PRESETS = [
-  { value: "midnight", label: "Midnight", css: "linear-gradient(135deg, #0c0c1d, #1a1a3e)" },
-  { value: "ocean", label: "Ocean", css: "linear-gradient(135deg, #0a1628, #1e3a5f)" },
-  { value: "sunset", label: "Sunset", css: "linear-gradient(135deg, #1a0a2e, #4a1942)" },
-  { value: "forest", label: "Forest", css: "linear-gradient(135deg, #0a1a0a, #1a3a2a)" },
-  { value: "aurora", label: "Aurora", css: "linear-gradient(135deg, #0a0a2e, #1a3a4a)" },
-  { value: "ember", label: "Ember", css: "linear-gradient(135deg, #1a0a0a, #3a1a1a)" },
+// ─── All 28 themes the widget supports ──────────────────────
+export const WIDGET_THEMES = [
+  { id: "none", name: "Dark", type: "dark" as const, preview: "#080808" },
+  { id: "light", name: "Light", type: "light" as const, preview: "#f8f9fa" },
+  { id: "black", name: "Pure Black", type: "dark" as const, preview: "#000000" },
+  { id: "noir", name: "Noir", type: "dark" as const, preview: "#0a0a0c" },
+  { id: "aurora", name: "Aurora", type: "dark" as const, preview: "#0c1220" },
+  { id: "ocean", name: "Ocean", type: "dark" as const, preview: "#0a1628" },
+  { id: "oceanv2", name: "Ocean V2", type: "dark" as const, preview: "#091a2a" },
+  { id: "midnight", name: "Midnight", type: "dark" as const, preview: "#0c0c1d" },
+  { id: "midnightpurple", name: "Midnight Purple", type: "dark" as const, preview: "#120c20" },
+  { id: "crimson", name: "Crimson", type: "dark" as const, preview: "#150d10" },
+  { id: "sunset", name: "Sunset", type: "dark" as const, preview: "#1a0a2e" },
+  { id: "sunsetv2", name: "Sunset V2", type: "dark" as const, preview: "#1c0e2e" },
+  { id: "forest", name: "Forest", type: "dark" as const, preview: "#0a1a0a" },
+  { id: "bubblegum", name: "Bubblegum", type: "dark" as const, preview: "#1a0a1e" },
+  { id: "rose", name: "Rose", type: "light" as const, preview: "#fce4ec" },
+  { id: "peach", name: "Peach", type: "light" as const, preview: "#fff3e0" },
+  { id: "carbon", name: "Carbon", type: "dark" as const, preview: "#1a1a1a" },
+  { id: "monochrome", name: "Monochrome", type: "dark" as const, preview: "#111111" },
+  { id: "plain", name: "Plain", type: "dark" as const, preview: "#000000" },
+  { id: "golden", name: "Golden", type: "dark" as const, preview: "#1a1508" },
+  { id: "pure-black", name: "Pure Black+", type: "dark" as const, preview: "#000000" },
+  { id: "grid", name: "Grid", type: "dark" as const, preview: "#080808" },
+  { id: "dots", name: "Dots", type: "dark" as const, preview: "#080808" },
+  { id: "wave", name: "Wave", type: "dark" as const, preview: "#0a0a1a" },
+  { id: "whatsapp", name: "WhatsApp", type: "light" as const, preview: "#ece5dd" },
+  { id: "wadark", name: "WhatsApp Dark", type: "dark" as const, preview: "#0b141a" },
+  { id: "walight", name: "WhatsApp Light", type: "light" as const, preview: "#f0f0f0" },
+  { id: "paper", name: "Paper", type: "light" as const, preview: "#faf8f5" },
+] as const;
+
+// ─── Status options ─────────────────────────────────────────
+export const STATUS_OPTIONS = [
+  { id: "online", label: "Online", color: "#34d399", icon: "🟢" },
+  { id: "studying", label: "Studying", color: "#60a5fa", icon: "📚" },
+  { id: "away", label: "Away", color: "#fbbf24", icon: "🟡" },
+  { id: "busy", label: "Busy", color: "#f87171", icon: "🔴" },
 ] as const;

@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback, useRef, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWidgetConfig } from "@/lib/useWidgetConfig";
-import { Sidebar, TABS } from "@/components/admin/Sidebar";
+import { Sidebar, MobileMenuButton, TABS } from "@/components/admin/Sidebar";
 import { ConfigPanel } from "@/components/admin/ConfigPanel";
 import { LivePreview } from "@/components/admin/LivePreview";
 import { SyncBadge } from "@/components/admin/SyncBadge";
 import { BackgroundBeams } from "@/components/admin/BackgroundBeams";
 import { SpotlightCard } from "@/components/admin/SpotlightCard";
-import { Shield, Eye, EyeOff, Bug, Lock, AlertTriangle } from "lucide-react";
+import { Shield, Eye, EyeOff, Bug, Lock, AlertTriangle, PanelRightClose, PanelRight } from "lucide-react";
 
 // ─── Auth Config ────────────────────────────────────────────
 const ADMIN_PASSWORD = "1306";
@@ -41,7 +41,7 @@ function clearAuth() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  LOGIN PAGE — dark glass, particle orbs, brutal typography
+//  LOGIN PAGE
 // ═══════════════════════════════════════════════════════════
 
 function LoginPage({ onAuth }: { onAuth: () => void }) {
@@ -76,7 +76,6 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-1/4 h-96 w-96 rounded-full bg-[#2EB9DF]/[0.03] blur-[120px]" />
         <div className="absolute -right-32 bottom-1/4 h-96 w-96 rounded-full bg-[#2EB9DF]/[0.02] blur-[120px]" />
-        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.01] blur-[80px]" />
       </div>
 
       {/* Dot grid */}
@@ -88,23 +87,16 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
         }}
       />
 
-      {/* Beams */}
       <BackgroundBeams />
 
-      {/* Login card */}
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md px-4"
       >
-        <SpotlightCard
-          className="p-8"
-          spotlightColor="rgba(46, 185, 223, 0.08)"
-        >
-          {/* Header */}
+        <SpotlightCard className="p-6 sm:p-8" spotlightColor="rgba(46, 185, 223, 0.08)">
           <div className="mb-8 flex flex-col items-center text-center">
-            {/* Shield icon with glow */}
             <div className="relative mb-5">
               <div className="absolute inset-0 animate-pulse rounded-full bg-[#2EB9DF]/20 blur-xl" />
               <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#2EB9DF]/20 bg-[#2EB9DF]/10">
@@ -113,18 +105,12 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
             </div>
             <div className="flex items-center gap-2">
               <Bug size={16} className="text-[#2EB9DF]/60" />
-              <h1 className="text-lg font-semibold tracking-tight text-white/90">
-                BioQuiz Admin
-              </h1>
+              <h1 className="text-lg font-semibold tracking-tight text-white/90">BioQuiz Admin</h1>
             </div>
-            <p className="mt-1.5 text-xs text-white/25">
-              Widget Configuration Panel
-            </p>
+            <p className="mt-1.5 text-xs text-white/25">Widget Configuration Panel</p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Password field */}
             <div className="space-y-2">
               <label className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-white/30">
                 <Lock size={10} />
@@ -138,9 +124,7 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password"
                   className={`w-full rounded-lg border bg-white/[0.03] px-4 py-3 pr-11 font-mono text-sm text-white/80 placeholder:text-white/15 outline-none transition-all focus:border-[#2EB9DF]/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#2EB9DF]/20 ${
-                    error
-                      ? "border-red-500/50 ring-1 ring-red-500/30"
-                      : "border-white/[0.06]"
+                    error ? "border-red-500/50 ring-1 ring-red-500/30" : "border-white/[0.06]"
                   }`}
                 />
                 <button
@@ -153,7 +137,6 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
               </div>
             </div>
 
-            {/* Error message */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -170,7 +153,6 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
               )}
             </AnimatePresence>
 
-            {/* Submit button */}
             <motion.button
               type="submit"
               whileHover={{ scale: 1.01 }}
@@ -181,13 +163,9 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
                   : "bg-[#2EB9DF] text-[#060608] hover:bg-[#2EB9DF]/90"
               }`}
             >
-              {/* Shimmer sweep */}
               <span
                 className="absolute inset-0 z-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
-                }}
+                style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)" }}
               />
               <span className="relative z-10 flex items-center justify-center gap-2">
                 <Lock size={14} />
@@ -196,7 +174,6 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
             </motion.button>
           </form>
 
-          {/* Footer */}
           <div className="mt-6 flex items-center justify-center gap-1.5 text-[10px] text-white/15">
             <div className="h-px flex-1 bg-white/[0.04]" />
             <span className="uppercase tracking-widest">Secured Session</span>
@@ -209,13 +186,14 @@ function LoginPage({ onAuth }: { onAuth: () => void }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ADMIN PANEL — the actual config dashboard
+//  ADMIN PANEL
 // ═══════════════════════════════════════════════════════════
 
 function AdminPanel() {
   const { config, updateConfig, syncStatus, loaded } = useWidgetConfig();
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [previewOpen, setPreviewOpen] = useState(true);
+  const [mobileNav, setMobileNav] = useState(false);
 
   if (!loaded) {
     return (
@@ -232,35 +210,43 @@ function AdminPanel() {
     <div className="relative flex h-screen overflow-hidden bg-[#060608]">
       <BackgroundBeams />
 
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        mobileOpen={mobileNav}
+        onMobileClose={() => setMobileNav(false)}
+      />
 
       <div className="relative z-10 flex flex-1 overflow-hidden">
         {/* Config panel */}
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="flex items-center justify-between border-b border-white/[0.04] bg-[#060608]/60 px-6 py-3 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
+          <header className="flex items-center justify-between border-b border-white/[0.04] bg-[#060608]/60 px-4 py-3 backdrop-blur-sm sm:px-6">
+            <div className="flex items-center gap-2">
+              <MobileMenuButton onClick={() => setMobileNav(true)} />
               <h2 className="text-sm font-medium text-white/70">
                 {TABS.find((t) => t.id === activeTab)?.label}
               </h2>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <SyncBadge status={syncStatus} />
               <button
                 onClick={() => setPreviewOpen(!previewOpen)}
-                className={`rounded-md px-3 py-1.5 text-xs transition-colors ${
+                className={`hidden sm:flex rounded-md px-3 py-1.5 text-xs transition-colors items-center gap-1.5 ${
                   previewOpen
                     ? "bg-[#2EB9DF]/15 text-[#2EB9DF]"
                     : "bg-white/[0.03] text-white/40 hover:text-white/60"
                 }`}
               >
+                {previewOpen ? <PanelRightClose size={14} /> : <PanelRight size={14} />}
                 Preview
               </button>
               <button
                 onClick={() => { clearAuth(); window.location.reload(); }}
-                className="rounded-md bg-white/[0.03] px-3 py-1.5 text-xs text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                className="rounded-md bg-white/[0.03] px-2.5 py-1.5 text-xs text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
               >
-                Logout
+                <span className="hidden sm:inline">Logout</span>
+                <Lock size={14} className="sm:hidden" />
               </button>
             </div>
           </header>
@@ -284,7 +270,7 @@ function AdminPanel() {
           </AnimatePresence>
         </div>
 
-        {/* Live preview panel */}
+        {/* Live preview — desktop only */}
         <AnimatePresence>
           {previewOpen && (
             <motion.div
@@ -292,7 +278,7 @@ function AdminPanel() {
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="shrink-0 overflow-hidden border-l border-white/[0.04]"
+              className="hidden md:block shrink-0 overflow-hidden border-l border-white/[0.04]"
             >
               <LivePreview config={config} />
             </motion.div>

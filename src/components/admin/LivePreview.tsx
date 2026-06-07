@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import type { WidgetConfig } from "@/lib/defaults";
+import { WIDGET_THEMES } from "@/lib/defaults";
+import { STATUS_OPTIONS } from "@/lib/defaults";
+import { MessageCircle, X, Send, ChevronDown } from "lucide-react";
 
 interface LivePreviewProps {
   config: WidgetConfig;
@@ -23,6 +26,10 @@ export function LivePreview({ config }: LivePreviewProps) {
     }
   }, [config]);
 
+  const theme = WIDGET_THEMES.find((t) => t.id === config.defaultTheme);
+  const bg = theme?.preview ?? config.bgColor;
+  const statusInfo = STATUS_OPTIONS.find((s) => s.id === config.botStatus);
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-white/[0.04] px-4 py-2.5">
@@ -35,40 +42,157 @@ export function LivePreview({ config }: LivePreviewProps) {
           <span className="h-2 w-2 rounded-full bg-emerald-400/60" />
         </div>
       </div>
-      <div className="flex-1 bg-[#0a0a0f] p-4">
+
+      <div className="flex-1 overflow-auto bg-[#0a0a0f] p-3 sm:p-4">
+        {/* Phone frame */}
         <div
-          className="mx-auto h-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.06]"
+          className="mx-auto h-full max-w-[340px] overflow-hidden border border-white/[0.06]"
           style={{
-            background: config.darkMode ? "#060608" : "#fafafa",
+            borderRadius: config.borderRadius,
+            background: bg,
           }}
         >
-          <iframe
-            ref={iframeRef}
-            src="/chat-widget.js"
-            title="Widget Preview"
-            className="h-full w-full border-0 opacity-0"
-            sandbox="allow-scripts allow-same-origin"
-          />
-          {/* Placeholder content — simulates widget */}
-          <div className="flex h-full flex-col items-end justify-end p-4">
-            {/* Widget button */}
+          {/* Widget header */}
+          <div
+            className="flex items-center justify-between px-3 py-2.5 border-b"
+            style={{
+              borderColor: "rgba(255,255,255,0.06)",
+              background: config.bgElevated,
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
+                style={{ backgroundColor: config.accentColor, borderRadius: config.borderRadius / 2 }}
+              >
+                {config.botInitials || "BQ"}
+              </div>
+              <div>
+                <p className="text-xs font-semibold" style={{ color: config.textColor }}>
+                  {config.botName}
+                </p>
+                <p className="text-[9px]" style={{ color: statusInfo?.color }}>
+                  {statusInfo?.icon} {statusInfo?.label}
+                </p>
+              </div>
+            </div>
+            <ChevronDown size={14} style={{ color: config.textColor, opacity: 0.4 }} />
+          </div>
+
+          {/* Chat area */}
+          <div className="flex flex-col gap-2 p-3" style={{ minHeight: 200 }}>
+            {/* Bot message */}
+            <div className="flex items-end gap-1.5 max-w-[80%]">
+              <div
+                className="px-3 py-2 text-xs"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  color: config.textColor,
+                  borderRadius: config.borderRadius,
+                  fontSize: config.fontSize === "sm" ? "12px" : config.fontSize === "lg" ? "16px" : "13.5px",
+                }}
+              >
+                Hey there! 👋 Ask me anything about biology.
+              </div>
+            </div>
+
+            {/* User message */}
+            <div className="flex items-end gap-1.5 max-w-[80%] self-end">
+              <div
+                className="px-3 py-2 text-xs text-white"
+                style={{
+                  background: config.bubbleMine,
+                  borderRadius: config.borderRadius,
+                  fontSize: config.fontSize === "sm" ? "12px" : config.fontSize === "lg" ? "16px" : "13.5px",
+                }}
+              >
+                What is mitosis?
+              </div>
+            </div>
+
+            {/* Bot reply */}
+            <div className="flex items-end gap-1.5 max-w-[85%]">
+              <div
+                className="px-3 py-2 text-xs"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  color: config.textColor,
+                  borderRadius: config.borderRadius,
+                  fontSize: config.fontSize === "sm" ? "12px" : config.fontSize === "lg" ? "16px" : "13.5px",
+                }}
+              >
+                Mitosis is cell division that produces two identical daughter cells 🧬
+              </div>
+            </div>
+
+            {config.typingIndicator && (
+              <div className="flex items-end gap-1.5">
+                <div
+                  className="flex items-center gap-1 px-3 py-2"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: config.borderRadius,
+                  }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick replies */}
+          {config.disappearingEnabled === false && (
+            <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+              {["Cell Structure", "Mitosis vs Meiosis", "DNA"].map((label) => (
+                <button
+                  key={label}
+                  className="rounded-full border px-2.5 py-1 text-[10px] transition-colors"
+                  style={{
+                    borderColor: `${config.accentColor}30`,
+                    color: config.accentColor,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input bar */}
+          <div
+            className="flex items-center gap-2 border-t px-3 py-2"
+            style={{ borderColor: "rgba(255,255,255,0.06)", background: config.bgElevated }}
+          >
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all"
+              className="flex-1 rounded-full px-3 py-1.5 text-[10px]"
               style={{
-                backgroundColor: config.primaryColor,
-                borderRadius: config.borderRadius,
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.3)",
+                borderRadius: config.borderRadius / 2,
               }}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
+              Type a message...
+            </div>
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-full"
+              style={{ backgroundColor: config.accentColor }}
+            >
+              <Send size={12} className="text-white" />
+            </div>
+          </div>
+
+          {/* Widget bubble */}
+          <div className="flex justify-end p-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center shadow-lg"
+              style={{
+                backgroundColor: config.accentColor,
+                borderRadius: config.borderRadius / 2,
+              }}
+            >
+              <MessageCircle size={18} className="text-white" />
             </div>
           </div>
         </div>

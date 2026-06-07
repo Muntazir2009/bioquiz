@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import type { WidgetConfig, QuickReply } from "@/lib/defaults";
-import { GRADIENT_PRESETS } from "@/lib/defaults";
+import type { WidgetConfig, NotifPrefs } from "@/lib/defaults";
+import { WIDGET_THEMES, STATUS_OPTIONS } from "@/lib/defaults";
 import { SpotlightCard } from "./SpotlightCard";
 import { ShimmerButton } from "./ShimmerButton";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
 
 interface ConfigPanelProps {
   config: WidgetConfig;
@@ -26,32 +25,18 @@ interface ConfigPanelProps {
   activeTab: string;
 }
 
-// ─── Section wrapper ────────────────────────────────────────
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+// ─── Helpers ────────────────────────────────────────────────
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <SpotlightCard className="p-5">
+    <SpotlightCard className="p-4 sm:p-5">
       <h3 className="mb-4 text-sm font-semibold text-white/70">{title}</h3>
       <div className="space-y-5">{children}</div>
     </SpotlightCard>
   );
 }
 
-// ─── Field row ──────────────────────────────────────────────
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -63,105 +48,156 @@ function Field({
   );
 }
 
-// ─── Tab Content ────────────────────────────────────────────
+function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <Label className="text-xs text-white/50">{label}</Label>
+        {hint && <p className="text-[10px] text-white/25 mt-0.5">{hint}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+// ─── 1. APPEARANCE ──────────────────────────────────────────
 
 function AppearanceTab({ config, updateConfig }: ConfigPanelProps) {
   return (
     <div className="space-y-4">
-      <Section title="Colors & Typography">
-        <Field label="Primary Color">
-          <div className="flex items-center gap-3">
+      <Section title="Accent Colors">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Primary Accent" hint="--bq-accent">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={config.accentColor}
+                onChange={(e) => updateConfig({ accentColor: e.target.value })}
+                className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
+              />
+              <Input
+                value={config.accentColor}
+                onChange={(e) => updateConfig({ accentColor: e.target.value })}
+                className="flex-1 font-mono text-xs"
+              />
+            </div>
+          </Field>
+          <Field label="Secondary Accent" hint="--bq-accent-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={config.accent2Color}
+                onChange={(e) => updateConfig({ accent2Color: e.target.value })}
+                className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
+              />
+              <Input
+                value={config.accent2Color}
+                onChange={(e) => updateConfig({ accent2Color: e.target.value })}
+                className="flex-1 font-mono text-xs"
+              />
+            </div>
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="Background & Text">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Background" hint="--bq-bg">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={config.bgColor}
+                onChange={(e) => updateConfig({ bgColor: e.target.value })}
+                className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
+              />
+              <Input
+                value={config.bgColor}
+                onChange={(e) => updateConfig({ bgColor: e.target.value })}
+                className="flex-1 font-mono text-xs"
+              />
+            </div>
+          </Field>
+          <Field label="Elevated BG" hint="--bq-bg-elevated">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={config.bgElevated}
+                onChange={(e) => updateConfig({ bgElevated: e.target.value })}
+                className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
+              />
+              <Input
+                value={config.bgElevated}
+                onChange={(e) => updateConfig({ bgElevated: e.target.value })}
+                className="flex-1 font-mono text-xs"
+              />
+            </div>
+          </Field>
+        </div>
+        <Field label="Text Color" hint="--bq-text">
+          <div className="flex items-center gap-2">
             <input
               type="color"
-              value={config.primaryColor}
-              onChange={(e) => updateConfig({ primaryColor: e.target.value })}
-              className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+              value={config.textColor}
+              onChange={(e) => updateConfig({ textColor: e.target.value })}
+              className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
             />
             <Input
-              value={config.primaryColor}
-              onChange={(e) => updateConfig({ primaryColor: e.target.value })}
+              value={config.textColor}
+              onChange={(e) => updateConfig({ textColor: e.target.value })}
               className="flex-1 font-mono text-xs"
             />
           </div>
         </Field>
+      </Section>
 
-        <Field label="Font Family">
-          <Input
-            value={config.fontFamily}
-            onChange={(e) => updateConfig({ fontFamily: e.target.value })}
-            className="text-xs"
-          />
-        </Field>
-
-        <Field label={`Border Radius — ${config.borderRadius}px`}>
+      <Section title="Layout & Typography">
+        <Field label={`Border Radius — ${config.borderRadius}px`} hint="--bq-radius">
           <Slider
             value={[config.borderRadius]}
             min={0}
-            max={32}
+            max={28}
             step={2}
             onValueChange={([v]) => updateConfig({ borderRadius: v })}
           />
         </Field>
-      </Section>
 
-      <Section title="Layout">
-        <Field label="Position">
+        <Field label="Font Size">
           <Select
-            value={config.position}
-            onValueChange={(v) =>
-              updateConfig({ position: v as WidgetConfig["position"] })
-            }
+            value={config.fontSize}
+            onValueChange={(v) => updateConfig({ fontSize: v as WidgetConfig["fontSize"] })}
           >
-            <SelectTrigger className="text-xs">
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="bottom-right">Bottom Right</SelectItem>
-              <SelectItem value="bottom-left">Bottom Left</SelectItem>
-              <SelectItem value="top-right">Top Right</SelectItem>
-              <SelectItem value="top-left">Top Left</SelectItem>
+              <SelectItem value="sm">Small (12px)</SelectItem>
+              <SelectItem value="md">Medium (13.5px)</SelectItem>
+              <SelectItem value="lg">Large (16px)</SelectItem>
             </SelectContent>
           </Select>
         </Field>
 
-        <Field label="Widget Size">
+        <Field label="Bubble Style">
           <Select
-            value={config.widgetSize}
-            onValueChange={(v) =>
-              updateConfig({ widgetSize: v as WidgetConfig["widgetSize"] })
-            }
+            value={config.bubbleStyle}
+            onValueChange={(v) => updateConfig({ bubbleStyle: v as WidgetConfig["bubbleStyle"] })}
           >
-            <SelectTrigger className="text-xs">
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="sm">Small</SelectItem>
-              <SelectItem value="md">Medium</SelectItem>
-              <SelectItem value="lg">Large</SelectItem>
+              <SelectItem value="rounded">Rounded</SelectItem>
+              <SelectItem value="modern">Modern</SelectItem>
+              <SelectItem value="minimal">Minimal</SelectItem>
             </SelectContent>
           </Select>
         </Field>
 
-        <Field label="Dark Mode">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={config.darkMode}
-              onCheckedChange={(v) => updateConfig({ darkMode: v })}
-            />
-            <span className="text-xs text-white/40">
-              {config.darkMode ? "On" : "Off"}
-            </span>
-          </div>
-        </Field>
-      </Section>
-
-      <Section title="Custom CSS">
-        <Field label="Inject custom styles" hint="Applied after all other styles">
-          <Textarea
-            value={config.customCSS}
-            onChange={(e) => updateConfig({ customCSS: e.target.value })}
-            placeholder="/* e.g. .bqp { border: 1px solid red; } */"
-            className="min-h-[100px] font-mono text-xs"
+        <Field label="My Bubble Gradient" hint="--bq-bubble-mine">
+          <Input
+            value={config.bubbleMine}
+            onChange={(e) => updateConfig({ bubbleMine: e.target.value })}
+            className="font-mono text-xs"
+          />
+          <div
+            className="mt-2 h-6 rounded-md"
+            style={{ background: config.bubbleMine }}
           />
         </Field>
       </Section>
@@ -169,22 +205,63 @@ function AppearanceTab({ config, updateConfig }: ConfigPanelProps) {
   );
 }
 
+// ─── 2. THEMES ──────────────────────────────────────────────
+
+function ThemesTab({ config, updateConfig }: ConfigPanelProps) {
+  return (
+    <div className="space-y-4">
+      <Section title="Default Theme for New Users">
+        <p className="text-xs text-white/30 mb-3">
+          Users can override this in their own settings. This sets the default when they first visit.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {WIDGET_THEMES.map((theme) => (
+            <button
+              key={theme.id}
+              onClick={() => updateConfig({ defaultTheme: theme.id })}
+              className={`group relative flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all ${
+                config.defaultTheme === theme.id
+                  ? "border-[#2EB9DF]/50 ring-1 ring-[#2EB9DF]/30 bg-[#2EB9DF]/5"
+                  : "border-white/[0.06] hover:border-white/[0.12] bg-white/[0.01]"
+              }`}
+            >
+              <div
+                className="h-5 w-5 shrink-0 rounded-full border border-white/10"
+                style={{ backgroundColor: theme.preview }}
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-white/70 truncate">{theme.name}</p>
+                <p className="text-[9px] text-white/25 uppercase">{theme.type}</p>
+              </div>
+              {config.defaultTheme === theme.id && (
+                <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#2EB9DF]" />
+              )}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+// ─── 3. BEHAVIOR ────────────────────────────────────────────
+
 function BehaviorTab({ config, updateConfig }: ConfigPanelProps) {
+  const updateNotif = useCallback(
+    (key: keyof NotifPrefs, value: boolean) => {
+      updateConfig({ notifPrefs: { ...config.notifPrefs, [key]: value } });
+    },
+    [config.notifPrefs, updateConfig],
+  );
+
   return (
     <div className="space-y-4">
       <Section title="Auto Open">
-        <Field label="Auto-open widget on page load">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={config.autoOpen}
-              onCheckedChange={(v) => updateConfig({ autoOpen: v })}
-            />
-            <span className="text-xs text-white/40">
-              {config.autoOpen ? "Enabled" : "Disabled"}
-            </span>
-          </div>
-        </Field>
-
+        <Toggle
+          label="Auto-open widget on page load"
+          checked={config.autoOpen}
+          onChange={(v) => updateConfig({ autoOpen: v })}
+        />
         {config.autoOpen && (
           <Field label={`Delay — ${(config.autoOpenDelay / 1000).toFixed(1)}s`}>
             <Slider
@@ -198,235 +275,226 @@ function BehaviorTab({ config, updateConfig }: ConfigPanelProps) {
         )}
       </Section>
 
-      <Section title="Interaction">
-        <Field label="Typing Indicator">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={config.typingIndicator}
-              onCheckedChange={(v) => updateConfig({ typingIndicator: v })}
-            />
-            <span className="text-xs text-white/40">
-              {config.typingIndicator ? "Show" : "Hide"}
-            </span>
-          </div>
-        </Field>
-
-        <Field label="Sound Effects">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={config.soundEnabled}
-              onCheckedChange={(v) => updateConfig({ soundEnabled: v })}
-            />
-            <span className="text-xs text-white/40">
-              {config.soundEnabled ? "On" : "Off"}
-            </span>
-          </div>
-        </Field>
-
-        <Field label="Persist Chat History">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={config.persistHistory}
-              onCheckedChange={(v) => updateConfig({ persistHistory: v })}
-            />
-            <span className="text-xs text-white/40">
-              {config.persistHistory ? "Yes" : "No"}
-            </span>
-          </div>
-        </Field>
-
+      <Section title="Chat Behavior">
+        <Toggle label="Typing Indicator" checked={config.typingIndicator} onChange={(v) => updateConfig({ typingIndicator: v })} />
+        <Toggle label="Read Receipts" hint="Shows ✓✓ when message is read" checked={config.readReceipts} onChange={(v) => updateConfig({ readReceipts: v })} />
         <Separator className="bg-white/[0.04]" />
-
-        <Field label={`Rate Limit — ${config.rateLimit} msg/min`} hint="0 = unlimited">
+        <Field label={`Character Limit — ${config.charLimit}`} hint="Max chars per message">
           <Slider
-            value={[config.rateLimit]}
-            min={0}
-            max={60}
-            step={5}
-            onValueChange={([v]) => updateConfig({ rateLimit: v })}
+            value={[config.charLimit]}
+            min={100}
+            max={2000}
+            step={10}
+            onValueChange={([v]) => updateConfig({ charLimit: v })}
           />
         </Field>
+        <Field label={`Messages Per Chat — ${config.maxMessages}`} hint="Max messages fetched">
+          <Slider
+            value={[config.maxMessages]}
+            min={10}
+            max={200}
+            step={10}
+            onValueChange={([v]) => updateConfig({ maxMessages: v })}
+          />
+        </Field>
+      </Section>
+
+      <Section title="Notifications">
+        <Toggle label="In-App Banners" checked={config.notifPrefs.inApp} onChange={(v) => updateNotif("inApp", v)} />
+        <Toggle label="Push Notifications" hint="Browser native push" checked={config.notifPrefs.push} onChange={(v) => updateNotif("push", v)} />
+        <Toggle label="Sound" checked={config.notifPrefs.sound} onChange={(v) => updateNotif("sound", v)} />
+        <Separator className="bg-white/[0.04]" />
+        <Toggle label="Global Chat Alerts" checked={config.notifPrefs.globalChat} onChange={(v) => updateNotif("globalChat", v)} />
+        <Toggle label="DM Alerts" checked={config.notifPrefs.dms} onChange={(v) => updateNotif("dms", v)} />
+        <Toggle label="Mention Alerts" hint="@username pings" checked={config.notifPrefs.mentions} onChange={(v) => updateNotif("mentions", v)} />
+      </Section>
+
+      <Section title="Disappearing Messages">
+        <Toggle
+          label="Enable Disappearing Messages"
+          hint="Messages auto-delete after TTL"
+          checked={config.disappearingEnabled}
+          onChange={(v) => updateConfig({ disappearingEnabled: v })}
+        />
+        {config.disappearingEnabled && (
+          <Field label={`Default TTL — ${(config.disappearDefaultTtl / 60000).toFixed(0)} min`}>
+            <Slider
+              value={[config.disappearDefaultTtl]}
+              min={60000}
+              max={86400000}
+              step={300000}
+              onValueChange={([v]) => updateConfig({ disappearDefaultTtl: v })}
+            />
+          </Field>
+        )}
       </Section>
     </div>
   );
 }
 
-function WelcomeTab({ config, updateConfig }: ConfigPanelProps) {
+// ─── 4. PROFILE ─────────────────────────────────────────────
+
+function ProfileTab({ config, updateConfig }: ConfigPanelProps) {
   return (
     <div className="space-y-4">
       <Section title="Bot Identity">
-        <Field label="Bot Name">
-          <Input
-            value={config.botName}
-            onChange={(e) => updateConfig({ botName: e.target.value })}
-            className="text-xs"
-          />
-        </Field>
-
-        <Field label="Avatar URL" hint="Leave empty for default">
-          <Input
-            value={config.avatarUrl}
-            onChange={(e) => updateConfig({ avatarUrl: e.target.value })}
-            placeholder="https://example.com/avatar.png"
-            className="text-xs"
-          />
-        </Field>
+        <div className="flex items-start gap-4">
+          {/* Avatar preview */}
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-bold text-white"
+              style={{ backgroundColor: config.accentColor }}
+            >
+              {config.botInitials || "BQ"}
+            </div>
+            <span className="text-[10px] text-white/25">Avatar</span>
+          </div>
+          <div className="flex-1 space-y-4">
+            <Field label="Display Name">
+              <Input
+                value={config.botName}
+                onChange={(e) => updateConfig({ botName: e.target.value })}
+                className="text-xs"
+              />
+            </Field>
+            <Field label="Initials" hint="2-char avatar text">
+              <Input
+                value={config.botInitials}
+                onChange={(e) => updateConfig({ botInitials: e.target.value })}
+                maxLength={2}
+                className="w-20 text-xs text-center"
+              />
+            </Field>
+          </div>
+        </div>
       </Section>
 
-      <Section title="Welcome Message">
-        <Field label="Title">
-          <Input
-            value={config.welcomeTitle}
-            onChange={(e) => updateConfig({ welcomeTitle: e.target.value })}
-            className="text-xs"
-          />
-        </Field>
-
-        <Field label="Subtitle">
-          <Input
-            value={config.welcomeSubtitle}
-            onChange={(e) => updateConfig({ welcomeSubtitle: e.target.value })}
-            className="text-xs"
-          />
-        </Field>
-      </Section>
-
-      <Section title="Background Gradient">
-        <Field label="Gradient Preset">
-          <div className="grid grid-cols-3 gap-2">
-            {GRADIENT_PRESETS.map((preset) => (
+      <Section title="Status & Bio">
+        <Field label="Status">
+          <div className="grid grid-cols-2 gap-2">
+            {STATUS_OPTIONS.map((s) => (
               <button
-                key={preset.value}
-                onClick={() => updateConfig({ bgGradientPreset: preset.value })}
-                className={`group relative flex flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-all ${
-                  config.bgGradientPreset === preset.value
-                    ? "border-[#2EB9DF]/50 ring-1 ring-[#2EB9DF]/30"
-                    : "border-white/[0.06] hover:border-white/[0.12]"
+                key={s.id}
+                onClick={() => updateConfig({ botStatus: s.id as WidgetConfig["botStatus"] })}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all ${
+                  config.botStatus === s.id
+                    ? "border-[#2EB9DF]/40 bg-[#2EB9DF]/10 text-white/80"
+                    : "border-white/[0.06] text-white/40 hover:border-white/[0.12]"
                 }`}
               >
-                <div
-                  className="h-8 w-full rounded-md"
-                  style={{ background: preset.css }}
-                />
-                <span className="text-[10px] text-white/40 group-hover:text-white/60">
-                  {preset.label}
-                </span>
+                <span>{s.icon}</span>
+                <span>{s.label}</span>
               </button>
             ))}
           </div>
         </Field>
-      </Section>
-    </div>
-  );
-}
 
-function QuickRepliesTab({ config, updateConfig }: ConfigPanelProps) {
-  const addReply = useCallback(() => {
-    const id = Date.now().toString(36);
-    updateConfig({
-      quickReplies: [...config.quickReplies, { id, label: "", message: "" }],
-    });
-  }, [config.quickReplies, updateConfig]);
-
-  const removeReply = useCallback(
-    (id: string) => {
-      updateConfig({
-        quickReplies: config.quickReplies.filter((r) => r.id !== id),
-      });
-    },
-    [config.quickReplies, updateConfig],
-  );
-
-  const updateReply = useCallback(
-    (id: string, field: keyof QuickReply, value: string) => {
-      updateConfig({
-        quickReplies: config.quickReplies.map((r) =>
-          r.id === id ? { ...r, [field]: value } : r,
-        ),
-      });
-    },
-    [config.quickReplies, updateConfig],
-  );
-
-  return (
-    <div className="space-y-4">
-      <Section title="Quick Reply Buttons">
-        <div className="space-y-3">
-          {config.quickReplies.map((reply, i) => (
-            <div
-              key={reply.id}
-              className="flex items-start gap-2 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3"
-            >
-              <span className="mt-1.5 text-[10px] text-white/20">#{i + 1}</span>
-              <div className="flex-1 space-y-2">
-                <Input
-                  value={reply.label}
-                  onChange={(e) => updateReply(reply.id, "label", e.target.value)}
-                  placeholder="Button label"
-                  className="text-xs"
-                />
-                <Input
-                  value={reply.message}
-                  onChange={(e) => updateReply(reply.id, "message", e.target.value)}
-                  placeholder="Message sent on click"
-                  className="text-xs"
-                />
-              </div>
-              <button
-                onClick={() => removeReply(reply.id)}
-                className="mt-1.5 rounded-md p-1 text-white/20 transition-colors hover:bg-red-500/10 hover:text-red-400"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <ShimmerButton onClick={addReply}>
-          <span className="flex items-center gap-1.5">
-            <Plus size={14} /> Add Reply
-          </span>
-        </ShimmerButton>
-      </Section>
-    </div>
-  );
-}
-
-function AIPersonaTab({ config, updateConfig }: ConfigPanelProps) {
-  return (
-    <div className="space-y-4">
-      <Section title="System Prompt">
-        <Field label="Instructions" hint="Defines the AI's behavior and personality">
+        <Field label="Bio">
           <Textarea
-            value={config.systemPrompt}
-            onChange={(e) => updateConfig({ systemPrompt: e.target.value })}
-            className="min-h-[140px] font-mono text-xs"
+            value={config.botBio}
+            onChange={(e) => updateConfig({ botBio: e.target.value })}
+            className="min-h-[80px] text-xs"
+          />
+        </Field>
+
+        <Field label="Banner Color">
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={config.botBannerColor}
+              onChange={(e) => updateConfig({ botBannerColor: e.target.value })}
+              className="h-9 w-10 cursor-pointer rounded border border-white/10 bg-transparent"
+            />
+            <Input
+              value={config.botBannerColor}
+              onChange={(e) => updateConfig({ botBannerColor: e.target.value })}
+              className="flex-1 font-mono text-xs"
+            />
+          </div>
+          <div
+            className="mt-2 h-8 rounded-lg"
+            style={{ background: `linear-gradient(135deg, ${config.botBannerColor}, ${config.accentColor})` }}
           />
         </Field>
       </Section>
+    </div>
+  );
+}
 
-      <Section title="Parameters">
-        <Field label={`Temperature — ${config.temperature.toFixed(2)}`} hint="0 = precise, 1 = creative">
-          <Slider
-            value={[config.temperature * 100]}
-            min={0}
-            max={100}
-            step={1}
-            onValueChange={([v]) => updateConfig({ temperature: v / 100 })}
-          />
-        </Field>
+// ─── 5. SECURITY ────────────────────────────────────────────
 
-        <Field label="Fallback Message" hint="Shown when AI fails to respond">
-          <Input
-            value={config.fallbackMessage}
-            onChange={(e) => updateConfig({ fallbackMessage: e.target.value })}
-            className="text-xs"
+function SecurityTab({ config, updateConfig }: ConfigPanelProps) {
+  return (
+    <div className="space-y-4">
+      <Section title="Master Kill Switch">
+        <Toggle
+          label="Widget Enabled"
+          hint="Disables widget globally when off — users see nothing"
+          checked={config.widgetEnabled}
+          onChange={(v) => updateConfig({ widgetEnabled: v })}
+        />
+        <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium text-center ${
+          config.widgetEnabled
+            ? "bg-emerald-500/10 text-emerald-400"
+            : "bg-red-500/10 text-red-400"
+        }`}>
+          {config.widgetEnabled ? "WIDGET ACTIVE" : "WIDGET DISABLED"}
+        </div>
+      </Section>
+
+      <Section title="Disguise Mode">
+        <Toggle
+          label="Calculator Disguise"
+          hint="Shows a fake calculator until PIN is entered"
+          checked={config.disguiseEnabled}
+          onChange={(v) => updateConfig({ disguiseEnabled: v })}
+        />
+        {config.disguiseEnabled && (
+          <Field label="Widget PIN" hint="PIN to unlock the disguise">
+            <Input
+              type="password"
+              value={config.widgetPin}
+              onChange={(e) => updateConfig({ widgetPin: e.target.value })}
+              maxLength={6}
+              className="w-32 font-mono text-sm tracking-[0.3em]"
+            />
+          </Field>
+        )}
+      </Section>
+
+      <Section title="DM Lock">
+        <Toggle
+          label="DM PIN Lock"
+          hint="Require a PIN to open DM conversations"
+          checked={config.dmLockEnabled}
+          onChange={(v) => updateConfig({ dmLockEnabled: v })}
+        />
+      </Section>
+
+      <Section title="Allowed Domains">
+        <Field
+          label="Domain Whitelist"
+          hint="One domain per line. Leave empty for all domains."
+        >
+          <Textarea
+            value={config.allowedDomains}
+            onChange={(e) => updateConfig({ allowedDomains: e.target.value })}
+            placeholder={`bioquiz.app\nlocalhost:3000`}
+            className="min-h-[100px] font-mono text-xs"
           />
         </Field>
       </Section>
+    </div>
+  );
+}
 
-      <Section title="Worker Endpoint">
-        <Field label="Cloudflare Worker URL">
+// ─── 6. ADVANCED ────────────────────────────────────────────
+
+function AdvancedTab({ config, updateConfig }: ConfigPanelProps) {
+  return (
+    <div className="space-y-4">
+      <Section title="Worker & API">
+        <Field label="Cloudflare Worker URL" hint="AI backend endpoint">
           <Input
             value={config.workerUrl}
             onChange={(e) => updateConfig({ workerUrl: e.target.value })}
@@ -434,65 +502,62 @@ function AIPersonaTab({ config, updateConfig }: ConfigPanelProps) {
             className="font-mono text-xs"
           />
         </Field>
-      </Section>
-    </div>
-  );
-}
-
-function AccessTab({ config, updateConfig }: ConfigPanelProps) {
-  return (
-    <div className="space-y-4">
-      <Section title="Master Kill Switch">
-        <Field label="Widget Enabled" hint="Disables widget globally when off">
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={config.enabled}
-              onCheckedChange={(v) => updateConfig({ enabled: v })}
-            />
-            <span
-              className={`text-xs font-medium ${
-                config.enabled ? "text-emerald-400" : "text-red-400"
-              }`}
-            >
-              {config.enabled ? "ACTIVE" : "DISABLED"}
-            </span>
-          </div>
+        <Field label="Giphy API Key" hint="For GIF search in chat">
+          <Input
+            value={config.giphyApiKey}
+            onChange={(e) => updateConfig({ giphyApiKey: e.target.value })}
+            className="font-mono text-xs"
+          />
+        </Field>
+        <Field label="Image Host URL" hint="Leave empty for default">
+          <Input
+            value={config.imageHost}
+            onChange={(e) => updateConfig({ imageHost: e.target.value })}
+            placeholder="https://img.example.com"
+            className="font-mono text-xs"
+          />
         </Field>
       </Section>
 
-      <Section title="Allowed Domains">
-        <Field
-          label="Domain Whitelist"
-          hint="One domain per line. Leave empty for all."
-        >
+      <Section title="Custom CSS">
+        <Field label="Inject custom styles" hint="Applied as CSS custom properties on #bqp">
           <Textarea
-            value={config.allowedDomains}
-            onChange={(e) => updateConfig({ allowedDomains: e.target.value })}
-            placeholder={`example.com\nbioquiz.app\nlocalhost:3000`}
+            value={config.customCSS}
+            onChange={(e) => updateConfig({ customCSS: e.target.value })}
+            placeholder={`/* e.g. --bq-accent: #ff6b6b; */\n/* or: .bqp { border: 1px solid red; } */`}
             className="min-h-[120px] font-mono text-xs"
           />
         </Field>
       </Section>
+
+      <Section title="Debug">
+        <Toggle
+          label="Debug Mode"
+          hint="Enables verbose console logging"
+          checked={config.debugMode}
+          onChange={(v) => updateConfig({ debugMode: v })}
+        />
+      </Section>
     </div>
   );
 }
 
-// ─── Main ConfigPanel ───────────────────────────────────────
+// ─── MAIN CONFIG PANEL ──────────────────────────────────────
 
 export function ConfigPanel({ config, updateConfig, activeTab }: ConfigPanelProps) {
   const props: ConfigPanelProps = { config, updateConfig, activeTab };
 
   const tabMap: Record<string, React.ReactNode> = {
     appearance: <AppearanceTab {...props} />,
+    themes: <ThemesTab {...props} />,
     behavior: <BehaviorTab {...props} />,
-    welcome: <WelcomeTab {...props} />,
-    "quick-replies": <QuickRepliesTab {...props} />,
-    "ai-persona": <AIPersonaTab {...props} />,
-    access: <AccessTab {...props} />,
+    profile: <ProfileTab {...props} />,
+    security: <SecurityTab {...props} />,
+    advanced: <AdvancedTab {...props} />,
   };
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-5 [&::-webkit-scrollbar]:w-1.5">
+    <div className="h-full overflow-y-auto px-4 py-5 sm:px-6 [&::-webkit-scrollbar]:w-1.5">
       {tabMap[activeTab] ?? <p className="text-white/30">Select a tab</p>}
     </div>
   );

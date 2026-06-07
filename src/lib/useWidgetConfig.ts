@@ -7,13 +7,21 @@ import { getConfig, setConfig, onConfigChange } from "./firebase";
 
 export type SyncStatus = "synced" | "syncing" | "offline";
 
+function deepMerge(prev: WidgetConfig, partial: Partial<WidgetConfig>): WidgetConfig {
+  const merged = { ...prev, ...partial };
+  // Deep merge nested objects
+  if (partial.notifPrefs && prev.notifPrefs) {
+    merged.notifPrefs = { ...prev.notifPrefs, ...partial.notifPrefs };
+  }
+  return merged;
+}
+
 export function useWidgetConfig() {
   const [config, setConfigState] = useState<WidgetConfig>(DEFAULT_CONFIG);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("syncing");
   const [loaded, setLoaded] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load initial config + subscribe
   useEffect(() => {
     let mounted = true;
 
@@ -48,14 +56,10 @@ export function useWidgetConfig() {
     };
   }, []);
 
-  // Debounced write to Firebase
   const updateConfig = useCallback((partial: Partial<WidgetConfig>) => {
-    const next = { ...DEFAULT_CONFIG, ...partial } as WidgetConfig;
-
     setConfigState((prev) => {
-      const merged = { ...prev, ...partial };
+      const merged = deepMerge(prev, partial);
 
-      // Debounce Firebase write
       if (debounceRef.current) clearTimeout(debounceRef.current);
       setSyncStatus("syncing");
 
