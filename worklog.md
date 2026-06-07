@@ -34,3 +34,24 @@ Stage Summary:
 - Aceternity UI effects: BackgroundBeams, SpotlightCard, MovingBorder, ShimmerButton
 - Framer Motion page transitions
 - All shadcn/ui components used (Input, Label, Switch, Slider, Textarea, Select, Separator)
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix page not found, remove themes, fix /admin route
+
+Work Log:
+- Diagnosed "page not found" issue: `export const dynamic = "force-dynamic"` in admin/layout.tsx was causing Cloudflare Workers routing failure
+- Removed `force-dynamic` export from admin layout to fix the 404 on deployed site
+- Updated WIDGET_THEMES in defaults.ts to only include Pure Black and Golden Brown
+- Updated defaultTheme from "none" to "pure-black"
+- Updated chat-widget.js v30 patch: reduced THEMES array to only ['pure-black','golden'], updated THEME_LABEL, changed CSS to hide all chips then show only the two wanted, updated fallback from 'none' to 'pure-black'
+- Added 'golden' and 'pure-black' to KNOWN array in v28 patch so applyTheme() properly handles the class
+- Deleted old src/components/site/AdminPanel.tsx (dead code - old file manager admin)
+- Lint passed, committed and pushed to GitHub
+
+Stage Summary:
+- Commit 68f3c5e pushed to origin/main
+- Both / and /admin routes verified working locally (200 OK)
+- Admin panel login tested with password 1306, shows widget config
+- Themes tab shows only 2 themes: Pure Black and Golden Brown
+- Cloudflare auto-deploy should pick up the changes
