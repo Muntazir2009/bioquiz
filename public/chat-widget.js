@@ -108,15 +108,15 @@ const PALETTE = [
 const EMOJI_LIST = ['😊','😂','❤️','🔥','👍','🎉','😮','🧬','💯','🌍','👀','😢','✨','💪','🙌','😎'];
 // v9.2: Full emoji reaction picker — categorized like WhatsApp's keyboard
 const REACTION_CATEGORIES = {
-  '⭐': ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','💀','🫶','🤯'],
-  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
-  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','💋','🩸'],
-  '🐶': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪰','🪲','🪳','🦟','🦗','🕷️','🕸️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🪶','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔'],
-  '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🫖','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊'],
-  '⚽': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🏵️','🎗️','🎫','🎟️','🎪','🤹','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🪘','🎷','🎺','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
-  '🚗': ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','🪝','⛽','🚧','🚦','🚥','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🕍','🛕','🕋','⛩️','🛤️','🛣️','🗾','🎑','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌌','🌉','🌁'],
-  '💡': ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','🪛','🔧','🔨','⚒️','🛠️','⛏️','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🔫','💣','🧨','🪓','🔪','🗡️','⚔️','🛡️','🚬','⚰️','🪦','⚱️','🏺','🔮','📿','🧿','💈','⚗️','🔭','🔬','🕳️','🩹','🩺','💊','💉','🩸','🧬','🦠','🧫','🧪','🌡️','🧹','🧺','🧻','🚽','🚰','🚿','🛁','🛀','🧼','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛋️','🛏️','🛌','🧸','🪆','🖼️','🪞','🪟','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🎎','🏮','🎐'],
-  '❤️': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯','💹','❇️','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈂️','🛂','🛃','🛄','🛅','🚹','🚺','🚼','⚧️','🚻','🚮','🎦','📶','🈁','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
+  '⭐': ['👍','❤️','😂','😮','😢','🔥','🎉','🥰','😭','👏','🤔','💯','🙏','🫶','🤯','✨'],
+  '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  '👋': ['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','💋'],
+  '🐶': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🐘','🦛','🦏','🐪','🐫','🦒','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🦢','🦩','🕊️','🐇'],
+  '🍔': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🥒','🌶️','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🥙','🌮','🌯','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🥛','☕','🍵','🧃','🥤'],
+  '⚽': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🎱','🏓','🏸','🏒','🏑','🏏','🥅','⛳','🏹','🎣','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','🏂','🏋️','🤸','⛹️','🤾','🏌️','🏇','🧘','🏄','🏊','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎫','🎪','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🎻','🎲','♟️','🎯','🎳','🎮','🧩'],
+  '🚗': ['🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🛴','🚲','🛵','🏍️','🚨','🚃','🚋','🚞','🚄','🚅','🚂','🚆','🚇','✈️','🛫','🛬','💺','🚀','🛸','🚁','🛶','⛵','🚤','🛳️','🚢','⚓','⛽','🚧','🚦','🗺️','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','🏖️','🏝️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🏠','🏡','🏗️','🏭','🏢','🏬','🏥','🏦','🏨','🏪','🏫','🏛️','⛪','🗾','🎑','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌌','🌉'],
+  '💡': ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🕹️','💾','💿','📀','📷','📸','📹','🎥','📽️','📞','☎️','📟','📺','📻','🎙️','🎚️','🎛️','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🔌','💡','🔦','🕯️','💸','💵','💰','💳','💎','⚖️','🔧','🔨','🛠️','🔩','⚙️','🧱','🧲','🔮','📿','⚗️','🔭','🔬','🩹','🩺','💊','💉','🧬','🦠','🧪','🌡️','🧹','🚽','🚰','🚿','🛁','🧼','🔑','🗝️','🚪','🛋️','🛏️','🧸','🖼️','🛍️','🛒','🎁','🎈','🎏','🎀','🎊','🎉','🎎','🏮'],
+  '❤️': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','♻️','✅','❌','⭕','🛑','⛔','💯','💢','❗','❕','❓','❔','‼️','⁉️','⚠️','🔱','⚜️','🔰','🌐','💠','Ⓜ️','🌀','💤','♿','🅿️','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
 };
 const REACTIONS  = REACTION_CATEGORIES['⭐'];     // legacy quick row (kept for compatibility)
 // Quick reaction stickers — one-tap big-emoji message ("burst" bubble)
@@ -127,7 +127,7 @@ const QUICK_STICKERS = [
   // Expressions
   '🫶','🙏','👏','🤝','💪','🫡','🤌','👌',
   // Fun
-  '💀','🤯','😭','👀','😈','🤡','💅','🫠',
+  '🤯','😭','👀','💅','🫠',
   // Nature/Objects
   '🌙','⚡','🎯','💎','🚀','🌊','🎸','🍀',
   // Animals
@@ -16122,3 +16122,140 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
 }catch(e){ console.error('[bq] v69 patch error:', e); }
 })();
 /* ════════════ end v69 patch ════════════ */
+
+/* ════════════ v70 patch — Theme Blink Fix: single source of truth ════════════
+   1. Override applyGlobalTheme / applyDmTheme to only accept 'pure-black' or 'golden'
+   2. Kill old theme intervals that re-apply stale themes every N seconds
+   3. Remove all old bq-theme-* classes and apply only the valid one
+   4. Override setGlobalTheme / setDmTheme to normalize invalid themes
+══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var ALLOWED = ['pure-black','golden'];
+  var DEFAULT = 'pure-black';
+  var LS_KEY = 'bq_theme_v2';
+
+  function norm(t){
+    if(!t || ALLOWED.indexOf(t)<0) return DEFAULT;
+    return t;
+  }
+
+  // ── 1. Override core theme functions ──
+  if(typeof applyGlobalTheme==='function'){
+    var _origApplyGlobal = applyGlobalTheme;
+    window.applyGlobalTheme = function(theme){
+      theme = norm(theme);
+      var panel = document.getElementById('bqp');
+      if(panel){
+        // Strip ALL bq-theme-* classes cleanly in one pass
+        var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
+        cls.push('bq-theme-'+theme);
+        panel.className = cls.join(' ');
+      }
+      // Sync chip selections
+      document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
+        ch.classList.toggle('sel', ch.dataset.t===theme);
+      });
+    };
+  }
+
+  if(typeof applyDmTheme==='function'){
+    window.applyDmTheme = function(did,theme){
+      theme = norm(theme);
+      var v = document.getElementById('bqv-dmconv');
+      if(v) v.className = 'bqv bq-active bq-theme-'+theme;
+      var panel = document.getElementById('bqp');
+      if(panel){
+        var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
+        cls.push('bq-theme-'+theme);
+        panel.className = cls.join(' ');
+      }
+      document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
+        ch.classList.toggle('sel', ch.dataset.t===theme);
+      });
+    };
+  }
+
+  if(typeof setGlobalTheme==='function'){
+    window.setGlobalTheme = function(t){
+      t = norm(t);
+      try{ localStorage.setItem(LS_KEY, t); }catch(_){}
+      try{ localStorage.setItem('bq_theme', t); }catch(_){}
+      try{ localStorage.setItem('bq_theme_v30', t); }catch(_){}
+      applyGlobalTheme(t);
+      if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(t);
+    };
+  }
+
+  if(typeof setDmTheme==='function'){
+    window.setDmTheme = function(did,theme){
+      theme = norm(theme);
+      var t = (typeof getThemes==='function') ? getThemes() : {};
+      t[did] = theme;
+      try{ localStorage.setItem('bq_themes', JSON.stringify(t)); }catch(_){}
+      try{ localStorage.setItem(LS_KEY, theme); }catch(_){}
+      if(typeof db!=='undefined' && db && typeof uid!=='undefined' && uid) db.ref('bq_presence/'+uid+'/theme').set(theme);
+      applyDmTheme(did,theme);
+    };
+  }
+
+  if(typeof getGlobalTheme==='function'){
+    window.getGlobalTheme = function(){
+      try{
+        var t = localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme') || DEFAULT;
+        return norm(t);
+      }catch(_){ return DEFAULT; }
+    };
+  }
+
+  // ── 2. Clean up localStorage — normalize old invalid theme values ──
+  try{
+    var cur = localStorage.getItem(LS_KEY);
+    if(cur && ALLOWED.indexOf(cur)<0){
+      localStorage.setItem(LS_KEY, DEFAULT);
+    }
+    var cur2 = localStorage.getItem('bq_theme_v30');
+    if(cur2 && ALLOWED.indexOf(cur2)<0){
+      localStorage.setItem('bq_theme_v30', DEFAULT);
+    }
+    var cur3 = localStorage.getItem('bq_theme');
+    if(cur3 && ALLOWED.indexOf(cur3)<0){
+      localStorage.setItem('bq_theme', DEFAULT);
+    }
+  }catch(_){}
+
+  // ── 3. Apply the correct theme now ──
+  function applyNow(){
+    var panel = document.getElementById('bqp');
+    if(!panel) return;
+    var saved = DEFAULT;
+    try{ saved = norm(localStorage.getItem(LS_KEY) || localStorage.getItem('bq_theme_v30') || localStorage.getItem('bq_theme')); }catch(_){}
+    var cls = panel.className.split(/\s+/).filter(function(c){ return c.indexOf('bq-theme-')!==0; });
+    cls.push('bq-theme-'+saved);
+    panel.className = cls.join(' ');
+    document.querySelectorAll('.bq-theme-chip,.bq-if-th').forEach(function(ch){
+      ch.classList.toggle('sel', ch.dataset.t===saved);
+    });
+  }
+
+  // Apply immediately if panel exists, otherwise retry
+  applyNow();
+  var _bootTries = 0;
+  var _bootIv = setInterval(function(){
+    applyNow();
+    _bootTries++;
+    if(_bootTries > 30) clearInterval(_bootIv);
+  }, 200);
+
+  // ── 4. Hide ALL theme chips except pure-black & golden (CSS override) ──
+  var style = document.createElement('style');
+  style.id = 'bq-v70-theme-fix';
+  style.textContent =
+    '#bqp #bq-theme-chips .bq-theme-chip,#bqp #bq-if-themes .bq-if-th{display:none!important;}'+
+    '#bqp #bq-theme-chips .bq-theme-chip[data-t="pure-black"],#bqp #bq-theme-chips .bq-theme-chip[data-t="golden"],'+
+    '#bqp #bq-if-themes .bq-if-th[data-t="pure-black"],#bqp #bq-if-themes .bq-if-th[data-t="golden"]{display:inline-block!important;}';
+  document.head.appendChild(style);
+
+  try{ console.log('[bq] v70 patch loaded — theme blink fix, single source of truth'); }catch(_){}
+})();
+/* ════════════ end v70 patch ════════════ */
