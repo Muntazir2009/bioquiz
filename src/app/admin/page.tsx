@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 // socket.io-client removed — using polling for Cloudflare compatibility
 import {
@@ -8,7 +8,10 @@ import {
   Pencil, Check, X, ArrowLeft, BarChart3, Eye, EyeOff, Filter,
   RefreshCw, Copy, Globe, FileText, Image as ImageIcon, Video,
   Music, FileArchive, File, Activity, Trash, LogOut, Calendar,
-  Hash, CopyPlus, Database, TrendingUp, Zap,
+  Hash, CopyPlus, Database, TrendingUp, Zap, MessageSquare,
+  Settings, RotateCcw, Users, Palette, SlidersHorizontal, Shield,
+  Save, Upload, Bell, Volume2, Smartphone, Wrench, AlertTriangle,
+  Type, MessageCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils-client";
@@ -39,7 +42,57 @@ type StorageInfo = {
   largest: { id: string; name: string; size: number; sizeFormatted: string; category: string; }[];
 };
 
-type Tab = "overview" | "files" | "storage";
+type WidgetConfig = {
+  widgetEnabled?: boolean;
+  disguiseEnabled?: boolean;
+  autoOpen?: boolean;
+  autoOpenDelay?: number;
+  defaultTheme?: string;
+  accentColor?: string;
+  widgetPosition?: string;
+  bubbleSize?: number;
+  panelWidth?: number;
+  panelHeight?: number;
+  charLimit?: number;
+  maxMessages?: number;
+  fontSize?: string;
+  profanityFilter?: boolean;
+  slowMode?: boolean;
+  slowModeInterval?: number;
+  rateLimitEnabled?: boolean;
+  linkFilter?: boolean;
+  announcementEnabled?: boolean;
+  announcementText?: string;
+  announcementColor?: string;
+  maintenanceEnabled?: boolean;
+  maintenanceMessage?: string;
+  [key: string]: unknown;
+};
+
+type PresenceUser = {
+  uid: string;
+  ts?: number;
+  name?: string;
+  status?: string;
+  [key: string]: unknown;
+};
+
+type RecentMessage = {
+  ts?: number;
+  text?: string;
+  sender?: string;
+  system?: boolean;
+  [key: string]: unknown;
+};
+
+type ActivityData = {
+  onlineUsers: PresenceUser[];
+  onlineCount: number;
+  recentMessages: RecentMessage[];
+  totalMessages: number;
+};
+
+type Tab = "overview" | "files" | "storage" | "widget" | "activity" | "settings";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,6 +107,32 @@ const categoryColors: Record<string, string> = {
   pdf: "oklch(0.65 0.2 25)", archive: "oklch(0.68 0.12 60)", document: "oklch(0.7 0.12 250)",
   spreadsheet: "oklch(0.72 0.16 140)", presentation: "oklch(0.75 0.15 30)",
   text: "oklch(0.65 0.1 220)", file: "oklch(0.55 0.08 250)",
+};
+
+const defaultWidgetConfig: WidgetConfig = {
+  widgetEnabled: true,
+  disguiseEnabled: false,
+  autoOpen: false,
+  autoOpenDelay: 0,
+  defaultTheme: "pure-black",
+  accentColor: "#ffffff",
+  widgetPosition: "bottom-right",
+  bubbleSize: 56,
+  panelWidth: 380,
+  panelHeight: 600,
+  charLimit: 500,
+  maxMessages: 50,
+  fontSize: "medium",
+  profanityFilter: true,
+  slowMode: false,
+  slowModeInterval: 5,
+  rateLimitEnabled: true,
+  linkFilter: false,
+  announcementEnabled: false,
+  announcementText: "",
+  announcementColor: "#f59e0b",
+  maintenanceEnabled: false,
+  maintenanceMessage: "",
 };
 
 // ─── Admin Page ───────────────────────────────────────────────────────────────
@@ -84,6 +163,29 @@ export default function AdminPage() {
 
   // Realtime via polling (Cloudflare Workers compatible — no WebSocket server needed)
   const [wsConnected, setWsConnected] = useState(true); // always "connected" via polling
+
+  // Widget config
+  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(defaultWidgetConfig);
+  const [widgetConfigLoading, setWidgetConfigLoading] = useState(false);
+  const [syncingKey, setSyncingKey] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Activity
+  const [activityData, setActivityData] = useState<ActivityData | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  // Widget refresh toast
+  const [widgetRefreshToast, setWidgetRefreshToast] = useState(false);
+
+  // Settings
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [sessionTimeout, setSessionTimeout] = useState("24h");
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [soundOnMessage, setSoundOnMessage] = useState(false);
+  const [hapticFeedback, setHapticFeedback] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState("");
 
   // ─── Auth ────────────────────────────────────────────────────────────────
 
@@ -132,6 +234,66 @@ export default function AdminPage() {
     const interval = setInterval(() => { fetchData(); }, 10000); // poll every 10s
     return () => { clearInterval(interval); };
   }, [isAuthed, fetchData]);
+
+  // ─── Widget Config ─────────────────────────────────────────────────────
+
+  const fetchWidgetConfig = useCallback(async () => {
+    setWidgetConfigLoading(true);
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    try {
+      const res = await fetch("/api/admin/widget-config", { headers: { "x-admin-password": pwd } });
+      if (res.ok) {
+        const json = await res.json();
+        setWidgetConfig({ ...defaultWidgetConfig, ...(json.config || {}) });
+      }
+    } catch { /* ignore */ }
+    finally { setWidgetConfigLoading(false); }
+  }, [password]);
+
+  useEffect(() => { if (isAuthed && tab === "widget") { queueMicrotask(() => fetchWidgetConfig()); } }, [isAuthed, tab, fetchWidgetConfig]);
+
+  const writeWidgetConfig = useCallback((key: string, value: unknown) => {
+    setWidgetConfig((prev) => {
+      const updated = { ...prev, [key]: value };
+      // Show sync indicator
+      setSyncingKey(key);
+      // Debounce the API write
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        const pwd = password || sessionStorage.getItem("admin-auth") || "";
+        try {
+          await fetch("/api/admin/widget-config", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+            body: JSON.stringify({ [key]: value }),
+          });
+        } catch { /* ignore */ }
+        setSyncingKey(null);
+      }, 300);
+      return updated;
+    });
+  }, [password]);
+
+  // ─── Activity ──────────────────────────────────────────────────────────
+
+  const fetchActivity = useCallback(async () => {
+    setActivityLoading(true);
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    try {
+      const res = await fetch("/api/admin/activity", { headers: { "x-admin-password": pwd } });
+      if (res.ok) setActivityData(await res.json());
+    } catch { /* ignore */ }
+    finally { setActivityLoading(false); }
+  }, [password]);
+
+  useEffect(() => { if (isAuthed && tab === "activity") { queueMicrotask(() => fetchActivity()); } }, [isAuthed, tab, fetchActivity]);
+
+  // Auto-refresh activity every 10 seconds
+  useEffect(() => {
+    if (!isAuthed || tab !== "activity") return;
+    const interval = setInterval(() => { fetchActivity(); }, 10000);
+    return () => { clearInterval(interval); };
+  }, [isAuthed, tab, fetchActivity]);
 
   // ─── File operations ─────────────────────────────────────────────────────
 
@@ -184,6 +346,79 @@ export default function AdminPage() {
     setCopiedShareId(shareId);
     setTimeout(() => setCopiedShareId(null), 2000);
   }, []);
+
+  // ─── Widget Refresh ────────────────────────────────────────────────────
+
+  const handleWidgetRefresh = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("bq-admin-refresh"));
+    // Also force-reload the script
+    const oldScript = document.getElementById("bq-chat-script");
+    if (oldScript) oldScript.remove();
+    const oldBubble = document.getElementById("bqb");
+    if (oldBubble) oldBubble.remove();
+    const oldPanel = document.getElementById("bqp");
+    if (oldPanel) oldPanel.remove();
+    // Re-create script tag with cache-bust
+    const script = document.createElement("script");
+    script.id = "bq-chat-script";
+    script.src = `/chat-widget.js?t=${Date.now()}`;
+    document.body.appendChild(script);
+    setWidgetRefreshToast(true);
+    setTimeout(() => setWidgetRefreshToast(false), 2000);
+  }, []);
+
+  // ─── Settings: Export/Import/Reset ─────────────────────────────────────
+
+  const handleExportConfig = useCallback(() => {
+    const blob = new Blob([JSON.stringify(widgetConfig, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bioquiz-widget-config.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [widgetConfig]);
+
+  const handleImportConfig = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const config = JSON.parse(text);
+      setWidgetConfig({ ...defaultWidgetConfig, ...config });
+      const pwd = password || sessionStorage.getItem("admin-auth") || "";
+      await fetch("/api/admin/widget-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+        body: JSON.stringify(config),
+      });
+    } catch { /* ignore invalid JSON */ }
+    e.target.value = "";
+  }, [password]);
+
+  const handleResetDefaults = useCallback(async () => {
+    setWidgetConfig(defaultWidgetConfig);
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    await fetch("/api/admin/widget-config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+      body: JSON.stringify(defaultWidgetConfig),
+    });
+    setShowResetConfirm(false);
+  }, [password]);
+
+  const handlePasswordChange = useCallback(() => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      setPasswordMsg("Passwords do not match");
+      return;
+    }
+    setPasswordMsg("Password updated locally");
+    sessionStorage.setItem("admin-auth", newPassword);
+    setPassword(newPassword);
+    setNewPassword("");
+    setConfirmPassword("");
+    setTimeout(() => setPasswordMsg(""), 3000);
+  }, [newPassword, confirmPassword]);
 
   // ─── Filtered files ──────────────────────────────────────────────────────
 
@@ -258,6 +493,14 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Widget Refresh Toast */}
+      {widgetRefreshToast && (
+        <div className="fixed top-4 right-4 z-50 animate-[fade-up_0.2s_ease_both] flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+          <Check className="h-4 w-4 text-green-500" />
+          <span className="text-xs font-medium">Widget refreshed</span>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-6">
@@ -276,6 +519,9 @@ export default function AdminPage() {
               <span className={`inline-block h-1.5 w-1.5 rounded-full ${wsConnected ? "bg-green-500" : "bg-red-500"}`} />
               {wsConnected ? "Polling" : "Offline"}
             </span>
+            <button onClick={handleWidgetRefresh} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Widget">
+              <RotateCcw className="h-4 w-4" />
+            </button>
             <button onClick={() => fetchData()} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </button>
@@ -287,15 +533,18 @@ export default function AdminPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm">
+      <div className="border-b border-border bg-background/50 backdrop-blur-sm overflow-x-auto">
         <div className="mx-auto flex max-w-7xl gap-1 px-6 pt-2">
           {([
             { id: "overview" as Tab, label: "Overview", icon: BarChart3 },
             { id: "files" as Tab, label: "Files", icon: Files },
             { id: "storage" as Tab, label: "Storage", icon: Database },
+            { id: "widget" as Tab, label: "Widget", icon: MessageSquare },
+            { id: "activity" as Tab, label: "Activity", icon: Activity },
+            { id: "settings" as Tab, label: "Settings", icon: Settings },
           ]).map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id ? "text-foreground border-foreground" : "text-muted-foreground border-transparent hover:text-foreground"
               }`}>
               <t.icon className="h-3.5 w-3.5" />{t.label}
@@ -651,6 +900,328 @@ export default function AdminPage() {
                 </div>
               )
             )}
+
+            {/* ─── WIDGET TAB ────────────────────────────────────────────── */}
+            {tab === "widget" && (
+              <div className="flex flex-col gap-6">
+                {widgetConfigLoading && !widgetConfig ? (
+                  <div className="flex items-center justify-center py-24">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Section: General */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">General</h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ConfigToggle label="Widget Enabled" value={widgetConfig.widgetEnabled ?? true} syncing={syncingKey === "widgetEnabled"} onChange={(v) => writeWidgetConfig("widgetEnabled", v)} />
+                        <ConfigToggle label="Disguise Mode" value={widgetConfig.disguiseEnabled ?? false} syncing={syncingKey === "disguiseEnabled"} onChange={(v) => writeWidgetConfig("disguiseEnabled", v)} />
+                        <ConfigToggle label="Auto Open" value={widgetConfig.autoOpen ?? false} syncing={syncingKey === "autoOpen"} onChange={(v) => writeWidgetConfig("autoOpen", v)} />
+                        <ConfigSlider label="Auto Open Delay" value={widgetConfig.autoOpenDelay ?? 0} min={0} max={10} step={1} unit="s" syncing={syncingKey === "autoOpenDelay"} onChange={(v) => writeWidgetConfig("autoOpenDelay", v)} />
+                      </div>
+                    </div>
+
+                    {/* Section: Appearance */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <Palette className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">Appearance</h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ConfigSelect label="Default Theme" value={widgetConfig.defaultTheme ?? "pure-black"} options={[{ value: "pure-black", label: "Pure Black" }, { value: "golden", label: "Golden" }]} syncing={syncingKey === "defaultTheme"} onChange={(v) => writeWidgetConfig("defaultTheme", v)} />
+                        <ConfigColorPicker label="Accent Color" value={widgetConfig.accentColor ?? "#ffffff"} syncing={syncingKey === "accentColor"} onChange={(v) => writeWidgetConfig("accentColor", v)} />
+                        <ConfigSelect label="Widget Position" value={widgetConfig.widgetPosition ?? "bottom-right"} options={[{ value: "bottom-right", label: "Bottom Right" }, { value: "bottom-left", label: "Bottom Left" }, { value: "top-right", label: "Top Right" }, { value: "top-left", label: "Top Left" }]} syncing={syncingKey === "widgetPosition"} onChange={(v) => writeWidgetConfig("widgetPosition", v)} />
+                        <ConfigSlider label="Bubble Size" value={widgetConfig.bubbleSize ?? 56} min={40} max={72} step={2} unit="px" syncing={syncingKey === "bubbleSize"} onChange={(v) => writeWidgetConfig("bubbleSize", v)} />
+                        <ConfigSlider label="Panel Width" value={widgetConfig.panelWidth ?? 380} min={300} max={500} step={10} unit="px" syncing={syncingKey === "panelWidth"} onChange={(v) => writeWidgetConfig("panelWidth", v)} />
+                        <ConfigSlider label="Panel Height" value={widgetConfig.panelHeight ?? 600} min={400} max={800} step={10} unit="px" syncing={syncingKey === "panelHeight"} onChange={(v) => writeWidgetConfig("panelHeight", v)} />
+                      </div>
+                    </div>
+
+                    {/* Section: Messages */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <Type className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">Messages</h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ConfigSlider label="Character Limit" value={widgetConfig.charLimit ?? 500} min={100} max={1000} step={10} unit="" syncing={syncingKey === "charLimit"} onChange={(v) => writeWidgetConfig("charLimit", v)} />
+                        <ConfigSlider label="Max Messages" value={widgetConfig.maxMessages ?? 50} min={20} max={100} step={5} unit="" syncing={syncingKey === "maxMessages"} onChange={(v) => writeWidgetConfig("maxMessages", v)} />
+                        <ConfigSelect label="Font Size" value={widgetConfig.fontSize ?? "medium"} options={[{ value: "small", label: "Small" }, { value: "medium", label: "Medium" }, { value: "large", label: "Large" }]} syncing={syncingKey === "fontSize"} onChange={(v) => writeWidgetConfig("fontSize", v)} />
+                      </div>
+                    </div>
+
+                    {/* Section: Features */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">Features</h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ConfigToggle label="Profanity Filter" value={widgetConfig.profanityFilter ?? true} syncing={syncingKey === "profanityFilter"} onChange={(v) => writeWidgetConfig("profanityFilter", v)} />
+                        <ConfigToggle label="Slow Mode" value={widgetConfig.slowMode ?? false} syncing={syncingKey === "slowMode"} onChange={(v) => writeWidgetConfig("slowMode", v)} />
+                        {widgetConfig.slowMode && (
+                          <ConfigSlider label="Slow Mode Interval" value={widgetConfig.slowModeInterval ?? 5} min={1} max={60} step={1} unit="s" syncing={syncingKey === "slowModeInterval"} onChange={(v) => writeWidgetConfig("slowModeInterval", v)} />
+                        )}
+                        <ConfigToggle label="Rate Limiting" value={widgetConfig.rateLimitEnabled ?? true} syncing={syncingKey === "rateLimitEnabled"} onChange={(v) => writeWidgetConfig("rateLimitEnabled", v)} />
+                        <ConfigToggle label="Link Filter" value={widgetConfig.linkFilter ?? false} syncing={syncingKey === "linkFilter"} onChange={(v) => writeWidgetConfig("linkFilter", v)} />
+                      </div>
+                    </div>
+
+                    {/* Section: Announcements */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">Announcements</h2>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ConfigToggle label="Announcement Enabled" value={widgetConfig.announcementEnabled ?? false} syncing={syncingKey === "announcementEnabled"} onChange={(v) => writeWidgetConfig("announcementEnabled", v)} />
+                        <ConfigColorPicker label="Announcement Color" value={widgetConfig.announcementColor ?? "#f59e0b"} syncing={syncingKey === "announcementColor"} onChange={(v) => writeWidgetConfig("announcementColor", v)} />
+                        <div className="md:col-span-2 flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Announcement Text</span>
+                            {syncingKey === "announcementText" && <SyncIndicator />}
+                          </div>
+                          <input type="text" value={widgetConfig.announcementText ?? ""} maxLength={200}
+                            onChange={(e) => writeWidgetConfig("announcementText", e.target.value)}
+                            placeholder="Enter announcement message..."
+                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
+                          <span className="text-[10px] text-muted-foreground text-right">{(widgetConfig.announcementText ?? "").length}/200</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ─── ACTIVITY TAB ──────────────────────────────────────────── */}
+            {tab === "activity" && (
+              <div className="flex flex-col gap-6">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <StatCard icon={Users} label="Online Now" value={String(activityData?.onlineCount ?? 0)} color="oklch(0.72 0.16 140)" />
+                  <StatCard icon={MessageSquare} label="Total Messages" value={String(activityData?.totalMessages ?? 0)} color="oklch(0.7 0.12 250)" />
+                  <StatCard icon={Activity} label="Active Today" value={String(Math.max(activityData?.onlineCount ?? 0, Math.min(activityData?.totalMessages ?? 0, 99)))} color="oklch(0.75 0.15 200)" />
+                </div>
+
+                {activityLoading && !activityData ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
+                  </div>
+                ) : activityData ? (
+                  <>
+                    {/* Online Users */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <h2 className="text-sm font-semibold">Online Users</h2>
+                          <span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500 font-medium">{activityData.onlineCount} online</span>
+                        </div>
+                        <button onClick={fetchActivity} className="grid h-7 w-7 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh">
+                          <RefreshCw className={`h-3.5 w-3.5 ${activityLoading ? "animate-spin" : ""}`} />
+                        </button>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {activityData.onlineUsers.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-8">No users currently online</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {activityData.onlineUsers.map((user) => {
+                              const userName = (user.name as string) || user.uid || "Anonymous";
+                              const status = (user.status as string) || "online";
+                              const statusColor = status === "online" ? "bg-green-500" : status === "away" ? "bg-yellow-500" : "bg-red-500";
+                              const lastSeen = user.ts ? new Date(user.ts).toLocaleTimeString() : "Unknown";
+                              return (
+                                <div key={user.uid} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                                  <div className="grid h-8 w-8 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">
+                                    {userName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-medium truncate">{userName}</p>
+                                    <p className="text-[10px] text-muted-foreground">Last seen: {lastSeen}</p>
+                                  </div>
+                                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${statusColor}`} title={status} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Recent Messages */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        <h2 className="text-sm font-semibold">Recent Messages</h2>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {activityData.recentMessages.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-8">No recent messages</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {activityData.recentMessages.map((msg, i) => {
+                              const isSystem = msg.system === true;
+                              const sender = (msg.sender as string) || "Unknown";
+                              const text = (msg.text as string) || "";
+                              const time = msg.ts ? new Date(msg.ts).toLocaleTimeString() : "";
+                              return (
+                                <div key={i} className={`flex items-start gap-3 rounded-xl border border-border p-3 ${isSystem ? "bg-foreground/[0.02]" : "bg-background"}`}>
+                                  <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold ${isSystem ? "bg-foreground/5 text-muted-foreground" : "bg-foreground/10"}`}>
+                                    {isSystem ? "S" : sender.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`text-xs font-medium ${isSystem ? "text-muted-foreground" : ""}`}>{isSystem ? "System" : sender}</span>
+                                      {time && <span className="text-[10px] text-muted-foreground">{time}</span>}
+                                    </div>
+                                    <p className={`text-xs mt-0.5 truncate ${isSystem ? "text-muted-foreground" : ""}`}>{text || "(empty)"}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+                    <div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><Activity className="h-5 w-5 text-muted-foreground" /></div>
+                    <div><p className="text-sm font-medium">Activity data unavailable</p><p className="mt-1 text-xs text-muted-foreground">Could not load activity data.</p></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── SETTINGS TAB ──────────────────────────────────────────── */}
+            {tab === "settings" && (
+              <div className="flex flex-col gap-6">
+                {/* Section: Security */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-semibold">Security</h2>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-muted-foreground">Admin Password Change</span>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPasswordMsg(""); }}
+                          placeholder="New password"
+                          className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+                        <input type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordMsg(""); }}
+                          placeholder="Confirm password"
+                          className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+                        <button onClick={handlePasswordChange} className="flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 shrink-0">
+                          <Save className="h-3.5 w-3.5" />Save
+                        </button>
+                      </div>
+                      {passwordMsg && <p className={`text-xs ${passwordMsg.includes("not match") ? "text-red-500" : "text-green-500"}`}>{passwordMsg}</p>}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-muted-foreground">Session Timeout</span>
+                      <select value={sessionTimeout} onChange={(e) => setSessionTimeout(e.target.value)}
+                        className="h-9 w-full max-w-xs rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                        <option value="1h">1 Hour</option>
+                        <option value="6h">6 Hours</option>
+                        <option value="24h">24 Hours</option>
+                        <option value="never">Never</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Data Management */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <Database className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-semibold">Data Management</h2>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button onClick={handleExportConfig} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5">
+                      <Download className="h-3.5 w-3.5" />Export Config
+                    </button>
+                    <label className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 cursor-pointer">
+                      <Upload className="h-3.5 w-3.5" />Import Config
+                      <input type="file" accept=".json" onChange={handleImportConfig} className="hidden" />
+                    </label>
+                    <button onClick={() => setShowResetConfirm(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10">
+                      <AlertTriangle className="h-3.5 w-3.5" />Reset to Defaults
+                    </button>
+                  </div>
+                  {showResetConfirm && (
+                    <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 animate-[fade-up_0.2s_ease_both]">
+                      <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium">Reset all widget settings to defaults?</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">This action cannot be undone.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={handleResetDefaults} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium transition-colors hover:bg-red-600">Reset</button>
+                        <button onClick={() => setShowResetConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section: Notifications */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <Bell className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-semibold">Notifications</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Push Notifications</span>
+                      </div>
+                      <ToggleSwitch value={pushNotifications} onChange={setPushNotifications} />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Sound on Message</span>
+                      </div>
+                      <ToggleSwitch value={soundOnMessage} onChange={setSoundOnMessage} />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Haptic Feedback</span>
+                      </div>
+                      <ToggleSwitch value={hapticFeedback} onChange={setHapticFeedback} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Maintenance */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-sm font-semibold">Maintenance</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConfigToggle label="Maintenance Mode" value={widgetConfig.maintenanceEnabled ?? false} syncing={syncingKey === "maintenanceEnabled"} onChange={(v) => writeWidgetConfig("maintenanceEnabled", v)} />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Maintenance Message</span>
+                        {syncingKey === "maintenanceMessage" && <SyncIndicator />}
+                      </div>
+                      <input type="text" value={widgetConfig.maintenanceMessage ?? ""}
+                        onChange={(e) => writeWidgetConfig("maintenanceMessage", e.target.value)}
+                        placeholder="Site is under maintenance..."
+                        className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
       </main>
@@ -676,6 +1247,124 @@ function StatCard({ icon: Icon, label, value, color }: { icon: LucideIcon; label
       <div>
         <p className="text-xl font-semibold tabular-nums">{value}</p>
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Toggle Switch ────────────────────────────────────────────────────────────
+
+function ToggleSwitch({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${value ? "bg-foreground" : "bg-foreground/20"}`}
+    >
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${value ? "translate-x-6" : "translate-x-1"}`} />
+    </button>
+  );
+}
+
+// ─── Sync Indicator ───────────────────────────────────────────────────────────
+
+function SyncIndicator() {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+      <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+      syncing
+    </span>
+  );
+}
+
+// ─── Config Toggle ────────────────────────────────────────────────────────────
+
+function ConfigToggle({ label, value, syncing, onChange }: { label: string; value: boolean; syncing: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        {syncing && <SyncIndicator />}
+      </div>
+      <ToggleSwitch value={value} onChange={onChange} />
+    </div>
+  );
+}
+
+// ─── Config Slider ────────────────────────────────────────────────────────────
+
+function ConfigSlider({ label, value, min, max, step, unit, syncing, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; unit: string; syncing: boolean; onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{label}</span>
+          {syncing && <SyncIndicator />}
+        </div>
+        <span className="text-xs font-medium tabular-nums">{value}{unit}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-2 rounded-full appearance-none cursor-pointer bg-foreground/10 accent-foreground"
+      />
+    </div>
+  );
+}
+
+// ─── Config Select ────────────────────────────────────────────────────────────
+
+function ConfigSelect({ label, value, options, syncing, onChange }: {
+  label: string; value: string; options: { value: string; label: string }[]; syncing: boolean; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        {syncing && <SyncIndicator />}
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── Config Color Picker ──────────────────────────────────────────────────────
+
+function ConfigColorPicker({ label, value, syncing, onChange }: {
+  label: string; value: string; syncing: boolean; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        {syncing && <SyncIndicator />}
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-12 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-mono outline-none focus:border-foreground/30"
+        />
       </div>
     </div>
   );
