@@ -21,12 +21,20 @@ export async function GET(req: NextRequest) {
 
     // Mark banned users
     const bannedSet = new Set(config.bannedUsers || []);
-    const enriched = users.map((u) => ({
-      ...u,
-      banned: bannedSet.has(u.uid),
-    }));
+    // Attach active warnings
+    const now = Date.now();
+    const warnedUsers = config.warnedUsers || {};
+    const enriched = users.map((u) => {
+      const warning = warnedUsers[u.uid];
+      const activeWarning = warning && warning.expiresAt > now ? warning : null;
+      return {
+        ...u,
+        banned: bannedSet.has(u.uid),
+        warning: activeWarning || null,
+      };
+    });
 
-    return NextResponse.json({ users: enriched, bannedUsers: config.bannedUsers || [] });
+    return NextResponse.json({ users: enriched, bannedUsers: config.bannedUsers || [], warnedUsers });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

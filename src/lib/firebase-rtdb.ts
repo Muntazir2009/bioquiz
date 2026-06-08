@@ -77,6 +77,15 @@ async function rtdbDelete(path: string): Promise<void> {
 
 // ─── Widget Config ──────────────────────────────────────────────────────────────
 
+export interface UserWarning {
+  uid: string;
+  reason: string;
+  warnedAt: number;       // timestamp when warned
+  expiresAt: number;     // timestamp when warning expires
+  durationMs: number;    // duration in milliseconds
+  warnedBy: string;      // 'admin'
+}
+
 export interface WidgetConfig {
   maintenanceMode: boolean;
   maintenanceMessage: string;
@@ -87,6 +96,7 @@ export interface WidgetConfig {
   maxMessages: number;
   charLimit: number;
   bannedUsers: string[];
+  warnedUsers: Record<string, UserWarning>; // uid -> warning data
   broadcastMessage: string | null;
   broadcastActive: boolean;
   accent: string;
@@ -109,6 +119,7 @@ const DEFAULT_CONFIG: WidgetConfig = {
   maxMessages: 50,
   charLimit: 320,
   bannedUsers: [],
+  warnedUsers: {},
   broadcastMessage: null,
   broadcastActive: false,
   accent: "#60a5fa",
@@ -318,6 +329,53 @@ export async function unbanUser(uid: string): Promise<void> {
   await setWidgetConfig({ bannedUsers: banned });
 }
 
+// ─── Warnings ──────────────────────────────────────────────────────────────────
+
+export async function warnUser(uid: string, reason: string, durationMs: number): Promise<void> {
+  const config = await getWidgetConfig();
+  const warnedUsers = { ...(config.warnedUsers || {}) };
+  const now = Date.now();
+  warnedUsers[uid] = {
+    uid,
+    reason,
+    warnedAt: now,
+    expiresAt: now + durationMs,
+    durationMs,
+    warnedBy: "admin",
+  };
+  await setWidgetConfig({ warnedUsers });
+}
+
+export async function unwarnUser(uid: string): Promise<void> {
+  const config = await getWidgetConfig();
+  const warnedUsers = { ...(config.warnedUsers || {}) };
+  delete warnedUsers[uid];
+  await setWidgetConfig({ warnedUsers });
+}
+
+export async function getActiveWarnings(): Promise<UserWarning[]> {
+  const config = await getWidgetConfig();
+  const warnedUsers = config.warnedUsers || {};
+  const now = Date.now();
+  // Filter out expired warnings
+  const active: UserWarning[] = [];
+  const expired: string[] = [];
+  for (const [uid, w] of Object.entries(warnedUsers)) {
+    if (w.expiresAt > now) {
+      active.push(w);
+    } else {
+      expired.push(uid);
+    }
+  }
+  // Clean up expired warnings
+  if (expired.length > 0) {
+    const cleaned = { ...warnedUsers };
+    for (const uid of expired) delete cleaned[uid];
+    await setWidgetConfig({ warnedUsers: cleaned });
+  }
+  return active;
+}
+
 export async function broadcastMessage(message: string): Promise<void> {
   await setWidgetConfig({
     broadcastMessage: message,
@@ -369,6 +427,7 @@ export interface ChatStats {
   onlineUsers: number;
   totalUsers: number;
   bannedUsers: number;
+  warnedUsers: number;
 }
 
 export async function getChatStats(): Promise<ChatStats> {
@@ -382,6 +441,11 @@ export async function getChatStats(): Promise<ChatStats> {
 
   const dmCount = dms ? Object.keys(dms).length : 0;
   const totalUsers = allPresence ? Object.keys(allPresence).length : 0;
+  const now = Date.now();
+  const warnedUsersObj = config.warnedUsers || {};
+  const activeWarnedCount = Object.values(warnedUsersObj).filter(
+    (w: any) => w.expiresAt && w.expiresAt > now
+  ).length;
 
   return {
     totalMessages: msgs,
@@ -389,5 +453,6 @@ export async function getChatStats(): Promise<ChatStats> {
     onlineUsers: online.length,
     totalUsers,
     bannedUsers: (config.bannedUsers || []).length,
+    warnedUsers: activeWarnedCount,
   };
 }
