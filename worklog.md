@@ -255,3 +255,36 @@ Stage Summary:
 - Widget config controls write directly to Firebase RTDB
 - Activity tab shows real-time online users and recent messages
 - Settings tab has security, data management, notifications, maintenance controls
+
+---
+Task ID: 1-2
+Agent: main + fullstack-developer
+Task: Add DM/Global chat controls to admin panel + sidebar with expandable categories
+
+Work Log:
+- Created /api/admin/chat/route.ts — GET global messages, DM conversations, DM messages; DELETE individual messages
+- Completely rewrote admin page.tsx from 1371 to 1975 lines
+- Replaced top tab navigation with 260px fixed sidebar + expandable category groups
+- Sidebar has 6 categories with 17 sub-items:
+  - Dashboard: Overview, Activity
+  - Chat: Global Chat (NEW), DMs (NEW), Announcements
+  - Appearance: Themes, Layout, Messages
+  - Moderation: Content Filter, Rate Limiting, User Management (NEW)
+  - Settings: General, Security, Notifications, Data, Maintenance
+  - Storage: Files, Disk Usage
+- New Global Chat panel: view/search/bulk-delete global messages with reaction counts
+- New DMs panel: view conversation list, click to expand messages, delete messages
+- New User Management panel: view online users with status, kick users from presence
+- Mobile-responsive: hamburger toggle for sidebar on small screens
+- Chevron rotation animation on category expand/collapse
+- Active sub-item has 3px left border accent indicator
+- Fixed Firebase orderBy issue in chat API (removed orderBy, filter client-side)
+- Installed firebase package for existing lib/firebase.ts
+- Lint passes clean, build succeeds
+- Committed and pushed
+
+Stage Summary:
+- Admin panel now uses sidebar layout with 6 expandable categories and 17 sub-items
+- DM and Global chat controls added with full message viewing, search, and deletion
+- User management panel added with online user tracking and kick capability
+- All existing functionality preserved (file management, widget config, storage, etc.)
