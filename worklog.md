@@ -1,204 +1,232 @@
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Diagnose Cloudflare Pages build failure
+Agent: main
+Task: Fix theme flashing, comprehensive theme CSS, emoji cleanup, streak persistence
 
 Work Log:
-- Analyzed Cloudflare Pages build log showing two errors:
-  1. npm ERESOLVE: @cloudflare/next-on-pages@1.13.16 peer dep requires Next.js <=15.5.2, but project uses Next.js 16.2.6
-  2. wrangler.toml missing pages_build_output_dir property
-- Searched for compatible Cloudflare adapters
-- Found @opennextjs/cloudflare@1.19.11 which supports Next.js >=16.2.6
+- Analyzed root cause of theme flashing: 4+ competing theme systems (FIX 8, v28, v30, v70) fighting each other with intervals and CSS overrides
+- Fixed subscribeWidgetConfig to call applyGlobalTheme instead of undefined applyTheme
+- Cleaned HTML template: replaced 14-chip theme rows with only pure-black & golden
+- Gutted FIX 8's injectThemeOverrideCss that was forcing all chips visible with !important
+- Neutralized v28's chip injection intervals and old theme restoration intervals
+- Removed v30's competing applyTwoTheme and setInterval
+- Added v71 definitive patch with MutationObserver on #bqp to reject invalid theme classes
+- Removed v19/v20 chip injection code (noir/aurora/peach/carbon)
+- Added comprehensive theme CSS for both themes covering entire widget (panels, headers, inputs, lists, bubbles, buttons, etc.)
+- Removed inappropriate emojis: 👅, 💋, 👄, 🤮, 🥴, 🍑, 💉, 🦠, 🚽
+- Added Firebase sync for streaks (bq_streaks/{uid}) in StreakBadge.tsx
+- Added getStreak/setStreak functions to firebase.ts
+- StreakBadge now merges local + remote streak data, tracks bestStreak
+- Committed as 5f8d405, pushed to origin/main
 
 Stage Summary:
-- Root cause: @cloudflare/next-on-pages does NOT support Next.js 16
-- Solution: Migrate to @opennextjs/cloudflare (Cloudflare's officially maintained adapter)
----
-Task ID: 2
-Agent: Migration Agent
-Task: Migrate from @cloudflare/next-on-pages to @opennextjs/cloudflare
-
-Work Log:
-- Removed @cloudflare/next-on-pages from package.json devDependencies
-- Added @opennextjs/cloudflare@^1.19.11 to dependencies
-- Updated wrangler from ^3.99.0 to ^4.86.0
-- Replaced scripts: pages:build/dev/deploy → preview/deploy/cf-typegen
-- Deleted wrangler.toml, created wrangler.jsonc (Workers format)
-- Created open-next.config.ts with defineCloudflareConfig({})
-- Created .npmrc with legacy-peer-deps=true
-- Created .dev.vars with NEXTJS_ENV=development
-- Created .github/workflows/deploy.yml (GitHub Actions CI/CD)
-- Created missing src/app/api/files/upload/route.ts
-- Updated .gitignore with .open-next/ and cloudflare-env.d.ts
-- Verified bun install succeeds
-- Verified dev server returns HTTP 200
-
-Stage Summary:
-- Full migration from Pages to Workers deployment model
-- New adapter supports Next.js 16.2.6+
-- GitHub Actions workflow handles auto-deploy
-- Deployment zip: bioquiz-cloudflare-deploy.zip (24MB)
+- Theme flashing fixed with MutationObserver + centralized theme application
+- Both themes now comprehensively style the entire widget
+- Inappropriate emojis removed from reaction picker
+- Streaks are now account-persistent via Firebase RTDB
 
 ---
-Task ID: 3
-Agent: Main Agent
-Task: Fix all bugs (file upload 404, D1/R2 bindings, rePaintPoll error, brownish flash, admin 404, FilePanel connecting) and enhance UI
+Task ID: 1 (continued)
+Agent: general-purpose
+Task: Fix residual theme flashing in chat-widget.js
 
 Work Log:
-- Investigated all bugs: missing upload route, D1/R2 binding access, rePaintPoll undefined, theme flash, admin 404, FilePanel status
-- Fixed D1/R2 binding access: replaced process.env.DB/BUCKET with getCloudflareContext() from @opennextjs/cloudflare
-- Added cloudflare-env.d.ts type declarations for D1Database and R2Bucket bindings
-- Created missing /api/files/upload/route.ts (was the root cause of file upload failures)
-- Fixed rePaintPoll undefined error by adding window.rePaintPoll stub in ChatWidget component
-- Fixed brownish flash on site load by improving inline theme script in layout.tsx
-- Fixed admin panel lint errors: setState in effect, getFilteredFiles ordering
-- Fixed FilePanel connection status: use local SQLite in dev, D1 in production
-- Optimized Loader speed: 1.1s duration (from 1.4s), reduced animation overhead
-- Optimized Card3D: lighter tilt angles (2.5 from 3), faster transitions (0.35s from 0.4s)
-- Added dynamic imports for heavy components (FilePanel, SharedFileView, ChatWidget)
-- Enhanced Hero with 21st.dev-inspired stat pills
-- Optimized CSS: reduced blur/filter overhead, smaller atom icon, faster animations
-- Fixed all lint errors (7 → 0)
-- Removed initOpenNextCloudflareForDev() from next.config.ts (was causing dev server crashes)
-- Verified: main page 200, admin page 200, /api/files 200 in local dev
-- Committed all changes, attempted GitHub push (needs authentication token)
+- Fix 1: Added change detection to subscribeWidgetConfig() (line ~3634). Introduced `__lastWidgetConfig` variable that stores the last applied config; compares incoming Firebase snapshot via JSON.stringify and skips DOM updates if config hasn't changed. Prevents redundant style recalculations from Firebase on("value") re-fires.
+- Fix 2: Reduced v71 patch boot frequency (line ~16052). Changed boot schedule from 4 calls (immediate + 500ms + 1500ms + 3000ms) to 2 calls (immediate + 1000ms). Reduced cleanup interval from 10 runs at 2000ms to 3 runs at 5000ms. Eliminates repeated boot() calls that were stripping and re-adding theme classes.
+- Fix 3: Added transition suppression during theme application. Modified applyDefinitive() (line ~15944) to add `bq-theme-switching` class before swapping theme classes, then remove it after two requestAnimationFrame frames. Added CSS rule `#bqp.bq-theme-switching, #bqp.bq-theme-switching * { transition: none !important; animation: none !important; }` via a new style element (id: bq-v71-flash-fix) injected at v71 patch startup. This prevents CSS transition animations from playing during theme class swaps.
+- Fix 4: Cleaned up inappropriate emojis in REACTION_CATEGORIES (line ~112). Removed from '😀' category: 🤪, 🤑, 🤗, 🤭, 🤫, 😏, 🙄, 😬, 👻, 👽, 👾, 🤖, 😺, 😸, 😹, 😻, 😼, 😽, 🙀, 😿, 😾. Removed from '👋' category: 🫀, 🫁, 🦷, 🦴, 👁️.
 
 Stage Summary:
-- All critical bugs fixed
-- File upload now works (missing route created)
-- D1/R2 bindings now use correct API (getCloudflareContext)
-- rePaintPoll error resolved with global stub
-- Site loads faster with optimized animations and dynamic imports
-- Admin page accessible at /admin (returns 200)
-- Push to GitHub requires authentication token from user
+- Theme flashing should now be eliminated: no redundant config re-applications, fewer boot calls, and transition suppression during class swaps
+- Emoji picker cleaned of potentially inappropriate entries
+- All changes are targeted edits to /home/z/my-project/public/chat-widget.js
 
 ---
 Task ID: 4
-Agent: Main Agent
-Task: Fix dual typing indicators, add real-time notification feature, add new stickers with animations
+Agent: general-purpose
+Task: Expand WidgetConfig and defaults
 
 Work Log:
-- Diagnosed dual typing indicator bug: both main widget's setDmTyp() AND v25's broadcastTyping() were writing to bq_dm_typing Firebase path simultaneously, causing erratic typing indicator behavior
-- Fixed by disabling v25's broadcastTyping() and wireTypingInput() functions (added early returns)
-- Designed and implemented comprehensive real-time notification system (v36 patch):
-  - Notification bell with animated badge in chat header
-  - Notification dropdown panel with message previews and time-ago display
-  - In-app notification banners with slide-in/out animations
-  - Browser push notification support (Notification API)
-  - Sound notification with two-tone chime (Web Audio API)
-  - Firebase real-time listeners for cross-view message awareness
-  - 6 per-type toggle switches in profile settings (In-App, Sound, Global Chat, DMs, Mentions, Browser Push)
-  - Browser push permission flow with status display
-- Removed legacy hidden push notification CSS and replaced stub functions
-- Added 5 new sticker categories (40 new stickers):
-  - Science & Discovery (🧪🔬🧬🔭🌡️🧫💡🪐)
-  - Music & Dance (🎵🎶🎤💃🕺🪗🎹🥁)
-  - Weather & Cosmos (☀️🌈⭐❄️🌪️☄️🌤️🪶)
-  - Greetings & Gestures (👋🤞✌️🤙🫰🫱🫲🤟)
-  - Magic & Fantasy (🔮🧙🪄🐉🦄🌟👑🪬)
-- Added 5 new unique sticker animation keyframes:
-  - stk-science: Drop-down with blur reveal
-  - stk-music: Rhythmic bounce with rotation
-  - stk-weather: Fall-from-sky with blur transition
-  - stk-greet: Slide-in from side with bounce
-  - stk-magic: Full rotation with brightness/blur glow effect
-- Bumped widget version from 45.0.0 to 46.0.0
-- Verified with Agent Browser: all features working, no console errors
+- Added 8 new section groups (29 fields total) to the WidgetConfig interface:
+  - Moderation (5 fields): profanityFilter, slowMode, slowModeInterval, linkFilter, maxAccounts
+  - Announcements (4 fields): announcementEnabled, announcementText, announcementColor, announcementDismiss
+  - Streaks (4 fields): streaksEnabled, streakFreezeDays, streakMultiplier, streakRewardMessage
+  - Welcome Message (3 fields): welcomeEnabled, welcomeMessage, welcomeDelay
+  - Widget Position & Size (6 fields): widgetPosition (union type), widgetOffsetX, widgetOffsetY, bubbleSize, panelWidth, panelHeight
+  - Rate Limiting (4 fields): rateLimitEnabled, rateLimitMessages, rateLimitInterval, spamProtection
+  - Sound & Haptics (3 fields): messageSound, sendSound, hapticFeedback
+  - Online Indicators (2 fields): showOnlineCount, showTypingIndicator
+- Added matching default values for all 29 new fields in DEFAULT_CONFIG object
+- Updated WIDGET_THEMES entries to include accent and description properties
+- All existing fields preserved unchanged
 
 Stage Summary:
-- Dual typing indicators fixed by disabling v25 duplicate typing system
-- Complete real-time notification system with bell, dropdown, banners, sound, and push
-- 40 new stickers with 5 unique animation styles
-- Widget version bumped to 46.0.0
-- All features browser-verified and working
+- WidgetConfig interface expanded from ~24 fields to ~53 fields
+- DEFAULT_CONFIG fully reflects all new interface fields with specified defaults
+- WIDGET_THEMES now includes accent color and description metadata
+
+---
+Task ID: 6-7
+Agent: fullstack-dev
+Task: Create ModerationTab and AnnouncementsTab admin panel components
+
+Work Log:
+- Read existing ConfigPanel.tsx to understand helper component patterns (Section, Field, Toggle) and styling conventions
+- Confirmed WidgetConfig in defaults.ts already has all needed properties for both tabs (moderation, announcements, rate limiting, streaks, welcome)
+- Created /home/z/my-project/src/components/admin/ModerationTab.tsx with 4 sections:
+  - Content Filtering: profanityFilter, linkFilter, spamProtection toggles
+  - Slow Mode: slowMode toggle + slowModeInterval slider (1-60s, conditional)
+  - Rate Limiting: rateLimitEnabled toggle + rateLimitMessages slider (1-50) + rateLimitInterval slider (5-120s, conditional)
+  - Account Limits: maxAccounts number input (1-10)
+- Created /home/z/my-project/src/components/admin/AnnouncementsTab.tsx with 3 sections:
+  - Announcement Banner: announcementEnabled toggle + announcementText textarea (200 char) + announcementColor picker + announcementDismiss toggle (conditional)
+  - Welcome Message: welcomeEnabled toggle + welcomeMessage textarea + welcomeDelay slider (0-10000ms shown as seconds, conditional)
+  - Streak Settings: streaksEnabled toggle + streakFreezeDays slider (0-7) + streakMultiplier slider (1-5x, step 0.5) + streakRewardMessage input (conditional)
+- Both components include local copies of Section, Field, Toggle helpers matching ConfigPanel.tsx patterns
+- Both components use TabProps interface (config: WidgetConfig, updateConfig: Partial<WidgetConfig> => void)
+- Icons: ModerationTab uses ShieldCheck, Filter, Clock, Zap, Users, Ban; AnnouncementsTab uses Megaphone, MessageSquare, Flame, Hand
+- Registered both tabs in ConfigPanel.tsx tabMap (moderation, announcements)
+- Added Shield and Megaphone icons to Sidebar.tsx imports and TABS array
+- Lint passes clean on both new files
+
+Stage Summary:
+- Two new admin panel tab components created with consistent dark theme styling
+- ModerationTab: content filtering, slow mode, rate limiting, account limits
+- AnnouncementsTab: banner, welcome message, streak settings
+- Both tabs registered in sidebar and config panel routing
 
 ---
 Task ID: 5
-Agent: General Purpose Agent
-Task: Replies V2 + GIF picker fix (version 60.0.0)
+Agent: dashboard-agent
+Task: Create DashboardTab component for BioQuiz admin panel
 
 Work Log:
-- **Task 1A: GIF picker CSS** — Replaced old masonry `column-count:2` layout (lines 2070-2134) with clean grid layout (`grid-template-columns:repeat(2,1fr)`), fixed positioning (`right:0` instead of `left:8px;right:8px`), added `.bqgifp-nav` pagination CSS, `.bqgifp-prev`/`.bqgifp-next` buttons, `.bqgifp-page` indicator, `.bqgifp-item.bqgifp-err` error state, and `.bqgifp-skel` with aspect-ratio:1 pulse animation
-- **Task 1B: attachGifPicker function** — Replaced old infinite-scroll `appendGifs`/`loadMore` pattern with pagination version: `PER_PAGE=6`, `_allData` array, `renderPage()`, `fetchMore()`, prev/next button navigation, `updateNav()` with page counter
-- **Task 1C: Giphy API limit** — Changed `const limit = 24` → `6` at line 4188 and `const limit=24` → `6` at line 7454
-- **Task 2A: Reply Preview CSS** — Replaced old `.bqrp`/`.bqrp-n`/`.bqrp-t` styles (border-left:3px solid, dated look) with modern design: `border-radius:8px`, `border-left:2px solid`, `background:rgba(96,165,250,.1)`, uppercase name, smaller text
-- **Task 2B: Reply Bar CSS** — Replaced old `.bqrbar` styles (backdrop-filter blur, border on close button) with sleek design: no backdrop-filter, borderless close button, accent-tinted background, hover red close
-- **Task 2C: Reply Bar HTML** — Updated both global (`bqgrbar`) and DM (`bqdmrbar`) reply bars: replaced old `<line>` X icons with path-based `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`
-- **Task 2D: v43 patch** — Added at end of file to override stale `.bqrp`/`.bqrbar` styles from v35 and earlier patches (using !important), icon patching (replaces old `<line>` X with path-based), and GIF label theming
-- **Task 2E: Version bump** — Changed `WIDGET_VERSION` from `'2.0.0'` to `'60.0.0'` and updated `chat-widget-version.json` from `49.0.0` to `60.0.0`
-- **Syntax check** — `node -c chat-widget.js` passed with no errors
+- Analyzed existing admin components (ConfigPanel, Sidebar, SyncBadge, SpotlightCard) and WidgetConfig type to ensure style consistency
+- Confirmed WidgetConfig already has all required fields: widgetEnabled, disguiseEnabled, profanityFilter, slowMode, announcementEnabled, rateLimitEnabled, accentColor, bubbleStyle, fontSize, charLimit, maxMessages, autoOpen, autoOpenDelay, defaultTheme
+- Created /home/z/my-project/src/components/admin/DashboardTab.tsx with three main sections:
+  1. Status Cards (4-card grid, 2x2 mobile, 4-col desktop):
+     - Widget Status: green "Active" / red "Disabled" with pulsing indicator
+     - Default Theme: shows theme name + color swatch from WIDGET_THEMES
+     - Sync Status: pulsing dot + "Connected" text (always connected via Firebase)
+     - Last Updated: relative timestamp derived from component mount time
+  2. Quick Actions (2-column grid of action toggles):
+     - Toggle Widget (widgetEnabled) with green/red active color
+     - Disguise Mode (disguiseEnabled)
+     - Profanity Filter (profanityFilter)
+     - Slow Mode (slowMode)
+     - Announcements (announcementEnabled)
+     - Rate Limiting (rateLimitEnabled)
+  3. Configuration Summary (compact key-value list):
+     - Accent Color with color swatch + hex code
+     - Bubble Style (capitalized)
+     - Font Size (uppercase)
+     - Character Limit (with "chars" suffix)
+     - Max Messages (with "per chat" suffix)
+     - Auto Open (enabled/disabled with delay in seconds, conditional)
+- Added DashboardTab import and routing in ConfigPanel.tsx (tab id: "dashboard")
+- Added LayoutDashboard icon import and Dashboard entry (first position) in Sidebar.tsx TABS array
+- Admin page now defaults to Dashboard tab since TABS[0] is "dashboard"
+- Fixed lint issues: avoided setState in useEffect, avoided ref access during render; used useState(Date.now) for mount timestamp
+- All styling uses existing dark theme conventions: bg-[#060608], text-white/70, border-white/[0.06], brand color #2EB9DF
+- Lint passes clean
 
 Stage Summary:
-- GIF picker no longer uses masonry column-count layout (was causing overlapping)
-- GIF picker now has proper pagination with prev/next buttons and page counter
-- GIF API calls fetch 6 at a time instead of 24 (matches pagination)
-- Reply preview inside messages uses modern rounded style instead of dated left-border-only
-- Reply bar has clean borderless close button with red hover state
-- v43 patch ensures earlier patches' stale CSS is overridden
-- Widget version bumped to 60.0.0
+- DashboardTab component created at /home/z/my-project/src/components/admin/DashboardTab.tsx
+- Provides real-time widget status overview, quick toggle actions, and config summary
+- Integrated into admin panel as the default first tab (replaces Appearance as default)
+- Fully consistent with existing admin component styling and patterns
 
 ---
-Task ID: 1
-Agent: Main Agent
-Task: Replies V2 — Fix every visual and logic aspect of replies, modern sleek design, no duplicate UI elements. Fix GIF section navigation and overlapping. Fix chat lag/glitchiness.
+Task ID: 12
+Agent: general-purpose
+Task: Update chat-widget.js for new config fields from admin panel
 
 Work Log:
-- Analyzed the full 14K+ line chat-widget.js to identify 4 competing swipe-to-reply systems (v19, v20, v21, v24) causing severe lag
-- Identified reply chip CSS defined 3 times with !important arms race (base, v3, v43)
-- Found reply-to-reply only showing usernames because swipe handlers extracted text from .bqbbl.innerText which captured reply chip @username as first line
-- Found edit handler losing reply chips due to wrong selectors (.bqreply, .bq-replyref instead of .bqrp)
-- Found no click-to-scroll on reply chips
-- Found GIF navigation too small/transparent
-- Created comprehensive v44 patch (~570 lines) with 7 sections:
-  1. CSS: Unified reply chip CSS, suppressed old swipe visuals, bigger GIF nav with labels, fixed GIF grid overlapping
-  2. Unified capture-phase swipe handler replacing all 4 competing systems — uses stopImmediatePropagation() to block old handlers
-  3. Debounced setReply to prevent duplicate triggers from residual handlers
-  4. Click-to-scroll on reply chips with highlight animation
-  5. MutationObserver-based reply preservation on message edit
-  6. GIF nav labels (Prev/Next text added to buttons)
-  7. Global MutationObserver for ongoing DOM maintenance
-- Exported setReply/clearReply/getReply from main IIFE to window._bqSetReply etc.
-- Fixed doAction reply handler to extract proper text with type info (🎬 GIF, 📷 Photo, 👾 Sticker, 🎤 Voice note)
-- Fixed setReply to show nested reply context (↩ @user: original text → reply text)
-- Fixed edit handler selector from .bqreply/.bq-replyref to .bqrp
-- Added data-reply-key attribute to .bqrp elements for efficient click-to-scroll
-- Bumped version to 61.0.0
-- Pushed to GitHub
+- Read chat-widget.js (~16085 lines) and located subscribeWidgetConfig() at line 3632, startDB() at line 3663
+- Edit 1: Added v72 new config field handlers inside subscribeWidgetConfig() after `window.__BQ_ADMIN_CONFIG__=c;` (line 3653) and before `if(c.customCSS)` (line 3654). New handlers cover:
+  - widgetPosition & widgetOffsetX/Y: positions bubble (#bqb) and panel (#bqp) at bottom-right/bottom-left/top-right/top-left with appropriate CSS
+  - bubbleSize: sets width/height on bubble element
+  - panelWidth/panelHeight: sets width/height/maxHeight on panel element
+  - announcementEnabled + announcementText: creates/removes announcement banner div (#bq-announcement) with styling
+  - welcomeEnabled/welcomeMessage/welcomeDelay: persisted to localStorage
+  - profanityFilter/slowMode/slowModeInterval/linkFilter/spamProtection: moderation settings to localStorage
+  - rateLimitEnabled/rateLimitMessages/rateLimitInterval: rate limit settings to localStorage
+  - streaksEnabled/streakFreezeDays/streakMultiplier/streakRewardMessage: streak config to localStorage
+  - showOnlineCount/showTypingIndicator: indicator toggles to localStorage
+  - messageSound/sendSound/hapticFeedback: sound & haptics to localStorage
+- Edit 2: Added syncStreakToFirebase() function after subscribeWidgetConfig() closing brace. Function reads local streak data (bq.streak.v2), merges with remote Firebase data at bq_streaks/{uid} (taking higher count or more recent), writes merged data back to both Firebase and localStorage
+- Edit 3: Added syncStreakToFirebase() call to startDB() after subscribeWidgetConfig()
 
 Stage Summary:
-- v44 patch successfully loads (verified in browser console)
-- All exported functions accessible (window._bqSetReply, _bqClearReply, _bqGetReply)
-- GIF nav labels patched (2 prev + 2 next labels found)
-- v44 CSS stylesheet applied
-- No JS errors in console
-- The 4 competing swipe systems are now suppressed via capture-phase interception + CSS visual hiding
+- chat-widget.js now applies all 29 new admin config fields in real-time via subscribeWidgetConfig()
+- Streak data is synced to Firebase on startup for cross-device persistence
+- All changes are targeted edits; no existing functionality removed or altered
+
+---
+Task ID: main-coordinator
+Agent: main
+Task: Enhance admin panel with new real-time features and options
+
+Work Log:
+- Fixed theme flashing: Added change detection in subscribeWidgetConfig(), reduced v71 boot frequency, added transition suppression during theme switches
+- Cleaned up inappropriate emojis from reaction picker
+- Added streak persistence to Firebase (bq_streaks/{uid}) in chat-widget.js
+- Expanded WidgetConfig with 29 new fields across 8 sections (moderation, announcements, streaks, welcome, widget position/size, rate limiting, sound & haptics, online indicators)
+- Created DashboardTab: status cards, quick actions, configuration summary
+- Created ModerationTab: content filtering, slow mode, rate limiting, account limits
+- Created AnnouncementsTab: announcement banner, welcome message, streak settings
+- Enhanced AppearanceTab: widget position/size controls, sound & haptics section
+- Enhanced ThemesTab: rich preview cards with theme descriptions, online indicators
+- Enhanced LivePreview: theme-aware rendering, announcement banner, streak milestone, bottom nav, config summary footer
+- Updated Sidebar: added Dashboard, Moderation, Announcements tabs with icons
+- Updated ConfigPanel: integrated all new tab components
+- Updated chat-widget.js: subscribeWidgetConfig reads and applies all new config fields, syncStreakToFirebase for cross-device persistence
+- Lint passes clean, build succeeds, admin page renders correctly
+
+Stage Summary:
+- Admin panel now has 9 tabs: Dashboard, Appearance, Themes, Behavior, Profile, Security, Moderation, Announcements, Advanced
+- 29 new configuration fields for comprehensive widget control
+- Real-time Firebase sync for all settings
+- Theme flashing fixed with change detection + transition suppression
+- Streaks are account-persistent via Firebase
+- All themes apply to the entire widget comprehensively
 
 ---
 Task ID: 2
-Agent: Main Agent
-Task: Fix reply-to-reply showing original message instead of the reply's own text. Redesign GIF picker with modern UI.
+Agent: main
+Task: Enhance double-tap to heart (V2) with Instagram-style burst animation visible to both users
 
 Work Log:
-- Found root cause of reply-to-reply bug: `extractReplyText()` in v44 patch looks for `.bqtxt` element, but `renderMsg()` in the main IIFE never wraps text in a `.bqtxt` div — it only outputs raw HTML from `mentionify(linkify(esc(msg.text)))`. The `.bqtxt` class was only used in the `onMsgChanged` handler.
-- Fixed by wrapping `msg.text` output in `renderMsg()` with `<div class="bqtxt">` element (line 4995)
-- Added `.bqtxt{display:inline;}` CSS rule to prevent layout breakage
-- Now `extractReplyText()` correctly finds the message's own text via `.bqtxt`, not the reply chip's text
-- Created v45 patch with complete GIF picker redesign (Discord/Tenor style):
-  - Glassmorphic panel with 20px border-radius, blur backdrop
-  - Wider panel (360px), taller (420px)
-  - Enhanced search bar with focus glow effect
-  - Category chips as rounded pill buttons with accent highlight
-  - 2-column grid with shimmer loading skeletons
-  - GIF items with hover scale + border glow effect
-  - Navigation bar with "Back"/"Next" text labels + arrow icons
-  - Custom thin scrollbar for the grid
-  - Smooth panel open animation
-- Fixed GIF nav label duplication between v44 and v45 patches (v45 marks nav as v44-done to prevent re-adding old labels)
-- Bumped version to 62.0.0
-- Pushed to GitHub
+- Analyzed existing double-tap implementation: wireDoubleTap() in v2 patch, simple bqv2-doubletapped scale animation
+- Analyzed existing heart pop CSS: bqHeartPop keyframe with single 48px emoji
+- Replaced old CSS (bqHeartPop + .bq-heart-pop) with comprehensive V2 burst animation system:
+  - bqV2HeartMain: Instagram-style pop with overshoot, bounce, and fade (64px heart with glow)
+  - bqV2HeartRing: Expanding ring pulse effect
+  - bqV2HeartFloat: 8 mini floating hearts (❤️💕💗💖🩷) radiating outward at different angles
+  - bqV2Sparkle: 12 sparkle dots in pink/red/white radiating from center
+  - bqV2BubbleGlow / bqV2BubbleGlowMine: Bubble glow pulse effect (pink for theirs, indigo for mine)
+- Replaced wireDoubleTap() function with V2 enhanced version:
+  - On double-tap: writes ❤️ reaction to Firebase + writes burst event to bq_bursts/{global|dm}/{msgKey}
+  - Calls showHeartBurst(bbl) immediately for local animation
+  - Auto-cleans burst data from Firebase after 3 seconds
+- Created showHeartBurst(bbl) function:
+  - Builds DOM burst container with main heart, ring, 8 mini hearts, 12 sparkles
+  - Uses CSS custom properties (--bq-hf-mid, --bq-hf-end, --bq-sp-end) for per-particle trajectory
+  - Adds bubble glow pulse + haptic feedback (vibrate pattern [10,30,10])
+  - Self-cleans DOM after 1.4 seconds
+- Created listenForBursts() function for real-time burst event listening:
+  - Listens on bq_bursts/global for global chat bursts
+  - Polls for DM changes and attaches bq_bursts/dm/{dmId} listeners
+  - Tracks seen burst IDs in _bqBurstSeen to prevent replay
+  - Only shows animation for bursts from OTHER users (not self)
+  - Retries Firebase connection if not ready
+- Added data-key attribute to bubble elements for reliable key lookup
+- Updated comment at line 8305 from "No more double-tap ❤️" to reflect V2 enhanced behavior
+- Verified page loads, chat widget opens, no JavaScript errors
 
 Stage Summary:
-- Reply-to-reply now correctly shows the reply's own text, not the original message
-- GIF picker has a modern, sleek Discord/Tenor-inspired design
-- No JS errors, both v44 and v45 patches load successfully
-- GIF picker verified: 360px wide, 6 items, 12 categories, "Back"/"Next" nav working
+- Double-tap to heart V2: Instagram-style burst with main heart pop, expanding ring, 8 floating mini hearts, 12 sparkle particles, bubble glow pulse
+- Animation visible to BOTH users: burst events written to Firebase (bq_bursts/), other user's client detects and plays the same animation
+- Works in both global chat and DMs
+- Haptic feedback on double-tap
+- Auto-cleaning burst data from Firebase after 3 seconds
