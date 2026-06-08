@@ -50,6 +50,8 @@ var _widgetConfig = {
 
 /* Banned-user state */
 var _isUserBanned = false;
+var _isUserMuted = false;
+var _muteReason = '';
 
 /* Slow-mode state */
 var _slowModeLastSend = 0;   // timestamp of last sent message
@@ -2265,8 +2267,16 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   border-bottom:1px solid rgba(96,165,250,.2);flex-shrink:0;cursor:pointer;
   transition:background .15s;
 }
+#bq-gpin-bar{
+  display:none;align-items:center;gap:8px;
+  padding:7px 13px;background:rgba(96,165,250,.08);
+  border-bottom:1px solid rgba(96,165,250,.2);flex-shrink:0;cursor:pointer;
+  transition:background .15s;
+}
 #bq-pinned-bar:hover{background:rgba(96,165,250,.13);}
+#bq-gpin-bar:hover{background:rgba(96,165,250,.13);}
 #bq-pinned-bar.show{display:flex;}
+#bq-gpin-bar.show{display:flex;}
 .bq-pinbar-ic{color:var(--bq-accent);line-height:0;flex-shrink:0;}
 .bq-pinbar-ic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
 .bq-pinbar-body{flex:1;min-width:0;}
@@ -2969,6 +2979,10 @@ const HTML = `
         <div class="bq-me-av" id="bq-me-av" title="My profile"></div>
       </div>
       
+      <div id="bq-gpin-bar">
+        <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
+        <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-gpin-text"></div></div>
+      </div>
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -4008,7 +4022,7 @@ async function startDB(){
     await loadSDK();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();syncStreakToFirebase();
+    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();syncStreakToFirebase();subscribeGlobalPinned();
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 
@@ -4136,6 +4150,31 @@ function startPresence(){
       }
     });
   } catch(e) { console.warn('[BQ] ban check failed', e); }
+
+  // v75: Check if user is muted
+  try {
+    db.ref('bq_muted/'+uid).on('value', function(snap) {
+      _isUserMuted = snap.exists() && snap.val() !== null;
+      if(_isUserMuted && snap.val()) {
+        _muteReason = snap.val().reason || '';
+      } else {
+        _muteReason = '';
+      }
+      if(_isUserMuted && typeof toast === 'function') {
+        toast(_muteReason ? 'You have been muted: '+_muteReason : 'You have been muted');
+      }
+    });
+  } catch(e) { console.warn('[BQ] mute check failed', e); }
+
+  // v75: Listen for admin warnings
+  try {
+    db.ref('bq_warnings').orderByChild('uid').equalTo(uid).limitToLast(1).on('child_added', function(snap) {
+      var w = snap.val();
+      if(w && w.reason && typeof toast === 'function') {
+        toast('⚠️ Admin warning: ' + w.reason);
+      }
+    });
+  } catch(e) { console.warn('[BQ] warnings listener failed', e); }
 
   // v2: detach previous presence listener before adding a new one to prevent memory leak
   if(_presenceListenerRef){
@@ -5011,6 +5050,33 @@ function subscribeDmPinned(dmId){
     if(!bar||!txt) return;
     if(data){ bar.classList.add('show'); txt.textContent=data.text||''; }
     else bar.classList.remove('show');
+  });
+}
+
+/* ── Global pinned messages listener ── */
+var _globalPinnedUnsub = null;
+function subscribeGlobalPinned(){
+  if(!db) return;
+  // Unsubscribe previous
+  if(_globalPinnedUnsub){ try{ db.ref('bq_pinned').off('value', _globalPinnedUnsub); }catch(_){} }
+  _globalPinnedUnsub = db.ref('bq_pinned').on('value', function(snap){
+    var data = snap.val();
+    var bar = document.getElementById('bq-gpin-bar');
+    var txt = document.getElementById('bq-gpin-text');
+    if(!bar || !txt) return;
+    if(data && typeof data === 'object'){
+      // Show the most recently pinned message
+      var pins = Object.values(data);
+      var latest = pins.sort(function(a,b){ return (b.pinnedAt||0) - (a.pinnedAt||0); })[0];
+      if(latest){
+        bar.classList.add('show');
+        txt.textContent = latest.text || 'Pinned message';
+      } else {
+        bar.classList.remove('show');
+      }
+    } else {
+      bar.classList.remove('show');
+    }
   });
 }
 
@@ -6048,6 +6114,12 @@ function setupInput(ctx){
     // v74: Banned user check
     if(_isUserBanned){
       if(typeof toast==='function') toast('You are banned from chatting');
+      return;
+    }
+
+    // v75: Muted user check
+    if(_isUserMuted){
+      if(typeof toast==='function') toast(_muteReason ? 'You are muted: '+_muteReason : 'You are muted');
       return;
     }
 

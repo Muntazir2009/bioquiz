@@ -389,3 +389,34 @@ Stage Summary:
 - Notifications settings persist to Firebase (no more local-only state)
 - Banned users system: admin can ban/unban, widget checks in real-time
 - Server compiles and runs cleanly, lint passes
+
+---
+Task ID: 1-7
+Agent: full-stack-developer
+Task: Complete rewrite of admin panel with real-time Firebase chat controls
+
+Work Log:
+- Replaced all 10s polling intervals with 9 Firebase `onValue()` real-time listeners
+- Added direct Firebase SDK integration (firebase/app + firebase/database) in admin page
+- Set up live listeners for: global messages, DMs, presence, widget config, banned users, muted users, warnings, pinned messages
+- Dynamic DM messages listener when a specific DM is opened
+- Status indicator changed from "Polling" → "Real-time" (green dot)
+- Enhanced Global Chat: live message feed with per-message delete/pin/warn/mute/ban actions, pinned messages display, message statistics, bulk select & delete, chat export as JSON
+- Enhanced DMs: real-time DM list with participant names & message counts, click to view messages with delete/warn per message, DM export
+- Enhanced User Management: live online users with Warn/Mute/Ban/Kick per-user actions, banned users list with unban, muted users list with unmute, recent warnings log
+- Added modal dialogs for Warn and Mute with reason input
+- All admin actions (ban, mute, warn, pin, delete) write directly to Firebase (not through API routes)
+- Added new Firebase paths: bq_muted, bq_warnings, bq_pinned
+- Maintenance mode banner shown in header when active
+- All widget config writes go immediately to Firebase (no debounce delay)
+- Announcements section with preview
+- Reduced file from ~2130 to 1632 lines while adding more features
+- Lint passes clean, no dev server errors
+
+Stage Summary:
+- Admin panel is now fully real-time with Firebase onValue listeners (no more polling)
+- Chat controls are fully functional: view messages, delete, pin, warn/mute/ban users
+- DMs show usernames and message counts, can view individual DM messages
+- Maintenance mode and all widget controls are real-time via Firebase
+- New features: pin messages, mute users, warn users, chat export, message statistics
+- Status shows "Real-time" with green indicator instead of "Polling"
