@@ -420,3 +420,48 @@ Stage Summary:
 - Maintenance mode and all widget controls are real-time via Firebase
 - New features: pin messages, mute users, warn users, chat export, message statistics
 - Status shows "Real-time" with green indicator instead of "Polling"
+
+---
+Task ID: 1
+Agent: main
+Task: Add time-based warning system with expiry period instead of permanent warnings
+
+Work Log:
+- Added UserWarning interface to firebase-rtdb.ts with uid, reason, warnedAt, expiresAt, durationMs, warnedBy fields
+- Added warnedUsers: Record<string, UserWarning> to WidgetConfig interface and DEFAULT_CONFIG
+- Added warnUser(), unwarnUser(), getActiveWarnings() functions to firebase-rtdb.ts
+- Created /api/admin/chat/warnings API route with GET (list active) and POST (warn/unwarn) endpoints
+- Updated /api/admin/chat/users to include warning data per user and full warnedUsers map
+- Updated ChatStats interface to include warnedUsers count
+- Updated getChatStats() to count active (non-expired) warnings
+- Admin panel UI updates:
+  - Added UserWarning type and ChatUser.warning field
+  - Added warning state variables (warnUid, warnReason, warnDuration, warnDurationCustom)
+  - Added WARN_DURATIONS presets: 5m, 15m, 30m, 1h, 6h, 12h, 1d, 3d, 1w
+  - Added formatDuration() and formatTimeLeft() helper functions
+  - Added Warn button (amber) next to Ban button on each user
+  - Added Warning Modal with reason input, duration preset pills, custom duration input, preview
+  - Added Warned Users section showing active warnings with live countdown, reason, and duration
+  - Added Remove Warning (green) and Escalate to Ban (red) buttons per warned user
+  - Added Warned Users stat card in Chat Stats
+  - Fixed onlineNow → onlineUsers field name mismatch
+  - Changed Users section header from "Online Users" to "Users" with total count
+  - Banned users now show "Permanently banned" label
+- Chat widget updates:
+  - Added warning banner CSS (#bq-warning-bar) with amber theme, icon, reason text, countdown timer
+  - Added showWarningBanner(reason, expiresAt) with live countdown (1s interval)
+  - Added removeWarningBanner() for cleanup
+  - Updated applyWidgetConfig() to check config.warnedUsers for current user
+  - If active warning found, shows amber banner with reason and countdown
+  - Auto-removes banner when countdown reaches 0
+  - Warnings auto-expire: expired warnings are filtered out on read and cleaned from Firebase
+- Lint passes clean, build succeeds
+- Committed and pushed to origin/main
+
+Stage Summary:
+- Warnings are now time-based with admin-selected expiry (5 min to 1 week presets + custom)
+- Admin can see live countdown timers for each warned user
+- Users see amber warning banner with reason and live countdown in chat widget
+- Warnings auto-expire when timer reaches zero (both client and server side)
+- Admin can remove warnings early or escalate to ban
+- All changes deployed via git push
