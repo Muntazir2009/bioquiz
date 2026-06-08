@@ -30,6 +30,237 @@
 'use strict';
 
 /* ─────────────────────────────────────────
+   WIDGET RUNTIME CONFIG (v73)
+   Stores live config values from Firebase so all features
+   can read them without hitting localStorage on every call.
+───────────────────────────────────────── */
+var _widgetConfig = {
+  maintenanceEnabled: false,
+  maintenanceMessage: '',
+  slowMode: false,
+  slowModeInterval: 5,
+  profanityFilter: false,
+  linkFilter: false,
+  rateLimitEnabled: false,
+  rateLimitMessages: 5,
+  rateLimitInterval: 10,
+  charLimit: 500,
+  widgetEnabled: true
+};
+
+/* Banned-user state */
+var _isUserBanned = false;
+
+/* Slow-mode state */
+var _slowModeLastSend = 0;   // timestamp of last sent message
+var _slowModeTimer = null;   // interval id for countdown
+
+/* Rate-limit state */
+var _rateLimitTimestamps = []; // array of send timestamps
+
+/* ── Profanity word list (basic) ── */
+var _profanityList = [
+  'fuck','shit','ass','bitch','bastard','crap','dick','dickhead',
+  'piss','slut','whore','cunt','cock','douche','damn','hell',
+  'asshole','motherfucker','fucker','fucking','shitty','goddamn',
+  'bullshit','dumbass','jackass','dipshit','horseshit','pussy',
+  'twat','wanker','bollocks','prick','skank','tramp','nigga',
+  'nigger','chink','spic','kike','fag','faggot','retard','retarded'
+];
+
+function _filterProfanity(text) {
+  if (!_widgetConfig.profanityFilter || !text) return text;
+  var re = new RegExp('\\b(' + _profanityList.join('|') + ')\\b', 'gi');
+  return text.replace(re, '***');
+}
+
+/* ── Link filter ── */
+var _linkRegex = /https?:\/\/[^\s<]+|www\.[^\s<]+/gi;
+
+function _filterLinks(text) {
+  if (!_widgetConfig.linkFilter || !text) return text;
+  return text.replace(_linkRegex, '[link removed]');
+}
+
+/* ── Combined display filter ── */
+function _filterDisplayText(text) {
+  var t = text;
+  t = _filterProfanity(t);
+  t = _filterLinks(t);
+  return t;
+}
+
+/* ── Rate limit check ── */
+function _isRateLimited() {
+  if (!_widgetConfig.rateLimitEnabled) return false;
+  var now = Date.now();
+  var windowMs = (_widgetConfig.rateLimitInterval || 10) * 1000;
+  var maxMsgs = _widgetConfig.rateLimitMessages || 5;
+  // Prune timestamps outside window
+  _rateLimitTimestamps = _rateLimitTimestamps.filter(function(ts){ return now - ts < windowMs; });
+  return _rateLimitTimestamps.length >= maxMsgs;
+}
+
+function _recordSendForRateLimit() {
+  if (!_widgetConfig.rateLimitEnabled) return;
+  _rateLimitTimestamps.push(Date.now());
+}
+
+/* ── Slow mode check ── */
+function _isSlowModeCooldown() {
+  if (!_widgetConfig.slowMode) return false;
+  var interval = (_widgetConfig.slowModeInterval || 5) * 1000;
+  var elapsed = Date.now() - _slowModeLastSend;
+  return elapsed < interval;
+}
+
+function _getSlowModeRemaining() {
+  if (!_widgetConfig.slowMode) return 0;
+  var interval = (_widgetConfig.slowModeInterval || 5) * 1000;
+  var elapsed = Date.now() - _slowModeLastSend;
+  return Math.max(0, Math.ceil((interval - elapsed) / 1000));
+}
+
+/* ── Slow mode countdown UI ── */
+function _startSlowModeCountdown() {
+  _stopSlowModeCountdown();
+  _updateSlowModeUI();
+  _slowModeTimer = setInterval(function(){
+    if (!_isSlowModeCooldown()) {
+      _stopSlowModeCountdown();
+      _enableSendButtons();
+      return;
+    }
+    _updateSlowModeUI();
+  }, 500);
+}
+
+function _stopSlowModeCountdown() {
+  if (_slowModeTimer) { clearInterval(_slowModeTimer); _slowModeTimer = null; }
+  _clearSlowModeUI();
+}
+
+function _updateSlowModeUI() {
+  var rem = _getSlowModeRemaining();
+  // Update global send button
+  var gBtn = document.getElementById('bqgsnd');
+  if (gBtn) {
+    gBtn.disabled = true;
+    gBtn.title = 'Slow mode: ' + rem + 's';
+    gBtn.style.opacity = '0.5';
+    // Add countdown overlay
+    var badge = gBtn.querySelector('.bq-slow-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'bq-slow-badge';
+      badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2;';
+      gBtn.style.position = 'relative';
+      gBtn.appendChild(badge);
+    }
+    badge.textContent = rem;
+  }
+  // Update DM send button
+  var dBtn = document.getElementById('bqdmsnd');
+  if (dBtn) {
+    dBtn.disabled = true;
+    dBtn.title = 'Slow mode: ' + rem + 's';
+    dBtn.style.opacity = '0.5';
+    var badge2 = dBtn.querySelector('.bq-slow-badge');
+    if (!badge2) {
+      badge2 = document.createElement('span');
+      badge2.className = 'bq-slow-badge';
+      badge2.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2;';
+      dBtn.style.position = 'relative';
+      dBtn.appendChild(badge2);
+    }
+    badge2.textContent = rem;
+  }
+}
+
+function _clearSlowModeUI() {
+  ['bqgsnd','bqdmsnd'].forEach(function(id){
+    var btn = document.getElementById(id);
+    if (btn) {
+      btn.title = '';
+      btn.style.opacity = '';
+      var badge = btn.querySelector('.bq-slow-badge');
+      if (badge) badge.remove();
+    }
+  });
+}
+
+function _enableSendButtons() {
+  // Re-evaluate send button state based on input content
+  ['bqginp','bqdminp'].forEach(function(inpId, i){
+    var sndId = i === 0 ? 'bqgsnd' : 'bqdmsnd';
+    var inp = document.getElementById(inpId);
+    var snd = document.getElementById(sndId);
+    if (inp && snd) {
+      snd.disabled = !inp.value.trim();
+      snd.style.opacity = '';
+    }
+  });
+}
+
+/* ── Maintenance overlay ── */
+function _showMaintenanceOverlay(message) {
+  var panel = document.getElementById('bqp');
+  if (!panel) return;
+  var existing = document.getElementById('bq-maintenance-overlay');
+  if (existing) {
+    existing.querySelector('.bq-maint-text').textContent = message || 'Under Maintenance';
+    return;
+  }
+  var overlay = document.createElement('div');
+  overlay.id = 'bq-maintenance-overlay';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
+  overlay.innerHTML =
+    '<div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">' +
+      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' +
+      '</svg>' +
+    '</div>' +
+    '<div class="bq-maint-text" style="color:#fff;font-size:15px;font-weight:600;font-family:Inter,system-ui,sans-serif;line-height:1.5;max-width:260px;">' + _escHtml(message || 'Under Maintenance') + '</div>' +
+    '<div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:8px;font-family:Inter,system-ui,sans-serif;">Please check back later</div>';
+  panel.appendChild(overlay);
+}
+
+function _hideMaintenanceOverlay() {
+  var el = document.getElementById('bq-maintenance-overlay');
+  if (el) el.remove();
+}
+
+function _escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ── Dynamic char limit ── */
+function _applyDynamicCharLimit() {
+  var limit = _widgetConfig.charLimit || 500;
+  ['bqginp','bqdminp'].forEach(function(id){
+    var inp = document.getElementById(id);
+    if (inp) inp.setAttribute('maxlength', limit);
+  });
+}
+
+/* ── Rate limit warning toast ── */
+function _showRateLimitWarning() {
+  var msgs = _widgetConfig.rateLimitMessages || 5;
+  var secs = _widgetConfig.rateLimitInterval || 10;
+  var msg = 'Slow down! Max ' + msgs + ' messages per ' + secs + ' seconds.';
+  if (typeof toast === 'function') toast(msg);
+  else {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-family:Inter,system-ui,sans-serif;z-index:100000;pointer-events:none;';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 3000);
+  }
+}
+
+/* ─────────────────────────────────────────
    FIREBASE CONFIG
 ───────────────────────────────────────── */
 const FIREBASE_CONFIG = {
@@ -3696,10 +3927,45 @@ function subscribeWidgetConfig(){
       if(c.sendSound!==undefined)localStorage.setItem("bq_send_sound",c.sendSound?"on":"off");
       if(c.hapticFeedback!==undefined)localStorage.setItem("bq_haptic",c.hapticFeedback?"on":"off");
       if(c.customCSS){var el=document.getElementById("bq-admin-css");if(!el){el=document.createElement("style");el.id="bq-admin-css";document.head.appendChild(el);}el.textContent=c.customCSS;}
+
+      // v73: Populate runtime config for active features
+      if(c.maintenanceEnabled!==undefined) _widgetConfig.maintenanceEnabled = !!c.maintenanceEnabled;
+      if(c.maintenanceMessage!==undefined) _widgetConfig.maintenanceMessage = c.maintenanceMessage;
+      if(c.slowMode!==undefined) _widgetConfig.slowMode = !!c.slowMode;
+      if(c.slowModeInterval!==undefined) _widgetConfig.slowModeInterval = c.slowModeInterval || 5;
+      if(c.profanityFilter!==undefined) _widgetConfig.profanityFilter = !!c.profanityFilter;
+      if(c.linkFilter!==undefined) _widgetConfig.linkFilter = !!c.linkFilter;
+      if(c.rateLimitEnabled!==undefined) _widgetConfig.rateLimitEnabled = !!c.rateLimitEnabled;
+      if(c.rateLimitMessages!==undefined) _widgetConfig.rateLimitMessages = c.rateLimitMessages || 5;
+      if(c.rateLimitInterval!==undefined) _widgetConfig.rateLimitInterval = c.rateLimitInterval || 10;
+      if(c.charLimit!==undefined) _widgetConfig.charLimit = c.charLimit || 500;
+      if(c.widgetEnabled!==undefined) _widgetConfig.widgetEnabled = c.widgetEnabled !== false;
+
+      // v73: Maintenance mode overlay
+      if(_widgetConfig.maintenanceEnabled){
+        _showMaintenanceOverlay(_widgetConfig.maintenanceMessage);
+      } else {
+        _hideMaintenanceOverlay();
+      }
+
+      // v73: Dynamic char limit
+      _applyDynamicCharLimit();
+
+      // v73: If slow mode was just disabled, clean up any countdown UI
+      if(!_widgetConfig.slowMode) _stopSlowModeCountdown();
     });
     db.ref("bq_widget_config/settings/widgetEnabled").on("value",function(snap){
-      if(!snap)return;var enabled=snap.val();var bubble=document.getElementById("bqb");
-      if(bubble&&enabled===false)bubble.style.display="none";else if(bubble&&enabled!==false)bubble.style.display="";
+      if(!snap)return;var enabled=snap.val();
+      _widgetConfig.widgetEnabled = enabled !== false;
+      var bubble=document.getElementById("bqb");
+      var panel=document.getElementById("bqp");
+      if(enabled===false){
+        if(bubble) bubble.style.display="none";
+        if(panel) panel.style.display="none";
+      } else {
+        if(bubble) bubble.style.display="";
+        if(panel) panel.style.display="";
+      }
     });
   }catch(e){console.warn("[BQ Config Listener]",e);}
 }
@@ -3860,6 +4126,17 @@ function startPresence(){
   // v35 fix: on disconnect, write last-seen data instead of removing entirely
   // This preserves "Last seen X" info and doesn't conflict with v20's bq_lastseen
   ref.onDisconnect().set({uname,ts:firebase.database.ServerValue.TIMESTAMP,status:'offline',displayName:myProfile.displayName||'',initials:myProfile.initials||'',avatar:myProfile.avatar||'',color:myProfile.color||''});
+
+  // v74: Check if user is banned
+  try {
+    db.ref('bq_banned/'+uid).on('value', function(snap) {
+      _isUserBanned = snap.exists() && snap.val() !== null;
+      if(_isUserBanned && typeof toast === 'function') {
+        toast('You have been banned from chatting');
+      }
+    });
+  } catch(e) { console.warn('[BQ] ban check failed', e); }
+
   // v2: detach previous presence listener before adding a new one to prevent memory leak
   if(_presenceListenerRef){
     try{ db.ref('bq_presence').off('value', _presenceListenerRef); }catch(_){}
@@ -4049,7 +4326,7 @@ function subscribeGlobalTyping(){
 function sendGlobal(text){
   if(!db||!text.trim()||!uname)return;
   const disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
-  const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
+  const p={uid,uname,text:text.trim().slice(0,_widgetConfig.charLimit||CHAR_LIMIT),ts:Date.now()};
   if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
   if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
   db.ref('bq_messages').push(p);
@@ -4288,7 +4565,7 @@ function sendDm(text){
   const trimmed=text.trim();
   if(!trimmed&&!pendingImageData) return;
   const pname=activeDmPname||'?';
-  const p={uid,uname,text:trimmed.slice(0,CHAR_LIMIT),ts:Date.now()};
+  const p={uid,uname,text:trimmed.slice(0,_widgetConfig.charLimit||CHAR_LIMIT),ts:Date.now()};
   if(pendingImageData){ p.imageData=pendingImageData; clearMediaPreview(); }
   if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
   // Disappearing message
@@ -5115,7 +5392,7 @@ function renderMsg(ctx,msg,key){
   var _voiceHtml = (msg.type==='voice' && msg.audio) ? buildVoiceHtml(msg) : '';
   var _isSticker = !!_stickerHtml;
   var _hasMedia = !!(_imgHtml || _gifHtml);
-  var _txtHtml  = msg.text ? '<div class="bqtxt">'+mentionify(linkify(esc(msg.text)))+'</div>' : '';
+  var _txtHtml  = msg.text ? '<div class="bqtxt">'+mentionify(linkify(esc(_filterDisplayText(msg.text))))+'</div>' : '';
   var _hasText  = !!_txtHtml;
   var _bblCls   = 'bqbbl'+(msg.expiresAt?' disappearing':'')+(_hasMedia?' media':'')+(_hasMedia&&_hasText?' has-text':'')+(_isSticker?' sticker':'');
   var _unName   = isMine ? 'You' : '@'+esc(presD.displayName||msg.uname||'?');
@@ -5751,8 +6028,9 @@ function setupInput(ctx){
 
   inp.addEventListener('input',()=>{
     autoH(inp);
-    const len=inp.value.length,rem=CHAR_LIMIT-len;
-    snd.disabled=len===0 && !voicePreviewData;
+    var _dynLimit = _widgetConfig.charLimit || CHAR_LIMIT;
+    const len=inp.value.length,rem=_dynLimit-len;
+    snd.disabled=(len===0 && !voicePreviewData) || (len > _dynLimit);
     cc.textContent=rem<=60?rem+' left':'';
     cc.className='bqcc'+(rem<=20?' over':rem<=60?' warn':'');
     if(len){
@@ -5766,6 +6044,24 @@ function setupInput(ctx){
   function doSend(){
     const txt=inp.value.trim();
     if(!uname){showModal(false);return;}
+
+    // v74: Banned user check
+    if(_isUserBanned){
+      if(typeof toast==='function') toast('You are banned from chatting');
+      return;
+    }
+
+    // v73: Slow mode cooldown check
+    if(_isSlowModeCooldown()){
+      _startSlowModeCountdown();
+      return;
+    }
+    // v73: Rate limit check
+    if(_isRateLimited()){
+      _showRateLimitWarning();
+      return;
+    }
+
     if(!txt && voicePreviewData){
       try{
         const _data=voicePreviewData,_dur=voicePreviewDuration,_wave=voicePreviewWave;
@@ -5778,6 +6074,9 @@ function setupInput(ctx){
           else { sendVoiceDm(_data,_dur,_wave); ok=true; }
         }
         if(!ok){ console.error('[voice] send failed - isG=',isG,'activeDmId=',activeDmId,'hasFn=',typeof sendVoiceGlobal); return; }
+        _recordSendForRateLimit();
+        _slowModeLastSend = Date.now();
+        if(_widgetConfig.slowMode) _startSlowModeCountdown();
       }catch(err){ console.error('[voice] send threw',err); toast&&toast('Voice send failed'); return; }
       hideVoicePreview();
       inp.value=''; inp.style.height='auto'; snd.disabled=true; cc.textContent='';
@@ -5789,6 +6088,9 @@ function setupInput(ctx){
     }
     if(!txt)return;
     if(isG) sendGlobal(txt); else sendDm(txt);
+    _recordSendForRateLimit();
+    _slowModeLastSend = Date.now();
+    if(_widgetConfig.slowMode) _startSlowModeCountdown();
     inp.value='';inp.style.height='auto';snd.disabled=true;cc.textContent='';
     snd.classList.add('sending'); setTimeout(()=>snd.classList.remove('sending'),320);
     if(isG)setGTyp(false);else setDmTyp(false);

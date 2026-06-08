@@ -9,7 +9,7 @@ import {
   Music, FileArchive, File, Activity, Trash, LogOut, Calendar,
   Hash, CopyPlus, Database, TrendingUp, Zap, MessageSquare,
   Settings, RotateCcw, Users, Palette, SlidersHorizontal, Shield,
-  Save, Upload, Bell, Volume2, Smartphone, Wrench, AlertTriangle,
+  Save, Upload, Bell, Wrench, AlertTriangle,
   Type, MessageCircle, Megaphone, LayoutDashboard, ChevronRight,
   Menu, Ban, Heart,
 } from "lucide-react";
@@ -106,6 +106,7 @@ type ChatMessage = {
 type DmConversation = {
   dmId: string;
   participants: string[];
+  participantNames: string[];
   lastMessage: string;
   lastMessageTime: number;
   messageCount: number;
@@ -290,9 +291,6 @@ export default function AdminPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [sessionTimeout, setSessionTimeout] = useState("24h");
-  const [pushNotifications, setPushNotifications] = useState(false);
-  const [soundOnMessage, setSoundOnMessage] = useState(false);
-  const [hapticFeedback, setHapticFeedback] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState("");
 
@@ -305,6 +303,13 @@ export default function AdminPage() {
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [selectedChatMessages, setSelectedChatMessages] = useState<Set<string>>(new Set());
   const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
+  const [announcementText, setAnnouncementText] = useState("");
+  const [announcementSending, setAnnouncementSending] = useState(false);
+  const [clearAllConfirm, setClearAllConfirm] = useState(false);
+  const [actionMsg, setActionMsg] = useState("");
+
+  // Banned users
+  const [bannedUsers, setBannedUsers] = useState<{ uid: string; bannedAt: number }[]>([]);
 
   // ─── Auth ────────────────────────────────────────────────────────────────
 
@@ -369,7 +374,7 @@ export default function AdminPage() {
   }, [password]);
 
   // Fetch widget config when any appearance/moderation/general/settings section is active
-  const widgetSections: Section[] = ["themes", "layout", "messages-appearance", "content-filter", "rate-limiting", "announcements", "general", "maintenance"];
+  const widgetSections: Section[] = ["themes", "layout", "messages-appearance", "content-filter", "rate-limiting", "announcements", "general", "maintenance", "notifications"];
   useEffect(() => {
     if (isAuthed && widgetSections.includes(section)) { queueMicrotask(() => fetchWidgetConfig()); }
   }, [isAuthed, section, fetchWidgetConfig]);
@@ -406,11 +411,31 @@ export default function AdminPage() {
     finally { setActivityLoading(false); }
   }, [password]);
 
+  const fetchBannedUsers = useCallback(async () => {
+    const FB = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
+    try {
+      const res = await fetch(`${FB}/bq_banned.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === "object") {
+          const banned = Object.entries(data).map(([uid, val]: [string, any]) => ({
+            uid,
+            bannedAt: val?.bannedAt || 0,
+          }));
+          setBannedUsers(banned);
+        } else {
+          setBannedUsers([]);
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     if (isAuthed && (section === "activity" || section === "user-management")) {
       queueMicrotask(() => fetchActivity());
+      queueMicrotask(() => fetchBannedUsers());
     }
-  }, [isAuthed, section, fetchActivity]);
+  }, [isAuthed, section, fetchActivity, fetchBannedUsers]);
 
   useEffect(() => {
     if (!isAuthed || (section !== "activity" && section !== "user-management")) return;
@@ -493,6 +518,41 @@ export default function AdminPage() {
     } catch { /* ignore */ }
   }, [password, section, selectedDm, fetchGlobalChat, fetchDmMessages]);
 
+  const sendAnnouncement = useCallback(async () => {
+    if (!announcementText.trim()) return;
+    setAnnouncementSending(true);
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    try {
+      const res = await fetch("/api/admin/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+        body: JSON.stringify({ action: "announce", text: announcementText.trim() }),
+      });
+      if (res.ok) {
+        setAnnouncementText("");
+        setActionMsg("Announcement sent!");
+        fetchGlobalChat();
+        setTimeout(() => setActionMsg(""), 3000);
+      }
+    } catch { /* ignore */ }
+    finally { setAnnouncementSending(false); }
+  }, [password, announcementText, fetchGlobalChat]);
+
+  const clearAllMessages = useCallback(async (context: "global" | "dm", dmId?: string) => {
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    try {
+      await fetch("/api/admin/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+        body: JSON.stringify({ action: "clear-all", context, dmId }),
+      });
+      if (context === "global") { fetchGlobalChat(); setActionMsg("All global messages cleared"); }
+      else if (selectedDm) { fetchDmMessages(selectedDm); setActionMsg("DM messages cleared"); }
+      setClearAllConfirm(false);
+      setTimeout(() => setActionMsg(""), 3000);
+    } catch { /* ignore */ }
+  }, [password, selectedDm, fetchGlobalChat, fetchDmMessages]);
+
   const kickUser = useCallback(async (uid: string) => {
     const FB = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
     try {
@@ -500,6 +560,25 @@ export default function AdminPage() {
       fetchActivity();
     } catch { /* ignore */ }
   }, [fetchActivity]);
+
+  const banUser = useCallback(async (uid: string) => {
+    const FB = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
+    try {
+      await fetch(`${FB}/bq_banned/${uid}.json`, { method: "PUT", body: JSON.stringify({ bannedAt: Date.now() }) });
+      // Also kick them from presence
+      await fetch(`${FB}/bq_presence/${uid}.json`, { method: "DELETE" });
+      fetchActivity();
+      fetchBannedUsers();
+    } catch { /* ignore */ }
+  }, [fetchActivity, fetchBannedUsers]);
+
+  const unbanUser = useCallback(async (uid: string) => {
+    const FB = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
+    try {
+      await fetch(`${FB}/bq_banned/${uid}.json`, { method: "DELETE" });
+      fetchBannedUsers();
+    } catch { /* ignore */ }
+  }, [fetchBannedUsers]);
 
   // ─── File operations ─────────────────────────────────────────────────────
 
@@ -1060,11 +1139,38 @@ export default function AdminPage() {
               {/* ─── GLOBAL CHAT ───────────────────────────────────────── */}
               {section === "global-chat" && (
                 <div className="flex flex-col gap-6">
+                  {actionMsg && (
+                    <div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]">
+                      <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-xs font-medium text-green-500">{actionMsg}</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard icon={MessageSquare} label="Total Messages" value={String(globalMessages.length)} color="oklch(0.7 0.12 250)" />
                     <StatCard icon={Activity} label="Messages Today" value={String(globalMessages.filter((m) => { const d = new Date(m.ts); const now = new Date(); return d.toDateString() === now.toDateString(); }).length)} color="oklch(0.75 0.15 200)" />
                     <StatCard icon={Users} label="Active Chatters" value={String(new Set(globalMessages.map((m) => m.uid)).size)} color="oklch(0.72 0.16 140)" />
                   </div>
+
+                  {/* Send Announcement */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Megaphone className="h-4 w-4 text-muted-foreground" />
+                      <h2 className="text-sm font-semibold">Send Announcement</h2>
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" value={announcementText} onChange={(e) => setAnnouncementText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendAnnouncement()}
+                        placeholder="Type an announcement message..."
+                        className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
+                      <button onClick={sendAnnouncement} disabled={!announcementText.trim() || announcementSending}
+                        className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 disabled:opacity-40 shrink-0">
+                        {announcementSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Megaphone className="h-3.5 w-3.5" />}
+                        Send
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">This will post a system message visible to all users in the global chat.</p>
+                  </div>
+
                   <div className="rounded-2xl border border-border bg-card">
                     <div className="flex flex-col gap-4 p-6 border-b border-border">
                       <div className="flex items-center justify-between">
@@ -1078,6 +1184,19 @@ export default function AdminPage() {
                               className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/10 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/20">
                               <Trash className="h-3.5 w-3.5" />Delete ({selectedChatMessages.size})
                             </button>
+                          )}
+                          {!clearAllConfirm ? (
+                            <button onClick={() => setClearAllConfirm(true)}
+                              className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10">
+                              <Trash2 className="h-3.5 w-3.5" />Clear All
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => clearAllMessages("global")}
+                                className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm Clear</button>
+                              <button onClick={() => setClearAllConfirm(false)}
+                                className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+                            </div>
                           )}
                           <button onClick={fetchGlobalChat} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">
                             <RefreshCw className={`h-3.5 w-3.5 ${chatLoading ? "animate-spin" : ""}`} />
@@ -1106,17 +1225,18 @@ export default function AdminPage() {
                           {globalMessages
                             .filter((m) => !chatSearchQuery || m.text.toLowerCase().includes(chatSearchQuery.toLowerCase()) || m.uname.toLowerCase().includes(chatSearchQuery.toLowerCase()))
                             .map((msg) => (
-                              <div key={msg.key} className="flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01] transition-colors">
+                              <div key={msg.key} className={`flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01] transition-colors ${msg.type === "system" ? "bg-foreground/[0.02]" : ""}`}>
                                 <button onClick={() => { const next = new Set(selectedChatMessages); if (next.has(msg.key)) next.delete(msg.key); else next.add(msg.key); setSelectedChatMessages(next); }}
                                   className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors ${selectedChatMessages.has(msg.key) ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
                                   {selectedChatMessages.has(msg.key) && <Check className="h-3 w-3" />}
                                 </button>
-                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">
-                                  {msg.uname.charAt(0).toUpperCase()}
+                                <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold ${msg.type === "system" ? "bg-foreground/10 text-foreground" : "bg-foreground/5"}`}>
+                                  {msg.type === "system" ? <Megaphone className="h-4 w-4" /> : msg.uname.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium">{msg.uname}</span>
+                                    <span className={`text-xs font-medium ${msg.type === "system" ? "text-foreground/70 italic" : ""}`}>{msg.uname}</span>
+                                    {msg.type === "system" && <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">SYSTEM</span>}
                                     <span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span>
                                     {msg.reactions.length > 0 && (
                                       <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -1124,7 +1244,7 @@ export default function AdminPage() {
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-xs mt-0.5 break-words">{msg.text}</p>
+                                  <p className={`text-xs mt-0.5 break-words ${msg.type === "system" ? "text-foreground/60" : ""}`}>{msg.text}</p>
                                   {msg.reactions.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {msg.reactions.map((r, i) => (
@@ -1174,9 +1294,24 @@ export default function AdminPage() {
                           className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">
                           <ArrowLeft className="h-4 w-4" />
                         </button>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-1">
                           <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                          <h2 className="text-sm font-semibold">DM: {selectedDm}</h2>
+                          <h2 className="text-sm font-semibold">DM: {dmConversations.find((d) => d.dmId === selectedDm)?.participantNames?.join(" & ") || selectedDm}</h2>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {!clearAllConfirm ? (
+                            <button onClick={() => setClearAllConfirm(true)}
+                              className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10">
+                              <Trash2 className="h-3.5 w-3.5" />Clear All
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => clearAllMessages("dm", selectedDm)}
+                                className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm</button>
+                              <button onClick={() => setClearAllConfirm(false)}
+                                className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="max-h-[500px] overflow-y-auto">
@@ -1246,7 +1381,7 @@ export default function AdminPage() {
                                   <MessageCircle className="h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-medium truncate">{dm.participants.join(", ") || dm.dmId}</p>
+                                  <p className="text-xs font-medium truncate">{dm.participantNames?.join(" & ") || dm.participants.join(", ") || dm.dmId}</p>
                                   <p className="text-[11px] text-muted-foreground truncate">{dm.lastMessage || "No messages"}</p>
                                 </div>
                                 <div className="text-right shrink-0">
@@ -1432,10 +1567,16 @@ export default function AdminPage() {
                                     <span className="text-[10px] text-muted-foreground">Last: {lastSeen}</span>
                                   </div>
                                 </div>
-                                <button onClick={() => kickUser(user.uid)}
-                                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20">
-                                  <Ban className="h-3.5 w-3.5" />Kick
-                                </button>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button onClick={() => banUser(user.uid)}
+                                    className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20">
+                                    <Ban className="h-3.5 w-3.5" />Ban
+                                  </button>
+                                  <button onClick={() => kickUser(user.uid)}
+                                    className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20">
+                                    <Trash2 className="h-3.5 w-3.5" />Kick
+                                  </button>
+                                </div>
                               </div>
                             );
                           })}
@@ -1443,6 +1584,37 @@ export default function AdminPage() {
                       ) : null}
                     </div>
                   </div>
+
+                  {/* Banned Users */}
+                  {bannedUsers.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card">
+                      <div className="flex items-center gap-2 p-6 border-b border-border">
+                        <Ban className="h-4 w-4 text-orange-500" />
+                        <h2 className="text-sm font-semibold">Banned Users</h2>
+                        <span className="rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-500">{bannedUsers.length}</span>
+                      </div>
+                      <div className="divide-y divide-border/50">
+                        {bannedUsers.map((user) => (
+                          <div key={user.uid} className="flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.01] transition-colors">
+                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-orange-500/10 text-xs font-semibold text-orange-500">
+                              <Ban className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium">{user.uid}</span>
+                                <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">BANNED</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">Banned {user.bannedAt > 0 ? new Date(user.bannedAt).toLocaleString() : "unknown"}</span>
+                            </div>
+                            <button onClick={() => unbanUser(user.uid)}
+                              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20">
+                              <Check className="h-3.5 w-3.5" />Unban
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1507,28 +1679,11 @@ export default function AdminPage() {
                     <h2 className="text-sm font-semibold">Notifications</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Push Notifications</span>
-                      </div>
-                      <ToggleSwitch value={pushNotifications} onChange={setPushNotifications} />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Sound on Message</span>
-                      </div>
-                      <ToggleSwitch value={soundOnMessage} onChange={setSoundOnMessage} />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Haptic Feedback</span>
-                      </div>
-                      <ToggleSwitch value={hapticFeedback} onChange={setHapticFeedback} />
-                    </div>
+                    <ConfigToggle label="Push Notifications" value={widgetConfig.pushNotifications ?? false} syncing={syncingKey === "pushNotifications"} onChange={(v) => writeWidgetConfig("pushNotifications", v)} />
+                    <ConfigToggle label="Sound on Message" value={widgetConfig.soundOnMessage ?? false} syncing={syncingKey === "soundOnMessage"} onChange={(v) => writeWidgetConfig("soundOnMessage", v)} />
+                    <ConfigToggle label="Haptic Feedback" value={widgetConfig.hapticFeedback ?? false} syncing={syncingKey === "hapticFeedback"} onChange={(v) => writeWidgetConfig("hapticFeedback", v)} />
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-4">These settings are saved to Firebase and apply in real-time to all connected widgets.</p>
                 </div>
               )}
 
