@@ -230,3 +230,28 @@ Stage Summary:
 - Works in both global chat and DMs
 - Haptic feedback on double-tap
 - Auto-cleaning burst data from Firebase after 3 seconds
+
+---
+Task ID: 3-6
+Agent: main + fullstack-developer
+Task: Add more controls to admin panel + widget refresh button
+
+Work Log:
+- Created /api/admin/widget-config/route.ts (GET/PUT) — reads/writes widget config to Firebase RTDB at bq_widget_config/settings
+- Created /api/admin/activity/route.ts (GET) — fetches online users from bq_presence, recent messages from bq_messages, total count
+- Enhanced admin page.tsx from 683 to 1371 lines with 3 new tabs:
+  - Widget tab (MessageSquare icon): General (enable/disable, disguise, auto-open), Appearance (theme, accent color, position, bubble/panel size), Messages (char limit, max messages, font size), Features (profanity filter, slow mode, rate limiting, link filter), Announcements (enabled, text, color)
+  - Activity tab (Activity icon): Online users list with status dots, recent messages, stats cards (online now, total messages, active today)
+  - Settings tab (Settings icon): Security (password change, session timeout), Data Management (export/import config, reset to defaults), Notifications (push, sound, haptic), Maintenance (mode toggle + message)
+- Added widget refresh button in header (RotateCcw icon) — force-reloads chat widget script with cache-bust
+- All widget controls write to Firebase with 300ms debounce
+- Build succeeds, lint passes clean
+- Resolved merge conflicts from remote push
+- Committed and pushed
+
+Stage Summary:
+- Admin panel now has 6 tabs: Overview, Files, Storage, Widget, Activity, Settings
+- Widget refresh button in header for instant widget reload
+- Widget config controls write directly to Firebase RTDB
+- Activity tab shows real-time online users and recent messages
+- Settings tab has security, data management, notifications, maintenance controls
