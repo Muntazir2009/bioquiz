@@ -248,6 +248,16 @@ export default function AdminPage() {
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
 
+  // Pagination state for DM messages
+  const [dmMessagesPageSize, setDmMessagesPageSize] = useState(50);
+  const [dmTotalMessageCount, setDmTotalMessageCount] = useState(0);
+  const [dmHasMoreMessages, setDmHasMoreMessages] = useState(false);
+  const [loadingMoreDmMessages, setLoadingMoreDmMessages] = useState(false);
+  const [dmListLoading, setDmListLoading] = useState(false);
+
+  // DM search filter
+  const [dmSearchQuery, setDmSearchQuery] = useState("");
+
   // Real-time user state
   const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([]);
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
@@ -362,36 +372,10 @@ export default function AdminPage() {
     const db = getFirebaseDb();
     setFbConnected(true);
 
-    // DMs — optimized: skip full message iteration, use meta + quick last-msg lookup
-    const dmRef = ref(db, FB_PATHS.dms);
-    const unsubDm = onValue(dmRef, (snap) => {
-      if (!snap.exists()) { setDmConversations([]); return; }
-      const val = snap.val();
-      const convos: DmConversation[] = Object.entries(val).map(([dmId, dmData]: [string, any]) => {
-        const meta = dmData?.meta || {};
-        const messages = dmData?.messages || {};
-        const msgCount = typeof messages === "object" ? Object.keys(messages).length : 0;
-        // Optimized: find last message without sorting the entire array
-        let lastMsg = meta.lastMsg || "";
-        let lastTs = meta.lastTs || 0;
-        if (!lastTs && messages && typeof messages === "object") {
-          let maxTs = 0;
-          let maxText = "";
-          for (const [, m] of Object.entries(messages) as [string, any][]) {
-            if (m?.ts && m.ts > maxTs) { maxTs = m.ts; maxText = m.text || ""; }
-          }
-          lastMsg = maxText;
-          lastTs = maxTs;
-        }
-        return {
-          dmId, participants: [meta.p1 || "", meta.p2 || ""],
-          participantNames: [meta.n1 || "User 1", meta.n2 || "User 2"],
-          lastMessage: lastMsg, lastMessageTime: lastTs, messageCount: msgCount,
-        };
-      });
-      convos.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
-      setDmConversations(convos);
-    });
+    // DMs — lightweight: fetch DM list via REST API (not real-time listener)
+    // Using onValue on bq_dms downloads ALL message bodies for ALL DMs — extremely heavy.
+    // Instead, we use the REST API with shallow=true + targeted meta fetches.
+    // (fetchDmConversations is called separately below)
 
     // Presence
     const presRef = ref(db, FB_PATHS.presence);
@@ -445,18 +429,81 @@ export default function AdminPage() {
     });
 
     return () => {
-      off(dmRef); off(presRef); off(cfgRef);
+      off(presRef); off(cfgRef);
       off(banRef); off(mutRef); off(warnRef); off(pinRef);
       setFbConnected(false);
     };
   }, [isAuthed]);
 
-  // DM messages listener (when a DM is selected)
+  // ─── DM Conversations: Lightweight REST API fetch ───────────────────────────
+  // Uses REST API with shallow=true + targeted meta fetches instead of onValue
+  // which would download ALL message bodies for ALL DMs.
+
+  const fetchDmConversations = useCallback(async () => {
+    if (!isAuthed) return;
+    setDmListLoading(true);
+    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+    try {
+      const res = await fetch(`/api/admin/chat?type=dms`, {
+        headers: { "x-admin-password": pwd },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const convos: DmConversation[] = (data.conversations || []).map((c: any) => ({
+          dmId: c.dmId,
+          participants: c.participants || [],
+          participantNames: c.participantNames || [],
+          lastMessage: c.lastMessage || "",
+          lastMessageTime: c.lastMessageTime || 0,
+          messageCount: c.messageCount || 0,
+        }));
+        setDmConversations(convos);
+      }
+    } catch { /* ignore */ }
+    finally { setDmListLoading(false); }
+  }, [isAuthed, password]);
+
+  // Fetch DM list on auth
+  useEffect(() => {
+    if (isAuthed) fetchDmConversations();
+  }, [isAuthed, fetchDmConversations]);
+
+  // ─── DM Messages: Paginated real-time listener ───────────────────────────
+
+  // When selecting a new DM, reset pagination state
+  useEffect(() => {
+    if (selectedDm) {
+      setDmMessagesPageSize(50);
+      setDmHasMoreMessages(false);
+      setDmTotalMessageCount(0);
+    }
+  }, [selectedDm]);
+
+  // Paginated DM messages listener
   useEffect(() => {
     if (!isAuthed || !selectedDm) { setDmMessages([]); return; }
     const db = getFirebaseDb();
-    const dmMsgRef = ref(db, `${FB_PATHS.dms}/${selectedDm}/messages`);
-    const unsub = onValue(dmMsgRef, (snap) => {
+
+    // One-time read to get total message count for this DM
+    const countRef = ref(db, `${FB_PATHS.dms}/${selectedDm}/messages`);
+    get(countRef).then((snap) => {
+      if (snap.exists()) {
+        const count = Object.keys(snap.val()).length;
+        setDmTotalMessageCount(count);
+        setDmHasMoreMessages(count > dmMessagesPageSize);
+      } else {
+        setDmTotalMessageCount(0);
+        setDmHasMoreMessages(false);
+      }
+    });
+
+    // Paginated real-time listener — only fetch the latest N messages
+    const dmMsgQuery = query(
+      ref(db, `${FB_PATHS.dms}/${selectedDm}/messages`),
+      orderByChild('ts'),
+      limitToLast(dmMessagesPageSize)
+    );
+    const unsub = onValue(dmMsgQuery, (snap) => {
       if (!snap.exists()) { setDmMessages([]); return; }
       const val = snap.val();
       const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
@@ -466,9 +513,16 @@ export default function AdminPage() {
       }));
       msgs.sort((a, b) => b.ts - a.ts);
       setDmMessages(msgs);
+      setLoadingMoreDmMessages(false);
     });
-    return () => { off(dmMsgRef); };
-  }, [isAuthed, selectedDm]);
+    return () => { off(dmMsgQuery); };
+  }, [isAuthed, selectedDm, dmMessagesPageSize]);
+
+  // Load More DM messages handler
+  const loadMoreDmMessages = useCallback(() => {
+    setLoadingMoreDmMessages(true);
+    setDmMessagesPageSize((prev) => prev + 50);
+  }, []);
 
   // ─── Fetch data (file stats) ──────────────────────────────────────────────
 
@@ -1428,35 +1482,58 @@ export default function AdminPage() {
                   {selectedDm ? (
                     <div className="rounded-2xl border border-border bg-card">
                       <div className="flex items-center gap-3 p-6 border-b border-border">
-                        <button onClick={() => { setSelectedDm(null); setDmMessages([]); }} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
+                        <button onClick={() => { setSelectedDm(null); setDmMessages([]); setDmMessagesPageSize(50); setSelectedChatMessages(new Set()); }} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
                         <div className="flex items-center gap-2 flex-1"><MessageCircle className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">DM: {dmConversations.find((d) => d.dmId === selectedDm)?.participantNames?.join(" & ") || selectedDm}</h2></div>
                         <div className="flex items-center gap-2 shrink-0">
+                          {/* Bulk actions */}
+                          {selectedChatMessages.size > 0 && (
+                            <button onClick={() => bulkDeleteMessages(Array.from(selectedChatMessages), "dm", selectedDm)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/10 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/20">
+                              <Trash className="h-3.5 w-3.5" />Delete ({selectedChatMessages.size})
+                            </button>
+                          )}
+                          {/* Pagination info */}
+                          <span className="text-[10px] text-muted-foreground tabular-nums">{Math.min(dmMessages.length, dmMessagesPageSize)} / {dmTotalMessageCount || dmMessages.length} msgs</span>
                           <button onClick={() => exportChat(dmMessages, `dm-${selectedDm}.json`)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5"><DownloadCloud className="h-3.5 w-3.5" />Export</button>
-                          {!clearAllConfirm ? (<button onClick={() => setClearAllConfirm(true)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" />Clear All</button>) : (
+                          {!clearAllConfirm ? (<button onClick={() => setClearAllConfirm(true)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" />Clear</button>) : (
                             <div className="flex items-center gap-1.5"><button onClick={() => clearAllMessages("dm", selectedDm)} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm</button><button onClick={() => setClearAllConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button></div>
                           )}
                         </div>
                       </div>
                       <div className="max-h-[500px] overflow-y-auto">
                         {dmMessages.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No messages in this DM</p>) : (
-                          <div className="divide-y divide-border/50">
-                            {dmMessages.map((msg) => (
-                              <div key={msg.key} className="flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01]">
-                                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{msg.uname.charAt(0).toUpperCase()}</div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2"><span className="text-xs font-medium">{msg.uname}</span>{isBanned(msg.uid) && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}{isMuted(msg.uid) && <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}<span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span></div>
-                                  <p className="text-xs mt-0.5 break-words">{msg.text}</p>
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {deleteConfirmKey === msg.key ? (<><button onClick={() => { deleteMessage(msg.key, "dm", selectedDm); setDeleteConfirmKey(null); }} className="h-7 px-2 rounded-md bg-red-500 text-white text-[10px] font-medium">Yes</button><button onClick={() => setDeleteConfirmKey(null)} className="h-7 px-2 rounded-md border border-border text-[10px] font-medium">No</button></>) : (
-                                    <>
-                                      <button onClick={() => setWarnDialogUid(msg.uid)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-orange-500/10 hover:text-orange-500" title="Warn"><AlertTriangle className="h-3.5 w-3.5" /></button>
-                                      <button onClick={() => setDeleteConfirmKey(msg.key)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                                    </>
-                                  )}
-                                </div>
+                          <div>
+                            {/* Load More button at the top (for older messages) */}
+                            {dmHasMoreMessages && (
+                              <div className="flex justify-center py-3 border-b border-border/50">
+                                <button onClick={loadMoreDmMessages} disabled={loadingMoreDmMessages} className="flex items-center gap-1.5 h-8 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 disabled:opacity-50">
+                                  {loadingMoreDmMessages ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <ChevronRight className="h-3.5 w-3.5 rotate-90" />}
+                                  Load Older Messages
+                                </button>
                               </div>
-                            ))}
+                            )}
+                            <div className="divide-y divide-border/50">
+                              {dmMessages.map((msg) => (
+                                <div key={msg.key} className="flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01]">
+                                  <button onClick={() => { const next = new Set(selectedChatMessages); if (next.has(msg.key)) next.delete(msg.key); else next.add(msg.key); setSelectedChatMessages(next); }}
+                                    className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors ${selectedChatMessages.has(msg.key) ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
+                                    {selectedChatMessages.has(msg.key) && <Check className="h-3 w-3" />}
+                                  </button>
+                                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{msg.uname.charAt(0).toUpperCase()}</div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2"><span className="text-xs font-medium">{msg.uname}</span>{isBanned(msg.uid) && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}{isMuted(msg.uid) && <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}<span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span></div>
+                                    <p className="text-xs mt-0.5 break-words">{msg.text}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {deleteConfirmKey === msg.key ? (<><button onClick={() => { deleteMessage(msg.key, "dm", selectedDm); setDeleteConfirmKey(null); }} className="h-7 px-2 rounded-md bg-red-500 text-white text-[10px] font-medium">Yes</button><button onClick={() => setDeleteConfirmKey(null)} className="h-7 px-2 rounded-md border border-border text-[10px] font-medium">No</button></>) : (
+                                      <>
+                                        <button onClick={() => setWarnDialogUid(msg.uid)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-orange-500/10 hover:text-orange-500" title="Warn"><AlertTriangle className="h-3.5 w-3.5" /></button>
+                                        <button onClick={() => setDeleteConfirmKey(msg.key)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1464,18 +1541,57 @@ export default function AdminPage() {
                   ) : (
                     <div className="rounded-2xl border border-border bg-card">
                       <div className="flex items-center justify-between p-6 border-b border-border">
-                        <div className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">DM Conversations</h2><span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">Live</span></div>
+                        <div className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">DM Conversations</h2></div>
+                        <div className="flex items-center gap-2">
+                          {/* Search */}
+                          <div className="relative">
+                            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <input
+                              type="text"
+                              value={dmSearchQuery}
+                              onChange={(e) => setDmSearchQuery(e.target.value)}
+                              placeholder="Search DMs..."
+                              className="h-8 w-44 rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none transition-all focus:border-foreground/30 focus:w-56"
+                            />
+                          </div>
+                          {/* Refresh */}
+                          <button onClick={fetchDmConversations} disabled={dmListLoading} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50" title="Refresh DM list">
+                            <RefreshCw className={`h-3.5 w-3.5 ${dmListLoading ? "animate-spin" : ""}`} />
+                          </button>
+                        </div>
                       </div>
                       <div className="max-h-[500px] overflow-y-auto">
-                        {dmConversations.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No DM conversations found</p>) : (
+                        {dmListLoading && dmConversations.length === 0 ? (
+                          <div className="flex items-center justify-center py-16"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-xs text-muted-foreground">Loading DMs...</span></div>
+                        ) : dmConversations.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No DM conversations found</p>) : (
                           <div className="divide-y divide-border/50">
-                            {dmConversations.map((dm) => (
-                              <button key={dm.dmId} onClick={() => setSelectedDm(dm.dmId)} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.02] transition-colors text-left">
-                                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/5"><MessageCircle className="h-4 w-4 text-muted-foreground" /></div>
-                                <div className="min-w-0 flex-1"><p className="text-xs font-medium truncate">{dm.participantNames?.join(" & ") || dm.participants.join(", ") || dm.dmId}</p><p className="text-[11px] text-muted-foreground truncate">{dm.lastMessage || "No messages"}</p></div>
-                                <div className="text-right shrink-0">{dm.lastMessageTime > 0 && <p className="text-[10px] text-muted-foreground">{new Date(dm.lastMessageTime).toLocaleDateString()}</p>}<p className="text-[10px] text-muted-foreground">{dm.messageCount} msg{dm.messageCount !== 1 ? "s" : ""}</p></div>
-                              </button>
-                            ))}
+                            {dmConversations
+                              .filter((dm) => {
+                                if (!dmSearchQuery) return true;
+                                const q = dmSearchQuery.toLowerCase();
+                                return (
+                                  dm.participantNames?.some(n => n.toLowerCase().includes(q)) ||
+                                  dm.lastMessage?.toLowerCase().includes(q) ||
+                                  dm.dmId.toLowerCase().includes(q)
+                                );
+                              })
+                              .map((dm) => {
+                                // Check if any participant is online
+                                const isParticipantOnline = dm.participants.some(p => onlineUsers.some(u => u.uid === p));
+                                return (
+                                <div key={dm.dmId} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.02] transition-colors text-left group">
+                                  <button onClick={() => { setSelectedDm(dm.dmId); setSelectedChatMessages(new Set()); }} className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="relative">
+                                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/5"><MessageCircle className="h-4 w-4 text-muted-foreground" /></div>
+                                      {isParticipantOnline && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />}
+                                    </div>
+                                    <div className="min-w-0 flex-1"><p className="text-xs font-medium truncate">{dm.participantNames?.join(" & ") || dm.participants.join(", ") || dm.dmId}</p><p className="text-[11px] text-muted-foreground truncate">{dm.lastMessage || "No messages"}</p></div>
+                                    <div className="text-right shrink-0">{dm.lastMessageTime > 0 && <p className="text-[10px] text-muted-foreground">{new Date(dm.lastMessageTime).toLocaleDateString()}</p>}<p className="text-[10px] text-muted-foreground">{dm.messageCount} msg{dm.messageCount !== 1 ? "s" : ""}</p></div>
+                                  </button>
+                                  <button onClick={async () => { if (confirm("Delete this entire DM conversation?")) { const db = getFirebaseDb(); await remove(ref(db, `${FB_PATHS.dms}/${dm.dmId}`)); fetchDmConversations(); } }} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/10 hover:text-red-500 shrink-0" title="Delete conversation"><Trash2 className="h-3.5 w-3.5" /></button>
+                                </div>
+                                );
+                              })}
                           </div>
                         )}
                       </div>
