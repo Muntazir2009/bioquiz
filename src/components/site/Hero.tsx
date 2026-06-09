@@ -44,7 +44,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
           className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "130ms" }}
         >
-          Seven beautifully crafted modules — quizzes, AI research, a 3D cell
+          Six beautifully crafted modules — AI research, a 3D cell
           viewer, organelles, slides and solutions, all in one calm workspace.
         </p>
 
@@ -79,7 +79,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
           style={{ animationDelay: "280ms" }}
         >
           {[
-            { label: "Modules", value: "7" },
+            { label: "Modules", value: "6" },
             { label: "AI Powered", value: "Yes" },
             { label: "3D Viewer", value: "Live" },
           ].map((stat) => (

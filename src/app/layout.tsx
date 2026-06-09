@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "BioQuiz — The Biology Workspace",
-  description: "Seven beautifully crafted modules — quizzes, AI research, a 3D cell viewer, organelles, slides and solutions, all in one calm workspace.",
-  keywords: ["BioQuiz", "biology", "quiz", "AI", "3D cell viewer", "organelles"],
+  description: "Six beautifully crafted modules — AI research, a 3D cell viewer, organelles, slides and solutions, all in one calm workspace.",
+  keywords: ["BioQuiz", "biology", "AI", "3D cell viewer", "organelles"],
   authors: [{ name: "BioQuiz Team" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",

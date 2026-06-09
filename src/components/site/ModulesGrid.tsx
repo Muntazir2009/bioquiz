@@ -34,7 +34,7 @@ export function ModulesGrid() {
             </Badge>
           </div>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Seven modules.
+            Six modules.
           </h2>
           <p className="mt-1.5 text-[14px] text-muted-foreground">
             Designed to work beautifully together.

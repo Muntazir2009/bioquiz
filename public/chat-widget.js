@@ -4062,6 +4062,83 @@ async function startDB(){
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
     subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();syncStreakToFirebase();subscribeGlobalPinned();
+
+    // v76: Monitor Firebase connection state & auto-reconnect on tab focus
+    db.ref('.info/connected').on('value', function(snap) {
+      var connected = snap.val() === true;
+      if(connected) {
+        // Connection restored — refresh presence heartbeat
+        var pref = db.ref('bq_presence/'+uid);
+        if(uname && pref) {
+          pref.set({
+            uname,ts:Date.now(),
+            status:myProfile.status||'online',
+            activity:myProfile.activity||'',
+            bio:myProfile.bio||'',
+            color:myProfile.color||'',
+            initials:myProfile.initials||'',
+            avatar:myProfile.avatar||'',
+            banner:'',
+            displayName:myProfile.displayName||'',
+            pronouns:myProfile.pronouns||'',
+            customStatus:myProfile.customStatus||'',
+            nameColor:myProfile.nameColor||'',
+            bannerColor:myProfile.bannerColor||'',
+          }).catch(function(){});
+        }
+        // Remove any reconnect hint that might be showing
+        var hint = document.querySelector('.bq-reconnect-hint');
+        if(hint) hint.remove();
+      }
+    });
+
+    // v76: When tab regains focus after being backgrounded, force Firebase reconnect
+    // This fixes the "site not loaded" error when leaving the tab open
+    if(!window.__bqVisWired) {
+      window.__bqVisWired = true;
+      document.addEventListener('visibilitychange', function() {
+        if(!document.hidden && db) {
+          // Tab came back to foreground — give Firebase a moment to reconnect
+          // then verify connection and refresh presence
+          setTimeout(function() {
+            try {
+              db.ref('.info/connected').once('value').then(function(snap) {
+                if(snap.val() === true && uname) {
+                  // Still connected, just refresh presence
+                  db.ref('bq_presence/'+uid).set({
+                    uname,ts:Date.now(),
+                    status:myProfile.status||'online',
+                    activity:myProfile.activity||'',
+                    bio:myProfile.bio||'',
+                    color:myProfile.color||'',
+                    initials:myProfile.initials||'',
+                    avatar:myProfile.avatar||'',
+                    banner:'',
+                    displayName:myProfile.displayName||'',
+                    pronouns:myProfile.pronouns||'',
+                    customStatus:myProfile.customStatus||'',
+                    nameColor:myProfile.nameColor||'',
+                    bannerColor:myProfile.bannerColor||'',
+                  }).catch(function(){});
+                } else {
+                  // Connection lost — force reconnect by going offline then online
+                  try { db.goOffline(); } catch(_) {}
+                  setTimeout(function() {
+                    try { db.goOnline(); } catch(_) {}
+                  }, 300);
+                }
+              }).catch(function() {
+                // If we can't even check connection, force reconnect
+                try { db.goOffline(); } catch(_) {}
+                setTimeout(function() {
+                  try { db.goOnline(); } catch(_) {}
+                }, 300);
+              });
+            } catch(_) {}
+          }, 500);
+        }
+      });
+    }
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
 

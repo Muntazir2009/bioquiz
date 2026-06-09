@@ -1,6 +1,5 @@
 import {
   MonitorPlay,
-  BrainCircuit,
   Sparkles,
   Microscope,
   Atom,
@@ -46,24 +45,8 @@ export const modules: Module[] = [
     featured: true,
   },
   {
-    id: "quiz",
-    num: "002",
-    title: "Biology Quiz",
-    desc: "Timed challenges across all cell biology topics — organelles, membranes, molecular processes. Real-time scoring and instant feedback.",
-    href: "/quiz.html",
-    icon: BrainCircuit,
-    status: "READY TO LAUNCH",
-    color: "#60a5fa",   // cyan
-    accent: {
-      from: "oklch(0.78 0.18 240)",
-      to: "oklch(0.65 0.20 250)",
-      ring: "oklch(0.75 0.18 245 / 0.35)",
-      glow: "oklch(0.75 0.18 245 / 0.08)",
-    },
-  },
-  {
     id: "ask",
-    num: "003",
+    num: "002",
     title: "Ask Panel",
     desc: "AI-powered research terminal. Ask anything, get instant explanations from Wikipedia and Cloudflare AI.",
     href: "/ask.html",
@@ -79,7 +62,7 @@ export const modules: Module[] = [
   },
   {
     id: "organelles",
-    num: "004",
+    num: "003",
     title: "Organelle Explorer",
     desc: "Deep-dive visual cards for every organelle. Diagrams, functions, and key facts for each structure.",
     href: "/organelles.html",
@@ -95,7 +78,7 @@ export const modules: Module[] = [
   },
   {
     id: "cell-3d",
-    num: "005",
+    num: "004",
     title: "3D Cell Viewer",
     desc: "Interactive three-dimensional cell model. Rotate, zoom, and explore cell structure in real-time 3D.",
     href: "/cell-3d.html",
@@ -111,7 +94,7 @@ export const modules: Module[] = [
   },
   {
     id: "solutions",
-    num: "006",
+    num: "005",
     title: "Q&A Solutions",
     desc: "Complete exercise answers with detailed explanations. Review and reinforce every key concept.",
     href: "/solutions.html",
@@ -127,7 +110,7 @@ export const modules: Module[] = [
   },
   {
     id: "suggestions",
-    num: "007",
+    num: "006",
     title: "Suggestions",
     desc: "Share ideas, report issues, or suggest new features. Help shape the future of BioQuiz directly.",
     href: "/suggestions.html",
