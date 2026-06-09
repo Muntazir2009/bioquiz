@@ -23,3 +23,112 @@ Stage Summary:
 - Quiz/question editor completely removed from the site
 - Firebase reconnection handling added to prevent "site not loaded" errors
 - All changes pushed to origin/main
+
+---
+Task ID: 2
+Agent: general-purpose
+Task: Fix site not loaded error - Firebase connection recovery
+
+Work Log:
+- Read existing v76 reconnection code (lines 4066-4141) in chat-widget.js
+- Read the subscribe functions (subscribeGlobal, subscribeGlobalTyping, subscribeDmList, subscribeWidgetConfig, subscribeGlobalPinned) to understand listener patterns
+- Read the existing bq-reconnect-hint usage in DM list watchdog (line 4618-4621)
+- Added CSS for `.bq-conn-banner` reconnection indicator with pulsing animation (after line 2326)
+- Added reconnection banner HTML elements in both global chat view (`bq-conn-banner-g`) and DM view (`bq-conn-banner-dm`)
+- Enhanced `.info/connected` handler to track `window.__bqConnected` state and show/hide reconnection banners
+- Created `_bqRefreshAfterReconnect()` function that force-refreshes critical Firebase data after reconnection:
+  - Global messages (only if message list appears stale, <2 messages rendered)
+  - Widget config (CSS variables and admin config)
+  - Pinned messages
+  - DM list index
+- Enhanced visibility change handler to also call `_bqRefreshAfterReconnect()` on both reconnect paths (goOffline/goOnline and still-connected cases)
+- Added reconnection banner show/hide in visibility handler for immediate user feedback
+- Added periodic connection health check (60s interval while tab visible) with automatic reconnection on connection loss
+- All new code uses `window.__bqHealthWired` guard to prevent duplicate intervals
+
+Stage Summary:
+- Three Firebase reconnection improvements implemented:
+  1. Visual "Reconnecting…" banner with pulsing orange dot animation in both Global and DM chat views
+  2. `_bqRefreshAfterReconnect()` function that force-refreshes stale data after goOnline() using `once('value')` reads
+  3. 60-second periodic health check that detects silent disconnections and auto-recovers
+- Existing functionality preserved - only additive changes, no rewrites
+
+---
+Task ID: 4
+Agent: general-purpose
+Task: Liquid glass maintenance overlay
+
+Work Log:
+- Read current `_showMaintenanceOverlay` function at line 208-228 in chat-widget.js
+- Reviewed existing @keyframes in the codebase (found 50+ animation definitions, all inline in JS)
+- Replaced the overlay function with liquid glass version implementing all 7 requirements:
+  1. Extreme blur: `backdrop-filter:blur(80px) saturate(30%) brightness(0.15)` (was 40px/60%/0.3)
+  2. Thick dark background: `rgba(0,0,0,0.85)` (was 0.6) to fully obscure background content
+  3. Liquid glass shimmer: two animated gradient layers with `bqMaintShimmer` keyframes moving at 8s and 12s (reverse)
+  4. Frosted glass border: `border:1px solid rgba(255,255,255,0.08)` with `overflow:hidden`
+  5. Animated icon pulse: `bqMaintIconPulse` keyframes with scaling and expanding box-shadow glow
+  6. Better typography: 18px text (was 16px), 12px subtitle (was 11px), text-shadow on both, wider max-width 280px
+  7. CSS keyframes: Injected via `<style>` element inside overlay (bqMaintShimmer, bqMaintIconPulse, bqMaintFadeIn)
+- Added fade-in animation (`bqMaintFadeIn`) for smooth content entry
+- `_hideMaintenanceOverlay` function left unchanged
+- No other functions modified
+
+Stage Summary:
+- Maintenance overlay now uses liquid glass effect with 80px blur + 0.85 opacity dark background that fully hides chats/DMs
+- Animated shimmer gradient creates liquid glass appearance with subtle light movement
+- Icon pulses with expanding glow effect
+- Content fades in smoothly on appearance
+
+---
+Task ID: 3
+Agent: general-purpose
+Task: Fix laggy admin chat loading - lazy/paginated
+
+Work Log:
+- Read full admin page (~2088 lines) to understand current Firebase listener setup
+- Identified performance bottlenecks: `onValue(msgRef)` loads ALL global messages; `onValue(dmRef)` sorts ALL DM messages to find last message
+- Added `query, orderByChild, limitToLast` imports from `firebase/database`
+- Added pagination state variables: `messagesPageSize` (50), `totalMessageCount`, `hasMoreMessages`, `loadingMoreMessages`
+- Separated global messages listener into its own `useEffect` with `[isAuthed, messagesPageSize]` deps so it re-runs on page size change
+- Replaced `onValue(msgRef, ...)` with `query(ref(db, FB_PATHS.messages), orderByChild('ts'), limitToLast(messagesPageSize))` for paginated loading
+- Added one-time `get(countRef)` to fetch total message count for pagination info
+- Added `loadMoreMessages` callback that increases `messagesPageSize` by 50
+- Optimized DM list processing: replaced `entries.sort()` (O(n log n)) with single-pass max-finding loop (O(n)), and added `meta.lastMsg`/`meta.lastTs` fast path
+- Added "Load Older Messages" button with loading spinner at bottom of global messages list
+- Added "Showing X of Y messages" pagination info and "Search limited to loaded messages" hint
+- Updated Total Messages stat cards to use `totalMessageCount` (from one-time count) instead of `globalMessages.length`
+- Changed search placeholder to "Search loaded messages..." to indicate scope
+- Removed `msgQuery` from second useEffect cleanup (now handled in its own useEffect)
+- Verified build succeeds with `next build`
+
+Stage Summary:
+- Global messages now load 50 at a time instead of all at once, with "Load Older Messages" button for pagination
+- Real-time updates preserved for loaded messages via `onValue` with `limitToLast`
+- DM list no longer sorts all messages to find last message — uses O(n) single pass and meta fast path
+- Search scope clearly communicated to user
+- Build passes cleanly
+
+---
+Task ID: 6
+Agent: general-purpose
+Task: Add new real-time controls and features to admin panel
+
+Work Log:
+- Read admin page (~2140 lines) to understand current structure and identify sections to modify
+- Added new state variables: broadcastText, broadcastSending, broadcastAsSystem, broadcastPriority, maintenancePreviewVisible
+- Added sendBroadcast callback that pushes messages to Firebase with priority prefix and system/admin sender options
+- Added refreshOnlineUsers callback using Firebase get() for manual presence data refresh
+- Enhanced user-management section: added Refresh button next to Online Users header for manual online users list refresh
+- Enhanced rate-limiting section: added visual status indicator (green=active, red=disabled), custom range slider for slow mode interval with min/max labels, quick preset buttons (Relaxed/Normal/Strict) that set multiple config values at once
+- Enhanced maintenance section: added dual status banner (active=amber, inactive=green), preset message buttons (Under Maintenance, Back in 5 minutes, System Update, Upgrading servers), Preview Overlay toggle button that shows a simulated maintenance overlay with wrench icon and custom message
+- Enhanced announcements section: added Global Broadcast card with textarea input, character count indicator (0/500, red when >450), "Send as System" toggle switch (default on), priority level selector (Normal/Important/Urgent) with color-coded buttons and icons, live priority preview for Important/Urgent messages, send button with loading spinner state
+- Verified build succeeds with `next build`
+
+Stage Summary:
+- 4 admin panel sections enhanced with new real-time controls and features
+- User Management: Refresh button for online users list
+- Rate Limiting: Visual status indicator, range slider, quick presets (Relaxed/Normal/Strict)
+- Maintenance: Dual status banner, preset messages, interactive overlay preview
+- Announcements: Global Broadcast with priority levels, Send as System toggle, character count, loading state
+- All changes are additive/surgical — no existing functionality broken
+- Build passes cleanly

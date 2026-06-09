@@ -7,6 +7,7 @@ import {
 } from "firebase/app";
 import {
   getDatabase, ref, onValue, off, set, remove, push, get,
+  query, orderByChild, limitToLast,
   type Database,
 } from "firebase/database";
 import {
@@ -241,6 +242,12 @@ export default function AdminPage() {
   const [clearAllConfirm, setClearAllConfirm] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
 
+  // Pagination state for global messages
+  const [messagesPageSize, setMessagesPageSize] = useState(50);
+  const [totalMessageCount, setTotalMessageCount] = useState(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
+
   // Real-time user state
   const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([]);
   const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
@@ -270,6 +277,15 @@ export default function AdminPage() {
   // Widget refresh toast
   const [widgetRefreshToast, setWidgetRefreshToast] = useState(false);
 
+  // Broadcast state
+  const [broadcastText, setBroadcastText] = useState("");
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastAsSystem, setBroadcastAsSystem] = useState(true);
+  const [broadcastPriority, setBroadcastPriority] = useState<"normal" | "important" | "urgent">("normal");
+
+  // Maintenance preview
+  const [maintenancePreviewVisible, setMaintenancePreviewVisible] = useState(false);
+
   // Settings
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -298,14 +314,27 @@ export default function AdminPage() {
 
   // ─── Firebase Real-Time Listeners ─────────────────────────────────────────
 
+  // Global messages listener — separate useEffect so it re-runs on page size change
   useEffect(() => {
     if (!isAuthed) return;
     const db = getFirebaseDb();
-    setFbConnected(true);
 
-    // Global messages
-    const msgRef = ref(db, FB_PATHS.messages);
-    const unsubMsg = onValue(msgRef, (snap) => {
+    // One-time read to get total count
+    const countRef = ref(db, FB_PATHS.messages);
+    get(countRef).then((snap) => {
+      if (snap.exists()) {
+        const count = Object.keys(snap.val()).length;
+        setTotalMessageCount(count);
+        setHasMoreMessages(count > messagesPageSize);
+      } else {
+        setTotalMessageCount(0);
+        setHasMoreMessages(false);
+      }
+    });
+
+    // Paginated real-time listener for displayed messages
+    const msgQuery = query(ref(db, FB_PATHS.messages), orderByChild('ts'), limitToLast(messagesPageSize));
+    const unsubMsg = onValue(msgQuery, (snap) => {
       if (!snap.exists()) { setGlobalMessages([]); return; }
       const val = snap.val();
       const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
@@ -315,9 +344,25 @@ export default function AdminPage() {
       }));
       msgs.sort((a, b) => b.ts - a.ts);
       setGlobalMessages(msgs);
+      setLoadingMoreMessages(false);
     });
 
-    // DMs
+    return () => { off(msgQuery); };
+  }, [isAuthed, messagesPageSize]);
+
+  // Load More handler
+  const loadMoreMessages = useCallback(() => {
+    setLoadingMoreMessages(true);
+    setMessagesPageSize((prev) => prev + 50);
+  }, []);
+
+  // Other Firebase listeners (not affected by message pagination)
+  useEffect(() => {
+    if (!isAuthed) return;
+    const db = getFirebaseDb();
+    setFbConnected(true);
+
+    // DMs — optimized: skip full message iteration, use meta + quick last-msg lookup
     const dmRef = ref(db, FB_PATHS.dms);
     const unsubDm = onValue(dmRef, (snap) => {
       if (!snap.exists()) { setDmConversations([]); return; }
@@ -326,15 +371,17 @@ export default function AdminPage() {
         const meta = dmData?.meta || {};
         const messages = dmData?.messages || {};
         const msgCount = typeof messages === "object" ? Object.keys(messages).length : 0;
-        let lastMsg = "";
-        let lastTs = 0;
-        if (messages && typeof messages === "object") {
-          const entries = Object.entries(messages) as [string, any][];
-          if (entries.length > 0) {
-            const sorted = entries.sort((a, b) => (b[1]?.ts || 0) - (a[1]?.ts || 0));
-            lastMsg = sorted[0][1]?.text || "";
-            lastTs = sorted[0][1]?.ts || 0;
+        // Optimized: find last message without sorting the entire array
+        let lastMsg = meta.lastMsg || "";
+        let lastTs = meta.lastTs || 0;
+        if (!lastTs && messages && typeof messages === "object") {
+          let maxTs = 0;
+          let maxText = "";
+          for (const [, m] of Object.entries(messages) as [string, any][]) {
+            if (m?.ts && m.ts > maxTs) { maxTs = m.ts; maxText = m.text || ""; }
           }
+          lastMsg = maxText;
+          lastTs = maxTs;
         }
         return {
           dmId, participants: [meta.p1 || "", meta.p2 || ""],
@@ -398,7 +445,7 @@ export default function AdminPage() {
     });
 
     return () => {
-      off(msgRef); off(dmRef); off(presRef); off(cfgRef);
+      off(dmRef); off(presRef); off(cfgRef);
       off(banRef); off(mutRef); off(warnRef); off(pinRef);
       setFbConnected(false);
     };
@@ -586,6 +633,50 @@ export default function AdminPage() {
     const basePath = context === "global" ? FB_PATHS.messages : `${FB_PATHS.dms}/${dmId}/messages`;
     await Promise.all(msgKeys.map((k) => remove(ref(db, `${basePath}/${k}`))));
     setSelectedChatMessages(new Set());
+  }, []);
+
+  // ─── Broadcast ────────────────────────────────────────────────────────────
+
+  const sendBroadcast = useCallback(async () => {
+    if (!broadcastText.trim()) return;
+    setBroadcastSending(true);
+    try {
+      const db = getFirebaseDb();
+      const priorityStyles: Record<string, string> = {
+        normal: "📢",
+        important: "⚠️",
+        urgent: "🚨",
+      };
+      const prefix = priorityStyles[broadcastPriority] || "📢";
+      const text = broadcastPriority !== "normal" ? `${prefix} [${broadcastPriority.toUpperCase()}] ${broadcastText.trim()}` : broadcastText.trim();
+      await push(ref(db, FB_PATHS.messages), {
+        text,
+        uname: broadcastAsSystem ? "System" : "Admin",
+        uid: broadcastAsSystem ? "system" : "admin",
+        ts: Date.now(),
+        type: broadcastAsSystem ? "system" : "user",
+        edited: false,
+        priority: broadcastPriority,
+      });
+      setBroadcastText("");
+      setBroadcastPriority("normal");
+      setActionMsg("Broadcast sent!");
+      setTimeout(() => setActionMsg(""), 3000);
+    } catch { /* ignore */ }
+    finally { setBroadcastSending(false); }
+  }, [broadcastText, broadcastAsSystem, broadcastPriority]);
+
+  const refreshOnlineUsers = useCallback(() => {
+    const db = getFirebaseDb();
+    const presRef = ref(db, FB_PATHS.presence);
+    get(presRef).then((snap) => {
+      if (!snap.exists()) { setOnlineUsers([]); return; }
+      const val = snap.val();
+      const users: PresenceUser[] = Object.entries(val).map(([uid, v]: [string, any]) => ({
+        uid, ts: v?.ts, name: v?.name, status: v?.status,
+      }));
+      setOnlineUsers(users);
+    });
   }, []);
 
   // ─── Chat Export ──────────────────────────────────────────────────────────
@@ -1133,7 +1224,7 @@ export default function AdminPage() {
                 <div className="flex flex-col gap-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <StatCard icon={Users} label="Online Now" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
-                    <StatCard icon={MessageSquare} label="Total Messages" value={String(globalMessages.length)} color="oklch(0.7 0.12 250)" />
+                    <StatCard icon={MessageSquare} label="Total Messages" value={String(totalMessageCount || globalMessages.length)} color="oklch(0.7 0.12 250)" />
                     <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.75 0.15 200)" />
                   </div>
                   <div className="rounded-2xl border border-border bg-card p-6">
@@ -1188,7 +1279,7 @@ export default function AdminPage() {
                 <div className="flex flex-col gap-6">
                   {actionMsg && (<div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]"><Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium text-green-500">{actionMsg}</span></div>)}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <StatCard icon={MessageSquare} label="Total Messages" value={String(globalMessages.length)} color="oklch(0.7 0.12 250)" />
+                    <StatCard icon={MessageSquare} label="Total Messages" value={String(totalMessageCount || globalMessages.length)} color="oklch(0.7 0.12 250)" />
                     <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.75 0.15 200)" />
                     <StatCard icon={Users} label="Active Chatters" value={String(activeChatters)} color="oklch(0.72 0.16 140)" />
                     <StatCard icon={Clock} label="Peak Hour" value={peakHour} color="oklch(0.65 0.2 25)" />
@@ -1251,8 +1342,14 @@ export default function AdminPage() {
                       </div>
                       <div className="relative">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input type="text" value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)} placeholder="Search messages..." className="h-10 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition-all focus:border-foreground/30 focus:ring-2 focus:ring-foreground/5" />
+                        <input type="text" value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)} placeholder="Search loaded messages..." className="h-10 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition-all focus:border-foreground/30 focus:ring-2 focus:ring-foreground/5" />
                       </div>
+                      {totalMessageCount > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Showing {globalMessages.length} of {totalMessageCount} messages</span>
+                          {chatSearchQuery && <span className="text-[10px] text-muted-foreground">Search limited to loaded messages</span>}
+                        </div>
+                      )}
                     </div>
                     <div className="max-h-[500px] overflow-y-auto">
                       {globalMessages.length === 0 ? (
@@ -1305,6 +1402,14 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             ))}
+                          {hasMoreMessages && (
+                            <div className="flex items-center justify-center py-4 border-t border-border/50">
+                              <button onClick={loadMoreMessages} disabled={loadingMoreMessages} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 disabled:opacity-40">
+                                {loadingMoreMessages ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Clock className="h-3.5 w-3.5" />}
+                                Load Older Messages
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1382,8 +1487,9 @@ export default function AdminPage() {
               {/* ─── ANNOUNCEMENTS ─────────────────────────────────────── */}
               {section === "announcements" && (
                 <div className="flex flex-col gap-6">
+                  {/* Widget Announcement Config */}
                   <div className="rounded-2xl border border-border bg-card p-6">
-                    <div className="flex items-center gap-2 mb-5"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Announcements</h2></div>
+                    <div className="flex items-center gap-2 mb-5"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Announcement Banner</h2></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <ConfigToggle label="Announcement Enabled" value={widgetConfig.announcementEnabled ?? false} syncing={syncingKey === "announcementEnabled"} onChange={(v) => writeWidgetConfig("announcementEnabled", v)} />
                       <ConfigColorPicker label="Announcement Color" value={widgetConfig.announcementColor ?? "#f59e0b"} syncing={syncingKey === "announcementColor"} onChange={(v) => writeWidgetConfig("announcementColor", v)} />
@@ -1403,6 +1509,76 @@ export default function AdminPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Global Broadcast */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Global Broadcast</h2><span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">Chat</span></div>
+                    <div className="flex flex-col gap-4">
+                      {/* Broadcast Message Input */}
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Broadcast Message</span>
+                          <span className={`text-[10px] tabular-nums ${broadcastText.length > 450 ? "text-red-500" : "text-muted-foreground"}`}>{broadcastText.length}/500</span>
+                        </div>
+                        <textarea value={broadcastText} onChange={(e) => setBroadcastText(e.target.value.slice(0, 500))} placeholder="Type a broadcast message to all users..." rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-all focus:border-foreground/30 resize-none" />
+                      </div>
+
+                      {/* Send as System + Priority */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <div className={`grid h-5 w-9 shrink-0 place-items-center rounded-full transition-colors ${broadcastAsSystem ? "bg-foreground" : "bg-foreground/10"}`} onClick={() => setBroadcastAsSystem(!broadcastAsSystem)}>
+                            <div className={`h-3.5 w-3.5 rounded-full bg-background transition-transform ${broadcastAsSystem ? "translate-x-1.5" : "-translate-x-1.5"}`} />
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium">Send as System</span>
+                            <p className="text-[10px] text-muted-foreground">Message appears from "System" instead of "Admin"</p>
+                          </div>
+                        </label>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-xs text-muted-foreground">Priority Level</span>
+                          <div className="flex gap-2">
+                            {(["normal", "important", "urgent"] as const).map((p) => {
+                              const colors: Record<string, string> = {
+                                normal: "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+                                important: "border-amber-500/30 bg-amber-500/5 text-amber-500",
+                                urgent: "border-red-500/30 bg-red-500/5 text-red-500",
+                              };
+                              const activeColors: Record<string, string> = {
+                                normal: "border-foreground/20 bg-foreground/5 text-foreground",
+                                important: "border-amber-500/30 bg-amber-500/5 text-amber-500",
+                                urgent: "border-red-500/30 bg-red-500/5 text-red-500",
+                              };
+                              return (
+                                <button key={p} onClick={() => setBroadcastPriority(p)} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors capitalize ${broadcastPriority === p ? activeColors[p] : colors[p]}`}>
+                                  {p === "normal" && <MessageSquare className="h-3 w-3" />}
+                                  {p === "important" && <AlertTriangle className="h-3 w-3" />}
+                                  {p === "urgent" && <AlertCircle className="h-3 w-3" />}
+                                  {p}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Priority Preview */}
+                      {broadcastPriority !== "normal" && broadcastText.trim() && (
+                        <div className={`rounded-xl p-3 animate-[fade-up_0.2s_ease_both] ${broadcastPriority === "important" ? "bg-amber-500/5 border border-amber-500/20" : "bg-red-500/5 border border-red-500/20"}`}>
+                          <div className="flex items-center gap-2">
+                            {broadcastPriority === "important" && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                            {broadcastPriority === "urgent" && <AlertCircle className="h-4 w-4 text-red-500" />}
+                            <span className={`text-xs font-medium ${broadcastPriority === "important" ? "text-amber-500" : "text-red-500"}`}>[{broadcastPriority.toUpperCase()}]</span>
+                            <span className="text-xs">{broadcastText.trim()}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Send Button */}
+                      <button onClick={sendBroadcast} disabled={!broadcastText.trim() || broadcastSending} className="flex items-center justify-center gap-1.5 h-10 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 disabled:opacity-40 shrink-0 w-full md:w-auto md:self-end">
+                        {broadcastSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Megaphone className="h-3.5 w-3.5" />}{broadcastSending ? "Sending..." : "Send Broadcast"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1464,14 +1640,47 @@ export default function AdminPage() {
 
               {/* ─── RATE LIMITING ─────────────────────────────────────── */}
               {section === "rate-limiting" && (
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center gap-2 mb-5"><Zap className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Rate Limiting</h2></div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ConfigToggle label="Slow Mode" value={widgetConfig.slowMode ?? false} syncing={syncingKey === "slowMode"} onChange={(v) => writeWidgetConfig("slowMode", v)} />
-                    {widgetConfig.slowMode && <ConfigSlider label="Slow Mode Interval" value={widgetConfig.slowModeInterval ?? 5} min={1} max={60} step={1} unit="s" syncing={syncingKey === "slowModeInterval"} onChange={(v) => writeWidgetConfig("slowModeInterval", v)} />}
-                    <ConfigToggle label="Rate Limiting" value={widgetConfig.rateLimitEnabled ?? true} syncing={syncingKey === "rateLimitEnabled"} onChange={(v) => writeWidgetConfig("rateLimitEnabled", v)} />
+                <div className="flex flex-col gap-6">
+                  {/* Rate Limit Status */}
+                  <div className={`flex items-center gap-3 rounded-xl border p-4 animate-[fade-up_0.2s_ease_both] ${widgetConfig.rateLimitEnabled ? "border-green-500/20 bg-green-500/5" : "border-red-500/20 bg-red-500/5"}`}>
+                    {widgetConfig.rateLimitEnabled ? (
+                      <><Zap className="h-5 w-5 text-green-500 shrink-0" /><div><p className="text-xs font-medium text-green-500">Rate Limiting Active</p><p className="text-[10px] text-muted-foreground mt-0.5">Spam protection is enabled. Messages are rate-limited to prevent flooding.</p></div></>
+                    ) : (
+                      <><AlertTriangle className="h-5 w-5 text-red-500 shrink-0" /><div><p className="text-xs font-medium text-red-500">Rate Limiting Disabled</p><p className="text-[10px] text-muted-foreground mt-0.5">Warning: No spam protection is active. Users can send messages without restrictions.</p></div></>
+                    )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-4">Slow mode adds a cooldown between messages. Rate limiting prevents spam by capping messages per minute.</p>
+
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Zap className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Rate Limiting Controls</h2></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <ConfigToggle label="Slow Mode" value={widgetConfig.slowMode ?? false} syncing={syncingKey === "slowMode"} onChange={(v) => writeWidgetConfig("slowMode", v)} />
+                      <ConfigToggle label="Rate Limiting" value={widgetConfig.rateLimitEnabled ?? true} syncing={syncingKey === "rateLimitEnabled"} onChange={(v) => writeWidgetConfig("rateLimitEnabled", v)} />
+                    </div>
+
+                    {/* Slow Mode Interval Slider */}
+                    {widgetConfig.slowMode && (
+                      <div className="mt-4 flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Slow Mode Interval</span>
+                          <span className="text-xs font-medium tabular-nums">{widgetConfig.slowModeInterval ?? 5}s</span>
+                        </div>
+                        <input type="range" min={1} max={60} step={1} value={widgetConfig.slowModeInterval ?? 5} onChange={(e) => writeWidgetConfig("slowModeInterval", Number(e.target.value))} className="w-full h-2 rounded-full appearance-none bg-foreground/10 accent-foreground cursor-pointer" />
+                        <div className="flex justify-between text-[10px] text-muted-foreground"><span>1s</span><span>30s</span><span>60s</span></div>
+                      </div>
+                    )}
+
+                    {/* Quick Presets */}
+                    <div className="mt-4 flex flex-col gap-1.5">
+                      <span className="text-xs text-muted-foreground">Quick Presets</span>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 30); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 30 && widgetConfig.rateLimitEnabled ? "border-green-500/30 bg-green-500/5 text-green-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Relaxed (10msg/30s)</button>
+                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 10); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 10 && widgetConfig.rateLimitEnabled ? "border-amber-500/30 bg-amber-500/5 text-amber-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Normal (5msg/10s)</button>
+                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 5); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 5 && widgetConfig.rateLimitEnabled ? "border-red-500/30 bg-red-500/5 text-red-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Strict (3msg/5s)</button>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-muted-foreground mt-4">Slow mode adds a cooldown between messages. Rate limiting prevents spam by capping messages per minute.</p>
+                  </div>
                 </div>
               )}
 
@@ -1486,6 +1695,7 @@ export default function AdminPage() {
                   <div className="rounded-2xl border border-border bg-card">
                     <div className="flex items-center justify-between p-6 border-b border-border">
                       <div className="flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Online Users</h2><span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500 font-medium">{onlineUsers.length} online</span></div>
+                      <button onClick={refreshOnlineUsers} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><RefreshCw className="h-3.5 w-3.5" />Refresh</button>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                       {onlineUsers.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No users found</p>) : (
@@ -1896,14 +2106,17 @@ export default function AdminPage() {
               {/* ─── MAINTENANCE ───────────────────────────────────────── */}
               {section === "maintenance" && (
                 <div className="flex flex-col gap-6">
-                  {widgetConfig.maintenanceEnabled && (
-                    <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 animate-[fade-up_0.2s_ease_both]">
-                      <Wrench className="h-5 w-5 text-amber-500 shrink-0" />
-                      <div><p className="text-xs font-medium text-amber-500">Maintenance Mode is Active</p><p className="text-[10px] text-muted-foreground mt-0.5">The chat widget is currently showing a maintenance overlay to all users.</p></div>
-                    </div>
-                  )}
+                  {/* Status Banner */}
+                  <div className={`flex items-center gap-3 rounded-xl border p-4 animate-[fade-up_0.2s_ease_both] ${widgetConfig.maintenanceEnabled ? "border-amber-500/20 bg-amber-500/5" : "border-green-500/20 bg-green-500/5"}`}>
+                    {widgetConfig.maintenanceEnabled ? (
+                      <><Wrench className="h-5 w-5 text-amber-500 shrink-0" /><div><p className="text-xs font-medium text-amber-500">Maintenance Mode is Active</p><p className="text-[10px] text-muted-foreground mt-0.5">The chat widget is currently showing a maintenance overlay to all users.</p></div></>
+                    ) : (
+                      <><ShieldCheck className="h-5 w-5 text-green-500 shrink-0" /><div><p className="text-xs font-medium text-green-500">System is Online</p><p className="text-[10px] text-muted-foreground mt-0.5">All services are running normally. No maintenance overlay is active.</p></div></>
+                    )}
+                  </div>
+
                   <div className="rounded-2xl border border-border bg-card p-6">
-                    <div className="flex items-center gap-2 mb-5"><Wrench className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Maintenance</h2></div>
+                    <div className="flex items-center gap-2 mb-5"><Wrench className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Maintenance Controls</h2></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <ConfigToggle label="Maintenance Mode" value={widgetConfig.maintenanceEnabled ?? false} syncing={syncingKey === "maintenanceEnabled"} onChange={(v) => writeWidgetConfig("maintenanceEnabled", v)} />
                       <div className="flex flex-col gap-1.5">
@@ -1911,7 +2124,43 @@ export default function AdminPage() {
                         <input type="text" value={widgetConfig.maintenanceMessage ?? ""} onChange={(e) => writeWidgetConfig("maintenanceMessage", e.target.value)} placeholder="Site is under maintenance..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
                       </div>
                     </div>
+
+                    {/* Preset Messages */}
+                    <div className="mt-4 flex flex-col gap-1.5">
+                      <span className="text-xs text-muted-foreground">Preset Messages</span>
+                      <div className="flex flex-wrap gap-2">
+                        {["Under Maintenance", "Back in 5 minutes", "System Update", "Upgrading servers"].map((preset) => (
+                          <button key={preset} onClick={() => writeWidgetConfig("maintenanceMessage", preset)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">{preset}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Preview Button */}
+                    <div className="mt-4 flex items-center gap-3">
+                      <button onClick={() => setMaintenancePreviewVisible(!maintenancePreviewVisible)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">
+                        {maintenancePreviewVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}{maintenancePreviewVisible ? "Hide Preview" : "Preview Overlay"}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Maintenance Overlay Preview */}
+                  {maintenancePreviewVisible && (
+                    <div className="rounded-2xl border border-border bg-card p-6 animate-[fade-up_0.2s_ease_both]">
+                      <div className="flex items-center gap-2 mb-4"><Eye className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Maintenance Preview</h2></div>
+                      <div className="relative rounded-xl border border-amber-500/20 overflow-hidden" style={{ minHeight: 200 }}>
+                        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-3 p-6">
+                          <div className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500/10"><Wrench className="h-6 w-6 text-amber-500" /></div>
+                          <p className="text-sm font-medium text-amber-500">Maintenance Mode</p>
+                          <p className="text-xs text-muted-foreground text-center">{widgetConfig.maintenanceMessage || "Site is under maintenance. Please check back later."}</p>
+                        </div>
+                        <div className="p-4 opacity-20 pointer-events-none">
+                          <div className="h-3 w-24 rounded-full bg-foreground/10 mb-2" />
+                          <div className="h-2 w-full rounded-full bg-foreground/5 mb-1" />
+                          <div className="h-2 w-3/4 rounded-full bg-foreground/5" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

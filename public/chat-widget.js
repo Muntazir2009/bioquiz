@@ -215,16 +215,25 @@ function _showMaintenanceOverlay(message) {
   }
   var overlay = document.createElement('div');
   overlay.id = 'bq-maintenance-overlay';
-  overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;backdrop-filter:blur(40px) saturate(60%) brightness(0.3);-webkit-backdrop-filter:blur(40px) saturate(60%) brightness(0.3);background:rgba(0,0,0,0.6);';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;backdrop-filter:blur(80px) saturate(30%) brightness(0.15);-webkit-backdrop-filter:blur(80px) saturate(30%) brightness(0.15);background:rgba(0,0,0,0.85);border:1px solid rgba(255,255,255,0.08);overflow:hidden;';
   overlay.innerHTML =
-    '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 30px rgba(239,68,68,0.2);">' +
-      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-        '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' +
-      '</svg>' +
-    '</div>' +
-    '<div class="bq-maint-text" style="color:#fff;font-size:16px;font-weight:700;font-family:Inter,system-ui,sans-serif;line-height:1.5;max-width:260px;letter-spacing:0.01em;">' + _escHtml(message || 'Under Maintenance') + '</div>' +
-    '<div style="color:rgba(255,255,255,0.35);font-size:11px;margin-top:10px;font-family:Inter,system-ui,sans-serif;font-weight:500;letter-spacing:0.03em;">Please check back later</div>' +
-    '<div style="margin-top:16px;width:32px;height:2px;border-radius:1px;background:linear-gradient(to right,transparent,rgba(239,68,68,0.5),transparent);"></div>';
+    '<style>' +
+      '@keyframes bqMaintShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}' +
+      '@keyframes bqMaintIconPulse{0%,100%{box-shadow:0 0 20px rgba(239,68,68,0.2),0 0 40px rgba(239,68,68,0.1);transform:scale(1)}50%{box-shadow:0 0 30px rgba(239,68,68,0.4),0 0 60px rgba(239,68,68,0.2);transform:scale(1.05)}}' +
+      '@keyframes bqMaintFadeIn{from{opacity:0;transform:translateY(8px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}' +
+    '</style>' +
+    '<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.03) 25%,transparent 50%,rgba(255,255,255,0.02) 75%,transparent 100%);background-size:300% 300%;animation:bqMaintShimmer 8s ease-in-out infinite;"></div>' +
+    '<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;background:linear-gradient(160deg,transparent 40%,rgba(239,68,68,0.04) 50%,transparent 60%);background-size:250% 250%;animation:bqMaintShimmer 12s ease-in-out infinite reverse;"></div>' +
+    '<div style="animation:bqMaintFadeIn 0.5s ease-out both;display:flex;flex-direction:column;align-items:center;">' +
+      '<div style="width:72px;height:72px;border-radius:50%;background:rgba(239,68,68,0.12);border:2px solid rgba(239,68,68,0.25);display:flex;align-items:center;justify-content:center;margin-bottom:24px;animation:bqMaintIconPulse 3s ease-in-out infinite;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">' +
+        '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="bq-maint-text" style="color:#fff;font-size:18px;font-weight:700;font-family:Inter,system-ui,sans-serif;line-height:1.5;max-width:280px;letter-spacing:0.02em;text-shadow:0 2px 12px rgba(0,0,0,0.5);">' + _escHtml(message || 'Under Maintenance') + '</div>' +
+      '<div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:12px;font-family:Inter,system-ui,sans-serif;font-weight:500;letter-spacing:0.04em;text-shadow:0 1px 6px rgba(0,0,0,0.4);">Please check back later</div>' +
+      '<div style="margin-top:20px;width:40px;height:2px;border-radius:1px;background:linear-gradient(to right,transparent,rgba(239,68,68,0.5),transparent);"></div>' +
+    '</div>';
   panel.appendChild(overlay);
 }
 
@@ -2325,6 +2334,18 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-pinbar-unpin:hover{color:var(--bq-text);}
 .bq-pinbar-unpin svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
 
+/* ── RECONNECTION BANNER ── */
+.bq-conn-banner{
+  display:none;align-items:center;gap:8px;
+  padding:7px 13px;background:rgba(251,146,60,.1);
+  border-bottom:1px solid rgba(251,146,60,.25);flex-shrink:0;
+  animation:bqConnPulse 2s ease-in-out infinite;
+}
+.bq-conn-banner.show{display:flex;}
+.bq-conn-dot{width:8px;height:8px;border-radius:50%;background:#fb923c;flex-shrink:0;animation:bqConnDotPulse 1.4s ease-in-out infinite;}
+.bq-conn-text{font-family:'Inter',sans-serif;font-size:12px;color:var(--bq-text-muted);font-weight:500;}
+@keyframes bqConnPulse{0%,100%{background:rgba(251,146,60,.1);}50%{background:rgba(251,146,60,.18);}}
+@keyframes bqConnDotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.75);}}
 
 
 /* ── MEDIA PREVIEW ── */
@@ -3022,6 +3043,7 @@ const HTML = `
         <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-gpin-text"></div></div>
       </div>
+      <div class="bq-conn-banner" id="bq-conn-banner-g"><span class="bq-conn-dot"></span><span class="bq-conn-text">Reconnecting…</span></div>
       <div class="bqmsgs" id="bqgmsgs">
         <div class="bqempty" id="bqgempty">
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -3085,6 +3107,7 @@ const HTML = `
         <div class="bq-pinbar-body"><div class="bq-pinbar-label">Pinned Message</div><div class="bq-pinbar-text" id="bq-pinbar-text"></div></div>
         <button class="bq-pinbar-unpin" id="bq-pinbar-unpin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
+      <div class="bq-conn-banner" id="bq-conn-banner-dm"><span class="bq-conn-dot"></span><span class="bq-conn-text">Reconnecting…</span></div>
       <div class="bqmsgs" id="bqdmmsgs">
         <div class="bqempty" id="bqdmempty">
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
@@ -4063,9 +4086,11 @@ async function startDB(){
     db=firebase.database();
     subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();subscribeWidgetConfig();syncStreakToFirebase();subscribeGlobalPinned();
 
-    // v76: Monitor Firebase connection state & auto-reconnect on tab focus
+    // v76+v77: Monitor Firebase connection state & auto-reconnect on tab focus
+    window.__bqConnected = true; // optimistic initial state
     db.ref('.info/connected').on('value', function(snap) {
       var connected = snap.val() === true;
+      window.__bqConnected = connected;
       if(connected) {
         // Connection restored — refresh presence heartbeat
         var pref = db.ref('bq_presence/'+uid);
@@ -4089,8 +4114,67 @@ async function startDB(){
         // Remove any reconnect hint that might be showing
         var hint = document.querySelector('.bq-reconnect-hint');
         if(hint) hint.remove();
+        // Hide reconnection banners
+        var banners = document.querySelectorAll('.bq-conn-banner');
+        for(var i=0;i<banners.length;i++) banners[i].classList.remove('show');
+      } else {
+        // Connection lost — show reconnection banners
+        var banners = document.querySelectorAll('.bq-conn-banner');
+        for(var i=0;i<banners.length;i++) banners[i].classList.add('show');
       }
     });
+
+    // v77: Force-refresh critical data after reconnection
+    // Called after goOnline() to ensure stale listeners get fresh data
+    function _bqRefreshAfterReconnect(){
+      if(!db) return;
+      try {
+        // Refresh global messages
+        db.ref('bq_messages').limitToLast(MAX_MSG).once('value', function(snap){
+          if(!snap || !snap.exists()) return;
+          var msgsEl = document.getElementById('bqgmsgs');
+          if(!msgsEl) return;
+          // Only refresh if the message list appears stale (empty or very few messages)
+          var existingMsgs = msgsEl.querySelectorAll('.bqr');
+          if(existingMsgs.length < 2){
+            // Clear and re-render global messages
+            var emptyEl = document.getElementById('bqgempty');
+            gLastU = null; gLastT = 0;
+            snap.forEach(function(c){
+              renderMsg('global', c.val(), c.key);
+            });
+          }
+        }).catch(function(){});
+        // Refresh widget config
+        db.ref('bq_widget_config/settings').once('value', function(snap){
+          if(snap && snap.exists()){
+            var c = snap.val();
+            var panel = document.getElementById('bqp');
+            if(panel){
+              var vars = {"--bq-accent":c.accentColor,"--bq-accent-2":c.accent2Color,"--bq-bg":c.bgColor,"--bq-bg-elevated":c.bgElevated,"--bq-text":c.textColor,"--bq-radius":c.borderRadius?c.borderRadius+"px":undefined,"--bq-bubble-mine":c.bubbleMine};
+              for(var k in vars){if(vars[k]!==undefined&&vars[k]!==null&&vars[k]!==""){panel.style.setProperty(k,vars[k]);}}
+            }
+            window.__BQ_ADMIN_CONFIG__=c;
+          }
+        }).catch(function(){});
+        // Refresh pinned messages
+        db.ref('bq_pinned').once('value', function(snap){
+          var data = snap && snap.val ? snap.val() : null;
+          var bar = document.getElementById('bq-gpin-bar');
+          var txt = document.getElementById('bq-gpin-text');
+          if(bar && txt && data && typeof data === 'object'){
+            var pins = Object.values(data);
+            var latest = pins.sort(function(a,b){ return (b.pinnedAt||0) - (a.pinnedAt||0); })[0];
+            if(latest){ bar.classList.add('show'); txt.textContent = latest.text || 'Pinned message'; }
+            else { bar.classList.remove('show'); }
+          }
+        }).catch(function(){});
+        // Refresh DM list
+        if(uid){
+          db.ref('bq_dm_index/'+uid).once('value', function(){ /* triggers existing listener update */ }).catch(function(){});
+        }
+      } catch(_e){}
+    }
 
     // v76: When tab regains focus after being backgrounded, force Firebase reconnect
     // This fixes the "site not loaded" error when leaving the tab open
@@ -4120,24 +4204,69 @@ async function startDB(){
                     nameColor:myProfile.nameColor||'',
                     bannerColor:myProfile.bannerColor||'',
                   }).catch(function(){});
+                  // Also do a lightweight data refresh in case listeners went stale
+                  _bqRefreshAfterReconnect();
                 } else {
                   // Connection lost — force reconnect by going offline then online
+                  // Show banner immediately
+                  var banners = document.querySelectorAll('.bq-conn-banner');
+                  for(var i=0;i<banners.length;i++) banners[i].classList.add('show');
                   try { db.goOffline(); } catch(_) {}
                   setTimeout(function() {
                     try { db.goOnline(); } catch(_) {}
+                    // After goOnline(), wait for reconnection then refresh data
+                    setTimeout(function(){
+                      _bqRefreshAfterReconnect();
+                    }, 1500);
                   }, 300);
                 }
               }).catch(function() {
                 // If we can't even check connection, force reconnect
+                var banners = document.querySelectorAll('.bq-conn-banner');
+                for(var i=0;i<banners.length;i++) banners[i].classList.add('show');
                 try { db.goOffline(); } catch(_) {}
                 setTimeout(function() {
                   try { db.goOnline(); } catch(_) {}
+                  setTimeout(function(){
+                    _bqRefreshAfterReconnect();
+                  }, 1500);
                 }, 300);
               });
             } catch(_) {}
           }, 500);
         }
       });
+    }
+
+    // v77: Periodic connection health check — every 60s while tab is visible
+    if(!window.__bqHealthWired) {
+      window.__bqHealthWired = true;
+      setInterval(function(){
+        if(document.hidden || !db) return; // skip if tab is hidden
+        try {
+          db.ref('.info/connected').once('value').then(function(snap){
+            if(snap.val() !== true){
+              // Connection dropped while tab is visible — force reconnect
+              console.warn('[BioQuiz Chat] Health check: connection lost, forcing reconnect');
+              var banners = document.querySelectorAll('.bq-conn-banner');
+              for(var i=0;i<banners.length;i++) banners[i].classList.add('show');
+              try { db.goOffline(); } catch(_) {}
+              setTimeout(function(){
+                try { db.goOnline(); } catch(_) {}
+                setTimeout(function(){ _bqRefreshAfterReconnect(); }, 1500);
+              }, 300);
+            }
+          }).catch(function(){
+            // Can't even check — try reconnect
+            console.warn('[BioQuiz Chat] Health check: failed to query connection state, forcing reconnect');
+            try { db.goOffline(); } catch(_) {}
+            setTimeout(function(){
+              try { db.goOnline(); } catch(_) {}
+              setTimeout(function(){ _bqRefreshAfterReconnect(); }, 1500);
+            }, 300);
+          });
+        } catch(_){}
+      }, 60000);
     }
   }catch(e){console.warn('[BioQuiz Chat]',e);}
 }
