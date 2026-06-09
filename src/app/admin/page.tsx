@@ -19,6 +19,8 @@ import {
   Save, Upload, Bell, Wrench, AlertTriangle,
   Type, MessageCircle, Megaphone, LayoutDashboard, ChevronRight,
   Menu, Ban, Heart, Pin, VolumeX, DownloadCloud, Clock,
+  ShieldAlert, ShieldX, Timer, Hourglass, UserX, UserCheck,
+  Gavel, AlertCircle, Search as SearchIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils-client";
@@ -108,16 +110,16 @@ type ChatMessage = { key: string; text: string; uname: string; uid: string; ts: 
 
 type DmConversation = { dmId: string; participants: string[]; participantNames: string[]; lastMessage: string; lastMessageTime: number; messageCount: number; };
 
-type BannedUser = { uid: string; bannedAt: number };
-type MutedUser = { uid: string; mutedAt: number; reason?: string };
-type WarningEntry = { key: string; uid: string; reason: string; adminUid: string; ts: number };
+type BannedUser = { uid: string; bannedAt: number; reason?: string; duration?: number; expiresAt?: number };
+type MutedUser = { uid: string; mutedAt: number; reason?: string; duration?: number; expiresAt?: number };
+type WarningEntry = { key: string; uid: string; reason: string; adminUid: string; ts: number; duration?: number; expiresAt?: number; userName?: string };
 type PinnedMessage = { key: string; pinnedAt: number; pinnedBy: string };
 
 type Section =
   | "overview" | "activity"
   | "global-chat" | "dms" | "announcements"
   | "themes" | "layout" | "messages-appearance"
-  | "content-filter" | "rate-limiting" | "user-management"
+  | "content-filter" | "rate-limiting" | "user-management" | "warnings-bans"
   | "general" | "security" | "notifications" | "data" | "maintenance"
   | "files" | "disk-usage";
 
@@ -169,6 +171,7 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "content-filter", label: "Content Filter", icon: Filter },
     { id: "rate-limiting", label: "Rate Limiting", icon: Zap },
     { id: "user-management", label: "User Management", icon: Users },
+    { id: "warnings-bans", label: "Warnings & Bans", icon: ShieldAlert },
   ]},
   { id: "settings", icon: Settings, label: "Settings", items: [
     { id: "general", label: "General", icon: SlidersHorizontal },
@@ -248,8 +251,21 @@ export default function AdminPage() {
   // Warn/Mute dialog
   const [warnDialogUid, setWarnDialogUid] = useState<string | null>(null);
   const [warnReason, setWarnReason] = useState("");
+  const [warnDuration, setWarnDuration] = useState<number>(0); // 0 = permanent, >0 = hours
   const [muteDialogUid, setMuteDialogUid] = useState<string | null>(null);
   const [muteReason, setMuteReason] = useState("");
+  const [muteDuration, setMuteDuration] = useState<number>(1); // default 1 hour
+
+  // Ban dialog
+  const [banDialogUid, setBanDialogUid] = useState<string | null>(null);
+  const [banReason, setBanReason] = useState("");
+  const [banDuration, setBanDuration] = useState<number>(0); // 0 = permanent
+
+  // Warnings & Bans section
+  const [warningsBansSearch, setWarningsBansSearch] = useState("");
+  const [warningsBansTab, setWarningsBansTab] = useState<"warnings" | "bans" | "mutes">("warnings");
+  const [quickActionUid, setQuickActionUid] = useState("");
+  const [quickActionMode, setQuickActionMode] = useState<"warn" | "ban" | "mute" | null>(null);
 
   // Widget refresh toast
   const [widgetRefreshToast, setWidgetRefreshToast] = useState(false);
@@ -354,7 +370,7 @@ export default function AdminPage() {
     const unsubBan = onValue(banRef, (snap) => {
       if (!snap.exists()) { setBannedUsers([]); return; }
       const val = snap.val();
-      setBannedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, bannedAt: v?.bannedAt || 0 })));
+      setBannedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, bannedAt: v?.bannedAt || 0, reason: v?.reason || '', duration: v?.duration || 0, expiresAt: v?.expiresAt || 0 })));
     });
 
     // Muted
@@ -362,7 +378,7 @@ export default function AdminPage() {
     const unsubMut = onValue(mutRef, (snap) => {
       if (!snap.exists()) { setMutedUsers([]); return; }
       const val = snap.val();
-      setMutedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, mutedAt: v?.mutedAt || 0, reason: v?.reason })));
+      setMutedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, mutedAt: v?.mutedAt || 0, reason: v?.reason, duration: v?.duration || 0, expiresAt: v?.expiresAt || 0 })));
     });
 
     // Warnings
@@ -370,7 +386,7 @@ export default function AdminPage() {
     const unsubWarn = onValue(warnRef, (snap) => {
       if (!snap.exists()) { setWarnings([]); return; }
       const val = snap.val();
-      setWarnings(Object.entries(val).map(([k, v]: [string, any]) => ({ key: k, uid: v?.uid || "", reason: v?.reason || "", adminUid: v?.adminUid || "", ts: v?.ts || 0 })));
+      setWarnings(Object.entries(val).map(([k, v]: [string, any]) => ({ key: k, uid: v?.uid || "", reason: v?.reason || "", adminUid: v?.adminUid || "", ts: v?.ts || 0, duration: v?.duration || 0, expiresAt: v?.expiresAt || 0, userName: v?.userName || '' })));
     });
 
     // Pinned
@@ -482,10 +498,15 @@ export default function AdminPage() {
     await remove(ref(db, `${FB_PATHS.presence}/${uid}`));
   }, []);
 
-  const banUser = useCallback(async (uid: string) => {
+  const banUser = useCallback(async (uid: string, reason?: string, duration?: number) => {
     const db = getFirebaseDb();
-    await set(ref(db, `${FB_PATHS.banned}/${uid}`), { bannedAt: Date.now() });
+    const now = Date.now();
+    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+    await set(ref(db, `${FB_PATHS.banned}/${uid}`), { bannedAt: now, reason: reason || "No reason provided", duration: duration || 0, expiresAt });
     await remove(ref(db, `${FB_PATHS.presence}/${uid}`));
+    setBanDialogUid(null);
+    setBanReason("");
+    setBanDuration(0);
   }, []);
 
   const unbanUser = useCallback(async (uid: string) => {
@@ -493,11 +514,14 @@ export default function AdminPage() {
     await remove(ref(db, `${FB_PATHS.banned}/${uid}`));
   }, []);
 
-  const muteUser = useCallback(async (uid: string, reason: string) => {
+  const muteUser = useCallback(async (uid: string, reason: string, duration?: number) => {
     const db = getFirebaseDb();
-    await set(ref(db, `${FB_PATHS.muted}/${uid}`), { mutedAt: Date.now(), reason: reason || "No reason provided" });
+    const now = Date.now();
+    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+    await set(ref(db, `${FB_PATHS.muted}/${uid}`), { mutedAt: now, reason: reason || "No reason provided", duration: duration || 0, expiresAt });
     setMuteDialogUid(null);
     setMuteReason("");
+    setMuteDuration(1);
   }, []);
 
   const unmuteUser = useCallback(async (uid: string) => {
@@ -505,14 +529,21 @@ export default function AdminPage() {
     await remove(ref(db, `${FB_PATHS.muted}/${uid}`));
   }, []);
 
-  const warnUser = useCallback(async (uid: string, reason: string) => {
+  const warnUser = useCallback(async (uid: string, reason: string, duration?: number) => {
     const db = getFirebaseDb();
+    const now = Date.now();
+    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+    // Look up username from online users
+    const onlineUser = onlineUsers.find(u => u.uid === uid);
+    const userName = onlineUser?.name || '';
     await push(ref(db, FB_PATHS.warnings), {
-      uid, reason: reason || "No reason provided", adminUid: "admin", ts: Date.now(),
+      uid, reason: reason || "No reason provided", adminUid: "admin", ts: now,
+      duration: duration || 0, expiresAt, userName,
     });
     setWarnDialogUid(null);
     setWarnReason("");
-  }, []);
+    setWarnDuration(0);
+  }, [onlineUsers]);
 
   const pinMessage = useCallback(async (msgKey: string) => {
     const db = getFirebaseDb();
@@ -522,6 +553,32 @@ export default function AdminPage() {
   const unpinMessage = useCallback(async (msgKey: string) => {
     const db = getFirebaseDb();
     await remove(ref(db, `${FB_PATHS.pinned}/${msgKey}`));
+  }, []);
+
+  const removeWarning = useCallback(async (warnKey: string) => {
+    const db = getFirebaseDb();
+    await remove(ref(db, `${FB_PATHS.warnings}/${warnKey}`));
+  }, []);
+
+  const clearAllWarnings = useCallback(async () => {
+    const db = getFirebaseDb();
+    await remove(ref(db, FB_PATHS.warnings));
+    setActionMsg("All warnings cleared");
+    setTimeout(() => setActionMsg(""), 3000);
+  }, []);
+
+  const clearAllBans = useCallback(async () => {
+    const db = getFirebaseDb();
+    await remove(ref(db, FB_PATHS.banned));
+    setActionMsg("All bans cleared");
+    setTimeout(() => setActionMsg(""), 3000);
+  }, []);
+
+  const clearAllMutes = useCallback(async () => {
+    const db = getFirebaseDb();
+    await remove(ref(db, FB_PATHS.muted));
+    setActionMsg("All mutes cleared");
+    setTimeout(() => setActionMsg(""), 3000);
   }, []);
 
   const bulkDeleteMessages = useCallback(async (msgKeys: string[], context: "global" | "dm", dmId?: string) => {
@@ -677,6 +734,42 @@ export default function AdminPage() {
   const isBanned = (uid: string) => bannedUsers.some((b) => b.uid === uid);
   const isMuted = (uid: string) => mutedUsers.some((m) => m.uid === uid);
 
+  // Expiry helpers
+  const isExpired = (expiresAt: number) => expiresAt > 0 && Date.now() > expiresAt;
+  const formatDuration = (hours: number) => {
+    if (hours <= 0) return "Permanent";
+    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    const remaining = hours % 24;
+    return remaining > 0 ? `${days}d ${remaining}h` : `${days}d`;
+  };
+  const formatExpiry = (expiresAt: number) => {
+    if (!expiresAt) return "Never (Permanent)";
+    if (isExpired(expiresAt)) return "Expired";
+    const diff = expiresAt - Date.now();
+    if (diff < 60000) return "Less than 1 min";
+    if (diff < 3600000) return `${Math.ceil(diff / 60000)} min remaining`;
+    if (diff < 86400000) return `${Math.ceil(diff / 3600000)} hr remaining`;
+    return `${Math.ceil(diff / 86400000)} days remaining`;
+  };
+
+  // Active warnings = non-expired
+  const activeWarnings = warnings.filter((w) => !isExpired(w.expiresAt));
+  const expiredWarnings = warnings.filter((w) => isExpired(w.expiresAt));
+  const activeBans = bannedUsers.filter((b) => !isExpired(b.expiresAt));
+  const activeMutes = mutedUsers.filter((m) => !isExpired(m.expiresAt));
+
+  // Resolve username from uid
+  const resolveUserName = (uid: string) => {
+    const online = onlineUsers.find(u => u.uid === uid);
+    if (online?.name) return online.name as string;
+    // Check warnings for cached username
+    const warned = warnings.find(w => w.uid === uid && w.userName);
+    if (warned?.userName) return warned.userName;
+    return uid;
+  };
+
   // Peak hour calculation
   const peakHour = (() => {
     if (globalMessages.length === 0) return "N/A";
@@ -752,12 +845,41 @@ export default function AdminPage() {
       {warnDialogUid && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
-            <h3 className="text-sm font-semibold mb-2">Warn User</h3>
-            <p className="text-xs text-muted-foreground mb-3">UID: {warnDialogUid}</p>
-            <input type="text" value={warnReason} onChange={(e) => setWarnReason(e.target.value)} placeholder="Warning reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30 mb-3" />
-            <div className="flex items-center gap-2 justify-end">
-              <button onClick={() => { setWarnDialogUid(null); setWarnReason(""); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
-              <button onClick={() => warnUser(warnDialogUid, warnReason)} className="h-8 px-3 rounded-lg bg-orange-500 text-white text-xs font-medium">Warn</button>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-500/10"><AlertTriangle className="h-4 w-4 text-orange-500" /></div>
+              <h3 className="text-sm font-semibold">Warn User</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(warnDialogUid)}</p>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">Reason</span>
+                <input type="text" value={warnReason} onChange={(e) => setWarnReason(e.target.value)} placeholder="Warning reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Duration</span>
+                  <span className="text-xs font-medium">{warnDuration === 0 ? "Permanent" : formatDuration(warnDuration)}</span>
+                </div>
+                <select value={warnDuration} onChange={(e) => setWarnDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                  <option value={0}>Permanent (No Expiry)</option>
+                  <option value={0.5}>30 Minutes</option>
+                  <option value={1}>1 Hour</option>
+                  <option value={3}>3 Hours</option>
+                  <option value={6}>6 Hours</option>
+                  <option value={12}>12 Hours</option>
+                  <option value={24}>1 Day</option>
+                  <option value={72}>3 Days</option>
+                  <option value={168}>1 Week</option>
+                  <option value={720}>1 Month</option>
+                </select>
+                {warnDuration > 0 && (
+                  <p className="text-[10px] text-muted-foreground">Warning will auto-expire and be removed after {formatDuration(warnDuration)}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <button onClick={() => { setWarnDialogUid(null); setWarnReason(""); setWarnDuration(0); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+              <button onClick={() => warnUser(warnDialogUid, warnReason, warnDuration)} className="h-8 px-3 rounded-lg bg-orange-500 text-white text-xs font-medium transition-colors hover:bg-orange-600">Warn</button>
             </div>
           </div>
         </div>
@@ -767,12 +889,82 @@ export default function AdminPage() {
       {muteDialogUid && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
-            <h3 className="text-sm font-semibold mb-2">Mute User</h3>
-            <p className="text-xs text-muted-foreground mb-3">UID: {muteDialogUid}</p>
-            <input type="text" value={muteReason} onChange={(e) => setMuteReason(e.target.value)} placeholder="Mute reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30 mb-3" />
-            <div className="flex items-center gap-2 justify-end">
-              <button onClick={() => { setMuteDialogUid(null); setMuteReason(""); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
-              <button onClick={() => muteUser(muteDialogUid, muteReason)} className="h-8 px-3 rounded-lg bg-yellow-600 text-white text-xs font-medium">Mute</button>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-yellow-500/10"><VolumeX className="h-4 w-4 text-yellow-600" /></div>
+              <h3 className="text-sm font-semibold">Mute User</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(muteDialogUid)}</p>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">Reason</span>
+                <input type="text" value={muteReason} onChange={(e) => setMuteReason(e.target.value)} placeholder="Mute reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Duration</span>
+                  <span className="text-xs font-medium">{muteDuration === 0 ? "Permanent" : formatDuration(muteDuration)}</span>
+                </div>
+                <select value={muteDuration} onChange={(e) => setMuteDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                  <option value={0.5}>30 Minutes</option>
+                  <option value={1}>1 Hour</option>
+                  <option value={3}>3 Hours</option>
+                  <option value={6}>6 Hours</option>
+                  <option value={12}>12 Hours</option>
+                  <option value={24}>1 Day</option>
+                  <option value={72}>3 Days</option>
+                  <option value={168}>1 Week</option>
+                  <option value={0}>Permanent</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <button onClick={() => { setMuteDialogUid(null); setMuteReason(""); setMuteDuration(1); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+              <button onClick={() => muteUser(muteDialogUid, muteReason, muteDuration)} className="h-8 px-3 rounded-lg bg-yellow-600 text-white text-xs font-medium transition-colors hover:bg-yellow-700">Mute</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban Dialog */}
+      {banDialogUid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-red-500/10"><Ban className="h-4 w-4 text-red-500" /></div>
+              <h3 className="text-sm font-semibold">Ban User</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(banDialogUid)}</p>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">Reason</span>
+                <input type="text" value={banReason} onChange={(e) => setBanReason(e.target.value)} placeholder="Ban reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Duration</span>
+                  <span className="text-xs font-medium">{banDuration === 0 ? "Permanent" : formatDuration(banDuration)}</span>
+                </div>
+                <select value={banDuration} onChange={(e) => setBanDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                  <option value={0}>Permanent Ban</option>
+                  <option value={1}>1 Hour</option>
+                  <option value={6}>6 Hours</option>
+                  <option value={24}>1 Day</option>
+                  <option value={72}>3 Days</option>
+                  <option value={168}>1 Week</option>
+                  <option value={720}>1 Month</option>
+                </select>
+                {banDuration > 0 && (
+                  <p className="text-[10px] text-muted-foreground">Ban will auto-expire after {formatDuration(banDuration)}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                <p className="text-[10px] text-red-400">Banning will immediately disconnect the user and block all future access.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <button onClick={() => { setBanDialogUid(null); setBanReason(""); setBanDuration(0); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+              <button onClick={() => banUser(banDialogUid, banReason, banDuration)} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium transition-colors hover:bg-red-600">Ban</button>
             </div>
           </div>
         </div>
@@ -1312,7 +1504,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                                   <button onClick={() => setWarnDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20"><AlertTriangle className="h-3.5 w-3.5" />Warn</button>
                                   <button onClick={() => setMuteDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20"><VolumeX className="h-3.5 w-3.5" />Mute</button>
-                                  <button onClick={() => banUser(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Ban className="h-3.5 w-3.5" />Ban</button>
+                                  <button onClick={() => setBanDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Ban className="h-3.5 w-3.5" />Ban</button>
                                   <button onClick={() => kickUser(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3.5 w-3.5" />Kick</button>
                                 </div>
                               </div>
@@ -1366,6 +1558,270 @@ export default function AdminPage() {
                             <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-xs font-medium">UID: {w.uid}</span><span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">WARNING</span></div><span className="text-[10px] text-muted-foreground">{w.reason} · {new Date(w.ts).toLocaleString()}</span></div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ─── WARNINGS & BANS ────────────────────────────────────── */}
+              {section === "warnings-bans" && (
+                <div className="flex flex-col gap-6">
+                  {actionMsg && (<div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]"><Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium text-green-500">{actionMsg}</span></div>)}
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <StatCard icon={AlertTriangle} label="Active Warnings" value={String(activeWarnings.length)} color="oklch(0.75 0.15 60)" />
+                    <StatCard icon={Clock} label="Expired Warnings" value={String(expiredWarnings.length)} color="oklch(0.65 0.1 220)" />
+                    <StatCard icon={Ban} label="Banned Users" value={String(bannedUsers.length)} color="oklch(0.65 0.2 25)" />
+                    <StatCard icon={VolumeX} label="Muted Users" value={String(mutedUsers.length)} color="oklch(0.68 0.12 60)" />
+                    <StatCard icon={Users} label="Online Now" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><Gavel className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Quick Actions</h2></div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input type="text" value={quickActionUid} onChange={(e) => setQuickActionUid(e.target.value)} placeholder="Enter user UID..." className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-foreground/30" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { if (quickActionUid) { setWarnDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20 disabled:opacity-40"><AlertTriangle className="h-3.5 w-3.5" />Warn</button>
+                        <button onClick={() => { if (quickActionUid) { setMuteDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20 disabled:opacity-40"><VolumeX className="h-3.5 w-3.5" />Mute</button>
+                        <button onClick={() => { if (quickActionUid) { setBanDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20 disabled:opacity-40"><Ban className="h-3.5 w-3.5" />Ban</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tabs: Warnings / Bans / Mutes */}
+                  <div className="rounded-2xl border border-border bg-card">
+                    <div className="flex items-center gap-1 p-2 border-b border-border">
+                      <button onClick={() => setWarningsBansTab("warnings")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "warnings" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><AlertTriangle className="h-3.5 w-3.5" />Warnings<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{warnings.length}</span></button>
+                      <button onClick={() => setWarningsBansTab("bans")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "bans" ? "bg-red-500/10 text-red-500 border border-red-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><Ban className="h-3.5 w-3.5" />Bans<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{bannedUsers.length}</span></button>
+                      <button onClick={() => setWarningsBansTab("mutes")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "mutes" ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><VolumeX className="h-3.5 w-3.5" />Mutes<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{mutedUsers.length}</span></button>
+                      <div className="flex-1" />
+                      <div className="relative">
+                        <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <input type="text" value={warningsBansSearch} onChange={(e) => setWarningsBansSearch(e.target.value)} placeholder="Search..." className="h-8 w-40 rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:border-foreground/30" />
+                      </div>
+                    </div>
+
+                    {/* Warnings Tab */}
+                    {warningsBansTab === "warnings" && (
+                      <div className="max-h-[600px] overflow-y-auto">
+                        {warnings.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-orange-500/10"><AlertTriangle className="h-5 w-5 text-orange-500" /></div><p className="text-sm font-medium">No warnings yet</p><p className="text-xs text-muted-foreground">Warnings issued to users will appear here</p></div>
+                        ) : (
+                          <div className="divide-y divide-border/50">
+                            {warnings
+                              .filter((w) => {
+                                if (!warningsBansSearch) return true;
+                                const q = warningsBansSearch.toLowerCase();
+                                return w.uid.toLowerCase().includes(q) || w.reason.toLowerCase().includes(q) || (w.userName && w.userName.toLowerCase().includes(q));
+                              })
+                              .sort((a, b) => {
+                                // Active first, then by time
+                                const aExpired = isExpired(a.expiresAt);
+                                const bExpired = isExpired(b.expiresAt);
+                                if (aExpired !== bExpired) return aExpired ? 1 : -1;
+                                return b.ts - a.ts;
+                              })
+                              .map((w) => {
+                              const expired = isExpired(w.expiresAt);
+                              const userName = w.userName || resolveUserName(w.uid);
+                              return (
+                                <div key={w.key} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
+                                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-orange-500/10 text-orange-500"}`}>
+                                    <AlertTriangle className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-medium">{userName}</span>
+                                      {expired
+                                        ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
+                                        : <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">ACTIVE</span>
+                                      }
+                                      {w.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(w.duration)}</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      <span className="text-[10px] text-muted-foreground">{w.reason}</span>
+                                      <span className="text-[10px] text-muted-foreground">·</span>
+                                      <span className="text-[10px] text-muted-foreground">{new Date(w.ts).toLocaleString()}</span>
+                                      {w.expiresAt > 0 && (
+                                        <>
+                                          <span className="text-[10px] text-muted-foreground">·</span>
+                                          <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(w.expiresAt)}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button onClick={() => removeWarning(w.key)} className="flex items-center gap-1 h-7 px-2 rounded-lg text-muted-foreground text-[10px] font-medium transition-colors hover:bg-foreground/5 hover:text-foreground" title="Remove warning"><X className="h-3 w-3" /></button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {warnings.length > 0 && (
+                          <div className="flex items-center justify-between px-6 py-3 border-t border-border/50">
+                            <span className="text-[10px] text-muted-foreground">{activeWarnings.length} active · {expiredWarnings.length} expired</span>
+                            <div className="flex items-center gap-2">
+                              {expiredWarnings.length > 0 && (
+                                <button onClick={async () => {
+                                  const db = getFirebaseDb();
+                                  for (const w of expiredWarnings) {
+                                    await remove(ref(db, `${FB_PATHS.warnings}/${w.key}`));
+                                  }
+                                  setActionMsg(`${expiredWarnings.length} expired warnings cleaned up`);
+                                  setTimeout(() => setActionMsg(""), 3000);
+                                }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-muted-foreground text-[10px] font-medium transition-colors hover:bg-foreground/5 hover:text-foreground border border-border"><Trash2 className="h-3 w-3" />Clear Expired</button>
+                              )}
+                              <button onClick={() => { if (confirm("Clear ALL warnings?")) clearAllWarnings(); }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-red-500 text-[10px] font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3 w-3" />Clear All</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bans Tab */}
+                    {warningsBansTab === "bans" && (
+                      <div className="max-h-[600px] overflow-y-auto">
+                        {bannedUsers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-red-500/10"><Ban className="h-5 w-5 text-red-500" /></div><p className="text-sm font-medium">No banned users</p><p className="text-xs text-muted-foreground">Banned users will appear here</p></div>
+                        ) : (
+                          <div className="divide-y divide-border/50">
+                            {bannedUsers
+                              .filter((b) => {
+                                if (!warningsBansSearch) return true;
+                                const q = warningsBansSearch.toLowerCase();
+                                return b.uid.toLowerCase().includes(q) || (b.reason && b.reason.toLowerCase().includes(q));
+                              })
+                              .map((user) => {
+                              const expired = isExpired(user.expiresAt);
+                              return (
+                                <div key={user.uid} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
+                                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-red-500/10 text-red-500"}`}>
+                                    <Ban className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-medium">{resolveUserName(user.uid)}</span>
+                                      {expired
+                                        ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
+                                        : <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>
+                                      }
+                                      {user.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration)}</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {user.reason && <span className="text-[10px] text-muted-foreground">{user.reason}</span>}
+                                      <span className="text-[10px] text-muted-foreground">· Banned {user.bannedAt > 0 ? new Date(user.bannedAt).toLocaleString() : "unknown"}</span>
+                                      {user.expiresAt > 0 && (
+                                        <>
+                                          <span className="text-[10px] text-muted-foreground">·</span>
+                                          <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt)}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button onClick={() => unbanUser(user.uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20"><UserCheck className="h-3.5 w-3.5" />Unban</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {bannedUsers.length > 0 && (
+                          <div className="flex items-center justify-between px-6 py-3 border-t border-border/50">
+                            <span className="text-[10px] text-muted-foreground">{activeBans.length} active · {bannedUsers.length - activeBans.length} expired</span>
+                            <button onClick={() => { if (confirm("Unban ALL users?")) clearAllBans(); }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-red-500 text-[10px] font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3 w-3" />Clear All Bans</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mutes Tab */}
+                    {warningsBansTab === "mutes" && (
+                      <div className="max-h-[600px] overflow-y-auto">
+                        {mutedUsers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-yellow-500/10"><VolumeX className="h-5 w-5 text-yellow-600" /></div><p className="text-sm font-medium">No muted users</p><p className="text-xs text-muted-foreground">Muted users will appear here</p></div>
+                        ) : (
+                          <div className="divide-y divide-border/50">
+                            {mutedUsers
+                              .filter((m) => {
+                                if (!warningsBansSearch) return true;
+                                const q = warningsBansSearch.toLowerCase();
+                                return m.uid.toLowerCase().includes(q) || (m.reason && m.reason.toLowerCase().includes(q));
+                              })
+                              .map((user) => {
+                              const expired = isExpired(user.expiresAt);
+                              return (
+                                <div key={user.uid} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
+                                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-yellow-500/10 text-yellow-600"}`}>
+                                    <VolumeX className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-medium">{resolveUserName(user.uid)}</span>
+                                      {expired
+                                        ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
+                                        : <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>
+                                      }
+                                      {user.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration)}</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {user.reason && <span className="text-[10px] text-muted-foreground">{user.reason}</span>}
+                                      <span className="text-[10px] text-muted-foreground">· Muted {user.mutedAt > 0 ? new Date(user.mutedAt).toLocaleString() : "unknown"}</span>
+                                      {user.expiresAt > 0 && (
+                                        <>
+                                          <span className="text-[10px] text-muted-foreground">·</span>
+                                          <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt)}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button onClick={() => unmuteUser(user.uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20"><UserCheck className="h-3.5 w-3.5" />Unmute</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {mutedUsers.length > 0 && (
+                          <div className="flex items-center justify-between px-6 py-3 border-t border-border/50">
+                            <span className="text-[10px] text-muted-foreground">{activeMutes.length} active · {mutedUsers.length - activeMutes.length} expired</span>
+                            <button onClick={() => { if (confirm("Unmute ALL users?")) clearAllMutes(); }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-red-500 text-[10px] font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3 w-3" />Clear All Mutes</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Warning History Timeline */}
+                  {warnings.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-4"><Clock className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Activity Timeline</h2></div>
+                      <div className="relative pl-6">
+                        <div className="absolute left-2.5 top-0 bottom-0 w-px bg-border" />
+                        {[...warnings.sort((a, b) => b.ts - a.ts).slice(0, 10)].map((w, i) => {
+                          const expired = isExpired(w.expiresAt);
+                          return (
+                            <div key={w.key} className="relative pb-4 last:pb-0">
+                              <div className={`absolute -left-3.5 top-1 h-3.5 w-3.5 rounded-full border-2 border-background ${expired ? "bg-muted-foreground/30" : "bg-orange-500"}`} />
+                              <div className="ml-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium">{w.userName || resolveUserName(w.uid)}</span>
+                                  <span className="text-[9px] text-muted-foreground">{new Date(w.ts).toLocaleString()}</span>
+                                  {expired ? <span className="rounded bg-foreground/5 px-1 py-0.5 text-[8px] text-muted-foreground">expired</span> : <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[8px] text-orange-500">active</span>}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{w.reason}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
