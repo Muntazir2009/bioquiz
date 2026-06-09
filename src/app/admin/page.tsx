@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   initializeApp, getApps,
@@ -22,6 +22,7 @@ import {
   Menu, Ban, Heart, Pin, VolumeX, DownloadCloud, Clock,
   ShieldAlert, ShieldX, Timer, Hourglass, UserX, UserCheck,
   Gavel, AlertCircle, Search as SearchIcon,
+  Play, Pause, ArrowDown, Volume2, PieChart as PieChartIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils-client";
@@ -47,6 +48,8 @@ const FB_PATHS = {
   warnings: "bq_warnings",
   pinned: "bq_pinned",
   config: "bq_widget_config/settings",
+  autoModRules: "bq_widget_config/autoModRules",
+  autoModLog: "bq_auto_mod_log",
 };
 
 let fbApp: ReturnType<typeof initializeApp> | null = null;
@@ -116,12 +119,32 @@ type MutedUser = { uid: string; mutedAt: number; reason?: string; duration?: num
 type WarningEntry = { key: string; uid: string; reason: string; adminUid: string; ts: number; duration?: number; expiresAt?: number; userName?: string };
 type PinnedMessage = { key: string; pinnedAt: number; pinnedBy: string };
 
+type AutoModRule = {
+  id: string;
+  trigger: "word" | "regex" | "spam" | "caps" | "length";
+  pattern: string;
+  action: "warn" | "mute" | "ban" | "delete";
+  duration: number;
+  enabled: boolean;
+};
+
+type AutoModLogEntry = {
+  id: string;
+  ruleId: string;
+  uid: string;
+  userName: string;
+  trigger: string;
+  action: string;
+  messageText: string;
+  ts: number;
+};
+
 type Section =
-  | "overview" | "activity"
-  | "global-chat" | "dms" | "announcements"
+  | "overview" | "activity" | "analytics"
+  | "global-chat" | "dms" | "announcements" | "live-monitor"
   | "themes" | "layout" | "messages-appearance"
-  | "content-filter" | "rate-limiting" | "user-management" | "warnings-bans"
-  | "general" | "security" | "notifications" | "data" | "maintenance"
+  | "content-filter" | "rate-limiting" | "user-management" | "warnings-bans" | "auto-mod" | "user-intel"
+  | "general" | "security" | "notifications" | "data" | "maintenance" | "emergency" | "fb-health"
   | "files" | "disk-usage";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -157,11 +180,13 @@ const SIDEBAR: SidebarCategory[] = [
   { id: "dashboard", icon: BarChart3, label: "Dashboard", items: [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "activity", label: "Activity", icon: Activity },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
   ]},
   { id: "chat", icon: MessageSquare, label: "Chat", items: [
     { id: "global-chat", label: "Global Chat", icon: Globe },
     { id: "dms", label: "DMs", icon: MessageCircle },
     { id: "announcements", label: "Announcements", icon: Megaphone },
+    { id: "live-monitor", label: "Live Monitor", icon: Activity },
   ]},
   { id: "appearance", icon: Palette, label: "Appearance", items: [
     { id: "themes", label: "Themes", icon: Palette },
@@ -173,6 +198,8 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "rate-limiting", label: "Rate Limiting", icon: Zap },
     { id: "user-management", label: "User Management", icon: Users },
     { id: "warnings-bans", label: "Warnings & Bans", icon: ShieldAlert },
+    { id: "auto-mod", label: "Auto-Mod", icon: Shield },
+    { id: "user-intel", label: "User Intel", icon: SearchIcon },
   ]},
   { id: "settings", icon: Settings, label: "Settings", items: [
     { id: "general", label: "General", icon: SlidersHorizontal },
@@ -180,6 +207,8 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "data", label: "Data", icon: Database },
     { id: "maintenance", label: "Maintenance", icon: Wrench },
+    { id: "emergency", label: "Emergency", icon: ShieldAlert },
+    { id: "fb-health", label: "Firebase Health", icon: Heart },
   ]},
   { id: "storage", icon: HardDrive, label: "Storage", items: [
     { id: "files", label: "Files", icon: FileText },
@@ -304,6 +333,46 @@ export default function AdminPage() {
   const [passwordMsg, setPasswordMsg] = useState("");
 
   const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
+
+  // Live Monitor
+  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  const [liveAutoScroll, setLiveAutoScroll] = useState(true);
+  const [livePaused, setLivePaused] = useState(false);
+  const [liveFilter, setLiveFilter] = useState<"all" | "user" | "system">("all");
+  const [liveSoundEnabled, setLiveSoundEnabled] = useState(false);
+  const liveMessagesEndRef = useRef<HTMLDivElement>(null);
+  const prevLiveMsgCountRef = useRef(0);
+
+  // Analytics
+  const [analyticsTimeRange, setAnalyticsTimeRange] = useState<"24h" | "7d" | "30d">("24h");
+
+  // Auto-Mod
+  const [autoModRules, setAutoModRules] = useState<AutoModRule[]>([]);
+  const [autoModLog, setAutoModLog] = useState<AutoModLogEntry[]>([]);
+  const [newRuleTrigger, setNewRuleTrigger] = useState<"word" | "regex" | "spam" | "caps" | "length">("word");
+  const [newRulePattern, setNewRulePattern] = useState("");
+  const [newRuleAction, setNewRuleAction] = useState<"warn" | "mute" | "ban" | "delete">("delete");
+  const [newRuleDuration, setNewRuleDuration] = useState(1);
+  const [testModText, setTestModText] = useState("");
+  const [showAddRule, setShowAddRule] = useState(false);
+
+  // User Intel
+  const [intelSearchQuery, setIntelSearchQuery] = useState("");
+  const [intelSelectedUser, setIntelSelectedUser] = useState<string | null>(null);
+
+  // Emergency
+  const [nukeConfirmStep, setNukeConfirmStep] = useState(0);
+  const [massKickConfirm, setMassKickConfirm] = useState(false);
+  const [chatFrozen, setChatFrozen] = useState(false);
+
+  // Firebase Health
+  const [fbLatency, setFbLatency] = useState<number | null>(null);
+  const [fbHealthStatus, setFbHealthStatus] = useState<"checking" | "healthy" | "degraded" | "down">("checking");
+  const [fbDiagResults, setFbDiagResults] = useState<Record<string, {ok: boolean; ms: number; error?: string}> | null>(null);
+  const [fbDiagRunning, setFbDiagRunning] = useState(false);
+
+  // Action message helper (must be before useCallback hooks that use it)
+  const showActionMsg = useCallback((msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(""), 3000); }, []);
 
   // ─── Auth ────────────────────────────────────────────────────────────────
 
@@ -524,6 +593,79 @@ export default function AdminPage() {
     setDmMessagesPageSize((prev) => prev + 50);
   }, []);
 
+  // ─── Live Monitor: Real-time listener ──────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthed) return;
+    const db = getFirebaseDb();
+    const liveQuery = query(ref(db, FB_PATHS.messages), orderByChild('ts'), limitToLast(200));
+    const unsub = onValue(liveQuery, (snap) => {
+      if (!snap.exists()) { setLiveMessages([]); return; }
+      const val = snap.val();
+      const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+        key: k, text: v?.text || "", uname: v?.uname || "Unknown", uid: v?.uid || "",
+        ts: v?.ts || 0, type: v?.type || "user", edited: v?.edited || false,
+        reactions: v?.reactions ? (Array.isArray(v.reactions) ? v.reactions : Object.values(v.reactions)) : [],
+      }));
+      msgs.sort((a, b) => a.ts - b.ts);
+      // Check for new messages (sound notification)
+      if (liveSoundEnabled && prevLiveMsgCountRef.current > 0 && msgs.length > prevLiveMsgCountRef.current) {
+        try {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = 880; osc.type = "sine";
+          gain.gain.value = 0.1;
+          osc.start(); osc.stop(ctx.currentTime + 0.08);
+        } catch {}
+      }
+      prevLiveMsgCountRef.current = msgs.length;
+      if (!livePaused) setLiveMessages(msgs);
+    });
+    return () => { off(liveQuery); };
+  }, [isAuthed, livePaused, liveSoundEnabled]);
+
+  // Auto-scroll for live monitor
+  useEffect(() => {
+    if (liveAutoScroll && liveMessagesEndRef.current) {
+      liveMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [liveMessages, liveAutoScroll]);
+
+  // ─── Auto-Mod: Real-time listener for rules ──────────────────────────────
+  useEffect(() => {
+    if (!isAuthed) return;
+    const db = getFirebaseDb();
+    const rulesRef = ref(db, FB_PATHS.autoModRules);
+    const unsubRules = onValue(rulesRef, (snap) => {
+      if (!snap.exists()) { setAutoModRules([]); return; }
+      const val = snap.val();
+      const rules: AutoModRule[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+        id: k, trigger: v?.trigger || "word", pattern: v?.pattern || "",
+        action: v?.action || "delete", duration: v?.duration || 1, enabled: v?.enabled ?? true,
+      }));
+      setAutoModRules(rules);
+    });
+    const logRef = ref(db, FB_PATHS.autoModLog);
+    const unsubLog = onValue(logRef, (snap) => {
+      if (!snap.exists()) { setAutoModLog([]); return; }
+      const val = snap.val();
+      const entries: AutoModLogEntry[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+        id: k, ruleId: v?.ruleId || "", uid: v?.uid || "", userName: v?.userName || "",
+        trigger: v?.trigger || "", action: v?.action || "", messageText: v?.messageText || "",
+        ts: v?.ts || 0,
+      }));
+      entries.sort((a, b) => b.ts - a.ts);
+      setAutoModLog(entries.slice(0, 10));
+    });
+    // Chat frozen listener
+    const frozenRef = ref(db, "bq_widget_config/chatFrozen");
+    const unsubFrozen = onValue(frozenRef, (snap) => {
+      setChatFrozen(snap.exists() && snap.val() === true);
+    });
+    return () => { off(rulesRef); off(logRef); off(frozenRef); };
+  }, [isAuthed]);
+
   // ─── Fetch data (file stats) ──────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -732,6 +874,177 @@ export default function AdminPage() {
       setOnlineUsers(users);
     });
   }, []);
+
+  // ─── Auto-Mod Actions ──────────────────────────────────────────────────────
+
+  const saveAutoModRule = useCallback(async (rule: Omit<AutoModRule, "id">) => {
+    const db = getFirebaseDb();
+    const newRef = push(ref(db, FB_PATHS.autoModRules));
+    await set(newRef, { ...rule, id: newRef.key });
+    setShowAddRule(false);
+    setNewRulePattern("");
+    setTestModText("");
+    showActionMsg("Rule created");
+  }, []);
+
+  const deleteAutoModRule = useCallback(async (ruleId: string) => {
+    const db = getFirebaseDb();
+    await remove(ref(db, `${FB_PATHS.autoModRules}/${ruleId}`));
+    showActionMsg("Rule deleted");
+  }, []);
+
+  const toggleAutoModRule = useCallback(async (ruleId: string, enabled: boolean) => {
+    const db = getFirebaseDb();
+    await set(ref(db, `${FB_PATHS.autoModRules}/${ruleId}/enabled`), !enabled);
+  }, []);
+
+  const testAutoModRules = useCallback((text: string): { rule: AutoModRule; matched: boolean }[] => {
+    return autoModRules.filter(r => r.enabled).map(rule => {
+      let matched = false;
+      switch (rule.trigger) {
+        case "word": matched = text.toLowerCase().includes(rule.pattern.toLowerCase()); break;
+        case "regex": try { matched = new RegExp(rule.pattern, "i").test(text); } catch { matched = false; } break;
+        case "caps": matched = text.length > 5 && text === text.toUpperCase() && /[A-Z]/.test(text); break;
+        case "spam": matched = (text.match(/(.)\1{4,}/g) || []).length > 0; break;
+        case "length": matched = text.length > parseInt(rule.pattern) || 500; break;
+      }
+      return { rule, matched };
+    });
+  }, [autoModRules]);
+
+  const initPresetRules = useCallback(async () => {
+    const db = getFirebaseDb();
+    const presets: Omit<AutoModRule, "id">[] = [
+      { trigger: "word", pattern: "badword,damn,hell,crap", action: "delete", duration: 0, enabled: true },
+      { trigger: "caps", pattern: "", action: "warn", duration: 1, enabled: true },
+      { trigger: "spam", pattern: "", action: "mute", duration: 1, enabled: true },
+      { trigger: "length", pattern: "500", action: "delete", duration: 0, enabled: true },
+    ];
+    for (const p of presets) {
+      const newRef = push(ref(db, FB_PATHS.autoModRules));
+      await set(newRef, { ...p, id: newRef.key });
+    }
+    showActionMsg("Preset rules added");
+  }, []);
+
+  // ─── Emergency Actions ─────────────────────────────────────────────────────
+
+  const triggerPanic = useCallback(async () => {
+    writeWidgetConfig("maintenanceEnabled", true);
+    writeWidgetConfig("widgetEnabled", false);
+    showActionMsg("⚠️ PANIC MODE ACTIVATED — Maintenance ON, Widget OFF");
+  }, [writeWidgetConfig]);
+
+  const toggleLockdown = useCallback(async (enable: boolean) => {
+    if (enable) {
+      writeWidgetConfig("slowMode", true);
+      writeWidgetConfig("slowModeInterval", 60);
+      writeWidgetConfig("rateLimitEnabled", true);
+      writeWidgetConfig("profanityFilter", true);
+      writeWidgetConfig("linkFilter", true);
+      showActionMsg("🔒 Lockdown mode ENABLED — All restrictions active");
+    } else {
+      writeWidgetConfig("slowMode", false);
+      writeWidgetConfig("linkFilter", false);
+      showActionMsg("🔓 Lockdown mode DISABLED");
+    }
+  }, [writeWidgetConfig]);
+
+  const nukeChat = useCallback(async () => {
+    const db = getFirebaseDb();
+    await remove(ref(db, FB_PATHS.messages));
+    await remove(ref(db, FB_PATHS.dms));
+    await remove(ref(db, FB_PATHS.warnings));
+    setNukeConfirmStep(0);
+    showActionMsg("💣 NUKE COMPLETE — All messages, DMs, and warnings cleared");
+  }, []);
+
+  const massKickAll = useCallback(async () => {
+    const db = getFirebaseDb();
+    await remove(ref(db, FB_PATHS.presence));
+    setMassKickConfirm(false);
+    showActionMsg("👢 All users kicked");
+  }, []);
+
+  const toggleChatFreeze = useCallback(async (freeze: boolean) => {
+    const db = getFirebaseDb();
+    if (freeze) {
+      await set(ref(db, "bq_widget_config/chatFrozen"), true);
+      showActionMsg("❄️ Chat FROZEN — Read-only mode");
+    } else {
+      await remove(ref(db, "bq_widget_config/chatFrozen"));
+      showActionMsg("💬 Chat UNFROZEN — Users can send messages");
+    }
+  }, []);
+
+  // ─── Firebase Health Actions ───────────────────────────────────────────────
+
+  const measureFbLatency = useCallback(async () => {
+    const db = getFirebaseDb();
+    const start = performance.now();
+    try {
+      const testRef = ref(db, "bq_widget_config/_health_ping");
+      await set(testRef, Date.now());
+      await get(testRef);
+      await remove(testRef);
+      const ms = Math.round(performance.now() - start);
+      setFbLatency(ms);
+      setFbHealthStatus(ms < 200 ? "healthy" : ms < 500 ? "degraded" : "down");
+    } catch {
+      setFbLatency(null);
+      setFbHealthStatus("down");
+    }
+  }, []);
+
+  const runFbDiagnostics = useCallback(async () => {
+    setFbDiagRunning(true);
+    setFbDiagResults(null);
+    const db = getFirebaseDb();
+    const results: Record<string, { ok: boolean; ms: number; error?: string }> = {};
+    // Test 1: Read
+    try {
+      const t0 = performance.now();
+      await get(ref(db, FB_PATHS.config));
+      results.read = { ok: true, ms: Math.round(performance.now() - t0) };
+    } catch (e: any) {
+      results.read = { ok: false, ms: 0, error: e.message };
+    }
+    // Test 2: Write
+    try {
+      const t0 = performance.now();
+      await set(ref(db, "bq_widget_config/_diag"), Date.now());
+      results.write = { ok: true, ms: Math.round(performance.now() - t0) };
+    } catch (e: any) {
+      results.write = { ok: false, ms: 0, error: e.message };
+    }
+    // Test 3: Delete
+    try {
+      const t0 = performance.now();
+      await remove(ref(db, "bq_widget_config/_diag"));
+      results.delete = { ok: true, ms: Math.round(performance.now() - t0) };
+    } catch (e: any) {
+      results.delete = { ok: false, ms: 0, error: e.message };
+    }
+    // Test 4: Messages node
+    try {
+      const t0 = performance.now();
+      const snap = await get(ref(db, FB_PATHS.messages));
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+      results.messages = { ok: true, ms: Math.round(performance.now() - t0) };
+    } catch (e: any) {
+      results.messages = { ok: false, ms: 0, error: e.message };
+    }
+    setFbDiagResults(results);
+    setFbDiagRunning(false);
+  }, []);
+
+  // Measure latency on mount and periodically
+  useEffect(() => {
+    if (!isAuthed) return;
+    measureFbLatency();
+    const interval = setInterval(measureFbLatency, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthed, measureFbLatency]);
 
   // ─── Chat Export ──────────────────────────────────────────────────────────
 
@@ -975,8 +1288,6 @@ export default function AdminPage() {
   }
 
   // ─── Dashboard ───────────────────────────────────────────────────────────
-
-  const showActionMsg = (msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(""), 3000); };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -2374,6 +2685,702 @@ export default function AdminPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-3 py-24 text-center"><div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><Database className="h-5 w-5 text-muted-foreground" /></div><div><p className="text-sm font-medium">Storage data unavailable</p><p className="mt-1 text-xs text-muted-foreground">Could not load storage analytics. Database may not be configured.</p></div></div>
                 )
+              )}
+
+              {/* ─── ANALYTICS ──────────────────────────────────────────── */}
+              {section === "analytics" && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center gap-2">
+                    {(["24h", "7d", "30d"] as const).map((r) => (
+                      <button key={r} onClick={() => setAnalyticsTimeRange(r)} className={`h-8 px-3 rounded-lg border text-xs font-medium transition-colors ${analyticsTimeRange === r ? "border-foreground/20 bg-foreground/5 text-foreground" : "border-border text-muted-foreground hover:bg-foreground/5"}`}>{r}</button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard icon={MessageSquare} label="Total Messages" value={String(globalMessages.length)} color="oklch(0.7 0.12 250)" />
+                    <StatCard icon={Users} label="Active Users" value={String(activeChatters)} color="oklch(0.72 0.16 140)" />
+                    <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.75 0.15 200)" />
+                    <StatCard icon={TrendingUp} label="Peak Hour" value={peakHour} color="oklch(0.65 0.2 25)" />
+                  </div>
+
+                  {/* Message Volume by Hour */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><BarChart3 className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Message Volume by Hour</h2></div>
+                    {(() => {
+                      const now = Date.now();
+                      const rangeMs = analyticsTimeRange === "24h" ? 86400000 : analyticsTimeRange === "7d" ? 604800000 : 2592000000;
+                      const filtered = globalMessages.filter(m => m.ts > now - rangeMs);
+                      const hourMap: Record<number, number> = {};
+                      for (let h = 0; h < 24; h++) hourMap[h] = 0;
+                      filtered.forEach(m => { const h = new Date(m.ts).getHours(); hourMap[h] = (hourMap[h] || 0) + 1; });
+                      const maxCount = Math.max(...Object.values(hourMap), 1);
+                      return (
+                        <div className="flex items-end gap-1 h-40">
+                          {Array.from({ length: 24 }, (_, h) => (
+                            <div key={h} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-[9px] text-muted-foreground tabular-nums">{hourMap[h]}</span>
+                              <div className="w-full rounded-t-sm bg-foreground/10 relative" style={{ height: "100%" }}>
+                                <div className="absolute bottom-0 left-0 right-0 rounded-t-sm transition-all duration-500" style={{ height: `${(hourMap[h] / maxCount) * 100}%`, background: hourMap[h] === maxCount && maxCount > 0 ? "oklch(0.65 0.2 25)" : "oklch(0.7 0.12 250 / 0.5)" }} />
+                              </div>
+                              <span className="text-[8px] text-muted-foreground tabular-nums">{h}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Peak Hours Heatmap */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Activity className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Activity Heatmap</h2></div>
+                    {(() => {
+                      const now = Date.now();
+                      const rangeMs = analyticsTimeRange === "24h" ? 86400000 : analyticsTimeRange === "7d" ? 604800000 : 2592000000;
+                      const filtered = globalMessages.filter(m => m.ts > now - rangeMs);
+                      const dayHourMap: Record<string, Record<number, number>> = {};
+                      filtered.forEach(m => {
+                        const d = new Date(m.ts).toLocaleDateString("en-US", { weekday: "short" });
+                        const h = new Date(m.ts).getHours();
+                        if (!dayHourMap[d]) dayHourMap[d] = {};
+                        dayHourMap[d][h] = (dayHourMap[d][h] || 0) + 1;
+                      });
+                      const maxVal = Math.max(...Object.values(dayHourMap).flatMap(h => Object.values(h)), 1);
+                      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                      return (
+                        <div className="overflow-x-auto">
+                          <div className="min-w-[500px]">
+                            <div className="flex gap-0.5 mb-1 pl-10">
+                              {Array.from({ length: 24 }, (_, h) => (<span key={h} className="flex-1 text-center text-[7px] text-muted-foreground tabular-nums">{h % 4 === 0 ? h : ""}</span>))}
+                            </div>
+                            {days.map(day => (
+                              <div key={day} className="flex items-center gap-0.5 mb-0.5">
+                                <span className="w-10 text-[9px] text-muted-foreground shrink-0">{day}</span>
+                                {Array.from({ length: 24 }, (_, h) => {
+                                  const val = dayHourMap[day]?.[h] || 0;
+                                  const intensity = val / maxVal;
+                                  return (<div key={h} className="flex-1 h-5 rounded-sm" style={{ background: intensity === 0 ? "oklch(0.95 0 0)" : `oklch(${0.4 + intensity * 0.3} ${intensity * 0.2} 25)` }} title={`${day} ${h}:00 — ${val} messages`} />);
+                                })}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* User Engagement - Top 10 */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Users className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Top 10 Most Active Users</h2></div>
+                    {(() => {
+                      const now = Date.now();
+                      const rangeMs = analyticsTimeRange === "24h" ? 86400000 : analyticsTimeRange === "7d" ? 604800000 : 2592000000;
+                      const filtered = globalMessages.filter(m => m.ts > now - rangeMs && m.type !== "system");
+                      const counts: Record<string, { name: string; count: number }> = {};
+                      filtered.forEach(m => {
+                        if (!counts[m.uid]) counts[m.uid] = { name: m.uname, count: 0 };
+                        counts[m.uid].count++;
+                      });
+                      const top10 = Object.entries(counts).sort((a, b) => b[1].count - a[1].count).slice(0, 10);
+                      const maxC = top10.length > 0 ? top10[0][1].count : 1;
+                      return top10.length === 0 ? <p className="text-xs text-muted-foreground text-center py-8">No user messages in this time range</p> : (
+                        <div className="space-y-2">
+                          {top10.map(([uid, data], i) => (
+                            <div key={uid} className="flex items-center gap-3">
+                              <span className="text-[10px] font-bold text-muted-foreground w-4 shrink-0">{i + 1}</span>
+                              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground/5 text-[10px] font-semibold">{data.name.charAt(0).toUpperCase()}</div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs font-medium truncate">{data.name}</span>
+                                  <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{data.count} msgs</span>
+                                </div>
+                                <div className="h-2 overflow-hidden rounded-full bg-foreground/5">
+                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(data.count / maxC) * 100}%`, background: `oklch(${0.5 + (1 - i / 10) * 0.2} 0.15 250)` }} />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Trending Words */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Hash className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Trending Words</h2></div>
+                    {(() => {
+                      const stopWords = new Set(["the","a","an","and","or","but","in","on","at","to","for","of","is","it","this","that","was","are","with","i","you","me","my","we","be","have","has","do","not","no","so","if","as","up","out","just","about","also","how","what","when","where","who","why","all","can","will","would","could","should","than","then","there","here","from","by","an","am","been","being","did","does","had","he","she","they","them","their","its","our","your","more","some","any","very","too","much","many","such","each","every","own","other","which","who","whom","these","those","get","got","go","going","come","make","made","take","want","like","know","think","see","look","find","give","tell","say","said","one","two","new","now","way","may","day","get","got","im","ive","dont","cant","wont","thats","ur","u","r","lol","hi","hey","hello","ok","okay","yeah","yes","nope","oh","wow","haha"]);
+                      const now = Date.now();
+                      const rangeMs = analyticsTimeRange === "24h" ? 86400000 : analyticsTimeRange === "7d" ? 604800000 : 2592000000;
+                      const filtered = globalMessages.filter(m => m.ts > now - rangeMs && m.type !== "system");
+                      const wordCounts: Record<string, number> = {};
+                      filtered.forEach(m => {
+                        m.text.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).forEach(w => {
+                          if (w.length > 2 && !stopWords.has(w)) wordCounts[w] = (wordCounts[w] || 0) + 1;
+                        });
+                      });
+                      const top15 = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+                      const maxW = top15.length > 0 ? top15[0][1] : 1;
+                      return top15.length === 0 ? <p className="text-xs text-muted-foreground text-center py-8">Not enough messages to extract trends</p> : (
+                        <div className="flex flex-wrap gap-2">
+                          {top15.map(([word, count], i) => (
+                            <span key={word} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-foreground/5" style={{ fontSize: `${Math.max(10, 14 - i)}px` }}>
+                              <span>{word}</span>
+                              <span className="text-[9px] text-muted-foreground tabular-nums">{count}</span>
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Message Type Breakdown */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5"><PieChartIcon className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Message Types</h2></div>
+                      {(() => {
+                        const now = Date.now();
+                        const rangeMs = analyticsTimeRange === "24h" ? 86400000 : analyticsTimeRange === "7d" ? 604800000 : 2592000000;
+                        const filtered = globalMessages.filter(m => m.ts > now - rangeMs);
+                        const userCount = filtered.filter(m => m.type !== "system").length;
+                        const sysCount = filtered.filter(m => m.type === "system").length;
+                        const total = filtered.length || 1;
+                        return (
+                          <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-4 justify-center">
+                              <svg viewBox="0 0 36 36" className="w-32 h-32">
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="oklch(0.95 0 0)" strokeWidth="3" />
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="oklch(0.7 0.12 250)" strokeWidth="3" strokeDasharray={`${(userCount / total) * 100} ${100 - (userCount / total) * 100}`} strokeDashoffset="25" strokeLinecap="round" />
+                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="oklch(0.75 0.15 60)" strokeWidth="3" strokeDasharray={`${(sysCount / total) * 100} ${100 - (sysCount / total) * 100}`} strokeDashoffset={`${25 - (userCount / total) * 100}`} strokeLinecap="round" />
+                              </svg>
+                            </div>
+                            <div className="flex items-center justify-center gap-6">
+                              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: "oklch(0.7 0.12 250)" }} /><span className="text-xs">User ({userCount})</span></div>
+                              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: "oklch(0.75 0.15 60)" }} /><span className="text-xs">System ({sysCount})</span></div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    {/* Daily Trend */}
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-5"><TrendingUp className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Daily Trend (7d)</h2></div>
+                      {(() => {
+                        const days: { label: string; count: number }[] = [];
+                        for (let i = 6; i >= 0; i--) {
+                          const d = new Date(); d.setDate(d.getDate() - i);
+                          const ds = d.toDateString();
+                          days.push({ label: d.toLocaleDateString("en-US", { weekday: "short", day: "numeric" }), count: globalMessages.filter(m => new Date(m.ts).toDateString() === ds).length });
+                        }
+                        const maxD = Math.max(...days.map(d => d.count), 1);
+                        return (
+                          <div className="flex items-end gap-2 h-32">
+                            {days.map((d, i) => (
+                              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                <span className="text-[9px] text-muted-foreground tabular-nums">{d.count}</span>
+                                <div className="w-full rounded-t-sm bg-foreground/10 relative" style={{ height: "100%" }}>
+                                  <div className="absolute bottom-0 left-0 right-0 rounded-t-sm transition-all duration-500" style={{ height: `${(d.count / maxD) * 100}%`, background: "oklch(0.7 0.12 250 / 0.6)" }} />
+                                </div>
+                                <span className="text-[8px] text-muted-foreground">{d.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── LIVE MONITOR ─────────────────────────────────────── */}
+              {section === "live-monitor" && (
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard icon={Activity} label="Live Messages" value={String(liveMessages.length)} color="oklch(0.7 0.12 250)" />
+                    <StatCard icon={Users} label="Online Users" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+                    <StatCard icon={Zap} label="Messages/min" value={String(liveMessages.filter(m => m.ts > Date.now() - 60000).length)} color="oklch(0.75 0.15 200)" />
+                    <StatCard icon={MessageSquare} label="Status" value={livePaused ? "PAUSED" : fbConnected ? "LIVE" : "OFFLINE"} color={livePaused ? "oklch(0.75 0.15 60)" : fbConnected ? "oklch(0.72 0.16 140)" : "oklch(0.65 0.2 25)"} />
+                  </div>
+
+                  {/* Controls */}
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-full ${fbConnected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                        <span className="text-xs text-muted-foreground">{fbConnected ? "Connected" : "Disconnected"}</span>
+                      </div>
+                      <div className="h-4 w-px bg-border" />
+                      <button onClick={() => setLivePaused(!livePaused)} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors ${livePaused ? "border-green-500/20 bg-green-500/5 text-green-500" : "border-amber-500/20 bg-amber-500/5 text-amber-500"}`}>
+                        {livePaused ? <><Play className="h-3.5 w-3.5" />Resume</> : <><Pause className="h-3.5 w-3.5" />Pause</>}
+                      </button>
+                      <button onClick={() => setLiveMessages([])} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><Trash2 className="h-3.5 w-3.5" />Clear</button>
+                      <button onClick={() => setLiveAutoScroll(!liveAutoScroll)} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors ${liveAutoScroll ? "border-foreground/20 bg-foreground/5 text-foreground" : "border-border text-muted-foreground hover:bg-foreground/5"}`}>
+                        <ArrowDown className="h-3.5 w-3.5" />Auto-scroll {liveAutoScroll ? "ON" : "OFF"}
+                      </button>
+                      <label className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 cursor-pointer">
+                        <input type="checkbox" checked={liveSoundEnabled} onChange={(e) => setLiveSoundEnabled(e.target.checked)} className="sr-only" />
+                        {liveSoundEnabled ? <Volume2 className="h-3.5 w-3.5 text-green-500" /> : <VolumeX className="h-3.5 w-3.5" />}
+                        Sound {liveSoundEnabled ? "ON" : "OFF"}
+                      </label>
+                      <select value={liveFilter} onChange={(e) => setLiveFilter(e.target.value as any)} className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs outline-none focus:border-foreground/30">
+                        <option value="all">All Messages</option>
+                        <option value="user">User Only</option>
+                        <option value="system">System Only</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Terminal-style chat view */}
+                  <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-foreground/[0.02]">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+                      <span className="ml-2 text-[10px] font-mono text-muted-foreground">live-feed://bq_messages</span>
+                    </div>
+                    <div className="max-h-[500px] overflow-y-auto p-4 font-mono text-xs bg-[oklch(0.12_0_0)]">
+                      {liveMessages
+                        .filter(m => liveFilter === "all" || (liveFilter === "user" && m.type !== "system") || (liveFilter === "system" && m.type === "system"))
+                        .map((msg) => {
+                          const isSystem = msg.type === "system";
+                          const color = isSystem ? "text-amber-400" : msg.uid === "admin" ? "text-blue-400" : "text-white";
+                          const ts = new Date(msg.ts).toLocaleTimeString("en-US", { hour12: false });
+                          return (
+                            <div key={msg.key} className={`flex items-start gap-2 py-0.5 ${color} hover:bg-white/5 transition-colors`}>
+                              <span className="text-muted-foreground/60 shrink-0 tabular-nums text-[10px]">{ts}</span>
+                              <span className={`shrink-0 rounded px-1 py-0 text-[9px] font-bold ${isSystem ? "bg-amber-500/20 text-amber-400" : msg.uid === "admin" ? "bg-blue-500/20 text-blue-400" : "bg-white/10 text-white/70"}`}>
+                                {isSystem ? "SYS" : msg.uname.slice(0, 6).toUpperCase()}
+                              </span>
+                              <span className="break-all">{msg.text}</span>
+                            </div>
+                          );
+                        })}
+                      {liveMessages.length === 0 && <div className="text-muted-foreground/40 text-center py-8">Waiting for messages...</div>}
+                      <div ref={liveMessagesEndRef} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── AUTO-MOD ──────────────────────────────────────────── */}
+              {section === "auto-mod" && (
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard icon={Shield} label="Active Rules" value={String(autoModRules.filter(r => r.enabled).length)} color="oklch(0.72 0.16 140)" />
+                    <StatCard icon={ShieldX} label="Disabled Rules" value={String(autoModRules.filter(r => !r.enabled).length)} color="oklch(0.65 0.1 220)" />
+                    <StatCard icon={Gavel} label="Auto-Actions" value={String(autoModLog.length)} color="oklch(0.75 0.15 60)" />
+                    <StatCard icon={Activity} label="Total Rules" value={String(autoModRules.length)} color="oklch(0.7 0.12 250)" />
+                  </div>
+
+                  {/* Add Rule */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Auto-Moderation Rules</h2></div>
+                      <div className="flex items-center gap-2">
+                        {autoModRules.length === 0 && (
+                          <button onClick={initPresetRules} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><CopyPlus className="h-3.5 w-3.5" />Load Presets</button>
+                        )}
+                        <button onClick={() => setShowAddRule(!showAddRule)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90">+ Add Rule</button>
+                      </div>
+                    </div>
+
+                    {showAddRule && (
+                      <div className="rounded-xl border border-border bg-background p-4 mb-4 animate-[fade-up_0.2s_ease_both]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Trigger Type</span>
+                            <select value={newRuleTrigger} onChange={(e) => setNewRuleTrigger(e.target.value as any)} className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                              <option value="word">Word Match</option>
+                              <option value="regex">Regex Pattern</option>
+                              <option value="spam">Spam Detection</option>
+                              <option value="caps">Caps Lock</option>
+                              <option value="length">Max Length</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Pattern {newRuleTrigger === "spam" || newRuleTrigger === "caps" ? "(auto)" : ""}</span>
+                            <input type="text" value={newRulePattern} onChange={(e) => setNewRulePattern(e.target.value)} disabled={newRuleTrigger === "spam" || newRuleTrigger === "caps"} placeholder={newRuleTrigger === "word" ? "badword1,badword2" : newRuleTrigger === "regex" ? "pattern" : newRuleTrigger === "length" ? "500" : "Auto-detected"} className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30 disabled:opacity-40" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Action</span>
+                            <select value={newRuleAction} onChange={(e) => setNewRuleAction(e.target.value as any)} className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+                              <option value="delete">Delete Message</option>
+                              <option value="warn">Warn User</option>
+                              <option value="mute">Mute User</option>
+                              <option value="ban">Ban User</option>
+                            </select>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-xs text-muted-foreground">Duration (hours, 0=permanent)</span>
+                            <input type="number" value={newRuleDuration} onChange={(e) => setNewRuleDuration(Number(e.target.value))} min={0} className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30" />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3">
+                          <button onClick={() => saveAutoModRule({ trigger: newRuleTrigger, pattern: newRulePattern, action: newRuleAction, duration: newRuleDuration, enabled: true })} className="flex items-center gap-1.5 h-8 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90"><Check className="h-3.5 w-3.5" />Save Rule</button>
+                          <button onClick={() => setShowAddRule(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5">Cancel</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rules List */}
+                    {autoModRules.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-3 py-12"><div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><Shield className="h-5 w-5 text-muted-foreground" /></div><p className="text-sm font-medium">No auto-mod rules</p><p className="text-xs text-muted-foreground">Add rules or load presets to get started</p></div>
+                    ) : (
+                      <div className="divide-y divide-border/50">
+                        {autoModRules.map((rule) => (
+                          <div key={rule.id} className="flex items-center gap-3 py-3">
+                            <button onClick={() => toggleAutoModRule(rule.id, rule.enabled)} className={`grid h-8 w-12 shrink-0 place-items-center rounded-full transition-colors ${rule.enabled ? "bg-green-500" : "bg-foreground/10"}`}>
+                              <div className={`h-6 w-6 rounded-full bg-background transition-transform ${rule.enabled ? "translate-x-2" : "-translate-x-2"}`} />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium capitalize">{rule.trigger}</span>
+                                {rule.pattern && <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground truncate max-w-32">{rule.pattern}</span>}
+                                <span className="text-[9px] text-muted-foreground">→</span>
+                                <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium capitalize ${rule.action === "delete" ? "bg-red-500/10 text-red-500" : rule.action === "warn" ? "bg-orange-500/10 text-orange-500" : rule.action === "mute" ? "bg-yellow-500/10 text-yellow-600" : "bg-red-500/10 text-red-500"}`}>{rule.action}</span>
+                              </div>
+                            </div>
+                            <button onClick={() => deleteAutoModRule(rule.id)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Test Rules */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><Search className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Test Rules</h2></div>
+                    <div className="flex gap-2">
+                      <input type="text" value={testModText} onChange={(e) => setTestModText(e.target.value)} placeholder="Enter text to test against rules..." className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+                    </div>
+                    {testModText && (
+                      <div className="mt-3 space-y-1.5">
+                        {testAutoModRules(testModText).map(({ rule, matched }, i) => (
+                          <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${matched ? "bg-red-500/5 border border-red-500/20" : "bg-foreground/[0.02] border border-border/50"}`}>
+                            {matched ? <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" /> : <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                            <span className="capitalize font-medium">{rule.trigger}</span>
+                            {rule.pattern && <span className="font-mono text-muted-foreground">{rule.pattern}</span>}
+                            <span className="text-muted-foreground">→</span>
+                            <span className="capitalize">{rule.action}</span>
+                            <span className={`ml-auto text-[9px] font-medium ${matched ? "text-red-500" : "text-green-500"}`}>{matched ? "TRIGGERED" : "PASS"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Execution Log */}
+                  {autoModLog.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <div className="flex items-center gap-2 mb-4"><Clock className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Recent Auto-Mod Actions</h2></div>
+                      <div className="space-y-2">
+                        {autoModLog.map((entry) => (
+                          <div key={entry.id} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground/5"><Shield className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2"><span className="text-xs font-medium">{entry.userName || entry.uid}</span><span className={`rounded px-1.5 py-0.5 text-[9px] font-medium capitalize ${entry.action === "delete" ? "bg-red-500/10 text-red-500" : entry.action === "warn" ? "bg-orange-500/10 text-orange-500" : "bg-yellow-500/10 text-yellow-600"}`}>{entry.action}</span></div>
+                              <p className="text-[10px] text-muted-foreground truncate">Triggered by {entry.trigger} · "{entry.messageText.slice(0, 40)}"</p>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground shrink-0">{new Date(entry.ts).toLocaleTimeString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ─── USER INTEL ───────────────────────────────────────── */}
+              {section === "user-intel" && (
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><SearchIcon className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">User Intelligence</h2></div>
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input type="text" value={intelSearchQuery} onChange={(e) => { setIntelSearchQuery(e.target.value); setIntelSelectedUser(null); }} placeholder="Search by UID or username..." className="h-10 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition-all focus:border-foreground/30" />
+                    </div>
+                    {intelSearchQuery && !intelSelectedUser && (
+                      <div className="mt-3 max-h-48 overflow-y-auto divide-y divide-border/50 rounded-lg border border-border">
+                        {(() => {
+                          const q = intelSearchQuery.toLowerCase();
+                          const matches = onlineUsers.filter(u => (u.uid?.toLowerCase().includes(q)) || ((u.name as string)?.toLowerCase().includes(q)));
+                          // Also search from messages for non-online users
+                          const msgUsers = new Map<string, { uname: string; uid: string }>();
+                          globalMessages.forEach(m => { if (!msgUsers.has(m.uid)) msgUsers.set(m.uid, { uname: m.uname, uid: m.uid }); });
+                          msgUsers.forEach((v, k) => { if (!matches.some(u => u.uid === k) && (k.toLowerCase().includes(q) || v.uname.toLowerCase().includes(q))) { matches.push({ uid: k, name: v.uname, ts: 0 } as PresenceUser); } });
+                          return matches.length === 0 ? <p className="text-xs text-muted-foreground text-center py-4">No users found</p> : matches.slice(0, 10).map(u => (
+                            <button key={u.uid} onClick={() => setIntelSelectedUser(u.uid)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-foreground/[0.02] transition-colors text-left">
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{((u.name as string) || u.uid).charAt(0).toUpperCase()}</div>
+                              <div className="min-w-0 flex-1"><p className="text-xs font-medium truncate">{(u.name as string) || u.uid}</p><p className="text-[10px] text-muted-foreground">UID: {u.uid}</p></div>
+                              {onlineUsers.some(o => o.uid === u.uid) && <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />}
+                            </button>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {intelSelectedUser && (() => {
+                    const uid = intelSelectedUser;
+                    const isOnline = onlineUsers.some(u => u.uid === uid);
+                    const onlineUser = onlineUsers.find(u => u.uid === uid);
+                    const userName = (onlineUser?.name as string) || (() => { const m = globalMessages.find(m => m.uid === uid); return m?.uname || uid; })();
+                    const userMsgs = globalMessages.filter(m => m.uid === uid);
+                    const userWarnings = warnings.filter(w => w.uid === uid);
+                    const activeWarningsCount = userWarnings.filter(w => !isExpired(w.expiresAt)).length;
+                    const isBannedUser = bannedUsers.some(b => b.uid === uid && !isExpired(b.expiresAt));
+                    const isMutedUser = mutedUsers.some(m => m.uid === uid && !isExpired(m.expiresAt));
+                    const banInfo = bannedUsers.find(b => b.uid === uid);
+                    const muteInfo = mutedUsers.find(m => m.uid === uid);
+                    const userDms = dmConversations.filter(d => d.participants?.includes(uid));
+                    const firstSeen = userMsgs.length > 0 ? new Date(Math.min(...userMsgs.map(m => m.ts))).toLocaleString() : "Unknown";
+                    const riskLevel = activeWarningsCount === 0 ? "low" : activeWarningsCount <= 2 ? "medium" : "high";
+                    const riskColor = riskLevel === "low" ? "bg-green-500/10 text-green-500" : riskLevel === "medium" ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500";
+                    const riskLabel = riskLevel === "low" ? "LOW" : riskLevel === "medium" ? "MEDIUM" : "HIGH";
+
+                    return (
+                      <div className="flex flex-col gap-6 animate-[fade-up_0.2s_ease_both]">
+                        {/* Profile Card */}
+                        <div className="rounded-2xl border border-border bg-card p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-foreground/5 text-lg font-semibold">{userName.charAt(0).toUpperCase()}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold">{userName}</h3>
+                                {isOnline ? <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-1.5 py-0.5 text-[9px] font-medium text-green-500"><span className="h-1.5 w-1.5 rounded-full bg-green-500" />ONLINE</span> : <span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">OFFLINE</span>}
+                                {isBannedUser && <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}
+                                {isMutedUser && <span className="rounded-md bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}
+                                <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-medium ${riskColor}`}>RISK: {riskLabel}</span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-1">UID: {uid}</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[10px] text-muted-foreground">
+                                <span>Total Messages: <strong className="text-foreground">{userMsgs.length}</strong></span>
+                                <span>Warnings: <strong className={activeWarningsCount > 0 ? "text-orange-500" : "text-foreground"}>{activeWarningsCount}</strong></span>
+                                <span>DMs: <strong className="text-foreground">{userDms.length}</strong></span>
+                                <span>First Seen: <strong className="text-foreground">{firstSeen}</strong></span>
+                                <span>Last Seen: <strong className="text-foreground">{onlineUser?.ts ? new Date(onlineUser.ts).toLocaleString() : "Unknown"}</strong></span>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Quick Actions */}
+                          <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
+                            <button onClick={() => setWarnDialogUid(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20"><AlertTriangle className="h-3.5 w-3.5" />Warn</button>
+                            <button onClick={() => setMuteDialogUid(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20"><VolumeX className="h-3.5 w-3.5" />Mute</button>
+                            <button onClick={() => setBanDialogUid(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Ban className="h-3.5 w-3.5" />Ban</button>
+                            <button onClick={() => kickUser(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><UserX className="h-3.5 w-3.5" />Kick</button>
+                          </div>
+                        </div>
+
+                        {/* Ban/Mute Details */}
+                        {(isBannedUser || isMutedUser) && (
+                          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                            <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4 text-red-500" /><span className="text-xs font-medium text-red-500">Active Restrictions</span></div>
+                            {isBannedUser && banInfo && <p className="text-[10px] text-muted-foreground">Banned: {banInfo.reason || "No reason"} · Since {new Date(banInfo.bannedAt).toLocaleString()} {banInfo.expiresAt > 0 ? `· Expires ${formatExpiry(banInfo.expiresAt)}` : "· Permanent"}</p>}
+                            {isMutedUser && muteInfo && <p className="text-[10px] text-muted-foreground">Muted: {muteInfo.reason || "No reason"} · Since {new Date(muteInfo.mutedAt).toLocaleString()} {muteInfo.expiresAt > 0 ? `· Expires ${formatExpiry(muteInfo.expiresAt)}` : "· Permanent"}</p>}
+                          </div>
+                        )}
+
+                        {/* Recent Messages */}
+                        <div className="rounded-2xl border border-border bg-card p-6">
+                          <div className="flex items-center gap-2 mb-4"><MessageSquare className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Recent Messages ({userMsgs.length})</h2></div>
+                          <div className="max-h-96 overflow-y-auto divide-y divide-border/50">
+                            {userMsgs.slice(0, 20).map(msg => (
+                              <div key={msg.key} className="flex items-start gap-3 px-2 py-3 hover:bg-foreground/[0.01] transition-colors">
+                                <span className="text-[10px] text-muted-foreground tabular-nums shrink-0 mt-0.5">{new Date(msg.ts).toLocaleTimeString()}</span>
+                                <p className="text-xs break-words flex-1">{msg.text}</p>
+                                <button onClick={() => deleteMessage(msg.key, "global")} className="grid h-6 w-6 shrink-0 place-items-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                              </div>
+                            ))}
+                            {userMsgs.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">No messages found</p>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ─── EMERGENCY ─────────────────────────────────────────── */}
+              {section === "emergency" && (
+                <div className="flex flex-col gap-6">
+                  {actionMsg && (<div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]"><Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium text-green-500">{actionMsg}</span></div>)}
+
+                  {/* Status Banner */}
+                  <div className="flex flex-col gap-3">
+                    {widgetConfig.maintenanceEnabled && (
+                      <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 animate-[fade-up_0.2s_ease_both]"><Wrench className="h-5 w-5 text-amber-500 shrink-0" /><div><p className="text-xs font-medium text-amber-500">Maintenance Mode Active</p><p className="text-[10px] text-muted-foreground mt-0.5">Widget is showing maintenance overlay to all users</p></div></div>
+                    )}
+                    {!widgetConfig.widgetEnabled && (
+                      <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 animate-[fade-up_0.2s_ease_both]"><ShieldAlert className="h-5 w-5 text-red-500 shrink-0" /><div><p className="text-xs font-medium text-red-500">Widget is DISABLED</p><p className="text-[10px] text-muted-foreground mt-0.5">The chat widget is completely turned off</p></div></div>
+                    )}
+                    {chatFrozen && (
+                      <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 animate-[fade-up_0.2s_ease_both]"><Lock className="h-5 w-5 text-blue-500 shrink-0" /><div><p className="text-xs font-medium text-blue-500">Chat is FROZEN</p><p className="text-[10px] text-muted-foreground mt-0.5">Chat is in read-only mode. Users cannot send messages.</p></div></div>
+                    )}
+                  </div>
+
+                  {/* Panic Button */}
+                  <div className="rounded-2xl border-2 border-red-500/30 bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><ShieldAlert className="h-4 w-4 text-red-500" /><h2 className="text-sm font-semibold text-red-500">Panic Button</h2></div>
+                    <p className="text-xs text-muted-foreground mb-4">Instantly enables maintenance mode and disables the widget. Use in emergencies.</p>
+                    <button onClick={triggerPanic} className="flex items-center justify-center gap-2 h-14 w-full rounded-xl bg-red-500 text-white text-sm font-bold transition-all hover:bg-red-600 active:scale-[0.98] shadow-lg shadow-red-500/20">
+                      <AlertTriangle className="h-5 w-5" />ACTIVATE PANIC MODE
+                    </button>
+                  </div>
+
+                  {/* Lockdown Mode */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Lockdown Mode</h2></div>
+                      <button onClick={() => toggleLockdown(!widgetConfig.slowMode || !widgetConfig.profanityFilter || !widgetConfig.linkFilter)} className={`flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-colors ${widgetConfig.slowMode && widgetConfig.profanityFilter && widgetConfig.linkFilter ? "bg-red-500/10 text-red-500 border border-red-500/20" : "bg-foreground text-background hover:opacity-90"}`}>
+                        {widgetConfig.slowMode && widgetConfig.profanityFilter && widgetConfig.linkFilter ? <><ShieldX className="h-3.5 w-3.5" />Disable Lockdown</> : <><Shield className="h-3.5 w-3.5" />Enable Lockdown</>}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Enables: Slow Mode (60s), Rate Limiting, Profanity Filter, Link Filter</p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className={`rounded-md px-2 py-1 text-[9px] font-medium ${widgetConfig.slowMode ? "bg-green-500/10 text-green-500" : "bg-foreground/5 text-muted-foreground"}`}>Slow Mode {widgetConfig.slowMode ? "✓" : "✗"}</span>
+                      <span className={`rounded-md px-2 py-1 text-[9px] font-medium ${widgetConfig.rateLimitEnabled ? "bg-green-500/10 text-green-500" : "bg-foreground/5 text-muted-foreground"}`}>Rate Limit {widgetConfig.rateLimitEnabled ? "✓" : "✗"}</span>
+                      <span className={`rounded-md px-2 py-1 text-[9px] font-medium ${widgetConfig.profanityFilter ? "bg-green-500/10 text-green-500" : "bg-foreground/5 text-muted-foreground"}`}>Profanity Filter {widgetConfig.profanityFilter ? "✓" : "✗"}</span>
+                      <span className={`rounded-md px-2 py-1 text-[9px] font-medium ${widgetConfig.linkFilter ? "bg-green-500/10 text-green-500" : "bg-foreground/5 text-muted-foreground"}`}>Link Filter {widgetConfig.linkFilter ? "✓" : "✗"}</span>
+                    </div>
+                  </div>
+
+                  {/* Freeze Chat */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2"><Lock className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Freeze Chat</h2></div>
+                        <p className="text-[10px] text-muted-foreground mt-1">Makes chat read-only. Users can see messages but cannot send new ones.</p>
+                      </div>
+                      <button onClick={() => toggleChatFreeze(!chatFrozen)} className={`flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-colors ${chatFrozen ? "bg-blue-500/10 text-blue-500 border border-blue-500/20" : "bg-foreground text-background hover:opacity-90"}`}>
+                        {chatFrozen ? <><Lock className="h-3.5 w-3.5" />Unfreeze</> : <><Lock className="h-3.5 w-3.5" />Freeze</>}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Nuke Chat */}
+                  <div className="rounded-2xl border-2 border-red-500/20 bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><Trash2 className="h-4 w-4 text-red-500" /><h2 className="text-sm font-semibold text-red-500">Nuke Chat</h2></div>
+                    <p className="text-xs text-muted-foreground mb-4">Permanently deletes ALL messages, DMs, and warnings. This action cannot be undone.</p>
+                    {nukeConfirmStep === 0 ? (
+                      <button onClick={() => setNukeConfirmStep(1)} className="flex items-center gap-2 h-10 px-4 rounded-lg border border-red-500/30 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><Trash2 className="h-4 w-4" />Nuke Everything</button>
+                    ) : nukeConfirmStep === 1 ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                        <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+                        <div className="flex-1"><p className="text-xs font-medium text-red-500">Are you absolutely sure?</p><p className="text-[10px] text-muted-foreground">This will delete all messages, DMs, and warnings forever.</p></div>
+                        <div className="flex items-center gap-2"><button onClick={() => setNukeConfirmStep(2)} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Yes, continue</button><button onClick={() => setNukeConfirmStep(0)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button></div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 rounded-xl border-2 border-red-500/30 bg-red-500/10 p-4 animate-pulse">
+                        <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                        <div className="flex-1"><p className="text-xs font-bold text-red-500">FINAL WARNING — Type "NUKE" to confirm</p><p className="text-[10px] text-muted-foreground">There is no going back.</p></div>
+                        <div className="flex items-center gap-2"><button onClick={nukeChat} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-bold">💥 NUKE</button><button onClick={() => setNukeConfirmStep(0)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mass Kick */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2"><UserX className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Mass Kick</h2></div>
+                        <p className="text-[10px] text-muted-foreground mt-1">Disconnect all {onlineUsers.length} online users.</p>
+                      </div>
+                      {!massKickConfirm ? (
+                        <button onClick={() => setMassKickConfirm(true)} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><UserX className="h-3.5 w-3.5" />Kick All</button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button onClick={massKickAll} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm</button>
+                          <button onClick={() => setMassKickConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── FIREBASE HEALTH ───────────────────────────────────── */}
+              {section === "fb-health" && (
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard icon={Heart} label="Status" value={fbHealthStatus === "healthy" ? "Healthy" : fbHealthStatus === "degraded" ? "Degraded" : fbHealthStatus === "down" ? "Down" : "Checking..."} color={fbHealthStatus === "healthy" ? "oklch(0.72 0.16 140)" : fbHealthStatus === "degraded" ? "oklch(0.75 0.15 60)" : "oklch(0.65 0.2 25)"} />
+                    <StatCard icon={Zap} label="Latency" value={fbLatency !== null ? `${fbLatency}ms` : "..."} color="oklch(0.7 0.12 250)" />
+                    <StatCard icon={Activity} label="Connection" value={fbConnected ? "Connected" : "Disconnected"} color={fbConnected ? "oklch(0.72 0.16 140)" : "oklch(0.65 0.2 25)"} />
+                    <StatCard icon={Database} label="Messages Node" value={String(totalMessageCount)} color="oklch(0.75 0.15 200)" />
+                  </div>
+
+                  {/* Connection Status Card */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Heart className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Connection Status</h2></div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background p-4">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Status</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block h-3 w-3 rounded-full ${fbConnected ? "bg-green-500" : "bg-red-500"} ${fbConnected ? "animate-pulse" : ""}`} />
+                          <span className="text-sm font-medium">{fbConnected ? "Connected" : "Disconnected"}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background p-4">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Latency</span>
+                        <div className="flex items-center gap-2">
+                          {fbLatency !== null ? (
+                            <><span className="text-sm font-medium tabular-nums">{fbLatency}ms</span>
+                            <span className={`text-[10px] font-medium ${fbLatency < 200 ? "text-green-500" : fbLatency < 500 ? "text-amber-500" : "text-red-500"}`}>{fbLatency < 200 ? "Good" : fbLatency < 500 ? "Slow" : "Poor"}</span></>
+                          ) : <span className="text-sm text-muted-foreground">Measuring...</span>}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background p-4">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Last Checked</span>
+                        <span className="text-sm font-medium tabular-nums">{new Date().toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+                    <button onClick={measureFbLatency} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground mt-4"><RefreshCw className="h-3.5 w-3.5" />Refresh Latency</button>
+                  </div>
+
+                  {/* Database Size Estimate */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Database className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Database Overview</h2></div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { label: "Messages", count: totalMessageCount || globalMessages.length, color: "oklch(0.7 0.12 250)" },
+                        { label: "Online Users", count: onlineUsers.length, color: "oklch(0.72 0.16 140)" },
+                        { label: "Warnings", count: warnings.length, color: "oklch(0.75 0.15 60)" },
+                        { label: "DM Conversations", count: dmConversations.length, color: "oklch(0.75 0.15 200)" },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-xl border border-border bg-background p-4 flex flex-col gap-1.5">
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</span>
+                          <span className="text-lg font-semibold tabular-nums">{item.count}</span>
+                          <div className="h-1 rounded-full bg-foreground/5"><div className="h-full rounded-full" style={{ width: `${Math.min(100, item.count / 10)}%`, background: item.color }} /></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Diagnostics */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-2"><Wrench className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Diagnostics</h2></div>
+                      <button onClick={runFbDiagnostics} disabled={fbDiagRunning} className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 disabled:opacity-40">
+                        {fbDiagRunning ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Running...</> : <><Wrench className="h-3.5 w-3.5" />Run Diagnostics</>}
+                      </button>
+                    </div>
+                    {fbDiagResults ? (
+                      <div className="space-y-2">
+                        {Object.entries(fbDiagResults).map(([test, result]) => (
+                          <div key={test} className={`flex items-center gap-3 rounded-xl border p-3 ${result.ok ? "border-green-500/20 bg-green-500/5" : "border-red-500/20 bg-red-500/5"}`}>
+                            {result.ok ? <Check className="h-4 w-4 text-green-500 shrink-0" /> : <X className="h-4 w-4 text-red-500 shrink-0" />}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium capitalize">{test}</span>
+                                <span className="text-[10px] text-muted-foreground tabular-nums">{result.ms}ms</span>
+                              </div>
+                              {result.error && <p className="text-[10px] text-red-500">{result.error}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-8">Click "Run Diagnostics" to test read, write, and delete operations</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           ) : null}
