@@ -17037,7 +17037,7 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
    MAGIC LINK HANDLER — Admin-generated account access links
    URL format: ?magic=TOKEN
    Firebase path: bq_admin_magic_links/{token}
-   v2: Cool glassmorphism UI, works on fresh devices, warnings & confirmations
+   v3: Sleek SaaS UI, brief confirmation, SVG icons, micro-interactions
    ════════════════════════════════════════════════════════════════════════ */
 (function magicLinkHandler(){
 'use strict';
@@ -17046,376 +17046,261 @@ function _mlDb(){ try{ if(window.firebase&&firebase.apps&&firebase.apps.length) 
 function _mlUid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
 function _mlUname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
 
-// ─── Inject styles once ──────────────────────────────────────────────────────
+// ─── SVG Icons ───────────────────────────────────────────────────────────────
+var SVG={
+  key:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+  check:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  x:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  clock:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  lock:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  warn:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  shield:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>',
+  zap:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  arrowRight:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  refresh:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+};
+
+// ─── Inject styles ───────────────────────────────────────────────────────────
 function _mlEnsureStyles(){
   if(document.getElementById('bq-magic-styles')) return;
   var s=document.createElement('style');
   s.id='bq-magic-styles';
-  s.textContent= [
-    '@keyframes bqMlFadeIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}',
-    '@keyframes bqMlPulse{0%,100%{opacity:1}50%{opacity:.5}}',
+  s.textContent=[
+    '@keyframes bqMlIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}',
     '@keyframes bqMlSpin{to{transform:rotate(360deg)}}',
-    '@keyframes bqMlGlow{0%,100%{box-shadow:0 0 20px rgba(139,92,246,.2),0 0 60px rgba(139,92,246,.08)}50%{box-shadow:0 0 30px rgba(139,92,246,.35),0 0 80px rgba(139,92,246,.15)}}',
-    '@keyframes bqMlBorderSpin{to{--bq-ml-angle:360deg}}',
-    '@keyframes bqMlCheckPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}',
-    '@keyframes bqMlShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}',
-    '@keyframes bqMlFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}',
-    '@keyframes bqMlRingPulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.2);opacity:0}}',
-    '@keyframes bqMlProgress{from{width:0%}to{width:100%}}',
-    '@keyframes bqMlWarnBounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}',
-    '.bq-ml-card{animation:bqMlFadeIn .4s cubic-bezier(.16,1,.3,1) both}',
-    '.bq-ml-btn{transition:all .15s ease;cursor:pointer;outline:none}',
-    '.bq-ml-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}',
-    '.bq-ml-btn:active{transform:translateY(0);filter:brightness(.95)}',
-    '.bq-ml-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 50%,transparent 100%);background-size:200% 100%;animation:bqMlShimmer 2s infinite}',
+    '@keyframes bqMlDash{to{stroke-dashoffset:0}}',
+    '@keyframes bqMlBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}',
+    '@keyframes bqMlPop{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}',
+    '@keyframes bqMlPulse{0%,100%{opacity:.6}50%{opacity:1}}',
+    '@keyframes bqMlOrb{0%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.1)}66%{transform:translate(-20px,15px) scale(.9)}100%{transform:translate(0,0) scale(1)}}',
+    '#bq-magic-overlay *{box-sizing:border-box}',
+    '.bq-ml-card{animation:bqMlIn .35s cubic-bezier(.2,.8,.2,1) both}',
+    '.bq-ml-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:600 13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;border:none;outline:none;cursor:pointer;transition:all .12s ease}',
+    '.bq-ml-btn:hover{transform:translateY(-1px)}',
+    '.bq-ml-btn:active{transform:translateY(0)}',
+    '.bq-ml-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:.02em}',
   ].join('\n');
   document.head.appendChild(s);
 }
 
-// ─── Create the overlay container ────────────────────────────────────────────
+// ─── Overlay ─────────────────────────────────────────────────────────────────
 function _mlOverlay(){
-  var existing=document.getElementById('bq-magic-overlay');
-  if(existing) existing.remove();
+  var ex=document.getElementById('bq-magic-overlay'); if(ex) ex.remove();
   _mlEnsureStyles();
   var o=document.createElement('div');
   o.id='bq-magic-overlay';
-  o.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);animation:bqMlFadeIn .3s ease both';
+  o.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,4,8,.78);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);animation:bqMlIn .25s ease both';
+  // Animated background orbs
+  var o1=document.createElement('div');
+  o1.style.cssText='position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 70%);top:20%;left:10%;animation:bqMlOrb 8s ease-in-out infinite;pointer-events:none';
+  o.appendChild(o1);
+  var o2=document.createElement('div');
+  o2.style.cssText='position:absolute;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.1),transparent 70%);bottom:15%;right:8%;animation:bqMlOrb 10s ease-in-out infinite reverse;pointer-events:none';
+  o.appendChild(o2);
   document.body.appendChild(o);
   return o;
 }
+function _mlRemove(){ var o=document.getElementById('bq-magic-overlay'); if(o) o.remove(); }
 
-function _mlRemoveOverlay(){
-  var o=document.getElementById('bq-magic-overlay');
-  if(o) o.remove();
+// ─── Card shell ──────────────────────────────────────────────────────────────
+function _mlCard(html,gradient){
+  var g=gradient||'linear-gradient(135deg,rgba(139,92,246,.3),rgba(99,102,241,.1))';
+  return '<div class="bq-ml-card" style="position:relative;background:rgba(10,12,20,.92);color:#f0f2f5;border-radius:20px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.06),0 24px 80px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04)">'+
+    '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:'+g+';opacity:.8"></div>'+
+    '<div style="padding:28px 24px">'+html+'</div></div>';
 }
 
-// ─── Card wrapper with gradient border ───────────────────────────────────────
-function _mlCard(inner, accent){
-  var a=accent||'rgba(139,92,246,.6)';
-  return '<div class="bq-ml-card" style="position:relative;background:rgba(15,18,25,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#e6e9ef;border-radius:22px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 32px 100px rgba(0,0,0,.7),0 0 80px '+a.replace(',.6',',.1')+';animation:bqMlGlow 3s ease-in-out infinite">'+
-    '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,'+a+',transparent);border-radius:22px 22px 0 0"></div>'+
-    '<div class="bq-ml-shimmer" style="position:absolute;inset:0;border-radius:22px;pointer-events:none"></div>'+
-    '<div style="position:relative;padding:32px 28px">'+inner+'</div>'+
-  '</div>';
+// ─── Icon circle ─────────────────────────────────────────────────────────────
+function _mlIc(svg,color){
+  return '<div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;color:'+color+';animation:bqMlPop .4s cubic-bezier(.2,.8,.2,1) .15s both;background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 24px -4px '+color.replace(')',',.2)').replace('rgb','rgba')+'">'+svg+'</div>';
 }
 
-// ─── Icon builder ────────────────────────────────────────────────────────────
-function _mlIcon(emoji,bg,ring){
-  var ringHtml=ring?'<div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid '+bg.replace('linear-gradient(135deg,','').split(',')[0].replace(')',',.3)')+';animation:bqMlRingPulse 1.8s ease-out infinite"></div>':'';
-  return '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px">'+
-    ringHtml+
-    '<div style="width:56px;height:56px;border-radius:16px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 8px 30px '+bg.replace('linear-gradient(135deg,','').split(',')[0].replace(')',',.25)')+';animation:bqMlCheckPop .5s cubic-bezier(.16,1,.3,1) .2s both">'+emoji+'</div>'+
-  '</div>';
-}
-
-// ─── Show loading state ──────────────────────────────────────────────────────
-function showMagicLinkLoading(){
+// ─── Loading ─────────────────────────────────────────────────────────────────
+function _mlLoading(){
   var o=_mlOverlay();
   o.innerHTML=_mlCard(
-    '<div style="text-align:center">'+
+    '<div style="text-align:center;padding:12px 0">'+
       '<div style="display:flex;justify-content:center;margin-bottom:20px">'+
-        '<div style="position:relative;width:64px;height:64px">'+
-          '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(139,92,246,.15)"></div>'+
-          '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#a78bfa;animation:bqMlSpin 1s linear infinite"></div>'+
-          '<div style="position:absolute;inset:12px;border-radius:50%;border:2px solid transparent;border-bottom-color:#60a5fa;animation:bqMlSpin 1.5s linear infinite reverse"></div>'+
+        '<div style="position:relative;width:48px;height:48px">'+
+          '<svg width="48" height="48" viewBox="0 0 48 48" style="animation:bqMlSpin 1.2s linear infinite"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(139,92,246,.12)" stroke-width="3"/><circle cx="24" cy="24" r="20" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="80 50" stroke-linecap="round"/></svg>'+
         '</div>'+
       '</div>'+
-      '<div style="font-weight:700;font-size:17px;margin-bottom:6px;letter-spacing:-.3px">Verifying Magic Link</div>'+
-      '<div style="font-size:12px;color:rgba(230,233,239,.5)">Checking authentication token...</div>'+
-    '</div>',
-    'rgba(139,92,246,.6)'
+      '<div style="font-weight:600;font-size:15px;color:#f0f2f5;letter-spacing:-.2px">Verifying link…</div>'+
+      '<div style="font-size:12px;color:rgba(240,242,245,.35);margin-top:4px">Checking authentication token</div>'+
+    '</div>'
   );
 }
 
-// ─── Show confirmation before logging in (with warnings) ─────────────────────
-function showMagicLinkConfirm(data, onConfirm, onCancel){
-  var currentUid=_mlUid();
-  var currentName=_mlUname();
-  var replacing=!!currentUid;
+// ─── Confirmation (brief & impactful) ────────────────────────────────────────
+function _mlConfirm(data, onConfirm, onCancel){
   var o=_mlOverlay();
+  var hasCurrent=!!_mlUid();
+  var curName=_mlUname();
 
-  var warnBlock='';
-  if(replacing){
-    warnBlock=
-      '<div style="margin-top:16px;padding:12px 14px;border-radius:12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);text-align:left">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-          '<span style="font-size:16px;animation:bqMlWarnBounce 1s ease infinite">⚠️</span>'+
-          '<span style="font-size:12px;font-weight:700;color:#fbbf24">Account Replacement Warning</span>'+
-        '</div>'+
-        '<div style="font-size:11px;color:rgba(251,191,36,.7);line-height:1.5">'+
-          'You are currently logged in as <b style="color:#fbbf24">@'+(currentName||currentUid.slice(0,8))+'</b>. '+
-          'Activating this link will <b style="color:#fb923c">completely replace</b> your current session. '+
-          'Your current account data will remain on the server but you will lose access to it on this device.'+
-        '</div>'+
-      '</div>';
-  }
-
-  var securityWarn=
-    '<div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);text-align:left">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-        '<span style="font-size:14px">🔐</span>'+
-        '<span style="font-size:12px;font-weight:700;color:#a78bfa">Security Notice</span>'+
-      '</div>'+
-      '<div style="font-size:11px;color:rgba(167,139,250,.7);line-height:1.5">'+
-        'This link was generated by an administrator and grants <b style="color:#c4b5fd">full, unrestricted access</b> to the account <b style="color:#c4b5fd">@'+(data.username||'unknown')+'</b>. '+
-        'No password or additional verification is required. If you did not request this link, do not proceed.'+
-      '</div>'+
-    '</div>';
-
-  var expiryInfo='';
+  // Expiry pill
+  var pillExpiry='';
   if(data.expiresAt>0){
-    var remaining=data.expiresAt-Date.now();
-    var hrs=Math.floor(remaining/3600000);
-    var mins=Math.floor((remaining%3600000)/60000);
-    var timeStr=hrs>0?(hrs+'h '+mins+'m'):(mins+'m');
-    expiryInfo='<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);font-size:10px;color:#4ade80;margin-top:8px">⏱ Link expires in '+timeStr+'</div>';
+    var rem=data.expiresAt-Date.now();
+    var h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000);
+    pillExpiry='<span class="bq-ml-pill" style="background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.12)">⏱ '+(h>0?h+'h '+m+'m':m+'m')+' left</span>';
   }else{
-    expiryInfo='<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);font-size:10px;color:#fbbf24;margin-top:8px">∞ Link never expires</div>';
+    pillExpiry='<span class="bq-ml-pill" style="background:rgba(251,191,36,.06);color:#fbbf24;border:1px solid rgba(251,191,36,.1)">∞ Never expires</span>';
   }
 
-  var oneTimeTag=data.oneTime?
-    '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.15);font-size:10px;color:#fb923c;margin-top:6px">🔑 One-time use — this link will be destroyed after activation</div>':
-    '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.15);font-size:10px;color:#60a5fa;margin-top:6px">🔄 Reusable — link remains active after use</div>';
+  // One-time pill
+  var pillOt=data.oneTime?
+    '<span class="bq-ml-pill" style="background:rgba(249,115,22,.06);color:#fb923c;border:1px solid rgba(249,115,22,.1)">One-time</span>':
+    '<span class="bq-ml-pill" style="background:rgba(96,165,250,.06);color:#60a5fa;border:1px solid rgba(96,165,250,.1)">Reusable</span>';
+
+  // Switch warning (only if currently logged in)
+  var switchWarn='';
+  if(hasCurrent){
+    switchWarn='<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.08)">'+
+      '<div style="color:#fbbf24;flex-shrink:0">'+SVG.warn+'</div>'+
+      '<span style="font-size:11px;color:rgba(251,191,36,.7);line-height:1.4">Replaces your current session <b style="color:#fbbf24">@'+(curName||'…')+'</b></span>'+
+    '</div>';
+  }
 
   var inner=
     '<div style="text-align:center">'+
-      _mlIcon('🔑','linear-gradient(135deg,#8b5cf6,#6366f1)',true)+
-      '<div style="font-weight:800;font-size:18px;margin-bottom:4px;letter-spacing:-.4px">Magic Link Detected</div>'+
-      '<div style="font-size:13px;color:rgba(230,233,239,.5);margin-bottom:4px">An account access link has been found</div>'+
-      '<div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.12)">'+
-        '<div style="font-size:10px;color:rgba(230,233,239,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Target Account</div>'+
-        '<div style="font-size:20px;font-weight:800;color:#c4b5fd;letter-spacing:-.5px">@'+(data.username||'unknown')+'</div>'+
-        expiryInfo+oneTimeTag+
+      '<div style="margin-bottom:16px">'+_mlIc(SVG.key,'#a78bfa')+'</div>'+
+      '<div style="font-weight:700;font-size:17px;letter-spacing:-.3px;color:#f0f2f5">Access Account</div>'+
+      '<div style="font-size:12px;color:rgba(240,242,245,.4);margin-top:4px">Sign in via admin-generated magic link</div>'+
+      // Account card
+      '<div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.08)">'+
+        '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(240,242,245,.25);margin-bottom:6px">Account</div>'+
+        '<div style="font-size:18px;font-weight:700;color:#c4b5fd;letter-spacing:-.4px">@'+(data.username||'unknown')+'</div>'+
+        '<div style="display:flex;gap:6px;margin-top:8px;justify-content:center;flex-wrap:wrap">'+pillExpiry+pillOt+'</div>'+
       '</div>'+
-      warnBlock+securityWarn+
-      '<div style="display:flex;gap:10px;margin-top:20px">'+
-        '<button id="bq-ml-cancel" class="bq-ml-btn" style="flex:1;height:42px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(230,233,239,.6);font-weight:600;font-size:13px">Cancel</button>'+
-        '<button id="bq-ml-confirm" class="bq-ml-btn" style="flex:1.4;height:42px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#6366f1);border:none;color:#fff;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(139,92,246,.3)">'+(replacing?'Switch Account':'Activate Link')+'</button>'+
+      // Warnings
+      '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">'+
+        switchWarn+
+        '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(139,92,246,.03);border:1px solid rgba(139,92,246,.06)">'+
+          '<div style="color:#8b5cf6;flex-shrink:0">'+SVG.shield+'</div>'+
+          '<span style="font-size:11px;color:rgba(167,139,250,.55);line-height:1.4">Full access · No password needed · Admin-authorized</span>'+
+        '</div>'+
+      '</div>'+
+      // Buttons
+      '<div style="display:flex;gap:8px;margin-top:18px">'+
+        '<button id="bq-ml-no" class="bq-ml-btn" style="flex:1;height:40px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.45);font-weight:500">Cancel</button>'+
+        '<button id="bq-ml-yes" class="bq-ml-btn" style="flex:1.3;height:40px;border-radius:10px;background:#7c3aed;color:#fff;box-shadow:0 0 20px -4px rgba(124,58,237,.35)">'+SVG.arrowRight+' '+(hasCurrent?'Switch':'Continue')+'</button>'+
       '</div>'+
     '</div>';
 
-  o.innerHTML=_mlCard(inner,'rgba(139,92,246,.6)');
-
-  document.getElementById('bq-ml-cancel').onclick=function(){ _mlRemoveOverlay(); if(onCancel) onCancel(); };
-  document.getElementById('bq-ml-confirm').onclick=function(){ onConfirm(); };
+  o.innerHTML=_mlCard(inner);
+  document.getElementById('bq-ml-no').onclick=function(){ _mlRemove(); if(onCancel) onCancel(); };
+  document.getElementById('bq-ml-yes').onclick=onConfirm;
 }
 
-// ─── Show success state ──────────────────────────────────────────────────────
-function showMagicLinkSuccess(username){
+// ─── Success ─────────────────────────────────────────────────────────────────
+function _mlSuccess(username){
   var o=_mlOverlay();
-
-  var inner=
-    '<div style="text-align:center">'+
-      '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px">'+
-        '<div style="position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%);animation:bqMlPulse 2s ease infinite"></div>'+
-        _mlIcon('✓','linear-gradient(135deg,#22c55e,#16a34a)',true)+
-      '</div>'+
-      '<div style="font-weight:800;font-size:20px;margin-bottom:6px;letter-spacing:-.4px">Welcome Back!</div>'+
-      '<div style="font-size:13px;color:rgba(230,233,239,.5);margin-bottom:16px">You\'re now logged in as</div>'+
-      '<div style="display:inline-block;padding:8px 20px;border-radius:12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);font-size:16px;font-weight:700;color:#4ade80;letter-spacing:-.3px">@'+(username||'unknown')+'</div>'+
+  o.innerHTML=_mlCard(
+    '<div style="text-align:center;padding:8px 0">'+
+      '<div style="margin-bottom:14px">'+_mlIc(SVG.check,'#4ade80')+'</div>'+
+      '<div style="font-weight:700;font-size:18px;letter-spacing:-.3px;color:#f0f2f5">You\'re in</div>'+
+      '<div style="margin-top:8px;display:inline-block;padding:6px 16px;border-radius:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.1);font-size:15px;font-weight:700;color:#4ade80;letter-spacing:-.2px">@'+(username||'unknown')+'</div>'+
       '<div style="margin-top:20px">'+
-        '<div style="font-size:11px;color:rgba(230,233,239,.35);margin-bottom:8px">Reloading in a moment...</div>'+
-        '<div style="height:3px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;margin:0 auto;max-width:200px">'+
-          '<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#22c55e,#4ade80);animation:bqMlProgress 2s ease both"></div>'+
+        '<div style="height:2px;border-radius:2px;background:rgba(255,255,255,.04);overflow:hidden">'+
+          '<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#22c55e,#4ade80);transform-origin:left;animation:bqMlBar 2s cubic-bezier(.4,0,.2,1) both"></div>'+
         '</div>'+
+        '<div style="font-size:10px;color:rgba(240,242,245,.25);margin-top:8px">Loading your account…</div>'+
       '</div>'+
-    '</div>';
-
-  o.innerHTML=_mlCard(inner,'rgba(34,197,94,.5)');
+    '</div>',
+    'linear-gradient(135deg,rgba(34,197,94,.3),rgba(74,222,128,.1))'
+  );
   setTimeout(function(){ location.reload(); }, 2200);
 }
 
-// ─── Show error states ───────────────────────────────────────────────────────
-function showMagicLinkError(kind, detail){
+// ─── Error ───────────────────────────────────────────────────────────────────
+function _mlError(kind, detail){
   var o=_mlOverlay();
-  var emoji,title,desc,accent;
-
+  var svg,title,desc,color;
   if(kind==='expired'){
-    emoji='⏰'; title='Link Expired';
-    desc='This magic link has passed its expiration time and is no longer valid.';
-    accent='rgba(249,115,22,.5)';
+    svg=SVG.clock; title='Link expired'; desc='This link has passed its expiration time.'; color='#fb923c';
   }else if(kind==='used'){
-    emoji='🔒'; title='Link Already Used';
-    desc='This one-time link was already activated and has been destroyed for security.';
-    accent='rgba(249,115,22,.5)';
+    svg=SVG.lock; title='Link already used'; desc='This one-time link was already activated.'; color='#fb923c';
   }else if(kind==='invalid'){
-    emoji='✕'; title='Invalid Link';
-    desc='This magic link does not exist or has been revoked by an administrator.';
-    accent='rgba(239,68,68,.5)';
+    svg=SVG.x; title='Invalid link'; desc='This link doesn\'t exist or was revoked.'; color='#f87171';
   }else{
-    emoji='!'; title='Something Went Wrong';
-    desc=detail||'An unexpected error occurred while processing the magic link.';
-    accent='rgba(239,68,68,.5)';
+    svg=SVG.x; title='Something went wrong'; desc=detail||'An unexpected error occurred.'; color='#f87171';
   }
-
-  var inner=
-    '<div style="text-align:center">'+
-      _mlIcon(emoji, kind==='invalid'||kind==='error'?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#f97316,#ef4444)', false)+
-      '<div style="font-weight:800;font-size:18px;margin-bottom:6px;letter-spacing:-.4px">'+title+'</div>'+
-      '<div style="font-size:13px;color:rgba(230,233,239,.5);line-height:1.6;margin-bottom:20px">'+desc+'</div>'+
-      '<div style="margin-top:8px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);font-size:11px;color:rgba(230,233,239,.3)">'+
-        'Contact an administrator to request a new access link.'+
-      '</div>'+
-      '<button id="bq-ml-close" class="bq-ml-btn" style="margin-top:18px;height:40px;padding:0 28px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e6e9ef;font-weight:600;font-size:13px">Close</button>'+
-    '</div>';
-
-  o.innerHTML=_mlCard(inner, accent);
-  document.getElementById('bq-ml-close').onclick=_mlRemoveOverlay;
+  o.innerHTML=_mlCard(
+    '<div style="text-align:center;padding:8px 0">'+
+      '<div style="margin-bottom:14px">'+_mlIc(svg,color)+'</div>'+
+      '<div style="font-weight:700;font-size:17px;letter-spacing:-.2px;color:#f0f2f5">'+title+'</div>'+
+      '<div style="font-size:12px;color:rgba(240,242,245,.4);margin-top:4px;line-height:1.5">'+desc+'</div>'+
+      '<div style="margin-top:14px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:10px;color:rgba(240,242,245,.2)">Ask an admin for a new link</div>'+
+      '<button id="bq-ml-close" class="bq-ml-btn" style="margin-top:16px;height:36px;padding:0 24px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.4);font-weight:500;font-size:12px">Close</button>'+
+    '</div>',
+    kind==='invalid'||kind==='error'?'linear-gradient(135deg,rgba(239,68,68,.3),rgba(248,113,113,.1))':'linear-gradient(135deg,rgba(249,115,22,.3),rgba(251,146,60,.1))'
+  );
+  document.getElementById('bq-ml-close').onclick=_mlRemove;
 }
 
 // ─── Main consume logic ──────────────────────────────────────────────────────
 async function consumeMagicLink(token){
   var db=_mlDb();
-  if(!db){ console.warn('[BQ Magic] Firebase not ready'); showMagicLinkError('error','Firebase is not available. Please refresh the page.'); return; }
-  if(!token||token.length<10){ console.warn('[BQ Magic] Invalid token'); showMagicLinkError('invalid'); return; }
+  if(!db){ _mlError('error','Firebase is not available. Please refresh.'); return; }
+  if(!token||token.length<10){ _mlError('invalid'); return; }
 
-  // Clean URL immediately so the token isn't visible in address bar
-  try{
-    var url=new URL(window.location.href);
-    url.searchParams.delete('magic');
-    window.history.replaceState({},'',url.toString());
-  }catch(_){}
+  // Clean URL immediately
+  try{ var u=new URL(window.location.href); u.searchParams.delete('magic'); window.history.replaceState({},'',u.toString()); }catch(_){}
 
-  // Show loading
-  showMagicLinkLoading();
+  _mlLoading();
 
   try{
     var snap=await db.ref('bq_admin_magic_links/'+token).once('value');
-    if(!snap.exists()){ showMagicLinkError('invalid'); return; }
-
+    if(!snap.exists()){ _mlError('invalid'); return; }
     var data=snap.val();
 
-    // Check expiry
-    if(data.expiresAt>0 && Date.now()>data.expiresAt){
-      showMagicLinkError('expired');
-      return;
-    }
+    if(data.expiresAt>0 && Date.now()>data.expiresAt){ _mlError('expired'); return; }
+    if(data.oneTime && data.used){ _mlError('used'); return; }
 
-    // Check one-time use
-    if(data.oneTime && data.used){
-      showMagicLinkError('used');
-      return;
-    }
-
-    // Valid! Show confirmation dialog with warnings
-    showMagicLinkConfirm(data, async function(){
-      // User confirmed — proceed with account access
-      showMagicLinkLoading();
-
+    _mlConfirm(data, async function(){
+      _mlLoading();
       try{
-        var uid=data.uid;
-        var username=data.username||'';
+        var uid=data.uid, username=data.username||'';
 
-        // Mark as used (one-time or not — always record usage)
+        // Mark used
         var updates={used:true, usedAt:Date.now()};
         try{ updates.usedBy=_mlUname()||'guest'; }catch(_){}
         await db.ref('bq_admin_magic_links/'+token).update(updates);
+        if(data.oneTime){ try{ await db.ref('bq_admin_magic_links/'+token).remove(); }catch(_){} }
 
-        // If one-time, delete after marking used
-        if(data.oneTime){
-          try{ await db.ref('bq_admin_magic_links/'+token).remove(); }catch(_){}
-        }
+        // Save previous
+        var pUid=_mlUid(), pName=_mlUname();
+        if(pUid){ try{ sessionStorage.setItem('bq_uid_pre_restore',pUid); }catch(_){} if(pName){ try{ sessionStorage.setItem('bq_uname_pre_restore',pName); }catch(_){} } }
 
-        // ── Write account data to localStorage (works on fresh devices too) ──
-        // Save previous account info in case they want to switch back
-        var prevUid=_mlUid();
-        var prevName=_mlUname();
-        if(prevUid){
-          try{ sessionStorage.setItem('bq_uid_pre_restore', prevUid); }catch(_){}
-          if(prevName){ try{ sessionStorage.setItem('bq_uname_pre_restore', prevName); }catch(_){} }
-        }
+        // Write account
+        localStorage.setItem('bq_chat_uid',uid);
+        localStorage.setItem('bq_uid',uid);
+        if(username){ localStorage.setItem('bq_chat_uname',username); localStorage.setItem('bq_name',username); }
 
-        // Write BOTH canonical + legacy uid keys
-        localStorage.setItem('bq_chat_uid', uid);
-        localStorage.setItem('bq_uid', uid);
-        if(username){
-          localStorage.setItem('bq_chat_uname', username);
-          localStorage.setItem('bq_name', username);
-        }
+        // Repair mappings
+        if(username){ try{ await db.ref('bq_usernames/'+username).set(uid); }catch(_){} try{ await db.ref('bq_recovery/'+uid+'/username').set(username); }catch(_){} }
 
-        // Repair username → uid mapping
-        if(username){
-          try{ await db.ref('bq_usernames/'+username).set(uid); }catch(_){}
-          try{ await db.ref('bq_recovery/'+uid+'/username').set(username); }catch(_){}
-        }
+        // Ensure presence
+        try{ var ps=await db.ref('bq_presence/'+uid).once('value'); if(!ps.exists()&&username){ await db.ref('bq_presence/'+uid).set({uname:username,ts:Date.now(),status:'online',activity:'',bio:'',color:'',initials:username.charAt(0).toUpperCase(),avatar:'',banner:'',displayName:'',pronouns:'',customStatus:'',nameColor:'',bannerColor:''}); } }catch(_){}
 
-        // Ensure presence node exists so the account is recognized after reload
-        try{
-          var presSnap=await db.ref('bq_presence/'+uid).once('value');
-          if(!presSnap.exists() && username){
-            await db.ref('bq_presence/'+uid).set({
-              uname:username,
-              ts:Date.now(),
-              status:'online',
-              activity:'',
-              bio:'',
-              color:'',
-              initials:username.charAt(0).toUpperCase(),
-              avatar:'',
-              banner:'',
-              displayName:'',
-              pronouns:'',
-              customStatus:'',
-              nameColor:'',
-              bannerColor:'',
-            });
-          }
-        }catch(_){}
+        // Clear caches
+        try{ Object.keys(localStorage).forEach(function(k){ if(k.startsWith('bq_user_dms_migrated_v22_')||k.startsWith('bq_dm_lastread_')||k.startsWith('bq_unread_')) localStorage.removeItem(k); }); }catch(_){}
 
-        // Clear stale device caches
-        try{
-          Object.keys(localStorage).forEach(function(k){
-            if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k);
-            if(k.startsWith('bq_dm_lastread_')) localStorage.removeItem(k);
-            if(k.startsWith('bq_unread_')) localStorage.removeItem(k);
-          });
-        }catch(_){}
-
-        // Show success
-        showMagicLinkSuccess(username);
-
-      }catch(err){
-        console.error('[BQ Magic] Error during activation:', err);
-        showMagicLinkError('error', err.message||'Failed to activate the magic link.');
-      }
-    }, function(){
-      // User cancelled — no action needed
+        _mlSuccess(username);
+      }catch(err){ console.error('[BQ Magic]',err); _mlError('error',err.message||'Activation failed.'); }
     });
 
-  }catch(err){
-    console.error('[BQ Magic] Error:', err);
-    showMagicLinkError('error');
-  }
+  }catch(err){ console.error('[BQ Magic]',err); _mlError('error'); }
 }
 
-// Check for magic link on load
+// Check on load
 function checkMagicLink(){
   try{
-    var params=new URLSearchParams(window.location.search);
-    var token=params.get('magic');
-    if(token){
-      // Wait for Firebase to be ready
-      var attempts=0;
-      var iv=setInterval(function(){
-        attempts++;
-        if(_mlDb()){
-          clearInterval(iv);
-          consumeMagicLink(token);
-        }else if(attempts>30){
-          clearInterval(iv);
-          console.warn('[BQ Magic] Firebase not available after 15s');
-          showMagicLinkError('error','Firebase could not be initialized. Please check your connection and refresh.');
-        }
-      }, 500);
-    }
+    var p=new URLSearchParams(window.location.search), t=p.get('magic');
+    if(t){ var i=0; var iv=setInterval(function(){ i++; if(_mlDb()){ clearInterval(iv); consumeMagicLink(t); }else if(i>30){ clearInterval(iv); _mlError('error','Firebase could not initialize. Refresh the page.'); } },500); }
   }catch(_){}
 }
-
-// Run check after DOM is ready
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', function(){ setTimeout(checkMagicLink, 1000); });
-}else{
-  setTimeout(checkMagicLink, 1000);
-}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(checkMagicLink,1000); });
+else setTimeout(checkMagicLink,1000);
 
 })();
