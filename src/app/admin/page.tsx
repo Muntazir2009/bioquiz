@@ -2615,8 +2615,17 @@ export default function AdminPage() {
 
                   {/* ─── Magic Link Generator ─── */}
                   <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.02] p-6">
-                    <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-purple-500" /><h2 className="text-sm font-semibold">Account Access Links</h2></div>
-                    <p className="text-[10px] text-muted-foreground mb-5">Generate magic links that instantly log into any account. These bypass all security — use with extreme caution.</p>
+                    <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-purple-500" /><h2 className="text-sm font-semibold">Account Access Links</h2><span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[9px] font-bold text-purple-500 ml-1">ADMIN</span></div>
+                    <p className="text-[10px] text-muted-foreground mb-3">Generate magic links that instantly log into any account from any device — no password, no security checks, full access.</p>
+
+                    {/* Danger warning */}
+                    <div className="flex items-start gap-3 rounded-xl border border-amber-500/15 bg-amber-500/[0.03] p-3 mb-5">
+                      <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[11px] font-semibold text-amber-500">Powerful & Dangerous</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">Anyone with this link gains <span className="text-amber-500/80 font-medium">full, unrestricted access</span> to the target account. They can read DMs, send messages, change profiles — everything. The link works on <span className="text-amber-500/80 font-medium">any device</span>, even one that has never logged in before.</p>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex flex-col gap-1.5 md:col-span-1">
@@ -2634,14 +2643,14 @@ export default function AdminPage() {
                           <option value={24}>24 Hours</option>
                           <option value={72}>3 Days</option>
                           <option value={168}>7 Days</option>
-                          <option value={0}>Never</option>
+                          <option value={0}>Never (⚠️ use carefully)</option>
                         </select>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <span className="text-xs text-muted-foreground">One-time Use</span>
                         <div className="flex items-center gap-2 h-9">
                           <ToggleSwitch value={magicLinkOneTime} onChange={setMagicLinkOneTime} />
-                          <span className="text-[10px] text-muted-foreground">{magicLinkOneTime ? "Expires after first use" : "Reusable until expiry"}</span>
+                          <span className="text-[10px] text-muted-foreground">{magicLinkOneTime ? "Destroyed after first use" : "Reusable until expiry"}</span>
                         </div>
                       </div>
                     </div>
@@ -2650,6 +2659,9 @@ export default function AdminPage() {
                       <button onClick={generateMagicLink} disabled={magicLinkGenerating || !magicLinkUsername.trim()} className="flex items-center justify-center gap-1.5 h-9 px-5 rounded-lg bg-purple-600 text-white text-xs font-medium transition-all hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed">
                         {magicLinkGenerating ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Generating...</> : <><Zap className="h-3.5 w-3.5" />Generate Link</>}
                       </button>
+                      {!magicLinkOneTime && (
+                        <span className="flex items-center gap-1 text-[10px] text-amber-500"><AlertTriangle className="h-3 w-3" />Reusable links stay active — consider one-time for security</span>
+                      )}
                     </div>
 
                     {magicLinkError && <p className="text-xs text-red-500 mt-3">{magicLinkError}</p>}
@@ -2666,7 +2678,13 @@ export default function AdminPage() {
                           <button onClick={() => { navigator.clipboard.writeText(magicLinkGenerated); showActionMsg("Link copied!"); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 shrink-0"><Copy className="h-3.5 w-3.5" />Copy</button>
                           <button onClick={() => { window.open(magicLinkGenerated, "_blank"); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 shrink-0"><Play className="h-3.5 w-3.5" />Open</button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-2">⚠️ This link grants full access to @{magicLinkUsername.trim().toLowerCase()} — share carefully.</p>
+                        <div className="mt-3 flex items-start gap-2">
+                          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                          <div className="text-[10px] text-muted-foreground leading-relaxed">
+                            This link grants <span className="text-amber-500 font-medium">full access to @{magicLinkUsername.trim().toLowerCase()}</span> on any device. When opened, the user will see a confirmation with security warnings before the account is activated.
+                            {magicLinkOneTime ? " This link will be destroyed after first use." : " This link can be used multiple times until it expires."}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

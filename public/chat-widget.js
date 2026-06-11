@@ -17037,6 +17037,7 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
    MAGIC LINK HANDLER — Admin-generated account access links
    URL format: ?magic=TOKEN
    Firebase path: bq_admin_magic_links/{token}
+   v2: Cool glassmorphism UI, works on fresh devices, warnings & confirmations
    ════════════════════════════════════════════════════════════════════════ */
 (function magicLinkHandler(){
 'use strict';
@@ -17045,143 +17046,345 @@ function _mlDb(){ try{ if(window.firebase&&firebase.apps&&firebase.apps.length) 
 function _mlUid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
 function _mlUname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
 
+// ─── Inject styles once ──────────────────────────────────────────────────────
+function _mlEnsureStyles(){
+  if(document.getElementById('bq-magic-styles')) return;
+  var s=document.createElement('style');
+  s.id='bq-magic-styles';
+  s.textContent= [
+    '@keyframes bqMlFadeIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}',
+    '@keyframes bqMlPulse{0%,100%{opacity:1}50%{opacity:.5}}',
+    '@keyframes bqMlSpin{to{transform:rotate(360deg)}}',
+    '@keyframes bqMlGlow{0%,100%{box-shadow:0 0 20px rgba(139,92,246,.2),0 0 60px rgba(139,92,246,.08)}50%{box-shadow:0 0 30px rgba(139,92,246,.35),0 0 80px rgba(139,92,246,.15)}}',
+    '@keyframes bqMlBorderSpin{to{--bq-ml-angle:360deg}}',
+    '@keyframes bqMlCheckPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}',
+    '@keyframes bqMlShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}',
+    '@keyframes bqMlFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}',
+    '@keyframes bqMlRingPulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.2);opacity:0}}',
+    '@keyframes bqMlProgress{from{width:0%}to{width:100%}}',
+    '@keyframes bqMlWarnBounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}',
+    '.bq-ml-card{animation:bqMlFadeIn .4s cubic-bezier(.16,1,.3,1) both}',
+    '.bq-ml-btn{transition:all .15s ease;cursor:pointer;outline:none}',
+    '.bq-ml-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}',
+    '.bq-ml-btn:active{transform:translateY(0);filter:brightness(.95)}',
+    '.bq-ml-shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 50%,transparent 100%);background-size:200% 100%;animation:bqMlShimmer 2s infinite}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+// ─── Create the overlay container ────────────────────────────────────────────
+function _mlOverlay(){
+  var existing=document.getElementById('bq-magic-overlay');
+  if(existing) existing.remove();
+  _mlEnsureStyles();
+  var o=document.createElement('div');
+  o.id='bq-magic-overlay';
+  o.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);animation:bqMlFadeIn .3s ease both';
+  document.body.appendChild(o);
+  return o;
+}
+
+function _mlRemoveOverlay(){
+  var o=document.getElementById('bq-magic-overlay');
+  if(o) o.remove();
+}
+
+// ─── Card wrapper with gradient border ───────────────────────────────────────
+function _mlCard(inner, accent){
+  var a=accent||'rgba(139,92,246,.6)';
+  return '<div class="bq-ml-card" style="position:relative;background:rgba(15,18,25,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#e6e9ef;border-radius:22px;max-width:420px;width:100%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.05),0 32px 100px rgba(0,0,0,.7),0 0 80px '+a.replace(',.6',',.1')+';animation:bqMlGlow 3s ease-in-out infinite">'+
+    '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,'+a+',transparent);border-radius:22px 22px 0 0"></div>'+
+    '<div class="bq-ml-shimmer" style="position:absolute;inset:0;border-radius:22px;pointer-events:none"></div>'+
+    '<div style="position:relative;padding:32px 28px">'+inner+'</div>'+
+  '</div>';
+}
+
+// ─── Icon builder ────────────────────────────────────────────────────────────
+function _mlIcon(emoji,bg,ring){
+  var ringHtml=ring?'<div style="position:absolute;inset:-4px;border-radius:50%;border:2px solid '+bg.replace('linear-gradient(135deg,','').split(',')[0].replace(')',',.3)')+';animation:bqMlRingPulse 1.8s ease-out infinite"></div>':'';
+  return '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px">'+
+    ringHtml+
+    '<div style="width:56px;height:56px;border-radius:16px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 8px 30px '+bg.replace('linear-gradient(135deg,','').split(',')[0].replace(')',',.25)')+';animation:bqMlCheckPop .5s cubic-bezier(.16,1,.3,1) .2s both">'+emoji+'</div>'+
+  '</div>';
+}
+
+// ─── Show loading state ──────────────────────────────────────────────────────
+function showMagicLinkLoading(){
+  var o=_mlOverlay();
+  o.innerHTML=_mlCard(
+    '<div style="text-align:center">'+
+      '<div style="display:flex;justify-content:center;margin-bottom:20px">'+
+        '<div style="position:relative;width:64px;height:64px">'+
+          '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(139,92,246,.15)"></div>'+
+          '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#a78bfa;animation:bqMlSpin 1s linear infinite"></div>'+
+          '<div style="position:absolute;inset:12px;border-radius:50%;border:2px solid transparent;border-bottom-color:#60a5fa;animation:bqMlSpin 1.5s linear infinite reverse"></div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-weight:700;font-size:17px;margin-bottom:6px;letter-spacing:-.3px">Verifying Magic Link</div>'+
+      '<div style="font-size:12px;color:rgba(230,233,239,.5)">Checking authentication token...</div>'+
+    '</div>',
+    'rgba(139,92,246,.6)'
+  );
+}
+
+// ─── Show confirmation before logging in (with warnings) ─────────────────────
+function showMagicLinkConfirm(data, onConfirm, onCancel){
+  var currentUid=_mlUid();
+  var currentName=_mlUname();
+  var replacing=!!currentUid;
+  var o=_mlOverlay();
+
+  var warnBlock='';
+  if(replacing){
+    warnBlock=
+      '<div style="margin-top:16px;padding:12px 14px;border-radius:12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);text-align:left">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+          '<span style="font-size:16px;animation:bqMlWarnBounce 1s ease infinite">⚠️</span>'+
+          '<span style="font-size:12px;font-weight:700;color:#fbbf24">Account Replacement Warning</span>'+
+        '</div>'+
+        '<div style="font-size:11px;color:rgba(251,191,36,.7);line-height:1.5">'+
+          'You are currently logged in as <b style="color:#fbbf24">@'+(currentName||currentUid.slice(0,8))+'</b>. '+
+          'Activating this link will <b style="color:#fb923c">completely replace</b> your current session. '+
+          'Your current account data will remain on the server but you will lose access to it on this device.'+
+        '</div>'+
+      '</div>';
+  }
+
+  var securityWarn=
+    '<div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);text-align:left">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+        '<span style="font-size:14px">🔐</span>'+
+        '<span style="font-size:12px;font-weight:700;color:#a78bfa">Security Notice</span>'+
+      '</div>'+
+      '<div style="font-size:11px;color:rgba(167,139,250,.7);line-height:1.5">'+
+        'This link was generated by an administrator and grants <b style="color:#c4b5fd">full, unrestricted access</b> to the account <b style="color:#c4b5fd">@'+(data.username||'unknown')+'</b>. '+
+        'No password or additional verification is required. If you did not request this link, do not proceed.'+
+      '</div>'+
+    '</div>';
+
+  var expiryInfo='';
+  if(data.expiresAt>0){
+    var remaining=data.expiresAt-Date.now();
+    var hrs=Math.floor(remaining/3600000);
+    var mins=Math.floor((remaining%3600000)/60000);
+    var timeStr=hrs>0?(hrs+'h '+mins+'m'):(mins+'m');
+    expiryInfo='<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);font-size:10px;color:#4ade80;margin-top:8px">⏱ Link expires in '+timeStr+'</div>';
+  }else{
+    expiryInfo='<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);font-size:10px;color:#fbbf24;margin-top:8px">∞ Link never expires</div>';
+  }
+
+  var oneTimeTag=data.oneTime?
+    '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.15);font-size:10px;color:#fb923c;margin-top:6px">🔑 One-time use — this link will be destroyed after activation</div>':
+    '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.15);font-size:10px;color:#60a5fa;margin-top:6px">🔄 Reusable — link remains active after use</div>';
+
+  var inner=
+    '<div style="text-align:center">'+
+      _mlIcon('🔑','linear-gradient(135deg,#8b5cf6,#6366f1)',true)+
+      '<div style="font-weight:800;font-size:18px;margin-bottom:4px;letter-spacing:-.4px">Magic Link Detected</div>'+
+      '<div style="font-size:13px;color:rgba(230,233,239,.5);margin-bottom:4px">An account access link has been found</div>'+
+      '<div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.12)">'+
+        '<div style="font-size:10px;color:rgba(230,233,239,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Target Account</div>'+
+        '<div style="font-size:20px;font-weight:800;color:#c4b5fd;letter-spacing:-.5px">@'+(data.username||'unknown')+'</div>'+
+        expiryInfo+oneTimeTag+
+      '</div>'+
+      warnBlock+securityWarn+
+      '<div style="display:flex;gap:10px;margin-top:20px">'+
+        '<button id="bq-ml-cancel" class="bq-ml-btn" style="flex:1;height:42px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(230,233,239,.6);font-weight:600;font-size:13px">Cancel</button>'+
+        '<button id="bq-ml-confirm" class="bq-ml-btn" style="flex:1.4;height:42px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#6366f1);border:none;color:#fff;font-weight:700;font-size:13px;box-shadow:0 4px 20px rgba(139,92,246,.3)">'+(replacing?'Switch Account':'Activate Link')+'</button>'+
+      '</div>'+
+    '</div>';
+
+  o.innerHTML=_mlCard(inner,'rgba(139,92,246,.6)');
+
+  document.getElementById('bq-ml-cancel').onclick=function(){ _mlRemoveOverlay(); if(onCancel) onCancel(); };
+  document.getElementById('bq-ml-confirm').onclick=function(){ onConfirm(); };
+}
+
+// ─── Show success state ──────────────────────────────────────────────────────
+function showMagicLinkSuccess(username){
+  var o=_mlOverlay();
+
+  var inner=
+    '<div style="text-align:center">'+
+      '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px">'+
+        '<div style="position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%);animation:bqMlPulse 2s ease infinite"></div>'+
+        _mlIcon('✓','linear-gradient(135deg,#22c55e,#16a34a)',true)+
+      '</div>'+
+      '<div style="font-weight:800;font-size:20px;margin-bottom:6px;letter-spacing:-.4px">Welcome Back!</div>'+
+      '<div style="font-size:13px;color:rgba(230,233,239,.5);margin-bottom:16px">You\'re now logged in as</div>'+
+      '<div style="display:inline-block;padding:8px 20px;border-radius:12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);font-size:16px;font-weight:700;color:#4ade80;letter-spacing:-.3px">@'+(username||'unknown')+'</div>'+
+      '<div style="margin-top:20px">'+
+        '<div style="font-size:11px;color:rgba(230,233,239,.35);margin-bottom:8px">Reloading in a moment...</div>'+
+        '<div style="height:3px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;margin:0 auto;max-width:200px">'+
+          '<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#22c55e,#4ade80);animation:bqMlProgress 2s ease both"></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  o.innerHTML=_mlCard(inner,'rgba(34,197,94,.5)');
+  setTimeout(function(){ location.reload(); }, 2200);
+}
+
+// ─── Show error states ───────────────────────────────────────────────────────
+function showMagicLinkError(kind, detail){
+  var o=_mlOverlay();
+  var emoji,title,desc,accent;
+
+  if(kind==='expired'){
+    emoji='⏰'; title='Link Expired';
+    desc='This magic link has passed its expiration time and is no longer valid.';
+    accent='rgba(249,115,22,.5)';
+  }else if(kind==='used'){
+    emoji='🔒'; title='Link Already Used';
+    desc='This one-time link was already activated and has been destroyed for security.';
+    accent='rgba(249,115,22,.5)';
+  }else if(kind==='invalid'){
+    emoji='✕'; title='Invalid Link';
+    desc='This magic link does not exist or has been revoked by an administrator.';
+    accent='rgba(239,68,68,.5)';
+  }else{
+    emoji='!'; title='Something Went Wrong';
+    desc=detail||'An unexpected error occurred while processing the magic link.';
+    accent='rgba(239,68,68,.5)';
+  }
+
+  var inner=
+    '<div style="text-align:center">'+
+      _mlIcon(emoji, kind==='invalid'||kind==='error'?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#f97316,#ef4444)', false)+
+      '<div style="font-weight:800;font-size:18px;margin-bottom:6px;letter-spacing:-.4px">'+title+'</div>'+
+      '<div style="font-size:13px;color:rgba(230,233,239,.5);line-height:1.6;margin-bottom:20px">'+desc+'</div>'+
+      '<div style="margin-top:8px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);font-size:11px;color:rgba(230,233,239,.3)">'+
+        'Contact an administrator to request a new access link.'+
+      '</div>'+
+      '<button id="bq-ml-close" class="bq-ml-btn" style="margin-top:18px;height:40px;padding:0 28px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e6e9ef;font-weight:600;font-size:13px">Close</button>'+
+    '</div>';
+
+  o.innerHTML=_mlCard(inner, accent);
+  document.getElementById('bq-ml-close').onclick=_mlRemoveOverlay;
+}
+
+// ─── Main consume logic ──────────────────────────────────────────────────────
 async function consumeMagicLink(token){
-  const db=_mlDb();
-  if(!db){ console.warn('[BQ Magic] Firebase not ready'); return; }
-  if(!token||token.length<10){ console.warn('[BQ Magic] Invalid token'); return; }
+  var db=_mlDb();
+  if(!db){ console.warn('[BQ Magic] Firebase not ready'); showMagicLinkError('error','Firebase is not available. Please refresh the page.'); return; }
+  if(!token||token.length<10){ console.warn('[BQ Magic] Invalid token'); showMagicLinkError('invalid'); return; }
 
   // Clean URL immediately so the token isn't visible in address bar
   try{
-    const url=new URL(window.location.href);
+    var url=new URL(window.location.href);
     url.searchParams.delete('magic');
     window.history.replaceState({},'',url.toString());
   }catch(_){}
 
-  try{
-    const snap=await db.ref('bq_admin_magic_links/'+token).once('value');
-    if(!snap.exists()){ showMagicLinkStatus('invalid'); return; }
+  // Show loading
+  showMagicLinkLoading();
 
-    const data=snap.val();
+  try{
+    var snap=await db.ref('bq_admin_magic_links/'+token).once('value');
+    if(!snap.exists()){ showMagicLinkError('invalid'); return; }
+
+    var data=snap.val();
 
     // Check expiry
     if(data.expiresAt>0 && Date.now()>data.expiresAt){
-      showMagicLinkStatus('expired');
+      showMagicLinkError('expired');
       return;
     }
 
     // Check one-time use
     if(data.oneTime && data.used){
-      showMagicLinkStatus('used');
+      showMagicLinkError('used');
       return;
     }
 
-    // Valid! Restore the account
-    const uid=data.uid;
-    const username=data.username||'';
+    // Valid! Show confirmation dialog with warnings
+    showMagicLinkConfirm(data, async function(){
+      // User confirmed — proceed with account access
+      showMagicLinkLoading();
 
-    // Mark as used (one-time or not — always record usage)
-    const updates={used:true, usedAt:Date.now()};
-    try{ updates.usedBy=_mlUname()||'anonymous'; }catch(_){}
-    await db.ref('bq_admin_magic_links/'+token).update(updates);
+      try{
+        var uid=data.uid;
+        var username=data.username||'';
 
-    // If one-time, delete after marking used
-    if(data.oneTime){
-      try{ await db.ref('bq_admin_magic_links/'+token).remove(); }catch(_){}
-    }
+        // Mark as used (one-time or not — always record usage)
+        var updates={used:true, usedAt:Date.now()};
+        try{ updates.usedBy=_mlUname()||'guest'; }catch(_){}
+        await db.ref('bq_admin_magic_links/'+token).update(updates);
 
-    // Write account data to localStorage (same as restoreToUid)
-    localStorage.setItem('bq_chat_uid', uid);
-    localStorage.setItem('bq_uid', uid);
-    if(username){
-      localStorage.setItem('bq_chat_uname', username);
-      localStorage.setItem('bq_name', username);
-    }
+        // If one-time, delete after marking used
+        if(data.oneTime){
+          try{ await db.ref('bq_admin_magic_links/'+token).remove(); }catch(_){}
+        }
 
-    // Repair username → uid mapping
-    if(username){
-      try{ await db.ref('bq_usernames/'+username).set(uid); }catch(_){}
-      try{ await db.ref('bq_recovery/'+uid+'/username').set(username); }catch(_){}
-    }
+        // ── Write account data to localStorage (works on fresh devices too) ──
+        // Save previous account info in case they want to switch back
+        var prevUid=_mlUid();
+        var prevName=_mlUname();
+        if(prevUid){
+          try{ sessionStorage.setItem('bq_uid_pre_restore', prevUid); }catch(_){}
+          if(prevName){ try{ sessionStorage.setItem('bq_uname_pre_restore', prevName); }catch(_){} }
+        }
 
-    // Clear stale device caches
-    try{
-      Object.keys(localStorage).forEach(function(k){
-        if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k);
-        if(k.startsWith('bq_dm_lastread_')) localStorage.removeItem(k);
-        if(k.startsWith('bq_unread_')) localStorage.removeItem(k);
-      });
-    }catch(_){}
+        // Write BOTH canonical + legacy uid keys
+        localStorage.setItem('bq_chat_uid', uid);
+        localStorage.setItem('bq_uid', uid);
+        if(username){
+          localStorage.setItem('bq_chat_uname', username);
+          localStorage.setItem('bq_name', username);
+        }
 
-    showMagicLinkStatus('success', username);
+        // Repair username → uid mapping
+        if(username){
+          try{ await db.ref('bq_usernames/'+username).set(uid); }catch(_){}
+          try{ await db.ref('bq_recovery/'+uid+'/username').set(username); }catch(_){}
+        }
+
+        // Ensure presence node exists so the account is recognized after reload
+        try{
+          var presSnap=await db.ref('bq_presence/'+uid).once('value');
+          if(!presSnap.exists() && username){
+            await db.ref('bq_presence/'+uid).set({
+              uname:username,
+              ts:Date.now(),
+              status:'online',
+              activity:'',
+              bio:'',
+              color:'',
+              initials:username.charAt(0).toUpperCase(),
+              avatar:'',
+              banner:'',
+              displayName:'',
+              pronouns:'',
+              customStatus:'',
+              nameColor:'',
+              bannerColor:'',
+            });
+          }
+        }catch(_){}
+
+        // Clear stale device caches
+        try{
+          Object.keys(localStorage).forEach(function(k){
+            if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k);
+            if(k.startsWith('bq_dm_lastread_')) localStorage.removeItem(k);
+            if(k.startsWith('bq_unread_')) localStorage.removeItem(k);
+          });
+        }catch(_){}
+
+        // Show success
+        showMagicLinkSuccess(username);
+
+      }catch(err){
+        console.error('[BQ Magic] Error during activation:', err);
+        showMagicLinkError('error', err.message||'Failed to activate the magic link.');
+      }
+    }, function(){
+      // User cancelled — no action needed
+    });
 
   }catch(err){
     console.error('[BQ Magic] Error:', err);
-    showMagicLinkStatus('error');
-  }
-}
-
-function showMagicLinkStatus(kind, username){
-  // Remove any existing overlay
-  var existing=document.getElementById('bq-magic-overlay');
-  if(existing) existing.remove();
-
-  var overlay=document.createElement('div');
-  overlay.id='bq-magic-overlay';
-  overlay.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)';
-
-  var icon='', title='', desc='', color='#60a5fa';
-
-  if(kind==='success'){
-    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(34,197,94,.3)">✓</div>';
-    title='Account Restored';
-    desc='You are now logged in as <b style="color:#9ad7ff">@'+(username||'unknown')+'</b>. The page will reload shortly.';
-    color='#22c55e';
-  }else if(kind==='expired'){
-    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(249,115,22,.3)">⏰</div>';
-    title='Link Expired';
-    desc='This magic link has expired. Please request a new one from the admin.';
-    color='#f97316';
-  }else if(kind==='used'){
-    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(249,115,22,.3)">⚠️</div>';
-    title='Link Already Used';
-    desc='This one-time link has already been used. Please request a new one from the admin.';
-    color='#f97316';
-  }else if(kind==='invalid'){
-    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(239,68,68,.3)">✕</div>';
-    title='Invalid Link';
-    desc='This magic link does not exist or has been revoked.';
-    color='#ef4444';
-  }else{
-    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(239,68,68,.3)">!</div>';
-    title='Error';
-    desc='Something went wrong while processing the magic link.';
-    color='#ef4444';
-  }
-
-  overlay.innerHTML=
-    '<div style="background:rgba(15,18,25,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:400px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08);text-align:center;animation:bqRecFadeIn .25s ease both">'+
-      '<div style="display:flex;justify-content:center;margin-bottom:16px">'+icon+'</div>'+
-      '<div style="font-weight:700;font-size:18px;margin-bottom:8px;letter-spacing:-.3px">'+title+'</div>'+
-      '<div style="font-size:13px;opacity:.7;margin-bottom:20px;line-height:1.6">'+desc+'</div>'+
-      (kind==='success'
-        ? '<div style="display:flex;justify-content:center"><div style="width:32px;height:32px;border:3px solid '+color+';border-top-color:transparent;border-radius:50%;animation:bq-magic-spin 1s linear infinite"></div></div>'
-        : '<button onclick="document.getElementById(\'bq-magic-overlay\').remove()" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 24px;font-weight:600;cursor:pointer;font-size:13px">Close</button>'
-      )+
-    '</div>';
-
-  // Add spin animation if not present
-  if(!document.getElementById('bq-magic-spin-style')){
-    var s=document.createElement('style');
-    s.id='bq-magic-spin-style';
-    s.textContent='@keyframes bq-magic-spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-  }
-
-  document.body.appendChild(overlay);
-
-  // Auto-reload on success
-  if(kind==='success'){
-    setTimeout(function(){ location.reload(); }, 2000);
+    showMagicLinkError('error');
   }
 }
 
@@ -17201,6 +17404,7 @@ function checkMagicLink(){
         }else if(attempts>30){
           clearInterval(iv);
           console.warn('[BQ Magic] Firebase not available after 15s');
+          showMagicLinkError('error','Firebase could not be initialized. Please check your connection and refresh.');
         }
       }, 500);
     }
