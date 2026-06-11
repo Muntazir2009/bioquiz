@@ -206,3 +206,28 @@ Stage Summary:
 - All new sections accessible from sidebar navigation
 - Features use existing Firebase connection and data patterns
 - Changes pushed to GitHub for auto-deploy
+
+---
+Task ID: 10
+Agent: general-purpose
+Task: Redesign recovery UI with glassmorphism and fix bugs
+
+Work Log:
+- Read worklog.md and all relevant sections of chat-widget.js (~17000 lines)
+- Bug Fix 1: Added "Recover an existing account →" link directly in the HTML template (line ~3008, inside `bqnm` div) so it's always immediately visible on the username screen, no 700ms delay dependency
+- Bug Fix 2: Neutered v22's `ensureRecoveryCode()` (line ~9954) and `mountRecoveryEntry()` (line ~10292) by replacing their bodies with no-op comments — v23's boot already skips calling them, but now the function definitions are empty too
+- Added glassmorphism CSS keyframes and utility classes to the v23 CSS injection block (`injectV23CSS`): `bqRecFadeIn`, `bqRecPulse`, `bqRecShimmer`, `bqRecWarnPulse` animations, `.bq-rec-glass` class with focus/hover/active styles
+- Redesigned `showRecoveryCodeModal()` — glassmorphism overlay (blur 20px backdrop), translucent card (rgba 15,18,25/.88 + blur 12px), animated gradient border around code, shimmer animation, warning pulse for first-time display, gradient "I saved it" button, icon buttons for copy/download
+- Redesigned `showConfirmRestore()` — glassmorphism overlay, warning icon with orange-red gradient + pulse animation, left-bordered info box, gradient primary button, subtle cancel button
+- Redesigned `showRestoreModal()` — glassmorphism overlay, icon + title header, pill-style segmented tab bar with emoji labels, accent-bordered inputs with glow focus, gradient submit buttons, styled close button, info callouts with left-border accent
+- Redesigned `showReclaimQuiz()` — glassmorphism overlay, icon header with @name highlight, progress dots, numbered challenge cards with gradient number badges, styled radio options with accent-color, gradient submit button
+- Redesigned `showRecoverySettings()` — glassmorphism overlay, icon header, 4 section cards each with unique left-border color accent (blue/purple/amber/neutral), icon + title rows, hidden-then-shown "✓ set" status badges with green glow, styled inputs per section, gradient passphrase strength meter with smooth transitions, UID display with accent color box
+- Updated v23 `mountRecoveryEntry()` to wire the static recovery link (added in HTML template) instead of dynamically creating one
+- All JavaScript logic preserved — only HTML/CSS styling changed in template strings
+
+Stage Summary:
+- Bug Fix 1: Recovery link now always visible on username screen (added as static HTML element)
+- Bug Fix 2: v22's `ensureRecoveryCode()` and `mountRecoveryEntry()` are now no-ops
+- All 5 recovery modals redesigned with modern glassmorphism: blurred translucent overlays, gradient accents, animated elements, polished inputs/buttons, color-coded section cards, progress indicators, status badges
+- Zero JavaScript logic changes — only HTML/CSS in template strings modified
+- CSS animations added to v23 style injection block for reusable glassmorphism effects

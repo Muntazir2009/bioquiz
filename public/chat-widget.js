@@ -3005,6 +3005,7 @@ const HTML = `
       </div>
       <div class="bqnmst" id="bqnmst"></div>
       <button class="bqnmbtn" id="bqnmbtn" disabled>JOIN CHAT</button>
+      <button type="button" class="bq-rec-link" style="display:block;width:100%;margin-top:14px;padding:8px 0;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px/1.4 -apple-system,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;letter-spacing:.2px">Recover an existing account →</button>
     </div>
   </div>
 
@@ -4318,6 +4319,9 @@ function showModal(rename){
   if(rename&&uname){av.style.background=uColor(uname);av.textContent=uInit(uname);ckUN(uname);}
   else{av.style.background='rgba(96,165,250,.2)';av.textContent='?';}
   if(!('ontouchstart' in window)) setTimeout(()=>inp.focus(),60);
+  // Wire the static recovery link (in case mountRecoveryEntry hasn't run yet)
+  const recLink=m.querySelector('.bq-rec-link');
+  if(recLink && !recLink._bqWired){ recLink._bqWired=true; recLink.onclick=(e)=>{ e.preventDefault(); if(typeof showRestoreModal==='function') showRestoreModal(); }; }
 }
 
 function hideModal(){ document.getElementById('bqnm').style.display='none'; }
@@ -9951,16 +9955,7 @@ async function getRecoveryNode(uid){
   try{ const s=await db.ref('bq_recovery/'+uid).once('value'); return s.val(); }catch(_){ return null; }
 }
 async function ensureRecoveryCode(){
-  const db=_db(); const u=_uid(); const n=_uname();
-  if(!db||!u||!n) return;
-  if(localStorage.getItem(REC_LS_CODE_SHOWN+'_'+u)) return;
-  const existing=await getRecoveryNode(u);
-  if(existing && existing.codeHash){ localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'existing'); return; }
-  const code=genRecoveryCode();
-  const hash=await sha256Hex(code);
-  await db.ref('bq_recovery/'+u).update({codeHash:hash, codeCreatedAt:Date.now(), username:n});
-  localStorage.setItem(REC_LS_CODE_SHOWN+'_'+u,'1');
-  showRecoveryCodeModal(code, true);
+  /* no-op: v23 patch owns this now */
 }
 
 function closeAnyV22Modal(){
@@ -10298,30 +10293,7 @@ function showRecoverySettings(){
 }
 
 function mountRecoveryEntry(){
-  const profV=$('bqv-profile');
-  if(profV && !profV.querySelector('.bq-rec-entry')){
-    const row=document.createElement('button');
-    row.type='button';
-    row.className='bq-rec-entry';
-    row.style.cssText='display:flex;align-items:center;gap:12px;width:calc(100% - 24px);margin:8px 12px;padding:12px 14px;background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(167,139,250,.12));border:1px solid rgba(96,165,250,.25);border-radius:12px;color:inherit;cursor:pointer;font:600 14px system-ui,sans-serif;text-align:left';
-    row.innerHTML='<span style="font-size:20px">🔐</span><span style="flex:1">Account &amp; recovery</span><span style="opacity:.5">›</span>';
-    row.onclick=()=>{ if(!_uname()) { _toast('Set a username first'); return; } showRecoverySettings(); };
-    const scroll=profV.querySelector('.bqpf-scroll')||profV;
-    scroll.insertBefore(row, scroll.firstChild);
-  }
-  const nm=$('bqnm');
-  if(nm && !nm.querySelector('.bq-rec-link')){
-    const card=nm.querySelector('.bqnmc')||nm.firstElementChild;
-    if(card){
-      const link=document.createElement('button');
-      link.type='button';
-      link.className='bq-rec-link';
-      link.style.cssText='display:block;width:100%;margin-top:12px;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px system-ui;text-decoration:underline';
-      link.textContent='Recover an existing account →';
-      link.onclick=(e)=>{ e.preventDefault(); showRestoreModal(); };
-      card.appendChild(link);
-    }
-  }
+  /* no-op: v23 patch owns this now */
 }
 
 /* ── Edit window + delete-for-everyone ── */
@@ -10571,22 +10543,24 @@ function showRecoveryCodeModal(code, firstTime){
   closeAnyModal();
   const wrap=document.createElement('div');
   wrap.id='bq-rec-modal';
-  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
   wrap.innerHTML=`
-    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:440px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px">🔐</div>
+    <div class="bq-rec-glass" style="background:rgba(15,18,25,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:440px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(96,165,250,.3)">🔐</div>
         <div>
-          <div style="font-weight:700;font-size:16px">${firstTime?'Save your recovery code':'Your recovery code'}</div>
-          <div style="opacity:.65;font-size:12px">${firstTime?'This is shown only once. Save it now.':'Keep it somewhere safe.'}</div>
+          <div style="font-weight:700;font-size:17px;letter-spacing:-.2px">${firstTime?'Save your recovery code':'Your recovery code'}</div>
+          <div style="opacity:.6;font-size:12px;margin-top:2px">${firstTime?'This is shown only once — save it now.':'Keep it somewhere safe.'}</div>
         </div>
       </div>
-      <div style="background:#0f1218;border:1px dashed #3a4256;border-radius:10px;padding:14px;font:600 16px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px;text-align:center;color:#9ad7ff;margin:14px 0;user-select:all;word-break:break-all">${_esc(code)}</div>
-      <div style="font-size:12px;opacity:.7;margin-bottom:14px">If you lose access to this device, enter your username + this code on a new one to restore your account.</div>
+      <div style="position:relative;padding:3px;border-radius:12px;background:linear-gradient(135deg,rgba(96,165,250,.35),rgba(167,139,250,.35),rgba(96,165,250,.35));background-size:200% 100%;animation:bqRecShimmer 3s linear infinite;margin:16px 0">
+        <div style="background:rgba(15,18,25,.95);border-radius:10px;padding:16px;font:600 16px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1.2px;text-align:center;color:#9ad7ff;user-select:all;word-break:break-all">${_esc(code)}</div>
+      </div>
+      ${firstTime?'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;margin-bottom:14px;animation:bqRecWarnPulse 2s ease infinite"><span style="font-size:14px">⚠️</span><span style="font-size:12px;color:#fbbf24;font-weight:500">This code will never be shown again. Save it now.</span></div>':'<div style="font-size:12px;opacity:.6;margin-bottom:14px">If you lose access to this device, enter your username + this code on a new one to restore your account.</div>'}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="bq-rec-copy"  style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Copy</button>
-        <button id="bq-rec-dl"    style="flex:1;background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Download</button>
-        <button id="bq-rec-done"  style="flex:1;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:700;cursor:pointer">I saved it</button>
+        <button id="bq-rec-copy" style="flex:1;background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:14px">📋</span> Copy</button>
+        <button id="bq-rec-dl" style="flex:1;background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:14px">💾</span> Download</button>
+        <button id="bq-rec-done" style="flex:1;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25)">✓ I saved it</button>
       </div>
     </div>`;
   document.body.appendChild(wrap);
@@ -10607,19 +10581,22 @@ function showConfirmRestore(){
     const haveSelf=!!_uid();
     const wrap=document.createElement('div');
     wrap.id='bq-v23-confirm';
-    wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+    wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
     wrap.innerHTML=`
-      <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:420px;width:100%;padding:22px">
-        <div style="font-weight:700;font-size:16px;margin-bottom:8px">Replace current account?</div>
-        <div style="font-size:13px;opacity:.8;margin-bottom:16px;line-height:1.55">
+      <div class="bq-rec-glass" style="background:rgba(15,18,25,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:420px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;font-size:20px;animation:bqRecWarnPulse 2s ease infinite;box-shadow:0 4px 16px rgba(239,68,68,.25)">⚠️</div>
+          <div style="font-weight:700;font-size:17px;letter-spacing:-.2px">Replace current account?</div>
+        </div>
+        <div style="font-size:13px;opacity:.8;margin-bottom:20px;line-height:1.6;padding:14px;background:rgba(0,0,0,.2);border-radius:10px;border-left:3px solid rgba(249,115,22,.5)">
           ${haveSelf
-            ? 'Restoring will sign out the account currently on this device (<b>@'+_esc(_uname()||'(no name)')+'</b>) and replace it with the recovered one.<br><br>If the current account is yours too, back up its recovery code first.'
+            ? 'Restoring will sign out the account currently on this device (<b style="color:#9ad7ff">@'+_esc(_uname()||'(no name)')+'</b>) and replace it with the recovered one.<br><br>If the current account is yours too, back up its recovery code first.'
             : 'No account is signed in on this device, so nothing will be lost.'}
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          ${haveSelf?'<button data-act="backup" style="background:#2a3040;color:#fff;border:0;border-radius:8px;padding:11px;font-weight:600;cursor:pointer">Back up current account first</button>':''}
-          <button data-act="ok" style="background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Continue with restore</button>
-          <button data-act="cancel" style="background:none;color:#aaa;border:0;border-radius:8px;padding:8px;font-weight:600;cursor:pointer">Cancel</button>
+          ${haveSelf?'<button data-act="backup" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px"><span>💾</span> Back up current account first</button>':''}
+          <button data-act="ok" style="background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25)">Continue with restore</button>
+          <button data-act="cancel" style="background:none;color:rgba(255,255,255,.5);border:0;border-radius:10px;padding:10px;font-weight:600;cursor:pointer;transition:all .2s ease">Cancel</button>
         </div>
       </div>`;
     document.body.appendChild(wrap);
@@ -10697,45 +10674,48 @@ function showRestoreModal(presetTab){
   closeAnyModal();
   const wrap=document.createElement('div');
   wrap.id='bq-rec-restore';
-  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
   wrap.innerHTML=`
-    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:480px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:92vh;overflow:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-weight:700;font-size:17px">Recover your account</div>
-        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+    <div class="bq-rec-glass" style="background:rgba(15,18,25,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:480px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08);max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(96,165,250,.3)">🔄</div>
+          <div style="font-weight:700;font-size:18px;letter-spacing:-.3px">Recover your account</div>
+        </div>
+        <button data-close style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;opacity:.6;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:all .2s ease">✕</button>
       </div>
-      <div style="opacity:.65;font-size:12px;margin-bottom:14px">Pick a recovery method. Tip: type your username and we'll auto-pick the best method.</div>
-      <input id="bq-rc-uname" placeholder="Your username (without @)" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:10px;box-sizing:border-box"/>
-      <div id="bq-rc-tabs" style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #2a3040;flex-wrap:wrap">
-        <button data-tab="code"  class="bqrt" style="background:none;border:0;color:#fff;padding:8px 12px;cursor:pointer;border-bottom:2px solid #3b82f6">Code</button>
-        <button data-tab="pass"  class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Passphrase</button>
-        <button data-tab="quest" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Question</button>
-        <button data-tab="claim" class="bqrt" style="background:none;border:0;color:#aaa;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent">Reclaim</button>
+      <div style="opacity:.55;font-size:12px;margin-bottom:16px;padding-left:54px">Pick a recovery method. Tip: type your username and we'll auto-pick the best one.</div>
+      <input id="bq-rc-uname" placeholder="Your username (without @)" autocomplete="off" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:11px 14px;margin-bottom:14px;box-sizing:border-box;transition:all .2s ease;font-size:14px"/>
+      <div id="bq-rc-tabs" style="display:flex;gap:4px;margin-bottom:16px;background:rgba(0,0,0,.2);border-radius:10px;padding:3px;flex-wrap:wrap">
+        <button data-tab="code"  class="bqrt" style="background:rgba(96,165,250,.15);border:0;color:#fff;padding:9px 14px;cursor:pointer;border-radius:8px;font-weight:600;font-size:13px;transition:all .2s ease;flex:1;text-align:center">🔑 Code</button>
+        <button data-tab="pass"  class="bqrt" style="background:none;border:0;color:rgba(255,255,255,.5);padding:9px 14px;cursor:pointer;border-radius:8px;font-weight:500;font-size:13px;transition:all .2s ease;flex:1;text-align:center">🔒 Passphrase</button>
+        <button data-tab="quest" class="bqrt" style="background:none;border:0;color:rgba(255,255,255,.5);padding:9px 14px;cursor:pointer;border-radius:8px;font-weight:500;font-size:13px;transition:all .2s ease;flex:1;text-align:center">❓ Question</button>
+        <button data-tab="claim" class="bqrt" style="background:none;border:0;color:rgba(255,255,255,.5);padding:9px 14px;cursor:pointer;border-radius:8px;font-weight:500;font-size:13px;transition:all .2s ease;flex:1;text-align:center">🛡️ Reclaim</button>
       </div>
       <div data-pane="code">
-        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Recovery code</label>
-        <input id="bq-rc-code" placeholder="BQ-XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;font:600 14px ui-monospace,Menlo,monospace;box-sizing:border-box;text-transform:uppercase"/>
-        <button id="bq-rc-go-code" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+        <label style="display:block;font-size:12px;opacity:.6;margin-bottom:6px;font-weight:500">Recovery code</label>
+        <input id="bq-rc-code" placeholder="BQ-XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:11px 14px;margin-bottom:16px;font:600 14px ui-monospace,Menlo,monospace;box-sizing:border-box;text-transform:uppercase;transition:all .2s ease"/>
+        <button id="bq-rc-go-code" style="width:100%;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25);font-size:14px">Restore</button>
       </div>
       <div data-pane="pass" style="display:none">
-        <label style="display:block;font-size:12px;opacity:.7;margin-bottom:4px">Passphrase</label>
-        <div style="position:relative;margin-bottom:14px">
-          <input id="bq-rc-pass" type="password" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px 38px 10px 10px;box-sizing:border-box"/>
-          <button type="button" id="bq-rc-pass-eye" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#aaa;cursor:pointer;font-size:13px;padding:4px 8px">👁</button>
+        <label style="display:block;font-size:12px;opacity:.6;margin-bottom:6px;font-weight:500">Passphrase</label>
+        <div style="position:relative;margin-bottom:16px">
+          <input id="bq-rc-pass" type="password" autocomplete="off" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:11px 42px 11px 14px;box-sizing:border-box;transition:all .2s ease"/>
+          <button type="button" id="bq-rc-pass-eye" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;color:rgba(255,255,255,.4);cursor:pointer;font-size:14px;padding:4px 8px;transition:color .2s">👁</button>
         </div>
-        <button id="bq-rc-go-pass" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
+        <button id="bq-rc-go-pass" style="width:100%;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25);font-size:14px">Restore</button>
       </div>
       <div data-pane="quest" style="display:none">
-        <div id="bq-rc-q-display" style="font-size:13px;opacity:.85;margin-bottom:8px;min-height:18px;padding:8px 10px;background:#0f1218;border:1px solid #2a3040;border-radius:6px"></div>
-        <input id="bq-rc-q-ans" placeholder="Your answer" autocomplete="off" style="width:100%;background:#0f1218;color:#fff;border:1px solid #2a3040;border-radius:8px;padding:10px;margin-bottom:14px;box-sizing:border-box"/>
-        <button id="bq-rc-go-quest" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Restore</button>
-        <div style="font-size:11px;opacity:.55;margin-top:8px">Less secure. Only available if the account set this up.</div>
+        <div id="bq-rc-q-display" style="font-size:13px;opacity:.85;margin-bottom:10px;min-height:20px;padding:12px 14px;background:rgba(0,0,0,.2);border:1px solid rgba(96,165,250,.15);border-radius:10px;border-left:3px solid rgba(96,165,250,.4)"></div>
+        <input id="bq-rc-q-ans" placeholder="Your answer" autocomplete="off" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:11px 14px;margin-bottom:16px;box-sizing:border-box;transition:all .2s ease"/>
+        <button id="bq-rc-go-quest" style="width:100%;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25);font-size:14px">Restore</button>
+        <div style="font-size:11px;opacity:.45;margin-top:10px;padding:8px 12px;background:rgba(0,0,0,.15);border-radius:8px;display:flex;align-items:center;gap:6px"><span>⚠️</span> Less secure. Only available if the account set this up.</div>
       </div>
       <div data-pane="claim" style="display:none">
-        <div style="font-size:12px;opacity:.75;margin-bottom:10px;line-height:1.55">For accounts with no recovery set up. We'll verify ownership using your DM history, profile, or message text.</div>
-        <button id="bq-rc-go-claim" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Start verification</button>
+        <div style="font-size:12px;opacity:.65;margin-bottom:14px;line-height:1.6;padding:12px 14px;background:rgba(0,0,0,.2);border-radius:10px;border-left:3px solid rgba(167,139,250,.4)">For accounts with no recovery set up. We'll verify ownership using your DM history, profile, or message text.</div>
+        <button id="bq-rc-go-claim" style="width:100%;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25);font-size:14px">🛡️ Start verification</button>
       </div>
-      <div id="bq-rc-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+      <div id="bq-rc-status" style="margin-top:14px;font-size:13px;min-height:18px"></div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
@@ -10745,8 +10725,9 @@ function showRestoreModal(presetTab){
   const switchTab=(name)=>{
     wrap.querySelectorAll('.bqrt').forEach(b=>{
       const on=b.dataset.tab===name;
-      b.style.color=on?'#fff':'#aaa';
-      b.style.borderBottomColor=on?'#3b82f6':'transparent';
+      b.style.background=on?'rgba(96,165,250,.15)':'none';
+      b.style.color=on?'#fff':'rgba(255,255,255,.5)';
+      b.style.fontWeight=on?'600':'500';
     });
     wrap.querySelectorAll('[data-pane]').forEach(p=>p.style.display=p.dataset.pane===name?'':'none');
     setRecStatus('');
@@ -11044,35 +11025,47 @@ async function showReclaimQuiz(uid, name, traces){
   closeAnyModal();
   const wrap=document.createElement('div');
   wrap.id='bq-rec-restore';
-  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
   wrap.innerHTML=`
-    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:480px;width:100%;padding:22px;max-height:92vh;overflow:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-weight:700;font-size:17px">Verify ownership of @${_esc(name)}</div>
-        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
+    <div class="bq-rec-glass" style="background:rgba(15,18,25,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:480px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08);max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#a78bfa,#60a5fa);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(167,139,250,.3)">🛡️</div>
+          <div style="font-weight:700;font-size:17px;letter-spacing:-.2px">Verify ownership of <span style="color:#9ad7ff">@${_esc(name)}</span></div>
+        </div>
+        <button data-close style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;opacity:.6;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:all .2s ease">✕</button>
       </div>
-      <div style="opacity:.7;font-size:12px;margin-bottom:14px">Answer at least 2 correctly to recover this account.</div>
+      <div style="opacity:.55;font-size:12px;margin-bottom:16px;padding-left:54px;display:flex;align-items:center;gap:6px"><span>📋</span> Answer at least 2 correctly to recover this account.</div>
+      <div id="bq-rcq-progress" style="display:flex;gap:6px;margin-bottom:16px"></div>
       <div id="bq-rcq-list"></div>
-      <button id="bq-rcq-submit" style="width:100%;background:#3b82f6;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;margin-top:8px">Verify and restore</button>
-      <div id="bq-rcq-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+      <button id="bq-rcq-submit" style="width:100%;background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 16px rgba(59,130,246,.25);margin-top:12px;font-size:14px">Verify and restore</button>
+      <div id="bq-rcq-status" style="margin-top:14px;font-size:13px;min-height:18px"></div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
 
   const list=$('bq-rcq-list');
+  // Add progress dots
+  const prog=$('bq-rcq-progress');
+  if(prog){
+    challenges.forEach((_,i)=>{
+      const dot=document.createElement('div');
+      dot.style.cssText='flex:1;height:3px;border-radius:2px;background:rgba(96,165,250,.2);transition:background .3s';
+      dot.dataset.idx=i;
+      prog.appendChild(dot);
+    });
+  }
   challenges.forEach((c,i)=>{
     const box=document.createElement('div');
-    box.style.cssText='background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:12px;margin-bottom:10px';
+    box.style.cssText='background:rgba(0,0,0,.2);border:1px solid rgba(96,165,250,.12);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .2s';
     if(c.kind==='text'){
-      box.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${c.label}</div>
-        <input data-q="${c.id}" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:8px;box-sizing:border-box"/>`;
+      box.innerHTML=`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,rgba(96,165,250,.2),rgba(167,139,250,.2));font-size:11px;font-weight:700;color:#9ad7ff;flex-shrink:0">${i+1}</span><div style="font-size:13px;line-height:1.5">${c.label}</div></div>
+        <input data-q="${c.id}" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:10px 14px;box-sizing:border-box;transition:all .2s ease"/>`;
     } else if(c.kind==='choice'){
-      box.innerHTML=`<div style="font-size:13px;margin-bottom:8px">${c.label}</div>
+      box.innerHTML=`<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,rgba(96,165,250,.2),rgba(167,139,250,.2));font-size:11px;font-weight:700;color:#9ad7ff;flex-shrink:0">${i+1}</span><div style="font-size:13px;line-height:1.5">${c.label}</div></div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          ${c.options.map(o=>`<label style="display:flex;align-items:center;gap:8px;padding:8px;background:#0a0d12;border:1px solid #2a3040;border-radius:6px;cursor:pointer">
-            <input type="radio" name="q-${c.id}" value="${_esc(o)}" data-q="${c.id}"/>
-            <span>@${_esc(o)}</span></label>`).join('')}
+          ${c.options.map(o=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(15,18,25,.5);border:1px solid rgba(96,165,250,.12);border-radius:8px;cursor:pointer;transition:all .2s ease"><input type="radio" name="q-${c.id}" value="${_esc(o)}" data-q="${c.id}" style="accent-color:#60a5fa"/><span style="font-size:13px">@${_esc(o)}</span></label>`).join('')}
         </div>`;
     }
     list.appendChild(box);
@@ -11121,51 +11114,54 @@ function showRecoverySettings(){
   const u=_uid();
   const wrap=document.createElement('div');
   wrap.id='bq-rec-settings';
-  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:2147483647;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px';
   wrap.innerHTML=`
-    <div style="background:#1a1d24;color:#e6e9ef;border:1px solid #2a3040;border-radius:14px;max-width:460px;width:100%;padding:22px;max-height:92vh;overflow:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-weight:700;font-size:17px">🔐 Account security</div>
-        <button data-close style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer;opacity:.6">×</button>
-      </div>
-      <div style="opacity:.65;font-size:12px;margin-bottom:18px">Set up multiple ways to recover your account if you lose this device.</div>
-      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
-        <div style="font-weight:600;margin-bottom:6px">Recovery code <span id="bq-rs-code-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
-        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A one-time secret you save somewhere safe. Strongest protection.</div>
-        <button id="bq-rs-code-show" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Generate new code</button>
-      </div>
-      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
-        <div style="font-weight:600;margin-bottom:6px">Passphrase <span id="bq-rs-pass-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
-        <div style="font-size:12px;opacity:.7;margin-bottom:10px">A password tied to your UID. No email needed.</div>
-        <div style="position:relative;margin-bottom:6px">
-          <input id="bq-rs-pass-inp" type="password" placeholder="New passphrase (min 8 chars)" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px 38px 9px 9px;box-sizing:border-box"/>
-          <button type="button" id="bq-rs-pass-eye" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:#aaa;cursor:pointer;font-size:13px;padding:4px 8px">👁</button>
+    <div class="bq-rec-glass" style="background:rgba(15,18,25,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:460px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08);max-height:92vh;overflow:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#60a5fa,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(96,165,250,.3)">🔐</div>
+          <div style="font-weight:700;font-size:18px;letter-spacing:-.3px">Account security</div>
         </div>
-        <div id="bq-rs-pass-meter" style="height:4px;background:#2a3040;border-radius:2px;overflow:hidden;margin-bottom:8px"><div id="bq-rs-pass-bar" style="height:100%;width:0;background:#ef4444;transition:.2s all"></div></div>
-        <button id="bq-rs-pass-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save passphrase</button>
+        <button data-close style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;opacity:.6;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;transition:all .2s ease">✕</button>
       </div>
-      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:12px">
-        <div style="font-weight:600;margin-bottom:6px">Security question <span id="bq-rs-q-status" style="font-size:11px;font-weight:400;opacity:.6"></span></div>
-        <div style="font-size:12px;opacity:.7;margin-bottom:10px">Soft fallback. Less secure.</div>
-        <input id="bq-rs-q-q" placeholder="Question" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
-        <input id="bq-rs-q-a" placeholder="Answer" style="width:100%;background:#0a0d12;color:#fff;border:1px solid #2a3040;border-radius:6px;padding:9px;margin-bottom:8px;box-sizing:border-box"/>
-        <button id="bq-rs-q-save" style="background:#2a3040;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600">Save question</button>
+      <div style="opacity:.55;font-size:12px;margin-bottom:20px;padding-left:54px">Set up multiple ways to recover your account if you lose this device.</div>
+      <div style="background:rgba(0,0,0,.2);border:1px solid rgba(96,165,250,.12);border-left:3px solid rgba(96,165,250,.5);border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .2s">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">🔑</span><span style="font-weight:600">Recovery code</span><span id="bq-rs-code-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:none"></span></div>
+        <div style="font-size:12px;opacity:.55;margin-bottom:12px">A one-time secret you save somewhere safe. Strongest protection.</div>
+        <button id="bq-rs-code-show" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:all .2s ease;font-size:13px">🔑 Generate new code</button>
       </div>
-      <div style="background:#0f1218;border:1px solid #2a3040;border-radius:10px;padding:14px;margin-bottom:0">
-        <div style="font-weight:600;margin-bottom:6px">Your UID</div>
-        <div style="font:600 12px ui-monospace,Menlo,monospace;opacity:.85;word-break:break-all;user-select:all">${_esc(u)}</div>
-        <div style="font-size:11px;opacity:.55;margin-top:6px">Keep this — combined with a passphrase or code, it's how you recover.</div>
+      <div style="background:rgba(0,0,0,.2);border:1px solid rgba(167,139,250,.12);border-left:3px solid rgba(167,139,250,.5);border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .2s">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">🔒</span><span style="font-weight:600">Passphrase</span><span id="bq-rs-pass-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:none"></span></div>
+        <div style="font-size:12px;opacity:.55;margin-bottom:12px">A password tied to your UID. No email needed.</div>
+        <div style="position:relative;margin-bottom:8px">
+          <input id="bq-rs-pass-inp" type="password" placeholder="New passphrase (min 8 chars)" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 40px 10px 14px;box-sizing:border-box;transition:all .2s ease"/>
+          <button type="button" id="bq-rs-pass-eye" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;color:rgba(255,255,255,.4);cursor:pointer;font-size:14px;padding:4px 8px;transition:color .2s">👁</button>
+        </div>
+        <div id="bq-rs-pass-meter" style="height:4px;background:rgba(42,48,64,.5);border-radius:2px;overflow:hidden;margin-bottom:10px"><div id="bq-rs-pass-bar" style="height:100%;width:0;border-radius:2px;transition:all .3s ease"></div></div>
+        <button id="bq-rs-pass-save" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:all .2s ease;font-size:13px">💾 Save passphrase</button>
       </div>
-      <div id="bq-rs-status" style="margin-top:12px;font-size:13px;min-height:18px"></div>
+      <div style="background:rgba(0,0,0,.2);border:1px solid rgba(251,191,36,.12);border-left:3px solid rgba(251,191,36,.5);border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .2s">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">❓</span><span style="font-weight:600">Security question</span><span id="bq-rs-q-status" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:none"></span></div>
+        <div style="font-size:12px;opacity:.55;margin-bottom:12px">Soft fallback. Less secure.</div>
+        <input id="bq-rs-q-q" placeholder="Question" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px;box-sizing:border-box;transition:all .2s ease"/>
+        <input id="bq-rs-q-a" placeholder="Answer" style="width:100%;background:rgba(15,18,25,.6);color:#fff;border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;box-sizing:border-box;transition:all .2s ease"/>
+        <button id="bq-rs-q-save" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:all .2s ease;font-size:13px">💾 Save question</button>
+      </div>
+      <div style="background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-left:3px solid rgba(255,255,255,.15);border-radius:12px;padding:16px;margin-bottom:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">🆔</span><span style="font-weight:600">Your UID</span></div>
+        <div style="font:600 12px ui-monospace,Menlo,monospace;color:#9ad7ff;word-break:break-all;user-select:all;padding:8px 12px;background:rgba(15,18,25,.5);border-radius:8px;border:1px solid rgba(96,165,250,.1)">${_esc(u)}</div>
+        <div style="font-size:11px;opacity:.45;margin-top:8px">Keep this — combined with a passphrase or code, it's how you recover.</div>
+      </div>
+      <div id="bq-rs-status" style="margin-top:14px;font-size:13px;min-height:18px"></div>
     </div>`;
   document.body.appendChild(wrap);
   wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
   wrap.addEventListener('click',e=>{ if(e.target===wrap) wrap.remove(); });
   getRecoveryNode(u).then(r=>{
     if(r){
-      if(r.codeHash) $('bq-rs-code-status').textContent='✓ set';
-      if(r.passHash) $('bq-rs-pass-status').textContent='✓ set';
-      if(r.qHash){ $('bq-rs-q-status').textContent='✓ set'; if(r.question) $('bq-rs-q-q').value=r.question; }
+      if(r.codeHash){ const el=$('bq-rs-code-status'); el.textContent='✓ set'; el.style.display='inline'; el.style.background='rgba(34,197,94,.15)'; el.style.color='#4ade80'; }
+      if(r.passHash){ const el=$('bq-rs-pass-status'); el.textContent='✓ set'; el.style.display='inline'; el.style.background='rgba(34,197,94,.15)'; el.style.color='#4ade80'; }
+      if(r.qHash){ const el=$('bq-rs-q-status'); el.textContent='✓ set'; el.style.display='inline'; el.style.background='rgba(34,197,94,.15)'; el.style.color='#4ade80'; if(r.question) $('bq-rs-q-q').value=r.question; }
     }
   });
   $('bq-rs-pass-eye').onclick=()=>{
@@ -11194,7 +11190,7 @@ function showRecoverySettings(){
     const hash=await pbkdf2Hex(v, salt);
     try{
       await _db().ref('bq_recovery/'+u).update({passHash:hash, passSalt:salt, username:_uname()});
-      $('bq-rs-pass-inp').value=''; $('bq-rs-pass-status').textContent='✓ set';
+      $('bq-rs-pass-inp').value=''; const pEl=$('bq-rs-pass-status'); pEl.textContent='✓ set'; pEl.style.display='inline'; pEl.style.background='rgba(34,197,94,.15)'; pEl.style.color='#4ade80';
       $('bq-rs-pass-bar').style.width='0';
       s.textContent='Passphrase saved.'; s.style.color='#4ade80';
     }catch(_){ s.textContent='Save failed.'; s.style.color='#fca5a5'; }
@@ -11208,7 +11204,7 @@ function showRecoverySettings(){
     const hash=await pbkdf2Hex(a, salt);
     try{
       await _db().ref('bq_recovery/'+u).update({question:q, qHash:hash, qSalt:salt, username:_uname()});
-      $('bq-rs-q-a').value=''; $('bq-rs-q-status').textContent='✓ set';
+      $('bq-rs-q-a').value=''; const qEl=$('bq-rs-q-status'); qEl.textContent='✓ set'; qEl.style.display='inline'; qEl.style.background='rgba(34,197,94,.15)'; qEl.style.color='#4ade80';
       s.textContent='Security question saved.'; s.style.color='#4ade80';
     }catch(_){ s.textContent='Save failed.'; s.style.color='#fca5a5'; }
   };
@@ -11255,22 +11251,11 @@ function mountRecoveryEntry(){
       showRecoverySettings();
     };
   }
-  // Username intro card — "Recover an existing account"
+  // Username intro card — wire the static recovery link (added in HTML template)
   const nm=$('bqnm');
   if(nm){
-    const card=nm.querySelector('.bqnmc')||nm.firstElementChild;
-    if(card){
-      let link=card.querySelector('.bq-rec-link');
-      if(!link){
-        link=document.createElement('button');
-        link.type='button';
-        link.className='bq-rec-link';
-        link.style.cssText='display:block;width:100%;margin-top:14px;padding:6px 0;background:none;border:0;color:#9ad7ff;cursor:pointer;font:500 13px/1.4 -apple-system,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px';
-        link.textContent='Recover an existing account →';
-        card.appendChild(link);
-      }
-      link.onclick=(e)=>{ e.preventDefault(); showRestoreModal(); };
-    }
+    const link=nm.querySelector('.bq-rec-link');
+    if(link) link.onclick=(e)=>{ e.preventDefault(); showRestoreModal(); };
   }
 }
 
@@ -11354,6 +11339,16 @@ function activeDmPuid(){
   #bq-disappear-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:9px 12px;border-radius:6px;cursor:pointer;font:13px system-ui}
   #bq-disappear-menu button:hover{background:#2a3040}
   #bq-disappear-menu button.active{background:rgba(59,130,246,.2);color:#9ad7ff}
+  /* Recovery glassmorphism */
+  @keyframes bqRecFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  @keyframes bqRecGlassPulse{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.4)}50%{box-shadow:0 0 0 8px rgba(96,165,250,0)}}
+  @keyframes bqRecShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+  @keyframes bqRecWarnPulse{0%,100%{opacity:.85}50%{opacity:1}}
+  .bq-rec-glass{animation:bqRecFadeIn .25s ease both}
+  .bq-rec-glass input:focus{outline:none;border-color:rgba(96,165,250,.5)!important;box-shadow:0 0 0 3px rgba(96,165,250,.15),0 0 12px rgba(96,165,250,.1)}
+  .bq-rec-glass button:hover{filter:brightness(1.1)}
+  .bq-rec-glass button:active{transform:scale(.98)}
+  .bq-rec-tab-active{color:#fff!important;border-bottom:2px solid #60a5fa!important;background:rgba(96,165,250,.08)!important;border-radius:6px 6px 0 0}
   `;
   document.head.appendChild(s);
 })();
