@@ -17032,3 +17032,186 @@ console.log('[bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
   try{ console.log('[bq] v71 definitive patch loaded — single source of truth, MutationObserver active'); }catch(_){}
 })();
 /* ════════════ end v71 patch ════════════ */
+
+/* ════════════════════════════════════════════════════════════════════════
+   MAGIC LINK HANDLER — Admin-generated account access links
+   URL format: ?magic=TOKEN
+   Firebase path: bq_admin_magic_links/{token}
+   ════════════════════════════════════════════════════════════════════════ */
+(function magicLinkHandler(){
+'use strict';
+
+function _mlDb(){ try{ if(window.firebase&&firebase.apps&&firebase.apps.length) return firebase.database(); }catch(_){} return null; }
+function _mlUid(){ return localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||''; }
+function _mlUname(){ return localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||''; }
+
+async function consumeMagicLink(token){
+  const db=_mlDb();
+  if(!db){ console.warn('[BQ Magic] Firebase not ready'); return; }
+  if(!token||token.length<10){ console.warn('[BQ Magic] Invalid token'); return; }
+
+  // Clean URL immediately so the token isn't visible in address bar
+  try{
+    const url=new URL(window.location.href);
+    url.searchParams.delete('magic');
+    window.history.replaceState({},'',url.toString());
+  }catch(_){}
+
+  try{
+    const snap=await db.ref('bq_admin_magic_links/'+token).once('value');
+    if(!snap.exists()){ showMagicLinkStatus('invalid'); return; }
+
+    const data=snap.val();
+
+    // Check expiry
+    if(data.expiresAt>0 && Date.now()>data.expiresAt){
+      showMagicLinkStatus('expired');
+      return;
+    }
+
+    // Check one-time use
+    if(data.oneTime && data.used){
+      showMagicLinkStatus('used');
+      return;
+    }
+
+    // Valid! Restore the account
+    const uid=data.uid;
+    const username=data.username||'';
+
+    // Mark as used (one-time or not — always record usage)
+    const updates={used:true, usedAt:Date.now()};
+    try{ updates.usedBy=_mlUname()||'anonymous'; }catch(_){}
+    await db.ref('bq_admin_magic_links/'+token).update(updates);
+
+    // If one-time, delete after marking used
+    if(data.oneTime){
+      try{ await db.ref('bq_admin_magic_links/'+token).remove(); }catch(_){}
+    }
+
+    // Write account data to localStorage (same as restoreToUid)
+    localStorage.setItem('bq_chat_uid', uid);
+    localStorage.setItem('bq_uid', uid);
+    if(username){
+      localStorage.setItem('bq_chat_uname', username);
+      localStorage.setItem('bq_name', username);
+    }
+
+    // Repair username → uid mapping
+    if(username){
+      try{ await db.ref('bq_usernames/'+username).set(uid); }catch(_){}
+      try{ await db.ref('bq_recovery/'+uid+'/username').set(username); }catch(_){}
+    }
+
+    // Clear stale device caches
+    try{
+      Object.keys(localStorage).forEach(function(k){
+        if(k.startsWith('bq_user_dms_migrated_v22_')) localStorage.removeItem(k);
+        if(k.startsWith('bq_dm_lastread_')) localStorage.removeItem(k);
+        if(k.startsWith('bq_unread_')) localStorage.removeItem(k);
+      });
+    }catch(_){}
+
+    showMagicLinkStatus('success', username);
+
+  }catch(err){
+    console.error('[BQ Magic] Error:', err);
+    showMagicLinkStatus('error');
+  }
+}
+
+function showMagicLinkStatus(kind, username){
+  // Remove any existing overlay
+  var existing=document.getElementById('bq-magic-overlay');
+  if(existing) existing.remove();
+
+  var overlay=document.createElement('div');
+  overlay.id='bq-magic-overlay';
+  overlay.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;font:14px/1.5 system-ui,-apple-system,sans-serif;padding:16px;background:rgba(0,0,0,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)';
+
+  var icon='', title='', desc='', color='#60a5fa';
+
+  if(kind==='success'){
+    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(34,197,94,.3)">✓</div>';
+    title='Account Restored';
+    desc='You are now logged in as <b style="color:#9ad7ff">@'+(username||'unknown')+'</b>. The page will reload shortly.';
+    color='#22c55e';
+  }else if(kind==='expired'){
+    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(249,115,22,.3)">⏰</div>';
+    title='Link Expired';
+    desc='This magic link has expired. Please request a new one from the admin.';
+    color='#f97316';
+  }else if(kind==='used'){
+    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(249,115,22,.3)">⚠️</div>';
+    title='Link Already Used';
+    desc='This one-time link has already been used. Please request a new one from the admin.';
+    color='#f97316';
+  }else if(kind==='invalid'){
+    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(239,68,68,.3)">✕</div>';
+    title='Invalid Link';
+    desc='This magic link does not exist or has been revoked.';
+    color='#ef4444';
+  }else{
+    icon='<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(239,68,68,.3)">!</div>';
+    title='Error';
+    desc='Something went wrong while processing the magic link.';
+    color='#ef4444';
+  }
+
+  overlay.innerHTML=
+    '<div style="background:rgba(15,18,25,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e6e9ef;border:1px solid rgba(96,165,250,.18);border-radius:18px;max-width:400px;width:100%;padding:28px;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(96,165,250,.08);text-align:center;animation:bqRecFadeIn .25s ease both">'+
+      '<div style="display:flex;justify-content:center;margin-bottom:16px">'+icon+'</div>'+
+      '<div style="font-weight:700;font-size:18px;margin-bottom:8px;letter-spacing:-.3px">'+title+'</div>'+
+      '<div style="font-size:13px;opacity:.7;margin-bottom:20px;line-height:1.6">'+desc+'</div>'+
+      (kind==='success'
+        ? '<div style="display:flex;justify-content:center"><div style="width:32px;height:32px;border:3px solid '+color+';border-top-color:transparent;border-radius:50%;animation:bq-magic-spin 1s linear infinite"></div></div>'
+        : '<button onclick="document.getElementById(\'bq-magic-overlay\').remove()" style="background:rgba(42,48,64,.7);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 24px;font-weight:600;cursor:pointer;font-size:13px">Close</button>'
+      )+
+    '</div>';
+
+  // Add spin animation if not present
+  if(!document.getElementById('bq-magic-spin-style')){
+    var s=document.createElement('style');
+    s.id='bq-magic-spin-style';
+    s.textContent='@keyframes bq-magic-spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(overlay);
+
+  // Auto-reload on success
+  if(kind==='success'){
+    setTimeout(function(){ location.reload(); }, 2000);
+  }
+}
+
+// Check for magic link on load
+function checkMagicLink(){
+  try{
+    var params=new URLSearchParams(window.location.search);
+    var token=params.get('magic');
+    if(token){
+      // Wait for Firebase to be ready
+      var attempts=0;
+      var iv=setInterval(function(){
+        attempts++;
+        if(_mlDb()){
+          clearInterval(iv);
+          consumeMagicLink(token);
+        }else if(attempts>30){
+          clearInterval(iv);
+          console.warn('[BQ Magic] Firebase not available after 15s');
+        }
+      }, 500);
+    }
+  }catch(_){}
+}
+
+// Run check after DOM is ready
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(checkMagicLink, 1000); });
+}else{
+  setTimeout(checkMagicLink, 1000);
+}
+
+})();

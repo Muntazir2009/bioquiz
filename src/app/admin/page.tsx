@@ -23,6 +23,7 @@ import {
   ShieldAlert, ShieldX, Timer, Hourglass, UserX, UserCheck,
   Gavel, AlertCircle, Search as SearchIcon,
   Play, Pause, ArrowDown, Volume2, PieChart as PieChartIcon,
+  RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils-client";
@@ -370,6 +371,16 @@ export default function AdminPage() {
   const [fbHealthStatus, setFbHealthStatus] = useState<"checking" | "healthy" | "degraded" | "down">("checking");
   const [fbDiagResults, setFbDiagResults] = useState<Record<string, {ok: boolean; ms: number; error?: string}> | null>(null);
   const [fbDiagRunning, setFbDiagRunning] = useState(false);
+
+  // Magic Link (Account Access)
+  const [magicLinkUsername, setMagicLinkUsername] = useState("");
+  const [magicLinkExpiry, setMagicLinkExpiry] = useState<number>(24); // hours
+  const [magicLinkOneTime, setMagicLinkOneTime] = useState(true);
+  const [magicLinkGenerating, setMagicLinkGenerating] = useState(false);
+  const [magicLinkGenerated, setMagicLinkGenerated] = useState<string | null>(null);
+  const [magicLinkError, setMagicLinkError] = useState("");
+  const [magicLinkHistory, setMagicLinkHistory] = useState<{token: string; username: string; createdAt: number; expiresAt: number; oneTime: boolean; used: boolean; usedBy?: string; usedAt?: number}[]>([]);
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
 
   // Action message helper (must be before useCallback hooks that use it)
   const showActionMsg = useCallback((msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(""), 3000); }, []);
@@ -1046,6 +1057,12 @@ export default function AdminPage() {
     return () => clearInterval(interval);
   }, [isAuthed, measureFbLatency]);
 
+  // Load magic link history when security section is active
+  useEffect(() => {
+    if (!isAuthed || section !== "security") return;
+    loadMagicLinkHistory();
+  }, [isAuthed, section, loadMagicLinkHistory]);
+
   // ─── Chat Export ──────────────────────────────────────────────────────────
 
   const exportChat = useCallback((msgs: ChatMessage[], filename: string) => {
@@ -1148,6 +1165,105 @@ export default function AdminPage() {
     setPasswordMsg("Password updated locally"); sessionStorage.setItem("admin-auth", newPassword); setPassword(newPassword);
     setNewPassword(""); setConfirmPassword(""); setTimeout(() => setPasswordMsg(""), 3000);
   }, [newPassword, confirmPassword]);
+
+  // ─── Magic Link Generation ──────────────────────────────────────────────────
+
+  const generateMagicLink = useCallback(async () => {
+    if (!magicLinkUsername.trim()) { setMagicLinkError("Enter a username"); return; }
+    setMagicLinkGenerating(true); setMagicLinkError(""); setMagicLinkGenerated(null);
+    try {
+      const db = getFirebaseDb();
+      const name = magicLinkUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+      if (!name) { setMagicLinkError("Invalid username"); setMagicLinkGenerating(false); return; }
+
+      // Look up UID from bq_usernames
+      const uidSnap = await get(ref(db, `bq_usernames/${name}`));
+      if (!uidSnap.exists()) { setMagicLinkError(`@${name} not found in registry`); setMagicLinkGenerating(false); return; }
+      const uid = uidSnap.val();
+
+      // Generate a secure random token (32 bytes = 64 hex chars)
+      const tokenBytes = new Uint8Array(32);
+      crypto.getRandomValues(tokenBytes);
+      const token = Array.from(tokenBytes, b => b.toString(16).padStart(2, "0")).join("");
+
+      const now = Date.now();
+      const expiresAt = magicLinkExpiry > 0 ? now + magicLinkExpiry * 3600000 : 0; // 0 = never expires
+
+      const linkData = {
+        uid,
+        username: name,
+        createdAt: now,
+        expiresAt,
+        oneTime: magicLinkOneTime,
+        used: false,
+        adminCreated: true,
+      };
+
+      // Store in Firebase
+      await set(ref(db, `bq_admin_magic_links/${token}`), linkData);
+
+      // Build the magic URL
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const magicUrl = `${baseUrl}/?magic=${token}`;
+
+      setMagicLinkGenerated(magicUrl);
+
+      // Refresh history
+      loadMagicLinkHistory();
+    } catch (err) {
+      setMagicLinkError("Failed to generate link: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setMagicLinkGenerating(false);
+    }
+  }, [magicLinkUsername, magicLinkExpiry, magicLinkOneTime]);
+
+  const loadMagicLinkHistory = useCallback(async () => {
+    setMagicLinkLoading(true);
+    try {
+      const db = getFirebaseDb();
+      const snap = await get(ref(db, "bq_admin_magic_links"));
+      if (!snap.exists()) { setMagicLinkHistory([]); setMagicLinkLoading(false); return; }
+      const links: typeof magicLinkHistory = [];
+      snap.forEach((child) => {
+        const v = child.val();
+        links.push({
+          token: child.key || "",
+          username: v.username || "?",
+          createdAt: v.createdAt || 0,
+          expiresAt: v.expiresAt || 0,
+          oneTime: v.oneTime ?? true,
+          used: v.used ?? false,
+          usedBy: v.usedBy,
+          usedAt: v.usedAt,
+        });
+      });
+      // Sort newest first
+      links.sort((a, b) => b.createdAt - a.createdAt);
+      setMagicLinkHistory(links);
+    } catch {
+      setMagicLinkHistory([]);
+    } finally {
+      setMagicLinkLoading(false);
+    }
+  }, []);
+
+  const revokeMagicLink = useCallback(async (token: string) => {
+    try {
+      const db = getFirebaseDb();
+      await remove(ref(db, `bq_admin_magic_links/${token}`));
+      loadMagicLinkHistory();
+      showActionMsg("Magic link revoked");
+    } catch { /* ignore */ }
+  }, [loadMagicLinkHistory, showActionMsg]);
+
+  const revokeAllMagicLinks = useCallback(async () => {
+    try {
+      const db = getFirebaseDb();
+      await remove(ref(db, "bq_admin_magic_links"));
+      setMagicLinkHistory([]);
+      showActionMsg("All magic links revoked");
+    } catch { /* ignore */ }
+  }, [showActionMsg]);
 
   // ─── Filtered files ──────────────────────────────────────────────────────
 
@@ -2480,19 +2596,128 @@ export default function AdminPage() {
 
               {/* ─── SECURITY ──────────────────────────────────────────── */}
               {section === "security" && (
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center gap-2 mb-5"><Lock className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Security</h2></div>
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs text-muted-foreground">Admin Password Change</span>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPasswordMsg(""); }} placeholder="New password" className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
-                        <input type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordMsg(""); }} placeholder="Confirm password" className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
-                        <button onClick={handlePasswordChange} className="flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 shrink-0"><Save className="h-3.5 w-3.5" />Save</button>
+                <div className="flex flex-col gap-6">
+                  {/* Password & Session */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-5"><Lock className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Security</h2></div>
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-xs text-muted-foreground">Admin Password Change</span>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPasswordMsg(""); }} placeholder="New password" className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+                          <input type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordMsg(""); }} placeholder="Confirm password" className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+                          <button onClick={handlePasswordChange} className="flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 shrink-0"><Save className="h-3.5 w-3.5" />Save</button>
+                        </div>
+                        {passwordMsg && <p className={`text-xs ${passwordMsg.includes("not match") ? "text-red-500" : "text-green-500"}`}>{passwordMsg}</p>}
                       </div>
-                      {passwordMsg && <p className={`text-xs ${passwordMsg.includes("not match") ? "text-red-500" : "text-green-500"}`}>{passwordMsg}</p>}
+                      <div className="flex flex-col gap-1.5"><span className="text-xs text-muted-foreground">Session Timeout</span><select value={sessionTimeout} onChange={(e) => setSessionTimeout(e.target.value)} className="h-9 w-full max-w-xs rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30"><option value="1h">1 Hour</option><option value="6h">6 Hours</option><option value="24h">24 Hours</option><option value="never">Never</option></select></div>
                     </div>
-                    <div className="flex flex-col gap-1.5"><span className="text-xs text-muted-foreground">Session Timeout</span><select value={sessionTimeout} onChange={(e) => setSessionTimeout(e.target.value)} className="h-9 w-full max-w-xs rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30"><option value="1h">1 Hour</option><option value="6h">6 Hours</option><option value="24h">24 Hours</option><option value="never">Never</option></select></div>
+                  </div>
+
+                  {/* ─── Magic Link Generator ─── */}
+                  <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.02] p-6">
+                    <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-purple-500" /><h2 className="text-sm font-semibold">Account Access Links</h2></div>
+                    <p className="text-[10px] text-muted-foreground mb-5">Generate magic links that instantly log into any account. These bypass all security — use with extreme caution.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex flex-col gap-1.5 md:col-span-1">
+                        <span className="text-xs text-muted-foreground">Username</span>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">@</span>
+                          <input type="text" value={magicLinkUsername} onChange={(e) => { setMagicLinkUsername(e.target.value); setMagicLinkError(""); setMagicLinkGenerated(null); }} placeholder="username" className="h-9 w-full rounded-lg border border-border bg-background pl-7 pr-3 text-sm outline-none focus:border-purple-500/40" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs text-muted-foreground">Link Expiry</span>
+                        <select value={magicLinkExpiry} onChange={(e) => setMagicLinkExpiry(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-purple-500/40">
+                          <option value={1}>1 Hour</option>
+                          <option value={6}>6 Hours</option>
+                          <option value={24}>24 Hours</option>
+                          <option value={72}>3 Days</option>
+                          <option value={168}>7 Days</option>
+                          <option value={0}>Never</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs text-muted-foreground">One-time Use</span>
+                        <div className="flex items-center gap-2 h-9">
+                          <ToggleSwitch value={magicLinkOneTime} onChange={setMagicLinkOneTime} />
+                          <span className="text-[10px] text-muted-foreground">{magicLinkOneTime ? "Expires after first use" : "Reusable until expiry"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-4">
+                      <button onClick={generateMagicLink} disabled={magicLinkGenerating || !magicLinkUsername.trim()} className="flex items-center justify-center gap-1.5 h-9 px-5 rounded-lg bg-purple-600 text-white text-xs font-medium transition-all hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                        {magicLinkGenerating ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Generating...</> : <><Zap className="h-3.5 w-3.5" />Generate Link</>}
+                      </button>
+                    </div>
+
+                    {magicLinkError && <p className="text-xs text-red-500 mt-3">{magicLinkError}</p>}
+
+                    {/* Generated Link Display */}
+                    {magicLinkGenerated && (
+                      <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-4 animate-[fade-up_0.2s_ease_both]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ShieldCheck className="h-4 w-4 text-green-500" />
+                          <span className="text-xs font-medium text-green-500">Magic Link Generated</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="text" readOnly value={magicLinkGenerated} className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs font-mono outline-none select-all" onClick={(e) => (e.target as HTMLInputElement).select()} />
+                          <button onClick={() => { navigator.clipboard.writeText(magicLinkGenerated); showActionMsg("Link copied!"); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 shrink-0"><Copy className="h-3.5 w-3.5" />Copy</button>
+                          <button onClick={() => { window.open(magicLinkGenerated, "_blank"); }} className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 shrink-0"><Play className="h-3.5 w-3.5" />Open</button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">⚠️ This link grants full access to @{magicLinkUsername.trim().toLowerCase()} — share carefully.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ─── Active Links ─── */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2"><Hash className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Active Magic Links</h2></div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={loadMagicLinkHistory} className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-border text-[10px] text-muted-foreground transition-colors hover:bg-foreground/5"><RefreshCw className={`h-3 w-3 ${magicLinkLoading ? "animate-spin" : ""}`} />Refresh</button>
+                        {magicLinkHistory.length > 0 && (
+                          <button onClick={revokeAllMagicLinks} className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-red-500/20 text-[10px] text-red-500 transition-colors hover:bg-red-500/10"><Trash2 className="h-3 w-3" />Revoke All</button>
+                        )}
+                      </div>
+                    </div>
+                    {magicLinkHistory.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-8">No magic links generated yet</p>
+                    ) : (
+                      <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
+                        {magicLinkHistory.map((link) => {
+                          const isExpired = link.expiresAt > 0 && Date.now() > link.expiresAt;
+                          const isDead = isExpired || (link.oneTime && link.used);
+                          return (
+                            <div key={link.token} className={`flex items-center gap-3 px-2 py-3 transition-colors ${isDead ? "opacity-50" : ""}`}>
+                              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold" style={{ background: isDead ? "oklch(0.5 0 0 / 10%)" : "oklch(0.7 0.18 300 / 15%)", color: isDead ? "oklch(0.5 0 0)" : "oklch(0.7 0.18 300)" }}>
+                                {link.oneTime ? <Hash className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium">@{link.username}</span>
+                                  {link.used && <span className="rounded bg-foreground/10 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">USED{link.usedBy ? ` by ${link.usedBy}` : ""}</span>}
+                                  {isExpired && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">EXPIRED</span>}
+                                  {!isDead && <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[9px] font-medium text-green-500">ACTIVE</span>}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Created {new Date(link.createdAt).toLocaleString()}
+                                  {link.expiresAt > 0 ? ` · Expires ${new Date(link.expiresAt).toLocaleString()}` : " · Never expires"}
+                                  {link.oneTime ? " · One-time" : " · Reusable"}
+                                  {link.usedAt ? ` · Used ${new Date(link.usedAt).toLocaleString()}` : ""}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => { const url = `${window.location.origin}/?magic=${link.token}`; navigator.clipboard.writeText(url); showActionMsg("Link copied!"); }} className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-foreground/5 hover:text-foreground" title="Copy link"><Copy className="h-3 w-3" /></button>
+                                <button onClick={() => revokeMagicLink(link.token)} className="grid h-7 w-7 place-items-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500" title="Revoke"><Trash2 className="h-3 w-3" /></button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -3166,6 +3391,7 @@ export default function AdminPage() {
                             <button onClick={() => setMuteDialogUid(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20"><VolumeX className="h-3.5 w-3.5" />Mute</button>
                             <button onClick={() => setBanDialogUid(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Ban className="h-3.5 w-3.5" />Ban</button>
                             <button onClick={() => kickUser(uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><UserX className="h-3.5 w-3.5" />Kick</button>
+                            <button onClick={async () => { setMagicLinkUsername(userName); setSection("security"); }} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-purple-500 text-xs font-medium transition-colors hover:bg-purple-500/10 border border-purple-500/20"><Zap className="h-3.5 w-3.5" />Magic Link</button>
                           </div>
                         </div>
 
