@@ -23,7 +23,6 @@ import {
   ShieldAlert, ShieldX, Timer, Hourglass, UserX, UserCheck,
   Gavel, AlertCircle, Search as SearchIcon,
   Play, Pause, ArrowDown, Volume2, PieChart as PieChartIcon,
-  RotateCcw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils-client";
@@ -1057,12 +1056,6 @@ export default function AdminPage() {
     return () => clearInterval(interval);
   }, [isAuthed, measureFbLatency]);
 
-  // Load magic link history when security section is active
-  useEffect(() => {
-    if (!isAuthed || section !== "security") return;
-    loadMagicLinkHistory();
-  }, [isAuthed, section, loadMagicLinkHistory]);
-
   // ─── Chat Export ──────────────────────────────────────────────────────────
 
   const exportChat = useCallback((msgs: ChatMessage[], filename: string) => {
@@ -1264,6 +1257,12 @@ export default function AdminPage() {
       showActionMsg("All magic links revoked");
     } catch { /* ignore */ }
   }, [showActionMsg]);
+
+  // Load magic link history when security section is active
+  useEffect(() => {
+    if (!isAuthed || section !== "security") return;
+    loadMagicLinkHistory();
+  }, [isAuthed, section, loadMagicLinkHistory]);
 
   // ─── Filtered files ──────────────────────────────────────────────────────
 
