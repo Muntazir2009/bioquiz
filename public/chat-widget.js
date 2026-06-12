@@ -3477,6 +3477,8 @@ let gAtBot    = true;
 let dAtBot    = true;
 let gLastU=null, gLastT=0;
 let dLastU=null, dLastT=0;
+let _bqDelSuppressUntil=0; // timestamp: suppress child_added ghosts after deletion
+window._bqDelSuppressUntil = 0;
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3828,7 +3830,10 @@ function showDmConvo(pUid, pName) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
     ref.on('child_added', s => renderMsg('dm', s.val(), s.key));
     ref.on('child_changed', s => onMsgChanged('dm', s));
-    ref.on('child_removed', s => document.getElementById('bqmsg-dm-' + s.key)?.remove());
+    ref.on('child_removed', s => {
+      document.getElementById('bqmsg-dm-' + s.key)?.remove();
+      _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+    });
     dmListeners[activeDmId] = ref;
   }
   
@@ -4651,7 +4656,10 @@ function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
   ref.on('child_added',s=>renderMsg('global',s.val(),s.key));
   ref.on('child_changed',s=>onMsgChanged('global',s));
-  ref.on('child_removed',s=>document.getElementById('bqmsg-global-'+s.key)?.remove());
+  ref.on('child_removed',s=>{
+    document.getElementById('bqmsg-global-'+s.key)?.remove();
+    _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+  });
 }
 
 function subscribeGlobalTyping(){
@@ -5680,6 +5688,16 @@ function renderMsg(ctx,msg,key){
   const pfx='bqmsg-'+ctx+'-';
   if (document.getElementById(pfx + key)) return;
 
+  // ── GHOST FIX: After deleting a message, limitToLast causes Firebase to
+  // fire child_added for an older message that now enters the window.
+  // Suppress these ghost renders for 600ms after any deletion.
+  // Only suppress messages that are NOT brand new (<3s old).
+  var _supUntil = typeof window._bqDelSuppressUntil!=='undefined' ? window._bqDelSuppressUntil : _bqDelSuppressUntil;
+  if(_supUntil && Date.now() < _supUntil){
+    var msgAge = Date.now() - (msg.ts||0);
+    if(msgAge > 3000) return; // old message = ghost from limitToLast shift
+  }
+
   if(msg.type==='system'){
     if(document.getElementById(pfx+key)) return; // dedup
     const d=document.createElement('div');d.id=pfx+key;d.className='bqsys';d.textContent=msg.text;
@@ -5988,6 +6006,7 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     if(msg.uid!==uid)return;
     const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
     document.getElementById(pfx+key)?.remove();
+    _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
     db.ref(p).remove();
   }
   else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
@@ -10324,6 +10343,7 @@ function wireDeleteForEveryone(){
     if(!ctx||!key) return;
     const path=(ctx==='global'?'bq_messages/':'bq_dms/'+(window.__bqActiveDm?.id||'')+'/messages/')+key;
     if(!confirm('Delete this message for everyone?')) return;
+    window._bqDelSuppressUntil=Date.now()+600;
     _db()?.ref(path).update({deleted:true, deletedAt:Date.now(), text:''}).then(()=>_toast('Deleted'));
     document.getElementById('bq-msg-sheet')?.remove();
   }, true);
@@ -15714,6 +15734,7 @@ if(document.readyState === 'loading'){
     var chip = e.target.closest('.bqrp');
     if(!chip) return;
     e.stopPropagation();
+    e.preventDefault();
 
     var row = chip.closest('.bqr');
     if(!row) return;
@@ -15727,10 +15748,36 @@ if(document.readyState === 'loading'){
 
     var targetId = 'bqmsg-' + ctx + '-' + replyKey;
     var target = document.getElementById(targetId);
-    if(!target) return;
-    try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+
+    if(!target){
+      // Target message not in DOM (outside loaded window)
+      // Show a brief toast and flash the chip instead
+      chip.style.transition = 'background .15s ease';
+      chip.style.background = 'rgba(96,165,250,.18)';
+      setTimeout(function(){ chip.style.background = ''; }, 800);
+      if(typeof _toast === 'function') _toast('Original message not loaded');
+      else if(typeof window.toast === 'function') window.toast('Original message not loaded');
+      return;
+    }
+
+    // Scroll to the target message
+    try{
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+    }catch(_){}
+
+    // Highlight with animation - remove any existing highlight first
+    document.querySelectorAll('.bq-rp-hl').forEach(function(el){
+      el.classList.remove('bq-rp-hl');
+    });
+
+    // Force reflow for re-animation
+    void target.offsetWidth;
     target.classList.add('bq-rp-hl');
-    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 1700);
+
+    // Clear highlight after animation
+    setTimeout(function(){
+      target.classList.remove('bq-rp-hl');
+    }, 2000);
   }
 
   /* ──────────────────────────────────────────────────────────────────────
@@ -16188,10 +16235,11 @@ v64Style.textContent = [
   '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
 
   /* ── Reply chip highlight animation ── */
-  '.bq-rp-hl .bqbbl{',
-  '  box-shadow:0 0 0 2px rgba(96,165,250,.5),0 0 20px rgba(96,165,250,.15)!important;',
-  '  transition:box-shadow .3s ease!important;',
+  '@keyframes bqV45ReplyHL{',
+  '  0%,100%{box-shadow:0 0 0 0 transparent;}',
+  '  10%,85%{box-shadow:0 0 0 3px rgba(96,165,250,.5),0 0 18px rgba(96,165,250,.2);}',
   '}',
+  '.bqr.bq-rp-hl .bqbbl{animation:bqV45ReplyHL 2s ease!important;}',
 
   /* ── Swipe indicator badge ── */
   '.bq-wa-badge{',
