@@ -1039,8 +1039,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqp.bq-theme-wadark .bq-msg-inline .bq-ms-btn{background:#202c33!important;border-color:#2a3942!important;color:#e9edef!important;box-shadow:none!important;}
 .bq-voice-msg{--bq-voice-progress:0;}
 .bq-voice-bars{position:relative;overflow:hidden;}
-.bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease;opacity:.42;}
-.bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 12px color-mix(in srgb,var(--bq-accent) 22%, transparent);}
+.bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease,box-shadow .16s ease;opacity:.4;border-radius:1.5px;}
+.bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 8px color-mix(in srgb,var(--bq-accent) 18%, transparent);}
 
 #bq-rx-picker{position:absolute;inset:0;display:none;z-index:50;align-items:flex-end;justify-content:center;}
 #bq-rx-picker.open{display:flex;}
@@ -2877,21 +2877,21 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   display:flex;align-items:center;gap:10px;min-width:160px;padding:6px 4px;
 }
 .bq-voice-play{
-  width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);
+  width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);
   border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  color:inherit;flex-shrink:0;transition:transform .15s;
+  color:inherit;flex-shrink:0;transition:transform .15s,background .15s,box-shadow .15s;
 }
-.bq-voice-play:hover{transform:scale(1.08);}
+.bq-voice-play:hover{transform:scale(1.08);background:rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,0,0,.2);}
 .bq-voice-play svg{width:14px;height:14px;fill:currentColor;}
 .bq-voice-bars{
-  flex:1;display:flex;align-items:center;gap:2px;height:24px;
+  flex:1;display:flex;align-items:center;gap:2px;height:28px;
 }
 .bq-voice-bar{
-  width:2px;background:currentColor;opacity:.5;border-radius:1px;
-  transition:opacity .12s,height .12s;
+  width:2.5px;background:currentColor;opacity:.4;border-radius:1.5px;
+  transition:opacity .12s,height .12s,background .12s;
 }
 .bq-voice-bar.played{opacity:1;}
-.bq-voice-time{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;opacity:.85;flex-shrink:0;}
+.bq-voice-time{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;opacity:.85;flex-shrink:0;min-width:32px;text-align:center;font-variant-numeric:tabular-nums;}
 
 /* v36: Removed legacy push notification UI hide — now handled by v36 notification settings */
 
@@ -3060,10 +3060,16 @@ const HTML = `
         <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bqiw">
+        <div class="bqvoice-rec-bar" id="bq-voice-rec-bar-global">
+          <span class="bqvoice-rec-dot"></span>
+          <span class="bqvoice-rec-time" id="bq-voice-rec-time-global">0:00</span>
+          <button class="bqvoice-rec-cancel" id="bq-voice-rec-cancel-global">Cancel</button>
+        </div>
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
           <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
+          <button class="bqvoice-btn" id="bq-voice-btn-global" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
@@ -7162,7 +7168,7 @@ function buildVoiceHtml(msg){
   const time=m+':'+(r<10?'0':'')+r;
   const heights=normalizeVoiceWave(Array.isArray(msg.waveform)?msg.waveform:[], 48);
   const bars=heights.map(h=>{
-    const px=Math.max(6,Math.round(6+(h/100)*18));
+    const px=Math.max(6,Math.round(6+(h/100)*22));
     return '<span class="bq-voice-bar" style="height:'+px+'px"></span>';
   }).join('');
   return '<div class="bq-voice-msg" data-audio="'+esc(msg.audio||'')+'" data-dur="'+dur+'">'+
@@ -7430,11 +7436,11 @@ setTimeout(_injectProfileUploads,1500);
   /* v9.1: Voice preview bar — Send / Discard / Play / Replay controls */
   .bq-voice-preview{
     position:relative;z-index:4;display:flex;align-items:center;gap:8px;
-    padding:8px 10px;margin:6px 8px 0;border-radius:14px;
-    background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(15,23,42,.78));
-    border:1px solid var(--bq-border,rgba(255,255,255,.08));
-    box-shadow:0 6px 18px rgba(0,0,0,.32);
-    animation:bqVpIn .18s ease-out;
+    padding:8px 12px;margin:6px 8px 0;border-radius:14px;
+    background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(15,23,42,.82));
+    border:1px solid rgba(96,165,250,.15);
+    box-shadow:0 6px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
+    animation:bqVpIn .18s ease-out;backdrop-filter:blur(10px);
   }
   @keyframes bqVpIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .bq-voice-preview .bq-vp-play,
@@ -7465,7 +7471,7 @@ setTimeout(_injectProfileUploads,1500);
   .bq-voice-preview.show{display:flex;}
   .bq-voice-preview .bq-vp-btn.discard{background:rgba(220,38,38,.18);color:#fca5a5;}
   .bq-voice-preview .bq-vp-btn.discard:hover{background:rgba(220,38,38,.32);color:#fff;transform:scale(1.06);}
-  .bq-voice-preview .bq-vp-btn.send{background:#22c55e;color:#fff;width:36px;height:36px;border-radius:50%;box-shadow:0 4px 12px rgba(34,197,94,.4);}
+  .bq-voice-preview .bq-vp-btn.send{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;width:36px;height:36px;border-radius:50%;box-shadow:0 4px 14px rgba(34,197,94,.4);}
   .bq-voice-preview .bq-vp-btn.send svg{fill:#fff;stroke:none;}
   .bq-voice-preview .bq-vp-btn.send:hover{filter:brightness(1.1);transform:scale(1.06);}
 
@@ -8171,7 +8177,7 @@ setTimeout(_injectProfileUploads,1500);
       if(window.MediaRecorder && !MediaRecorder.isTypeSupported(mime)) mime='audio/mp4;codecs=mp4a.40.2';
       if(window.MediaRecorder && !MediaRecorder.isTypeSupported(mime)) mime='';
       if(!window.MediaRecorder){ toast('Voice notes not supported'); stream.getTracks().forEach(t=>t.stop()); return; }
-      const recorder=mime?new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:64000}):new MediaRecorder(stream,{audioBitsPerSecond:64000});
+      const recorder=mime?new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:128000}):new MediaRecorder(stream,{audioBitsPerSecond:128000});
       const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       const source=audioCtx.createMediaStreamSource(stream);
       const analyser=audioCtx.createAnalyser();
@@ -12206,26 +12212,28 @@ const VN2_BARS   = 56;
 
 const vn2css = document.createElement('style');
 vn2css.textContent = `
-.bqvoice-rec-bar.show{display:flex!important;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(220,38,38,.05));border:1px solid rgba(220,38,38,.35);border-radius:14px;animation:bqV2RecIn .22s ease}
+.bqvoice-rec-bar.show{display:flex!important;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(135deg,rgba(220,38,38,.14),rgba(220,38,38,.04));border:1px solid rgba(220,38,38,.4);border-radius:14px;animation:bqV2RecIn .22s ease;backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(220,38,38,.12)}
 .bqvoice-btn.recording{animation:bqV2Pulse 1.4s ease-in-out infinite!important;box-shadow:0 0 0 0 rgba(220,38,38,.55)}
 @keyframes bqV2Pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.55)}50%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
 @keyframes bqV2RecIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.bqv2-live-wave{flex:1;display:flex;align-items:center;gap:2px;height:24px;overflow:hidden}
-.bqv2-live-wave span{flex:1 1 auto;min-width:2px;max-width:3px;background:#dc2626;border-radius:2px;transition:height .08s linear;opacity:.95}
-.bqv2-rec-actions{display:flex;align-items:center;gap:6px}
-.bqv2-rec-actions button{background:none;border:0;cursor:pointer;color:inherit;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease}
-.bqv2-rec-actions button:hover{background:rgba(255,255,255,.08);transform:scale(1.06)}
+.bqv2-live-wave{flex:1;display:flex;align-items:center;gap:2px;height:26px;overflow:hidden;padding:0 2px}
+.bqv2-live-wave span{flex:1 1 auto;min-width:2px;max-width:3.5px;background:linear-gradient(180deg,#f87171,#dc2626);border-radius:2px;transition:height .06s linear;opacity:.92}
+.bqv2-rec-actions{display:flex;align-items:center;gap:4px}
+.bqv2-rec-actions button{background:none;border:0;cursor:pointer;color:inherit;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease}
+.bqv2-rec-actions button:hover{background:rgba(255,255,255,.1);transform:scale(1.08)}
 .bqv2-rec-actions button.danger{color:#fca5a5}
-.bqv2-rec-actions button.send{background:#16a34a;color:#fff}
-.bqv2-rec-actions button.send:hover{background:#15803d}
+.bqv2-rec-actions button.send{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;box-shadow:0 2px 10px rgba(34,197,94,.35)}
+.bqv2-rec-actions button.send:hover{background:linear-gradient(135deg,#16a34a,#15803d);transform:scale(1.08)}
 .bqv2-rec-paused{opacity:.6;filter:grayscale(.5)}
+.bqv2-timer{font-variant-numeric:tabular-nums;letter-spacing:.3px}
 
 .bq-voice-msg{min-width:200px;transition:transform .15s ease}
 .bq-voice-msg:hover{transform:translateY(-1px)}
 .bq-voice-bars{cursor:pointer;position:relative}
-.bq-voice-bars::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--bq-vp,0%);background:linear-gradient(90deg,transparent,rgba(155,215,255,.06));pointer-events:none;transition:width .12s linear}
-.bq-voice-speed{font-size:10px;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:inherit;border-radius:10px;padding:2px 6px;margin-left:6px;cursor:pointer;font-family:ui-monospace,monospace;transition:background .15s ease}
-.bq-voice-speed:hover{background:rgba(255,255,255,.22)}
+.bq-voice-bars::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--bq-vp,0%);background:linear-gradient(90deg,rgba(96,165,250,.08),rgba(96,165,250,.03));pointer-events:none;transition:width .12s linear;border-radius:2px}
+.bq-voice-speed{font-size:10px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:10px;padding:1px 7px;margin-left:4px;cursor:pointer;font-family:ui-monospace,monospace;transition:all .15s ease;line-height:1.6}
+.bq-voice-speed:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.25)}
+.bq-voice-speed:active{transform:scale(.92)}
 .bq-voice-play{transition:transform .15s ease,box-shadow .15s ease}
 .bq-voice-play:hover{box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .bq-voice-play.playing{animation:bqV2PlayPulse 1.6s ease-in-out infinite}
@@ -12239,13 +12247,14 @@ function vn2FmtTime(ms){
   const s=Math.max(0,Math.floor(ms/1000));
   return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 }
-function vn2BuildBar(){
-  const bar=$('bq-voice-rec-bar'); if(!bar) return null;
+function vn2BuildBar(barId){
+  const bar=$(barId); if(!bar) return null;
   bar.innerHTML='';
   const dot=document.createElement('span'); dot.className='bqvoice-rec-dot'; bar.appendChild(dot);
-  const time=document.createElement('span'); time.className='bqvoice-rec-time'; time.id='bq-voice-rec-time'; time.textContent='0:00'; bar.appendChild(time);
+  const timeId=barId+'-time';
+  const time=document.createElement('span'); time.className='bqvoice-rec-time bqvn2-timer'; time.id=timeId; time.textContent='0:00'; bar.appendChild(time);
   const wave=document.createElement('div'); wave.className='bqv2-live-wave'; wave.id='bqv2-live-wave';
-  for(let i=0;i<28;i++){ const s=document.createElement('span'); s.style.height='4px'; wave.appendChild(s); }
+  for(let i=0;i<36;i++){ const s=document.createElement('span'); s.style.height='4px'; wave.appendChild(s); }
   bar.appendChild(wave);
   const acts=document.createElement('div'); acts.className='bqv2-rec-actions';
   acts.innerHTML='<button id="bqv2-pause" title="Pause/resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button>'+
@@ -12257,19 +12266,22 @@ function vn2BuildBar(){
 async function vn2Start(btn){
   if(_vn2){ return; }
   if(!navigator.mediaDevices?.getUserMedia){ _toast('Voice not supported','err'); return; }
+  // Determine which context (DM or global) based on the button clicked
+  const isGlobalBtn = btn?.id === 'bq-voice-btn-global';
+  const barId = isGlobalBtn ? 'bq-voice-rec-bar-global' : 'bq-voice-rec-bar';
   let stream;
-  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
   catch(e){ _toast('Microphone permission denied','err'); return; }
   let mime='audio/webm;codecs=opus';
   if(!MediaRecorder.isTypeSupported(mime)) mime='audio/webm';
   if(!MediaRecorder.isTypeSupported(mime)) mime='';
-  const rec = mime ? new MediaRecorder(stream,{mimeType:mime,bitsPerSecond:64000}) : new MediaRecorder(stream);
+  const rec = mime ? new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:128000}) : new MediaRecorder(stream,{audioBitsPerSecond:128000});
   const chunks=[]; const peaks=[];
   let acx,src,an,buf,sampler;
   try{
     acx=new (window.AudioContext||window.webkitAudioContext)();
     src=acx.createMediaStreamSource(stream);
-    an=acx.createAnalyser(); an.fftSize=512;
+    an=acx.createAnalyser(); an.fftSize=2048; an.smoothingTimeConstant=0.82;
     buf=new Uint8Array(an.frequencyBinCount);
     src.connect(an);
   }catch(_){}
@@ -12279,31 +12291,31 @@ async function vn2Start(btn){
   rec.onerror=()=>{ _toast('Recording error','err'); vn2Cancel(); };
   rec.start(250);
 
-  const bar=vn2BuildBar(); bar?.classList.add('show');
+  const bar=vn2BuildBar(barId); bar?.classList.add('show');
   btn?.classList.add('recording');
-  const wave=$('bqv2-live-wave'); const tEl=$('bq-voice-rec-time');
+  const wave=$('bqv2-live-wave'); const tEl=$(barId+'-time');
   const tick=()=>{
     if(!_vn2) return;
     const elapsed=Date.now()-start-pausedTotal-(paused?(Date.now()-pauseStart):0);
     if(tEl) tEl.textContent=vn2FmtTime(elapsed);
     if(elapsed>=VN2_MAX_MS){ vn2Send(); return; }
     if(an && !paused){
-      an.getByteTimeDomainData(buf);
-      let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
-      const rms=Math.sqrt(sum/buf.length);
-      const lvl=Math.max(0.06, Math.min(1, rms*3.6));
+      an.getByteFrequencyData(buf);
+      let sum=0; for(let i=0;i<buf.length;i++) sum+=buf[i];
+      const avg=sum/buf.length;
+      const lvl=Math.max(0.04, Math.min(1, avg/180));
       peaks.push(lvl);
       if(wave){
         const bars=wave.children;
         for(let i=0;i<bars.length-1;i++){ bars[i].style.height=bars[i+1].style.height; }
-        bars[bars.length-1].style.height=Math.max(3,Math.round(lvl*22))+'px';
+        bars[bars.length-1].style.height=Math.max(3,Math.round(lvl*24))+'px';
       }
     }
   };
   sampler=setInterval(tick, 70);
 
   _vn2 = {
-    rec, stream, chunks, peaks, start, sampler, btn,
+    rec, stream, chunks, peaks, start, sampler, btn, barId, isGlobalBtn,
     isPaused(){ return paused; },
     togglePause(){
       if(rec.state==='recording'){ rec.pause(); paused=true; pauseStart=Date.now(); bar?.classList.add('bqv2-rec-paused'); }
@@ -12318,7 +12330,9 @@ async function vn2Start(btn){
 function vn2TogglePause(){ _vn2?.togglePause(); }
 function vn2ResetUI(){
   $('bq-voice-rec-bar')?.classList.remove('show');
+  $('bq-voice-rec-bar-global')?.classList.remove('show');
   $('bq-voice-btn')?.classList.remove('recording');
+  $('bq-voice-btn-global')?.classList.remove('recording');
 }
 function vn2Cancel(){
   const ctx=_vn2; _vn2=null; if(!ctx) return;
@@ -12368,14 +12382,16 @@ function sendVoiceV2(audioData, durMs, waveform){
 
 // Hook the voice button — replace v3's tap handler with V2 lifecycle.
 function wireVoiceV2(){
-  const btn=$('bq-voice-btn'); if(!btn || btn._v2) return; btn._v2=true;
-  // Strip prior listeners by cloning
-  const fresh=btn.cloneNode(true);
-  btn.parentNode.replaceChild(fresh, btn);
-  fresh._v2=true;
-  fresh.addEventListener('click', e=>{
-    e.preventDefault(); e.stopPropagation();
-    if(_vn2) vn2Send(); else vn2Start(fresh);
+  ['bq-voice-btn','bq-voice-btn-global'].forEach(function(btnId){
+    const btn=$(btnId); if(!btn || btn._v2) return; btn._v2=true;
+    // Strip prior listeners by cloning
+    const fresh=btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh._v2=true;
+    fresh.addEventListener('click', e=>{
+      e.preventDefault(); e.stopPropagation();
+      if(_vn2) vn2Send(); else vn2Start(fresh);
+    });
   });
 }
 
@@ -12958,7 +12974,7 @@ setInterval(()=>{
   setInterval(wrapRender, 4000); // re-apply if widget rebinds
 
   /* ───────────────────── 3) VOICE PLAYBACK — single global player ──────── */
-  var VP = { audio:null, srcKey:null, node:null, raf:0 };
+  var VP = { audio:null, srcKey:null, node:null, raf:0, speed:1 };
 
   function fmtTime(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 
@@ -13011,9 +13027,25 @@ setInterval(()=>{
     var btn = node.querySelector('.bq-voice-play');
     var time = node.querySelector('.bq-voice-time');
 
+    // Ensure speed chip exists
+    var speedChip = node.querySelector('.bq-voice-speed');
+    if(!speedChip){
+      speedChip = document.createElement('button');
+      speedChip.className='bq-voice-speed';
+      speedChip.textContent='1x';
+      speedChip.onclick = function(ev){
+        ev.stopPropagation(); ev.preventDefault();
+        VP.speed = VP.speed===1?1.5:VP.speed===1.5?2:1;
+        speedChip.textContent = VP.speed+'x';
+        if(VP.audio) VP.audio.playbackRate = VP.speed;
+      };
+      node.appendChild(speedChip);
+    }
+
     // Toggle pause on same node
     if(VP.node===node && VP.audio){
       if(!VP.audio.paused){ VP.audio.pause(); setIcon(btn,false); return; }
+      VP.audio.playbackRate = VP.speed;
       VP.audio.play().catch(function(){}); setIcon(btn,true); tickVP(); return;
     }
     stopVP();
@@ -13021,6 +13053,7 @@ setInterval(()=>{
     var a = new Audio();
     a.preload = 'metadata';
     a.src = src;
+    a.playbackRate = VP.speed;
     VP.audio=a; VP.node=node; VP.srcKey=key;
 
     var dur = await resolveDuration(a);
@@ -17137,53 +17170,29 @@ function _mlConfirm(data, onConfirm, onCancel){
   var hasCurrent=!!_mlUid();
   var curName=_mlUname();
 
-  // Expiry pill
-  var pillExpiry='';
+  // Compact pill row
+  var pills='';
   if(data.expiresAt>0){
     var rem=data.expiresAt-Date.now();
     var h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000);
-    pillExpiry='<span class="bq-ml-pill" style="background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.12)">⏱ '+(h>0?h+'h '+m+'m':m+'m')+' left</span>';
+    pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.12)">⏱ '+(h>0?h+'h '+m+'m':m+'m')+'</span>';
   }else{
-    pillExpiry='<span class="bq-ml-pill" style="background:rgba(251,191,36,.06);color:#fbbf24;border:1px solid rgba(251,191,36,.1)">∞ Never expires</span>';
+    pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24;border:1px solid rgba(251,191,36,.1)">∞</span>';
   }
+  pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:'+(data.oneTime?'rgba(249,115,22,.08)':'rgba(96,165,250,.08)')+';color:'+(data.oneTime?'#fb923c':'#60a5fa')+';border:1px solid '+(data.oneTime?'rgba(249,115,22,.1)':'rgba(96,165,250,.1)')+'">'+(data.oneTime?'One-time':'Reusable')+'</span>';
 
-  // One-time pill
-  var pillOt=data.oneTime?
-    '<span class="bq-ml-pill" style="background:rgba(249,115,22,.06);color:#fb923c;border:1px solid rgba(249,115,22,.1)">One-time</span>':
-    '<span class="bq-ml-pill" style="background:rgba(96,165,250,.06);color:#60a5fa;border:1px solid rgba(96,165,250,.1)">Reusable</span>';
-
-  // Switch warning (only if currently logged in)
-  var switchWarn='';
-  if(hasCurrent){
-    switchWarn='<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.08)">'+
-      '<div style="color:#fbbf24;flex-shrink:0">'+SVG.warn+'</div>'+
-      '<span style="font-size:11px;color:rgba(251,191,36,.7);line-height:1.4">Replaces your current session <b style="color:#fbbf24">@'+(curName||'…')+'</b></span>'+
-    '</div>';
-  }
+  var switchTag=hasCurrent?'<div style="font-size:10px;color:rgba(251,191,36,.65);margin-top:4px">Replaces @'+(curName||'…')+'</div>':'';
 
   var inner=
     '<div style="text-align:center">'+
-      '<div style="margin-bottom:16px">'+_mlIc(SVG.key,'#a78bfa')+'</div>'+
-      '<div style="font-weight:700;font-size:17px;letter-spacing:-.3px;color:#f0f2f5">Access Account</div>'+
-      '<div style="font-size:12px;color:rgba(240,242,245,.4);margin-top:4px">Sign in via admin-generated magic link</div>'+
-      // Account card
-      '<div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.08)">'+
-        '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(240,242,245,.25);margin-bottom:6px">Account</div>'+
-        '<div style="font-size:18px;font-weight:700;color:#c4b5fd;letter-spacing:-.4px">@'+(data.username||'unknown')+'</div>'+
-        '<div style="display:flex;gap:6px;margin-top:8px;justify-content:center;flex-wrap:wrap">'+pillExpiry+pillOt+'</div>'+
-      '</div>'+
-      // Warnings
-      '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">'+
-        switchWarn+
-        '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(139,92,246,.03);border:1px solid rgba(139,92,246,.06)">'+
-          '<div style="color:#8b5cf6;flex-shrink:0">'+SVG.shield+'</div>'+
-          '<span style="font-size:11px;color:rgba(167,139,250,.55);line-height:1.4">Full access · No password needed · Admin-authorized</span>'+
-        '</div>'+
-      '</div>'+
-      // Buttons
+      '<div style="margin-bottom:12px">'+_mlIc(SVG.key,'#a78bfa')+'</div>'+
+      '<div style="font-weight:700;font-size:16px;letter-spacing:-.3px;color:#f0f2f5">Access Account</div>'+
+      '<div style="font-size:22px;font-weight:800;color:#c4b5fd;letter-spacing:-.5px;margin-top:10px">@'+(data.username||'unknown')+'</div>'+
+      '<div style="display:flex;gap:5px;margin-top:8px;justify-content:center">'+pills+'</div>'+
+      switchTag+
       '<div style="display:flex;gap:8px;margin-top:18px">'+
-        '<button id="bq-ml-no" class="bq-ml-btn" style="flex:1;height:40px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.45);font-weight:500">Cancel</button>'+
-        '<button id="bq-ml-yes" class="bq-ml-btn" style="flex:1.3;height:40px;border-radius:10px;background:#7c3aed;color:#fff;box-shadow:0 0 20px -4px rgba(124,58,237,.35)">'+SVG.arrowRight+' '+(hasCurrent?'Switch':'Continue')+'</button>'+
+        '<button id="bq-ml-no" class="bq-ml-btn" style="flex:1;height:38px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.4);font-weight:500;font-size:13px">Cancel</button>'+
+        '<button id="bq-ml-yes" class="bq-ml-btn" style="flex:1.3;height:38px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:600;font-size:13px;box-shadow:0 0 20px -4px rgba(124,58,237,.3)">'+(hasCurrent?'Switch →':'Continue →')+'</button>'+
       '</div>'+
     '</div>';
 
