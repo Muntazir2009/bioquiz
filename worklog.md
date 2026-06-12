@@ -267,3 +267,28 @@ Stage Summary:
 - UI: SaaS-style recording bars with gradient waves, enhanced bubble bars, improved preview styling
 - Magic link: Confirmation dialog now brief and polished with minimal text
 - All changes pushed to GitHub for auto-deploy
+
+---
+Task ID: 12
+Agent: Main Agent
+Task: Fix ghost message after DM delete + reply chip wrong target/no highlight
+
+Work Log:
+- Investigated ghost message bug: When a DM message is deleted, Firebase limitToLast(50) shifts the query window and fires child_added for an older message entering the window. The existing dedup check (line 5681) only catches duplicates already in DOM, not new old messages.
+- Added _bqDelSuppressUntil mechanism: After any deletion, sets a 600ms suppression window during which renderMsg skips child_added events for messages older than 3 seconds (brand new messages still render)
+- Applied suppression in 4 places: DM child_removed handler, global child_removed handler, doAction delete handler, v22 delete-for-everyone handler
+- Exposed _bqDelSuppressUntil on window for cross-IIFE access
+- Investigated reply chip click bug: Two issues found:
+  1. When target message not in DOM (outside 50-msg window), handler silently returned with no feedback
+  2. Highlight animation broken: v45 CSS used static box-shadow with !important, overriding v44's animation and never auto-removing
+- Fixed reply chip click: Added toast + chip flash when target not found, remove existing highlights before adding new, force reflow for re-animation
+- Fixed highlight animation: Replaced static box-shadow with proper bqV45ReplyHL keyframe animation (2s ease, glow in/out)
+- Also discovered v28 deleted-for-me tracking (DEL set) is effectively a no-op - window.renderMsg is never set, so the wrapRender function wraps nothing
+- Lint passes clean, no page errors
+- Committed and pushed (commit 25df617)
+
+Stage Summary:
+- Ghost message: Fixed with deletion suppression window (600ms, only blocks old messages)
+- Reply click: Shows feedback when target not loaded, proper scroll + animated highlight
+- Highlight animation: Fixed from broken static style to proper keyframe animation
+- All changes pushed to GitHub
