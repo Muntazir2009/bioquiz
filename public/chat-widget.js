@@ -3479,6 +3479,11 @@ let gLastU=null, gLastT=0;
 let dLastU=null, dLastT=0;
 let _bqDelSuppressUntil=0; // timestamp: suppress child_added ghosts after deletion
 window._bqDelSuppressUntil = 0;
+let _bqDmOldestKey=''; // track oldest DM message key to detect window-shift ghosts
+let _bqGlobalOldestKey=''; // track oldest global message key
+let _bqDmInitialLoadDone=false; // flag: initial DM load complete
+let _bqGlobalInitialLoadDone=false; // flag: initial global load complete
+let _bqRenderBypassGhostCheck=false; // flag: allow renderMsg to bypass ghost suppression (for explicit loads like reply chip navigation)
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3828,11 +3833,20 @@ function showDmConvo(pUid, pName) {
   // Subscribe fresh
   if (db) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
-    ref.on('child_added', s => renderMsg('dm', s.val(), s.key));
+    _bqDmOldestKey=''; _bqDmInitialLoadDone=false;
+    ref.on('child_added', s => {
+      // Track the oldest key during initial load
+      if(!_bqDmInitialLoadDone){
+        if(!_bqDmOldestKey || s.key < _bqDmOldestKey) _bqDmOldestKey = s.key;
+      }
+      renderMsg('dm', s.val(), s.key);
+    });
+    // Mark initial load done after the 'value' event fires
+    ref.once('value', ()=>{ _bqDmInitialLoadDone=true; });
     ref.on('child_changed', s => onMsgChanged('dm', s));
     ref.on('child_removed', s => {
       document.getElementById('bqmsg-dm-' + s.key)?.remove();
-      _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+      _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
     });
     dmListeners[activeDmId] = ref;
   }
@@ -4654,11 +4668,18 @@ function closeProfileCard(){
 ───────────────────────────────────────── */
 function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
-  ref.on('child_added',s=>renderMsg('global',s.val(),s.key));
+  _bqGlobalOldestKey=''; _bqGlobalInitialLoadDone=false;
+  ref.on('child_added',s=>{
+    if(!_bqGlobalInitialLoadDone){
+      if(!_bqGlobalOldestKey || s.key < _bqGlobalOldestKey) _bqGlobalOldestKey = s.key;
+    }
+    renderMsg('global',s.val(),s.key);
+  });
+  ref.once('value',()=>{ _bqGlobalInitialLoadDone=true; });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>{
     document.getElementById('bqmsg-global-'+s.key)?.remove();
-    _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+    _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
   });
 }
 
@@ -5690,12 +5711,27 @@ function renderMsg(ctx,msg,key){
 
   // ── GHOST FIX: After deleting a message, limitToLast causes Firebase to
   // fire child_added for an older message that now enters the window.
-  // Suppress these ghost renders for 600ms after any deletion.
-  // Only suppress messages that are NOT brand new (<3s old).
-  var _supUntil = typeof window._bqDelSuppressUntil!=='undefined' ? window._bqDelSuppressUntil : _bqDelSuppressUntil;
-  if(_supUntil && Date.now() < _supUntil){
-    var msgAge = Date.now() - (msg.ts||0);
-    if(msgAge > 3000) return; // old message = ghost from limitToLast shift
+  // Two-layer suppression:
+  // 1. Time-based: suppress for 3s after any deletion (messages >500ms old)
+  // 2. Key-based: after initial load, reject messages older than the tracked
+  //    oldest key (these are window-shift ghosts re-entering the limitToLast window)
+  // Bypass: _bqRenderBypassGhostCheck allows explicit loads (e.g., reply navigation)
+  if(!_bqRenderBypassGhostCheck){
+    var _supUntil = typeof window._bqDelSuppressUntil!=='undefined' ? window._bqDelSuppressUntil : _bqDelSuppressUntil;
+    if(_supUntil && Date.now() < _supUntil){
+      var msgAge = Date.now() - (msg.ts||0);
+      if(msgAge > 500) return; // non-realtime message = ghost from limitToLast shift
+    }
+    // Key-based ghost detection: after initial load, if this message's key is
+    // older than the oldest key we tracked during initial load, it's a ghost
+    // that entered the limitToLast window due to a deletion.
+    var _oldestKey = isG ? _bqGlobalOldestKey : _bqDmOldestKey;
+    var _initialDone = isG ? _bqGlobalInitialLoadDone : _bqDmInitialLoadDone;
+    if(_initialDone && _oldestKey && key < _oldestKey){
+      return; // window-shift ghost — message is older than anything in initial load
+    }
+  } else {
+    _bqRenderBypassGhostCheck = false; // reset after one use
   }
 
   if(msg.type==='system'){
@@ -5811,7 +5847,23 @@ function renderMsg(ctx,msg,key){
   const _stars=getStarred();
   const _sdid=ctx==='global'?'global':(activeDmId||'');
   if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred'); }
-  msgsEl.appendChild(row);
+  // Insert at correct chronological position (not just append)
+  // Find the right place by comparing Firebase push keys (lexicographic = chronological)
+  var _inserted = false;
+  var _existingMsgs = msgsEl.querySelectorAll('.bqr[id]');
+  if(_existingMsgs.length > 0){
+    // Find the first existing message with a key greater than this one
+    for(var _ei = 0; _ei < _existingMsgs.length; _ei++){
+      var _em = _existingMsgs[_ei].id.match(/^bqmsg-(global|dm)-(.+)$/);
+      if(_em && _em[2] > key){
+        // Insert before this message
+        _existingMsgs[_ei].parentNode.insertBefore(row, _existingMsgs[_ei]);
+        _inserted = true;
+        break;
+      }
+    }
+  }
+  if(!_inserted) msgsEl.appendChild(row);
   // Apply any cached read receipts to this newly rendered message
   if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
 
@@ -6006,7 +6058,7 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     if(msg.uid!==uid)return;
     const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
     document.getElementById(pfx+key)?.remove();
-    _bqDelSuppressUntil=Date.now()+600; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+    _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
     db.ref(p).remove();
   }
   else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
@@ -10343,7 +10395,7 @@ function wireDeleteForEveryone(){
     if(!ctx||!key) return;
     const path=(ctx==='global'?'bq_messages/':'bq_dms/'+(window.__bqActiveDm?.id||'')+'/messages/')+key;
     if(!confirm('Delete this message for everyone?')) return;
-    window._bqDelSuppressUntil=Date.now()+600;
+    window._bqDelSuppressUntil=Date.now()+3000;
     _db()?.ref(path).update({deleted:true, deletedAt:Date.now(), text:''}).then(()=>_toast('Deleted'));
     document.getElementById('bq-msg-sheet')?.remove();
   }, true);
@@ -15443,10 +15495,15 @@ if(document.readyState === 'loading'){
 
     /* ── 1c. Reply highlight animation (click-to-scroll) ── */
     '@keyframes bqReplyHighlight{',
-    '  0%,100%{box-shadow:0 0 0 0 transparent;}',
-    '  15%,85%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 14px rgba(96,165,250,.35);}',
+    '  0%,100%{box-shadow:0 0 0 0 transparent;background-position:0% 50%;}',
+    '  10%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 18px rgba(96,165,250,.4);background:rgba(96,165,250,.08);}',
+    '  30%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);}',
+    '  70%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);}',
+    '  90%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 18px rgba(96,165,250,.4);background:rgba(96,165,250,.08);}',
     '}',
-    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 1.6s ease;}',
+    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 2s ease!important;}',
+    '.bqr.bq-rp-hl{transition:background .3s ease;}',
+    '.bqr.bq-rp-hl{background:rgba(96,165,250,.06)!important;border-radius:8px;}',
 
     /* ── 1d. GIF nav — bigger, labeled, more visible ── */
     '.bqgifp-prev,.bqgifp-next{',
@@ -15749,21 +15806,74 @@ if(document.readyState === 'loading'){
     var targetId = 'bqmsg-' + ctx + '-' + replyKey;
     var target = document.getElementById(targetId);
 
+    // Also try finding within the specific messages container (avoid cross-context matches)
+    if(!target){
+      var container = document.getElementById(ctx === 'global' ? 'bqgmsgs' : 'bqdmmsgs');
+      if(container) target = container.querySelector('#' + targetId);
+    }
+
     if(!target){
       // Target message not in DOM (outside loaded window)
-      // Show a brief toast and flash the chip instead
-      chip.style.transition = 'background .15s ease';
-      chip.style.background = 'rgba(96,165,250,.18)';
-      setTimeout(function(){ chip.style.background = ''; }, 800);
-      if(typeof _toast === 'function') _toast('Original message not loaded');
-      else if(typeof window.toast === 'function') window.toast('Original message not loaded');
+      // Try to load it from Firebase and insert it temporarily
+      try{
+        var _db = typeof db !== 'undefined' ? db : (typeof _fdb === 'function' ? _fdb() : null);
+        var _activeDmId = typeof activeDmId !== 'undefined' ? activeDmId : null;
+        if(_db){
+          var path = ctx === 'global' ? 'bq_messages/' + replyKey : 'bq_dms/' + _activeDmId + '/messages/' + replyKey;
+          _db.ref(path).once('value').then(function(snap){
+            var msgData = snap.val();
+            if(msgData && typeof renderMsg === 'function'){
+              // Render the message (it will be inserted at the right position)
+              // Set bypass flag so ghost suppression doesn't block this explicit load
+              if(typeof _bqRenderBypassGhostCheck !== 'undefined') _bqRenderBypassGhostCheck = true;
+              renderMsg(ctx, msgData, replyKey);
+              // Now find and scroll to it
+              var loaded = document.getElementById(targetId);
+              if(loaded){
+                scrollToAndHighlight(loaded);
+              } else {
+                showChipFlash(chip, 'Message loaded but not found');
+              }
+            } else {
+              showChipFlash(chip, 'Original message no longer exists');
+            }
+          }).catch(function(){
+            showChipFlash(chip, 'Could not load original message');
+          });
+          return; // async — will handle above
+        }
+      }catch(_){}
+      showChipFlash(chip, 'Original message not loaded');
       return;
     }
 
-    // Scroll to the target message
+    scrollToAndHighlight(target);
+  }
+
+  function scrollToAndHighlight(target){
+    // Find the scrollable container
+    var scrollContainer = target.closest('[style*="overflow"]') || target.parentElement;
+    while(scrollContainer && scrollContainer !== document.body){
+      var style = getComputedStyle(scrollContainer);
+      if(style.overflowY === 'auto' || style.overflowY === 'scroll'){
+        break;
+      }
+      scrollContainer = scrollContainer.parentElement;
+    }
+
+    // Scroll to the target message within the container
     try{
       target.scrollIntoView({behavior:'smooth', block:'center'});
-    }catch(_){}
+    }catch(_){
+      // Fallback: manually set scroll position
+      try{
+        if(scrollContainer && scrollContainer !== document.body){
+          var targetRect = target.getBoundingClientRect();
+          var containerRect = scrollContainer.getBoundingClientRect();
+          scrollContainer.scrollTop += (targetRect.top - containerRect.top) - containerRect.height / 2 + targetRect.height / 2;
+        }
+      }catch(_){}
+    }
 
     // Highlight with animation - remove any existing highlight first
     document.querySelectorAll('.bq-rp-hl').forEach(function(el){
@@ -15774,10 +15884,27 @@ if(document.readyState === 'loading'){
     void target.offsetWidth;
     target.classList.add('bq-rp-hl');
 
+    // Also add a brief scale pulse on the bubble for extra visibility
+    var bbl = target.querySelector('.bqbbl');
+    if(bbl){
+      bbl.style.transition = 'transform 0.2s ease';
+      bbl.style.transform = 'scale(1.02)';
+      setTimeout(function(){ bbl.style.transform = ''; }, 300);
+    }
+
     // Clear highlight after animation
     setTimeout(function(){
       target.classList.remove('bq-rp-hl');
     }, 2000);
+  }
+
+  function showChipFlash(chip, msg){
+    chip.style.transition = 'background .15s ease, border-color .15s ease';
+    chip.style.background = 'rgba(96,165,250,.25)';
+    chip.style.borderLeftColor = 'rgba(96,165,250,.8)';
+    setTimeout(function(){ chip.style.background = ''; chip.style.borderLeftColor = ''; }, 1200);
+    if(typeof _toast === 'function') _toast(msg);
+    else if(typeof window.toast === 'function') window.toast(msg);
   }
 
   /* ──────────────────────────────────────────────────────────────────────
