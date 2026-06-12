@@ -231,3 +231,39 @@ Stage Summary:
 - All 5 recovery modals redesigned with modern glassmorphism: blurred translucent overlays, gradient accents, animated elements, polished inputs/buttons, color-coded section cards, progress indicators, status badges
 - Zero JavaScript logic changes — only HTML/CSS in template strings modified
 - CSS animations added to v23 style injection block for reusable glassmorphism effects
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Upgrade voice note features, enhance usability/design, fix frequency bugs
+
+Work Log:
+- Analyzed entire voice note system across chat-widget.js (17K+ lines) - found 3 overlapping systems (v9, v9.3, v25) with conflicting handlers
+- Fixed audio bitrate: increased from 64kbps to 128kbps in both v25 vn2Start and v9.3 startStableRecording
+- Fixed waveform frequency: replaced getByteTimeDomainData with getByteFrequencyData for better visual representation of audio frequency content
+- Increased FFT analyser size to 2048 with smoothingTimeConstant=0.82 for finer frequency resolution
+- Added channelCount:1 to audio capture constraints for mono recording (smaller files, better speech)
+- Added voice button to global chat composer (bq-voice-btn-global) - was previously DM-only
+- Added recording bar (bq-voice-rec-bar-global) to global chat composer HTML template
+- Updated wireVoiceV2() to wire both DM and global voice buttons
+- Updated vn2BuildBar() to accept barId parameter for context-aware bar building
+- Updated vn2Start() to detect which button was clicked and use correct recording bar
+- Updated vn2ResetUI() to clear both DM and global recording bars/buttons
+- Added playback speed toggle (1x/1.5x/2x) to v28 global player with persistent speed state
+- Enhanced recording bar CSS: gradient wave bars, backdrop-filter blur, improved shadow, timer font variant
+- Enhanced voice bubble CSS: wider bars (2.5px), rounded corners (1.5px), tabular-nums time display, better hover effects
+- Enhanced voice preview CSS: gradient background, accent border, inset glow, gradient send button
+- Improved waveform bar heights (22px → 24px range) for better visual clarity
+- Increased live wave bars from 28 to 36 for smoother animation
+- Fixed magic link confirmation dialog: made brief and sleek SaaS-style (removed verbose warning blocks, security notice, account card wrapper)
+- Verified with Agent Browser: 2 voice buttons found (global + DM), 2 recording bars present, no JS errors
+- Lint passes clean
+- Committed and pushed to origin/main (commit 8410ea6)
+
+Stage Summary:
+- Audio quality: 128kbps bitrate (was 64kbps), frequency data instead of time domain, FFT 2048 (was 512)
+- Global chat: Voice button and recording bar now available in global chat (was DM-only)
+- Playback: Speed toggle (1x/1.5x/2x) added to v28 global player
+- UI: SaaS-style recording bars with gradient waves, enhanced bubble bars, improved preview styling
+- Magic link: Confirmation dialog now brief and polished with minimal text
+- All changes pushed to GitHub for auto-deploy
