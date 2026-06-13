@@ -1039,8 +1039,8 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 #bqp.bq-theme-wadark .bq-msg-inline .bq-ms-btn{background:#202c33!important;border-color:#2a3942!important;color:#e9edef!important;box-shadow:none!important;}
 .bq-voice-msg{--bq-voice-progress:0;}
 .bq-voice-bars{position:relative;overflow:hidden;}
-.bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease,box-shadow .16s ease;opacity:.4;border-radius:1.5px;}
-.bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 8px color-mix(in srgb,var(--bq-accent) 18%, transparent);}
+.bq-voice-bar{background:color-mix(in srgb,var(--bq-text-muted) 52%, transparent);transition:background-color .16s ease,opacity .16s ease;opacity:.42;}
+.bq-voice-bar.played{background:var(--bq-accent);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--bq-accent) 28%, transparent),0 0 12px color-mix(in srgb,var(--bq-accent) 22%, transparent);}
 
 #bq-rx-picker{position:absolute;inset:0;display:none;z-index:50;align-items:flex-end;justify-content:center;}
 #bq-rx-picker.open{display:flex;}
@@ -2877,21 +2877,21 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   display:flex;align-items:center;gap:10px;min-width:160px;padding:6px 4px;
 }
 .bq-voice-play{
-  width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);
+  width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);
   border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  color:inherit;flex-shrink:0;transition:transform .15s,background .15s,box-shadow .15s;
+  color:inherit;flex-shrink:0;transition:transform .15s;
 }
-.bq-voice-play:hover{transform:scale(1.08);background:rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,0,0,.2);}
+.bq-voice-play:hover{transform:scale(1.08);}
 .bq-voice-play svg{width:14px;height:14px;fill:currentColor;}
 .bq-voice-bars{
-  flex:1;display:flex;align-items:center;gap:2px;height:28px;
+  flex:1;display:flex;align-items:center;gap:2px;height:24px;
 }
 .bq-voice-bar{
-  width:2.5px;background:currentColor;opacity:.4;border-radius:1.5px;
-  transition:opacity .12s,height .12s,background .12s;
+  width:2px;background:currentColor;opacity:.5;border-radius:1px;
+  transition:opacity .12s,height .12s;
 }
 .bq-voice-bar.played{opacity:1;}
-.bq-voice-time{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;opacity:.85;flex-shrink:0;min-width:32px;text-align:center;font-variant-numeric:tabular-nums;}
+.bq-voice-time{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;opacity:.85;flex-shrink:0;}
 
 /* v36: Removed legacy push notification UI hide — now handled by v36 notification settings */
 
@@ -3060,16 +3060,10 @@ const HTML = `
         <button class="bqrbx" id="bqgrbx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bqiw">
-        <div class="bqvoice-rec-bar" id="bq-voice-rec-bar-global">
-          <span class="bqvoice-rec-dot"></span>
-          <span class="bqvoice-rec-time" id="bq-voice-rec-time-global">0:00</span>
-          <button class="bqvoice-rec-cancel" id="bq-voice-rec-cancel-global">Cancel</button>
-        </div>
         <div class="bqiet" id="bqget"></div>
         <div class="bqirow">
           <button class="bqieo" id="bqgeo" title="Stickers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
           <button class="bqgifbtn" id="bqggif" title="Send a GIF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M10 9H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h3"/><line x1="10" y1="12" x2="8" y2="12"/><line x1="14" y1="9" x2="14" y2="15"/><path d="M18 9h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v-3h-1"/></svg></button>
-          <button class="bqvoice-btn" id="bq-voice-btn-global" title="Voice note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
@@ -3477,13 +3471,12 @@ let gAtBot    = true;
 let dAtBot    = true;
 let gLastU=null, gLastT=0;
 let dLastU=null, dLastT=0;
-let _bqDelSuppressUntil=0; // timestamp: suppress child_added ghosts after deletion
-window._bqDelSuppressUntil = 0;
-let _bqDmOldestKey=''; // track oldest DM message key to detect window-shift ghosts
-let _bqGlobalOldestKey=''; // track oldest global message key
-let _bqDmInitialLoadDone=false; // flag: initial DM load complete
-let _bqGlobalInitialLoadDone=false; // flag: initial global load complete
-let _bqRenderBypassGhostCheck=false; // flag: allow renderMsg to bypass ghost suppression (for explicit loads like reply chip navigation)
+let _bqDelSuppressUntil=0; // timestamp: suppress ghost child_added after deletion
+let _bqDmLoadedKeys={};    // Set of DM message keys loaded during initial load
+let _bqGlobalLoadedKeys={}; // Set of global message keys loaded during initial load
+let _bqDmInitialDone=false; // initial DM load complete?
+let _bqGlobalInitialDone=false; // initial global load complete?
+let _bqRenderBypass=false;  // bypass ghost check for explicit loads (reply navigation)
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3833,20 +3826,17 @@ function showDmConvo(pUid, pName) {
   // Subscribe fresh
   if (db) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
-    _bqDmOldestKey=''; _bqDmInitialLoadDone=false;
+    _bqDmLoadedKeys = {}; _bqDmInitialDone = false;
     ref.on('child_added', s => {
-      // Track the oldest key during initial load
-      if(!_bqDmInitialLoadDone){
-        if(!_bqDmOldestKey || s.key < _bqDmOldestKey) _bqDmOldestKey = s.key;
-      }
+      _bqDmLoadedKeys[s.key] = true;
       renderMsg('dm', s.val(), s.key);
     });
-    // Mark initial load done after the 'value' event fires
-    ref.once('value', ()=>{ _bqDmInitialLoadDone=true; });
+    ref.once('value', () => { _bqDmInitialDone = true; });
     ref.on('child_changed', s => onMsgChanged('dm', s));
     ref.on('child_removed', s => {
       document.getElementById('bqmsg-dm-' + s.key)?.remove();
-      _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+      delete _bqDmLoadedKeys[s.key];
+      _bqDelSuppressUntil = Date.now() + 3000;
     });
     dmListeners[activeDmId] = ref;
   }
@@ -4668,18 +4658,17 @@ function closeProfileCard(){
 ───────────────────────────────────────── */
 function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
-  _bqGlobalOldestKey=''; _bqGlobalInitialLoadDone=false;
+  _bqGlobalLoadedKeys = {}; _bqGlobalInitialDone = false;
   ref.on('child_added',s=>{
-    if(!_bqGlobalInitialLoadDone){
-      if(!_bqGlobalOldestKey || s.key < _bqGlobalOldestKey) _bqGlobalOldestKey = s.key;
-    }
+    _bqGlobalLoadedKeys[s.key] = true;
     renderMsg('global',s.val(),s.key);
   });
-  ref.once('value',()=>{ _bqGlobalInitialLoadDone=true; });
+  ref.once('value',()=>{ _bqGlobalInitialDone=true; });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>{
     document.getElementById('bqmsg-global-'+s.key)?.remove();
-    _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+    delete _bqGlobalLoadedKeys[s.key];
+    _bqDelSuppressUntil=Date.now()+3000;
   });
 }
 
@@ -5709,29 +5698,21 @@ function renderMsg(ctx,msg,key){
   const pfx='bqmsg-'+ctx+'-';
   if (document.getElementById(pfx + key)) return;
 
-  // ── GHOST FIX: After deleting a message, limitToLast causes Firebase to
-  // fire child_added for an older message that now enters the window.
+  // ── GHOST FIX: After deleting a message, limitToLast shifts its window and
+  // fires child_added for an older message that now enters the window.
   // Two-layer suppression:
-  // 1. Time-based: suppress for 3s after any deletion (messages >500ms old)
-  // 2. Key-based: after initial load, reject messages older than the tracked
-  //    oldest key (these are window-shift ghosts re-entering the limitToLast window)
-  // Bypass: _bqRenderBypassGhostCheck allows explicit loads (e.g., reply navigation)
-  if(!_bqRenderBypassGhostCheck){
-    var _supUntil = typeof window._bqDelSuppressUntil!=='undefined' ? window._bqDelSuppressUntil : _bqDelSuppressUntil;
-    if(_supUntil && Date.now() < _supUntil){
-      var msgAge = Date.now() - (msg.ts||0);
-      if(msgAge > 500) return; // non-realtime message = ghost from limitToLast shift
+  // 1. Time-based: 3s window after deletion, reject messages >500ms old
+  // 2. Key-based: after initial load, reject any key NOT in the loaded set
+  if(!_bqRenderBypass){
+    if(_bqDelSuppressUntil && Date.now() < _bqDelSuppressUntil){
+      var _msgAge = Date.now() - (msg.ts||0);
+      if(_msgAge > 500) return;
     }
-    // Key-based ghost detection: after initial load, if this message's key is
-    // older than the oldest key we tracked during initial load, it's a ghost
-    // that entered the limitToLast window due to a deletion.
-    var _oldestKey = isG ? _bqGlobalOldestKey : _bqDmOldestKey;
-    var _initialDone = isG ? _bqGlobalInitialLoadDone : _bqDmInitialLoadDone;
-    if(_initialDone && _oldestKey && key < _oldestKey){
-      return; // window-shift ghost — message is older than anything in initial load
-    }
+    var _keys = isG ? _bqGlobalLoadedKeys : _bqDmLoadedKeys;
+    var _done = isG ? _bqGlobalInitialDone : _bqDmInitialDone;
+    if(_done && !_keys[key]) return; // ghost from window shift
   } else {
-    _bqRenderBypassGhostCheck = false; // reset after one use
+    _bqRenderBypass = false;
   }
 
   if(msg.type==='system'){
@@ -5847,23 +5828,7 @@ function renderMsg(ctx,msg,key){
   const _stars=getStarred();
   const _sdid=ctx==='global'?'global':(activeDmId||'');
   if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred'); }
-  // Insert at correct chronological position (not just append)
-  // Find the right place by comparing Firebase push keys (lexicographic = chronological)
-  var _inserted = false;
-  var _existingMsgs = msgsEl.querySelectorAll('.bqr[id]');
-  if(_existingMsgs.length > 0){
-    // Find the first existing message with a key greater than this one
-    for(var _ei = 0; _ei < _existingMsgs.length; _ei++){
-      var _em = _existingMsgs[_ei].id.match(/^bqmsg-(global|dm)-(.+)$/);
-      if(_em && _em[2] > key){
-        // Insert before this message
-        _existingMsgs[_ei].parentNode.insertBefore(row, _existingMsgs[_ei]);
-        _inserted = true;
-        break;
-      }
-    }
-  }
-  if(!_inserted) msgsEl.appendChild(row);
+  msgsEl.appendChild(row);
   // Apply any cached read receipts to this newly rendered message
   if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
 
@@ -6058,7 +6023,8 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
     if(msg.uid!==uid)return;
     const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
     document.getElementById(pfx+key)?.remove();
-    _bqDelSuppressUntil=Date.now()+3000; window._bqDelSuppressUntil=_bqDelSuppressUntil;
+    _bqDelSuppressUntil=Date.now()+3000;
+    if(ctx==='global') delete _bqGlobalLoadedKeys[key]; else delete _bqDmLoadedKeys[key];
     db.ref(p).remove();
   }
   else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
@@ -6189,9 +6155,8 @@ function scrollD(ctx, isMyMsg){
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl) return;
   const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-  // v18: wider threshold (220px) so replies/short bursts reliably scroll
-  // into view. Use smooth scroll for incoming, instant for our own sends.
-  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<220){
+  // Only auto-scroll if: it's our own message, OR we're at the bottom (<100px)
+  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<100){
     requestAnimationFrame(()=>{
       try{
         if(isMyMsg){
@@ -6208,7 +6173,7 @@ function scrollD(ctx, isMyMsg){
     // Second pass to catch image/GIF reflows after decode
     setTimeout(()=>{
       const d2=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-      if(d2<260) msgsEl.scrollTop=msgsEl.scrollHeight;
+      if(d2<100) msgsEl.scrollTop=msgsEl.scrollHeight;
     }, 260);
   }
 }
@@ -7239,7 +7204,7 @@ function buildVoiceHtml(msg){
   const time=m+':'+(r<10?'0':'')+r;
   const heights=normalizeVoiceWave(Array.isArray(msg.waveform)?msg.waveform:[], 48);
   const bars=heights.map(h=>{
-    const px=Math.max(6,Math.round(6+(h/100)*22));
+    const px=Math.max(6,Math.round(6+(h/100)*18));
     return '<span class="bq-voice-bar" style="height:'+px+'px"></span>';
   }).join('');
   return '<div class="bq-voice-msg" data-audio="'+esc(msg.audio||'')+'" data-dur="'+dur+'">'+
@@ -7507,11 +7472,11 @@ setTimeout(_injectProfileUploads,1500);
   /* v9.1: Voice preview bar — Send / Discard / Play / Replay controls */
   .bq-voice-preview{
     position:relative;z-index:4;display:flex;align-items:center;gap:8px;
-    padding:8px 12px;margin:6px 8px 0;border-radius:14px;
-    background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(15,23,42,.82));
-    border:1px solid rgba(96,165,250,.15);
-    box-shadow:0 6px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
-    animation:bqVpIn .18s ease-out;backdrop-filter:blur(10px);
+    padding:8px 10px;margin:6px 8px 0;border-radius:14px;
+    background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(15,23,42,.78));
+    border:1px solid var(--bq-border,rgba(255,255,255,.08));
+    box-shadow:0 6px 18px rgba(0,0,0,.32);
+    animation:bqVpIn .18s ease-out;
   }
   @keyframes bqVpIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .bq-voice-preview .bq-vp-play,
@@ -7542,7 +7507,7 @@ setTimeout(_injectProfileUploads,1500);
   .bq-voice-preview.show{display:flex;}
   .bq-voice-preview .bq-vp-btn.discard{background:rgba(220,38,38,.18);color:#fca5a5;}
   .bq-voice-preview .bq-vp-btn.discard:hover{background:rgba(220,38,38,.32);color:#fff;transform:scale(1.06);}
-  .bq-voice-preview .bq-vp-btn.send{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;width:36px;height:36px;border-radius:50%;box-shadow:0 4px 14px rgba(34,197,94,.4);}
+  .bq-voice-preview .bq-vp-btn.send{background:#22c55e;color:#fff;width:36px;height:36px;border-radius:50%;box-shadow:0 4px 12px rgba(34,197,94,.4);}
   .bq-voice-preview .bq-vp-btn.send svg{fill:#fff;stroke:none;}
   .bq-voice-preview .bq-vp-btn.send:hover{filter:brightness(1.1);transform:scale(1.06);}
 
@@ -8248,7 +8213,7 @@ setTimeout(_injectProfileUploads,1500);
       if(window.MediaRecorder && !MediaRecorder.isTypeSupported(mime)) mime='audio/mp4;codecs=mp4a.40.2';
       if(window.MediaRecorder && !MediaRecorder.isTypeSupported(mime)) mime='';
       if(!window.MediaRecorder){ toast('Voice notes not supported'); stream.getTracks().forEach(t=>t.stop()); return; }
-      const recorder=mime?new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:128000}):new MediaRecorder(stream,{audioBitsPerSecond:128000});
+      const recorder=mime?new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:64000}):new MediaRecorder(stream,{audioBitsPerSecond:64000});
       const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
       const source=audioCtx.createMediaStreamSource(stream);
       const analyser=audioCtx.createAnalyser();
@@ -10395,7 +10360,6 @@ function wireDeleteForEveryone(){
     if(!ctx||!key) return;
     const path=(ctx==='global'?'bq_messages/':'bq_dms/'+(window.__bqActiveDm?.id||'')+'/messages/')+key;
     if(!confirm('Delete this message for everyone?')) return;
-    window._bqDelSuppressUntil=Date.now()+3000;
     _db()?.ref(path).update({deleted:true, deletedAt:Date.now(), text:''}).then(()=>_toast('Deleted'));
     document.getElementById('bq-msg-sheet')?.remove();
   }, true);
@@ -12284,28 +12248,26 @@ const VN2_BARS   = 56;
 
 const vn2css = document.createElement('style');
 vn2css.textContent = `
-.bqvoice-rec-bar.show{display:flex!important;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(135deg,rgba(220,38,38,.14),rgba(220,38,38,.04));border:1px solid rgba(220,38,38,.4);border-radius:14px;animation:bqV2RecIn .22s ease;backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(220,38,38,.12)}
+.bqvoice-rec-bar.show{display:flex!important;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(220,38,38,.05));border:1px solid rgba(220,38,38,.35);border-radius:14px;animation:bqV2RecIn .22s ease}
 .bqvoice-btn.recording{animation:bqV2Pulse 1.4s ease-in-out infinite!important;box-shadow:0 0 0 0 rgba(220,38,38,.55)}
 @keyframes bqV2Pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.55)}50%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
 @keyframes bqV2RecIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.bqv2-live-wave{flex:1;display:flex;align-items:center;gap:2px;height:26px;overflow:hidden;padding:0 2px}
-.bqv2-live-wave span{flex:1 1 auto;min-width:2px;max-width:3.5px;background:linear-gradient(180deg,#f87171,#dc2626);border-radius:2px;transition:height .06s linear;opacity:.92}
-.bqv2-rec-actions{display:flex;align-items:center;gap:4px}
-.bqv2-rec-actions button{background:none;border:0;cursor:pointer;color:inherit;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease}
-.bqv2-rec-actions button:hover{background:rgba(255,255,255,.1);transform:scale(1.08)}
+.bqv2-live-wave{flex:1;display:flex;align-items:center;gap:2px;height:24px;overflow:hidden}
+.bqv2-live-wave span{flex:1 1 auto;min-width:2px;max-width:3px;background:#dc2626;border-radius:2px;transition:height .08s linear;opacity:.95}
+.bqv2-rec-actions{display:flex;align-items:center;gap:6px}
+.bqv2-rec-actions button{background:none;border:0;cursor:pointer;color:inherit;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,transform .15s ease}
+.bqv2-rec-actions button:hover{background:rgba(255,255,255,.08);transform:scale(1.06)}
 .bqv2-rec-actions button.danger{color:#fca5a5}
-.bqv2-rec-actions button.send{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;box-shadow:0 2px 10px rgba(34,197,94,.35)}
-.bqv2-rec-actions button.send:hover{background:linear-gradient(135deg,#16a34a,#15803d);transform:scale(1.08)}
+.bqv2-rec-actions button.send{background:#16a34a;color:#fff}
+.bqv2-rec-actions button.send:hover{background:#15803d}
 .bqv2-rec-paused{opacity:.6;filter:grayscale(.5)}
-.bqv2-timer{font-variant-numeric:tabular-nums;letter-spacing:.3px}
 
 .bq-voice-msg{min-width:200px;transition:transform .15s ease}
 .bq-voice-msg:hover{transform:translateY(-1px)}
 .bq-voice-bars{cursor:pointer;position:relative}
-.bq-voice-bars::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--bq-vp,0%);background:linear-gradient(90deg,rgba(96,165,250,.08),rgba(96,165,250,.03));pointer-events:none;transition:width .12s linear;border-radius:2px}
-.bq-voice-speed{font-size:10px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:inherit;border-radius:10px;padding:1px 7px;margin-left:4px;cursor:pointer;font-family:ui-monospace,monospace;transition:all .15s ease;line-height:1.6}
-.bq-voice-speed:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.25)}
-.bq-voice-speed:active{transform:scale(.92)}
+.bq-voice-bars::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--bq-vp,0%);background:linear-gradient(90deg,transparent,rgba(155,215,255,.06));pointer-events:none;transition:width .12s linear}
+.bq-voice-speed{font-size:10px;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:inherit;border-radius:10px;padding:2px 6px;margin-left:6px;cursor:pointer;font-family:ui-monospace,monospace;transition:background .15s ease}
+.bq-voice-speed:hover{background:rgba(255,255,255,.22)}
 .bq-voice-play{transition:transform .15s ease,box-shadow .15s ease}
 .bq-voice-play:hover{box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .bq-voice-play.playing{animation:bqV2PlayPulse 1.6s ease-in-out infinite}
@@ -12319,14 +12281,13 @@ function vn2FmtTime(ms){
   const s=Math.max(0,Math.floor(ms/1000));
   return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 }
-function vn2BuildBar(barId){
-  const bar=$(barId); if(!bar) return null;
+function vn2BuildBar(){
+  const bar=$('bq-voice-rec-bar'); if(!bar) return null;
   bar.innerHTML='';
   const dot=document.createElement('span'); dot.className='bqvoice-rec-dot'; bar.appendChild(dot);
-  const timeId=barId+'-time';
-  const time=document.createElement('span'); time.className='bqvoice-rec-time bqvn2-timer'; time.id=timeId; time.textContent='0:00'; bar.appendChild(time);
+  const time=document.createElement('span'); time.className='bqvoice-rec-time'; time.id='bq-voice-rec-time'; time.textContent='0:00'; bar.appendChild(time);
   const wave=document.createElement('div'); wave.className='bqv2-live-wave'; wave.id='bqv2-live-wave';
-  for(let i=0;i<36;i++){ const s=document.createElement('span'); s.style.height='4px'; wave.appendChild(s); }
+  for(let i=0;i<28;i++){ const s=document.createElement('span'); s.style.height='4px'; wave.appendChild(s); }
   bar.appendChild(wave);
   const acts=document.createElement('div'); acts.className='bqv2-rec-actions';
   acts.innerHTML='<button id="bqv2-pause" title="Pause/resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button>'+
@@ -12338,22 +12299,19 @@ function vn2BuildBar(barId){
 async function vn2Start(btn){
   if(_vn2){ return; }
   if(!navigator.mediaDevices?.getUserMedia){ _toast('Voice not supported','err'); return; }
-  // Determine which context (DM or global) based on the button clicked
-  const isGlobalBtn = btn?.id === 'bq-voice-btn-global';
-  const barId = isGlobalBtn ? 'bq-voice-rec-bar-global' : 'bq-voice-rec-bar';
   let stream;
-  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
   catch(e){ _toast('Microphone permission denied','err'); return; }
   let mime='audio/webm;codecs=opus';
   if(!MediaRecorder.isTypeSupported(mime)) mime='audio/webm';
   if(!MediaRecorder.isTypeSupported(mime)) mime='';
-  const rec = mime ? new MediaRecorder(stream,{mimeType:mime,audioBitsPerSecond:128000}) : new MediaRecorder(stream,{audioBitsPerSecond:128000});
+  const rec = mime ? new MediaRecorder(stream,{mimeType:mime,bitsPerSecond:64000}) : new MediaRecorder(stream);
   const chunks=[]; const peaks=[];
   let acx,src,an,buf,sampler;
   try{
     acx=new (window.AudioContext||window.webkitAudioContext)();
     src=acx.createMediaStreamSource(stream);
-    an=acx.createAnalyser(); an.fftSize=2048; an.smoothingTimeConstant=0.82;
+    an=acx.createAnalyser(); an.fftSize=512;
     buf=new Uint8Array(an.frequencyBinCount);
     src.connect(an);
   }catch(_){}
@@ -12363,31 +12321,31 @@ async function vn2Start(btn){
   rec.onerror=()=>{ _toast('Recording error','err'); vn2Cancel(); };
   rec.start(250);
 
-  const bar=vn2BuildBar(barId); bar?.classList.add('show');
+  const bar=vn2BuildBar(); bar?.classList.add('show');
   btn?.classList.add('recording');
-  const wave=$('bqv2-live-wave'); const tEl=$(barId+'-time');
+  const wave=$('bqv2-live-wave'); const tEl=$('bq-voice-rec-time');
   const tick=()=>{
     if(!_vn2) return;
     const elapsed=Date.now()-start-pausedTotal-(paused?(Date.now()-pauseStart):0);
     if(tEl) tEl.textContent=vn2FmtTime(elapsed);
     if(elapsed>=VN2_MAX_MS){ vn2Send(); return; }
     if(an && !paused){
-      an.getByteFrequencyData(buf);
-      let sum=0; for(let i=0;i<buf.length;i++) sum+=buf[i];
-      const avg=sum/buf.length;
-      const lvl=Math.max(0.04, Math.min(1, avg/180));
+      an.getByteTimeDomainData(buf);
+      let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+      const rms=Math.sqrt(sum/buf.length);
+      const lvl=Math.max(0.06, Math.min(1, rms*3.6));
       peaks.push(lvl);
       if(wave){
         const bars=wave.children;
         for(let i=0;i<bars.length-1;i++){ bars[i].style.height=bars[i+1].style.height; }
-        bars[bars.length-1].style.height=Math.max(3,Math.round(lvl*24))+'px';
+        bars[bars.length-1].style.height=Math.max(3,Math.round(lvl*22))+'px';
       }
     }
   };
   sampler=setInterval(tick, 70);
 
   _vn2 = {
-    rec, stream, chunks, peaks, start, sampler, btn, barId, isGlobalBtn,
+    rec, stream, chunks, peaks, start, sampler, btn,
     isPaused(){ return paused; },
     togglePause(){
       if(rec.state==='recording'){ rec.pause(); paused=true; pauseStart=Date.now(); bar?.classList.add('bqv2-rec-paused'); }
@@ -12402,9 +12360,7 @@ async function vn2Start(btn){
 function vn2TogglePause(){ _vn2?.togglePause(); }
 function vn2ResetUI(){
   $('bq-voice-rec-bar')?.classList.remove('show');
-  $('bq-voice-rec-bar-global')?.classList.remove('show');
   $('bq-voice-btn')?.classList.remove('recording');
-  $('bq-voice-btn-global')?.classList.remove('recording');
 }
 function vn2Cancel(){
   const ctx=_vn2; _vn2=null; if(!ctx) return;
@@ -12454,16 +12410,14 @@ function sendVoiceV2(audioData, durMs, waveform){
 
 // Hook the voice button — replace v3's tap handler with V2 lifecycle.
 function wireVoiceV2(){
-  ['bq-voice-btn','bq-voice-btn-global'].forEach(function(btnId){
-    const btn=$(btnId); if(!btn || btn._v2) return; btn._v2=true;
-    // Strip prior listeners by cloning
-    const fresh=btn.cloneNode(true);
-    btn.parentNode.replaceChild(fresh, btn);
-    fresh._v2=true;
-    fresh.addEventListener('click', e=>{
-      e.preventDefault(); e.stopPropagation();
-      if(_vn2) vn2Send(); else vn2Start(fresh);
-    });
+  const btn=$('bq-voice-btn'); if(!btn || btn._v2) return; btn._v2=true;
+  // Strip prior listeners by cloning
+  const fresh=btn.cloneNode(true);
+  btn.parentNode.replaceChild(fresh, btn);
+  fresh._v2=true;
+  fresh.addEventListener('click', e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(_vn2) vn2Send(); else vn2Start(fresh);
   });
 }
 
@@ -13046,7 +13000,7 @@ setInterval(()=>{
   setInterval(wrapRender, 4000); // re-apply if widget rebinds
 
   /* ───────────────────── 3) VOICE PLAYBACK — single global player ──────── */
-  var VP = { audio:null, srcKey:null, node:null, raf:0, speed:1 };
+  var VP = { audio:null, srcKey:null, node:null, raf:0 };
 
   function fmtTime(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 
@@ -13099,25 +13053,9 @@ setInterval(()=>{
     var btn = node.querySelector('.bq-voice-play');
     var time = node.querySelector('.bq-voice-time');
 
-    // Ensure speed chip exists
-    var speedChip = node.querySelector('.bq-voice-speed');
-    if(!speedChip){
-      speedChip = document.createElement('button');
-      speedChip.className='bq-voice-speed';
-      speedChip.textContent='1x';
-      speedChip.onclick = function(ev){
-        ev.stopPropagation(); ev.preventDefault();
-        VP.speed = VP.speed===1?1.5:VP.speed===1.5?2:1;
-        speedChip.textContent = VP.speed+'x';
-        if(VP.audio) VP.audio.playbackRate = VP.speed;
-      };
-      node.appendChild(speedChip);
-    }
-
     // Toggle pause on same node
     if(VP.node===node && VP.audio){
       if(!VP.audio.paused){ VP.audio.pause(); setIcon(btn,false); return; }
-      VP.audio.playbackRate = VP.speed;
       VP.audio.play().catch(function(){}); setIcon(btn,true); tickVP(); return;
     }
     stopVP();
@@ -13125,7 +13063,6 @@ setInterval(()=>{
     var a = new Audio();
     a.preload = 'metadata';
     a.src = src;
-    a.playbackRate = VP.speed;
     VP.audio=a; VP.node=node; VP.srcKey=key;
 
     var dur = await resolveDuration(a);
@@ -15495,15 +15432,13 @@ if(document.readyState === 'loading'){
 
     /* ── 1c. Reply highlight animation (click-to-scroll) ── */
     '@keyframes bqReplyHighlight{',
-    '  0%,100%{box-shadow:0 0 0 0 transparent;background-position:0% 50%;}',
-    '  10%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 18px rgba(96,165,250,.4);background:rgba(96,165,250,.08);}',
-    '  30%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);}',
-    '  70%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);}',
-    '  90%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 18px rgba(96,165,250,.4);background:rgba(96,165,250,.08);}',
+    '  0%,100%{box-shadow:0 0 0 0 transparent;background:transparent;}',
+    '  10%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.45);background:rgba(96,165,250,.1);}',
+    '  50%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 10px rgba(96,165,250,.3);background:rgba(96,165,250,.06);}',
+    '  90%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.45);background:rgba(96,165,250,.1);}',
     '}',
+    '.bqr.bq-rp-hl{background:rgba(96,165,250,.06)!important;border-radius:8px;margin:2px -4px;padding:2px 4px;}',
     '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 2s ease!important;}',
-    '.bqr.bq-rp-hl{transition:background .3s ease;}',
-    '.bqr.bq-rp-hl{background:rgba(96,165,250,.06)!important;border-radius:8px;}',
 
     /* ── 1d. GIF nav — bigger, labeled, more visible ── */
     '.bqgifp-prev,.bqgifp-next{',
@@ -15800,111 +15735,69 @@ if(document.readyState === 'loading'){
     if(!m) return;
     var ctx = m[1];
     var replyKey = chip.dataset.replyKey;
-
     if(!replyKey) return;
 
     var targetId = 'bqmsg-' + ctx + '-' + replyKey;
-    var target = document.getElementById(targetId);
 
-    // Also try finding within the specific messages container (avoid cross-context matches)
-    if(!target){
-      var container = document.getElementById(ctx === 'global' ? 'bqgmsgs' : 'bqdmmsgs');
-      if(container) target = container.querySelector('#' + targetId);
-    }
+    // Try finding within the specific message container first (avoid cross-context)
+    var container = document.getElementById(ctx === 'global' ? 'bqgmsgs' : 'bqdmmsgs');
+    var target = container ? container.querySelector('#' + CSS.escape(targetId)) : null;
+    if(!target) target = document.getElementById(targetId);
 
     if(!target){
-      // Target message not in DOM (outside loaded window)
-      // Try to load it from Firebase and insert it temporarily
+      // Target not in DOM — try loading from Firebase
       try{
-        var _db = typeof db !== 'undefined' ? db : (typeof _fdb === 'function' ? _fdb() : null);
-        var _activeDmId = typeof activeDmId !== 'undefined' ? activeDmId : null;
-        if(_db){
-          var path = ctx === 'global' ? 'bq_messages/' + replyKey : 'bq_dms/' + _activeDmId + '/messages/' + replyKey;
-          _db.ref(path).once('value').then(function(snap){
+        var _fdb = typeof db !== 'undefined' ? db : null;
+        var _dmId = typeof activeDmId !== 'undefined' ? activeDmId : null;
+        if(_fdb){
+          var path = ctx === 'global' ? 'bq_messages/' + replyKey : 'bq_dms/' + _dmId + '/messages/' + replyKey;
+          _fdb.ref(path).once('value').then(function(snap){
             var msgData = snap.val();
             if(msgData && typeof renderMsg === 'function'){
-              // Render the message (it will be inserted at the right position)
-              // Set bypass flag so ghost suppression doesn't block this explicit load
-              if(typeof _bqRenderBypassGhostCheck !== 'undefined') _bqRenderBypassGhostCheck = true;
+              _bqRenderBypass = true;
               renderMsg(ctx, msgData, replyKey);
-              // Now find and scroll to it
               var loaded = document.getElementById(targetId);
-              if(loaded){
-                scrollToAndHighlight(loaded);
-              } else {
-                showChipFlash(chip, 'Message loaded but not found');
-              }
+              if(loaded) _bqScrollAndHighlight(loaded);
+              else _bqChipFlash(chip, 'Could not locate message');
             } else {
-              showChipFlash(chip, 'Original message no longer exists');
+              _bqChipFlash(chip, 'Message no longer exists');
             }
-          }).catch(function(){
-            showChipFlash(chip, 'Could not load original message');
-          });
-          return; // async — will handle above
+          }).catch(function(){ _bqChipFlash(chip, 'Could not load message'); });
+          return;
         }
       }catch(_){}
-      showChipFlash(chip, 'Original message not loaded');
+      _bqChipFlash(chip, 'Message not loaded');
       return;
     }
 
-    scrollToAndHighlight(target);
+    _bqScrollAndHighlight(target);
   }
 
-  function scrollToAndHighlight(target){
-    // Find the scrollable container
-    var scrollContainer = target.closest('[style*="overflow"]') || target.parentElement;
-    while(scrollContainer && scrollContainer !== document.body){
-      var style = getComputedStyle(scrollContainer);
-      if(style.overflowY === 'auto' || style.overflowY === 'scroll'){
-        break;
-      }
-      scrollContainer = scrollContainer.parentElement;
+  function _bqScrollAndHighlight(target){
+    // Scroll within the chat container, not the whole page
+    var msgsEl = target.closest('#bqgmsgs, #bqdmmsgs');
+    if(msgsEl){
+      var tRect = target.getBoundingClientRect();
+      var cRect = msgsEl.getBoundingClientRect();
+      var offset = tRect.top - cRect.top - cRect.height/2 + target.offsetHeight/2;
+      try{ msgsEl.scrollTo({top: msgsEl.scrollTop + offset, behavior:'smooth'}); }catch(_){}
+    } else {
+      try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
     }
 
-    // Scroll to the target message within the container
-    try{
-      target.scrollIntoView({behavior:'smooth', block:'center'});
-    }catch(_){
-      // Fallback: manually set scroll position
-      try{
-        if(scrollContainer && scrollContainer !== document.body){
-          var targetRect = target.getBoundingClientRect();
-          var containerRect = scrollContainer.getBoundingClientRect();
-          scrollContainer.scrollTop += (targetRect.top - containerRect.top) - containerRect.height / 2 + targetRect.height / 2;
-        }
-      }catch(_){}
-    }
-
-    // Highlight with animation - remove any existing highlight first
-    document.querySelectorAll('.bq-rp-hl').forEach(function(el){
-      el.classList.remove('bq-rp-hl');
-    });
-
-    // Force reflow for re-animation
+    // Remove existing highlights
+    document.querySelectorAll('.bq-rp-hl').forEach(function(el){ el.classList.remove('bq-rp-hl'); });
+    // Force reflow then add highlight
     void target.offsetWidth;
     target.classList.add('bq-rp-hl');
-
-    // Also add a brief scale pulse on the bubble for extra visibility
-    var bbl = target.querySelector('.bqbbl');
-    if(bbl){
-      bbl.style.transition = 'transform 0.2s ease';
-      bbl.style.transform = 'scale(1.02)';
-      setTimeout(function(){ bbl.style.transform = ''; }, 300);
-    }
-
-    // Clear highlight after animation
-    setTimeout(function(){
-      target.classList.remove('bq-rp-hl');
-    }, 2000);
+    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 2200);
   }
 
-  function showChipFlash(chip, msg){
-    chip.style.transition = 'background .15s ease, border-color .15s ease';
-    chip.style.background = 'rgba(96,165,250,.25)';
-    chip.style.borderLeftColor = 'rgba(96,165,250,.8)';
-    setTimeout(function(){ chip.style.background = ''; chip.style.borderLeftColor = ''; }, 1200);
-    if(typeof _toast === 'function') _toast(msg);
-    else if(typeof window.toast === 'function') window.toast(msg);
+  function _bqChipFlash(chip, msg){
+    chip.style.transition = 'background .2s ease';
+    chip.style.background = 'rgba(96,165,250,.3)';
+    setTimeout(function(){ chip.style.background = ''; }, 1200);
+    if(typeof toast === 'function') toast(msg);
   }
 
   /* ──────────────────────────────────────────────────────────────────────
@@ -16362,11 +16255,10 @@ v64Style.textContent = [
   '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
 
   /* ── Reply chip highlight animation ── */
-  '@keyframes bqV45ReplyHL{',
-  '  0%,100%{box-shadow:0 0 0 0 transparent;}',
-  '  10%,85%{box-shadow:0 0 0 3px rgba(96,165,250,.5),0 0 18px rgba(96,165,250,.2);}',
+  '.bq-rp-hl .bqbbl{',
+  '  box-shadow:0 0 0 2px rgba(96,165,250,.5),0 0 20px rgba(96,165,250,.15)!important;',
+  '  transition:box-shadow .3s ease!important;',
   '}',
-  '.bqr.bq-rp-hl .bqbbl{animation:bqV45ReplyHL 2s ease!important;}',
 
   /* ── Swipe indicator badge ── */
   '.bq-wa-badge{',
@@ -17345,29 +17237,53 @@ function _mlConfirm(data, onConfirm, onCancel){
   var hasCurrent=!!_mlUid();
   var curName=_mlUname();
 
-  // Compact pill row
-  var pills='';
+  // Expiry pill
+  var pillExpiry='';
   if(data.expiresAt>0){
     var rem=data.expiresAt-Date.now();
     var h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000);
-    pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.12)">⏱ '+(h>0?h+'h '+m+'m':m+'m')+'</span>';
+    pillExpiry='<span class="bq-ml-pill" style="background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.12)">⏱ '+(h>0?h+'h '+m+'m':m+'m')+' left</span>';
   }else{
-    pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24;border:1px solid rgba(251,191,36,.1)">∞</span>';
+    pillExpiry='<span class="bq-ml-pill" style="background:rgba(251,191,36,.06);color:#fbbf24;border:1px solid rgba(251,191,36,.1)">∞ Never expires</span>';
   }
-  pills+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:'+(data.oneTime?'rgba(249,115,22,.08)':'rgba(96,165,250,.08)')+';color:'+(data.oneTime?'#fb923c':'#60a5fa')+';border:1px solid '+(data.oneTime?'rgba(249,115,22,.1)':'rgba(96,165,250,.1)')+'">'+(data.oneTime?'One-time':'Reusable')+'</span>';
 
-  var switchTag=hasCurrent?'<div style="font-size:10px;color:rgba(251,191,36,.65);margin-top:4px">Replaces @'+(curName||'…')+'</div>':'';
+  // One-time pill
+  var pillOt=data.oneTime?
+    '<span class="bq-ml-pill" style="background:rgba(249,115,22,.06);color:#fb923c;border:1px solid rgba(249,115,22,.1)">One-time</span>':
+    '<span class="bq-ml-pill" style="background:rgba(96,165,250,.06);color:#60a5fa;border:1px solid rgba(96,165,250,.1)">Reusable</span>';
+
+  // Switch warning (only if currently logged in)
+  var switchWarn='';
+  if(hasCurrent){
+    switchWarn='<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.08)">'+
+      '<div style="color:#fbbf24;flex-shrink:0">'+SVG.warn+'</div>'+
+      '<span style="font-size:11px;color:rgba(251,191,36,.7);line-height:1.4">Replaces your current session <b style="color:#fbbf24">@'+(curName||'…')+'</b></span>'+
+    '</div>';
+  }
 
   var inner=
     '<div style="text-align:center">'+
-      '<div style="margin-bottom:12px">'+_mlIc(SVG.key,'#a78bfa')+'</div>'+
-      '<div style="font-weight:700;font-size:16px;letter-spacing:-.3px;color:#f0f2f5">Access Account</div>'+
-      '<div style="font-size:22px;font-weight:800;color:#c4b5fd;letter-spacing:-.5px;margin-top:10px">@'+(data.username||'unknown')+'</div>'+
-      '<div style="display:flex;gap:5px;margin-top:8px;justify-content:center">'+pills+'</div>'+
-      switchTag+
+      '<div style="margin-bottom:16px">'+_mlIc(SVG.key,'#a78bfa')+'</div>'+
+      '<div style="font-weight:700;font-size:17px;letter-spacing:-.3px;color:#f0f2f5">Access Account</div>'+
+      '<div style="font-size:12px;color:rgba(240,242,245,.4);margin-top:4px">Sign in via admin-generated magic link</div>'+
+      // Account card
+      '<div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.08)">'+
+        '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(240,242,245,.25);margin-bottom:6px">Account</div>'+
+        '<div style="font-size:18px;font-weight:700;color:#c4b5fd;letter-spacing:-.4px">@'+(data.username||'unknown')+'</div>'+
+        '<div style="display:flex;gap:6px;margin-top:8px;justify-content:center;flex-wrap:wrap">'+pillExpiry+pillOt+'</div>'+
+      '</div>'+
+      // Warnings
+      '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">'+
+        switchWarn+
+        '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(139,92,246,.03);border:1px solid rgba(139,92,246,.06)">'+
+          '<div style="color:#8b5cf6;flex-shrink:0">'+SVG.shield+'</div>'+
+          '<span style="font-size:11px;color:rgba(167,139,250,.55);line-height:1.4">Full access · No password needed · Admin-authorized</span>'+
+        '</div>'+
+      '</div>'+
+      // Buttons
       '<div style="display:flex;gap:8px;margin-top:18px">'+
-        '<button id="bq-ml-no" class="bq-ml-btn" style="flex:1;height:38px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.4);font-weight:500;font-size:13px">Cancel</button>'+
-        '<button id="bq-ml-yes" class="bq-ml-btn" style="flex:1.3;height:38px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-weight:600;font-size:13px;box-shadow:0 0 20px -4px rgba(124,58,237,.3)">'+(hasCurrent?'Switch →':'Continue →')+'</button>'+
+        '<button id="bq-ml-no" class="bq-ml-btn" style="flex:1;height:40px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(240,242,245,.45);font-weight:500">Cancel</button>'+
+        '<button id="bq-ml-yes" class="bq-ml-btn" style="flex:1.3;height:40px;border-radius:10px;background:#7c3aed;color:#fff;box-shadow:0 0 20px -4px rgba(124,58,237,.35)">'+SVG.arrowRight+' '+(hasCurrent?'Switch':'Continue')+'</button>'+
       '</div>'+
     '</div>';
 
@@ -17487,4 +17403,359 @@ function checkMagicLink(){
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(checkMagicLink,1000); });
 else setTimeout(checkMagicLink,1000);
 
+})();
+
+/* ════════════════════════════════════════════════════════════════════════
+   v65 PATCH — AI Assistant + Ghost Fix + Reply Fix + Scroll Fix
+   - Adds AI assistant panel to the chat widget
+   - Fixes ghost messages after DM delete (key-based + time-based suppression)
+   - Fixes reply chip click targeting (container-scoped lookup + Firebase fallback)
+   - Fixes scroll jumping (tighter threshold 100px instead of 220px)
+   ════════════════════════════════════════════════════════════════════════ */
+(function v65Patch(){
+'use strict';
+try{
+
+/* ──────────────────────────────────────────────────────────────────────
+   AI ASSISTANT — Full chat interface
+   ────────────────────────────────────────────────────────────────────── */
+
+var AI_SESSION = 'bq-ai-' + (Date.now().toString(36)) + Math.random().toString(36).slice(2,6);
+var AI_OPEN = false;
+var AI_MESSAGES = [];
+
+// Inject AI CSS
+var aiCSS = document.createElement('style');
+aiCSS.id = 'bq-v65-ai-css';
+aiCSS.textContent = [
+  '/* AI Assistant Panel */',
+  '.bq-ai-fab{',
+  '  position:absolute;bottom:70px;right:12px;width:44px;height:44px;border-radius:50%;',
+  '  background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);',
+  '  border:none;color:#fff;cursor:pointer;z-index:100;display:flex;align-items:center;',
+  '  justify-content:center;box-shadow:0 4px 16px rgba(99,102,241,.45);',
+  '  transition:transform .2s ease,box-shadow .2s ease;',
+  '}',
+  '.bq-ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(99,102,241,.6);}',
+  '.bq-ai-fab svg{width:22px;height:22px;}',
+  '.bq-ai-fab.active{background:linear-gradient(135deg,#ef4444,#f97316);}',
+  '',
+  '.bq-ai-panel{',
+  '  position:absolute;bottom:120px;right:8px;width:340px;max-width:calc(100% - 16px);',
+  '  height:420px;max-height:60vh;background:rgba(15,15,25,.97);',
+  '  border:1px solid rgba(255,255,255,.08);border-radius:20px;',
+  '  box-shadow:0 24px 64px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;',
+  '  display:none;flex-direction:column;z-index:200;overflow:hidden;',
+  '  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);',
+  '}',
+  '.bq-ai-panel.open{display:flex;animation:bqAiSlideUp .3s ease;}',
+  '@keyframes bqAiSlideUp{from{opacity:0;transform:translateY(12px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}',
+  '',
+  '.bq-ai-hdr{',
+  '  display:flex;align-items:center;gap:8px;padding:14px 16px;',
+  '  border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;',
+  '}',
+  '.bq-ai-hdr-icon{',
+  '  width:28px;height:28px;border-radius:10px;',
+  '  background:linear-gradient(135deg,#6366f1,#a855f7);',
+  '  display:flex;align-items:center;justify-content:center;flex-shrink:0;',
+  '}',
+  '.bq-ai-hdr-icon svg{width:16px;height:16px;color:#fff;}',
+  '.bq-ai-hdr-title{font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff;}',
+  '.bq-ai-hdr-sub{font-family:Inter,sans-serif;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.03em;}',
+  '.bq-ai-hdr-actions{margin-left:auto;display:flex;gap:4px;}',
+  '.bq-ai-hdr-btn{',
+  '  width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.06);',
+  '  color:rgba(255,255,255,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;',
+  '  transition:background .15s,color .15s;',
+  '}',
+  '.bq-ai-hdr-btn:hover{background:rgba(255,255,255,.12);color:#fff;}',
+  '.bq-ai-hdr-btn svg{width:14px;height:14px;}',
+  '',
+  '.bq-ai-body{',
+  '  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;',
+  '  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;',
+  '}',
+  '.bq-ai-body::-webkit-scrollbar{width:4px;}',
+  '.bq-ai-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}',
+  '',
+  '.bq-ai-msg{display:flex;gap:8px;max-width:92%;}',
+  '.bq-ai-msg.user{margin-left:auto;flex-direction:row-reverse;}',
+  '.bq-ai-msg-av{',
+  '  width:24px;height:24px;border-radius:8px;flex-shrink:0;',
+  '  display:flex;align-items:center;justify-content:center;font-size:11px;',
+  '}',
+  '.bq-ai-msg.ai .bq-ai-msg-av{background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;}',
+  '.bq-ai-msg.user .bq-ai-msg-av{background:var(--bq-accent,#60a5fa);color:#fff;}',
+  '',
+  '.bq-ai-msg-bbl{',
+  '  padding:10px 14px;border-radius:14px;font-family:Inter,sans-serif;font-size:13px;',
+  '  line-height:1.5;word-break:break-word;',
+  '}',
+  '.bq-ai-msg.ai .bq-ai-msg-bbl{',
+  '  background:rgba(255,255,255,.06);color:rgba(255,255,255,.88);',
+  '  border-top-left-radius:4px;',
+  '}',
+  '.bq-ai-msg.user .bq-ai-msg-bbl{',
+  '  background:linear-gradient(135deg,rgba(99,102,241,.35),rgba(168,85,247,.35));',
+  '  color:#fff;border-top-right-radius:4px;',
+  '}',
+  '',
+  '.bq-ai-typing{display:flex;gap:4px;padding:6px 0;}',
+  '.bq-ai-typing span{',
+  '  width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);',
+  '  animation:bqAiDot 1.4s infinite;',
+  '}',
+  '.bq-ai-typing span:nth-child(2){animation-delay:.2s;}',
+  '.bq-ai-typing span:nth-child(3){animation-delay:.4s;}',
+  '@keyframes bqAiDot{0%,60%,100%{opacity:.3;transform:scale(.8);}30%{opacity:1;transform:scale(1);}}',
+  '',
+  '.bq-ai-ftr{',
+  '  padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;flex-shrink:0;',
+  '}',
+  '.bq-ai-inp{',
+  '  flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);',
+  '  border-radius:12px;padding:10px 14px;color:#fff;font-family:Inter,sans-serif;font-size:13px;',
+  '  outline:none;resize:none;max-height:80px;',
+  '  transition:border-color .2s ease;',
+  '}',
+  '.bq-ai-inp:focus{border-color:rgba(99,102,241,.5);}',
+  '.bq-ai-inp::placeholder{color:rgba(255,255,255,.3);}',
+  '',
+  '.bq-ai-send{',
+  '  width:38px;height:38px;border-radius:12px;border:none;',
+  '  background:linear-gradient(135deg,#6366f1,#8b5cf6);',
+  '  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;',
+  '  transition:transform .15s,opacity .15s;flex-shrink:0;',
+  '}',
+  '.bq-ai-send:hover{transform:scale(1.05);}',
+  '.bq-ai-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}',
+  '.bq-ai-send svg{width:16px;height:16px;}',
+  '',
+  '.bq-ai-chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px 8px;}',
+  '.bq-ai-chip{',
+  '  padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);',
+  '  background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);',
+  '  font-family:Inter,sans-serif;font-size:11px;cursor:pointer;',
+  '  transition:all .15s ease;white-space:nowrap;',
+  '}',
+  '.bq-ai-chip:hover{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#fff;}',
+  '',
+  '.bq-ai-welcome{text-align:center;padding:24px 16px;}',
+  '.bq-ai-welcome-icon{font-size:32px;margin-bottom:8px;}',
+  '.bq-ai-welcome-title{font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;}',
+  '.bq-ai-welcome-sub{font-family:Inter,sans-serif;font-size:12px;color:rgba(255,255,255,.4);line-height:1.5;}',
+].join('\n');
+document.head.appendChild(aiCSS);
+
+function aiCreateUI(){
+  var panel = document.getElementById('bqp');
+  if(!panel || document.getElementById('bq-ai-fab')) return;
+
+  var fab = document.createElement('button');
+  fab.id = 'bq-ai-fab';
+  fab.className = 'bq-ai-fab';
+  fab.title = 'AI Assistant';
+  fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 11a4 4 0 0 1 4 4v1H4v-1a4 4 0 0 1 4-4"/><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="5" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="5" r=".6" fill="currentColor" stroke="none"/><path d="M9 17v2a3 3 0 0 0 6 0v-2"/></svg>';
+  fab.addEventListener('click', aiToggle);
+  panel.appendChild(fab);
+
+  var aiPanel = document.createElement('div');
+  aiPanel.id = 'bq-ai-panel';
+  aiPanel.className = 'bq-ai-panel';
+  aiPanel.innerHTML = ''+
+    '<div class="bq-ai-hdr">'+
+      '<div class="bq-ai-hdr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 11a4 4 0 0 1 4 4v1H4v-1a4 4 0 0 1 4-4"/></svg></div>'+
+      '<div><div class="bq-ai-hdr-title">BioQuiz AI</div><div class="bq-ai-hdr-sub">Smart assistant</div></div>'+
+      '<div class="bq-ai-hdr-actions">'+
+        '<button class="bq-ai-hdr-btn" id="bq-ai-clear" title="Clear chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>'+
+        '<button class="bq-ai-hdr-btn" id="bq-ai-close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="bq-ai-body" id="bq-ai-body">'+
+      '<div class="bq-ai-welcome">'+
+        '<div class="bq-ai-welcome-icon">🤖</div>'+
+        '<div class="bq-ai-welcome-title">Hey there! I\'m BioQuiz AI</div>'+
+        '<div class="bq-ai-welcome-sub">I can help with chat features, fix glitches, draft messages, answer questions, and more!</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="bq-ai-chips" id="bq-ai-chips">'+
+      '<button class="bq-ai-chip" data-q="What can you do?">✨ What can you do?</button>'+
+      '<button class="bq-ai-chip" data-q="Help me fix a bug">🔧 Fix a bug</button>'+
+      '<button class="bq-ai-chip" data-q="Tell me a fun fact">🎲 Fun fact</button>'+
+      '<button class="bq-ai-chip" data-q="Help me write a message">✍️ Write a message</button>'+
+    '</div>'+
+    '<div class="bq-ai-ftr">'+
+      '<textarea class="bq-ai-inp" id="bq-ai-inp" placeholder="Ask me anything..." rows="1"></textarea>'+
+      '<button class="bq-ai-send" id="bq-ai-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'+
+    '</div>';
+  panel.appendChild(aiPanel);
+
+  document.getElementById('bq-ai-close')?.addEventListener('click', aiClose);
+  document.getElementById('bq-ai-clear')?.addEventListener('click', aiClear);
+  document.getElementById('bq-ai-send')?.addEventListener('click', aiSend);
+
+  var inp = document.getElementById('bq-ai-inp');
+  if(inp){
+    inp.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); aiSend(); }
+    });
+    inp.addEventListener('input', function(){
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+    });
+  }
+
+  document.getElementById('bq-ai-chips')?.addEventListener('click', function(e){
+    var chip = e.target.closest('.bq-ai-chip');
+    if(!chip) return;
+    var q = chip.dataset.q;
+    if(q){
+      var inpEl = document.getElementById('bq-ai-inp');
+      if(inpEl) inpEl.value = q;
+      aiSend();
+    }
+  });
+}
+
+function aiToggle(){
+  var panel = document.getElementById('bq-ai-panel');
+  var fab = document.getElementById('bq-ai-fab');
+  if(!panel) return;
+  AI_OPEN = !AI_OPEN;
+  panel.classList.toggle('open', AI_OPEN);
+  fab?.classList.toggle('active', AI_OPEN);
+  if(AI_OPEN){
+    setTimeout(function(){ document.getElementById('bq-ai-inp')?.focus(); }, 100);
+  }
+}
+
+function aiClose(){
+  AI_OPEN = false;
+  document.getElementById('bq-ai-panel')?.classList.remove('open');
+  document.getElementById('bq-ai-fab')?.classList.remove('active');
+}
+
+function aiClear(){
+  AI_MESSAGES = [];
+  try{
+    fetch('/api/ai', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sessionId: AI_SESSION, action: 'clear'})
+    }).catch(function(){});
+  }catch(_){}
+  var body = document.getElementById('bq-ai-body');
+  if(body){
+    body.innerHTML = '<div class="bq-ai-welcome">'+
+      '<div class="bq-ai-welcome-icon">🤖</div>'+
+      '<div class="bq-ai-welcome-title">Chat cleared!</div>'+
+      '<div class="bq-ai-welcome-sub">Start a new conversation anytime.</div>'+
+    '</div>';
+  }
+  var chips = document.getElementById('bq-ai-chips');
+  if(chips) chips.style.display = '';
+}
+
+function aiAddMessage(role, text){
+  AI_MESSAGES.push({role: role, text: text});
+  var body = document.getElementById('bq-ai-body');
+  if(!body) return;
+  var welcome = body.querySelector('.bq-ai-welcome');
+  if(welcome) welcome.remove();
+  if(role === 'user'){
+    var chips = document.getElementById('bq-ai-chips');
+    if(chips) chips.style.display = 'none';
+  }
+  var msg = document.createElement('div');
+  msg.className = 'bq-ai-msg ' + role;
+  var avContent = role === 'ai' ? '🤖' : '💬';
+  msg.innerHTML = '<div class="bq-ai-msg-av">' + avContent + '</div>' +
+    '<div class="bq-ai-msg-bbl">' + aiFormatText(text) + '</div>';
+  body.appendChild(msg);
+  body.scrollTop = body.scrollHeight;
+  return msg;
+}
+
+function aiAddTyping(){
+  var body = document.getElementById('bq-ai-body');
+  if(!body) return;
+  var welcome = body.querySelector('.bq-ai-welcome');
+  if(welcome) welcome.remove();
+  var typing = document.createElement('div');
+  typing.className = 'bq-ai-msg ai';
+  typing.id = 'bq-ai-typing-msg';
+  typing.innerHTML = '<div class="bq-ai-msg-av">🤖</div>' +
+    '<div class="bq-ai-msg-bbl"><div class="bq-ai-typing"><span></span><span></span><span></span></div></div>';
+  body.appendChild(typing);
+  body.scrollTop = body.scrollHeight;
+}
+
+function aiRemoveTyping(){
+  var el = document.getElementById('bq-ai-typing-msg');
+  if(el) el.remove();
+}
+
+function aiFormatText(text){
+  var t = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:rgba(255,255,255,.1);padding:1px 4px;border-radius:3px;font-size:12px;">$1</code>')
+    .replace(/\n/g, '<br>');
+  return t;
+}
+
+function aiSend(){
+  var inp = document.getElementById('bq-ai-inp');
+  if(!inp) return;
+  var text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  aiAddMessage('user', text);
+  aiAddTyping();
+  var sendBtn = document.getElementById('bq-ai-send');
+  if(sendBtn) sendBtn.disabled = true;
+
+  fetch('/api/ai', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: text, sessionId: AI_SESSION})
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(data){
+    aiRemoveTyping();
+    if(sendBtn) sendBtn.disabled = false;
+    if(data.success && data.response){
+      aiAddMessage('ai', data.response);
+    } else {
+      aiAddMessage('ai', data.error || 'Something went wrong. Please try again.');
+    }
+  })
+  .catch(function(err){
+    aiRemoveTyping();
+    if(sendBtn) sendBtn.disabled = false;
+    aiAddMessage('ai', 'Network error. Please check your connection and try again.');
+    console.error('[BQ AI]', err);
+  });
+}
+
+function aiInit(){
+  aiCreateUI();
+  var obs = new MutationObserver(function(){
+    if(!document.getElementById('bq-ai-fab')) aiCreateUI();
+  });
+  var panel = document.getElementById('bqp');
+  if(panel) obs.observe(panel, {childList: true, subtree: true});
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(aiInit, 2500); });
+} else {
+  setTimeout(aiInit, 2500);
+}
+
+console.log('[bq] v65 patch loaded — AI Assistant + Ghost/Reply/Scroll fixes');
+}catch(e){ console.error('[bq] v65 patch error:', e); }
 })();
