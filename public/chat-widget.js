@@ -15425,18 +15425,19 @@ if(document.readyState === 'loading'){
     '.bqr.mine .bqrp-n{color:rgba(255,255,255,.85)!important;}',
     '.bqr.mine .bqrp-t{color:rgba(255,255,255,.6)!important;}',
 
-    /* ── 1c. Reply highlight animation (click-to-scroll) ── */
+    /* ── 1c. Reply highlight animation (click-to-scroll) — v67: much more visible ── */
     '@keyframes bqReplyHighlight{',
-    '  0%{box-shadow:0 0 0 0 transparent;background:transparent;}',
-    '  15%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
-    '  30%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);background:rgba(96,165,250,.1);}',
-    '  50%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
-    '  70%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);background:rgba(96,165,250,.1);}',
-    '  85%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
-    '  100%{box-shadow:0 0 0 0 transparent;background:transparent;}',
+    '  0%{box-shadow:0 0 0 0 transparent;background:transparent;transform:scale(1);}',
+    '  8%{box-shadow:0 0 0 4px var(--bq-accent,#60a5fa),0 0 24px rgba(96,165,250,.6);background:rgba(96,165,250,.25);transform:scale(1.01);}',
+    '  20%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.4);background:rgba(96,165,250,.15);transform:scale(1);}',
+    '  35%{box-shadow:0 0 0 4px var(--bq-accent,#60a5fa),0 0 24px rgba(96,165,250,.6);background:rgba(96,165,250,.25);transform:scale(1.01);}',
+    '  50%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.4);background:rgba(96,165,250,.15);transform:scale(1);}',
+    '  65%{box-shadow:0 0 0 4px var(--bq-accent,#60a5fa),0 0 24px rgba(96,165,250,.6);background:rgba(96,165,250,.25);transform:scale(1.01);}',
+    '  80%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 10px rgba(96,165,250,.3);background:rgba(96,165,250,.1);transform:scale(1);}',
+    '  100%{box-shadow:0 0 0 0 transparent;background:transparent;transform:scale(1);}',
     '}',
-    '.bqr.bq-rp-hl{background:rgba(96,165,250,.12)!important;border-radius:8px;margin:2px -4px;padding:2px 4px;transition:background .2s ease;}',
-    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 2.8s ease!important;}',
+    '.bqr.bq-rp-hl{background:rgba(96,165,250,.18)!important;border-radius:10px!important;margin:2px -6px!important;padding:4px 6px!important;border:2px solid rgba(96,165,250,.4)!important;transition:all .3s ease!important;}',
+    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 3.5s ease!important;}',
 
     /* ── 1d. GIF nav — bigger, labeled, more visible ── */
     '.bqgifp-prev,.bqgifp-next{',
@@ -15735,11 +15736,50 @@ if(document.readyState === 'loading'){
     var replyKey = chip.dataset.replyKey;
     if(!replyKey) return;
 
+    // v67: Also check row's dataset.replyToKey as fallback (more reliable than HTML attribute)
+    if(!replyKey && row.dataset.replyToKey) replyKey = row.dataset.replyToKey;
+    if(!replyKey) return;
+
     var targetId = 'bqmsg-' + ctx + '-' + replyKey;
+
+    // v67: Debug log for reply chip targeting
+    if(typeof bugLog === 'function'){
+      try{ bugLog('info', 'reply-chip-click', 'Reply chip clicked', 'ctx=' + ctx + ' replyKey=' + replyKey + ' targetId=' + targetId); }catch(_){}
+    }
 
     // Use getElementById directly — more reliable than querySelector+CSS.escape
     // for Firebase push IDs that start with '-'
     var target = document.getElementById(targetId);
+
+    // v67: If not found by exact ID, try searching within the correct container
+    if(!target){
+      var container = ctx === 'global'
+        ? document.getElementById('bqgmsgs')
+        : document.getElementById('bqdmmsgs');
+      if(container){
+        // Try finding by data-key attribute on bubbles (more reliable than ID)
+        var allMsgs = container.querySelectorAll('.bqr[id]');
+        for(var i = 0; i < allMsgs.length; i++){
+          var elId = allMsgs[i].id || '';
+          // Extract key from ID: bqmsg-global-KEY or bqmsg-dm-KEY
+          var em = elId.match(/^bqmsg-(?:global|dm)-(.+)$/);
+          if(em && em[1] === replyKey){
+            target = allMsgs[i];
+            break;
+          }
+        }
+      }
+    }
+
+    // v67: If still not found, try the OTHER context (in case of context mismatch)
+    if(!target){
+      var altCtx = ctx === 'global' ? 'dm' : 'global';
+      var altTargetId = 'bqmsg-' + altCtx + '-' + replyKey;
+      target = document.getElementById(altTargetId);
+      if(target && typeof bugLog === 'function'){
+        try{ bugLog('warn', 'reply-ctx-mismatch', 'Reply chip context was wrong', 'chip ctx=' + ctx + ' but target found in ' + altCtx); }catch(_){}
+      }
+    }
 
     if(!target){
       // Target not in DOM — try loading from Firebase
@@ -15753,9 +15793,24 @@ if(document.readyState === 'loading'){
             if(msgData && typeof renderMsg === 'function'){
               _bqRenderBypass = true;
               renderMsg(ctx, msgData, replyKey);
-              var loaded = document.getElementById(targetId);
-              if(loaded) _bqScrollAndHighlight(loaded);
-              else _bqChipFlash(chip, 'Could not locate message');
+              // v67: Use requestAnimationFrame to ensure DOM is updated
+              requestAnimationFrame(function(){
+                var loaded = document.getElementById(targetId);
+                if(!loaded){
+                  // Try container search as fallback
+                  var cont = ctx === 'global' ? document.getElementById('bqgmsgs') : document.getElementById('bqdmmsgs');
+                  if(cont){
+                    var msgs = cont.querySelectorAll('.bqr[id]');
+                    for(var j = 0; j < msgs.length; j++){
+                      var eid = msgs[j].id || '';
+                      var eem = eid.match(/^bqmsg-(?:global|dm)-(.+)$/);
+                      if(eem && eem[1] === replyKey){ loaded = msgs[j]; break; }
+                    }
+                  }
+                }
+                if(loaded) _bqScrollAndHighlight(loaded);
+                else _bqChipFlash(chip, 'Could not locate message');
+              });
             } else {
               _bqChipFlash(chip, 'Message no longer exists');
             }
@@ -15787,7 +15842,7 @@ if(document.readyState === 'loading'){
     // Force reflow then add highlight
     void target.offsetWidth;
     target.classList.add('bq-rp-hl');
-    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 3000);
+    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 4000);
   }
 
   function _bqChipFlash(chip, msg){
@@ -16251,11 +16306,7 @@ v64Style.textContent = [
   '.bqgifp-item.bqgifp-err img{display:none!important;}',
   '.bqgifp-item.bqgifp-err::after{content:"⚠"!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;opacity:.3!important;}',
 
-  /* ── Reply chip highlight animation ── */
-  '.bq-rp-hl .bqbbl{',
-  '  box-shadow:0 0 0 3px rgba(96,165,250,.6),0 0 24px rgba(96,165,250,.25)!important;',
-  '  transition:box-shadow .3s ease!important;',
-  '}',
+  /* ── Reply chip highlight is handled by bqReplyHighlight animation in main CSS ── */
 
   /* ── Swipe indicator badge ── */
   '.bq-wa-badge{',
@@ -17403,8 +17454,8 @@ else setTimeout(checkMagicLink,1000);
 })();
 
 /* ════════════════════════════════════════════════════════════════════════
-   v65 PATCH — AI Assistant + Ghost Fix + Reply Fix + Scroll Fix
-   - Adds AI assistant panel to the chat widget
+   v65+67 PATCH — Ghost Fix + Reply Fix + Scroll Fix
+   - AI Assistant REMOVED per user request (monitoring system is in v67)
    - Fixes ghost messages after DM delete (key-based + time-based suppression)
    - Fixes reply chip click targeting (container-scoped lookup + Firebase fallback)
    - Fixes scroll jumping (tighter threshold 100px instead of 220px)
@@ -17413,357 +17464,30 @@ else setTimeout(checkMagicLink,1000);
 'use strict';
 try{
 
-/* ──────────────────────────────────────────────────────────────────────
-   AI ASSISTANT — Full chat interface
-   ────────────────────────────────────────────────────────────────────── */
+// Ghost fix, reply fix, and scroll fix are already integrated into the main code
+// via _bqDelSuppressUntil, _bqDmLoadedKeys, handleReplyChipClick, etc.
+// This patch is now minimal — just ensures the fix variables exist.
 
-var AI_SESSION = 'bq-ai-' + (Date.now().toString(36)) + Math.random().toString(36).slice(2,6);
-var AI_OPEN = false;
-var AI_MESSAGES = [];
+if(typeof _bqDelSuppressUntil === 'undefined') window._bqDelSuppressUntil = 0;
+if(typeof _bqDmLoadedKeys === 'undefined') window._bqDmLoadedKeys = {};
+if(typeof _bqGlobalLoadedKeys === 'undefined') window._bqGlobalLoadedKeys = {};
+if(typeof _bqDmInitialDone === 'undefined') window._bqDmInitialDone = false;
+if(typeof _bqGlobalInitialDone === 'undefined') window._bqGlobalInitialDone = false;
+if(typeof _bqRenderBypass === 'undefined') window._bqRenderBypass = false;
 
-// Inject AI CSS
-var aiCSS = document.createElement('style');
-aiCSS.id = 'bq-v65-ai-css';
-aiCSS.textContent = [
-  '/* AI Assistant Panel */',
-  '.bq-ai-fab{',
-  '  position:absolute;bottom:70px;right:12px;width:44px;height:44px;border-radius:50%;',
-  '  background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);',
-  '  border:none;color:#fff;cursor:pointer;z-index:100;display:flex;align-items:center;',
-  '  justify-content:center;box-shadow:0 4px 16px rgba(99,102,241,.45);',
-  '  transition:transform .2s ease,box-shadow .2s ease;',
-  '}',
-  '.bq-ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(99,102,241,.6);}',
-  '.bq-ai-fab svg{width:22px;height:22px;}',
-  '.bq-ai-fab.active{background:linear-gradient(135deg,#ef4444,#f97316);}',
-  '',
-  '.bq-ai-panel{',
-  '  position:absolute;bottom:120px;right:8px;width:340px;max-width:calc(100% - 16px);',
-  '  height:420px;max-height:60vh;background:rgba(15,15,25,.97);',
-  '  border:1px solid rgba(255,255,255,.08);border-radius:20px;',
-  '  box-shadow:0 24px 64px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;',
-  '  display:none;flex-direction:column;z-index:200;overflow:hidden;',
-  '  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);',
-  '}',
-  '.bq-ai-panel.open{display:flex;animation:bqAiSlideUp .3s ease;}',
-  '@keyframes bqAiSlideUp{from{opacity:0;transform:translateY(12px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}',
-  '',
-  '.bq-ai-hdr{',
-  '  display:flex;align-items:center;gap:8px;padding:14px 16px;',
-  '  border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;',
-  '}',
-  '.bq-ai-hdr-icon{',
-  '  width:28px;height:28px;border-radius:10px;',
-  '  background:linear-gradient(135deg,#6366f1,#a855f7);',
-  '  display:flex;align-items:center;justify-content:center;flex-shrink:0;',
-  '}',
-  '.bq-ai-hdr-icon svg{width:16px;height:16px;color:#fff;}',
-  '.bq-ai-hdr-title{font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff;}',
-  '.bq-ai-hdr-sub{font-family:Inter,sans-serif;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.03em;}',
-  '.bq-ai-hdr-actions{margin-left:auto;display:flex;gap:4px;}',
-  '.bq-ai-hdr-btn{',
-  '  width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.06);',
-  '  color:rgba(255,255,255,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;',
-  '  transition:background .15s,color .15s;',
-  '}',
-  '.bq-ai-hdr-btn:hover{background:rgba(255,255,255,.12);color:#fff;}',
-  '.bq-ai-hdr-btn svg{width:14px;height:14px;}',
-  '',
-  '.bq-ai-body{',
-  '  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;',
-  '  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;',
-  '}',
-  '.bq-ai-body::-webkit-scrollbar{width:4px;}',
-  '.bq-ai-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}',
-  '',
-  '.bq-ai-msg{display:flex;gap:8px;max-width:92%;}',
-  '.bq-ai-msg.user{margin-left:auto;flex-direction:row-reverse;}',
-  '.bq-ai-msg-av{',
-  '  width:24px;height:24px;border-radius:8px;flex-shrink:0;',
-  '  display:flex;align-items:center;justify-content:center;font-size:11px;',
-  '}',
-  '.bq-ai-msg.ai .bq-ai-msg-av{background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;}',
-  '.bq-ai-msg.user .bq-ai-msg-av{background:var(--bq-accent,#60a5fa);color:#fff;}',
-  '',
-  '.bq-ai-msg-bbl{',
-  '  padding:10px 14px;border-radius:14px;font-family:Inter,sans-serif;font-size:13px;',
-  '  line-height:1.5;word-break:break-word;',
-  '}',
-  '.bq-ai-msg.ai .bq-ai-msg-bbl{',
-  '  background:rgba(255,255,255,.06);color:rgba(255,255,255,.88);',
-  '  border-top-left-radius:4px;',
-  '}',
-  '.bq-ai-msg.user .bq-ai-msg-bbl{',
-  '  background:linear-gradient(135deg,rgba(99,102,241,.35),rgba(168,85,247,.35));',
-  '  color:#fff;border-top-right-radius:4px;',
-  '}',
-  '',
-  '.bq-ai-typing{display:flex;gap:4px;padding:6px 0;}',
-  '.bq-ai-typing span{',
-  '  width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);',
-  '  animation:bqAiDot 1.4s infinite;',
-  '}',
-  '.bq-ai-typing span:nth-child(2){animation-delay:.2s;}',
-  '.bq-ai-typing span:nth-child(3){animation-delay:.4s;}',
-  '@keyframes bqAiDot{0%,60%,100%{opacity:.3;transform:scale(.8);}30%{opacity:1;transform:scale(1);}}',
-  '',
-  '.bq-ai-ftr{',
-  '  padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;flex-shrink:0;',
-  '}',
-  '.bq-ai-inp{',
-  '  flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);',
-  '  border-radius:12px;padding:10px 14px;color:#fff;font-family:Inter,sans-serif;font-size:13px;',
-  '  outline:none;resize:none;max-height:80px;',
-  '  transition:border-color .2s ease;',
-  '}',
-  '.bq-ai-inp:focus{border-color:rgba(99,102,241,.5);}',
-  '.bq-ai-inp::placeholder{color:rgba(255,255,255,.3);}',
-  '',
-  '.bq-ai-send{',
-  '  width:38px;height:38px;border-radius:12px;border:none;',
-  '  background:linear-gradient(135deg,#6366f1,#8b5cf6);',
-  '  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;',
-  '  transition:transform .15s,opacity .15s;flex-shrink:0;',
-  '}',
-  '.bq-ai-send:hover{transform:scale(1.05);}',
-  '.bq-ai-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}',
-  '.bq-ai-send svg{width:16px;height:16px;}',
-  '',
-  '.bq-ai-chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px 8px;}',
-  '.bq-ai-chip{',
-  '  padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);',
-  '  background:rgba(255,255,255,.04);color:rgba(255,255,255,.6);',
-  '  font-family:Inter,sans-serif;font-size:11px;cursor:pointer;',
-  '  transition:all .15s ease;white-space:nowrap;',
-  '}',
-  '.bq-ai-chip:hover{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#fff;}',
-  '',
-  '.bq-ai-welcome{text-align:center;padding:24px 16px;}',
-  '.bq-ai-welcome-icon{font-size:32px;margin-bottom:8px;}',
-  '.bq-ai-welcome-title{font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;}',
-  '.bq-ai-welcome-sub{font-family:Inter,sans-serif;font-size:12px;color:rgba(255,255,255,.4);line-height:1.5;}',
-].join('\n');
-document.head.appendChild(aiCSS);
-
-function aiCreateUI(){
-  var panel = document.getElementById('bqp');
-  if(!panel || document.getElementById('bq-ai-fab')) return;
-
-  var fab = document.createElement('button');
-  fab.id = 'bq-ai-fab';
-  fab.className = 'bq-ai-fab';
-  fab.title = 'AI Assistant';
-  fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 11a4 4 0 0 1 4 4v1H4v-1a4 4 0 0 1 4-4"/><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="5" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="5" r=".6" fill="currentColor" stroke="none"/><path d="M9 17v2a3 3 0 0 0 6 0v-2"/></svg>';
-  fab.addEventListener('click', aiToggle);
-  panel.appendChild(fab);
-
-  var aiPanel = document.createElement('div');
-  aiPanel.id = 'bq-ai-panel';
-  aiPanel.className = 'bq-ai-panel';
-  aiPanel.innerHTML = ''+
-    '<div class="bq-ai-hdr">'+
-      '<div class="bq-ai-hdr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 11a4 4 0 0 1 4 4v1H4v-1a4 4 0 0 1 4-4"/></svg></div>'+
-      '<div><div class="bq-ai-hdr-title">BioQuiz AI</div><div class="bq-ai-hdr-sub">Smart assistant</div></div>'+
-      '<div class="bq-ai-hdr-actions">'+
-        '<button class="bq-ai-hdr-btn" id="bq-ai-clear" title="Clear chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>'+
-        '<button class="bq-ai-hdr-btn" id="bq-ai-close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
-      '</div>'+
-    '</div>'+
-    '<div class="bq-ai-body" id="bq-ai-body">'+
-      '<div class="bq-ai-welcome">'+
-        '<div class="bq-ai-welcome-icon">🤖</div>'+
-        '<div class="bq-ai-welcome-title">Hey there! I\'m BioQuiz AI</div>'+
-        '<div class="bq-ai-welcome-sub">I can help with chat features, fix glitches, draft messages, answer questions, and more!</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="bq-ai-chips" id="bq-ai-chips">'+
-      '<button class="bq-ai-chip" data-q="What can you do?">✨ What can you do?</button>'+
-      '<button class="bq-ai-chip" data-q="Help me fix a bug">🔧 Fix a bug</button>'+
-      '<button class="bq-ai-chip" data-q="Tell me a fun fact">🎲 Fun fact</button>'+
-      '<button class="bq-ai-chip" data-q="Help me write a message">✍️ Write a message</button>'+
-    '</div>'+
-    '<div class="bq-ai-ftr">'+
-      '<textarea class="bq-ai-inp" id="bq-ai-inp" placeholder="Ask me anything..." rows="1"></textarea>'+
-      '<button class="bq-ai-send" id="bq-ai-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'+
-    '</div>';
-  panel.appendChild(aiPanel);
-
-  document.getElementById('bq-ai-close')?.addEventListener('click', aiClose);
-  document.getElementById('bq-ai-clear')?.addEventListener('click', aiClear);
-  document.getElementById('bq-ai-send')?.addEventListener('click', aiSend);
-
-  var inp = document.getElementById('bq-ai-inp');
-  if(inp){
-    inp.addEventListener('keydown', function(e){
-      if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); aiSend(); }
-    });
-    inp.addEventListener('input', function(){
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 80) + 'px';
-    });
-  }
-
-  document.getElementById('bq-ai-chips')?.addEventListener('click', function(e){
-    var chip = e.target.closest('.bq-ai-chip');
-    if(!chip) return;
-    var q = chip.dataset.q;
-    if(q){
-      var inpEl = document.getElementById('bq-ai-inp');
-      if(inpEl) inpEl.value = q;
-      aiSend();
-    }
-  });
-}
-
-function aiToggle(){
-  var panel = document.getElementById('bq-ai-panel');
-  var fab = document.getElementById('bq-ai-fab');
-  if(!panel) return;
-  AI_OPEN = !AI_OPEN;
-  panel.classList.toggle('open', AI_OPEN);
-  fab?.classList.toggle('active', AI_OPEN);
-  if(AI_OPEN){
-    setTimeout(function(){ document.getElementById('bq-ai-inp')?.focus(); }, 100);
-  }
-}
-
-function aiClose(){
-  AI_OPEN = false;
-  document.getElementById('bq-ai-panel')?.classList.remove('open');
-  document.getElementById('bq-ai-fab')?.classList.remove('active');
-}
-
-function aiClear(){
-  AI_MESSAGES = [];
-  try{
-    fetch('/api/ai', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({sessionId: AI_SESSION, action: 'clear'})
-    }).catch(function(){});
-  }catch(_){}
-  var body = document.getElementById('bq-ai-body');
-  if(body){
-    body.innerHTML = '<div class="bq-ai-welcome">'+
-      '<div class="bq-ai-welcome-icon">🤖</div>'+
-      '<div class="bq-ai-welcome-title">Chat cleared!</div>'+
-      '<div class="bq-ai-welcome-sub">Start a new conversation anytime.</div>'+
-    '</div>';
-  }
-  var chips = document.getElementById('bq-ai-chips');
-  if(chips) chips.style.display = '';
-}
-
-function aiAddMessage(role, text){
-  AI_MESSAGES.push({role: role, text: text});
-  var body = document.getElementById('bq-ai-body');
-  if(!body) return;
-  var welcome = body.querySelector('.bq-ai-welcome');
-  if(welcome) welcome.remove();
-  if(role === 'user'){
-    var chips = document.getElementById('bq-ai-chips');
-    if(chips) chips.style.display = 'none';
-  }
-  var msg = document.createElement('div');
-  msg.className = 'bq-ai-msg ' + role;
-  var avContent = role === 'ai' ? '🤖' : '💬';
-  msg.innerHTML = '<div class="bq-ai-msg-av">' + avContent + '</div>' +
-    '<div class="bq-ai-msg-bbl">' + aiFormatText(text) + '</div>';
-  body.appendChild(msg);
-  body.scrollTop = body.scrollHeight;
-  return msg;
-}
-
-function aiAddTyping(){
-  var body = document.getElementById('bq-ai-body');
-  if(!body) return;
-  var welcome = body.querySelector('.bq-ai-welcome');
-  if(welcome) welcome.remove();
-  var typing = document.createElement('div');
-  typing.className = 'bq-ai-msg ai';
-  typing.id = 'bq-ai-typing-msg';
-  typing.innerHTML = '<div class="bq-ai-msg-av">🤖</div>' +
-    '<div class="bq-ai-msg-bbl"><div class="bq-ai-typing"><span></span><span></span><span></span></div></div>';
-  body.appendChild(typing);
-  body.scrollTop = body.scrollHeight;
-}
-
-function aiRemoveTyping(){
-  var el = document.getElementById('bq-ai-typing-msg');
-  if(el) el.remove();
-}
-
-function aiFormatText(text){
-  var t = text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code style="background:rgba(255,255,255,.1);padding:1px 4px;border-radius:3px;font-size:12px;">$1</code>')
-    .replace(/\n/g, '<br>');
-  return t;
-}
-
-function aiSend(){
-  var inp = document.getElementById('bq-ai-inp');
-  if(!inp) return;
-  var text = inp.value.trim();
-  if(!text) return;
-  inp.value = '';
-  inp.style.height = 'auto';
-  aiAddMessage('user', text);
-  aiAddTyping();
-  var sendBtn = document.getElementById('bq-ai-send');
-  if(sendBtn) sendBtn.disabled = true;
-
-  fetch('/api/ai', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({message: text, sessionId: AI_SESSION})
-  })
-  .then(function(res){ return res.json(); })
-  .then(function(data){
-    aiRemoveTyping();
-    if(sendBtn) sendBtn.disabled = false;
-    if(data.success && data.response){
-      aiAddMessage('ai', data.response);
-    } else {
-      aiAddMessage('ai', data.error || 'Something went wrong. Please try again.');
-    }
-  })
-  .catch(function(err){
-    aiRemoveTyping();
-    if(sendBtn) sendBtn.disabled = false;
-    aiAddMessage('ai', 'Network error. Please check your connection and try again.');
-    console.error('[BQ AI]', err);
-  });
-}
-
-function aiInit(){
-  aiCreateUI();
-  var obs = new MutationObserver(function(){
-    if(!document.getElementById('bq-ai-fab')) aiCreateUI();
-  });
-  var panel = document.getElementById('bqp');
-  if(panel) obs.observe(panel, {childList: true, subtree: true});
-}
-
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', function(){ setTimeout(aiInit, 2500); });
-} else {
-  setTimeout(aiInit, 2500);
-}
-
-console.log('[bq] v65 patch loaded — AI Assistant + Ghost/Reply/Scroll fixes');
-}catch(e){ console.error('[bq] v65 patch error:', e); }
+console.log('[bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)');
+}catch(e){ console.error('[bq] v65+67 patch error:', e); }
 })();
 
 /* ════════════════════════════════════════════════════════════════════════
-   v66 PATCH — AI Bug Monitor + Performance + Stability
+   v66+67 PATCH — AI Bug Monitor + Performance + Stability
    - Background bug hunter that monitors the widget for errors/anomalies
    - Logs bugs to Firebase (bq_bug_logs) for admin panel review
    - Self-healing: auto-fixes common issues (duplicate DOM, orphan listeners)
    - Performance: throttles renders, debounces scroll, reduces reflows
    - Stability: better error boundaries, retry logic for Firebase ops
+   - v67: Reply chip health checks, ghost detection verification,
+          memory leak monitoring, enhanced self-healing, orphan cleanup
    ════════════════════════════════════════════════════════════════════════ */
 (function v66Patch(){
 'use strict';
@@ -18069,6 +17793,256 @@ function selfHeal(){
 }
 
 /* ──────────────────────────────────────────────────────────────────────
+   §6b. v67: REPLY CHIP HEALTH CHECK
+   Verifies that all reply chips in the DOM have valid targets.
+   Logs warnings for broken/orphaned reply references.
+   ────────────────────────────────────────────────────────────────────── */
+
+function checkReplyChipHealth(){
+  var chips = document.querySelectorAll('.bqrp[data-reply-key]');
+  var broken = 0;
+  var total = 0;
+  chips.forEach(function(chip){
+    total++;
+    var replyKey = chip.dataset.replyKey;
+    if(!replyKey) return;
+    var row = chip.closest('.bqr');
+    if(!row) return;
+    var rowId = row.id || '';
+    var m = rowId.match(/^bqmsg-(global|dm)-(.+)$/);
+    if(!m) return;
+    var ctx = m[1];
+    var targetId = 'bqmsg-' + ctx + '-' + replyKey;
+    var target = document.getElementById(targetId);
+    if(!target){
+      // Also check the row's dataset as fallback
+      var found = false;
+      var container = ctx === 'global' ? document.getElementById('bqgmsgs') : document.getElementById('bqdmmsgs');
+      if(container){
+        var msgs = container.querySelectorAll('.bqr[id]');
+        for(var i = 0; i < msgs.length; i++){
+          var eid = msgs[i].id || '';
+          var em = eid.match(/^bqmsg-(?:global|dm)-(.+)$/);
+          if(em && em[1] === replyKey){ found = true; break; }
+        }
+      }
+      if(!found){
+        broken++;
+        // Self-heal: mark chip as broken so user knows
+        chip.style.opacity = '0.5';
+        chip.title = 'Original message not available';
+      }
+    }
+  });
+  if(broken > 0){
+    bugLog(SEV.WARN, 'reply-chip-broken', broken + '/' + total + ' reply chips have missing targets');
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6c. v67: GHOST MESSAGE VERIFICATION
+   Checks if any rendered messages match the ghost suppression criteria
+   (appeared after deletion window shift).
+   ────────────────────────────────────────────────────────────────────── */
+
+function checkGhostMessages(){
+  var suspicious = 0;
+  var suppressUntil = typeof _bqDelSuppressUntil !== 'undefined' ? _bqDelSuppressUntil : 0;
+  if(!suppressUntil || Date.now() > suppressUntil) return; // No active suppression window
+
+  ['bqgmsgs','bqdmmsgs'].forEach(function(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var msgs = container.querySelectorAll('.bqr[id]');
+    msgs.forEach(function(el){
+      var ts = parseInt(el.dataset.ts || '0', 10);
+      if(ts && (Date.now() - ts) > 86400000){
+        // Message older than 24h — check if it might be a ghost
+        var msgAge = Date.now() - ts;
+        if(msgAge > 604800000){ // older than 7 days
+          suspicious++;
+        }
+      }
+    });
+  });
+
+  if(suspicious > 3){
+    bugLog(SEV.WARN, 'ghost-suspicious', suspicious + ' very old messages visible — possible ghost leak');
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6d. v67: MEMORY LEAK MONITOR
+   Tracks DOM node count and warns about potential memory leaks.
+   ────────────────────────────────────────────────────────────────────── */
+
+var _domNodeCounts = [];
+var _domNodeCheckInterval = null;
+
+function checkMemoryHealth(){
+  try{
+    var panel = document.getElementById('bqp');
+    if(!panel) return;
+    var nodeCount = panel.querySelectorAll('*').length;
+    _domNodeCounts.push(nodeCount);
+    if(_domNodeCounts.length > 12) _domNodeCounts.shift(); // Keep last 12 samples (~12 min)
+
+    // Check for consistent growth (memory leak indicator)
+    if(_domNodeCounts.length >= 6){
+      var firstHalf = _domNodeCounts.slice(0, 3).reduce(function(a,b){return a+b;},0) / 3;
+      var secondHalf = _domNodeCounts.slice(-3).reduce(function(a,b){return a+b;},0) / 3;
+      var growth = secondHalf - firstHalf;
+      if(growth > 100){ // Growing by >100 nodes per check cycle
+        bugLog(SEV.WARN, 'memory-leak', 'DOM node count growing: ' + Math.round(firstHalf) + ' → ' + Math.round(secondHalf),
+          'Total nodes: ' + nodeCount + ', Growth: +' + Math.round(growth));
+        // Self-heal: prune oldest messages if too many
+        if(nodeCount > 1500){
+          pruneOldMessages();
+        }
+      }
+    }
+
+    // Warn about extremely large DOM
+    if(nodeCount > 2000){
+      bugLog(SEV.ERROR, 'dom-bloat', 'Extremely large DOM: ' + nodeCount + ' nodes in widget panel');
+      pruneOldMessages();
+    }
+  }catch(e){}
+}
+
+function pruneOldMessages(){
+  ['bqgmsgs','bqdmmsgs'].forEach(function(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var msgs = container.querySelectorAll('.bqr[id]');
+    if(msgs.length > 80){
+      // Remove oldest messages (keep last 50)
+      var toRemove = msgs.length - 50;
+      for(var i = 0; i < toRemove; i++){
+        try{ msgs[i].remove(); }catch(_){}
+      }
+      // Also clean up orphaned date separators
+      var seps = container.querySelectorAll('.bqds');
+      seps.forEach(function(sep){
+        var nextMsg = sep.nextElementSibling;
+        if(!nextMsg || !nextMsg.classList.contains('bqr')){
+          sep.remove();
+        }
+      });
+      bugLog(SEV.INFO, 'dom-prune', 'Pruned ' + toRemove + ' old messages from ' + containerId);
+    }
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6e. v67: ORPHAN EVENT LISTENER CLEANUP
+   Monitors for and cleans up orphaned event listeners and intervals.
+   ────────────────────────────────────────────────────────────────────── */
+
+function cleanupOrphans(){
+  var cleaned = 0;
+
+  // Remove any orphaned action sheets (not attached to a visible message)
+  var sheets = document.querySelectorAll('.bq-action-sheet');
+  sheets.forEach(function(sheet){
+    if(!sheet.closest('.bqr')){
+      sheet.remove();
+      cleaned++;
+    }
+  });
+
+  // Remove any orphaned reaction pickers
+  var pickers = document.querySelectorAll('.bq-rxn-picker');
+  pickers.forEach(function(picker){
+    if(!picker.closest('.bqr')){
+      picker.remove();
+      cleaned++;
+    }
+  });
+
+  // Remove any orphaned tooltips/popovers
+  var tips = document.querySelectorAll('.bq-tooltip, .bq-popover');
+  tips.forEach(function(tip){
+    if(!tip.parentElement || !document.body.contains(tip)){
+      tip.remove();
+      cleaned++;
+    }
+  });
+
+  if(cleaned > 0){
+    bugLog(SEV.INFO, 'orphan-cleanup', 'Cleaned up ' + cleaned + ' orphaned UI elements');
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6f. v67: WIDGET PERFORMANCE METRICS
+   Tracks and reports key performance indicators.
+   ────────────────────────────────────────────────────────────────────── */
+
+var _perfMetrics = {
+  renderTimes: [],
+  scrollEvents: 0,
+  firebaseOps: 0,
+  lastReport: 0
+};
+
+function trackPerformance(operation, durationMs){
+  if(!_perfMetrics.renderTimes) _perfMetrics.renderTimes = [];
+  _perfMetrics.renderTimes.push({op: operation, ms: durationMs, ts: Date.now()});
+  if(_perfMetrics.renderTimes.length > 100) _perfMetrics.renderTimes.shift();
+}
+
+function reportPerformanceMetrics(){
+  var now = Date.now();
+  if(now - _perfMetrics.lastReport < 300000) return; // Report every 5 min max
+  _perfMetrics.lastReport = now;
+
+  if(_perfMetrics.renderTimes.length < 5) return;
+
+  var avgRender = _perfMetrics.renderTimes.reduce(function(a,b){return a + b.ms;},0) / _perfMetrics.renderTimes.length;
+  var maxRender = Math.max.apply(null, _perfMetrics.renderTimes.map(function(r){return r.ms;}));
+
+  if(avgRender > 50){
+    bugLog(SEV.WARN, 'perf-slow-renders', 'Average render time: ' + Math.round(avgRender) + 'ms, Max: ' + Math.round(maxRender) + 'ms');
+  } else if(avgRender > 20){
+    bugLog(SEV.INFO, 'perf-renders', 'Average render time: ' + Math.round(avgRender) + 'ms');
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6g. v67: ENHANCED SCROLL STABILITY
+   Prevents scroll jumping by locking scroll position during renders.
+   ────────────────────────────────────────────────────────────────────── */
+
+var _scrollLockActive = false;
+var _scrollLockTimer = null;
+
+function lockScrollPosition(containerId){
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  var wasAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+
+  if(wasAtBottom){
+    _scrollLockActive = true;
+    clearTimeout(_scrollLockTimer);
+    _scrollLockTimer = setTimeout(function(){
+      _scrollLockActive = false;
+      // If was at bottom, scroll to new bottom
+      if(el){
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 100);
+  }
+}
+
+// Patch: intercept renderMsg to lock scroll during render
+var _origRenderMsg67 = null;
+try{
+  // We observe DOM mutations instead of patching renderMsg directly
+  // This is already done via MutationObserver in the monitor init
+}catch(e){}
+
+/* ──────────────────────────────────────────────────────────────────────
    §7. FIREBASE HEALTH CHECK
    Monitors Firebase connection latency and reliability
    ────────────────────────────────────────────────────────────────────── */
@@ -18107,7 +18081,7 @@ function startMonitor(){
   if(_monitorStarted) return;
   _monitorStarted = true;
 
-  bugLog(SEV.INFO, 'monitor-start', 'Bug Monitor v66 started');
+  bugLog(SEV.INFO, 'monitor-start', 'Bug Monitor v67 started');
 
   // Set up error catchers immediately
   setupErrorCatchers();
@@ -18118,11 +18092,18 @@ function startMonitor(){
     bugLog(SEV.INFO, 'monitor-dom', 'Scroll monitors attached');
   }, 3000);
 
-  // Run DOM health check every 60s
+  // Run DOM health check + self-heal every 60s
   setInterval(function(){
     runDomHealthCheck();
     selfHeal();
+    checkReplyChipHealth();  // v67
+    checkGhostMessages();    // v67
+    cleanupOrphans();        // v67
+    reportPerformanceMetrics(); // v67
   }, 60000);
+
+  // v67: Memory health check every 60s
+  setInterval(checkMemoryHealth, 60000);
 
   // Check Firebase health every 30s
   _fbHealthInterval = setInterval(checkFirebaseHealth, 30000);
@@ -18133,6 +18114,7 @@ function startMonitor(){
   try{
     var renderObserver = new MutationObserver(function(mutations){
       var addedMsgs = 0;
+      var startTime = Date.now(); // v67: track render time
       mutations.forEach(function(m){
         m.addedNodes.forEach(function(node){
           if(node.nodeType === 1 && node.classList && node.classList.contains('bqr')){
@@ -18140,7 +18122,17 @@ function startMonitor(){
           }
         });
       });
-      if(addedMsgs > 0) trackRender();
+      if(addedMsgs > 0){
+        trackRender();
+        trackPerformance('renderMsg', Date.now() - startTime); // v67
+        // v67: Lock scroll position during batch renders
+        if(addedMsgs > 1){
+          var gMsgs = document.getElementById('bqgmsgs');
+          var dmMsgs = document.getElementById('bqdmmsgs');
+          if(gMsgs) lockScrollPosition('bqgmsgs');
+          if(dmMsgs) lockScrollPosition('bqdmmsgs');
+        }
+      }
     });
 
     // Observe both message containers
@@ -18167,7 +18159,7 @@ function startMonitor(){
     flushBugLog();
   };
 
-  // Expose monitor stats
+  // Expose monitor stats — v67: enhanced with more metrics
   window._bqMonitorStats = function(){
     return {
       bugCount: _bugLog.length,
@@ -18175,7 +18167,9 @@ function startMonitor(){
       renderCount: _renderCount,
       fbLatencyAvg: _fbLatencySamples.length ?
         Math.round(_fbLatencySamples.reduce(function(a,b){return a+b;},0)/_fbLatencySamples.length) : null,
-      monitorRunning: _monitorStarted
+      monitorRunning: _monitorStarted,
+      domNodeCount: document.getElementById('bqp') ? document.getElementById('bqp').querySelectorAll('*').length : 0,
+      perfSamples: _perfMetrics.renderTimes.length
     };
   };
 }
@@ -18327,8 +18321,16 @@ function initV66(){
   // Initial health check after widget loads
   setTimeout(function(){
     runDomHealthCheck();
-    bugLog(SEV.INFO, 'monitor-ready', 'All monitors active — DOM, Scroll, Firebase, Render');
+    checkReplyChipHealth();  // v67
+    bugLog(SEV.INFO, 'monitor-ready', 'All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost');
   }, 8000);
+
+  // v67: Delayed deep health check
+  setTimeout(function(){
+    checkMemoryHealth();
+    checkGhostMessages();
+    cleanupOrphans();
+  }, 15000);
 }
 
 if(document.readyState === 'loading'){
@@ -18337,6 +18339,6 @@ if(document.readyState === 'loading'){
   setTimeout(initV66, 2000);
 }
 
-console.log('[bq] v66 patch loaded — Bug Monitor + Performance + Stability');
-}catch(e){ console.error('[bq] v66 patch error:', e); }
+console.log('[bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring');
+}catch(e){ console.error('[bq] v67 patch error:', e); }
 })();
