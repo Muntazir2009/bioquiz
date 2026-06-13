@@ -1,0 +1,2002 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+     4→     4→import { useRouter } from "next/navigation";
+     5→     5→import {
+     6→     6→  initializeApp, getApps,
+     7→     7→} from "firebase/app";
+     8→     8→import {
+     9→     9→  getDatabase, ref, onValue, off, set, remove, push, get,
+    10→    10→  query, orderByChild, limitToLast,
+    11→    11→  type Database,
+    12→    12→} from "firebase/database";
+    13→    13→import {
+    14→    14→  ShieldCheck, HardDrive, Files, Download, Trash2, Search, Lock,
+    15→    15→  Pencil, Check, X, ArrowLeft, BarChart3, Eye, EyeOff, Filter,
+    16→    16→  RefreshCw, Copy, Globe, FileText, Image as ImageIcon, Video,
+    17→    17→  Music, FileArchive, File, Activity, Trash, LogOut, Calendar,
+    18→    18→  Hash, CopyPlus, Database, TrendingUp, Zap, MessageSquare,
+    19→    19→  Settings, RotateCcw, Users, Palette, SlidersHorizontal, Shield,
+    20→    20→  Save, Upload, Bell, Wrench, AlertTriangle,
+    21→    21→  Type, MessageCircle, Megaphone, LayoutDashboard, ChevronRight,
+    22→    22→  Menu, Ban, Heart, Pin, VolumeX, DownloadCloud, Clock,
+    23→    23→  ShieldAlert, ShieldX, Timer, Hourglass, UserX, UserCheck,
+    24→    24→  Gavel, AlertCircle, Search as SearchIcon,
+    25→    25→  Play, Pause, ArrowDown, Volume2, PieChart as PieChartIcon,
+    26→    26→} from "lucide-react";
+    27→    27→import type { LucideIcon } from "lucide-react";
+    28→    28→import { formatFileSize } from "@/lib/utils-client";
+    29→    29→
+    30→    30→// ─── Firebase Config ──────────────────────────────────────────────────────────
+    31→    31→
+    32→    32→const FIREBASE_CONFIG = {
+    33→    33→  apiKey:            "AIzaSyBvsLNXMGsr-XQF-GE-EET1YOnICSMicOA",
+    34→    34→  authDomain:        "bioquiz-chat.firebaseapp.com",
+    35→    35→  databaseURL:       "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
+    36→    36→  projectId:         "bioquiz-chat",
+    37→    37→  storageBucket:     "bioquiz-chat.firebasestorage.app",
+    38→    38→  messagingSenderId: "616382882153",
+    39→    39→  appId:             "1:616382882153:web:9c8a32401be847468d1df8",
+    40→    40→};
+    41→    41→
+    42→    42→const FB_PATHS = {
+    43→    43→  messages: "bq_messages",
+    44→    44→  dms: "bq_dms",
+    45→    45→  presence: "bq_presence",
+    46→    46→  banned: "bq_banned",
+    47→    47→  muted: "bq_muted",
+    48→    48→  warnings: "bq_warnings",
+    49→    49→  pinned: "bq_pinned",
+    50→    50→  config: "bq_widget_config/settings",
+    51→    51→  autoModRules: "bq_widget_config/autoModRules",
+    52→    52→  autoModLog: "bq_auto_mod_log",
+    53→    53→};
+    54→    54→
+    55→    55→let fbApp: ReturnType<typeof initializeApp> | null = null;
+    56→    56→let fbDb: Database | null = null;
+    57→    57→
+    58→    58→function getFirebaseDb(): Database {
+    59→    59→  if (fbDb) return fbDb;
+    60→    60→  if (getApps().length === 0) {
+    61→    61→    fbApp = initializeApp(FIREBASE_CONFIG);
+    62→    62→  } else {
+    63→    63→    fbApp = getApps()[0];
+    64→    64→  }
+    65→    65→  fbDb = getDatabase(fbApp);
+    66→    66→  return fbDb;
+    67→    67→}
+    68→    68→
+    69→    69→// ─── Types ────────────────────────────────────────────────────────────────────
+    70→    70→
+    71→    71→type AdminStats = {
+    72→    72→  totalFiles: number; totalSize: number; totalSizeFormatted: string;
+    73→    73→  totalDownloads: number; publicFiles: number; privateFiles: number;
+    74→    74→};
+    75→    75→
+    76→    76→type CategoryInfo = { category: string; count: number; size: number; sizeFormatted: string; };
+    77→    77→
+    78→    78→type UploadDay = { date: string; count: number; size: number; };
+    79→    79→
+    80→    80→type AdminFile = {
+    81→    81→  id: string; name: string; size: number; sizeFormatted: string;
+    82→    82→  mimeType: string; category: string; shareId: string; downloads: number;
+    83→    83→  isPublic: boolean; description: string | null; createdAt: string; expiresAt: string | null;
+    84→    84→};
+    85→    85→
+    86→    86→type AdminData = { stats: AdminStats; categoryDistribution: CategoryInfo[]; uploadsByDay: UploadDay[]; recentFiles: AdminFile[]; };
+    87→    87→
+    88→    88→type StorageInfo = {
+    89→    89→  disk: { used: number; usedFormatted: string; filesOnDisk: number; };
+    90→    90→  typeBreakdown: { type: string; count: number; size: number; sizeFormatted: string; downloads: number; }[];
+    91→    91→  topDownloaded: { id: string; name: string; downloads: number; sizeFormatted: string; }[];
+    92→    92→  largest: { id: string; name: string; size: number; sizeFormatted: string; category: string; }[];
+    93→    93→};
+    94→    94→
+    95→    95→type WidgetConfig = {
+    96→    96→  widgetEnabled?: boolean; disguiseEnabled?: boolean; autoOpen?: boolean;
+    97→    97→  autoOpenDelay?: number; defaultTheme?: string; accentColor?: string;
+    98→    98→  widgetPosition?: string; bubbleSize?: number; panelWidth?: number;
+    99→    99→  panelHeight?: number; charLimit?: number; maxMessages?: number;
+   100→   100→  fontSize?: string; profanityFilter?: boolean; slowMode?: boolean;
+   101→   101→  slowModeInterval?: number; rateLimitEnabled?: boolean; linkFilter?: boolean;
+   102→   102→  announcementEnabled?: boolean; announcementText?: string;
+   103→   103→  announcementColor?: string; maintenanceEnabled?: boolean;
+   104→   104→  maintenanceMessage?: string; [key: string]: unknown;
+   105→   105→};
+   106→   106→
+   107→   107→type PresenceUser = { uid: string; ts?: number; name?: string; status?: string; [key: string]: unknown; };
+   108→   108→
+   109→   109→type ActivityData = { onlineUsers: PresenceUser[]; onlineCount: number; recentMessages: RecentMessage[]; totalMessages: number; };
+   110→   110→
+   111→   111→type RecentMessage = { ts?: number; text?: string; sender?: string; system?: boolean; [key: string]: unknown; };
+   112→   112→
+   113→   113→type ChatMessage = { key: string; text: string; uname: string; uid: string; ts: number; type: string; edited: boolean; reactions: { emoji: string; count: number }[]; };
+   114→   114→
+   115→   115→type DmConversation = { dmId: string; participants: string[]; participantNames: string[]; lastMessage: string; lastMessageTime: number; messageCount: number; };
+   116→   116→
+   117→   117→type BannedUser = { uid: string; bannedAt: number; reason?: string; duration?: number; expiresAt?: number };
+   118→   118→type MutedUser = { uid: string; mutedAt: number; reason?: string; duration?: number; expiresAt?: number };
+   119→   119→type WarningEntry = { key: string; uid: string; reason: string; adminUid: string; ts: number; duration?: number; expiresAt?: number; userName?: string };
+   120→   120→type PinnedMessage = { key: string; pinnedAt: number; pinnedBy: string };
+   121→   121→
+   122→   122→type AutoModRule = {
+   123→   123→  id: string;
+   124→   124→  trigger: "word" | "regex" | "spam" | "caps" | "length";
+   125→   125→  pattern: string;
+   126→   126→  action: "warn" | "mute" | "ban" | "delete";
+   127→   127→  duration: number;
+   128→   128→  enabled: boolean;
+   129→   129→};
+   130→   130→
+   131→   131→type AutoModLogEntry = {
+   132→   132→  id: string;
+   133→   133→  ruleId: string;
+   134→   134→  uid: string;
+   135→   135→  userName: string;
+   136→   136→  trigger: string;
+   137→   137→  action: string;
+   138→   138→  messageText: string;
+   139→   139→  ts: number;
+   140→   140→};
+   141→   141→
+   142→   142→type Section =
+   143→   143→  | "overview" | "activity" | "analytics"
+   144→   144→  | "global-chat" | "dms" | "announcements" | "live-monitor"
+   145→   145→  | "themes" | "layout" | "messages-appearance"
+   146→   146→  | "content-filter" | "rate-limiting" | "user-management" | "warnings-bans" | "auto-mod" | "user-intel"
+   147→   147→  | "general" | "security" | "notifications" | "data" | "maintenance" | "emergency" | "fb-health"
+   148→   148→  | "files" | "disk-usage";
+   149→   149→
+   150→   150→// ─── Constants ────────────────────────────────────────────────────────────────
+   151→   151→
+   152→   152→const categoryIcons: Record<string, LucideIcon> = {
+   153→   153→  image: ImageIcon, video: Video, audio: Music, pdf: FileText,
+   154→   154→  archive: FileArchive, document: FileText, spreadsheet: FileText,
+   155→   155→  presentation: FileText, text: FileText, file: File,
+   156→   156→};
+   157→   157→
+   158→   158→const categoryColors: Record<string, string> = {
+   159→   159→  image: "oklch(0.75 0.15 200)", video: "oklch(0.7 0.18 300)", audio: "oklch(0.72 0.16 150)",
+   160→   160→  pdf: "oklch(0.65 0.2 25)", archive: "oklch(0.68 0.12 60)", document: "oklch(0.7 0.12 250)",
+   161→   161→  spreadsheet: "oklch(0.72 0.16 140)", presentation: "oklch(0.75 0.15 30)",
+   162→   162→  text: "oklch(0.65 0.1 220)", file: "oklch(0.55 0.08 250)",
+   163→   163→};
+   164→   164→
+   165→   165→const defaultWidgetConfig: WidgetConfig = {
+   166→   166→  widgetEnabled: true, disguiseEnabled: false, autoOpen: false, autoOpenDelay: 0,
+   167→   167→  defaultTheme: "pure-black", accentColor: "#ffffff", widgetPosition: "bottom-right",
+   168→   168→  bubbleSize: 56, panelWidth: 380, panelHeight: 600, charLimit: 500,
+   169→   169→  maxMessages: 50, fontSize: "medium", profanityFilter: true, slowMode: false,
+   170→   170→  slowModeInterval: 5, rateLimitEnabled: true, linkFilter: false,
+   171→   171→  announcementEnabled: false, announcementText: "", announcementColor: "#f59e0b",
+   172→   172→  maintenanceEnabled: false, maintenanceMessage: "",
+   173→   173→};
+   174→   174→
+   175→   175→// ─── Sidebar Definition ──────────────────────────────────────────────────────
+   176→   176→
+   177→   177→type SidebarCategory = { id: string; icon: LucideIcon; label: string; items: { id: Section; label: string; icon: LucideIcon }[]; };
+   178→   178→
+   179→   179→const SIDEBAR: SidebarCategory[] = [
+   180→   180→  { id: "dashboard", icon: BarChart3, label: "Dashboard", items: [
+   181→   181→    { id: "overview", label: "Overview", icon: LayoutDashboard },
+   182→   182→    { id: "activity", label: "Activity", icon: Activity },
+   183→   183→    { id: "analytics", label: "Analytics", icon: TrendingUp },
+   184→   184→  ]},
+   185→   185→  { id: "chat", icon: MessageSquare, label: "Chat", items: [
+   186→   186→    { id: "global-chat", label: "Global Chat", icon: Globe },
+   187→   187→    { id: "dms", label: "DMs", icon: MessageCircle },
+   188→   188→    { id: "announcements", label: "Announcements", icon: Megaphone },
+   189→   189→    { id: "live-monitor", label: "Live Monitor", icon: Activity },
+   190→   190→  ]},
+   191→   191→  { id: "appearance", icon: Palette, label: "Appearance", items: [
+   192→   192→    { id: "themes", label: "Themes", icon: Palette },
+   193→   193→    { id: "layout", label: "Layout", icon: SlidersHorizontal },
+   194→   194→    { id: "messages-appearance", label: "Messages", icon: Type },
+   195→   195→  ]},
+   196→   196→  { id: "moderation", icon: Shield, label: "Moderation", items: [
+   197→   197→    { id: "content-filter", label: "Content Filter", icon: Filter },
+   198→   198→    { id: "rate-limiting", label: "Rate Limiting", icon: Zap },
+   199→   199→    { id: "user-management", label: "User Management", icon: Users },
+   200→   200→    { id: "warnings-bans", label: "Warnings & Bans", icon: ShieldAlert },
+   201→   201→    { id: "auto-mod", label: "Auto-Mod", icon: Shield },
+   202→   202→    { id: "user-intel", label: "User Intel", icon: SearchIcon },
+   203→   203→  ]},
+   204→   204→  { id: "settings", icon: Settings, label: "Settings", items: [
+   205→   205→    { id: "general", label: "General", icon: SlidersHorizontal },
+   206→   206→    { id: "security", label: "Security", icon: Lock },
+   207→   207→    { id: "notifications", label: "Notifications", icon: Bell },
+   208→   208→    { id: "data", label: "Data", icon: Database },
+   209→   209→    { id: "maintenance", label: "Maintenance", icon: Wrench },
+   210→   210→    { id: "emergency", label: "Emergency", icon: ShieldAlert },
+   211→   211→    { id: "fb-health", label: "Firebase Health", icon: Heart },
+   212→   212→  ]},
+   213→   213→  { id: "storage", icon: HardDrive, label: "Storage", items: [
+   214→   214→    { id: "files", label: "Files", icon: FileText },
+   215→   215→    { id: "disk-usage", label: "Disk Usage", icon: Database },
+   216→   216→  ]},
+   217→   217→];
+   218→   218→
+   219→   219→function categoryForSection(section: Section): string {
+   220→   220→  for (const cat of SIDEBAR) { if (cat.items.some((it) => it.id === section)) return cat.id; }
+   221→   221→  return "dashboard";
+   222→   222→}
+   223→   223→
+   224→   224→// ─── Admin Page ───────────────────────────────────────────────────────────────
+   225→   225→
+   226→   226→export default function AdminPage() {
+   227→   227→  const router = useRouter();
+   228→   228→  const [password, setPassword] = useState("");
+   229→   229→  const [isAuthed, setIsAuthed] = useState(false);
+   230→   230→  const [authError, setAuthError] = useState("");
+   231→   231→  const [authLoading, setAuthLoading] = useState(false);
+   232→   232→
+   233→   233→  const [data, setData] = useState<AdminData | null>(null);
+   234→   234→  const [storageData, setStorageData] = useState<StorageInfo | null>(null);
+   235→   235→  const [loading, setLoading] = useState(false);
+   236→   236→
+   237→   237→  // Sidebar navigation
+   238→   238→  const [section, setSection] = useState<Section>("overview");
+   239→   239→  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["dashboard"]));
+   240→   240→  const [sidebarOpen, setSidebarOpen] = useState(false);
+   241→   241→
+   242→   242→  // File management
+   243→   243→  const [searchQuery, setSearchQuery] = useState("");
+   244→   244→  const [selectedCategory, setSelectedCategory] = useState("all");
+   245→   245→  const [sortBy, setSortBy] = useState("newest");
+   246→   246→  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+   247→   247→  const [showFilters, setShowFilters] = useState(false);
+   248→   248→
+   249→   249→  // Inline editing
+   250→   250→  const [editingId, setEditingId] = useState<string | null>(null);
+   251→   251→  const [editName, setEditName] = useState("");
+   252→   252→  const [editDesc, setEditDesc] = useState("");
+   253→   253→
+   254→   254→  // Real-time connection
+   255→   255→  const [fbConnected, setFbConnected] = useState(false);
+   256→   256→
+   257→   257→  // Widget config (real-time from Firebase)
+   258→   258→  const [widgetConfig, setWidgetConfig] = useState<WidgetConfig>(defaultWidgetConfig);
+   259→   259→  const [syncingKey, setSyncingKey] = useState<string | null>(null);
+   260→   260→
+   261→   261→  // Real-time chat state
+   262→   262→  const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
+   263→   263→  const [dmConversations, setDmConversations] = useState<DmConversation[]>([]);
+   264→   264→  const [selectedDm, setSelectedDm] = useState<string | null>(null);
+   265→   265→  const [dmMessages, setDmMessages] = useState<ChatMessage[]>([]);
+   266→   266→  const [chatSearchQuery, setChatSearchQuery] = useState("");
+   267→   267→  const [selectedChatMessages, setSelectedChatMessages] = useState<Set<string>>(new Set());
+   268→   268→  const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
+   269→   269→  const [announcementText, setAnnouncementText] = useState("");
+   270→   270→  const [announcementSending, setAnnouncementSending] = useState(false);
+   271→   271→  const [clearAllConfirm, setClearAllConfirm] = useState(false);
+   272→   272→  const [actionMsg, setActionMsg] = useState("");
+   273→   273→
+   274→   274→  // Pagination state for global messages
+   275→   275→  const [messagesPageSize, setMessagesPageSize] = useState(50);
+   276→   276→  const [totalMessageCount, setTotalMessageCount] = useState(0);
+   277→   277→  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+   278→   278→  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
+   279→   279→
+   280→   280→  // Pagination state for DM messages
+   281→   281→  const [dmMessagesPageSize, setDmMessagesPageSize] = useState(50);
+   282→   282→  const [dmTotalMessageCount, setDmTotalMessageCount] = useState(0);
+   283→   283→  const [dmHasMoreMessages, setDmHasMoreMessages] = useState(false);
+   284→   284→  const [loadingMoreDmMessages, setLoadingMoreDmMessages] = useState(false);
+   285→   285→  const [dmListLoading, setDmListLoading] = useState(false);
+   286→   286→
+   287→   287→  // DM search filter
+   288→   288→  const [dmSearchQuery, setDmSearchQuery] = useState("");
+   289→   289→
+   290→   290→  // Real-time user state
+   291→   291→  const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([]);
+   292→   292→  const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
+   293→   293→  const [mutedUsers, setMutedUsers] = useState<MutedUser[]>([]);
+   294→   294→  const [warnings, setWarnings] = useState<WarningEntry[]>([]);
+   295→   295→  const [pinnedMessages, setPinnedMessages] = useState<PinnedMessage[]>([]);
+   296→   296→
+   297→   297→  // Warn/Mute dialog
+   298→   298→  const [warnDialogUid, setWarnDialogUid] = useState<string | null>(null);
+   299→   299→  const [warnReason, setWarnReason] = useState("");
+   300→   300→  const [warnDuration, setWarnDuration] = useState<number>(0); // 0 = permanent, >0 = hours
+   301→   301→  const [muteDialogUid, setMuteDialogUid] = useState<string | null>(null);
+   302→   302→  const [muteReason, setMuteReason] = useState("");
+   303→   303→  const [muteDuration, setMuteDuration] = useState<number>(1); // default 1 hour
+   304→   304→
+   305→   305→  // Ban dialog
+   306→   306→  const [banDialogUid, setBanDialogUid] = useState<string | null>(null);
+   307→   307→  const [banReason, setBanReason] = useState("");
+   308→   308→  const [banDuration, setBanDuration] = useState<number>(0); // 0 = permanent
+   309→   309→
+   310→   310→  // Warnings & Bans section
+   311→   311→  const [warningsBansSearch, setWarningsBansSearch] = useState("");
+   312→   312→  const [warningsBansTab, setWarningsBansTab] = useState<"warnings" | "bans" | "mutes">("warnings");
+   313→   313→  const [quickActionUid, setQuickActionUid] = useState("");
+   314→   314→  const [quickActionMode, setQuickActionMode] = useState<"warn" | "ban" | "mute" | null>(null);
+   315→   315→
+   316→   316→  // Widget refresh toast
+   317→   317→  const [widgetRefreshToast, setWidgetRefreshToast] = useState(false);
+   318→   318→
+   319→   319→  // Broadcast state
+   320→   320→  const [broadcastText, setBroadcastText] = useState("");
+   321→   321→  const [broadcastSending, setBroadcastSending] = useState(false);
+   322→   322→  const [broadcastAsSystem, setBroadcastAsSystem] = useState(true);
+   323→   323→  const [broadcastPriority, setBroadcastPriority] = useState<"normal" | "important" | "urgent">("normal");
+   324→   324→
+   325→   325→  // Maintenance preview
+   326→   326→  const [maintenancePreviewVisible, setMaintenancePreviewVisible] = useState(false);
+   327→   327→
+   328→   328→  // Settings
+   329→   329→  const [newPassword, setNewPassword] = useState("");
+   330→   330→  const [confirmPassword, setConfirmPassword] = useState("");
+   331→   331→  const [sessionTimeout, setSessionTimeout] = useState("24h");
+   332→   332→  const [showResetConfirm, setShowResetConfirm] = useState(false);
+   333→   333→  const [passwordMsg, setPasswordMsg] = useState("");
+   334→   334→
+   335→   335→  const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
+   336→   336→
+   337→   337→  // Live Monitor
+   338→   338→  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+   339→   339→  const [liveAutoScroll, setLiveAutoScroll] = useState(true);
+   340→   340→  const [livePaused, setLivePaused] = useState(false);
+   341→   341→  const [liveFilter, setLiveFilter] = useState<"all" | "user" | "system">("all");
+   342→   342→  const [liveSoundEnabled, setLiveSoundEnabled] = useState(false);
+   343→   343→  const liveMessagesEndRef = useRef<HTMLDivElement>(null);
+   344→   344→  const prevLiveMsgCountRef = useRef(0);
+   345→   345→
+   346→   346→  // Analytics
+   347→   347→  const [analyticsTimeRange, setAnalyticsTimeRange] = useState<"24h" | "7d" | "30d">("24h");
+   348→   348→
+   349→   349→  // Auto-Mod
+   350→   350→  const [autoModRules, setAutoModRules] = useState<AutoModRule[]>([]);
+   351→   351→  const [autoModLog, setAutoModLog] = useState<AutoModLogEntry[]>([]);
+   352→   352→  const [newRuleTrigger, setNewRuleTrigger] = useState<"word" | "regex" | "spam" | "caps" | "length">("word");
+   353→   353→  const [newRulePattern, setNewRulePattern] = useState("");
+   354→   354→  const [newRuleAction, setNewRuleAction] = useState<"warn" | "mute" | "ban" | "delete">("delete");
+   355→   355→  const [newRuleDuration, setNewRuleDuration] = useState(1);
+   356→   356→  const [testModText, setTestModText] = useState("");
+   357→   357→  const [showAddRule, setShowAddRule] = useState(false);
+   358→   358→
+   359→   359→  // User Intel
+   360→   360→  const [intelSearchQuery, setIntelSearchQuery] = useState("");
+   361→   361→  const [intelSelectedUser, setIntelSelectedUser] = useState<string | null>(null);
+   362→   362→
+   363→   363→  // Emergency
+   364→   364→  const [nukeConfirmStep, setNukeConfirmStep] = useState(0);
+   365→   365→  const [massKickConfirm, setMassKickConfirm] = useState(false);
+   366→   366→  const [chatFrozen, setChatFrozen] = useState(false);
+   367→   367→
+   368→   368→  // Firebase Health
+   369→   369→  const [fbLatency, setFbLatency] = useState<number | null>(null);
+   370→   370→  const [fbHealthStatus, setFbHealthStatus] = useState<"checking" | "healthy" | "degraded" | "down">("checking");
+   371→   371→  const [fbDiagResults, setFbDiagResults] = useState<Record<string, {ok: boolean; ms: number; error?: string}> | null>(null);
+   372→   372→  const [fbDiagRunning, setFbDiagRunning] = useState(false);
+   373→   373→
+   374→   374→  // Magic Link (Account Access)
+   375→   375→  const [magicLinkUsername, setMagicLinkUsername] = useState("");
+   376→   376→  const [magicLinkExpiry, setMagicLinkExpiry] = useState<number>(24); // hours
+   377→   377→  const [magicLinkOneTime, setMagicLinkOneTime] = useState(true);
+   378→   378→  const [magicLinkGenerating, setMagicLinkGenerating] = useState(false);
+   379→   379→  const [magicLinkGenerated, setMagicLinkGenerated] = useState<string | null>(null);
+   380→   380→  const [magicLinkError, setMagicLinkError] = useState("");
+   381→   381→  const [magicLinkHistory, setMagicLinkHistory] = useState<{token: string; username: string; createdAt: number; expiresAt: number; oneTime: boolean; used: boolean; usedBy?: string; usedAt?: number}[]>([]);
+   382→   382→  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+   383→   383→
+   384→   384→  // Action message helper (must be before useCallback hooks that use it)
+   385→   385→  const showActionMsg = useCallback((msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(""), 3000); }, []);
+   386→   386→
+   387→   387→  // ─── Auth ────────────────────────────────────────────────────────────────
+   388→   388→
+   389→   389→  const handleLogin = useCallback(async () => {
+   390→   390→    setAuthLoading(true); setAuthError("");
+   391→   391→    try {
+   392→   392→      const res = await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+   393→   393→      if (res.ok) { setIsAuthed(true); sessionStorage.setItem("admin-auth", password); }
+   394→   394→      else setAuthError("Invalid password");
+   395→   395→    } catch { setAuthError("Connection failed"); }
+   396→   396→    finally { setAuthLoading(false); }
+   397→   397→  }, [password]);
+   398→   398→
+   399→   399→  useEffect(() => {
+   400→   400→    const saved = sessionStorage.getItem("admin-auth");
+   401→   401→    if (saved === "0613") { queueMicrotask(() => { setIsAuthed(true); setPassword(saved); }); }
+   402→   402→  }, []);
+   403→   403→
+   404→   404→  // ─── Firebase Real-Time Listeners ─────────────────────────────────────────
+   405→   405→
+   406→   406→  // Global messages listener — separate useEffect so it re-runs on page size change
+   407→   407→  useEffect(() => {
+   408→   408→    if (!isAuthed) return;
+   409→   409→    const db = getFirebaseDb();
+   410→   410→
+   411→   411→    // One-time read to get total count
+   412→   412→    const countRef = ref(db, FB_PATHS.messages);
+   413→   413→    get(countRef).then((snap) => {
+   414→   414→      if (snap.exists()) {
+   415→   415→        const count = Object.keys(snap.val()).length;
+   416→   416→        setTotalMessageCount(count);
+   417→   417→        setHasMoreMessages(count > messagesPageSize);
+   418→   418→      } else {
+   419→   419→        setTotalMessageCount(0);
+   420→   420→        setHasMoreMessages(false);
+   421→   421→      }
+   422→   422→    });
+   423→   423→
+   424→   424→    // Paginated real-time listener for displayed messages
+   425→   425→    const msgQuery = query(ref(db, FB_PATHS.messages), orderByChild('ts'), limitToLast(messagesPageSize));
+   426→   426→    const unsubMsg = onValue(msgQuery, (snap) => {
+   427→   427→      if (!snap.exists()) { setGlobalMessages([]); return; }
+   428→   428→      const val = snap.val();
+   429→   429→      const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   430→   430→        key: k, text: v?.text || "", uname: v?.uname || "Unknown", uid: v?.uid || "",
+   431→   431→        ts: v?.ts || 0, type: v?.type || "user", edited: v?.edited || false,
+   432→   432→        reactions: v?.reactions ? (Array.isArray(v.reactions) ? v.reactions : Object.values(v.reactions)) : [],
+   433→   433→      }));
+   434→   434→      msgs.sort((a, b) => b.ts - a.ts);
+   435→   435→      setGlobalMessages(msgs);
+   436→   436→      setLoadingMoreMessages(false);
+   437→   437→    });
+   438→   438→
+   439→   439→    return () => { off(msgQuery); };
+   440→   440→  }, [isAuthed, messagesPageSize]);
+   441→   441→
+   442→   442→  // Load More handler
+   443→   443→  const loadMoreMessages = useCallback(() => {
+   444→   444→    setLoadingMoreMessages(true);
+   445→   445→    setMessagesPageSize((prev) => prev + 50);
+   446→   446→  }, []);
+   447→   447→
+   448→   448→  // Other Firebase listeners (not affected by message pagination)
+   449→   449→  useEffect(() => {
+   450→   450→    if (!isAuthed) return;
+   451→   451→    const db = getFirebaseDb();
+   452→   452→    setFbConnected(true);
+   453→   453→
+   454→   454→    // DMs — lightweight: fetch DM list via REST API (not real-time listener)
+   455→   455→    // Using onValue on bq_dms downloads ALL message bodies for ALL DMs — extremely heavy.
+   456→   456→    // Instead, we use the REST API with shallow=true + targeted meta fetches.
+   457→   457→    // (fetchDmConversations is called separately below)
+   458→   458→
+   459→   459→    // Presence
+   460→   460→    const presRef = ref(db, FB_PATHS.presence);
+   461→   461→    const unsubPres = onValue(presRef, (snap) => {
+   462→   462→      if (!snap.exists()) { setOnlineUsers([]); return; }
+   463→   463→      const val = snap.val();
+   464→   464→      const users: PresenceUser[] = Object.entries(val).map(([uid, v]: [string, any]) => ({
+   465→   465→        uid, ts: v?.ts, name: v?.name, status: v?.status,
+   466→   466→      }));
+   467→   467→      setOnlineUsers(users);
+   468→   468→    });
+   469→   469→
+   470→   470→    // Widget config
+   471→   471→    const cfgRef = ref(db, FB_PATHS.config);
+   472→   472→    const unsubCfg = onValue(cfgRef, (snap) => {
+   473→   473→      if (!snap.exists()) return;
+   474→   474→      setWidgetConfig((prev) => ({ ...prev, ...snap.val() }));
+   475→   475→      setSyncingKey(null);
+   476→   476→    });
+   477→   477→
+   478→   478→    // Banned
+   479→   479→    const banRef = ref(db, FB_PATHS.banned);
+   480→   480→    const unsubBan = onValue(banRef, (snap) => {
+   481→   481→      if (!snap.exists()) { setBannedUsers([]); return; }
+   482→   482→      const val = snap.val();
+   483→   483→      setBannedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, bannedAt: v?.bannedAt || 0, reason: v?.reason || '', duration: v?.duration || 0, expiresAt: v?.expiresAt || 0 })));
+   484→   484→    });
+   485→   485→
+   486→   486→    // Muted
+   487→   487→    const mutRef = ref(db, FB_PATHS.muted);
+   488→   488→    const unsubMut = onValue(mutRef, (snap) => {
+   489→   489→      if (!snap.exists()) { setMutedUsers([]); return; }
+   490→   490→      const val = snap.val();
+   491→   491→      setMutedUsers(Object.entries(val).map(([uid, v]: [string, any]) => ({ uid, mutedAt: v?.mutedAt || 0, reason: v?.reason, duration: v?.duration || 0, expiresAt: v?.expiresAt || 0 })));
+   492→   492→    });
+   493→   493→
+   494→   494→    // Warnings
+   495→   495→    const warnRef = ref(db, FB_PATHS.warnings);
+   496→   496→    const unsubWarn = onValue(warnRef, (snap) => {
+   497→   497→      if (!snap.exists()) { setWarnings([]); return; }
+   498→   498→      const val = snap.val();
+   499→   499→      setWarnings(Object.entries(val).map(([k, v]: [string, any]) => ({ key: k, uid: v?.uid || "", reason: v?.reason || "", adminUid: v?.adminUid || "", ts: v?.ts || 0, duration: v?.duration || 0, expiresAt: v?.expiresAt || 0, userName: v?.userName || '' })));
+   500→   500→    });
+   501→   501→
+   502→   502→    // Pinned
+   503→   503→    const pinRef = ref(db, FB_PATHS.pinned);
+   504→   504→    const unsubPin = onValue(pinRef, (snap) => {
+   505→   505→      if (!snap.exists()) { setPinnedMessages([]); return; }
+   506→   506→      const val = snap.val();
+   507→   507→      setPinnedMessages(Object.entries(val).map(([k, v]: [string, any]) => ({ key: k, pinnedAt: v?.pinnedAt || 0, pinnedBy: v?.pinnedBy || "" })));
+   508→   508→    });
+   509→   509→
+   510→   510→    return () => {
+   511→   511→      off(presRef); off(cfgRef);
+   512→   512→      off(banRef); off(mutRef); off(warnRef); off(pinRef);
+   513→   513→      setFbConnected(false);
+   514→   514→    };
+   515→   515→  }, [isAuthed]);
+   516→   516→
+   517→   517→  // ─── DM Conversations: Lightweight REST API fetch ───────────────────────────
+   518→   518→  // Uses REST API with shallow=true + targeted meta fetches instead of onValue
+   519→   519→  // which would download ALL message bodies for ALL DMs.
+   520→   520→
+   521→   521→  const fetchDmConversations = useCallback(async () => {
+   522→   522→    if (!isAuthed) return;
+   523→   523→    setDmListLoading(true);
+   524→   524→    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+   525→   525→    try {
+   526→   526→      const res = await fetch(`/api/admin/chat?type=dms`, {
+   527→   527→        headers: { "x-admin-password": pwd },
+   528→   528→      });
+   529→   529→      if (res.ok) {
+   530→   530→        const data = await res.json();
+   531→   531→        const convos: DmConversation[] = (data.conversations || []).map((c: any) => ({
+   532→   532→          dmId: c.dmId,
+   533→   533→          participants: c.participants || [],
+   534→   534→          participantNames: c.participantNames || [],
+   535→   535→          lastMessage: c.lastMessage || "",
+   536→   536→          lastMessageTime: c.lastMessageTime || 0,
+   537→   537→          messageCount: c.messageCount || 0,
+   538→   538→        }));
+   539→   539→        setDmConversations(convos);
+   540→   540→      }
+   541→   541→    } catch { /* ignore */ }
+   542→   542→    finally { setDmListLoading(false); }
+   543→   543→  }, [isAuthed, password]);
+   544→   544→
+   545→   545→  // Fetch DM list on auth
+   546→   546→  useEffect(() => {
+   547→   547→    if (isAuthed) fetchDmConversations();
+   548→   548→  }, [isAuthed, fetchDmConversations]);
+   549→   549→
+   550→   550→  // ─── DM Messages: Paginated real-time listener ───────────────────────────
+   551→   551→
+   552→   552→  // When selecting a new DM, reset pagination state
+   553→   553→  useEffect(() => {
+   554→   554→    if (selectedDm) {
+   555→   555→      setDmMessagesPageSize(50);
+   556→   556→      setDmHasMoreMessages(false);
+   557→   557→      setDmTotalMessageCount(0);
+   558→   558→    }
+   559→   559→  }, [selectedDm]);
+   560→   560→
+   561→   561→  // Paginated DM messages listener
+   562→   562→  useEffect(() => {
+   563→   563→    if (!isAuthed || !selectedDm) { setDmMessages([]); return; }
+   564→   564→    const db = getFirebaseDb();
+   565→   565→
+   566→   566→    // One-time read to get total message count for this DM
+   567→   567→    const countRef = ref(db, `${FB_PATHS.dms}/${selectedDm}/messages`);
+   568→   568→    get(countRef).then((snap) => {
+   569→   569→      if (snap.exists()) {
+   570→   570→        const count = Object.keys(snap.val()).length;
+   571→   571→        setDmTotalMessageCount(count);
+   572→   572→        setDmHasMoreMessages(count > dmMessagesPageSize);
+   573→   573→      } else {
+   574→   574→        setDmTotalMessageCount(0);
+   575→   575→        setDmHasMoreMessages(false);
+   576→   576→      }
+   577→   577→    });
+   578→   578→
+   579→   579→    // Paginated real-time listener — only fetch the latest N messages
+   580→   580→    const dmMsgQuery = query(
+   581→   581→      ref(db, `${FB_PATHS.dms}/${selectedDm}/messages`),
+   582→   582→      orderByChild('ts'),
+   583→   583→      limitToLast(dmMessagesPageSize)
+   584→   584→    );
+   585→   585→    const unsub = onValue(dmMsgQuery, (snap) => {
+   586→   586→      if (!snap.exists()) { setDmMessages([]); return; }
+   587→   587→      const val = snap.val();
+   588→   588→      const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   589→   589→        key: k, text: v?.text || "", uname: v?.uname || "Unknown", uid: v?.uid || "",
+   590→   590→        ts: v?.ts || 0, type: v?.type || "user", edited: v?.edited || false,
+   591→   591→        reactions: v?.reactions ? (Array.isArray(v.reactions) ? v.reactions : Object.values(v.reactions)) : [],
+   592→   592→      }));
+   593→   593→      msgs.sort((a, b) => b.ts - a.ts);
+   594→   594→      setDmMessages(msgs);
+   595→   595→      setLoadingMoreDmMessages(false);
+   596→   596→    });
+   597→   597→    return () => { off(dmMsgQuery); };
+   598→   598→  }, [isAuthed, selectedDm, dmMessagesPageSize]);
+   599→   599→
+   600→   600→  // Load More DM messages handler
+   601→   601→  const loadMoreDmMessages = useCallback(() => {
+   602→   602→    setLoadingMoreDmMessages(true);
+   603→   603→    setDmMessagesPageSize((prev) => prev + 50);
+   604→   604→  }, []);
+   605→   605→
+   606→   606→  // ─── Live Monitor: Real-time listener ──────────────────────────────────────
+   607→   607→  useEffect(() => {
+   608→   608→    if (!isAuthed) return;
+   609→   609→    const db = getFirebaseDb();
+   610→   610→    const liveQuery = query(ref(db, FB_PATHS.messages), orderByChild('ts'), limitToLast(200));
+   611→   611→    const unsub = onValue(liveQuery, (snap) => {
+   612→   612→      if (!snap.exists()) { setLiveMessages([]); return; }
+   613→   613→      const val = snap.val();
+   614→   614→      const msgs: ChatMessage[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   615→   615→        key: k, text: v?.text || "", uname: v?.uname || "Unknown", uid: v?.uid || "",
+   616→   616→        ts: v?.ts || 0, type: v?.type || "user", edited: v?.edited || false,
+   617→   617→        reactions: v?.reactions ? (Array.isArray(v.reactions) ? v.reactions : Object.values(v.reactions)) : [],
+   618→   618→      }));
+   619→   619→      msgs.sort((a, b) => a.ts - b.ts);
+   620→   620→      // Check for new messages (sound notification)
+   621→   621→      if (liveSoundEnabled && prevLiveMsgCountRef.current > 0 && msgs.length > prevLiveMsgCountRef.current) {
+   622→   622→        try {
+   623→   623→          const ctx = new AudioContext();
+   624→   624→          const osc = ctx.createOscillator();
+   625→   625→          const gain = ctx.createGain();
+   626→   626→          osc.connect(gain); gain.connect(ctx.destination);
+   627→   627→          osc.frequency.value = 880; osc.type = "sine";
+   628→   628→          gain.gain.value = 0.1;
+   629→   629→          osc.start(); osc.stop(ctx.currentTime + 0.08);
+   630→   630→        } catch {}
+   631→   631→      }
+   632→   632→      prevLiveMsgCountRef.current = msgs.length;
+   633→   633→      if (!livePaused) setLiveMessages(msgs);
+   634→   634→    });
+   635→   635→    return () => { off(liveQuery); };
+   636→   636→  }, [isAuthed, livePaused, liveSoundEnabled]);
+   637→   637→
+   638→   638→  // Auto-scroll for live monitor
+   639→   639→  useEffect(() => {
+   640→   640→    if (liveAutoScroll && liveMessagesEndRef.current) {
+   641→   641→      liveMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+   642→   642→    }
+   643→   643→  }, [liveMessages, liveAutoScroll]);
+   644→   644→
+   645→   645→  // ─── Auto-Mod: Real-time listener for rules ──────────────────────────────
+   646→   646→  useEffect(() => {
+   647→   647→    if (!isAuthed) return;
+   648→   648→    const db = getFirebaseDb();
+   649→   649→    const rulesRef = ref(db, FB_PATHS.autoModRules);
+   650→   650→    const unsubRules = onValue(rulesRef, (snap) => {
+   651→   651→      if (!snap.exists()) { setAutoModRules([]); return; }
+   652→   652→      const val = snap.val();
+   653→   653→      const rules: AutoModRule[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   654→   654→        id: k, trigger: v?.trigger || "word", pattern: v?.pattern || "",
+   655→   655→        action: v?.action || "delete", duration: v?.duration || 1, enabled: v?.enabled ?? true,
+   656→   656→      }));
+   657→   657→      setAutoModRules(rules);
+   658→   658→    });
+   659→   659→    const logRef = ref(db, FB_PATHS.autoModLog);
+   660→   660→    const unsubLog = onValue(logRef, (snap) => {
+   661→   661→      if (!snap.exists()) { setAutoModLog([]); return; }
+   662→   662→      const val = snap.val();
+   663→   663→      const entries: AutoModLogEntry[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   664→   664→        id: k, ruleId: v?.ruleId || "", uid: v?.uid || "", userName: v?.userName || "",
+   665→   665→        trigger: v?.trigger || "", action: v?.action || "", messageText: v?.messageText || "",
+   666→   666→        ts: v?.ts || 0,
+   667→   667→      }));
+   668→   668→      entries.sort((a, b) => b.ts - a.ts);
+   669→   669→      setAutoModLog(entries.slice(0, 10));
+   670→   670→    });
+   671→   671→    // Chat frozen listener
+   672→   672→    const frozenRef = ref(db, "bq_widget_config/chatFrozen");
+   673→   673→    const unsubFrozen = onValue(frozenRef, (snap) => {
+   674→   674→      setChatFrozen(snap.exists() && snap.val() === true);
+   675→   675→    });
+   676→   676→    return () => { off(rulesRef); off(logRef); off(frozenRef); };
+   677→   677→  }, [isAuthed]);
+   678→   678→
+   679→   679→  // ─── Fetch data (file stats) ──────────────────────────────────────────────
+   680→   680→
+   681→   681→  const fetchData = useCallback(async () => {
+   682→   682→    setLoading(true);
+   683→   683→    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+   684→   684→    try {
+   685→   685→      const [mainRes, storageRes] = await Promise.all([
+   686→   686→        fetch("/api/admin", { headers: { "x-admin-password": pwd } }),
+   687→   687→        fetch("/api/admin/storage", { headers: { "x-admin-password": pwd } }),
+   688→   688→      ]);
+   689→   689→      if (mainRes.ok) setData(await mainRes.json());
+   690→   690→      else if (mainRes.status === 401) { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); }
+   691→   691→      if (storageRes.ok) setStorageData(await storageRes.json());
+   692→   692→    } catch { /* ignore */ }
+   693→   693→    finally { setLoading(false); }
+   694→   694→  }, [password]);
+   695→   695→
+   696→   696→  useEffect(() => { if (isAuthed) { queueMicrotask(() => fetchData()); } }, [isAuthed, fetchData]);
+   697→   697→  useEffect(() => { if (!isAuthed) return; const i = setInterval(() => { fetchData(); }, 30000); return () => clearInterval(i); }, [isAuthed, fetchData]);
+   698→   698→
+   699→   699→  // ─── Widget Config Write (immediate to Firebase) ──────────────────────────
+   700→   700→
+   701→   701→  const writeWidgetConfig = useCallback((key: string, value: unknown) => {
+   702→   702→    setWidgetConfig((prev) => ({ ...prev, [key]: value }));
+   703→   703→    setSyncingKey(key);
+   704→   704→    const db = getFirebaseDb();
+   705→   705→    const cfgRef = ref(db, FB_PATHS.config);
+   706→   706→    // Use the API route which does a Firebase PATCH (preserves other fields)
+   707→   707→    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+   708→   708→    fetch("/api/admin/widget-config", {
+   709→   709→      method: "PUT",
+   710→   710→      headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+   711→   711→      body: JSON.stringify({ [key]: value }),
+   712→   712→    }).then(() => setSyncingKey(null)).catch(() => setSyncingKey(null));
+   713→   713→  }, [password]);
+   714→   714→
+   715→   715→  // ─── Firebase Admin Actions ───────────────────────────────────────────────
+   716→   716→
+   717→   717→  const deleteMessage = useCallback(async (msgKey: string, context: "global" | "dm", dmId?: string) => {
+   718→   718→    const db = getFirebaseDb();
+   719→   719→    const path = context === "global" ? `${FB_PATHS.messages}/${msgKey}` : `${FB_PATHS.dms}/${dmId}/messages/${msgKey}`;
+   720→   720→    await remove(ref(db, path));
+   721→   721→    // Real-time listener will update state automatically
+   722→   722→  }, []);
+   723→   723→
+   724→   724→  const clearAllMessages = useCallback(async (context: "global" | "dm", dmId?: string) => {
+   725→   725→    const db = getFirebaseDb();
+   726→   726→    const path = context === "global" ? FB_PATHS.messages : `${FB_PATHS.dms}/${dmId}/messages`;
+   727→   727→    await remove(ref(db, path));
+   728→   728→    setClearAllConfirm(false);
+   729→   729→    setActionMsg(context === "global" ? "All global messages cleared" : "DM messages cleared");
+   730→   730→    setTimeout(() => setActionMsg(""), 3000);
+   731→   731→  }, []);
+   732→   732→
+   733→   733→  const sendAnnouncement = useCallback(async () => {
+   734→   734→    if (!announcementText.trim()) return;
+   735→   735→    setAnnouncementSending(true);
+   736→   736→    try {
+   737→   737→      const db = getFirebaseDb();
+   738→   738→      await push(ref(db, FB_PATHS.messages), {
+   739→   739→        text: announcementText.trim(), uname: "System", uid: "system",
+   740→   740→        ts: Date.now(), type: "system", edited: false,
+   741→   741→      });
+   742→   742→      setAnnouncementText("");
+   743→   743→      setActionMsg("Announcement sent!");
+   744→   744→      setTimeout(() => setActionMsg(""), 3000);
+   745→   745→    } catch { /* ignore */ }
+   746→   746→    finally { setAnnouncementSending(false); }
+   747→   747→  }, [announcementText]);
+   748→   748→
+   749→   749→  const kickUser = useCallback(async (uid: string) => {
+   750→   750→    const db = getFirebaseDb();
+   751→   751→    await remove(ref(db, `${FB_PATHS.presence}/${uid}`));
+   752→   752→  }, []);
+   753→   753→
+   754→   754→  const banUser = useCallback(async (uid: string, reason?: string, duration?: number) => {
+   755→   755→    const db = getFirebaseDb();
+   756→   756→    const now = Date.now();
+   757→   757→    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+   758→   758→    await set(ref(db, `${FB_PATHS.banned}/${uid}`), { bannedAt: now, reason: reason || "No reason provided", duration: duration || 0, expiresAt });
+   759→   759→    await remove(ref(db, `${FB_PATHS.presence}/${uid}`));
+   760→   760→    setBanDialogUid(null);
+   761→   761→    setBanReason("");
+   762→   762→    setBanDuration(0);
+   763→   763→  }, []);
+   764→   764→
+   765→   765→  const unbanUser = useCallback(async (uid: string) => {
+   766→   766→    const db = getFirebaseDb();
+   767→   767→    await remove(ref(db, `${FB_PATHS.banned}/${uid}`));
+   768→   768→  }, []);
+   769→   769→
+   770→   770→  const muteUser = useCallback(async (uid: string, reason: string, duration?: number) => {
+   771→   771→    const db = getFirebaseDb();
+   772→   772→    const now = Date.now();
+   773→   773→    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+   774→   774→    await set(ref(db, `${FB_PATHS.muted}/${uid}`), { mutedAt: now, reason: reason || "No reason provided", duration: duration || 0, expiresAt });
+   775→   775→    setMuteDialogUid(null);
+   776→   776→    setMuteReason("");
+   777→   777→    setMuteDuration(1);
+   778→   778→  }, []);
+   779→   779→
+   780→   780→  const unmuteUser = useCallback(async (uid: string) => {
+   781→   781→    const db = getFirebaseDb();
+   782→   782→    await remove(ref(db, `${FB_PATHS.muted}/${uid}`));
+   783→   783→  }, []);
+   784→   784→
+   785→   785→  const warnUser = useCallback(async (uid: string, reason: string, duration?: number) => {
+   786→   786→    const db = getFirebaseDb();
+   787→   787→    const now = Date.now();
+   788→   788→    const expiresAt = duration && duration > 0 ? now + duration * 3600000 : 0;
+   789→   789→    // Look up username from online users
+   790→   790→    const onlineUser = onlineUsers.find(u => u.uid === uid);
+   791→   791→    const userName = onlineUser?.name || '';
+   792→   792→    await push(ref(db, FB_PATHS.warnings), {
+   793→   793→      uid, reason: reason || "No reason provided", adminUid: "admin", ts: now,
+   794→   794→      duration: duration || 0, expiresAt, userName,
+   795→   795→    });
+   796→   796→    setWarnDialogUid(null);
+   797→   797→    setWarnReason("");
+   798→   798→    setWarnDuration(0);
+   799→   799→  }, [onlineUsers]);
+   800→   800→
+   801→   801→  const pinMessage = useCallback(async (msgKey: string) => {
+   802→   802→    const db = getFirebaseDb();
+   803→   803→    await set(ref(db, `${FB_PATHS.pinned}/${msgKey}`), { pinnedAt: Date.now(), pinnedBy: "admin" });
+   804→   804→  }, []);
+   805→   805→
+   806→   806→  const unpinMessage = useCallback(async (msgKey: string) => {
+   807→   807→    const db = getFirebaseDb();
+   808→   808→    await remove(ref(db, `${FB_PATHS.pinned}/${msgKey}`));
+   809→   809→  }, []);
+   810→   810→
+   811→   811→  const removeWarning = useCallback(async (warnKey: string) => {
+   812→   812→    const db = getFirebaseDb();
+   813→   813→    await remove(ref(db, `${FB_PATHS.warnings}/${warnKey}`));
+   814→   814→  }, []);
+   815→   815→
+   816→   816→  const clearAllWarnings = useCallback(async () => {
+   817→   817→    const db = getFirebaseDb();
+   818→   818→    await remove(ref(db, FB_PATHS.warnings));
+   819→   819→    setActionMsg("All warnings cleared");
+   820→   820→    setTimeout(() => setActionMsg(""), 3000);
+   821→   821→  }, []);
+   822→   822→
+   823→   823→  const clearAllBans = useCallback(async () => {
+   824→   824→    const db = getFirebaseDb();
+   825→   825→    await remove(ref(db, FB_PATHS.banned));
+   826→   826→    setActionMsg("All bans cleared");
+   827→   827→    setTimeout(() => setActionMsg(""), 3000);
+   828→   828→  }, []);
+   829→   829→
+   830→   830→  const clearAllMutes = useCallback(async () => {
+   831→   831→    const db = getFirebaseDb();
+   832→   832→    await remove(ref(db, FB_PATHS.muted));
+   833→   833→    setActionMsg("All mutes cleared");
+   834→   834→    setTimeout(() => setActionMsg(""), 3000);
+   835→   835→  }, []);
+   836→   836→
+   837→   837→  const bulkDeleteMessages = useCallback(async (msgKeys: string[], context: "global" | "dm", dmId?: string) => {
+   838→   838→    const db = getFirebaseDb();
+   839→   839→    const basePath = context === "global" ? FB_PATHS.messages : `${FB_PATHS.dms}/${dmId}/messages`;
+   840→   840→    await Promise.all(msgKeys.map((k) => remove(ref(db, `${basePath}/${k}`))));
+   841→   841→    setSelectedChatMessages(new Set());
+   842→   842→  }, []);
+   843→   843→
+   844→   844→  // ─── Broadcast ────────────────────────────────────────────────────────────
+   845→   845→
+   846→   846→  const sendBroadcast = useCallback(async () => {
+   847→   847→    if (!broadcastText.trim()) return;
+   848→   848→    setBroadcastSending(true);
+   849→   849→    try {
+   850→   850→      const db = getFirebaseDb();
+   851→   851→      const priorityStyles: Record<string, string> = {
+   852→   852→        normal: "📢",
+   853→   853→        important: "⚠️",
+   854→   854→        urgent: "🚨",
+   855→   855→      };
+   856→   856→      const prefix = priorityStyles[broadcastPriority] || "📢";
+   857→   857→      const text = broadcastPriority !== "normal" ? `${prefix} [${broadcastPriority.toUpperCase()}] ${broadcastText.trim()}` : broadcastText.trim();
+   858→   858→      await push(ref(db, FB_PATHS.messages), {
+   859→   859→        text,
+   860→   860→        uname: broadcastAsSystem ? "System" : "Admin",
+   861→   861→        uid: broadcastAsSystem ? "system" : "admin",
+   862→   862→        ts: Date.now(),
+   863→   863→        type: broadcastAsSystem ? "system" : "user",
+   864→   864→        edited: false,
+   865→   865→        priority: broadcastPriority,
+   866→   866→      });
+   867→   867→      setBroadcastText("");
+   868→   868→      setBroadcastPriority("normal");
+   869→   869→      setActionMsg("Broadcast sent!");
+   870→   870→      setTimeout(() => setActionMsg(""), 3000);
+   871→   871→    } catch { /* ignore */ }
+   872→   872→    finally { setBroadcastSending(false); }
+   873→   873→  }, [broadcastText, broadcastAsSystem, broadcastPriority]);
+   874→   874→
+   875→   875→  const refreshOnlineUsers = useCallback(() => {
+   876→   876→    const db = getFirebaseDb();
+   877→   877→    const presRef = ref(db, FB_PATHS.presence);
+   878→   878→    get(presRef).then((snap) => {
+   879→   879→      if (!snap.exists()) { setOnlineUsers([]); return; }
+   880→   880→      const val = snap.val();
+   881→   881→      const users: PresenceUser[] = Object.entries(val).map(([uid, v]: [string, any]) => ({
+   882→   882→        uid, ts: v?.ts, name: v?.name, status: v?.status,
+   883→   883→      }));
+   884→   884→      setOnlineUsers(users);
+   885→   885→    });
+   886→   886→  }, []);
+   887→   887→
+   888→   888→  // ─── Auto-Mod Actions ──────────────────────────────────────────────────────
+   889→   889→
+   890→   890→  const saveAutoModRule = useCallback(async (rule: Omit<AutoModRule, "id">) => {
+   891→   891→    const db = getFirebaseDb();
+   892→   892→    const newRef = push(ref(db, FB_PATHS.autoModRules));
+   893→   893→    await set(newRef, { ...rule, id: newRef.key });
+   894→   894→    setShowAddRule(false);
+   895→   895→    setNewRulePattern("");
+   896→   896→    setTestModText("");
+   897→   897→    showActionMsg("Rule created");
+   898→   898→  }, []);
+   899→   899→
+   900→   900→  const deleteAutoModRule = useCallback(async (ruleId: string) => {
+   901→   901→    const db = getFirebaseDb();
+   902→   902→    await remove(ref(db, `${FB_PATHS.autoModRules}/${ruleId}`));
+   903→   903→    showActionMsg("Rule deleted");
+   904→   904→  }, []);
+   905→   905→
+   906→   906→  const toggleAutoModRule = useCallback(async (ruleId: string, enabled: boolean) => {
+   907→   907→    const db = getFirebaseDb();
+   908→   908→    await set(ref(db, `${FB_PATHS.autoModRules}/${ruleId}/enabled`), !enabled);
+   909→   909→  }, []);
+   910→   910→
+   911→   911→  const testAutoModRules = useCallback((text: string): { rule: AutoModRule; matched: boolean }[] => {
+   912→   912→    return autoModRules.filter(r => r.enabled).map(rule => {
+   913→   913→      let matched = false;
+   914→   914→      switch (rule.trigger) {
+   915→   915→        case "word": matched = text.toLowerCase().includes(rule.pattern.toLowerCase()); break;
+   916→   916→        case "regex": try { matched = new RegExp(rule.pattern, "i").test(text); } catch { matched = false; } break;
+   917→   917→        case "caps": matched = text.length > 5 && text === text.toUpperCase() && /[A-Z]/.test(text); break;
+   918→   918→        case "spam": matched = (text.match(/(.)\1{4,}/g) || []).length > 0; break;
+   919→   919→        case "length": matched = text.length > parseInt(rule.pattern) || 500; break;
+   920→   920→      }
+   921→   921→      return { rule, matched };
+   922→   922→    });
+   923→   923→  }, [autoModRules]);
+   924→   924→
+   925→   925→  const initPresetRules = useCallback(async () => {
+   926→   926→    const db = getFirebaseDb();
+   927→   927→    const presets: Omit<AutoModRule, "id">[] = [
+   928→   928→      { trigger: "word", pattern: "badword,damn,hell,crap", action: "delete", duration: 0, enabled: true },
+   929→   929→      { trigger: "caps", pattern: "", action: "warn", duration: 1, enabled: true },
+   930→   930→      { trigger: "spam", pattern: "", action: "mute", duration: 1, enabled: true },
+   931→   931→      { trigger: "length", pattern: "500", action: "delete", duration: 0, enabled: true },
+   932→   932→    ];
+   933→   933→    for (const p of presets) {
+   934→   934→      const newRef = push(ref(db, FB_PATHS.autoModRules));
+   935→   935→      await set(newRef, { ...p, id: newRef.key });
+   936→   936→    }
+   937→   937→    showActionMsg("Preset rules added");
+   938→   938→  }, []);
+   939→   939→
+   940→   940→  // ─── Emergency Actions ─────────────────────────────────────────────────────
+   941→   941→
+   942→   942→  const triggerPanic = useCallback(async () => {
+   943→   943→    writeWidgetConfig("maintenanceEnabled", true);
+   944→   944→    writeWidgetConfig("widgetEnabled", false);
+   945→   945→    showActionMsg("⚠️ PANIC MODE ACTIVATED — Maintenance ON, Widget OFF");
+   946→   946→  }, [writeWidgetConfig]);
+   947→   947→
+   948→   948→  const toggleLockdown = useCallback(async (enable: boolean) => {
+   949→   949→    if (enable) {
+   950→   950→      writeWidgetConfig("slowMode", true);
+   951→   951→      writeWidgetConfig("slowModeInterval", 60);
+   952→   952→      writeWidgetConfig("rateLimitEnabled", true);
+   953→   953→      writeWidgetConfig("profanityFilter", true);
+   954→   954→      writeWidgetConfig("linkFilter", true);
+   955→   955→      showActionMsg("🔒 Lockdown mode ENABLED — All restrictions active");
+   956→   956→    } else {
+   957→   957→      writeWidgetConfig("slowMode", false);
+   958→   958→      writeWidgetConfig("linkFilter", false);
+   959→   959→      showActionMsg("🔓 Lockdown mode DISABLED");
+   960→   960→    }
+   961→   961→  }, [writeWidgetConfig]);
+   962→   962→
+   963→   963→  const nukeChat = useCallback(async () => {
+   964→   964→    const db = getFirebaseDb();
+   965→   965→    await remove(ref(db, FB_PATHS.messages));
+   966→   966→    await remove(ref(db, FB_PATHS.dms));
+   967→   967→    await remove(ref(db, FB_PATHS.warnings));
+   968→   968→    setNukeConfirmStep(0);
+   969→   969→    showActionMsg("💣 NUKE COMPLETE — All messages, DMs, and warnings cleared");
+   970→   970→  }, []);
+   971→   971→
+   972→   972→  const massKickAll = useCallback(async () => {
+   973→   973→    const db = getFirebaseDb();
+   974→   974→    await remove(ref(db, FB_PATHS.presence));
+   975→   975→    setMassKickConfirm(false);
+   976→   976→    showActionMsg("👢 All users kicked");
+   977→   977→  }, []);
+   978→   978→
+   979→   979→  const toggleChatFreeze = useCallback(async (freeze: boolean) => {
+   980→   980→    const db = getFirebaseDb();
+   981→   981→    if (freeze) {
+   982→   982→      await set(ref(db, "bq_widget_config/chatFrozen"), true);
+   983→   983→      showActionMsg("❄️ Chat FROZEN — Read-only mode");
+   984→   984→    } else {
+   985→   985→      await remove(ref(db, "bq_widget_config/chatFrozen"));
+   986→   986→      showActionMsg("💬 Chat UNFROZEN — Users can send messages");
+   987→   987→    }
+   988→   988→  }, []);
+   989→   989→
+   990→   990→  // ─── Firebase Health Actions ───────────────────────────────────────────────
+   991→   991→
+   992→   992→  const measureFbLatency = useCallback(async () => {
+   993→   993→    const db = getFirebaseDb();
+   994→   994→    const start = performance.now();
+   995→   995→    try {
+   996→   996→      const testRef = ref(db, "bq_widget_config/_health_ping");
+   997→   997→      await set(testRef, Date.now());
+   998→   998→      await get(testRef);
+   999→   999→      await remove(testRef);
+  1000→  1000→      const ms = Math.round(performance.now() - start);
+  1001→  1001→      setFbLatency(ms);
+  1002→  1002→      setFbHealthStatus(ms < 200 ? "healthy" : ms < 500 ? "degraded" : "down");
+  1003→  1003→    } catch {
+  1004→  1004→      setFbLatency(null);
+  1005→  1005→      setFbHealthStatus("down");
+  1006→  1006→    }
+  1007→  1007→  }, []);
+  1008→  1008→
+  1009→  1009→  const runFbDiagnostics = useCallback(async () => {
+  1010→  1010→    setFbDiagRunning(true);
+  1011→  1011→    setFbDiagResults(null);
+  1012→  1012→    const db = getFirebaseDb();
+  1013→  1013→    const results: Record<string, { ok: boolean; ms: number; error?: string }> = {};
+  1014→  1014→    // Test 1: Read
+  1015→  1015→    try {
+  1016→  1016→      const t0 = performance.now();
+  1017→  1017→      await get(ref(db, FB_PATHS.config));
+  1018→  1018→      results.read = { ok: true, ms: Math.round(performance.now() - t0) };
+  1019→  1019→    } catch (e: any) {
+  1020→  1020→      results.read = { ok: false, ms: 0, error: e.message };
+  1021→  1021→    }
+  1022→  1022→    // Test 2: Write
+  1023→  1023→    try {
+  1024→  1024→      const t0 = performance.now();
+  1025→  1025→      await set(ref(db, "bq_widget_config/_diag"), Date.now());
+  1026→  1026→      results.write = { ok: true, ms: Math.round(performance.now() - t0) };
+  1027→  1027→    } catch (e: any) {
+  1028→  1028→      results.write = { ok: false, ms: 0, error: e.message };
+  1029→  1029→    }
+  1030→  1030→    // Test 3: Delete
+  1031→  1031→    try {
+  1032→  1032→      const t0 = performance.now();
+  1033→  1033→      await remove(ref(db, "bq_widget_config/_diag"));
+  1034→  1034→      results.delete = { ok: true, ms: Math.round(performance.now() - t0) };
+  1035→  1035→    } catch (e: any) {
+  1036→  1036→      results.delete = { ok: false, ms: 0, error: e.message };
+  1037→  1037→    }
+  1038→  1038→    // Test 4: Messages node
+  1039→  1039→    try {
+  1040→  1040→      const t0 = performance.now();
+  1041→  1041→      const snap = await get(ref(db, FB_PATHS.messages));
+  1042→  1042→      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+  1043→  1043→      results.messages = { ok: true, ms: Math.round(performance.now() - t0) };
+  1044→  1044→    } catch (e: any) {
+  1045→  1045→      results.messages = { ok: false, ms: 0, error: e.message };
+  1046→  1046→    }
+  1047→  1047→    setFbDiagResults(results);
+  1048→  1048→    setFbDiagRunning(false);
+  1049→  1049→  }, []);
+  1050→  1050→
+  1051→  1051→  // Measure latency on mount and periodically
+  1052→  1052→  useEffect(() => {
+  1053→  1053→    if (!isAuthed) return;
+  1054→  1054→    measureFbLatency();
+  1055→  1055→    const interval = setInterval(measureFbLatency, 30000);
+  1056→  1056→    return () => clearInterval(interval);
+  1057→  1057→  }, [isAuthed, measureFbLatency]);
+  1058→  1058→
+  1059→  1059→  // ─── Chat Export ──────────────────────────────────────────────────────────
+  1060→  1060→
+  1061→  1061→  const exportChat = useCallback((msgs: ChatMessage[], filename: string) => {
+  1062→  1062→    const blob = new Blob([JSON.stringify(msgs, null, 2)], { type: "application/json" });
+  1063→  1063→    const url = URL.createObjectURL(blob);
+  1064→  1064→    const a = document.createElement("a");
+  1065→  1065→    a.href = url; a.download = filename; a.click();
+  1066→  1066→    URL.revokeObjectURL(url);
+  1067→  1067→  }, []);
+  1068→  1068→
+  1069→  1069→  // ─── File operations ─────────────────────────────────────────────────────
+  1070→  1070→
+  1071→  1071→  const getPwd = useCallback(() => password || sessionStorage.getItem("admin-auth") || "", [password]);
+  1072→  1072→
+  1073→  1073→  const togglePublic = useCallback(async (id: string, current: boolean) => {
+  1074→  1074→    await fetch(`/api/files/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ isPublic: !current }) });
+  1075→  1075→    fetchData();
+  1076→  1076→  }, [getPwd, fetchData]);
+  1077→  1077→
+  1078→  1078→  const renameFile = useCallback(async (id: string, newName: string) => {
+  1079→  1079→    if (!newName.trim()) return;
+  1080→  1080→    await fetch(`/api/files/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ originalName: newName.trim() }) });
+  1081→  1081→    setEditingId(null); fetchData();
+  1082→  1082→  }, [getPwd, fetchData]);
+  1083→  1083→
+  1084→  1084→  const updateDescription = useCallback(async (id: string, desc: string) => {
+  1085→  1085→    await fetch(`/api/files/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ description: desc }) });
+  1086→  1086→    fetchData();
+  1087→  1087→  }, [getPwd, fetchData]);
+  1088→  1088→
+  1089→  1089→  const deleteFile = useCallback(async (id: string) => {
+  1090→  1090→    await fetch(`/api/files/${id}`, { method: "DELETE", headers: { "x-admin-password": getPwd() } });
+  1091→  1091→    fetchData();
+  1092→  1092→  }, [getPwd, fetchData]);
+  1093→  1093→
+  1094→  1094→  const duplicateFile = useCallback(async (id: string) => {
+  1095→  1095→    await fetch("/api/files/duplicate", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ id }) });
+  1096→  1096→    fetchData();
+  1097→  1097→  }, [getPwd, fetchData]);
+  1098→  1098→
+  1099→  1099→  const bulkDelete = useCallback(async () => {
+  1100→  1100→    if (selectedFiles.size === 0) return;
+  1101→  1101→    await fetch("/api/admin/bulk-delete", { method: "POST", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ ids: Array.from(selectedFiles) }) });
+  1102→  1102→    setSelectedFiles(new Set()); fetchData();
+  1103→  1103→  }, [getPwd, selectedFiles, fetchData]);
+  1104→  1104→
+  1105→  1105→  const bulkToggleVisibility = useCallback(async (makePublic: boolean) => {
+  1106→  1106→    if (selectedFiles.size === 0) return;
+  1107→  1107→    await Promise.all(Array.from(selectedFiles).map((id) =>
+  1108→  1108→      fetch(`/api/files/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", "x-admin-password": getPwd() }, body: JSON.stringify({ isPublic: makePublic }) })
+  1109→  1109→    ));
+  1110→  1110→    fetchData();
+  1111→  1111→  }, [getPwd, selectedFiles, fetchData]);
+  1112→  1112→
+  1113→  1113→  const copyShareLink = useCallback((shareId: string) => {
+  1114→  1114→    navigator.clipboard.writeText(`${window.location.origin}?share=${shareId}`);
+  1115→  1115→    setCopiedShareId(shareId);
+  1116→  1116→    setTimeout(() => setCopiedShareId(null), 2000);
+  1117→  1117→  }, []);
+  1118→  1118→
+  1119→  1119→  // ─── Widget Refresh ────────────────────────────────────────────────────
+  1120→  1120→
+  1121→  1121→  const handleWidgetRefresh = useCallback(() => {
+  1122→  1122→    window.dispatchEvent(new CustomEvent("bq-admin-refresh"));
+  1123→  1123→    const oldScript = document.getElementById("bq-chat-script"); if (oldScript) oldScript.remove();
+  1124→  1124→    const oldBubble = document.getElementById("bqb"); if (oldBubble) oldBubble.remove();
+  1125→  1125→    const oldPanel = document.getElementById("bqp"); if (oldPanel) oldPanel.remove();
+  1126→  1126→    const script = document.createElement("script"); script.id = "bq-chat-script"; script.src = `/chat-widget.js?t=${Date.now()}`;
+  1127→  1127→    document.body.appendChild(script);
+  1128→  1128→    setWidgetRefreshToast(true); setTimeout(() => setWidgetRefreshToast(false), 2000);
+  1129→  1129→  }, []);
+  1130→  1130→
+  1131→  1131→  // ─── Settings: Export/Import/Reset ─────────────────────────────────────
+  1132→  1132→
+  1133→  1133→  const handleExportConfig = useCallback(() => {
+  1134→  1134→    const blob = new Blob([JSON.stringify(widgetConfig, null, 2)], { type: "application/json" });
+  1135→  1135→    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "bioquiz-widget-config.json"; a.click(); URL.revokeObjectURL(url);
+  1136→  1136→  }, [widgetConfig]);
+  1137→  1137→
+  1138→  1138→  const handleImportConfig = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  1139→  1139→    const file = e.target.files?.[0]; if (!file) return;
+  1140→  1140→    try {
+  1141→  1141→      const text = await file.text(); const config = JSON.parse(text);
+  1142→  1142→      setWidgetConfig({ ...defaultWidgetConfig, ...config });
+  1143→  1143→      const pwd = password || sessionStorage.getItem("admin-auth") || "";
+  1144→  1144→      await fetch("/api/admin/widget-config", { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": pwd }, body: JSON.stringify(config) });
+  1145→  1145→    } catch { /* ignore */ }
+  1146→  1146→    e.target.value = "";
+  1147→  1147→  }, [password]);
+  1148→  1148→
+  1149→  1149→  const handleResetDefaults = useCallback(async () => {
+  1150→  1150→    setWidgetConfig(defaultWidgetConfig);
+  1151→  1151→    const pwd = password || sessionStorage.getItem("admin-auth") || "";
+  1152→  1152→    await fetch("/api/admin/widget-config", { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": pwd }, body: JSON.stringify(defaultWidgetConfig) });
+  1153→  1153→    setShowResetConfirm(false);
+  1154→  1154→  }, [password]);
+  1155→  1155→
+  1156→  1156→  const handlePasswordChange = useCallback(() => {
+  1157→  1157→    if (!newPassword || newPassword !== confirmPassword) { setPasswordMsg("Passwords do not match"); return; }
+  1158→  1158→    setPasswordMsg("Password updated locally"); sessionStorage.setItem("admin-auth", newPassword); setPassword(newPassword);
+  1159→  1159→    setNewPassword(""); setConfirmPassword(""); setTimeout(() => setPasswordMsg(""), 3000);
+  1160→  1160→  }, [newPassword, confirmPassword]);
+  1161→  1161→
+  1162→  1162→  // ─── Magic Link Generation ──────────────────────────────────────────────────
+  1163→  1163→
+  1164→  1164→  const generateMagicLink = useCallback(async () => {
+  1165→  1165→    if (!magicLinkUsername.trim()) { setMagicLinkError("Enter a username"); return; }
+  1166→  1166→    setMagicLinkGenerating(true); setMagicLinkError(""); setMagicLinkGenerated(null);
+  1167→  1167→    try {
+  1168→  1168→      const db = getFirebaseDb();
+  1169→  1169→      const name = magicLinkUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  1170→  1170→      if (!name) { setMagicLinkError("Invalid username"); setMagicLinkGenerating(false); return; }
+  1171→  1171→
+  1172→  1172→      // Look up UID from bq_usernames
+  1173→  1173→      const uidSnap = await get(ref(db, `bq_usernames/${name}`));
+  1174→  1174→      if (!uidSnap.exists()) { setMagicLinkError(`@${name} not found in registry`); setMagicLinkGenerating(false); return; }
+  1175→  1175→      const uid = uidSnap.val();
+  1176→  1176→
+  1177→  1177→      // Generate a secure random token (32 bytes = 64 hex chars)
+  1178→  1178→      const tokenBytes = new Uint8Array(32);
+  1179→  1179→      crypto.getRandomValues(tokenBytes);
+  1180→  1180→      const token = Array.from(tokenBytes, b => b.toString(16).padStart(2, "0")).join("");
+  1181→  1181→
+  1182→  1182→      const now = Date.now();
+  1183→  1183→      const expiresAt = magicLinkExpiry > 0 ? now + magicLinkExpiry * 3600000 : 0; // 0 = never expires
+  1184→  1184→
+  1185→  1185→      const linkData = {
+  1186→  1186→        uid,
+  1187→  1187→        username: name,
+  1188→  1188→        createdAt: now,
+  1189→  1189→        expiresAt,
+  1190→  1190→        oneTime: magicLinkOneTime,
+  1191→  1191→        used: false,
+  1192→  1192→        adminCreated: true,
+  1193→  1193→      };
+  1194→  1194→
+  1195→  1195→      // Store in Firebase
+  1196→  1196→      await set(ref(db, `bq_admin_magic_links/${token}`), linkData);
+  1197→  1197→
+  1198→  1198→      // Build the magic URL
+  1199→  1199→      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  1200→  1200→      const magicUrl = `${baseUrl}/?magic=${token}`;
+  1201→  1201→
+  1202→  1202→      setMagicLinkGenerated(magicUrl);
+  1203→  1203→
+  1204→  1204→      // Refresh history
+  1205→  1205→      loadMagicLinkHistory();
+  1206→  1206→    } catch (err) {
+  1207→  1207→      setMagicLinkError("Failed to generate link: " + (err instanceof Error ? err.message : "Unknown error"));
+  1208→  1208→    } finally {
+  1209→  1209→      setMagicLinkGenerating(false);
+  1210→  1210→    }
+  1211→  1211→  }, [magicLinkUsername, magicLinkExpiry, magicLinkOneTime]);
+  1212→  1212→
+  1213→  1213→  const loadMagicLinkHistory = useCallback(async () => {
+  1214→  1214→    setMagicLinkLoading(true);
+  1215→  1215→    try {
+  1216→  1216→      const db = getFirebaseDb();
+  1217→  1217→      const snap = await get(ref(db, "bq_admin_magic_links"));
+  1218→  1218→      if (!snap.exists()) { setMagicLinkHistory([]); setMagicLinkLoading(false); return; }
+  1219→  1219→      const links: typeof magicLinkHistory = [];
+  1220→  1220→      snap.forEach((child) => {
+  1221→  1221→        const v = child.val();
+  1222→  1222→        links.push({
+  1223→  1223→          token: child.key || "",
+  1224→  1224→          username: v.username || "?",
+  1225→  1225→          createdAt: v.createdAt || 0,
+  1226→  1226→          expiresAt: v.expiresAt || 0,
+  1227→  1227→          oneTime: v.oneTime ?? true,
+  1228→  1228→          used: v.used ?? false,
+  1229→  1229→          usedBy: v.usedBy,
+  1230→  1230→          usedAt: v.usedAt,
+  1231→  1231→        });
+  1232→  1232→      });
+  1233→  1233→      // Sort newest first
+  1234→  1234→      links.sort((a, b) => b.createdAt - a.createdAt);
+  1235→  1235→      setMagicLinkHistory(links);
+  1236→  1236→    } catch {
+  1237→  1237→      setMagicLinkHistory([]);
+  1238→  1238→    } finally {
+  1239→  1239→      setMagicLinkLoading(false);
+  1240→  1240→    }
+  1241→  1241→  }, []);
+  1242→  1242→
+  1243→  1243→  const revokeMagicLink = useCallback(async (token: string) => {
+  1244→  1244→    try {
+  1245→  1245→      const db = getFirebaseDb();
+  1246→  1246→      await remove(ref(db, `bq_admin_magic_links/${token}`));
+  1247→  1247→      loadMagicLinkHistory();
+  1248→  1248→      showActionMsg("Magic link revoked");
+  1249→  1249→    } catch { /* ignore */ }
+  1250→  1250→  }, [loadMagicLinkHistory, showActionMsg]);
+  1251→  1251→
+  1252→  1252→  const revokeAllMagicLinks = useCallback(async () => {
+  1253→  1253→    try {
+  1254→  1254→      const db = getFirebaseDb();
+  1255→  1255→      await remove(ref(db, "bq_admin_magic_links"));
+  1256→  1256→      setMagicLinkHistory([]);
+  1257→  1257→      showActionMsg("All magic links revoked");
+  1258→  1258→    } catch { /* ignore */ }
+  1259→  1259→  }, [showActionMsg]);
+  1260→  1260→
+  1261→  1261→  // Load magic link history when security section is active
+  1262→  1262→  useEffect(() => {
+  1263→  1263→    if (!isAuthed || section !== "security") return;
+  1264→  1264→    loadMagicLinkHistory();
+  1265→  1265→  }, [isAuthed, section, loadMagicLinkHistory]);
+  1266→  1266→
+  1267→  1267→  // ─── Filtered files ──────────────────────────────────────────────────────
+  1268→  1268→
+  1269→  1269→  const getFilteredFiles = useCallback(() => {
+  1270→  1270→    if (!data) return [];
+  1271→  1271→    let files = [...data.recentFiles];
+  1272→  1272→    if (searchQuery) { const q = searchQuery.toLowerCase(); files = files.filter((f) => f.name.toLowerCase().includes(q) || f.mimeType.toLowerCase().includes(q) || (f.description && f.description.toLowerCase().includes(q))); }
+  1273→  1273→    if (selectedCategory !== "all") files = files.filter((f) => f.category === selectedCategory);
+  1274→  1274→    if (sortBy === "newest") files.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  1275→  1275→    else if (sortBy === "oldest") files.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  1276→  1276→    else if (sortBy === "name") files.sort((a, b) => a.name.localeCompare(b.name));
+  1277→  1277→    else if (sortBy === "size") files.sort((a, b) => b.size - a.size);
+  1278→  1278→    else if (sortBy === "downloads") files.sort((a, b) => b.downloads - a.downloads);
+  1279→  1279→    return files;
+  1280→  1280→  }, [data, searchQuery, selectedCategory, sortBy]);
+  1281→  1281→
+  1282→  1282→  const filteredFiles = getFilteredFiles();
+  1283→  1283→
+  1284→  1284→  const toggleSelectAll = useCallback(() => {
+  1285→  1285→    const filtered = getFilteredFiles();
+  1286→  1286→    if (selectedFiles.size === filtered.length) setSelectedFiles(new Set());
+  1287→  1287→    else setSelectedFiles(new Set(filtered.map((f) => f.id)));
+  1288→  1288→  }, [selectedFiles, getFilteredFiles]);
+  1289→  1289→
+  1290→  1290→  const logout = useCallback(() => { setIsAuthed(false); sessionStorage.removeItem("admin-auth"); setPassword(""); }, []);
+  1291→  1291→
+  1292→  1292→  const toggleCategory = useCallback((catId: string) => {
+  1293→  1293→    setExpandedCategories((prev) => { const next = new Set(prev); if (next.has(catId)) next.delete(catId); else next.add(catId); return next; });
+  1294→  1294→  }, []);
+  1295→  1295→
+  1296→  1296→  const navigateTo = useCallback((s: Section) => {
+  1297→  1297→    setSection(s); setSidebarOpen(false);
+  1298→  1298→    const catId = categoryForSection(s);
+  1299→  1299→    setExpandedCategories((prev) => { if (prev.has(catId)) return prev; const next = new Set(prev); next.add(catId); return next; });
+  1300→  1300→  }, []);
+  1301→  1301→
+  1302→  1302→  // ─── Computed values ──────────────────────────────────────────────────────
+  1303→  1303→
+  1304→  1304→  const msgsToday = globalMessages.filter((m) => new Date(m.ts).toDateString() === new Date().toDateString()).length;
+  1305→  1305→  const activeChatters = new Set(globalMessages.filter((m) => m.type !== "system").map((m) => m.uid)).size;
+  1306→  1306→  const isPinned = (key: string) => pinnedMessages.some((p) => p.key === key);
+  1307→  1307→  const isBanned = (uid: string) => bannedUsers.some((b) => b.uid === uid);
+  1308→  1308→  const isMuted = (uid: string) => mutedUsers.some((m) => m.uid === uid);
+  1309→  1309→
+  1310→  1310→  // Expiry helpers
+  1311→  1311→  const isExpired = (expiresAt: number) => expiresAt > 0 && Date.now() > expiresAt;
+  1312→  1312→  const formatDuration = (hours: number) => {
+  1313→  1313→    if (hours <= 0) return "Permanent";
+  1314→  1314→    if (hours < 1) return `${Math.round(hours * 60)}m`;
+  1315→  1315→    if (hours < 24) return `${hours}h`;
+  1316→  1316→    const days = Math.floor(hours / 24);
+  1317→  1317→    const remaining = hours % 24;
+  1318→  1318→    return remaining > 0 ? `${days}d ${remaining}h` : `${days}d`;
+  1319→  1319→  };
+  1320→  1320→  const formatExpiry = (expiresAt: number) => {
+  1321→  1321→    if (!expiresAt) return "Never (Permanent)";
+  1322→  1322→    if (isExpired(expiresAt)) return "Expired";
+  1323→  1323→    const diff = expiresAt - Date.now();
+  1324→  1324→    if (diff < 60000) return "Less than 1 min";
+  1325→  1325→    if (diff < 3600000) return `${Math.ceil(diff / 60000)} min remaining`;
+  1326→  1326→    if (diff < 86400000) return `${Math.ceil(diff / 3600000)} hr remaining`;
+  1327→  1327→    return `${Math.ceil(diff / 86400000)} days remaining`;
+  1328→  1328→  };
+  1329→  1329→
+  1330→  1330→  // Active warnings = non-expired
+  1331→  1331→  const activeWarnings = warnings.filter((w) => !isExpired(w.expiresAt));
+  1332→  1332→  const expiredWarnings = warnings.filter((w) => isExpired(w.expiresAt));
+  1333→  1333→  const activeBans = bannedUsers.filter((b) => !isExpired(b.expiresAt));
+  1334→  1334→  const activeMutes = mutedUsers.filter((m) => !isExpired(m.expiresAt));
+  1335→  1335→
+  1336→  1336→  // Resolve username from uid
+  1337→  1337→  const resolveUserName = (uid: string) => {
+  1338→  1338→    const online = onlineUsers.find(u => u.uid === uid);
+  1339→  1339→    if (online?.name) return online.name as string;
+  1340→  1340→    // Check warnings for cached username
+  1341→  1341→    const warned = warnings.find(w => w.uid === uid && w.userName);
+  1342→  1342→    if (warned?.userName) return warned.userName;
+  1343→  1343→    return uid;
+  1344→  1344→  };
+  1345→  1345→
+  1346→  1346→  // Peak hour calculation
+  1347→  1347→  const peakHour = (() => {
+  1348→  1348→    if (globalMessages.length === 0) return "N/A";
+  1349→  1349→    const hours: Record<number, number> = {};
+  1350→  1350→    globalMessages.forEach((m) => { const h = new Date(m.ts).getHours(); hours[h] = (hours[h] || 0) + 1; });
+  1351→  1351→    const peak = Object.entries(hours).sort((a, b) => b[1] - a[1])[0];
+  1352→  1352→    return peak ? `${peak[0]}:00` : "N/A";
+  1353→  1353→  })();
+  1354→  1354→
+  1355→  1355→  // Most active user
+  1356→  1356→  const mostActiveUser = (() => {
+  1357→  1357→    if (globalMessages.length === 0) return "N/A";
+  1358→  1358→    const counts: Record<string, number> = {};
+  1359→  1359→    globalMessages.filter((m) => m.type !== "system").forEach((m) => { counts[m.uname] = (counts[m.uname] || 0) + 1; });
+  1360→  1360→    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  1361→  1361→    return top ? top[0] : "N/A";
+  1362→  1362→  })();
+  1363→  1363→
+  1364→  1364→  // ─── Login Screen ────────────────────────────────────────────────────────
+  1365→  1365→
+  1366→  1366→  if (!isAuthed) {
+  1367→  1367→    return (
+  1368→  1368→      <div className="min-h-screen flex flex-col bg-background">
+  1369→  1369→        <div className="flex-1 flex items-center justify-center">
+  1370→  1370→          <div className="w-full max-w-sm mx-4 animate-[fade-up_0.5s_ease_both]">
+  1371→  1371→            <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card p-8 shadow-2xl">
+  1372→  1372→              <div className="relative">
+  1373→  1373→                <div className="absolute inset-0 rounded-2xl bg-foreground/5 blur-xl" />
+  1374→  1374→                <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-foreground/[0.07] border border-foreground/10">
+  1375→  1375→                  <ShieldCheck className="h-7 w-7 text-muted-foreground" />
+  1376→  1376→                </div>
+  1377→  1377→              </div>
+  1378→  1378→              <div className="text-center">
+  1379→  1379→                <h1 className="text-xl font-semibold tracking-tight">Admin Panel</h1>
+  1380→  1380→                <p className="mt-1.5 text-sm text-muted-foreground">Authenticate to manage your workspace</p>
+  1381→  1381→              </div>
+  1382→  1382→              <div className="w-full space-y-3">
+  1383→  1383→                <div className="relative">
+  1384→  1384→                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  1385→  1385→                  <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setAuthError(""); }}
+  1386→  1386→                    onKeyDown={(e) => e.key === "Enter" && handleLogin()} placeholder="Enter admin password"
+  1387→  1387→                    className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition-all focus:border-foreground/30 focus:ring-2 focus:ring-foreground/5" autoFocus />
+  1388→  1388→                </div>
+  1389→  1389→                {authError && <p className="text-xs text-red-500 animate-[fade-up_0.2s_ease_both]">{authError}</p>}
+  1390→  1390→                <button onClick={handleLogin} disabled={authLoading || !password}
+  1391→  1391→                  className="h-11 w-full rounded-xl bg-foreground text-background text-sm font-medium transition-all hover:opacity-90 disabled:opacity-40 active:scale-[0.98]">
+  1392→  1392→                  {authLoading ? <span className="flex items-center justify-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" />Verifying...</span> : "Access Panel"}
+  1393→  1393→                </button>
+  1394→  1394→              </div>
+  1395→  1395→              <button onClick={() => router.push("/")} className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+  1396→  1396→                <ArrowLeft className="h-3 w-3" />Back to home
+  1397→  1397→              </button>
+  1398→  1398→            </div>
+  1399→  1399→          </div>
+  1400→  1400→        </div>
+  1401→  1401→      </div>
+  1402→  1402→    );
+  1403→  1403→  }
+  1404→  1404→
+  1405→  1405→  // ─── Dashboard ───────────────────────────────────────────────────────────
+  1406→  1406→
+  1407→  1407→  return (
+  1408→  1408→    <div className="min-h-screen flex bg-background">
+  1409→  1409→      {widgetRefreshToast && (
+  1410→  1410→        <div className="fixed top-4 right-4 z-50 animate-[fade-up_0.2s_ease_both] flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+  1411→  1411→          <Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium">Widget refreshed</span>
+  1412→  1412→        </div>
+  1413→  1413→      )}
+  1414→  1414→
+  1415→  1415→      {/* Warn Dialog */}
+  1416→  1416→      {warnDialogUid && (
+  1417→  1417→        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+  1418→  1418→          <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
+  1419→  1419→            <div className="flex items-center gap-2 mb-3">
+  1420→  1420→              <div className="grid h-8 w-8 place-items-center rounded-lg bg-orange-500/10"><AlertTriangle className="h-4 w-4 text-orange-500" /></div>
+  1421→  1421→              <h3 className="text-sm font-semibold">Warn User</h3>
+  1422→  1422→            </div>
+  1423→  1423→            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(warnDialogUid)}</p>
+  1424→  1424→            <div className="space-y-3">
+  1425→  1425→              <div className="flex flex-col gap-1.5">
+  1426→  1426→                <span className="text-xs text-muted-foreground">Reason</span>
+  1427→  1427→                <input type="text" value={warnReason} onChange={(e) => setWarnReason(e.target.value)} placeholder="Warning reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+  1428→  1428→              </div>
+  1429→  1429→              <div className="flex flex-col gap-1.5">
+  1430→  1430→                <div className="flex items-center justify-between">
+  1431→  1431→                  <span className="text-xs text-muted-foreground">Duration</span>
+  1432→  1432→                  <span className="text-xs font-medium">{warnDuration === 0 ? "Permanent" : formatDuration(warnDuration)}</span>
+  1433→  1433→                </div>
+  1434→  1434→                <select value={warnDuration} onChange={(e) => setWarnDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+  1435→  1435→                  <option value={0}>Permanent (No Expiry)</option>
+  1436→  1436→                  <option value={0.5}>30 Minutes</option>
+  1437→  1437→                  <option value={1}>1 Hour</option>
+  1438→  1438→                  <option value={3}>3 Hours</option>
+  1439→  1439→                  <option value={6}>6 Hours</option>
+  1440→  1440→                  <option value={12}>12 Hours</option>
+  1441→  1441→                  <option value={24}>1 Day</option>
+  1442→  1442→                  <option value={72}>3 Days</option>
+  1443→  1443→                  <option value={168}>1 Week</option>
+  1444→  1444→                  <option value={720}>1 Month</option>
+  1445→  1445→                </select>
+  1446→  1446→                {warnDuration > 0 && (
+  1447→  1447→                  <p className="text-[10px] text-muted-foreground">Warning will auto-expire and be removed after {formatDuration(warnDuration)}</p>
+  1448→  1448→                )}
+  1449→  1449→              </div>
+  1450→  1450→            </div>
+  1451→  1451→            <div className="flex items-center gap-2 justify-end mt-4">
+  1452→  1452→              <button onClick={() => { setWarnDialogUid(null); setWarnReason(""); setWarnDuration(0); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+  1453→  1453→              <button onClick={() => warnUser(warnDialogUid, warnReason, warnDuration)} className="h-8 px-3 rounded-lg bg-orange-500 text-white text-xs font-medium transition-colors hover:bg-orange-600">Warn</button>
+  1454→  1454→            </div>
+  1455→  1455→          </div>
+  1456→  1456→        </div>
+  1457→  1457→      )}
+  1458→  1458→
+  1459→  1459→      {/* Mute Dialog */}
+  1460→  1460→      {muteDialogUid && (
+  1461→  1461→        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+  1462→  1462→          <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
+  1463→  1463→            <div className="flex items-center gap-2 mb-3">
+  1464→  1464→              <div className="grid h-8 w-8 place-items-center rounded-lg bg-yellow-500/10"><VolumeX className="h-4 w-4 text-yellow-600" /></div>
+  1465→  1465→              <h3 className="text-sm font-semibold">Mute User</h3>
+  1466→  1466→            </div>
+  1467→  1467→            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(muteDialogUid)}</p>
+  1468→  1468→            <div className="space-y-3">
+  1469→  1469→              <div className="flex flex-col gap-1.5">
+  1470→  1470→                <span className="text-xs text-muted-foreground">Reason</span>
+  1471→  1471→                <input type="text" value={muteReason} onChange={(e) => setMuteReason(e.target.value)} placeholder="Mute reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+  1472→  1472→              </div>
+  1473→  1473→              <div className="flex flex-col gap-1.5">
+  1474→  1474→                <div className="flex items-center justify-between">
+  1475→  1475→                  <span className="text-xs text-muted-foreground">Duration</span>
+  1476→  1476→                  <span className="text-xs font-medium">{muteDuration === 0 ? "Permanent" : formatDuration(muteDuration)}</span>
+  1477→  1477→                </div>
+  1478→  1478→                <select value={muteDuration} onChange={(e) => setMuteDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+  1479→  1479→                  <option value={0.5}>30 Minutes</option>
+  1480→  1480→                  <option value={1}>1 Hour</option>
+  1481→  1481→                  <option value={3}>3 Hours</option>
+  1482→  1482→                  <option value={6}>6 Hours</option>
+  1483→  1483→                  <option value={12}>12 Hours</option>
+  1484→  1484→                  <option value={24}>1 Day</option>
+  1485→  1485→                  <option value={72}>3 Days</option>
+  1486→  1486→                  <option value={168}>1 Week</option>
+  1487→  1487→                  <option value={0}>Permanent</option>
+  1488→  1488→                </select>
+  1489→  1489→              </div>
+  1490→  1490→            </div>
+  1491→  1491→            <div className="flex items-center gap-2 justify-end mt-4">
+  1492→  1492→              <button onClick={() => { setMuteDialogUid(null); setMuteReason(""); setMuteDuration(1); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+  1493→  1493→              <button onClick={() => muteUser(muteDialogUid, muteReason, muteDuration)} className="h-8 px-3 rounded-lg bg-yellow-600 text-white text-xs font-medium transition-colors hover:bg-yellow-700">Mute</button>
+  1494→  1494→            </div>
+  1495→  1495→          </div>
+  1496→  1496→        </div>
+  1497→  1497→      )}
+  1498→  1498→
+  1499→  1499→      {/* Ban Dialog */}
+  1500→  1500→      {banDialogUid && (
+  1501→  1501→        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+  1502→  1502→          <div className="w-full max-w-sm mx-4 rounded-2xl border border-border bg-card p-6 shadow-2xl animate-[fade-up_0.2s_ease_both]">
+  1503→  1503→            <div className="flex items-center gap-2 mb-3">
+  1504→  1504→              <div className="grid h-8 w-8 place-items-center rounded-lg bg-red-500/10"><Ban className="h-4 w-4 text-red-500" /></div>
+  1505→  1505→              <h3 className="text-sm font-semibold">Ban User</h3>
+  1506→  1506→            </div>
+  1507→  1507→            <p className="text-xs text-muted-foreground mb-3">User: {resolveUserName(banDialogUid)}</p>
+  1508→  1508→            <div className="space-y-3">
+  1509→  1509→              <div className="flex flex-col gap-1.5">
+  1510→  1510→                <span className="text-xs text-muted-foreground">Reason</span>
+  1511→  1511→                <input type="text" value={banReason} onChange={(e) => setBanReason(e.target.value)} placeholder="Ban reason..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-foreground/30" />
+  1512→  1512→              </div>
+  1513→  1513→              <div className="flex flex-col gap-1.5">
+  1514→  1514→                <div className="flex items-center justify-between">
+  1515→  1515→                  <span className="text-xs text-muted-foreground">Duration</span>
+  1516→  1516→                  <span className="text-xs font-medium">{banDuration === 0 ? "Permanent" : formatDuration(banDuration)}</span>
+  1517→  1517→                </div>
+  1518→  1518→                <select value={banDuration} onChange={(e) => setBanDuration(Number(e.target.value))} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30">
+  1519→  1519→                  <option value={0}>Permanent Ban</option>
+  1520→  1520→                  <option value={1}>1 Hour</option>
+  1521→  1521→                  <option value={6}>6 Hours</option>
+  1522→  1522→                  <option value={24}>1 Day</option>
+  1523→  1523→                  <option value={72}>3 Days</option>
+  1524→  1524→                  <option value={168}>1 Week</option>
+  1525→  1525→                  <option value={720}>1 Month</option>
+  1526→  1526→                </select>
+  1527→  1527→                {banDuration > 0 && (
+  1528→  1528→                  <p className="text-[10px] text-muted-foreground">Ban will auto-expire after {formatDuration(banDuration)}</p>
+  1529→  1529→                )}
+  1530→  1530→              </div>
+  1531→  1531→              <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+  1532→  1532→                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+  1533→  1533→                <p className="text-[10px] text-red-400">Banning will immediately disconnect the user and block all future access.</p>
+  1534→  1534→              </div>
+  1535→  1535→            </div>
+  1536→  1536→            <div className="flex items-center gap-2 justify-end mt-4">
+  1537→  1537→              <button onClick={() => { setBanDialogUid(null); setBanReason(""); setBanDuration(0); }} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+  1538→  1538→              <button onClick={() => banUser(banDialogUid, banReason, banDuration)} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium transition-colors hover:bg-red-600">Ban</button>
+  1539→  1539→            </div>
+  1540→  1540→          </div>
+  1541→  1541→        </div>
+  1542→  1542→      )}
+  1543→  1543→
+  1544→  1544→      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />}
+  1545→  1545→
+  1546→  1546→      {/* ─── Sidebar ──────────────────────────────────────────────────────── */}
+  1547→  1547→      <aside className={`fixed top-0 left-0 z-50 h-full w-[260px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+  1548→  1548→        <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+  1549→  1549→          <div className="flex items-center gap-2">
+  1550→  1550→            <div className="grid h-7 w-7 place-items-center rounded-md bg-foreground text-background text-[11px] font-semibold">B</div>
+  1551→  1551→            <span className="text-sm font-semibold">BioQuiz</span>
+  1552→  1552→            <span className="rounded-md border border-foreground/10 bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">ADMIN</span>
+  1553→  1553→          </div>
+  1554→  1554→          <div className="flex items-center gap-1">
+  1555→  1555→            <button onClick={handleWidgetRefresh} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh Widget">
+  1556→  1556→              <RotateCcw className="h-3.5 w-3.5" />
+  1557→  1557→            </button>
+  1558→  1558→            <button onClick={() => fetchData()} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh Data">
+  1559→  1559→              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+  1560→  1560→            </button>
+  1561→  1561→          </div>
+  1562→  1562→        </div>
+  1563→  1563→
+  1564→  1564→        <nav className="flex-1 overflow-y-auto py-3 px-2">
+  1565→  1565→          {SIDEBAR.map((cat) => {
+  1566→  1566→            const isExpanded = expandedCategories.has(cat.id);
+  1567→  1567→            const hasActive = cat.items.some((it) => it.id === section);
+  1568→  1568→            return (
+  1569→  1569→              <div key={cat.id} className="mb-1">
+  1570→  1570→                <button onClick={() => toggleCategory(cat.id)}
+  1571→  1571→                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-widest transition-colors ${hasActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+  1572→  1572→                  <cat.icon className="h-3.5 w-3.5 shrink-0" />
+  1573→  1573→                  <span className="flex-1 text-left">{cat.label}</span>
+  1574→  1574→                  <ChevronRight className={`h-3 w-3 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+  1575→  1575→                </button>
+  1576→  1576→                {isExpanded && (
+  1577→  1577→                  <div className="ml-3 mt-0.5 space-y-0.5">
+  1578→  1578→                    {cat.items.map((item) => {
+  1579→  1579→                      const isActive = section === item.id;
+  1580→  1580→                      return (
+  1581→  1581→                        <button key={item.id} onClick={() => navigateTo(item.id)}
+  1582→  1582→                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors relative ${isActive ? "bg-foreground/5 text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.02]"}`}>
+  1583→  1583→                          {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-foreground" />}
+  1584→  1584→                          <item.icon className="h-3.5 w-3.5 shrink-0" />
+  1585→  1585→                          <span>{item.label}</span>
+  1586→  1586→                        </button>
+  1587→  1587→                      );
+  1588→  1588→                    })}
+  1589→  1589→                  </div>
+  1590→  1590→                )}
+  1591→  1591→              </div>
+  1592→  1592→            );
+  1593→  1593→          })}
+  1594→  1594→        </nav>
+  1595→  1595→
+  1596→  1596→        <div className="border-t border-border p-3 shrink-0">
+  1597→  1597→          <div className="flex items-center justify-between">
+  1598→  1598→            <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+  1599→  1599→              <span className={`inline-block h-1.5 w-1.5 rounded-full ${fbConnected ? "bg-green-500" : "bg-red-500"}`} />
+  1600→  1600→              {fbConnected ? "Real-time" : "Offline"}
+  1601→  1601→            </span>
+  1602→  1602→            <div className="flex items-center gap-1">
+  1603→  1603→              <button onClick={() => router.push("/")} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Back to site">
+  1604→  1604→                <ArrowLeft className="h-3.5 w-3.5" />
+  1605→  1605→              </button>
+  1606→  1606→              <button onClick={logout} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500" title="Logout">
+  1607→  1607→                <LogOut className="h-3.5 w-3.5" />
+  1608→  1608→              </button>
+  1609→  1609→            </div>
+  1610→  1610→          </div>
+  1611→  1611→        </div>
+  1612→  1612→      </aside>
+  1613→  1613→
+  1614→  1614→      {/* ─── Main Area ────────────────────────────────────────────────────── */}
+  1615→  1615→      <div className="flex-1 flex flex-col min-w-0">
+  1616→  1616→        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl lg:hidden">
+  1617→  1617→          <div className="flex h-14 items-center justify-between px-4">
+  1618→  1618→            <div className="flex items-center gap-3">
+  1619→  1619→              <button onClick={() => setSidebarOpen(true)} className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">
+  1620→  1620→                <Menu className="h-4 w-4" />
+  1621→  1621→              </button>
+  1622→  1622→              <div className="flex items-center gap-2">
+  1623→  1623→                <div className="grid h-7 w-7 place-items-center rounded-md bg-foreground text-background text-[11px] font-semibold">B</div>
+  1624→  1624→                <span className="text-sm font-medium">Admin</span>
+  1625→  1625→              </div>
+  1626→  1626→            </div>
+  1627→  1627→            <div className="flex items-center gap-2">
+  1628→  1628→              <button onClick={handleWidgetRefresh} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><RotateCcw className="h-4 w-4" /></button>
+  1629→  1629→              <button onClick={logout} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"><LogOut className="h-4 w-4" /></button>
+  1630→  1630→            </div>
+  1631→  1631→          </div>
+  1632→  1632→        </header>
+  1633→  1633→
+  1634→  1634→        <header className="hidden lg:block sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-xl">
+  1635→  1635→          <div className="flex h-12 items-center justify-between px-8">
+  1636→  1636→            <div className="flex items-center gap-2">
+  1637→  1637→              {(() => { const cat = SIDEBAR.find((c) => c.items.some((it) => it.id === section)); const item = cat?.items.find((it) => it.id === section); if (!item || !cat) return null; return (<><item.icon className="h-4 w-4 text-muted-foreground" /><span className="text-sm font-medium">{item.label}</span><span className="text-[10px] text-muted-foreground">{cat.label}</span></>); })()}
+  1638→  1638→              {widgetConfig.maintenanceEnabled && <span className="ml-3 flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-500"><Wrench className="h-3 w-3" />Maintenance Mode</span>}
+  1639→  1639→            </div>
+  1640→  1640→            <div className="flex items-center gap-2">
+  1641→  1641→              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><span className={`inline-block h-1.5 w-1.5 rounded-full ${fbConnected ? "bg-green-500" : "bg-red-500"}`} />{fbConnected ? "Real-time" : "Offline"}</span>
+  1642→  1642→              <button onClick={() => fetchData()} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Refresh"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
+  1643→  1643→            </div>
+  1644→  1644→          </div>
+  1645→  1645→        </header>
+  1646→  1646→
+  1647→  1647→        {/* Main content */}
+  1648→  1648→        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+  1649→  1649→          {loading && !data ? (
+  1650→  1650→            <div className="flex items-center justify-center py-24"><div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" /></div>
+  1651→  1651→          ) : data ? (
+  1652→  1652→            <div className="flex flex-col gap-8 max-w-5xl">
+  1653→  1653→
+  1654→  1654→              {/* ─── OVERVIEW ─────────────────────────────────────────── */}
+  1655→  1655→              {section === "overview" && (
+  1656→  1656→                <>
+  1657→  1657→                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+  1658→  1658→                    <StatCard icon={Files} label="Total Files" value={String(data.stats.totalFiles)} color="oklch(0.7 0.12 250)" />
+  1659→  1659→                    <StatCard icon={HardDrive} label="Storage Used" value={data.stats.totalSizeFormatted} color="oklch(0.72 0.16 150)" />
+  1660→  1660→                    <StatCard icon={Download} label="Downloads" value={String(data.stats.totalDownloads)} color="oklch(0.75 0.15 200)" />
+  1661→  1661→                    <StatCard icon={Globe} label="Public" value={String(data.stats.publicFiles)} color="oklch(0.72 0.16 140)" />
+  1662→  1662→                    <StatCard icon={Lock} label="Private" value={String(data.stats.privateFiles)} color="oklch(0.65 0.1 220)" />
+  1663→  1663→                  </div>
+  1664→  1664→                  {/* Chat overview stats */}
+  1665→  1665→                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  1666→  1666→                    <StatCard icon={MessageSquare} label="Chat Messages" value={String(globalMessages.length)} color="oklch(0.7 0.12 250)" />
+  1667→  1667→                    <StatCard icon={Users} label="Online Users" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+  1668→  1668→                    <StatCard icon={MessageCircle} label="Active DMs" value={String(dmConversations.length)} color="oklch(0.75 0.15 200)" />
+  1669→  1669→                    <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.65 0.2 25)" />
+  1670→  1670→                  </div>
+  1671→  1671→                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1672→  1672→                    <div className="rounded-2xl border border-border bg-card p-6">
+  1673→  1673→                      <div className="flex items-center gap-2 mb-5"><BarChart3 className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Storage by Category</h2></div>
+  1674→  1674→                      <div className="space-y-3">
+  1675→  1675→                        {data.categoryDistribution.map((cat) => {
+  1676→  1676→                          const pct = data.stats.totalSize > 0 ? (cat.size / data.stats.totalSize) * 100 : 0;
+  1677→  1677→                          const color = categoryColors[cat.category] || categoryColors.file;
+  1678→  1678→                          return (<div key={cat.category} className="flex flex-col gap-1.5"><div className="flex items-center justify-between text-xs"><span className="capitalize font-medium">{cat.category}</span><span className="text-muted-foreground">{cat.sizeFormatted} · {cat.count} file{cat.count !== 1 ? "s" : ""}</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/5"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%`, background: color }} /></div></div>);
+  1679→  1679→                        })}
+  1680→  1680→                        {data.categoryDistribution.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>}
+  1681→  1681→                      </div>
+  1682→  1682→                    </div>
+  1683→  1683→                    <div className="rounded-2xl border border-border bg-card p-6">
+  1684→  1684→                      <div className="flex items-center gap-2 mb-5"><Activity className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Upload Activity (7 days)</h2></div>
+  1685→  1685→                      <div className="space-y-3">
+  1686→  1686→                        {data.uploadsByDay.map((day) => { const maxCount = Math.max(...data.uploadsByDay.map((d) => d.count), 1); const pct = (day.count / maxCount) * 100; return (<div key={day.date} className="flex items-center gap-3"><span className="text-[11px] text-muted-foreground w-20 shrink-0 tabular-nums">{new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span><div className="flex-1 h-6 overflow-hidden rounded-md bg-foreground/5"><div className="h-full rounded-md transition-all duration-500 flex items-center px-2" style={{ width: `${Math.max(pct, 8)}%`, background: "oklch(0.7 0.12 250 / 0.6)" }}><span className="text-[10px] font-medium text-background whitespace-nowrap">{day.count}</span></div></div></div>); })}
+  1687→  1687→                        {data.uploadsByDay.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No uploads in the last 7 days</p>}
+  1688→  1688→                      </div>
+  1689→  1689→                    </div>
+  1690→  1690→                  </div>
+  1691→  1691→                  {storageData && storageData.topDownloaded.length > 0 && (
+  1692→  1692→                    <div className="rounded-2xl border border-border bg-card p-6">
+  1693→  1693→                      <div className="flex items-center gap-2 mb-5"><TrendingUp className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Top Downloaded</h2></div>
+  1694→  1694→                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+  1695→  1695→                        {storageData.topDownloaded.map((f, i) => (<div key={f.id} className="flex items-center gap-2 rounded-xl border border-border bg-background p-3"><span className="text-xs font-bold text-muted-foreground">{i + 1}</span><div className="min-w-0 flex-1"><p className="truncate text-xs font-medium">{f.name}</p><p className="text-[10px] text-muted-foreground">{f.downloads} dl · {f.sizeFormatted}</p></div></div>))}
+  1696→  1696→                      </div>
+  1697→  1697→                    </div>
+  1698→  1698→                  )}
+  1699→  1699→                </>
+  1700→  1700→              )}
+  1701→  1701→
+  1702→  1702→              {/* ─── ACTIVITY ──────────────────────────────────────────── */}
+  1703→  1703→              {section === "activity" && (
+  1704→  1704→                <div className="flex flex-col gap-6">
+  1705→  1705→                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  1706→  1706→                    <StatCard icon={Users} label="Online Now" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+  1707→  1707→                    <StatCard icon={MessageSquare} label="Total Messages" value={String(totalMessageCount || globalMessages.length)} color="oklch(0.7 0.12 250)" />
+  1708→  1708→                    <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.75 0.15 200)" />
+  1709→  1709→                  </div>
+  1710→  1710→                  <div className="rounded-2xl border border-border bg-card p-6">
+  1711→  1711→                    <div className="flex items-center justify-between mb-5">
+  1712→  1712→                      <div className="flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Online Users</h2><span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500 font-medium">{onlineUsers.length} online</span></div>
+  1713→  1713→                    </div>
+  1714→  1714→                    <div className="max-h-96 overflow-y-auto">
+  1715→  1715→                      {onlineUsers.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-8">No users currently online</p>) : (
+  1716→  1716→                        <div className="space-y-2">
+  1717→  1717→                          {onlineUsers.map((user) => {
+  1718→  1718→                            const userName = (user.name as string) || user.uid || "Anonymous";
+  1719→  1719→                            const status = (user.status as string) || "online";
+  1720→  1720→                            const statusColor = status === "online" ? "bg-green-500" : status === "away" ? "bg-yellow-500" : "bg-red-500";
+  1721→  1721→                            return (<div key={user.uid} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3"><div className="grid h-8 w-8 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{userName.charAt(0).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="text-xs font-medium truncate">{userName}</p><p className="text-[10px] text-muted-foreground">Last seen: {user.ts ? new Date(user.ts).toLocaleTimeString() : "Unknown"}</p></div><span className={`inline-block h-2.5 w-2.5 rounded-full ${statusColor}`} title={status} /></div>);
+  1722→  1722→                          })}
+  1723→  1723→                        </div>
+  1724→  1724→                      )}
+  1725→  1725→                    </div>
+  1726→  1726→                  </div>
+  1727→  1727→                  <div className="rounded-2xl border border-border bg-card p-6">
+  1728→  1728→                    <div className="flex items-center gap-2 mb-5"><MessageSquare className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Recent Messages</h2></div>
+  1729→  1729→                    <div className="max-h-96 overflow-y-auto">
+  1730→  1730→                      {globalMessages.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-8">No recent messages</p>) : (
+  1731→  1731→                        <div className="space-y-2">
+  1732→  1732→                          {globalMessages.slice(0, 20).map((msg) => {
+  1733→  1733→                            const isSystem = msg.type === "system";
+  1734→  1734→                            return (<div key={msg.key} className={`flex items-start gap-3 rounded-xl border border-border p-3 ${isSystem ? "bg-foreground/[0.02]" : "bg-background"}`}><div className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold ${isSystem ? "bg-foreground/5 text-muted-foreground" : "bg-foreground/10"}`}>{isSystem ? "S" : msg.uname.charAt(0).toUpperCase()}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className={`text-xs font-medium ${isSystem ? "text-muted-foreground" : ""}`}>{isSystem ? "System" : msg.uname}</span>{msg.ts > 0 && <span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleTimeString()}</span>}</div><p className={`text-xs mt-0.5 truncate ${isSystem ? "text-muted-foreground" : ""}`}>{msg.text || "(empty)"}</p></div></div>);
+  1735→  1735→                          })}
+  1736→  1736→                        </div>
+  1737→  1737→                      )}
+  1738→  1738→                    </div>
+  1739→  1739→                  </div>
+  1740→  1740→                  {/* Activity Log */}
+  1741→  1741→                  {warnings.length > 0 && (
+  1742→  1742→                    <div className="rounded-2xl border border-border bg-card p-6">
+  1743→  1743→                      <div className="flex items-center gap-2 mb-5"><AlertTriangle className="h-4 w-4 text-orange-500" /><h2 className="text-sm font-semibold">Recent Warnings</h2></div>
+  1744→  1744→                      <div className="max-h-64 overflow-y-auto space-y-2">
+  1745→  1745→                        {warnings.sort((a, b) => b.ts - a.ts).slice(0, 20).map((w) => (
+  1746→  1746→                          <div key={w.key} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+  1747→  1747→                            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-500"><AlertTriangle className="h-3.5 w-3.5" /></div>
+  1748→  1748→                            <div className="min-w-0 flex-1"><p className="text-xs font-medium">UID: {w.uid}</p><p className="text-[10px] text-muted-foreground">{w.reason} · {new Date(w.ts).toLocaleString()}</p></div>
+  1749→  1749→                          </div>
+  1750→  1750→                        ))}
+  1751→  1751→                      </div>
+  1752→  1752→                    </div>
+  1753→  1753→                  )}
+  1754→  1754→                </div>
+  1755→  1755→              )}
+  1756→  1756→
+  1757→  1757→              {/* ─── GLOBAL CHAT ───────────────────────────────────────── */}
+  1758→  1758→              {section === "global-chat" && (
+  1759→  1759→                <div className="flex flex-col gap-6">
+  1760→  1760→                  {actionMsg && (<div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]"><Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium text-green-500">{actionMsg}</span></div>)}
+  1761→  1761→                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+  1762→  1762→                    <StatCard icon={MessageSquare} label="Total Messages" value={String(totalMessageCount || globalMessages.length)} color="oklch(0.7 0.12 250)" />
+  1763→  1763→                    <StatCard icon={Activity} label="Messages Today" value={String(msgsToday)} color="oklch(0.75 0.15 200)" />
+  1764→  1764→                    <StatCard icon={Users} label="Active Chatters" value={String(activeChatters)} color="oklch(0.72 0.16 140)" />
+  1765→  1765→                    <StatCard icon={Clock} label="Peak Hour" value={peakHour} color="oklch(0.65 0.2 25)" />
+  1766→  1766→                    <StatCard icon={TrendingUp} label="Most Active" value={mostActiveUser.length > 10 ? mostActiveUser.slice(0, 10) + "..." : mostActiveUser} color="oklch(0.68 0.12 60)" />
+  1767→  1767→                  </div>
+  1768→  1768→
+  1769→  1769→                  {/* Pinned Messages */}
+  1770→  1770→                  {pinnedMessages.length > 0 && (
+  1771→  1771→                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5">
+  1772→  1772→                      <div className="flex items-center gap-2 p-4 border-b border-amber-500/10">
+  1773→  1773→                        <Pin className="h-4 w-4 text-amber-500" /><h2 className="text-sm font-semibold text-amber-500">Pinned Messages</h2>
+  1774→  1774→                      </div>
+  1775→  1775→                      <div className="divide-y divide-amber-500/10">
+  1776→  1776→                        {pinnedMessages.map((pin) => {
+  1777→  1777→                          const msg = globalMessages.find((m) => m.key === pin.key);
+  1778→  1778→                          if (!msg) return null;
+  1779→  1779→                          return (
+  1780→  1780→                            <div key={pin.key} className="flex items-start gap-3 px-4 py-3">
+  1781→  1781→                              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-500/10 text-amber-500"><Pin className="h-3.5 w-3.5" /></div>
+  1782→  1782→                              <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-xs font-medium">{msg.uname}</span><span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span></div><p className="text-xs mt-0.5 break-words">{msg.text}</p></div>
+  1783→  1783→                              <button onClick={() => unpinMessage(pin.key)} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground" title="Unpin"><X className="h-3.5 w-3.5" /></button>
+  1784→  1784→                            </div>
+  1785→  1785→                          );
+  1786→  1786→                        })}
+  1787→  1787→                      </div>
+  1788→  1788→                    </div>
+  1789→  1789→                  )}
+  1790→  1790→
+  1791→  1791→                  {/* Send Announcement */}
+  1792→  1792→                  <div className="rounded-2xl border border-border bg-card p-6">
+  1793→  1793→                    <div className="flex items-center gap-2 mb-4"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Send Announcement</h2></div>
+  1794→  1794→                    <div className="flex gap-2">
+  1795→  1795→                      <input type="text" value={announcementText} onChange={(e) => setAnnouncementText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendAnnouncement()} placeholder="Type an announcement message..." className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
+  1796→  1796→                      <button onClick={sendAnnouncement} disabled={!announcementText.trim() || announcementSending} className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 disabled:opacity-40 shrink-0">
+  1797→  1797→                        {announcementSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Megaphone className="h-3.5 w-3.5" />}Send
+  1798→  1798→                      </button>
+  1799→  1799→                    </div>
+  1800→  1800→                  </div>
+  1801→  1801→
+  1802→  1802→                  <div className="rounded-2xl border border-border bg-card">
+  1803→  1803→                    <div className="flex flex-col gap-4 p-6 border-b border-border">
+  1804→  1804→                      <div className="flex items-center justify-between">
+  1805→  1805→                        <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Global Messages</h2><span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">Live</span></div>
+  1806→  1806→                        <div className="flex items-center gap-2">
+  1807→  1807→                          {selectedChatMessages.size > 0 && (
+  1808→  1808→                            <button onClick={() => bulkDeleteMessages(Array.from(selectedChatMessages), "global")} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/10 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/20">
+  1809→  1809→                              <Trash className="h-3.5 w-3.5" />Delete ({selectedChatMessages.size})
+  1810→  1810→                            </button>
+  1811→  1811→                          )}
+  1812→  1812→                          <button onClick={() => exportChat(globalMessages, "global-chat.json")} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5"><DownloadCloud className="h-3.5 w-3.5" />Export</button>
+  1813→  1813→                          {!clearAllConfirm ? (
+  1814→  1814→                            <button onClick={() => setClearAllConfirm(true)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" />Clear All</button>
+  1815→  1815→                          ) : (
+  1816→  1816→                            <div className="flex items-center gap-1.5">
+  1817→  1817→                              <button onClick={() => clearAllMessages("global")} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm</button>
+  1818→  1818→                              <button onClick={() => setClearAllConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
+  1819→  1819→                            </div>
+  1820→  1820→                          )}
+  1821→  1821→                        </div>
+  1822→  1822→                      </div>
+  1823→  1823→                      <div className="relative">
+  1824→  1824→                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  1825→  1825→                        <input type="text" value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)} placeholder="Search loaded messages..." className="h-10 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm outline-none transition-all focus:border-foreground/30 focus:ring-2 focus:ring-foreground/5" />
+  1826→  1826→                      </div>
+  1827→  1827→                      {totalMessageCount > 0 && (
+  1828→  1828→                        <div className="flex items-center justify-between">
+  1829→  1829→                          <span className="text-[10px] text-muted-foreground">Showing {globalMessages.length} of {totalMessageCount} messages</span>
+  1830→  1830→                          {chatSearchQuery && <span className="text-[10px] text-muted-foreground">Search limited to loaded messages</span>}
+  1831→  1831→                        </div>
+  1832→  1832→                      )}
+  1833→  1833→                    </div>
+  1834→  1834→                    <div className="max-h-[500px] overflow-y-auto">
+  1835→  1835→                      {globalMessages.length === 0 ? (
+  1836→  1836→                        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center"><div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><MessageSquare className="h-5 w-5 text-muted-foreground" /></div><p className="text-xs text-muted-foreground">No global messages yet</p></div>
+  1837→  1837→                      ) : (
+  1838→  1838→                        <div className="divide-y divide-border/50">
+  1839→  1839→                          {globalMessages
+  1840→  1840→                            .filter((m) => !chatSearchQuery || m.text.toLowerCase().includes(chatSearchQuery.toLowerCase()) || m.uname.toLowerCase().includes(chatSearchQuery.toLowerCase()))
+  1841→  1841→                            .map((msg) => (
+  1842→  1842→                              <div key={msg.key} className={`flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01] transition-colors ${msg.type === "system" ? "bg-foreground/[0.02]" : ""}`}>
+  1843→  1843→                                <button onClick={() => { const next = new Set(selectedChatMessages); if (next.has(msg.key)) next.delete(msg.key); else next.add(msg.key); setSelectedChatMessages(next); }}
+  1844→  1844→                                  className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors ${selectedChatMessages.has(msg.key) ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
+  1845→  1845→                                  {selectedChatMessages.has(msg.key) && <Check className="h-3 w-3" />}
+  1846→  1846→                                </button>
+  1847→  1847→                                <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold ${msg.type === "system" ? "bg-foreground/10 text-foreground" : isPinned(msg.key) ? "bg-amber-500/10 text-amber-500" : "bg-foreground/5"}`}>
+  1848→  1848→                                  {msg.type === "system" ? <Megaphone className="h-4 w-4" /> : isPinned(msg.key) ? <Pin className="h-4 w-4" /> : msg.uname.charAt(0).toUpperCase()}
+  1849→  1849→                                </div>
+  1850→  1850→                                <div className="min-w-0 flex-1">
+  1851→  1851→                                  <div className="flex items-center gap-2 flex-wrap">
+  1852→  1852→                                    <span className={`text-xs font-medium ${msg.type === "system" ? "text-foreground/70 italic" : ""}`}>{msg.uname}</span>
+  1853→  1853→                                    {msg.type === "system" && <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">SYSTEM</span>}
+  1854→  1854→                                    {isPinned(msg.key) && <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-500">PINNED</span>}
+  1855→  1855→                                    {isBanned(msg.uid) && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}
+  1856→  1856→                                    {isMuted(msg.uid) && <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}
+  1857→  1857→                                    <span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span>
+  1858→  1858→                                    {msg.reactions.length > 0 && <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Heart className="h-3 w-3" />{msg.reactions.reduce((a, r) => a + r.count, 0)}</span>}
+  1859→  1859→                                  </div>
+  1860→  1860→                                  <p className={`text-xs mt-0.5 break-words ${msg.type === "system" ? "text-foreground/60" : ""}`}>{msg.text}</p>
+  1861→  1861→                                  {msg.reactions.length > 0 && (<div className="flex flex-wrap gap-1 mt-1">{msg.reactions.map((r, i) => (<span key={i} className="inline-flex items-center gap-0.5 rounded-full bg-foreground/5 px-2 py-0.5 text-[10px]">{r.emoji} {r.count}</span>))}</div>)}
+  1862→  1862→                                </div>
+  1863→  1863→                                <div className="flex items-center gap-1 shrink-0">
+  1864→  1864→                                  {deleteConfirmKey === msg.key ? (
+  1865→  1865→                                    <><button onClick={() => { deleteMessage(msg.key, "global"); setDeleteConfirmKey(null); }} className="h-7 px-2 rounded-md bg-red-500 text-white text-[10px] font-medium">Yes</button><button onClick={() => setDeleteConfirmKey(null)} className="h-7 px-2 rounded-md border border-border text-[10px] font-medium">No</button></>
+  1866→  1866→                                  ) : (
+  1867→  1867→                                    <>
+  1868→  1868→                                      {msg.type !== "system" && (
+  1869→  1869→                                        <button onClick={() => isPinned(msg.key) ? unpinMessage(msg.key) : pinMessage(msg.key)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-amber-500/10 hover:text-amber-500" title={isPinned(msg.key) ? "Unpin" : "Pin"}>
+  1870→  1870→                                          <Pin className="h-3.5 w-3.5" />
+  1871→  1871→                                        </button>
+  1872→  1872→                                      )}
+  1873→  1873→                                      {msg.type !== "system" && (
+  1874→  1874→                                        <button onClick={() => setWarnDialogUid(msg.uid)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-orange-500/10 hover:text-orange-500" title="Warn"><AlertTriangle className="h-3.5 w-3.5" /></button>
+  1875→  1875→                                      )}
+  1876→  1876→                                      {msg.type !== "system" && (
+  1877→  1877→                                        <button onClick={() => setMuteDialogUid(msg.uid)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-yellow-500/10 hover:text-yellow-600" title="Mute"><VolumeX className="h-3.5 w-3.5" /></button>
+  1878→  1878→                                      )}
+  1879→  1879→                                      <button onClick={() => setDeleteConfirmKey(msg.key)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+  1880→  1880→                                    </>
+  1881→  1881→                                  )}
+  1882→  1882→                                </div>
+  1883→  1883→                              </div>
+  1884→  1884→                            ))}
+  1885→  1885→                          {hasMoreMessages && (
+  1886→  1886→                            <div className="flex items-center justify-center py-4 border-t border-border/50">
+  1887→  1887→                              <button onClick={loadMoreMessages} disabled={loadingMoreMessages} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 disabled:opacity-40">
+  1888→  1888→                                {loadingMoreMessages ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Clock className="h-3.5 w-3.5" />}
+  1889→  1889→                                Load Older Messages
+  1890→  1890→                              </button>
+  1891→  1891→                            </div>
+  1892→  1892→                          )}
+  1893→  1893→                        </div>
+  1894→  1894→                      )}
+  1895→  1895→                    </div>
+  1896→  1896→                  </div>
+  1897→  1897→                </div>
+  1898→  1898→              )}
+  1899→  1899→
+  1900→  1900→              {/* ─── DMs ───────────────────────────────────────────────── */}
+  1901→  1901→              {section === "dms" && (
+  1902→  1902→                <div className="flex flex-col gap-6">
+  1903→  1903→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  1904→  1904→                    <StatCard icon={MessageCircle} label="Total DMs" value={String(dmConversations.length)} color="oklch(0.7 0.12 250)" />
+  1905→  1905→                    <StatCard icon={Activity} label="Active Today" value={String(dmConversations.filter((d) => { const dt = new Date(d.lastMessageTime); return dt.toDateString() === new Date().toDateString(); }).length)} color="oklch(0.75 0.15 200)" />
+  1906→  1906→                  </div>
+  1907→  1907→
+  1908→  1908→                  {selectedDm ? (
+  1909→  1909→                    <div className="rounded-2xl border border-border bg-card">
+  1910→  1910→                      <div className="flex items-center gap-3 p-6 border-b border-border">
+  1911→  1911→                        <button onClick={() => { setSelectedDm(null); setDmMessages([]); setDmMessagesPageSize(50); setSelectedChatMessages(new Set()); }} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
+  1912→  1912→                        <div className="flex items-center gap-2 flex-1"><MessageCircle className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">DM: {dmConversations.find((d) => d.dmId === selectedDm)?.participantNames?.join(" & ") || selectedDm}</h2></div>
+  1913→  1913→                        <div className="flex items-center gap-2 shrink-0">
+  1914→  1914→                          {/* Bulk actions */}
+  1915→  1915→                          {selectedChatMessages.size > 0 && (
+  1916→  1916→                            <button onClick={() => bulkDeleteMessages(Array.from(selectedChatMessages), "dm", selectedDm)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/10 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/20">
+  1917→  1917→                              <Trash className="h-3.5 w-3.5" />Delete ({selectedChatMessages.size})
+  1918→  1918→                            </button>
+  1919→  1919→                          )}
+  1920→  1920→                          {/* Pagination info */}
+  1921→  1921→                          <span className="text-[10px] text-muted-foreground tabular-nums">{Math.min(dmMessages.length, dmMessagesPageSize)} / {dmTotalMessageCount || dmMessages.length} msgs</span>
+  1922→  1922→                          <button onClick={() => exportChat(dmMessages, `dm-${selectedDm}.json`)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5"><DownloadCloud className="h-3.5 w-3.5" />Export</button>
+  1923→  1923→                          {!clearAllConfirm ? (<button onClick={() => setClearAllConfirm(true)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-red-500/20 text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" />Clear</button>) : (
+  1924→  1924→                            <div className="flex items-center gap-1.5"><button onClick={() => clearAllMessages("dm", selectedDm)} className="h-8 px-3 rounded-lg bg-red-500 text-white text-xs font-medium">Confirm</button><button onClick={() => setClearAllConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button></div>
+  1925→  1925→                          )}
+  1926→  1926→                        </div>
+  1927→  1927→                      </div>
+  1928→  1928→                      <div className="max-h-[500px] overflow-y-auto">
+  1929→  1929→                        {dmMessages.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No messages in this DM</p>) : (
+  1930→  1930→                          <div>
+  1931→  1931→                            {/* Load More button at the top (for older messages) */}
+  1932→  1932→                            {dmHasMoreMessages && (
+  1933→  1933→                              <div className="flex justify-center py-3 border-b border-border/50">
+  1934→  1934→                                <button onClick={loadMoreDmMessages} disabled={loadingMoreDmMessages} className="flex items-center gap-1.5 h-8 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 disabled:opacity-50">
+  1935→  1935→                                  {loadingMoreDmMessages ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <ChevronRight className="h-3.5 w-3.5 rotate-90" />}
+  1936→  1936→                                  Load Older Messages
+  1937→  1937→                                </button>
+  1938→  1938→                              </div>
+  1939→  1939→                            )}
+  1940→  1940→                            <div className="divide-y divide-border/50">
+  1941→  1941→                              {dmMessages.map((msg) => (
+  1942→  1942→                                <div key={msg.key} className="flex items-start gap-3 px-6 py-3 hover:bg-foreground/[0.01]">
+  1943→  1943→                                  <button onClick={() => { const next = new Set(selectedChatMessages); if (next.has(msg.key)) next.delete(msg.key); else next.add(msg.key); setSelectedChatMessages(next); }}
+  1944→  1944→                                    className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors ${selectedChatMessages.has(msg.key) ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/30"}`}>
+  1945→  1945→                                    {selectedChatMessages.has(msg.key) && <Check className="h-3 w-3" />}
+  1946→  1946→                                  </button>
+  1947→  1947→                                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{msg.uname.charAt(0).toUpperCase()}</div>
+  1948→  1948→                                  <div className="min-w-0 flex-1">
+  1949→  1949→                                    <div className="flex items-center gap-2"><span className="text-xs font-medium">{msg.uname}</span>{isBanned(msg.uid) && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}{isMuted(msg.uid) && <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}<span className="text-[10px] text-muted-foreground">{new Date(msg.ts).toLocaleString()}</span></div>
+  1950→  1950→                                    <p className="text-xs mt-0.5 break-words">{msg.text}</p>
+  1951→  1951→                                  </div>
+  1952→  1952→                                  <div className="flex items-center gap-1 shrink-0">
+  1953→  1953→                                    {deleteConfirmKey === msg.key ? (<><button onClick={() => { deleteMessage(msg.key, "dm", selectedDm); setDeleteConfirmKey(null); }} className="h-7 px-2 rounded-md bg-red-500 text-white text-[10px] font-medium">Yes</button><button onClick={() => setDeleteConfirmKey(null)} className="h-7 px-2 rounded-md border border-border text-[10px] font-medium">No</button></>) : (
+  1954→  1954→                                      <>
+  1955→  1955→                                        <button onClick={() => setWarnDialogUid(msg.uid)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-orange-500/10 hover:text-orange-500" title="Warn"><AlertTriangle className="h-3.5 w-3.5" /></button>
+  1956→  1956→                                        <button onClick={() => setDeleteConfirmKey(msg.key)} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+  1957→  1957→                                      </>
+  1958→  1958→                                    )}
+  1959→  1959→                                  </div>
+  1960→  1960→                                </div>
+  1961→  1961→                              ))}
+  1962→  1962→                            </div>
+  1963→  1963→                          </div>
+  1964→  1964→                        )}
+  1965→  1965→                      </div>
+  1966→  1966→                    </div>
+  1967→  1967→                  ) : (
+  1968→  1968→                    <div className="rounded-2xl border border-border bg-card">
+  1969→  1969→                      <div className="flex items-center justify-between p-6 border-b border-border">
+  1970→  1970→                        <div className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">DM Conversations</h2></div>
+  1971→  1971→                        <div className="flex items-center gap-2">
+  1972→  1972→                          {/* Search */}
+  1973→  1973→                          <div className="relative">
+  1974→  1974→                            <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+  1975→  1975→                            <input
+  1976→  1976→                              type="text"
+  1977→  1977→                              value={dmSearchQuery}
+  1978→  1978→                              onChange={(e) => setDmSearchQuery(e.target.value)}
+  1979→  1979→                              placeholder="Search DMs..."
+  1980→  1980→                              className="h-8 w-44 rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none transition-all focus:border-foreground/30 focus:w-56"
+  1981→  1981→                            />
+  1982→  1982→                          </div>
+  1983→  1983→                          {/* Refresh */}
+  1984→  1984→                          <button onClick={fetchDmConversations} disabled={dmListLoading} className="grid h-8 w-8 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50" title="Refresh DM list">
+  1985→  1985→                            <RefreshCw className={`h-3.5 w-3.5 ${dmListLoading ? "animate-spin" : ""}`} />
+  1986→  1986→                          </button>
+  1987→  1987→                        </div>
+  1988→  1988→                      </div>
+  1989→  1989→                      <div className="max-h-[500px] overflow-y-auto">
+  1990→  1990→                        {dmListLoading && dmConversations.length === 0 ? (
+  1991→  1991→                          <div className="flex items-center justify-center py-16"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-xs text-muted-foreground">Loading DMs...</span></div>
+  1992→  1992→                        ) : dmConversations.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No DM conversations found</p>) : (
+  1993→  1993→                          <div className="divide-y divide-border/50">
+  1994→  1994→                            {dmConversations
+  1995→  1995→                              .filter((dm) => {
+  1996→  1996→                                if (!dmSearchQuery) return true;
+  1997→  1997→                                const q = dmSearchQuery.toLowerCase();
+  1998→  1998→                                return (
+  1999→  1999→                                  dm.participantNames?.some(n => n.toLowerCase().includes(q)) ||
+  2000→  2000→                                  dm.lastMessage?.toLowerCase().includes(q) ||
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

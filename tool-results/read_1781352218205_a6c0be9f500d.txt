@@ -1,0 +1,502 @@
+  2001→                                  dm.dmId.toLowerCase().includes(q)
+  2002→                                );
+  2003→                              })
+  2004→                              .map((dm) => {
+  2005→                                // Check if any participant is online
+  2006→                                const isParticipantOnline = dm.participants.some(p => onlineUsers.some(u => u.uid === p));
+  2007→                                return (
+  2008→                                <div key={dm.dmId} className="w-full flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.02] transition-colors text-left group">
+  2009→                                  <button onClick={() => { setSelectedDm(dm.dmId); setSelectedChatMessages(new Set()); }} className="flex items-center gap-3 flex-1 min-w-0">
+  2010→                                    <div className="relative">
+  2011→                                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/5"><MessageCircle className="h-4 w-4 text-muted-foreground" /></div>
+  2012→                                      {isParticipantOnline && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />}
+  2013→                                    </div>
+  2014→                                    <div className="min-w-0 flex-1"><p className="text-xs font-medium truncate">{dm.participantNames?.join(" & ") || dm.participants.join(", ") || dm.dmId}</p><p className="text-[11px] text-muted-foreground truncate">{dm.lastMessage || "No messages"}</p></div>
+  2015→                                    <div className="text-right shrink-0">{dm.lastMessageTime > 0 && <p className="text-[10px] text-muted-foreground">{new Date(dm.lastMessageTime).toLocaleDateString()}</p>}<p className="text-[10px] text-muted-foreground">{dm.messageCount} msg{dm.messageCount !== 1 ? "s" : ""}</p></div>
+  2016→                                  </button>
+  2017→                                  <button onClick={async () => { if (confirm("Delete this entire DM conversation?")) { const db = getFirebaseDb(); await remove(ref(db, `${FB_PATHS.dms}/${dm.dmId}`)); fetchDmConversations(); } }} className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/10 hover:text-red-500 shrink-0" title="Delete conversation"><Trash2 className="h-3.5 w-3.5" /></button>
+  2018→                                </div>
+  2019→                                );
+  2020→                              })}
+  2021→                          </div>
+  2022→                        )}
+  2023→                      </div>
+  2024→                    </div>
+  2025→                  )}
+  2026→                </div>
+  2027→              )}
+  2028→
+  2029→              {/* ─── ANNOUNCEMENTS ─────────────────────────────────────── */}
+  2030→              {section === "announcements" && (
+  2031→                <div className="flex flex-col gap-6">
+  2032→                  {/* Widget Announcement Config */}
+  2033→                  <div className="rounded-2xl border border-border bg-card p-6">
+  2034→                    <div className="flex items-center gap-2 mb-5"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Announcement Banner</h2></div>
+  2035→                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2036→                      <ConfigToggle label="Announcement Enabled" value={widgetConfig.announcementEnabled ?? false} syncing={syncingKey === "announcementEnabled"} onChange={(v) => writeWidgetConfig("announcementEnabled", v)} />
+  2037→                      <ConfigColorPicker label="Announcement Color" value={widgetConfig.announcementColor ?? "#f59e0b"} syncing={syncingKey === "announcementColor"} onChange={(v) => writeWidgetConfig("announcementColor", v)} />
+  2038→                      <div className="md:col-span-2 flex flex-col gap-1.5">
+  2039→                        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Announcement Text</span>{syncingKey === "announcementText" && <SyncIndicator />}</div>
+  2040→                        <input type="text" value={widgetConfig.announcementText ?? ""} maxLength={200} onChange={(e) => writeWidgetConfig("announcementText", e.target.value)} placeholder="Enter announcement message..." className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition-all focus:border-foreground/30" />
+  2041→                        <span className="text-[10px] text-muted-foreground text-right">{(widgetConfig.announcementText ?? "").length}/200</span>
+  2042→                      </div>
+  2043→                    </div>
+  2044→                  </div>
+  2045→                  {/* Preview */}
+  2046→                  {widgetConfig.announcementEnabled && widgetConfig.announcementText && (
+  2047→                    <div className="rounded-2xl border border-border bg-card p-6">
+  2048→                      <div className="flex items-center gap-2 mb-4"><Eye className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Preview</h2></div>
+  2049→                      <div className="rounded-xl p-4" style={{ background: `${widgetConfig.announcementColor || "#f59e0b"}15`, borderLeft: `3px solid ${widgetConfig.announcementColor || "#f59e0b"}` }}>
+  2050→                        <div className="flex items-center gap-2"><Megaphone className="h-4 w-4" style={{ color: widgetConfig.announcementColor || "#f59e0b" }} /><span className="text-sm font-medium" style={{ color: widgetConfig.announcementColor || "#f59e0b" }}>{widgetConfig.announcementText}</span></div>
+  2051→                      </div>
+  2052→                    </div>
+  2053→                  )}
+  2054→
+  2055→                  {/* Global Broadcast */}
+  2056→                  <div className="rounded-2xl border border-border bg-card p-6">
+  2057→                    <div className="flex items-center gap-2 mb-5"><Megaphone className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Global Broadcast</h2><span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">Chat</span></div>
+  2058→                    <div className="flex flex-col gap-4">
+  2059→                      {/* Broadcast Message Input */}
+  2060→                      <div className="flex flex-col gap-1.5">
+  2061→                        <div className="flex items-center justify-between">
+  2062→                          <span className="text-xs text-muted-foreground">Broadcast Message</span>
+  2063→                          <span className={`text-[10px] tabular-nums ${broadcastText.length > 450 ? "text-red-500" : "text-muted-foreground"}`}>{broadcastText.length}/500</span>
+  2064→                        </div>
+  2065→                        <textarea value={broadcastText} onChange={(e) => setBroadcastText(e.target.value.slice(0, 500))} placeholder="Type a broadcast message to all users..." rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-all focus:border-foreground/30 resize-none" />
+  2066→                      </div>
+  2067→
+  2068→                      {/* Send as System + Priority */}
+  2069→                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2070→                        <label className="flex items-center gap-3 cursor-pointer group">
+  2071→                          <div className={`grid h-5 w-9 shrink-0 place-items-center rounded-full transition-colors ${broadcastAsSystem ? "bg-foreground" : "bg-foreground/10"}`} onClick={() => setBroadcastAsSystem(!broadcastAsSystem)}>
+  2072→                            <div className={`h-3.5 w-3.5 rounded-full bg-background transition-transform ${broadcastAsSystem ? "translate-x-1.5" : "-translate-x-1.5"}`} />
+  2073→                          </div>
+  2074→                          <div>
+  2075→                            <span className="text-xs font-medium">Send as System</span>
+  2076→                            <p className="text-[10px] text-muted-foreground">Message appears from "System" instead of "Admin"</p>
+  2077→                          </div>
+  2078→                        </label>
+  2079→                        <div className="flex flex-col gap-1.5">
+  2080→                          <span className="text-xs text-muted-foreground">Priority Level</span>
+  2081→                          <div className="flex gap-2">
+  2082→                            {(["normal", "important", "urgent"] as const).map((p) => {
+  2083→                              const colors: Record<string, string> = {
+  2084→                                normal: "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+  2085→                                important: "border-amber-500/30 bg-amber-500/5 text-amber-500",
+  2086→                                urgent: "border-red-500/30 bg-red-500/5 text-red-500",
+  2087→                              };
+  2088→                              const activeColors: Record<string, string> = {
+  2089→                                normal: "border-foreground/20 bg-foreground/5 text-foreground",
+  2090→                                important: "border-amber-500/30 bg-amber-500/5 text-amber-500",
+  2091→                                urgent: "border-red-500/30 bg-red-500/5 text-red-500",
+  2092→                              };
+  2093→                              return (
+  2094→                                <button key={p} onClick={() => setBroadcastPriority(p)} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors capitalize ${broadcastPriority === p ? activeColors[p] : colors[p]}`}>
+  2095→                                  {p === "normal" && <MessageSquare className="h-3 w-3" />}
+  2096→                                  {p === "important" && <AlertTriangle className="h-3 w-3" />}
+  2097→                                  {p === "urgent" && <AlertCircle className="h-3 w-3" />}
+  2098→                                  {p}
+  2099→                                </button>
+  2100→                              );
+  2101→                            })}
+  2102→                          </div>
+  2103→                        </div>
+  2104→                      </div>
+  2105→
+  2106→                      {/* Priority Preview */}
+  2107→                      {broadcastPriority !== "normal" && broadcastText.trim() && (
+  2108→                        <div className={`rounded-xl p-3 animate-[fade-up_0.2s_ease_both] ${broadcastPriority === "important" ? "bg-amber-500/5 border border-amber-500/20" : "bg-red-500/5 border border-red-500/20"}`}>
+  2109→                          <div className="flex items-center gap-2">
+  2110→                            {broadcastPriority === "important" && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+  2111→                            {broadcastPriority === "urgent" && <AlertCircle className="h-4 w-4 text-red-500" />}
+  2112→                            <span className={`text-xs font-medium ${broadcastPriority === "important" ? "text-amber-500" : "text-red-500"}`}>[{broadcastPriority.toUpperCase()}]</span>
+  2113→                            <span className="text-xs">{broadcastText.trim()}</span>
+  2114→                          </div>
+  2115→                        </div>
+  2116→                      )}
+  2117→
+  2118→                      {/* Send Button */}
+  2119→                      <button onClick={sendBroadcast} disabled={!broadcastText.trim() || broadcastSending} className="flex items-center justify-center gap-1.5 h-10 px-4 rounded-lg bg-foreground text-background text-xs font-medium transition-colors hover:opacity-90 disabled:opacity-40 shrink-0 w-full md:w-auto md:self-end">
+  2120→                        {broadcastSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Megaphone className="h-3.5 w-3.5" />}{broadcastSending ? "Sending..." : "Send Broadcast"}
+  2121→                      </button>
+  2122→                    </div>
+  2123→                  </div>
+  2124→                </div>
+  2125→              )}
+  2126→
+  2127→              {/* ─── THEMES ────────────────────────────────────────────── */}
+  2128→              {section === "themes" && (
+  2129→                <div className="rounded-2xl border border-border bg-card p-6">
+  2130→                  <div className="flex items-center gap-2 mb-5"><Palette className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Themes</h2></div>
+  2131→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2132→                    <ConfigSelect label="Default Theme" value={widgetConfig.defaultTheme ?? "pure-black"} options={[{ value: "pure-black", label: "Pure Black" }, { value: "golden", label: "Golden" }]} syncing={syncingKey === "defaultTheme"} onChange={(v) => writeWidgetConfig("defaultTheme", v)} />
+  2133→                    <ConfigColorPicker label="Accent Color" value={widgetConfig.accentColor ?? "#ffffff"} syncing={syncingKey === "accentColor"} onChange={(v) => writeWidgetConfig("accentColor", v)} />
+  2134→                  </div>
+  2135→                  <div className="mt-6 rounded-xl border border-border overflow-hidden">
+  2136→                    <div className="p-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium bg-foreground/[0.02]">Preview</div>
+  2137→                    <div className="p-4" style={{ background: widgetConfig.defaultTheme === "golden" ? "#1a1500" : "#000" }}>
+  2138→                      <div className="flex items-center gap-2 mb-3"><div className="h-8 w-8 rounded-full" style={{ background: widgetConfig.accentColor || "#fff" }} /><div><div className="h-2 w-16 rounded-full" style={{ background: widgetConfig.accentColor || "#fff", opacity: 0.6 }} /><div className="h-1.5 w-10 rounded-full mt-1" style={{ background: widgetConfig.accentColor || "#fff", opacity: 0.3 }} /></div></div>
+  2139→                      <div className="rounded-lg p-2 mb-1.5" style={{ background: widgetConfig.accentColor ? `${widgetConfig.accentColor}15` : "rgba(255,255,255,0.05)" }}><div className="h-1.5 w-full rounded-full" style={{ background: widgetConfig.accentColor || "#fff", opacity: 0.5 }} /></div>
+  2140→                      <div className="rounded-lg p-2" style={{ background: widgetConfig.accentColor ? `${widgetConfig.accentColor}08` : "rgba(255,255,255,0.02)" }}><div className="h-1.5 w-3/4 rounded-full" style={{ background: widgetConfig.accentColor || "#fff", opacity: 0.3 }} /></div>
+  2141→                    </div>
+  2142→                  </div>
+  2143→                </div>
+  2144→              )}
+  2145→
+  2146→              {/* ─── LAYOUT ────────────────────────────────────────────── */}
+  2147→              {section === "layout" && (
+  2148→                <div className="rounded-2xl border border-border bg-card p-6">
+  2149→                  <div className="flex items-center gap-2 mb-5"><SlidersHorizontal className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Layout</h2></div>
+  2150→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2151→                    <ConfigSelect label="Widget Position" value={widgetConfig.widgetPosition ?? "bottom-right"} options={[{ value: "bottom-right", label: "Bottom Right" }, { value: "bottom-left", label: "Bottom Left" }, { value: "top-right", label: "Top Right" }, { value: "top-left", label: "Top Left" }]} syncing={syncingKey === "widgetPosition"} onChange={(v) => writeWidgetConfig("widgetPosition", v)} />
+  2152→                    <ConfigSlider label="Bubble Size" value={widgetConfig.bubbleSize ?? 56} min={40} max={72} step={2} unit="px" syncing={syncingKey === "bubbleSize"} onChange={(v) => writeWidgetConfig("bubbleSize", v)} />
+  2153→                    <ConfigSlider label="Panel Width" value={widgetConfig.panelWidth ?? 380} min={300} max={500} step={10} unit="px" syncing={syncingKey === "panelWidth"} onChange={(v) => writeWidgetConfig("panelWidth", v)} />
+  2154→                    <ConfigSlider label="Panel Height" value={widgetConfig.panelHeight ?? 600} min={400} max={800} step={10} unit="px" syncing={syncingKey === "panelHeight"} onChange={(v) => writeWidgetConfig("panelHeight", v)} />
+  2155→                  </div>
+  2156→                </div>
+  2157→              )}
+  2158→
+  2159→              {/* ─── MESSAGES APPEARANCE ───────────────────────────────── */}
+  2160→              {section === "messages-appearance" && (
+  2161→                <div className="rounded-2xl border border-border bg-card p-6">
+  2162→                  <div className="flex items-center gap-2 mb-5"><Type className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Messages</h2></div>
+  2163→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2164→                    <ConfigSlider label="Character Limit" value={widgetConfig.charLimit ?? 500} min={100} max={1000} step={10} unit="" syncing={syncingKey === "charLimit"} onChange={(v) => writeWidgetConfig("charLimit", v)} />
+  2165→                    <ConfigSlider label="Max Messages" value={widgetConfig.maxMessages ?? 50} min={20} max={100} step={5} unit="" syncing={syncingKey === "maxMessages"} onChange={(v) => writeWidgetConfig("maxMessages", v)} />
+  2166→                    <ConfigSelect label="Font Size" value={widgetConfig.fontSize ?? "medium"} options={[{ value: "small", label: "Small" }, { value: "medium", label: "Medium" }, { value: "large", label: "Large" }]} syncing={syncingKey === "fontSize"} onChange={(v) => writeWidgetConfig("fontSize", v)} />
+  2167→                  </div>
+  2168→                </div>
+  2169→              )}
+  2170→
+  2171→              {/* ─── CONTENT FILTER ────────────────────────────────────── */}
+  2172→              {section === "content-filter" && (
+  2173→                <div className="rounded-2xl border border-border bg-card p-6">
+  2174→                  <div className="flex items-center gap-2 mb-5"><Filter className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Content Filter</h2></div>
+  2175→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2176→                    <ConfigToggle label="Profanity Filter" value={widgetConfig.profanityFilter ?? true} syncing={syncingKey === "profanityFilter"} onChange={(v) => writeWidgetConfig("profanityFilter", v)} />
+  2177→                    <ConfigToggle label="Link Filter" value={widgetConfig.linkFilter ?? false} syncing={syncingKey === "linkFilter"} onChange={(v) => writeWidgetConfig("linkFilter", v)} />
+  2178→                  </div>
+  2179→                  <p className="text-[10px] text-muted-foreground mt-4">Profanity filter replaces offensive words with ***. Link filter strips URLs from messages.</p>
+  2180→                </div>
+  2181→              )}
+  2182→
+  2183→              {/* ─── RATE LIMITING ─────────────────────────────────────── */}
+  2184→              {section === "rate-limiting" && (
+  2185→                <div className="flex flex-col gap-6">
+  2186→                  {/* Rate Limit Status */}
+  2187→                  <div className={`flex items-center gap-3 rounded-xl border p-4 animate-[fade-up_0.2s_ease_both] ${widgetConfig.rateLimitEnabled ? "border-green-500/20 bg-green-500/5" : "border-red-500/20 bg-red-500/5"}`}>
+  2188→                    {widgetConfig.rateLimitEnabled ? (
+  2189→                      <><Zap className="h-5 w-5 text-green-500 shrink-0" /><div><p className="text-xs font-medium text-green-500">Rate Limiting Active</p><p className="text-[10px] text-muted-foreground mt-0.5">Spam protection is enabled. Messages are rate-limited to prevent flooding.</p></div></>
+  2190→                    ) : (
+  2191→                      <><AlertTriangle className="h-5 w-5 text-red-500 shrink-0" /><div><p className="text-xs font-medium text-red-500">Rate Limiting Disabled</p><p className="text-[10px] text-muted-foreground mt-0.5">Warning: No spam protection is active. Users can send messages without restrictions.</p></div></>
+  2192→                    )}
+  2193→                  </div>
+  2194→
+  2195→                  <div className="rounded-2xl border border-border bg-card p-6">
+  2196→                    <div className="flex items-center gap-2 mb-5"><Zap className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Rate Limiting Controls</h2></div>
+  2197→                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  2198→                      <ConfigToggle label="Slow Mode" value={widgetConfig.slowMode ?? false} syncing={syncingKey === "slowMode"} onChange={(v) => writeWidgetConfig("slowMode", v)} />
+  2199→                      <ConfigToggle label="Rate Limiting" value={widgetConfig.rateLimitEnabled ?? true} syncing={syncingKey === "rateLimitEnabled"} onChange={(v) => writeWidgetConfig("rateLimitEnabled", v)} />
+  2200→                    </div>
+  2201→
+  2202→                    {/* Slow Mode Interval Slider */}
+  2203→                    {widgetConfig.slowMode && (
+  2204→                      <div className="mt-4 flex flex-col gap-2">
+  2205→                        <div className="flex items-center justify-between">
+  2206→                          <span className="text-xs text-muted-foreground">Slow Mode Interval</span>
+  2207→                          <span className="text-xs font-medium tabular-nums">{widgetConfig.slowModeInterval ?? 5}s</span>
+  2208→                        </div>
+  2209→                        <input type="range" min={1} max={60} step={1} value={widgetConfig.slowModeInterval ?? 5} onChange={(e) => writeWidgetConfig("slowModeInterval", Number(e.target.value))} className="w-full h-2 rounded-full appearance-none bg-foreground/10 accent-foreground cursor-pointer" />
+  2210→                        <div className="flex justify-between text-[10px] text-muted-foreground"><span>1s</span><span>30s</span><span>60s</span></div>
+  2211→                      </div>
+  2212→                    )}
+  2213→
+  2214→                    {/* Quick Presets */}
+  2215→                    <div className="mt-4 flex flex-col gap-1.5">
+  2216→                      <span className="text-xs text-muted-foreground">Quick Presets</span>
+  2217→                      <div className="flex flex-wrap gap-2">
+  2218→                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 30); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 30 && widgetConfig.rateLimitEnabled ? "border-green-500/30 bg-green-500/5 text-green-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Relaxed (10msg/30s)</button>
+  2219→                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 10); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 10 && widgetConfig.rateLimitEnabled ? "border-amber-500/30 bg-amber-500/5 text-amber-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Normal (5msg/10s)</button>
+  2220→                        <button onClick={() => { writeWidgetConfig("slowMode", true); writeWidgetConfig("slowModeInterval", 5); writeWidgetConfig("rateLimitEnabled", true); }} className={`flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-medium transition-colors ${widgetConfig.slowModeInterval === 5 && widgetConfig.rateLimitEnabled ? "border-red-500/30 bg-red-500/5 text-red-500" : "border-border text-muted-foreground hover:bg-foreground/5 hover:text-foreground"}`}><Zap className="h-3.5 w-3.5" />Strict (3msg/5s)</button>
+  2221→                      </div>
+  2222→                    </div>
+  2223→
+  2224→                    <p className="text-[10px] text-muted-foreground mt-4">Slow mode adds a cooldown between messages. Rate limiting prevents spam by capping messages per minute.</p>
+  2225→                  </div>
+  2226→                </div>
+  2227→              )}
+  2228→
+  2229→              {/* ─── USER MANAGEMENT ───────────────────────────────────── */}
+  2230→              {section === "user-management" && (
+  2231→                <div className="flex flex-col gap-6">
+  2232→                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  2233→                    <StatCard icon={Users} label="Online Now" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+  2234→                    <StatCard icon={Ban} label="Banned" value={String(bannedUsers.length)} color="oklch(0.65 0.2 25)" />
+  2235→                    <StatCard icon={VolumeX} label="Muted" value={String(mutedUsers.length)} color="oklch(0.68 0.12 60)" />
+  2236→                  </div>
+  2237→                  <div className="rounded-2xl border border-border bg-card">
+  2238→                    <div className="flex items-center justify-between p-6 border-b border-border">
+  2239→                      <div className="flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Online Users</h2><span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500 font-medium">{onlineUsers.length} online</span></div>
+  2240→                      <button onClick={refreshOnlineUsers} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"><RefreshCw className="h-3.5 w-3.5" />Refresh</button>
+  2241→                    </div>
+  2242→                    <div className="max-h-[400px] overflow-y-auto">
+  2243→                      {onlineUsers.length === 0 ? (<p className="text-xs text-muted-foreground text-center py-16">No users found</p>) : (
+  2244→                        <div className="divide-y divide-border/50">
+  2245→                          {onlineUsers.map((user) => {
+  2246→                            const userName = (user.name as string) || user.uid || "Anonymous";
+  2247→                            const status = (user.status as string) || "online";
+  2248→                            const statusColor = status === "online" ? "bg-green-500" : status === "away" ? "bg-yellow-500" : "bg-red-500";
+  2249→                            return (
+  2250→                              <div key={user.uid} className="flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.01] transition-colors">
+  2251→                                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-foreground/5 text-xs font-semibold">{userName.charAt(0).toUpperCase()}</div>
+  2252→                                <div className="min-w-0 flex-1">
+  2253→                                  <div className="flex items-center gap-2"><span className="text-xs font-medium">{userName}</span><span className={`inline-block h-2 w-2 rounded-full ${statusColor}`} /><span className="text-[10px] text-muted-foreground capitalize">{status}</span>{isBanned(user.uid) && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>}{isMuted(user.uid) && <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>}</div>
+  2254→                                  <div className="flex items-center gap-3 mt-0.5"><span className="text-[10px] text-muted-foreground">UID: {user.uid}</span><span className="text-[10px] text-muted-foreground">Last: {user.ts ? new Date(user.ts).toLocaleString() : "Unknown"}</span></div>
+  2255→                                </div>
+  2256→                                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+  2257→                                  <button onClick={() => setWarnDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20"><AlertTriangle className="h-3.5 w-3.5" />Warn</button>
+  2258→                                  <button onClick={() => setMuteDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20"><VolumeX className="h-3.5 w-3.5" />Mute</button>
+  2259→                                  <button onClick={() => setBanDialogUid(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Ban className="h-3.5 w-3.5" />Ban</button>
+  2260→                                  <button onClick={() => kickUser(user.uid)} className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3.5 w-3.5" />Kick</button>
+  2261→                                </div>
+  2262→                              </div>
+  2263→                            );
+  2264→                          })}
+  2265→                        </div>
+  2266→                      )}
+  2267→                    </div>
+  2268→                  </div>
+  2269→
+  2270→                  {/* Banned Users */}
+  2271→                  {bannedUsers.length > 0 && (
+  2272→                    <div className="rounded-2xl border border-border bg-card">
+  2273→                      <div className="flex items-center gap-2 p-6 border-b border-border"><Ban className="h-4 w-4 text-red-500" /><h2 className="text-sm font-semibold">Banned Users</h2><span className="rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-500">{bannedUsers.length}</span></div>
+  2274→                      <div className="max-h-64 overflow-y-auto divide-y divide-border/50">
+  2275→                        {bannedUsers.map((user) => (
+  2276→                          <div key={user.uid} className="flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.01] transition-colors">
+  2277→                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-red-500/10 text-xs font-semibold text-red-500"><Ban className="h-4 w-4" /></div>
+  2278→                            <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-xs font-medium">{user.uid}</span><span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span></div><span className="text-[10px] text-muted-foreground">Banned {user.bannedAt > 0 ? new Date(user.bannedAt).toLocaleString() : "unknown"}</span></div>
+  2279→                            <button onClick={() => unbanUser(user.uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20"><Check className="h-3.5 w-3.5" />Unban</button>
+  2280→                          </div>
+  2281→                        ))}
+  2282→                      </div>
+  2283→                    </div>
+  2284→                  )}
+  2285→
+  2286→                  {/* Muted Users */}
+  2287→                  {mutedUsers.length > 0 && (
+  2288→                    <div className="rounded-2xl border border-border bg-card">
+  2289→                      <div className="flex items-center gap-2 p-6 border-b border-border"><VolumeX className="h-4 w-4 text-yellow-600" /><h2 className="text-sm font-semibold">Muted Users</h2><span className="rounded-md bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600">{mutedUsers.length}</span></div>
+  2290→                      <div className="max-h-64 overflow-y-auto divide-y divide-border/50">
+  2291→                        {mutedUsers.map((user) => (
+  2292→                          <div key={user.uid} className="flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.01] transition-colors">
+  2293→                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-yellow-500/10 text-xs font-semibold text-yellow-600"><VolumeX className="h-4 w-4" /></div>
+  2294→                            <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-xs font-medium">{user.uid}</span><span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span></div><span className="text-[10px] text-muted-foreground">{user.reason ? `Reason: ${user.reason} · ` : ""}Muted {user.mutedAt > 0 ? new Date(user.mutedAt).toLocaleString() : "unknown"}</span></div>
+  2295→                            <button onClick={() => unmuteUser(user.uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20"><Check className="h-3.5 w-3.5" />Unmute</button>
+  2296→                          </div>
+  2297→                        ))}
+  2298→                      </div>
+  2299→                    </div>
+  2300→                  )}
+  2301→
+  2302→                  {/* Recent Warnings */}
+  2303→                  {warnings.length > 0 && (
+  2304→                    <div className="rounded-2xl border border-border bg-card">
+  2305→                      <div className="flex items-center gap-2 p-6 border-b border-border"><AlertTriangle className="h-4 w-4 text-orange-500" /><h2 className="text-sm font-semibold">Recent Warnings</h2><span className="rounded-md bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-500">{warnings.length}</span></div>
+  2306→                      <div className="max-h-64 overflow-y-auto divide-y divide-border/50">
+  2307→                        {warnings.sort((a, b) => b.ts - a.ts).slice(0, 20).map((w) => (
+  2308→                          <div key={w.key} className="flex items-center gap-3 px-6 py-4 hover:bg-foreground/[0.01] transition-colors">
+  2309→                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-500"><AlertTriangle className="h-4 w-4" /></div>
+  2310→                            <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-xs font-medium">UID: {w.uid}</span><span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">WARNING</span></div><span className="text-[10px] text-muted-foreground">{w.reason} · {new Date(w.ts).toLocaleString()}</span></div>
+  2311→                          </div>
+  2312→                        ))}
+  2313→                      </div>
+  2314→                    </div>
+  2315→                  )}
+  2316→                </div>
+  2317→              )}
+  2318→
+  2319→              {/* ─── WARNINGS & BANS ────────────────────────────────────── */}
+  2320→              {section === "warnings-bans" && (
+  2321→                <div className="flex flex-col gap-6">
+  2322→                  {actionMsg && (<div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 animate-[fade-up_0.2s_ease_both]"><Check className="h-4 w-4 text-green-500" /><span className="text-xs font-medium text-green-500">{actionMsg}</span></div>)}
+  2323→
+  2324→                  {/* Stats */}
+  2325→                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+  2326→                    <StatCard icon={AlertTriangle} label="Active Warnings" value={String(activeWarnings.length)} color="oklch(0.75 0.15 60)" />
+  2327→                    <StatCard icon={Clock} label="Expired Warnings" value={String(expiredWarnings.length)} color="oklch(0.65 0.1 220)" />
+  2328→                    <StatCard icon={Ban} label="Banned Users" value={String(bannedUsers.length)} color="oklch(0.65 0.2 25)" />
+  2329→                    <StatCard icon={VolumeX} label="Muted Users" value={String(mutedUsers.length)} color="oklch(0.68 0.12 60)" />
+  2330→                    <StatCard icon={Users} label="Online Now" value={String(onlineUsers.length)} color="oklch(0.72 0.16 140)" />
+  2331→                  </div>
+  2332→
+  2333→                  {/* Quick Actions */}
+  2334→                  <div className="rounded-2xl border border-border bg-card p-6">
+  2335→                    <div className="flex items-center gap-2 mb-4"><Gavel className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Quick Actions</h2></div>
+  2336→                    <div className="flex flex-col sm:flex-row gap-3">
+  2337→                      <div className="relative flex-1">
+  2338→                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  2339→                        <input type="text" value={quickActionUid} onChange={(e) => setQuickActionUid(e.target.value)} placeholder="Enter user UID..." className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-foreground/30" />
+  2340→                      </div>
+  2341→                      <div className="flex items-center gap-2">
+  2342→                        <button onClick={() => { if (quickActionUid) { setWarnDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-orange-500 text-xs font-medium transition-colors hover:bg-orange-500/10 border border-orange-500/20 disabled:opacity-40"><AlertTriangle className="h-3.5 w-3.5" />Warn</button>
+  2343→                        <button onClick={() => { if (quickActionUid) { setMuteDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-yellow-600 text-xs font-medium transition-colors hover:bg-yellow-500/10 border border-yellow-500/20 disabled:opacity-40"><VolumeX className="h-3.5 w-3.5" />Mute</button>
+  2344→                        <button onClick={() => { if (quickActionUid) { setBanDialogUid(quickActionUid); } }} disabled={!quickActionUid} className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-red-500 text-xs font-medium transition-colors hover:bg-red-500/10 border border-red-500/20 disabled:opacity-40"><Ban className="h-3.5 w-3.5" />Ban</button>
+  2345→                      </div>
+  2346→                    </div>
+  2347→                  </div>
+  2348→
+  2349→                  {/* Tabs: Warnings / Bans / Mutes */}
+  2350→                  <div className="rounded-2xl border border-border bg-card">
+  2351→                    <div className="flex items-center gap-1 p-2 border-b border-border">
+  2352→                      <button onClick={() => setWarningsBansTab("warnings")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "warnings" ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><AlertTriangle className="h-3.5 w-3.5" />Warnings<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{warnings.length}</span></button>
+  2353→                      <button onClick={() => setWarningsBansTab("bans")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "bans" ? "bg-red-500/10 text-red-500 border border-red-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><Ban className="h-3.5 w-3.5" />Bans<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{bannedUsers.length}</span></button>
+  2354→                      <button onClick={() => setWarningsBansTab("mutes")} className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors ${warningsBansTab === "mutes" ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" : "text-muted-foreground hover:bg-foreground/5"}`}><VolumeX className="h-3.5 w-3.5" />Mutes<span className="rounded-md bg-foreground/5 px-1.5 py-0.5 text-[10px]">{mutedUsers.length}</span></button>
+  2355→                      <div className="flex-1" />
+  2356→                      <div className="relative">
+  2357→                        <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+  2358→                        <input type="text" value={warningsBansSearch} onChange={(e) => setWarningsBansSearch(e.target.value)} placeholder="Search..." className="h-8 w-40 rounded-lg border border-border bg-background pl-8 pr-3 text-xs outline-none focus:border-foreground/30" />
+  2359→                      </div>
+  2360→                    </div>
+  2361→
+  2362→                    {/* Warnings Tab */}
+  2363→                    {warningsBansTab === "warnings" && (
+  2364→                      <div className="max-h-[600px] overflow-y-auto">
+  2365→                        {warnings.length === 0 ? (
+  2366→                          <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-orange-500/10"><AlertTriangle className="h-5 w-5 text-orange-500" /></div><p className="text-sm font-medium">No warnings yet</p><p className="text-xs text-muted-foreground">Warnings issued to users will appear here</p></div>
+  2367→                        ) : (
+  2368→                          <div className="divide-y divide-border/50">
+  2369→                            {warnings
+  2370→                              .filter((w) => {
+  2371→                                if (!warningsBansSearch) return true;
+  2372→                                const q = warningsBansSearch.toLowerCase();
+  2373→                                return w.uid.toLowerCase().includes(q) || w.reason.toLowerCase().includes(q) || (w.userName && w.userName.toLowerCase().includes(q));
+  2374→                              })
+  2375→                              .sort((a, b) => {
+  2376→                                // Active first, then by time
+  2377→                                const aExpired = isExpired(a.expiresAt);
+  2378→                                const bExpired = isExpired(b.expiresAt);
+  2379→                                if (aExpired !== bExpired) return aExpired ? 1 : -1;
+  2380→                                return b.ts - a.ts;
+  2381→                              })
+  2382→                              .map((w) => {
+  2383→                              const expired = isExpired(w.expiresAt);
+  2384→                              const userName = w.userName || resolveUserName(w.uid);
+  2385→                              return (
+  2386→                                <div key={w.key} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
+  2387→                                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-orange-500/10 text-orange-500"}`}>
+  2388→                                    <AlertTriangle className="h-4 w-4" />
+  2389→                                  </div>
+  2390→                                  <div className="min-w-0 flex-1">
+  2391→                                    <div className="flex items-center gap-2 flex-wrap">
+  2392→                                      <span className="text-xs font-medium">{userName}</span>
+  2393→                                      {expired
+  2394→                                        ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
+  2395→                                        : <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">ACTIVE</span>
+  2396→                                      }
+  2397→                                      {w.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(w.duration)}</span>}
+  2398→                                    </div>
+  2399→                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+  2400→                                      <span className="text-[10px] text-muted-foreground">{w.reason}</span>
+  2401→                                      <span className="text-[10px] text-muted-foreground">·</span>
+  2402→                                      <span className="text-[10px] text-muted-foreground">{new Date(w.ts).toLocaleString()}</span>
+  2403→                                      {w.expiresAt > 0 && (
+  2404→                                        <>
+  2405→                                          <span className="text-[10px] text-muted-foreground">·</span>
+  2406→                                          <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
+  2407→                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(w.expiresAt)}
+  2408→                                          </span>
+  2409→                                        </>
+  2410→                                      )}
+  2411→                                    </div>
+  2412→                                  </div>
+  2413→                                  <button onClick={() => removeWarning(w.key)} className="flex items-center gap-1 h-7 px-2 rounded-lg text-muted-foreground text-[10px] font-medium transition-colors hover:bg-foreground/5 hover:text-foreground" title="Remove warning"><X className="h-3 w-3" /></button>
+  2414→                                </div>
+  2415→                              );
+  2416→                            })}
+  2417→                          </div>
+  2418→                        )}
+  2419→                        {warnings.length > 0 && (
+  2420→                          <div className="flex items-center justify-between px-6 py-3 border-t border-border/50">
+  2421→                            <span className="text-[10px] text-muted-foreground">{activeWarnings.length} active · {expiredWarnings.length} expired</span>
+  2422→                            <div className="flex items-center gap-2">
+  2423→                              {expiredWarnings.length > 0 && (
+  2424→                                <button onClick={async () => {
+  2425→                                  const db = getFirebaseDb();
+  2426→                                  for (const w of expiredWarnings) {
+  2427→                                    await remove(ref(db, `${FB_PATHS.warnings}/${w.key}`));
+  2428→                                  }
+  2429→                                  setActionMsg(`${expiredWarnings.length} expired warnings cleaned up`);
+  2430→                                  setTimeout(() => setActionMsg(""), 3000);
+  2431→                                }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-muted-foreground text-[10px] font-medium transition-colors hover:bg-foreground/5 hover:text-foreground border border-border"><Trash2 className="h-3 w-3" />Clear Expired</button>
+  2432→                              )}
+  2433→                              <button onClick={() => { if (confirm("Clear ALL warnings?")) clearAllWarnings(); }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-red-500 text-[10px] font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3 w-3" />Clear All</button>
+  2434→                            </div>
+  2435→                          </div>
+  2436→                        )}
+  2437→                      </div>
+  2438→                    )}
+  2439→
+  2440→                    {/* Bans Tab */}
+  2441→                    {warningsBansTab === "bans" && (
+  2442→                      <div className="max-h-[600px] overflow-y-auto">
+  2443→                        {bannedUsers.length === 0 ? (
+  2444→                          <div className="flex flex-col items-center justify-center py-16 gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-red-500/10"><Ban className="h-5 w-5 text-red-500" /></div><p className="text-sm font-medium">No banned users</p><p className="text-xs text-muted-foreground">Banned users will appear here</p></div>
+  2445→                        ) : (
+  2446→                          <div className="divide-y divide-border/50">
+  2447→                            {bannedUsers
+  2448→                              .filter((b) => {
+  2449→                                if (!warningsBansSearch) return true;
+  2450→                                const q = warningsBansSearch.toLowerCase();
+  2451→                                return b.uid.toLowerCase().includes(q) || (b.reason && b.reason.toLowerCase().includes(q));
+  2452→                              })
+  2453→                              .map((user) => {
+  2454→                              const expired = isExpired(user.expiresAt);
+  2455→                              return (
+  2456→                                <div key={user.uid} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
+  2457→                                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-red-500/10 text-red-500"}`}>
+  2458→                                    <Ban className="h-4 w-4" />
+  2459→                                  </div>
+  2460→                                  <div className="min-w-0 flex-1">
+  2461→                                    <div className="flex items-center gap-2 flex-wrap">
+  2462→                                      <span className="text-xs font-medium">{resolveUserName(user.uid)}</span>
+  2463→                                      {expired
+  2464→                                        ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
+  2465→                                        : <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>
+  2466→                                      }
+  2467→                                      {user.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration)}</span>}
+  2468→                                    </div>
+  2469→                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+  2470→                                      {user.reason && <span className="text-[10px] text-muted-foreground">{user.reason}</span>}
+  2471→                                      <span className="text-[10px] text-muted-foreground">· Banned {user.bannedAt > 0 ? new Date(user.bannedAt).toLocaleString() : "unknown"}</span>
+  2472→                                      {user.expiresAt > 0 && (
+  2473→                                        <>
+  2474→                                          <span className="text-[10px] text-muted-foreground">·</span>
+  2475→                                          <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
+  2476→                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt)}
+  2477→                                          </span>
+  2478→                                        </>
+  2479→                                      )}
+  2480→                                    </div>
+  2481→                                  </div>
+  2482→                                  <button onClick={() => unbanUser(user.uid)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-green-500 text-xs font-medium transition-colors hover:bg-green-500/10 border border-green-500/20"><UserCheck className="h-3.5 w-3.5" />Unban</button>
+  2483→                                </div>
+  2484→                              );
+  2485→                            })}
+  2486→                          </div>
+  2487→                        )}
+  2488→                        {bannedUsers.length > 0 && (
+  2489→                          <div className="flex items-center justify-between px-6 py-3 border-t border-border/50">
+  2490→                            <span className="text-[10px] text-muted-foreground">{activeBans.length} active · {bannedUsers.length - activeBans.length} expired</span>
+  2491→                            <button onClick={() => { if (confirm("Unban ALL users?")) clearAllBans(); }} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-red-500 text-[10px] font-medium transition-colors hover:bg-red-500/10 border border-red-500/20"><Trash2 className="h-3 w-3" />Clear All Bans</button>
+  2492→                          </div>
+  2493→                        )}
+  2494→                      </div>
+  2495→                    )}
+  2496→
+  2497→                    {/* Mutes Tab */}
+  2498→                    {warningsBansTab === "mutes" && (
+  2499→                      <div className="max-h-[600px] overflow-y-auto">
+  2500→                        {mutedUsers.length === 0 ? (
+
+[showing lines 2001-2500 of 3704; use offset=2501 with limit to continue reading]

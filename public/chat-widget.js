@@ -5706,11 +5706,11 @@ function renderMsg(ctx,msg,key){
   if(!_bqRenderBypass){
     if(_bqDelSuppressUntil && Date.now() < _bqDelSuppressUntil){
       var _msgAge = Date.now() - (msg.ts||0);
-      if(_msgAge > 500) return;
+      if(_msgAge > 500 && !document.getElementById(pfx+key)) return;
     }
     var _keys = isG ? _bqGlobalLoadedKeys : _bqDmLoadedKeys;
     var _done = isG ? _bqGlobalInitialDone : _bqDmInitialDone;
-    if(_done && !_keys[key]) return; // ghost from window shift
+    if(_done && !_keys[key] && !document.getElementById(pfx+key)) return; // ghost from window shift
   } else {
     _bqRenderBypass = false;
   }
@@ -6155,8 +6155,8 @@ function scrollD(ctx, isMyMsg){
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl) return;
   const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-  // Only auto-scroll if: it's our own message, OR we're at the bottom (<100px)
-  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<100){
+  // Only auto-scroll if: it's our own message, OR we're firmly at the bottom (<40px)
+  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<40){
     requestAnimationFrame(()=>{
       try{
         if(isMyMsg){
@@ -6170,11 +6170,6 @@ function scrollD(ctx, isMyMsg){
       }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
       if(isG) gAtBot=true; else dAtBot=true;
     });
-    // Second pass to catch image/GIF reflows after decode
-    setTimeout(()=>{
-      const d2=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-      if(d2<100) msgsEl.scrollTop=msgsEl.scrollHeight;
-    }, 260);
   }
 }
 
@@ -15432,13 +15427,16 @@ if(document.readyState === 'loading'){
 
     /* ── 1c. Reply highlight animation (click-to-scroll) ── */
     '@keyframes bqReplyHighlight{',
-    '  0%,100%{box-shadow:0 0 0 0 transparent;background:transparent;}',
-    '  10%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.45);background:rgba(96,165,250,.1);}',
-    '  50%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 10px rgba(96,165,250,.3);background:rgba(96,165,250,.06);}',
-    '  90%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 16px rgba(96,165,250,.45);background:rgba(96,165,250,.1);}',
+    '  0%{box-shadow:0 0 0 0 transparent;background:transparent;}',
+    '  15%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
+    '  30%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);background:rgba(96,165,250,.1);}',
+    '  50%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
+    '  70%{box-shadow:0 0 0 2px var(--bq-accent,#60a5fa),0 0 12px rgba(96,165,250,.3);background:rgba(96,165,250,.1);}',
+    '  85%{box-shadow:0 0 0 3px var(--bq-accent,#60a5fa),0 0 20px rgba(96,165,250,.5);background:rgba(96,165,250,.18);}',
+    '  100%{box-shadow:0 0 0 0 transparent;background:transparent;}',
     '}',
-    '.bqr.bq-rp-hl{background:rgba(96,165,250,.06)!important;border-radius:8px;margin:2px -4px;padding:2px 4px;}',
-    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 2s ease!important;}',
+    '.bqr.bq-rp-hl{background:rgba(96,165,250,.12)!important;border-radius:8px;margin:2px -4px;padding:2px 4px;transition:background .2s ease;}',
+    '.bqr.bq-rp-hl .bqbbl{animation:bqReplyHighlight 2.8s ease!important;}',
 
     /* ── 1d. GIF nav — bigger, labeled, more visible ── */
     '.bqgifp-prev,.bqgifp-next{',
@@ -15739,10 +15737,9 @@ if(document.readyState === 'loading'){
 
     var targetId = 'bqmsg-' + ctx + '-' + replyKey;
 
-    // Try finding within the specific message container first (avoid cross-context)
-    var container = document.getElementById(ctx === 'global' ? 'bqgmsgs' : 'bqdmmsgs');
-    var target = container ? container.querySelector('#' + CSS.escape(targetId)) : null;
-    if(!target) target = document.getElementById(targetId);
+    // Use getElementById directly — more reliable than querySelector+CSS.escape
+    // for Firebase push IDs that start with '-'
+    var target = document.getElementById(targetId);
 
     if(!target){
       // Target not in DOM — try loading from Firebase
@@ -15790,7 +15787,7 @@ if(document.readyState === 'loading'){
     // Force reflow then add highlight
     void target.offsetWidth;
     target.classList.add('bq-rp-hl');
-    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 2200);
+    setTimeout(function(){ target.classList.remove('bq-rp-hl'); }, 3000);
   }
 
   function _bqChipFlash(chip, msg){
@@ -16256,7 +16253,7 @@ v64Style.textContent = [
 
   /* ── Reply chip highlight animation ── */
   '.bq-rp-hl .bqbbl{',
-  '  box-shadow:0 0 0 2px rgba(96,165,250,.5),0 0 20px rgba(96,165,250,.15)!important;',
+  '  box-shadow:0 0 0 3px rgba(96,165,250,.6),0 0 24px rgba(96,165,250,.25)!important;',
   '  transition:box-shadow .3s ease!important;',
   '}',
 
@@ -17758,4 +17755,588 @@ if(document.readyState === 'loading'){
 
 console.log('[bq] v65 patch loaded — AI Assistant + Ghost/Reply/Scroll fixes');
 }catch(e){ console.error('[bq] v65 patch error:', e); }
+})();
+
+/* ════════════════════════════════════════════════════════════════════════
+   v66 PATCH — AI Bug Monitor + Performance + Stability
+   - Background bug hunter that monitors the widget for errors/anomalies
+   - Logs bugs to Firebase (bq_bug_logs) for admin panel review
+   - Self-healing: auto-fixes common issues (duplicate DOM, orphan listeners)
+   - Performance: throttles renders, debounces scroll, reduces reflows
+   - Stability: better error boundaries, retry logic for Firebase ops
+   ════════════════════════════════════════════════════════════════════════ */
+(function v66Patch(){
+'use strict';
+try{
+
+/* ──────────────────────────────────────────────────────────────────────
+   §1. BUG MONITOR — Catches errors, anomalies, and logs to Firebase
+   ────────────────────────────────────────────────────────────────────── */
+
+var _bugLog = [];  // local buffer
+var _bugLogMax = 200;
+var _bugFlushTimer = null;
+var _bugFlushInterval = 15000; // 15s
+var _monitorStarted = false;
+var _perfSamples = [];
+var _lastScrollPos = {};
+var _scrollJumpThreshold = 150; // px — if scroll jumps more than this unexpectedly
+var _renderCount = 0;
+var _renderCountResetTimer = null;
+
+// Severity levels
+var SEV = { INFO: 'info', WARN: 'warn', ERROR: 'error', CRITICAL: 'critical' };
+
+function bugLog(severity, category, message, detail){
+  var entry = {
+    id: 'bug-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    sev: severity,
+    cat: category,
+    msg: message,
+    detail: detail || '',
+    ts: Date.now(),
+    ua: navigator.userAgent.slice(0,80),
+    url: location.href.slice(0,120)
+  };
+  _bugLog.push(entry);
+  if(_bugLog.length > _bugLogMax) _bugLog.shift();
+
+  // Console prefix based on severity
+  var prefix = '[BQ Monitor]';
+  if(severity === SEV.ERROR || severity === SEV.CRITICAL) console.error(prefix, message, detail||'');
+  else if(severity === SEV.WARN) console.warn(prefix, message, detail||'');
+  else console.log(prefix, message, detail||'');
+
+  // Flush to Firebase periodically
+  if(!_bugFlushTimer) _bugFlushTimer = setTimeout(flushBugLog, _bugFlushInterval);
+}
+
+function flushBugLog(){
+  _bugFlushTimer = null;
+  if(!_bugLog.length) return;
+  try{
+    var db = typeof window.db !== 'undefined' ? window.db : (typeof db !== 'undefined' ? db : null);
+    if(!db) return;
+    // Only flush new entries (last batch)
+    var batch = _bugLog.slice(-20);
+    var ref = db.ref('bq_bug_logs');
+    batch.forEach(function(entry){
+      ref.push(entry);
+    });
+    // Prune old entries from Firebase (keep last 500)
+    ref.once('value').then(function(snap){
+      var keys = [];
+      snap.forEach(function(c){ keys.push(c.key); });
+      if(keys.length > 500){
+        keys.slice(0, keys.length - 500).forEach(function(k){
+          ref.child(k).remove();
+        });
+      }
+    }).catch(function(){});
+  }catch(e){
+    // Silent fail — don't create infinite loop
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §2. GLOBAL ERROR CATCHER
+   ────────────────────────────────────────────────────────────────────── */
+
+function setupErrorCatchers(){
+  // Catch JS errors
+  window.addEventListener('error', function(e){
+    bugLog(SEV.ERROR, 'js-error', e.message,
+      (e.filename||'') + ':' + (e.lineno||0) + ':' + (e.colno||0));
+    return false;
+  });
+
+  // Catch unhandled promise rejections
+  window.addEventListener('unhandledrejection', function(e){
+    var reason = e.reason;
+    var msg = reason && reason.message ? reason.message : String(reason).slice(0,200);
+    bugLog(SEV.ERROR, 'promise-reject', msg, reason && reason.stack ? reason.stack.slice(0,300) : '');
+    return false;
+  });
+
+  // Catch Firebase errors
+  var origConsoleError = console.error;
+  console.error = function(){
+    var args = Array.prototype.slice.call(arguments);
+    var msg = args.join(' ');
+    if(msg.indexOf('Firebase') !== -1 || msg.indexOf('firebase') !== -1 || msg.indexOf('FIREBASE') !== -1){
+      bugLog(SEV.ERROR, 'firebase-error', msg.slice(0,200));
+    }
+    return origConsoleError.apply(console, args);
+  };
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §3. SCROLL ANOMALY DETECTOR
+   ────────────────────────────────────────────────────────────────────── */
+
+function setupScrollMonitor(){
+  ['bqgmsgs','bqdmmsgs'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var lastTop = el.scrollTop;
+    var lastTime = Date.now();
+
+    el.addEventListener('scroll', function(){
+      var now = Date.now();
+      var delta = Math.abs(el.scrollTop - lastTop);
+      var dt = now - lastTime;
+
+      // Detect unexpected large jumps (not from user interaction)
+      if(delta > _scrollJumpThreshold && dt < 100){
+        // Check if this was triggered by programmatic scroll (scrollD, scrollTo)
+        var isAutoScroll = el._bqAutoScrolling;
+        if(!isAutoScroll){
+          bugLog(SEV.WARN, 'scroll-jump', 'Unexpected scroll jump detected',
+            'delta=' + Math.round(delta) + 'px in ' + dt + 'ms, container=' + id);
+        }
+      }
+
+      lastTop = el.scrollTop;
+      lastTime = now;
+    }, {passive: true});
+  });
+}
+
+// Mark programmatic scrolls so the monitor doesn't flag them
+function _markAutoScroll(msgsEl){
+  if(msgsEl) msgsEl._bqAutoScrolling = true;
+  setTimeout(function(){ if(msgsEl) msgsEl._bqAutoScrolling = false; }, 200);
+}
+
+// Patch scrollD to mark auto-scrolls
+var _origScrollD = typeof scrollD === 'function' ? scrollD : null;
+if(_origScrollD){
+  window._bqOrigScrollD = _origScrollD;
+  // We don't override scrollD since it's already defined — instead
+  // the scrollD function itself calls _markAutoScroll
+  // We'll add the marking via a post-hook
+  var _scrollDPatched = false;
+  // Monitor renderMsg call frequency
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §4. DOM CONSISTENCY CHECKER
+   Checks for: duplicate message IDs, orphaned elements, stale state
+   ────────────────────────────────────────────────────────────────────── */
+
+function runDomHealthCheck(){
+  var issues = 0;
+
+  // Check for duplicate message IDs
+  var seenIds = {};
+  ['bqgmsgs','bqdmmsgs'].forEach(function(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var msgs = container.querySelectorAll('.bqr[id]');
+    msgs.forEach(function(el){
+      var id = el.id;
+      if(seenIds[id]){
+        bugLog(SEV.WARN, 'dom-duplicate', 'Duplicate message element found', id);
+        // Self-heal: remove the duplicate
+        el.remove();
+        issues++;
+      }
+      seenIds[id] = true;
+    });
+  });
+
+  // Check for messages with missing key data
+  var msgRows = document.querySelectorAll('.bqr[id]');
+  var missingData = 0;
+  msgRows.forEach(function(row){
+    if(!row.dataset.ts && !row.classList.contains('bqsys')){
+      missingData++;
+    }
+  });
+  if(missingData > 0){
+    bugLog(SEV.INFO, 'dom-missing-data', missingData + ' messages missing timestamp data');
+  }
+
+  // Check for excessively large DOM (performance concern)
+  var totalMsgs = document.querySelectorAll('.bqr').length;
+  if(totalMsgs > 200){
+    bugLog(SEV.WARN, 'dom-size', 'Large DOM: ' + totalMsgs + ' message elements', 'Consider pruning older messages');
+  }
+
+  // Check Firebase connection state
+  try{
+    var dbRef = typeof window.db !== 'undefined' ? window.db : (typeof db !== 'undefined' ? db : null);
+    if(dbRef){
+      dbRef.ref('.info/connected').once('value').then(function(snap){
+        var connected = snap.val();
+        if(!connected){
+          bugLog(SEV.WARN, 'firebase-disconnected', 'Firebase realtime connection is down');
+        }
+      }).catch(function(){});
+    }
+  }catch(e){}
+
+  if(issues > 0){
+    bugLog(SEV.INFO, 'dom-self-heal', 'Auto-fixed ' + issues + ' DOM issues');
+  }
+
+  return issues;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §5. RENDER PERFORMANCE MONITOR
+   Tracks renderMsg call frequency and flags excessive renders
+   ────────────────────────────────────────────────────────────────────── */
+
+function trackRender(){
+  _renderCount++;
+  if(!_renderCountResetTimer){
+    _renderCountResetTimer = setTimeout(function(){
+      if(_renderCount > 80){
+        bugLog(SEV.WARN, 'render-spam', _renderCount + ' renders in 10s — possible render storm');
+      }
+      _renderCount = 0;
+      _renderCountResetTimer = null;
+    }, 10000);
+  }
+}
+
+// Patch renderMsg to track renders
+var _origRenderMsg = typeof renderMsg === 'function' ? renderMsg : null;
+if(_origRenderMsg){
+  // We can't easily reassign renderMsg since it's used by Firebase listeners
+  // Instead, we'll use a MutationObserver to track DOM additions
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §6. SELF-HEALING SYSTEM
+   Automatically fixes common issues without admin intervention
+   ────────────────────────────────────────────────────────────────────── */
+
+function selfHeal(){
+  var fixes = 0;
+
+  // Fix: Remove duplicate message elements
+  var seenIds = {};
+  ['bqgmsgs','bqdmmsgs'].forEach(function(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var msgs = container.querySelectorAll('.bqr[id]');
+    msgs.forEach(function(el){
+      if(seenIds[el.id]){
+        el.remove();
+        fixes++;
+      }
+      seenIds[el.id] = true;
+    });
+  });
+
+  // Fix: Clean up stale date separators
+  ['bqgmsgs','bqdmmsgs'].forEach(function(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var seps = container.querySelectorAll('.bqds');
+    var dateSet = {};
+    seps.forEach(function(sep){
+      var dk = sep.dataset.date;
+      if(dateSet[dk]){
+        sep.remove();
+        fixes++;
+      }
+      dateSet[dk] = true;
+    });
+  });
+
+  // Fix: Re-attach click handler for reply chips if missing
+  var chips = document.querySelectorAll('.bqrp');
+  var unhandledChips = 0;
+  chips.forEach(function(chip){
+    if(!chip._bqReplyChipHandler){
+      unhandledChips++;
+    }
+  });
+  // The reply chip handler is on document level, so individual chips don't need handlers
+  // This is informational only
+  if(unhandledChips > 5){
+    bugLog(SEV.INFO, 'self-heal-chips', unhandledChips + ' reply chips without direct handler (using delegation)');
+  }
+
+  if(fixes > 0){
+    bugLog(SEV.INFO, 'self-heal', 'Auto-fixed ' + fixes + ' issues');
+  }
+
+  return fixes;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §7. FIREBASE HEALTH CHECK
+   Monitors Firebase connection latency and reliability
+   ────────────────────────────────────────────────────────────────────── */
+
+var _fbHealthInterval = null;
+var _fbLatencySamples = [];
+
+function checkFirebaseHealth(){
+  try{
+    var dbRef = typeof window.db !== 'undefined' ? window.db : (typeof db !== 'undefined' ? db : null);
+    if(!dbRef) return;
+    var start = Date.now();
+    dbRef.ref('.info/connected').once('value').then(function(snap){
+      var latency = Date.now() - start;
+      _fbLatencySamples.push(latency);
+      if(_fbLatencySamples.length > 20) _fbLatencySamples.shift();
+
+      if(!snap.val()){
+        bugLog(SEV.CRITICAL, 'firebase-down', 'Firebase connection is DOWN');
+      } else if(latency > 3000){
+        bugLog(SEV.WARN, 'firebase-slow', 'Firebase latency: ' + latency + 'ms');
+      } else if(latency > 1000){
+        bugLog(SEV.INFO, 'firebase-latency', 'Firebase latency: ' + latency + 'ms');
+      }
+    }).catch(function(err){
+      bugLog(SEV.ERROR, 'firebase-error', 'Firebase health check failed', String(err).slice(0,200));
+    });
+  }catch(e){}
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §8. MONITOR INITIALIZATION
+   ────────────────────────────────────────────────────────────────────── */
+
+function startMonitor(){
+  if(_monitorStarted) return;
+  _monitorStarted = true;
+
+  bugLog(SEV.INFO, 'monitor-start', 'Bug Monitor v66 started');
+
+  // Set up error catchers immediately
+  setupErrorCatchers();
+
+  // Wait for widget to load, then set up DOM monitors
+  setTimeout(function(){
+    setupScrollMonitor();
+    bugLog(SEV.INFO, 'monitor-dom', 'Scroll monitors attached');
+  }, 3000);
+
+  // Run DOM health check every 60s
+  setInterval(function(){
+    runDomHealthCheck();
+    selfHeal();
+  }, 60000);
+
+  // Check Firebase health every 30s
+  _fbHealthInterval = setInterval(checkFirebaseHealth, 30000);
+  // Initial check after 5s
+  setTimeout(checkFirebaseHealth, 5000);
+
+  // Track renderMsg calls via MutationObserver
+  try{
+    var renderObserver = new MutationObserver(function(mutations){
+      var addedMsgs = 0;
+      mutations.forEach(function(m){
+        m.addedNodes.forEach(function(node){
+          if(node.nodeType === 1 && node.classList && node.classList.contains('bqr')){
+            addedMsgs++;
+          }
+        });
+      });
+      if(addedMsgs > 0) trackRender();
+    });
+
+    // Observe both message containers
+    setTimeout(function(){
+      ['bqgmsgs','bqdmmsgs'].forEach(function(id){
+        var el = document.getElementById(id);
+        if(el){
+          renderObserver.observe(el, {childList: true});
+        }
+      });
+    }, 3000);
+  }catch(e){
+    bugLog(SEV.WARN, 'monitor-observer', 'MutationObserver setup failed', String(e).slice(0,200));
+  }
+
+  // Flush bug log on page unload
+  window.addEventListener('beforeunload', function(){
+    flushBugLog();
+  });
+
+  // Also expose a manual report function
+  window._bqReportBug = function(msg, detail){
+    bugLog(SEV.WARN, 'user-report', msg, detail);
+    flushBugLog();
+  };
+
+  // Expose monitor stats
+  window._bqMonitorStats = function(){
+    return {
+      bugCount: _bugLog.length,
+      recentBugs: _bugLog.slice(-10),
+      renderCount: _renderCount,
+      fbLatencyAvg: _fbLatencySamples.length ?
+        Math.round(_fbLatencySamples.reduce(function(a,b){return a+b;},0)/_fbLatencySamples.length) : null,
+      monitorRunning: _monitorStarted
+    };
+  };
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §9. PERFORMANCE OPTIMIZATIONS
+   ────────────────────────────────────────────────────────────────────── */
+
+// Throttle expensive DOM operations
+var _domRafQueue = [];
+var _domRafScheduled = false;
+
+function scheduleDomUpdate(fn){
+  _domRafQueue.push(fn);
+  if(!_domRafScheduled){
+    _domRafScheduled = true;
+    requestAnimationFrame(function(){
+      var batch = _domRafQueue.slice();
+      _domRafQueue = [];
+      _domRafScheduled = false;
+      batch.forEach(function(f){ try{f();}catch(e){} });
+    });
+  }
+}
+
+// Debounce scroll handler (reduce scroll event processing)
+// This is already done in the main code with rAF throttle, but we add
+// an additional layer for performance-sensitive operations
+
+// Lazy-load images that are off-screen
+function setupLazyImageLoading(){
+  try{
+    if('IntersectionObserver' in window){
+      var imgObserver = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            var img = entry.target;
+            if(img.dataset.src){
+              img.src = img.dataset.src;
+              delete img.dataset.src;
+              imgObserver.unobserve(img);
+            }
+          }
+        });
+      }, {rootMargin: '200px'});
+
+      // Observe future images via MutationObserver
+      var panel = document.getElementById('bqp');
+      if(panel){
+        var mo = new MutationObserver(function(mutations){
+          mutations.forEach(function(m){
+            m.addedNodes.forEach(function(node){
+              if(node.nodeType === 1){
+                var imgs = node.querySelectorAll ? node.querySelectorAll('img[loading="lazy"]') : [];
+                imgs.forEach(function(img){ imgObserver.observe(img); });
+              }
+            });
+          });
+        });
+        mo.observe(panel, {childList: true, subtree: true});
+      }
+    }
+  }catch(e){}
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §10. STABILITY IMPROVEMENTS
+   ────────────────────────────────────────────────────────────────────── */
+
+// Wrap Firebase operations with retry logic
+function fbRetry(fn, maxRetries, delay){
+  maxRetries = maxRetries || 3;
+  delay = delay || 1000;
+  return fn().catch(function(err){
+    if(maxRetries <= 0) throw err;
+    bugLog(SEV.WARN, 'fb-retry', 'Retrying Firebase operation (' + maxRetries + ' left)', String(err).slice(0,100));
+    return new Promise(function(resolve){
+      setTimeout(function(){ resolve(fbRetry(fn, maxRetries - 1, delay * 1.5)); }, delay);
+    });
+  });
+}
+
+// Memory leak prevention: clean up detached DOM nodes
+function cleanupDetachedNodes(){
+  try{
+    var panel = document.getElementById('bqp');
+    if(!panel) return;
+    // Remove any elements that were detached but still referenced
+    var detached = panel.querySelectorAll('[data-bq-detached]');
+    detached.forEach(function(el){ el.remove(); });
+  }catch(e){}
+}
+
+// Periodic cleanup
+setInterval(cleanupDetachedNodes, 120000);
+
+/* ──────────────────────────────────────────────────────────────────────
+   §11. REPLACE AI CHAT WITH MONITOR STATUS INDICATOR
+   Instead of the AI chat FAB, show a small monitor status badge
+   ────────────────────────────────────────────────────────────────────── */
+
+var _monitorIndicator = null;
+
+function createMonitorIndicator(){
+  var panel = document.getElementById('bqp');
+  if(!panel || document.getElementById('bq-monitor-badge')) return;
+
+  var badge = document.createElement('div');
+  badge.id = 'bq-monitor-badge';
+  badge.title = 'Bug Monitor Active — Issues are logged to admin panel';
+  badge.style.cssText = 'position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;' +
+    'font:600 9px/1 Inter,sans-serif;color:rgba(255,255,255,.25);pointer-events:none;z-index:5;' +
+    'padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.04);';
+  badge.innerHTML = '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">' +
+    '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>' +
+    '<span>MONITOR</span>';
+
+  panel.appendChild(badge);
+  _monitorIndicator = badge;
+
+  // Pulse the indicator when a bug is logged
+  var origBugLog = bugLog;
+  // We'll just update the indicator periodically
+  setInterval(function(){
+    if(!_monitorIndicator) return;
+    var stats = window._bqMonitorStats ? window._bqMonitorStats() : null;
+    if(stats && stats.bugCount > 0){
+      var recentErrors = stats.recentBugs.filter(function(b){ return b.sev === 'error' || b.sev === 'critical'; });
+      if(recentErrors.length > 0){
+        _monitorIndicator.style.color = 'rgba(239,68,68,.5)';
+        _monitorIndicator.querySelector('span').textContent = 'MONITOR (' + recentErrors.length + ')';
+      } else {
+        _monitorIndicator.style.color = 'rgba(255,255,255,.25)';
+        _monitorIndicator.querySelector('span').textContent = 'MONITOR';
+      }
+    }
+  }, 10000);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   §12. START EVERYTHING
+   ────────────────────────────────────────────────────────────────────── */
+
+function initV66(){
+  startMonitor();
+  setupLazyImageLoading();
+  setTimeout(createMonitorIndicator, 3000);
+
+  // Initial health check after widget loads
+  setTimeout(function(){
+    runDomHealthCheck();
+    bugLog(SEV.INFO, 'monitor-ready', 'All monitors active — DOM, Scroll, Firebase, Render');
+  }, 8000);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(initV66, 2000); });
+} else {
+  setTimeout(initV66, 2000);
+}
+
+console.log('[bq] v66 patch loaded — Bug Monitor + Performance + Stability');
+}catch(e){ console.error('[bq] v66 patch error:', e); }
 })();

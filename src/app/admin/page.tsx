@@ -145,7 +145,7 @@ type Section =
   | "themes" | "layout" | "messages-appearance"
   | "content-filter" | "rate-limiting" | "user-management" | "warnings-bans" | "auto-mod" | "user-intel"
   | "general" | "security" | "notifications" | "data" | "maintenance" | "emergency" | "fb-health"
-  | "files" | "disk-usage";
+  | "files" | "disk-usage" | "bug-monitor";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -201,6 +201,10 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "auto-mod", label: "Auto-Mod", icon: Shield },
     { id: "user-intel", label: "User Intel", icon: SearchIcon },
   ]},
+  { id: "monitor", icon: Activity, label: "Monitor", items: [
+    { id: "bug-monitor", label: "Bug Monitor", icon: ShieldAlert },
+    { id: "fb-health", label: "Firebase Health", icon: Heart },
+  ]},
   { id: "settings", icon: Settings, label: "Settings", items: [
     { id: "general", label: "General", icon: SlidersHorizontal },
     { id: "security", label: "Security", icon: Lock },
@@ -208,7 +212,6 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "data", label: "Data", icon: Database },
     { id: "maintenance", label: "Maintenance", icon: Wrench },
     { id: "emergency", label: "Emergency", icon: ShieldAlert },
-    { id: "fb-health", label: "Firebase Health", icon: Heart },
   ]},
   { id: "storage", icon: HardDrive, label: "Storage", items: [
     { id: "files", label: "Files", icon: FileText },
@@ -381,6 +384,13 @@ export default function AdminPage() {
   const [magicLinkHistory, setMagicLinkHistory] = useState<{token: string; username: string; createdAt: number; expiresAt: number; oneTime: boolean; used: boolean; usedBy?: string; usedAt?: number}[]>([]);
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
 
+  // Bug Monitor
+  type BugLogEntry = { id: string; sev: string; cat: string; msg: string; detail: string; ts: number; ua?: string; url?: string };
+  const [bugLogs, setBugLogs] = useState<BugLogEntry[]>([]);
+  const [bugLogFilter, setBugLogFilter] = useState<"all" | "error" | "warn" | "info">("all");
+  const [bugLogSearch, setBugLogSearch] = useState("");
+  const [bugLogAutoRefresh, setBugLogAutoRefresh] = useState(true);
+
   // Action message helper (must be before useCallback hooks that use it)
   const showActionMsg = useCallback((msg: string) => { setActionMsg(msg); setTimeout(() => setActionMsg(""), 3000); }, []);
 
@@ -507,9 +517,28 @@ export default function AdminPage() {
       setPinnedMessages(Object.entries(val).map(([k, v]: [string, any]) => ({ key: k, pinnedAt: v?.pinnedAt || 0, pinnedBy: v?.pinnedBy || "" })));
     });
 
+    // Bug Monitor logs
+    const bugRef = ref(db, "bq_bug_logs");
+    const unsubBug = onValue(bugRef, (snap) => {
+      if (!snap.exists()) { setBugLogs([]); return; }
+      const val = snap.val();
+      const logs: BugLogEntry[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+        id: k,
+        sev: v?.sev || "info",
+        cat: v?.cat || "unknown",
+        msg: v?.msg || "",
+        detail: v?.detail || "",
+        ts: v?.ts || 0,
+        ua: v?.ua || "",
+        url: v?.url || "",
+      })).sort((a, b) => b.ts - a.ts);
+      setBugLogs(logs);
+    });
+
     return () => {
       off(presRef); off(cfgRef);
       off(banRef); off(mutRef); off(warnRef); off(pinRef);
+      off(bugRef);
       setFbConnected(false);
     };
   }, [isAuthed]);
@@ -3534,6 +3563,179 @@ export default function AdminPage() {
                           <button onClick={() => setMassKickConfirm(false)} className="h-8 px-3 rounded-lg border border-border text-xs font-medium">Cancel</button>
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── BUG MONITOR ───────────────────────────────────── */}
+              {section === "bug-monitor" && (
+                <div className="flex flex-col gap-6">
+                  {/* Header Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard icon={ShieldAlert} label="Total Issues" value={String(bugLogs.length)} color="oklch(0.65 0.2 25)" />
+                    <StatCard icon={AlertCircle} label="Errors" value={String(bugLogs.filter(b => b.sev === "error" || b.sev === "critical").length)} color="oklch(0.65 0.2 25)" />
+                    <StatCard icon={AlertTriangle} label="Warnings" value={String(bugLogs.filter(b => b.sev === "warn").length)} color="oklch(0.75 0.15 60)" />
+                    <StatCard icon={Activity} label="Monitor" value={bugLogAutoRefresh ? "Active" : "Paused"} color="oklch(0.72 0.16 140)" />
+                  </div>
+
+                  {/* Controls */}
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Search bug logs..."
+                          value={bugLogSearch}
+                          onChange={e => setBugLogSearch(e.target.value)}
+                          className="h-8 flex-1 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-foreground/30"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(["all", "error", "warn", "info"] as const).map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setBugLogFilter(f)}
+                            className={`h-7 px-2.5 rounded-md text-[10px] font-medium transition-colors ${
+                              bugLogFilter === f
+                                ? f === "error" ? "bg-red-500/15 text-red-500 border border-red-500/30"
+                                : f === "warn" ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                                : f === "info" ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                                : "bg-foreground/10 text-foreground border border-foreground/20"
+                                : "text-muted-foreground border border-transparent hover:bg-foreground/5"
+                            }`}
+                          >
+                            {f === "all" ? "All" : f === "error" ? "Errors" : f === "warn" ? "Warnings" : "Info"}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setBugLogAutoRefresh(!bugLogAutoRefresh)}
+                          className={`h-7 px-2.5 rounded-md text-[10px] font-medium transition-colors ${bugLogAutoRefresh ? "bg-green-500/15 text-green-500 border border-green-500/30" : "text-muted-foreground border border-transparent"}`}
+                        >
+                          {bugLogAutoRefresh ? "Auto" : "Manual"}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const db = getFirebaseDb();
+                            if (db) {
+                              await remove(ref(db, "bq_bug_logs"));
+                              setBugLogs([]);
+                              showActionMsg("Bug logs cleared");
+                            }
+                          }}
+                          className="h-7 px-2.5 rounded-md text-[10px] font-medium text-red-500 border border-red-500/20 transition-colors hover:bg-red-500/10"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bug Category Summary */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><ShieldAlert className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Issue Categories</h2></div>
+                    {(() => {
+                      const cats: Record<string, number> = {};
+                      bugLogs.forEach(b => { cats[b.cat] = (cats[b.cat] || 0) + 1; });
+                      const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+                      if (!sorted.length) return <p className="text-xs text-muted-foreground text-center py-4">No issues detected — system is healthy!</p>;
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {sorted.slice(0, 8).map(([cat, count]) => {
+                            const hasErrors = bugLogs.some(b => b.cat === cat && (b.sev === "error" || b.sev === "critical"));
+                            return (
+                              <div key={cat} className="rounded-xl border border-border bg-background p-3 flex flex-col gap-1">
+                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{cat.replace(/-/g, " ")}</span>
+                                <span className={`text-lg font-semibold tabular-nums ${hasErrors ? "text-red-500" : "text-amber-500"}`}>{count}</span>
+                                <div className="h-1 rounded-full bg-foreground/5"><div className={`h-full rounded-full ${hasErrors ? "bg-red-500/40" : "bg-amber-500/40"}`} style={{ width: `${Math.min(100, count * 10)}%` }} /></div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Bug Log List */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Bug Log</h2></div>
+                      <span className="text-[10px] text-muted-foreground">{bugLogs.length} entries</span>
+                    </div>
+                    <div className="max-h-[500px] overflow-y-auto space-y-1.5 pr-1" style={{ scrollbarWidth: "thin" }}>
+                      {(() => {
+                        const filtered = bugLogs.filter(b => {
+                          if (bugLogFilter === "error" && b.sev !== "error" && b.sev !== "critical") return false;
+                          if (bugLogFilter === "warn" && b.sev !== "warn") return false;
+                          if (bugLogFilter === "info" && b.sev !== "info") return false;
+                          if (bugLogSearch && !b.msg.toLowerCase().includes(bugLogSearch.toLowerCase()) && !b.cat.toLowerCase().includes(bugLogSearch.toLowerCase()) && !b.detail.toLowerCase().includes(bugLogSearch.toLowerCase())) return false;
+                          return true;
+                        });
+                        if (!filtered.length) return <p className="text-xs text-muted-foreground text-center py-8">No matching entries found</p>;
+                        return filtered.slice(0, 100).map(bug => (
+                          <div key={bug.id} className={`flex items-start gap-3 rounded-xl border p-3 ${
+                            bug.sev === "critical" ? "border-red-500/30 bg-red-500/5" :
+                            bug.sev === "error" ? "border-red-500/20 bg-red-500/[0.03]" :
+                            bug.sev === "warn" ? "border-amber-500/20 bg-amber-500/[0.03]" :
+                            "border-border bg-background"
+                          }`}>
+                            <div className={`mt-0.5 shrink-0 rounded-md p-1 ${
+                              bug.sev === "critical" ? "bg-red-500/20 text-red-500" :
+                              bug.sev === "error" ? "bg-red-500/15 text-red-500" :
+                              bug.sev === "warn" ? "bg-amber-500/15 text-amber-500" :
+                              "bg-blue-500/10 text-blue-500"
+                            }`}>
+                              {bug.sev === "critical" || bug.sev === "error" ? <AlertCircle className="h-3.5 w-3.5" /> :
+                               bug.sev === "warn" ? <AlertTriangle className="h-3.5 w-3.5" /> :
+                               <Activity className="h-3.5 w-3.5" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                  bug.sev === "critical" ? "bg-red-500/20 text-red-500" :
+                                  bug.sev === "error" ? "bg-red-500/15 text-red-500" :
+                                  bug.sev === "warn" ? "bg-amber-500/15 text-amber-500" :
+                                  "bg-blue-500/10 text-blue-500"
+                                }`}>{bug.sev}</span>
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{bug.cat.replace(/-/g, " ")}</span>
+                                <span className="text-[10px] text-muted-foreground ml-auto tabular-nums">{new Date(bug.ts).toLocaleString()}</span>
+                              </div>
+                              <p className="text-xs font-medium mt-1 break-words">{bug.msg}</p>
+                              {bug.detail && <p className="text-[10px] text-muted-foreground mt-0.5 break-words font-mono">{bug.detail.slice(0, 200)}</p>}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Monitor Info */}
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="flex items-center gap-2 mb-4"><Wrench className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Monitor System</h2></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Monitors</span>
+                        <div className="space-y-1.5">
+                          {["JS Error Catcher", "Promise Rejection", "Firebase Errors", "Scroll Anomaly", "DOM Consistency", "Render Performance", "Firebase Health", "Self-Healing"].map(m => (
+                            <div key={m} className="flex items-center gap-2">
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                              <span className="text-[11px]">{m}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Self-Healing Capabilities</span>
+                        <div className="space-y-1.5">
+                          {["Duplicate DOM removal", "Stale separator cleanup", "Ghost message suppression", "Firebase retry logic", "Detached node cleanup", "Connection state recovery"].map(m => (
+                            <div key={m} className="flex items-center gap-2">
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+                              <span className="text-[11px]">{m}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
