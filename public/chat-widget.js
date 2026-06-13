@@ -332,18 +332,24 @@ const FIREBASE_CONFIG = {
 const GIPHY_API_KEY = 'hylHrfS6vc3Hnbc6R6QRgpbHfWbwSCWY';
 const _resolvedGiphyKey = window.GIPHY_API_KEY || GIPHY_API_KEY;
 const GIPHY_CATEGORIES = [
-  { id:'trending', label:'Trending', q:null },
-  { id:'reactions', label:'Reactions', q:'reaction' },
-  { id:'love', label:'Love', q:'love' },
-  { id:'happy', label:'Happy', q:'happy' },
-  { id:'sad', label:'Sad', q:'sad' },
-  { id:'cute', label:'Cute', q:'cute animals' },
-  { id:'anime', label:'Anime', q:'anime' },
-  { id:'study', label:'Study', q:'studying' },
-  { id:'memes', label:'Memes', q:'meme' },
-  { id:'sports', label:'Sports', q:'sports' },
-  { id:'food', label:'Food', q:'food' },
-  { id:'fail', label:'Fail', q:'fail' },
+  { id:'trending', label:'🔥 Trending', q:null },
+  { id:'reactions', label:'😂 Reactions', q:'reaction' },
+  { id:'love', label:'❤️ Love', q:'love' },
+  { id:'happy', label:'😊 Happy', q:'happy' },
+  { id:'sad', label:'😢 Sad', q:'sad' },
+  { id:'cute', label:'🐾 Cute', q:'cute animals' },
+  { id:'anime', label:'✨ Anime', q:'anime' },
+  { id:'memes', label:'💀 Memes', q:'meme' },
+  { id:'dance', label:'💃 Dance', q:'dance' },
+  { id:'sports', label:'⚽ Sports', q:'sports' },
+  { id:'food', label:'🍕 Food', q:'food' },
+  { id:'celebrate', label:'🎉 Celebrate', q:'celebrate' },
+  { id:'whatsapp', label:'💬 WhatsApp', q:'whatsapp funny' },
+  { id:'cats', label:'🐱 Cats', q:'funny cats' },
+  { id:'dogs', label:'🐶 Dogs', q:'funny dogs' },
+  { id:'gaming', label:'🎮 Gaming', q:'gaming' },
+  { id:'study', label:'📚 Study', q:'studying' },
+  { id:'fail', label:'🤦 Fail', q:'fail' },
 ];
 
 /* ─────────────────────────────────────────
@@ -967,6 +973,17 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-msg-inline .bq-ms-btn.danger{color:#ef4444;}
 .bq-msg-inline .bq-ms-btn span{display:none;}
 .bq-msg-inline .bq-ms-btn svg{width:16px;height:16px;}
+.bq-quick-react{display:inline-flex;gap:2px;margin-top:4px;padding:4px 6px;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:999px;animation:bqQuickReactIn .15s ease;}
+.bq-quick-react button{width:30px;height:30px;border:none;background:transparent;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s ease,background .1s ease;}
+.bq-quick-react button:hover{transform:scale(1.25);background:var(--bq-hover);}
+@keyframes bqQuickReactIn{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.bq-forward-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;animation:bqQuickReactIn .2s ease;}
+.bq-forward-panel{background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:16px;width:280px;max-height:300px;overflow:hidden;}
+.bq-forward-title{padding:14px 16px 10px;font:600 14px/1 Inter,sans-serif;color:var(--bq-text);border-bottom:1px solid var(--bq-border);}
+.bq-forward-list{max-height:240px;overflow-y:auto;padding:4px;}
+.bq-forward-item{width:100%;text-align:left;padding:10px 14px;border:none;background:transparent;color:var(--bq-text);font:500 13px/1 Inter,sans-serif;cursor:pointer;border-radius:8px;transition:background .1s;}
+.bq-forward-item:hover{background:var(--bq-hover);}
+.bq-forward-name{display:flex;align-items:center;gap:8px;}
 .bqbbl.msg-menu-open{outline:1px solid color-mix(in srgb,var(--bq-accent) 30%, transparent);box-shadow:none;}
 .bq-presence{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,currentColor 12%, transparent);font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.02em;line-height:1.1;}
 .bq-presence-dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 16%, transparent);flex-shrink:0;}
@@ -3114,7 +3131,7 @@ const HTML = `
           <div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="bqempty-tx">Start a Conversation</div>
           <div class="bqempty-sub" id="bqdmesub"></div>
-          <div class="bqdm-empty-chips"><span>👋 Say hi</span><span>❤️ Send love</span><span>🔥 Hype them</span></div>
+          <div class="bqdm-empty-chips"><span>Say hi</span><span>Send love</span><span>Hype them</span></div>
         </div>
       </div>
       <div class="bqtyp" id="bqdmtyp"></div>
@@ -4828,7 +4845,7 @@ function renderDmList(){
     row.innerHTML=`
       <div class="bqdmav" data-status="${esc(stCls)}" style="background:${c};color:#000">${uInit(pname)}</div>
       <div class="bqdmin">
-        <div class="bqdmn">${pinned?'<span class="bqdm-pin bqdmn-pin">📌</span>':''}${esc(shown)}${alias?`<span class="bqdmn-alias"> (@${esc(pname)})</span>`:''}</div>
+        <div class="bqdmn">${pinned?'<span class="bqdm-pin bqdmn-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>':''}${esc(shown)}${alias?`<span class="bqdmn-alias"> (@${esc(pname)})</span>`:''}</div>
         <div class="bqdmp${unrd?' unr':''}">${preview||'<span style="opacity:.35">No messages yet</span>'}</div>
       </div>
       <div class="bqdmm">
@@ -4950,7 +4967,7 @@ async function giphyFetch(category, query, offset=0){
   const cacheKey = (query||'')+'|'+(category||'trending')+'|'+offset;
   if(_giphyCache[cacheKey]) return { data: _giphyCache[cacheKey].data, pagination: _giphyCache[cacheKey].pagination };
   let url;
-  const limit = 6;
+  const limit = 8;
   if(query && query.trim()){
     url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=pg-13&bundle=messaging_non_clips`;
   } else if(category === 'trending' || !category){
@@ -5358,7 +5375,7 @@ function pinMessage(ctx, key, msg){
       toast('Message unpinned');
     } else {
       db.ref('bq_dms/'+dmId+'/pinned').set({key,text:msg.text.slice(0,80),uname:msg.uname,ts:Date.now()});
-      toast('📌 Message pinned');
+      toast('Message pinned');
     }
   });
 }
@@ -5878,55 +5895,36 @@ function renderMsg(ctx,msg,key){
 }
 
 
-function ensureReactionPicker(){
-  let el=document.getElementById('bq-rx-picker');
-  if(el) return el;
-  el=document.createElement('div');
-  el.id='bq-rx-picker';
-  const cats=Object.keys(REACTION_CATEGORIES);
-  const tabs=cats.map((c,i)=>'<button class="bq-rx-tab'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+c+'</button>').join('');
-  const panes=cats.map((c,i)=>{
-    const btns=REACTION_CATEGORIES[c].map(e=>'<button class="bq-rx-emo" data-e="'+esc(e)+'">'+e+'</button>').join('');
-    return '<div class="bq-rx-pane'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+btns+'</div>';
-  }).join('');
-  el.innerHTML='<div class="bq-rx-back" data-close="1"></div>'+
-    '<div class="bq-rx-panel" role="dialog" aria-label="Pick a reaction">'+
-      '<div class="bq-rx-tabs">'+tabs+'</div>'+
-      '<div class="bq-rx-panes">'+panes+'</div>'+
-    '</div>';
-  (document.getElementById('bqp')||document.body).appendChild(el);
-  // Prevent mousedown from bubbling to document outside-click handler
-  el.addEventListener('mousedown',e=>e.stopPropagation());
-  el.addEventListener('click',e=>{
-    if(e.target.dataset.close==='1'||e.target===el) closeReactionPicker();
-  });
-  el.querySelectorAll('.bq-rx-tab').forEach(t=>{
-    t.addEventListener('click',e=>{
-      e.stopPropagation();
-      el.querySelectorAll('.bq-rx-tab').forEach(x=>x.classList.toggle('active',x===t));
-      el.querySelectorAll('.bq-rx-pane').forEach(p=>p.classList.toggle('active',p.dataset.cat===t.dataset.cat));
-    });
-  });
-  el.querySelectorAll('.bq-rx-emo').forEach(b=>{
-    b.addEventListener('click',e=>{
-      e.stopPropagation();
-      const ctx=el.dataset.ctx, key=el.dataset.key;
-      if(ctx&&key) toggleRxn(ctx,key,b.dataset.e);
-      closeReactionPicker();
-    });
-  });
-  return el;
-}
+function ensureReactionPicker(){ return null; }
 function openReactionPicker(ctx,key){
-  const el=ensureReactionPicker();
-  el.dataset.ctx=ctx; el.dataset.key=key;
-  el.classList.add('open');
+  // v68: Removed full-screen reaction picker. Quick emoji bar (long-press) still works.
+  // Instead, show a compact inline reaction bar (WhatsApp-style)
+  var row = document.querySelector('.bqr[id="bqmsg-'+ctx+'-'+key+'"]');
+  if(!row) return;
+  var existing = row.querySelector('.bq-quick-react');
+  if(existing){ existing.remove(); return; }
+  closeMsgActionSheet();
+  var emojis = ['👍','❤️','😂','😮','😢','🙏','🔥','👏'];
+  var bar = document.createElement('div');
+  bar.className = 'bq-quick-react';
+  bar.innerHTML = emojis.map(function(em){ return '<button data-e="'+em+'">'+em+'</button>'; }).join('');
+  bar.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleRxn(ctx, key, btn.dataset.e);
+      bar.remove();
+    });
+  });
+  bar.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+  var bw = row.querySelector('.bqbw');
+  if(bw) bw.appendChild(bar);
+  setTimeout(function(){
+    var off = function(ev){ if(!bar.contains(ev.target)){ bar.remove(); document.removeEventListener('click', off, true); } };
+    document.addEventListener('click', off, true);
+  }, 50);
 }
 function closeReactionPicker(){
-  const el=document.getElementById('bq-rx-picker');
-  if(!el) return;
-  el.classList.remove('open');
-  el.dataset.ctx=''; el.dataset.key='';
+  document.querySelectorAll('.bq-quick-react').forEach(function(el){ el.remove(); });
 }
 
 function ensureMsgActionSheet(){
@@ -5974,15 +5972,19 @@ function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
   const _sdid=isG?'global':(activeDmId||'');
   const isStarred = !!(_stars[_sdid]&&_stars[_sdid][key]);
   const items = [
-    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
-    {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
-    {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
-    {a:'star', label:isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
+    {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
+    {a:'forward', label:'Forward', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,17 20,12 15,7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>'},
+    {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
+    {a:'star', label:isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'},
+    {a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'}
   ];
-  if(!isG) items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
+  if(isG && !isMine){
+    items.push({a:'dmreply', label:'DM Reply', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'});
+  }
   if(isMine){
-    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
-    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
+    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
+    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
   }
   const bar=document.createElement('div');
   bar.className='bq-msg-inline'+(isMine?' mine':'');
@@ -6030,6 +6032,69 @@ function doAction(ctx,a,key,msg,pfx,fromSheet){
   else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
   else if(a==='star'){starMessage(ctx,key,msg);}
   else if(a==='pin'){pinMessage(ctx,key,msg);}
+  else if(a==='forward'){forwardMessage(ctx,key,msg);}
+  else if(a==='dmreply'){dmReplyFromGlobal(key,msg);}
+}
+
+function forwardMessage(ctx,key,msg){
+  var text = msg.text || '';
+  if(!text && msg.gifUrl) text = '🎬 GIF';
+  if(!text && msg.imageData) text = '📷 Photo';
+  if(!text) return toast('Nothing to forward');
+  // Show DM list to pick a conversation to forward to
+  var dmList = Object.keys(dmMeta || {});
+  if(!dmList.length){ toast('No DMs to forward to'); return; }
+  var overlay = document.createElement('div');
+  overlay.className = 'bq-forward-overlay';
+  overlay.innerHTML = '<div class="bq-forward-panel"><div class="bq-forward-title">Forward to...</div><div class="bq-forward-list"></div></div>';
+  var list = overlay.querySelector('.bq-forward-list');
+  dmList.forEach(function(dmId){
+    var meta = dmMeta[dmId] || {};
+    var name = meta.pname || 'Unknown';
+    var btn = document.createElement('button');
+    btn.className = 'bq-forward-item';
+    btn.innerHTML = '<span class="bq-forward-name">' + esc(name) + '</span>';
+    btn.addEventListener('click', function(){
+      db.ref('bq_dms/'+dmId+'/messages').push({uid:uid,uname:uname,text:'_fwd: '+text.slice(0,400),ts:Date.now(),forwarded:true});
+      overlay.remove();
+      toast('Forwarded to @'+name);
+    });
+    list.appendChild(btn);
+  });
+  // Add global chat option
+  var gBtn = document.createElement('button');
+  gBtn.className = 'bq-forward-item';
+  gBtn.innerHTML = '<span class="bq-forward-name">📢 Global Chat</span>';
+  gBtn.addEventListener('click', function(){
+    db.ref('bq_messages').push({uid:uid,uname:uname,text:'_fwd: '+text.slice(0,400),ts:Date.now(),forwarded:true});
+    overlay.remove();
+    toast('Forwarded to Global Chat');
+  });
+  list.insertBefore(gBtn, list.firstChild);
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  (document.getElementById('bqp')||document.body).appendChild(overlay);
+}
+
+function dmReplyFromGlobal(key,msg){
+  // Open a DM with the message author and pre-fill reply
+  if(msg.uid===uid) return toast('This is your own message');
+  var targetUid = msg.uid;
+  var targetName = msg.uname || 'Unknown';
+  // Find existing DM or create one
+  var existingDm = null;
+  Object.keys(dmMeta||{}).forEach(function(dmId){
+    if(dmMeta[dmId].puid === targetUid) existingDm = dmId;
+  });
+  if(existingDm){
+    openDm(existingDm, targetName, targetUid);
+    setTimeout(function(){
+      var _rpText = msg.text || 'Message';
+      setReply('dm',{key:key,uname:msg.uname,text:_rpText});
+      document.getElementById('bqdminp')?.focus();
+    }, 300);
+  } else {
+    toast('Start a DM with @'+targetName+' first, then reply');
+  }
 }
   
 function startEditMsg(ctx,key,msg,pfx){
@@ -6155,21 +6220,14 @@ function scrollD(ctx, isMyMsg){
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl) return;
   const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-  // Only auto-scroll if: it's our own message, OR we're firmly at the bottom (<40px)
-  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<40){
-    requestAnimationFrame(()=>{
-      try{
-        if(isMyMsg){
-          const prev=msgsEl.style.scrollBehavior;
-          msgsEl.style.scrollBehavior='auto';
-          msgsEl.scrollTop=msgsEl.scrollHeight;
-          requestAnimationFrame(()=>{ msgsEl.style.scrollBehavior=prev||''; });
-        } else {
-          msgsEl.scrollTo({top:msgsEl.scrollHeight, behavior:'smooth'});
-        }
-      }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
-      if(isG) gAtBot=true; else dAtBot=true;
-    });
+  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<60){
+    // v68: Direct scroll without double-RAF to reduce stutter
+    if(isMyMsg){
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+    } else {
+      try{ msgsEl.scrollTo({top:msgsEl.scrollHeight, behavior:'smooth'}); }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
+    }
+    if(isG) gAtBot=true; else dAtBot=true;
   }
 }
 
@@ -6418,8 +6476,8 @@ function setupInput(ctx){
   });
   renderStkCat(0);
   if(eoB){
-    eoB.textContent='✨';
-    eoB.title='Quick Stickers';
+    eoB.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>';
+    eoB.title='Stickers';
     eoB.addEventListener('click',()=>tray.classList.toggle('open'));
   }
 
@@ -12508,9 +12566,7 @@ polishCss.textContent=`
 .bqv2-typing span:nth-child(2){animation-delay:.18s}.bqv2-typing span:nth-child(3){animation-delay:.36s}
 @keyframes bqV2TypingDot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-3px);opacity:1}}
 
-.bqv2-quick-emoji{position:absolute;background:rgba(20,22,28,.95);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 8px;display:flex;gap:4px;z-index:2147483646;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:bqV2FadeIn .18s ease}
-.bqv2-quick-emoji button{background:none;border:0;font-size:20px;cursor:pointer;width:32px;height:32px;border-radius:50%;transition:transform .12s ease,background .12s ease}
-.bqv2-quick-emoji button:hover{background:rgba(255,255,255,.1);transform:scale(1.25)}
+/* v68: Quick emoji bar removed */
 
 /* V2 double-tap heart animation enhanced — see main CSS for burst styles */
 `;
@@ -12747,50 +12803,7 @@ function listenForBursts(){
   }, 2000);
 }
 
-// Long-press → quick emoji bar
-const QUICK_EMOJI=['👍','❤️','😂','😮','😢','🙏'];
-function wireQuickEmoji(){
-  if(window._bqV2QE) return; window._bqV2QE=true;
-  let press=null;
-  const start=(e)=>{
-    const bbl=e.target.closest('.bqbbl'); if(!bbl) return;
-    if(e.target.closest('a,button,.bq-voice-msg,.bq-img,.bq-gif')) return;
-    press={bbl, t:setTimeout(()=>showQE(bbl, e), 480)};
-  };
-  const cancel=()=>{ if(press){ clearTimeout(press.t); press=null; } };
-  document.addEventListener('mousedown', start);
-  document.addEventListener('mouseup', cancel);
-  document.addEventListener('mouseleave', cancel);
-  document.addEventListener('touchstart', e=>start(e.touches?e.touches[0]?{...e,clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,target:e.target}:e:e), {passive:true});
-  document.addEventListener('touchend', cancel);
-  document.addEventListener('touchmove', cancel);
-}
-function showQE(bbl, e){
-  document.querySelectorAll('.bqv2-quick-emoji').forEach(n=>n.remove());
-  const r=bbl.getBoundingClientRect();
-  const bar=document.createElement('div'); bar.className='bqv2-quick-emoji';
-  QUICK_EMOJI.forEach(em=>{
-    const b=document.createElement('button'); b.textContent=em;
-    b.onclick=()=>{
-      const key=bbl.dataset.key||bbl.dataset.k||bbl.id?.replace(/^bqm-/,'');
-      const dm=window.activeDmId||window.__bqActiveDm?.id||'';
-      const u=_uid(); const db=_db();
-      if(key && u && db){
-        const path = dm ? 'bq_dms/'+dm+'/messages/'+key+'/reactions/'+em+'/'+u : 'bq_messages/'+key+'/reactions/'+em+'/'+u;
-        db.ref(path).set(Date.now()).catch(()=>{});
-      }
-      bar.remove();
-    };
-    bar.appendChild(b);
-  });
-  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
-  bar.addEventListener('mousedown', ev => ev.stopPropagation());
-  document.body.appendChild(bar);
-  const top=Math.max(60, r.top-46);
-  bar.style.left=Math.min(window.innerWidth-bar.offsetWidth-8, Math.max(8, r.left))+'px';
-  bar.style.top=top+'px';
-  setTimeout(()=>{ const off=ev=>{ if(!bar.contains(ev.target)){ bar.remove(); document.removeEventListener('click', off, true); } }; document.addEventListener('click', off, true); }, 50);
-}
+// v68: Quick emoji bar removed — replaced by inline reaction bar in openReactionPicker
 
 // Tap timestamp → copy permalink
 function wireTimestampCopy(){
@@ -14085,17 +14098,17 @@ setInterval(()=>{
         if(!list) return;
         const atBot = isG ? (typeof gAtBot!=='undefined' && gAtBot) : (typeof dAtBot!=='undefined' && dAtBot);
         const distFromBot = list.scrollHeight - list.scrollTop - list.clientHeight;
-        // Only auto-scroll if near bottom (within 200px) — otherwise user is reading history
-        if(atBot || distFromBot < 200){
-          requestAnimationFrame(()=>{
-            // Own messages: instant snap (no animation lag)
-            // Others: smooth scroll so user sees content arriving
-            if(isMyMsg){
-              list.scrollTop = list.scrollHeight;
-            } else {
-              list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
-            }
-          });
+        // v68: Tighter 60px threshold to prevent unwanted auto-scrolls
+        // Only auto-scroll if user is actively at/near bottom
+        if(isMyMsg || atBot || distFromBot < 60){
+          // v68: Use instant scroll for own messages, skip smooth to prevent stutter
+          // For others, only smooth if distance is small (<200px)
+          if(isMyMsg || distFromBot < 60){
+            list.scrollTop = list.scrollHeight;
+          } else {
+            list.scrollTo({top: list.scrollHeight, behavior: 'smooth'});
+          }
+          if(isG) gAtBot=true; else dAtBot=true;
         }
       }catch(_){}
     };
@@ -18341,4 +18354,94 @@ if(document.readyState === 'loading'){
 
 console.log('[bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring');
 }catch(e){ console.error('[bq] v67 patch error:', e); }
+})();
+
+/* ════════════════════════════════════════════════════════════════════════
+   v68 PATCH — UI Immersion + Performance + Polish
+   - Smooth scroll without stutter
+   - SVG icons replacing emoji in UI
+   - Enhanced message bubbles with micro-animations
+   - Improved GIF picker with more categories
+   - Better sticker tray with visual categories
+   - Removed floating reaction panel → inline quick react
+   - Forward + DM Reply (Discord/WhatsApp inspired)
+   - Glassmorphism improvements, subtle gradients
+   ════════════════════════════════════════════════════════════════════════ */
+(function v68Patch(){
+'use strict';
+try{
+var s = document.createElement('style');
+s.id = 'bq-v68-css';
+s.textContent = [
+  /* ── Enhanced message row animations ── */
+  '.bqr.bq-new{animation:bqMsgSlideIn .3s cubic-bezier(.22,1,.36,1) both;}',
+  '@keyframes bqMsgSlideIn{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}',
+  '.bqr.mine.bq-new{animation-name:bqMsgSlideInMine;}',
+  '@keyframes bqMsgSlideInMine{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}',
+
+  /* ── Bubble hover micro-animation ── */
+  '.bqbbl{transition:transform .12s ease,box-shadow .12s ease;}',
+  '.bqr:not(.consec) .bqbbl:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.15);}',
+
+  /* ── Enhanced send button ── */
+  '.bqsnd{transition:transform .15s ease,background .2s ease,box-shadow .2s ease;}',
+  '.bqsnd:not(:disabled):hover{transform:scale(1.08);box-shadow:0 4px 16px rgba(96,165,250,.35);}',
+  '.bqsnd:not(:disabled):active{transform:scale(.92);}',
+
+  /* ── Input focus glow ── */
+  '.bqinp:focus{box-shadow:0 0 0 2px var(--bq-accent-glow,rgba(96,165,250,.15));border-color:var(--bq-accent,#60a5fa)!important;}',
+
+  /* ── Smooth category pill transitions ── */
+  '.bqgifp-cat,.bqstk-pill{transition:all .15s ease!important;}',
+  '.bqgifp-cat:hover,.bqstk-pill:hover{transform:translateY(-1px);}',
+
+  /* ── GIF item hover ── */
+  '.bqgifp-item{transition:transform .15s ease,box-shadow .15s ease;border-radius:8px;overflow:hidden;}',
+  '.bqgifp-item:hover{transform:scale(1.03);box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:1;}',
+
+  /* ── Sticker button hover ── */
+  '.bqietb{transition:transform .12s ease,background .12s ease;border-radius:8px;}',
+  '.bqietb:hover{transform:scale(1.2);background:rgba(255,255,255,.08);}',
+  '.bqietb:active{transform:scale(.9);}',
+
+  /* ── DM list item hover ── */
+  '.bqdml{transition:background .12s ease,transform .1s ease;border-radius:12px;margin:2px 4px;}',
+  '.bqdml:hover{background:var(--bq-hover,rgba(255,255,255,.06))!important;}',
+
+  /* ── Action sheet button hover ── */
+  '.bq-ms-btn{transition:transform .1s ease,background .1s ease,color .1s ease!important;}',
+  '.bq-ms-btn:hover{transform:scale(1.12);}',
+  '.bq-ms-btn:active{transform:scale(.9);}',
+
+  /* ── Header subtle gradient ── */
+  '.bqhdr{background:linear-gradient(180deg,var(--bq-bg-elevated,rgba(30,30,40,.95)),var(--bq-bg-elevated,rgba(30,30,40,.95)))!important;}',
+
+  /* ── Quick react bar polish ── */
+  '.bq-quick-react button:active{transform:scale(1.4);}',
+
+  /* ── Forward overlay polish ── */
+  '.bq-forward-item{transition:background .1s ease,transform .1s ease!important;}',
+  '.bq-forward-item:hover{transform:translateX(4px);}',
+
+  /* ── Smooth scroll-to-bottom button ── */
+  '.bqscr{transition:transform .2s ease,opacity .2s ease,box-shadow .2s ease!important;}',
+  '.bqscr.show{transform:translateY(-4px);box-shadow:0 4px 16px rgba(0,0,0,.3)!important;}',
+  '.bqscr:hover{transform:translateY(-6px) scale(1.05)!important;}',
+
+  /* ── Reaction badge animation ── */
+  '.bqrxn{transition:transform .12s ease!important;}',
+  '.bqrxn:hover{transform:scale(1.15);}',
+
+  /* ── Reduced motion ── */
+  '@media(prefers-reduced-motion:reduce){',
+  '  .bqr.bq-new,.bqbbl,.bqsnd,.bqinp,.bqgifp-cat,.bqstk-pill,.bqgifp-item,',
+  '  .bqietb,.bqdml,.bq-ms-btn,.bq-quick-react button,.bq-forward-item,.bqscr,.bqrxn{',
+  '    animation:none!important;transition:none!important;transform:none!important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head||document.documentElement).appendChild(s);
+
+console.log('[bq] v68 patch loaded — UI Immersion + Performance + Polish');
+}catch(e){ console.error('[bq] v68 patch error:', e); }
 })();

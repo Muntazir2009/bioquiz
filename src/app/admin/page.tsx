@@ -3717,7 +3717,7 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Monitors</span>
                         <div className="space-y-1.5">
-                          {["JS Error Catcher", "Promise Rejection", "Firebase Errors", "Scroll Anomaly", "DOM Consistency", "Render Performance", "Firebase Health", "Self-Healing", "Reply Chip Health", "Ghost Detection", "Memory Leak Monitor", "Orphan Cleanup", "Performance Metrics"].map(m => (
+                          {["JS Error Catcher", "Promise Rejection", "Firebase Errors", "Scroll Anomaly", "DOM Consistency", "Render Performance", "Firebase Health", "Self-Healing", "Reply Chip Health", "Ghost Detection", "Memory Leak Monitor", "Orphan Cleanup", "Performance Metrics", "Scroll Stability"].map(m => (
                             <div key={m} className="flex items-center gap-2">
                               <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
                               <span className="text-[11px]">{m}</span>
