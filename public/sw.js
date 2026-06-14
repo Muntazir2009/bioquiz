@@ -2,9 +2,10 @@
    BioQuiz Chat — Service Worker for Push Notifications
    Handles push events when tab/browser is closed
    v41: Updated for Web Push (VAPID) integration
+   v69.2: Added action buttons (Reply, Mark Read), better click handling
    ═══════════════════════════════════════════════════════════════ */
 
-const SW_VERSION = '2.0.0';
+const SW_VERSION = '2.1.0';
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -36,7 +37,6 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    // If not JSON, try text
     data = { title: 'BioQuiz Chat', body: event.data ? event.data.text() : 'New message' };
   }
 
@@ -47,16 +47,22 @@ self.addEventListener('push', (event) => {
     icon: data.icon || '/logo.svg',
     badge: '/logo.svg',
     tag: data.tag || 'bq-chat-' + Date.now(),
+    renotify: true,
     data: {
-      type: data.type || 'global',    // 'global' or 'dm'
+      type: data.type || 'global',
       dmId: data.dmId || null,
       pUid: data.pUid || null,
       pName: data.pName || null,
+      sender: data.sender || null,
       url: data.url || '/'
     },
     vibrate: [100, 50, 100],
     requireInteraction: false,
-    silent: false
+    silent: false,
+    actions: [
+      { action: 'reply', title: 'Reply', type: 'text' },
+      { action: 'markRead', title: 'Mark Read' }
+    ]
   };
 
   event.waitUntil(
@@ -66,29 +72,72 @@ self.addEventListener('push', (event) => {
 
 // Notification click — open app and navigate to conversation
 self.addEventListener('notificationclick', (event) => {
-  console.log('[bq-sw] Notification clicked', event.notification.data);
+  console.log('[bq-sw] Notification clicked, action:', event.action, event.notification.data);
   event.notification.close();
 
   const data = event.notification.data || {};
 
+  // Handle action buttons
+  if (event.action === 'markRead') {
+    // Just close — no navigation needed
+    // Could post message to mark messages as read
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        client.postMessage({
+          type: 'bq-mark-read',
+          notifType: data.type,
+          dmId: data.dmId
+        });
+      }
+    });
+    return;
+  }
+
+  if (event.action === 'reply') {
+    // event.reply contains the user's reply text (if type: 'text')
+    const replyText = event.reply || '';
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        client.postMessage({
+          type: 'bq-notif-reply',
+          notifType: data.type,
+          dmId: data.dmId,
+          pUid: data.pUid,
+          pName: data.pName,
+          reply: replyText
+        });
+        return client.focus();
+      }
+      // No existing window — open a new one
+      if (clientList.length === 0) {
+        self.clients.openWindow('/');
+      }
+    });
+    return;
+  }
+
+  // Default click (no action button) — open/focus the app
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Try to focus an existing window
       for (const client of clientList) {
         if ('focus' in client) {
-          // Send navigation message to the focused client
           client.postMessage({
-            type: 'bq-notif-click',
-            notifType: data.type,
-            dmId: data.dmId,
-            pUid: data.pUid,
-            pName: data.pName
+            type: 'NOTIFICATION_CLICK',
+            data: {
+              type: data.type,
+              dmId: data.dmId,
+              sender: data.sender
+            }
           });
           return client.focus();
         }
       }
-      // No existing window — open a new one
       return self.clients.openWindow('/');
     })
   );
+});
+
+// Notification close — optional analytics
+self.addEventListener('notificationclose', (event) => {
+  console.log('[bq-sw] Notification closed', event.notification.tag);
 });
