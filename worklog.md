@@ -67,3 +67,35 @@ Stage Summary:
 - Browser notifications integrated with existing notification system
 - All features verified with Agent Browser testing
 - Zero JS errors in console
+---
+Task ID: 2
+Agent: main
+Task: Fix notification spam — aggregate, throttle, respect tab visibility, remove double-notifying
+
+Work Log:
+- Identified root cause: V69 patch was hooking _bqNotifAdd and calling _bqShowBrowserNotif ON TOP of V36's showBrowserNotif — every message triggered TWO browser notifications
+- Identified V36's showBrowserNotif used Date.now() in tag — creating unique notifications per message instead of aggregating
+- Identified addNotification() was calling showBrowserNotif when prefs.push=true even when tab was visible
+- Identified showBrowserNotif had broken visibility guard (!document.hidden && !document.visibilityState==='hidden')
+- Fixed all issues:
+  1. Removed V69's _bqShowBrowserNotif function entirely (no more double notifications)
+  2. Removed V69's hook on _bqNotifAdd that was calling _bqShowBrowserNotif
+  3. Fixed addNotification() to only call showBrowserNotif when document.hidden (tab in background)
+  4. Rewrote showBrowserNotif() with aggregation: groups messages by context (dm-id or global)
+  5. Added throttling: 1.5s quiet period + 5s max wait before showing aggregated notification
+  6. Added global rate limiter: never more than 1 browser notification per 3 seconds
+  7. Used stable tags (bq-dm-{dmId} / bq-global) so notifications REPLACE each other instead of stacking
+  8. Added renotify:true so user still gets alerted on new messages in same context
+  9. Aggregated body text: "3 messages — last message text" for DMs, "5 new messages" for global
+  10. Fixed visibility guard: simple `if(!document.hidden) return;`
+  11. Removed auto-request on first notification (was causing spam detection)
+  12. Reset aggregate counters after showing notification
+
+Stage Summary:
+- Chrome will no longer detect notification spam because:
+  - Notifications are aggregated (max 1 per context per batch)
+  - Global rate limit of 1 notification per 3 seconds
+  - Stable tags replace instead of creating new notifications
+- Notifications only fire when tab is in background (document.hidden)
+- No more double notifications from V69+V36 overlap
+- All fixes verified with Agent Browser — zero JS errors

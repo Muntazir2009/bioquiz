@@ -14523,8 +14523,9 @@ function addNotification(sender, msg, type, dmId){
   // Sound
   playNotifSound();
 
-  // Browser push — always show when tab is hidden, or when push pref is enabled
-  if(document.hidden || prefs.push) showBrowserNotif(notif);
+  // Browser push — ONLY when tab is hidden (background/minimized)
+  // Never spam browser notifications while user is actively in the tab
+  if(document.hidden) showBrowserNotif(notif);
 }
 
 function updateNotifBadge(){
@@ -14665,28 +14666,97 @@ function dismissBanner(banner){
 
 /* ── BROWSER PUSH NOTIFICATIONS ── */
 function showBrowserNotif(notif){
+  // ── GUARD: Only show browser notifications when tab is NOT visible ──
+  if(!document.hidden) return;
   // Check/request permission first
   if('Notification' in window){
     if(Notification.permission === 'denied') return;
     if(Notification.permission === 'default'){
-      // Auto-request on first notification (browser will show the permission prompt)
-      Notification.requestPermission().then(function(){ showBrowserNotif(notif); });
+      // Don't auto-request on first notification — too aggressive, causes spam detection
       return;
     }
+  } else { return; }
+  if(Notification.permission !== 'granted') return;
+
+  // ── AGGREGATION: Group notifications by type (global / dm-id) ──
+  // Use a stable tag so messages in the same context replace each other
+  var _tag = notif.type === 'dm' ? 'bq-dm-' + (notif.dmId || 'unknown') : 'bq-global';
+
+  // Track pending notification data for aggregation
+  if(typeof window.__bqNotifAgg === 'undefined') window.__bqNotifAgg = {};
+  var agg = window.__bqNotifAgg[_tag];
+  if(!agg){
+    agg = { count: 0, senders: {}, lastMsg: '', lastSender: '', title: '', type: notif.type, dmId: notif.dmId, timer: null };
+    window.__bqNotifAgg[_tag] = agg;
   }
+  agg.count++;
+  agg.senders[notif.sender] = (agg.senders[notif.sender] || 0) + 1;
+  agg.lastMsg = notif.msg.slice(0, 100);
+  agg.lastSender = notif.sender;
+
+  // ── THROTTLE: Batch notifications — show after 1.5s of quiet, max wait 5s ──
+  if(agg.timer) clearTimeout(agg.timer);
+  agg.timer = setTimeout(function(){ _flushAggNotif(_tag); }, 1500);
+  // Safety flush at 5s even if messages keep coming
+  if(!agg.safetyTimer){
+    agg.safetyTimer = setTimeout(function(){ _flushAggNotif(_tag); }, 5000);
+  }
+}
+
+function _flushAggNotif(_tag){
+  var agg = window.__bqNotifAgg[_tag];
+  if(!agg || agg.count === 0) return;
+  if(agg.timer){ clearTimeout(agg.timer); agg.timer = null; }
+  if(agg.safetyTimer){ clearTimeout(agg.safetyTimer); agg.safetyTimer = null; }
+
+  // ── GLOBAL RATE LIMIT: Never show more than 1 browser notification per 3s ──
+  var _now = Date.now();
+  var _lastFlush = window.__bqLastNotifFlush || 0;
+  if(_now - _lastFlush < 3000){
+    // Too soon — delay this flush until the cooldown expires
+    var _delay = 3000 - (_now - _lastFlush);
+    agg.timer = setTimeout(function(){ _flushAggNotif(_tag); }, _delay);
+    return;
+  }
+  window.__bqLastNotifFlush = _now;
+
+  // Build aggregated body
+  var senderNames = Object.keys(agg.senders);
+  var title, body;
+  if(agg.type === 'dm'){
+    title = senderNames[0] || 'Someone';
+    if(agg.count === 1){
+      body = agg.lastMsg;
+    } else {
+      body = agg.count + ' messages — ' + agg.lastMsg;
+    }
+  } else {
+    // Global chat
+    if(agg.count === 1){
+      title = senderNames[0] || 'Someone';
+      body = agg.lastMsg;
+    } else if(senderNames.length === 1){
+      title = senderNames[0] + ' (' + agg.count + ')';
+      body = agg.lastMsg;
+    } else {
+      title = agg.count + ' new messages';
+      body = senderNames.slice(0, 3).join(', ') + (senderNames.length > 3 ? ' +' + (senderNames.length-3) : '');
+    }
+  }
+
   // Try service worker first (works when tab is in background or minimized)
   if('serviceWorker' in navigator && navigator.serviceWorker.controller){
     try{
       navigator.serviceWorker.ready.then(function(reg){
-        var title = notif.type === 'dm' ? 'DM from ' + notif.sender : notif.sender + ' in Global Chat';
         var options = {
-          body: notif.msg.slice(0,100),
+          body: body,
           icon: '/logo.svg',
           badge: '/logo.svg',
-          tag: 'bq-' + notif.type + '-' + Date.now(),
+          tag: _tag,
+          renotify: true,
           data: {
-            type: notif.type,
-            dmId: notif.dmId || null,
+            type: agg.type,
+            dmId: agg.dmId || null,
             url: '/'
           },
           vibrate: [100, 50, 100],
@@ -14694,36 +14764,41 @@ function showBrowserNotif(notif){
         };
         reg.showNotification(title, options).catch(function(){});
       });
+      // Reset aggregate
+      agg.count = 0; agg.senders = {};
       return;
     }catch(_){}
   }
   // Fallback: direct Notification API (only works while page is open)
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   try{
-    const n = new Notification('BioQuiz Chat', {
-      body: notif.sender + ': ' + notif.msg.slice(0,80),
+    var n = new Notification(title, {
+      body: body,
       icon: '/logo.svg',
-      tag: 'bq-' + notif.type + '-' + Date.now(),
-      silent: !document.hidden
+      tag: _tag,
+      renotify: true,
+      silent: false
     });
-    n.onclick = () => {
+    n.onclick = function(){
       window.focus();
       try{
-        const panel = document.getElementById('bqp');
+        var panel = document.getElementById('bqp');
         if(panel && !panel.classList.contains('open')){
           panel.classList.add('open');
         }
-        if(notif.type === 'dm' && notif.dmId && typeof window.__bqOpenDm === 'function'){
-          const myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-          const parts = notif.dmId.split('__');
-          const pUid = parts[0]===myUid ? parts[1] : parts[0];
-          window.__bqOpenDm(notif.dmId, pUid, notif.sender.replace('@',''));
+        if(agg.type === 'dm' && agg.dmId && typeof window.__bqOpenDm === 'function'){
+          var myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
+          var parts = agg.dmId.split('__');
+          var pUid = parts[0]===myUid ? parts[1] : parts[0];
+          window.__bqOpenDm(agg.dmId, pUid, agg.lastSender.replace('@',''));
         } else if(typeof window.bqNav === 'function') window.bqNav('chat');
       }catch(_){}
       n.close();
     };
-    setTimeout(() => n.close(), 8000);
+    setTimeout(function(){ n.close(); }, 6000);
   }catch(_){}
+  // Reset aggregate
+  agg.count = 0; agg.senders = {};
 }
 
 /* ── HELPERS ── */
@@ -18959,34 +19034,8 @@ function _bqRequestNotifPermission(){
   });
 }
 
-function _bqShowBrowserNotif(title, body, tag, dmId){
-  if(!_bqNotifEnabled || _bqNotifPermission!=='granted') return;
-  if(document.visibilityState==='visible' && typeof isOpen!=='undefined' && isOpen) return;
-  try{
-    var n = new Notification(title, {
-      body: body,
-      tag: tag || 'bq-chat',
-      icon: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233b82f6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'),
-      badge: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233b82f6"><circle cx="12" cy="12" r="10"/></svg>'),
-      silent: false
-    });
-    n.onclick = function(){
-      window.focus();
-      if(typeof openPanel==='function') openPanel();
-      if(dmId && typeof activeDmId!=='undefined'){
-        // Navigate to the DM conversation
-        var meta = typeof dmMeta!=='undefined'?dmMeta[dmId]:null;
-        if(meta){
-          var puid = meta.p1===(typeof uid!=='undefined'?uid:'')?meta.p2:meta.p1;
-          var pname = meta.p1===(typeof uid!=='undefined'?uid:'')?(meta.n2||'?'):(meta.n1||'?');
-          if(typeof showDmConvo==='function') showDmConvo(puid, pname);
-        }
-      }
-      n.close();
-    };
-    setTimeout(function(){ n.close(); }, 5000);
-  }catch(e){}
-}
+// Browser notification display is handled by V36's showBrowserNotif() with aggregation.
+// V69 does NOT create its own notifications to avoid double-notifying and spam detection.
 
 function _bqUpdateNotifUI(){
   // Support both old (bqpf-push-btn) and new (bq-notif-push-enable) button IDs
@@ -19067,13 +19116,10 @@ function _bqWireNotifBtn(){
   _bqUpdateNotifUI();
 }
 
-// Intercept the notification system to also show browser notifications
-var _origBqNotifAdd = window._bqNotifAdd;
-window._bqNotifAdd = function(sender, msg, ctx, dmId){
-  if(_origBqNotifAdd) _origBqNotifAdd(sender, msg, ctx, dmId);
-  // Show browser notification
-  _bqShowBrowserNotif(sender, msg, 'bq-'+ctx+'-'+(dmId||'global'), dmId);
-};
+// NOTE: V69 no longer hooks _bqNotifAdd to avoid double notifications.
+// The V36 showBrowserNotif() already handles browser notifications properly
+// with aggregation, throttling, and proper tab-visibility checks.
+// V69 only provides: permission request UI, V2 toggle, and UI updates.
 
 /* ── 9. V2 TOGGLE INJECTION IN PROFILE ── */
 function _v2InjectToggle(){
