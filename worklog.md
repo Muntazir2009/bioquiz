@@ -33,3 +33,37 @@ Stage Summary:
 - AI Bug Monitor system built and integrated
 - Admin panel updated with Bug Monitor dashboard section
 - All pages verified: Main (200), Admin (200), Widget-config (404)
+---
+Task ID: 1
+Agent: main
+Task: Implement DM V2 with Telegram design, WhatsApp logic, browser notifications, and V1/V2 toggle
+
+Work Log:
+- Explored entire chat-widget.js (18.5K+ lines) to understand DM V1 architecture
+- Identified key functions: renderDmList(), showDmConvo(), renderMsg(), scrollD(), bqNav()
+- Identified Firebase paths for DMs, presence, typing, read receipts
+- Designed V2 architecture as a CSS-driven overlay system using `.bq-dm-v2` class
+- Implemented V69 patch (appended to chat-widget.js) with:
+  1. V1/V2 toggle in profile settings (localStorage `bq_dm_version`)
+  2. V2 CSS for Telegram-style message bubbles (mine: accent gradient right-aligned, theirs: dark card left-aligned)
+  3. V2 CSS for consecutive message grouping (tail on first, rounded on consecutive)
+  4. V2 CSS for DM list (larger 52px avatars, online status dots, better unread badges)
+  5. V2 DM list rendering with WhatsApp-style time formatting (now, Xm, HH:MM, Yesterday, D/M)
+  6. V2 DM search bar injection
+  7. V2 new messages banner ("X new messages" when scrolled up)
+  8. V2 scroll handling with RAF debounce and banner management
+  9. Browser notification system (Notification API) with permission request
+  10. Integration with existing v36/v37 notification infrastructure (bq-notif-push-enable button)
+  11. Push notification toggle hook (data-pref="push" checkbox)
+  12. Date separator styling (Telegram-style with horizontal lines)
+  13. Typing indicator with 3 bouncing dots animation
+  14. Modern input wrapper styling (rounded textarea, accent focus)
+  15. Read receipts with blue double-check glow effect
+
+Stage Summary:
+- V69 patch successfully loaded with no errors
+- V1/V2 toggle works bidirectionally in profile settings
+- V2 CSS applied via `.bq-dm-v2` class on `#bqp` panel
+- Browser notifications integrated with existing notification system
+- All features verified with Agent Browser testing
+- Zero JS errors in console

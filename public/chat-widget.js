@@ -18529,3 +18529,629 @@ s.textContent = [
 console.log('[bq] v68 patch loaded — UI Immersion + Performance + Polish');
 }catch(e){ console.error('[bq] v68 patch error:', e); }
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V69 PATCH — DM V2: Telegram Design + WhatsApp Logic + Notifications
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+/* ── 1. V2 DM VERSION TOGGLE ── */
+var _bqDmVersion = localStorage.getItem('bq_dm_version') || 'v1';
+window._bqGetDmVersion = function(){ return _bqDmVersion; };
+window._bqSetDmVersion = function(v){
+  _bqDmVersion = v;
+  localStorage.setItem('bq_dm_version', v);
+  var p = document.getElementById('bqp');
+  if(p) p.classList.toggle('bq-dm-v2', v==='v2');
+  // Re-render DM list if on dms view
+  if(typeof renderDmList==='function') renderDmList();
+  // Update toggle UI
+  var tog = document.getElementById('bq-dm-v2-toggle');
+  if(tog) tog.checked = (v==='v2');
+  // Update V2 toggle row label
+  var lbl = document.getElementById('bq-dm-v2-label');
+  if(lbl) lbl.textContent = v==='v2'?'DM V2 (Modern)':'DM V1 (Classic)';
+};
+
+/* ── 2. V2 CSS ── */
+var v2css = document.createElement('style');
+v2css.textContent = [
+  /* ── V2 Toggle in Profile ── */
+  '#bq-dm-v2-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;gap:8px;}',
+  '#bq-dm-v2-row .bq-info-row-left{display:flex;align-items:center;gap:10px;}',
+  '#bq-dm-v2-row .bq-info-row-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--bq-accent-soft,rgba(96,165,250,.1));}',
+  '#bq-dm-v2-row .bq-info-row-ic svg{width:16px;height:16px;stroke:var(--bq-accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}',
+  '#bq-dm-v2-label{font-size:13px;color:var(--bq-text);}',
+  '#bq-dm-v2-sub{font-size:10px;color:var(--bq-text-muted);margin-top:2px;}',
+  '.bq-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}',
+  '.bq-toggle input{opacity:0;width:0;height:0;}',
+  '.bq-toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.12);border-radius:12px;transition:background .25s ease;}',
+  '.bq-toggle-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .25s ease;}',
+  '.bq-toggle input:checked+.bq-toggle-slider{background:var(--bq-accent);}',
+  '.bq-toggle input:checked+.bq-toggle-slider::before{transform:translateX(20px);}',
+
+  /* ── V2 DM LIST ── */
+  '.bq-dm-v2 #bqv-dms .bqhdr{background:var(--bq-bg-elevated);border-bottom:1px solid var(--bq-border);}',
+  '.bq-dm-v2 #bqdml{padding:0 4px;overflow-y:auto;flex:1;}',
+  '.bq-dm-v2 .bqdmr{display:flex;align-items:center;padding:10px 8px;border-radius:12px;margin:2px 4px;cursor:pointer;transition:background .15s ease;position:relative;gap:12px;}',
+  '.bq-dm-v2 .bqdmr:hover{background:var(--bq-bg-hover);}',
+  '.bq-dm-v2 .bqdmr.active-row{background:var(--bq-accent-soft,rgba(96,165,250,.08));}',
+  '.bq-dm-v2 .bqdmr.unread-row{background:rgba(96,165,250,.04);}',
+  '.bq-dm-v2 .bqdmav{width:52px!important;height:52px!important;border-radius:50%!important;font-size:18px!important;font-weight:700!important;flex-shrink:0;position:relative;}',
+  '.bq-dm-v2 .bqdmav::after{content:"";position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bq-bg);display:none;}',
+  '.bq-dm-v2 .bqdmav[data-status="online"]::after{background:#22c55e;display:block;}',
+  '.bq-dm-v2 .bqdmav[data-status="studying"]::after{background:#f59e0b;display:block;}',
+  '.bq-dm-v2 .bqdmav[data-status="busy"]::after{background:#ef4444;display:block;}',
+  '.bq-dm-v2 .bqdmin{flex:1;min-width:0;overflow:hidden;}',
+  '.bq-dm-v2 .bqdmn{font-size:14px;font-weight:600;color:var(--bq-text);display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+  '.bq-dm-v2 .bqdmp{font-size:12px;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;line-height:1.3;}',
+  '.bq-dm-v2 .bqdmp.unr{color:var(--bq-text);font-weight:500;}',
+  '.bq-dm-v2 .bqdmm{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}',
+  '.bq-dm-v2 .bqdmt{font-size:10px;color:var(--bq-text-subtle);white-space:nowrap;}',
+  '.bq-dm-v2 .bqdmub{min-width:20px;height:20px;border-radius:10px;background:var(--bq-accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;}',
+  '.bq-dm-v2 .bqdmr-acts{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:2px;opacity:0;transition:opacity .15s ease;z-index:2;}',
+  '.bq-dm-v2 .bqdmr:hover .bqdmr-acts{opacity:1;}',
+  '.bq-dm-v2 .bqdmr-act{width:28px;height:28px;border-radius:8px;border:none;background:var(--bq-bg-hover);color:var(--bq-text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease;}',
+  '.bq-dm-v2 .bqdmr-act:hover{background:var(--bq-border-hover);color:var(--bq-text);}',
+  '.bq-dm-v2 .bqdmr-act svg{width:14px;height:14px;}',
+  '.bq-dm-v2 .bqdmr-act.bq-pin.pinned{color:var(--bq-warning);}',
+  '.bq-dm-v2 .bqdmr-confirm{display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:10px;padding:8px;z-index:3;gap:4px;}',
+  '.bq-dm-v2 .bqdmr-confirm.show{display:flex;}',
+  '.bq-dm-v2 .bqdm-pin{color:var(--bq-warning);flex-shrink:0;}',
+  '.bq-dm-v2 .bqdmn-alias{color:var(--bq-text-subtle);font-weight:400;font-size:12px;}',
+
+  /* ── V2 DM Conversation Header ── */
+  '.bq-dm-v2 #bqv-dmconv>.bqhdr{background:var(--bq-bg-elevated);border-bottom:1px solid var(--bq-border);padding:0 4px;}',
+  '.bq-dm-v2 .bqdmhav{width:38px!important;height:38px!important;border-radius:50%!important;font-size:14px!important;font-weight:700!important;position:relative;}',
+  '.bq-dm-v2 .bqdmhi{flex:1;min-width:0;}',
+  '.bq-dm-v2 .bqdmhn{font-size:15px;font-weight:600;color:var(--bq-text);}',
+  '.bq-dm-v2 .bqdmhs{font-size:11px;display:flex;align-items:center;gap:5px;}',
+  '.bq-dm-v2 .bqdmhs-dot{width:7px!important;height:7px!important;border-radius:50%;display:inline-block!important;}',
+  '.bq-dm-v2 #bqdmhs-txt{font-size:11px;}',
+
+  /* ── V2 Message Bubbles (Telegram-inspired) ── */
+  '.bq-dm-v2 .bqr{padding:0 12px;margin:0!important;}',
+  '.bq-dm-v2 .bqr.mine{justify-content:flex-end;}',
+  '.bq-dm-v2 .bqr.theirs{justify-content:flex-start;}',
+  '.bq-dm-v2 .bqr.bq-new{animation:bqV2MsgIn .3s cubic-bezier(.22,1,.36,1) both;}',
+  '@keyframes bqV2MsgIn{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:none;}}',
+
+  '.bq-dm-v2 .bqri{display:flex;align-items:flex-end;gap:0;max-width:82%;}',
+  '.bq-dm-v2 .bqr.mine .bqri{flex-direction:row-reverse;max-width:82%;}',
+
+  /* Avatar — only shown for first in group */
+  '.bq-dm-v2 .bqr .bqav{width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:700;flex-shrink:0;margin-right:8px;align-self:flex-end;margin-bottom:2px;cursor:pointer;transition:transform .15s ease;}',
+  '.bq-dm-v2 .bqr.mine .bqav{display:none!important;}',
+  '.bq-dm-v2 .bqr.consec .bqav{visibility:hidden!important;}',
+  '.bq-dm-v2 .bqav:hover{transform:scale(1.1);}',
+
+  '.bq-dm-v2 .bqcol{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%;}',
+  '.bq-dm-v2 .bqmeta{display:none!important;}',
+
+  /* Bubble shape — Telegram-style with tail on first, rounded on consecutive */
+  '.bq-dm-v2 .bqbw{display:flex;flex-direction:column;gap:0;}',
+  '.bq-dm-v2 .bqr.theirs .bqbw{align-items:flex-start;}',
+  '.bq-dm-v2 .bqr.mine .bqbw{align-items:flex-end;}',
+
+  '.bq-dm-v2 .bqbbl{',
+  '  padding:7px 10px 4px!important;',
+  '  border-radius:12px!important;',
+  '  position:relative;',
+  '  max-width:100%;',
+  '  word-wrap:break-word;',
+  '  box-shadow:none!important;',
+  '  border:none!important;',
+  '  transition:transform .12s ease;',
+  '}',
+  '.bq-dm-v2 .bqbbl:active{transform:scale(.985);}',
+
+  /* Mine bubbles — accent gradient */
+  '.bq-dm-v2 .bqr.mine .bqbbl{',
+  '  background:var(--bq-bubble-mine);',
+  '  border-radius:12px 4px 12px 12px!important;',
+  '  color:#fff;',
+  '}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:12px!important;}',
+  '.bq-dm-v2 .bqr.mine .bqbbl.media{padding:3px!important;border-radius:12px 4px 12px 12px!important;}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:12px!important;}',
+
+  /* Theirs bubbles — dark card */
+  '.bq-dm-v2 .bqr.theirs .bqbbl{',
+  '  background:var(--bq-bg-elevated);',
+  '  border:1px solid var(--bq-border);',
+  '  border-radius:4px 12px 12px 12px!important;',
+  '  color:var(--bq-text);',
+  '}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:12px!important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl.media{padding:3px!important;border-radius:4px 12px 12px 12px!important;}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:12px!important;}',
+
+  /* V2 Text styles */
+  '.bq-dm-v2 .bqtxt{font-size:13.5px;line-height:1.45;margin-bottom:2px;}',
+  '.bq-dm-v2 .bqrbbl a{color:var(--bq-accent);text-decoration:underline;}',
+  '.bq-dm-v2 .bqr.mine .bqtxt a{color:#93c5fd;}',
+
+  /* V2 Meta (timestamp + ticks inside bubble) */
+  '.bq-dm-v2 .bqbbl-meta{float:right;margin:6px 0 -2px 8px;font-size:10px!important;line-height:1;color:rgba(255,255,255,.5)!important;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl-meta{color:var(--bq-text-subtle)!important;}',
+  '.bq-dm-v2 .bqbbl-meta .bqbbl-tick{display:inline-flex;align-items:center;}',
+  '.bq-dm-v2 .bqbbl-meta .bqbbl-tick svg{width:14px;height:9px;}',
+
+  /* V2 Read receipts */
+  '.bq-dm-v2 .bqbbl-meta .bqbbl-tick{color:rgba(255,255,255,.45);}',
+  '.bq-dm-v2 .bqbbl-meta.delivered .bqbbl-tick{color:rgba(255,255,255,.85);}',
+  '.bq-dm-v2 .bqbbl-meta.seen .bqbbl-tick{color:#22d3ee;filter:drop-shadow(0 0 3px rgba(34,211,238,.5));}',
+  '.bq-dm-v2 .bqr.mine .bqbbl-meta.seen{color:#a5f3fc!important;}',
+
+  /* V2 Reply preview */
+  '.bq-dm-v2 .bqrp{margin-bottom:4px;padding:4px 8px;border-left:2px solid var(--bq-accent);border-radius:4px;background:rgba(96,165,250,.06);}',
+  '.bq-dm-v2 .bqr.mine .bqrp{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.5);}',
+  '.bq-dm-v2 .bqrp-n{font-size:10px;font-weight:600;color:var(--bq-accent);}',
+  '.bq-dm-v2 .bqr.mine .bqrp-n{color:rgba(255,255,255,.8);}',
+  '.bq-dm-v2 .bqrp-t{font-size:11px;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}',
+  '.bq-dm-v2 .bqr.mine .bqrp-t{color:rgba(255,255,255,.6);}',
+
+  /* V2 Media */
+  '.bq-dm-v2 .bq-msg-img,.bq-dm-v2 .bq-msg-gif{border-radius:8px;max-width:260px;max-height:260px;display:block;}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-meta{position:absolute;bottom:4px;right:6px;background:rgba(0,0,0,.55);border-radius:8px;padding:2px 5px;color:#fff!important;}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-tick{color:rgba(255,255,255,.7)!important;}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text).seen .bqbbl-tick{color:#22d3ee!important;}',
+
+  /* V2 Sticker */
+  '.bq-dm-v2 .bqsticker{font-size:52px;line-height:1.1;}',
+
+  /* V2 Date separator */
+  '.bq-dm-v2 .bqds{margin:12px 0;text-align:center;font-size:11px;color:var(--bq-text-subtle);position:relative;}',
+  '.bq-dm-v2 .bqds::before,.bq-dm-v2 .bqds::after{content:"";position:absolute;top:50%;width:calc(50% - 40px);height:1px;background:var(--bq-border);}',
+  '.bq-dm-v2 .bqds::before{left:0;}',
+  '.bq-dm-v2 .bqds::after{right:0;}',
+
+  /* V2 Typing indicator */
+  '.bq-dm-v2 .bqtyp{padding:4px 16px;font-size:12px;color:var(--bq-accent);}',
+  '.bq-dm-v2 .bqtd{display:inline-flex;gap:3px;align-items:center;margin-right:4px;}',
+  '.bq-dm-v2 .bqtd span{width:5px;height:5px;border-radius:50%;background:var(--bq-accent);animation:bqV2TypeDot 1.2s ease-in-out infinite;}',
+  '.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.15s;}',
+  '.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.3s;}',
+  '@keyframes bqV2TypeDot{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}',
+
+  /* V2 Input wrapper */
+  '.bq-dm-v2 .bqiw{background:var(--bq-bg-elevated);border-top:1px solid var(--bq-border);}',
+  '.bq-dm-v2 .bqinp{background:rgba(255,255,255,.05)!important;border:1px solid var(--bq-border)!important;border-radius:20px!important;padding:8px 14px!important;font-size:13.5px!important;}',
+  '.bq-dm-v2 .bqinp:focus{border-color:var(--bq-accent)!important;box-shadow:0 0 0 2px var(--bq-accent-soft,rgba(96,165,250,.15))!important;}',
+
+  /* V2 Scroll button */
+  '.bq-dm-v2 .bqscr{bottom:72px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);box-shadow:0 2px 8px rgba(0,0,0,.3);}',
+  '.bq-dm-v2 .bqscr svg{width:18px;height:18px;}',
+
+  /* V2 Pinned bar */
+  '.bq-dm-v2 #bq-pinned-bar{background:var(--bq-bg-elevated);border-bottom:1px solid var(--bq-border);margin:0;}',
+
+  /* V2 Empty state */
+  '.bq-dm-v2 .bqempty{padding:40px 20px;text-align:center;}',
+  '.bq-dm-v2 .bqempty-ic svg{width:48px;height:48px;stroke:var(--bq-text-subtle);fill:none;}',
+  '.bq-dm-v2 .bqempty-tx{font-size:16px;font-weight:600;color:var(--bq-text);margin-top:12px;}',
+  '.bq-dm-v2 .bqempty-sub{font-size:12px;color:var(--bq-text-muted);margin-top:4px;}',
+
+  /* V2 New messages banner */
+  '.bq-dm-v2 .bq-new-msg-banner{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bq-accent);color:#fff;font-size:12px;font-weight:600;padding:6px 16px;border-radius:16px;cursor:pointer;z-index:5;box-shadow:0 2px 12px rgba(0,0,0,.3);animation:bqV2BannerIn .3s ease both;}',
+  '@keyframes bqV2BannerIn{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}',
+
+  /* ── Browser Notification Styles ── */
+  '.bq-notif-perm{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;background:var(--bq-bg-hover);border-radius:12px;margin-top:8px;}',
+  '.bq-notif-perm-btn{padding:8px 16px;border-radius:10px;border:none;background:var(--bq-accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;}',
+  '.bq-notif-perm-btn:hover{filter:brightness(1.1);}',
+  '.bq-notif-perm-status{font-size:11px;color:var(--bq-text-muted);}',
+
+  /* ── V2 Search in DM list ── */
+  '.bq-dm-v2 #bqdm-search{padding:8px 12px;}',
+  '.bq-dm-v2 #bqdm-search-inp{width:100%;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid var(--bq-border);background:var(--bq-bg-hover);color:var(--bq-text);font-size:13px;outline:none;transition:border-color .15s ease;}',
+  '.bq-dm-v2 #bqdm-search-inp:focus{border-color:var(--bq-accent);}',
+  '.bq-dm-v2 .bqdm-search-wrap{position:relative;}',
+  '.bq-dm-v2 .bqdm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--bq-text-subtle);}',
+  '.bq-dm-v2 .bqdm-search-icon svg{width:14px;height:14px;}',
+].join('\n');
+(document.head||document.documentElement).appendChild(v2css);
+
+/* ── 3. V2 DM LIST RENDERING ── */
+var _origRenderDmList = typeof renderDmList==='function' ? renderDmList : null;
+window.renderDmList = function(){
+  if(_bqDmVersion!=='v2'){
+    if(_origRenderDmList) _origRenderDmList();
+    return;
+  }
+  var list=document.getElementById('bqdml');if(!list)return;
+  var items=Object.entries(typeof dmMeta!=='undefined'?dmMeta:{});
+  if(!items.length){
+    if(!list.querySelector('.bqdmr')){
+      list.innerHTML='';
+      var e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
+      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No Messages Yet</div><div class="bqempty-sub">Start a conversation from Online</div>';
+      list.appendChild(e);
+    }
+    return;
+  }
+
+  var existingKeys=new Set([].slice.call(list.querySelectorAll('.bqdmr')).map(function(r){return r.dataset.did;}));
+  var newKeys=new Set(items.map(function(x){return x[0];}));
+  existingKeys.forEach(function(k){ if(!newKeys.has(k)){var el=list.querySelector('[data-did="'+k+'"]');if(el)el.remove();} });
+  list.querySelector('.bqempty')?.remove();
+
+  var pins=typeof getPins==='function'?getPins():[];
+  items.sort(function(a,b){var ap=pins.indexOf(a[0])>=0?1:0,bp=pins.indexOf(b[0])>=0?1:0;if(ap!==bp)return bp-ap;return(b[1].lastTs||0)-(a[1].lastTs||0);});
+
+  var _uid = typeof uid!=='undefined'?uid:'';
+  var _esc = typeof esc==='function'?esc:function(s){return s;};
+
+  items.forEach(function(item){
+    var did=item[0], meta=item[1];
+    var puid =meta.p1===_uid?meta.p2:meta.p1;
+    var pname=meta.p1===_uid?(meta.n2||'?'):(meta.n1||'?');
+    var alias=typeof getAlias==='function'?getAlias(puid):'';
+    var shown=alias||('@'+pname);
+    var unrd =meta.unread&&meta.unread[_uid]?meta.unread[_uid]:0;
+    var pdata=(typeof onlineU!=='undefined'?onlineU[puid]:null)||{};
+    var c    =typeof getColor==='function'?getColor(puid,pname):'#60a5fa';
+    var preview=meta.lastMsg?_esc(meta.lastMsg.slice(0,50)):'';
+    var ts   =meta.lastTs?_v2TsFormat(meta.lastTs):'';
+    var stCls=pdata.status||'';
+    var pinned=pins.indexOf(did)>=0;
+
+    // Message type indicator
+    var typeIcon = '';
+    if(preview.indexOf('📷')===0||preview.indexOf('🎬')===0||preview.indexOf('🎤')===0||preview.indexOf('👾')===0){
+      typeIcon = preview.charAt(0)+preview.charAt(1)+' ';
+      preview = preview.slice(2).trim();
+    }
+
+    var row=list.querySelector('[data-did="'+did+'"]');
+    var isNew=!row;
+    if(isNew){row=document.createElement('div');row.className='bqdmr';row.dataset.did=did;}
+    row.dataset.puid=puid;row.dataset.pname=pname;
+    row.innerHTML=
+      '<div class="bqdmav" data-status="'+_esc(stCls)+'" style="background:'+c+';color:#000">'+(typeof uInit==='function'?uInit(pname):'?')+'</div>'+
+      '<div class="bqdmin">'+
+        '<div class="bqdmn">'+(pinned?'<span class="bqdm-pin bqdmn-pin"><svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg></span>':'')+_esc(shown)+(alias?'<span class="bqdmn-alias"> (@'+_esc(pname)+')</span>':'')+'</div>'+
+        '<div class="bqdmp'+(unrd?' unr':'')+'">'+(typeIcon?'<span style="opacity:.5">'+typeIcon+'</span>':'')+(preview||'<span style="opacity:.35">No messages yet</span>')+'</div>'+
+      '</div>'+
+      '<div class="bqdmm">'+
+        '<div class="bqdmt">'+ts+'</div>'+
+        (unrd?'<div class="bqdmub">'+(unrd>9?'9+':unrd)+'</div>':'')+
+      '</div>'+
+      '<div class="bqdmr-acts">'+
+        '<button class="bqdmr-act bq-pin'+(pinned?' pinned':'')+'" data-did="'+did+'" title="'+(pinned?'Unpin':'Pin')+'">'+
+          '<svg viewBox="0 0 24 24" fill="'+(pinned?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'+
+        '</button>'+
+        '<button class="bqdmr-act bq-del" data-did="'+did+'" title="Delete">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>'+
+        '</button>'+
+      '</div>'+
+      '<div class="bqdmr-confirm">'+
+        '<div class="bqdmr-confirm-msg">Delete?</div>'+
+        '<button class="bqdmr-cyes" data-did="'+did+'">Delete</button>'+
+        '<button class="bqdmr-cno">Cancel</button>'+
+      '</div>';
+    row.classList.toggle('unread-row', unrd > 0);
+    row.classList.toggle('active-row', did === (typeof activeDmId!=='undefined'?activeDmId:''));
+    if(isNew) list.appendChild(row);
+  });
+  var frag = document.createDocumentFragment();
+  items.forEach(function(item){var r=list.querySelector('[data-did="'+item[0]+'"]');if(r) frag.appendChild(r);});
+  list.appendChild(frag);
+  var q=(document.getElementById('bqdm-search-inp')?.value||'').toLowerCase().trim();
+  if(q && typeof _filterDmList==='function') _filterDmList(q);
+};
+
+/* ── 4. V2 TIME FORMATTING ── */
+function _v2TsFormat(ts){
+  var d=new Date(ts), now=new Date();
+  var diff=now-d;
+  if(diff<60000) return 'now';
+  if(diff<3600000) return Math.floor(diff/60000)+'m';
+  if(d.toDateString()===now.toDateString()) return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  var yesterday=new Date(now);yesterday.setDate(yesterday.getDate()-1);
+  if(d.toDateString()===yesterday.toDateString()) return 'Yesterday';
+  return d.getDate()+'/'+(d.getMonth()+1);
+}
+
+/* ── 5. V2 SEARCH BAR INJECTION ── */
+function _v2InjectDmSearch(){
+  var dml=document.getElementById('bqdml');
+  if(!dml||document.getElementById('bqdm-search')) return;
+  var wrap=document.createElement('div');
+  wrap.id='bqdm-search';
+  wrap.innerHTML='<div class="bqdm-search-wrap"><span class="bqdm-search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" id="bqdm-search-inp" placeholder="Search conversations..." autocomplete="off" autocorrect="off" autocapitalize="off"></div>';
+  dml.parentNode.insertBefore(wrap, dml);
+  var inp=document.getElementById('bqdm-search-inp');
+  if(inp && typeof _filterDmList==='function'){
+    inp.addEventListener('input',function(e){_filterDmList(e.target.value.toLowerCase().trim());});
+  }
+}
+
+/* ── 6. V2 DM CONVERSATION OVERRIDE ── */
+var _origShowDmConvo = typeof showDmConvo==='function' ? showDmConvo : null;
+window.showDmConvo = function(pUid, pName){
+  if(_bqDmVersion!=='v2'){
+    if(_origShowDmConvo) _origShowDmConvo(pUid, pName);
+    return;
+  }
+  // V2 uses the same Firebase logic but different CSS
+  // The core showDmConvo logic handles Firebase subscriptions
+  // V2 just applies different CSS via the .bq-dm-v2 class
+  if(_origShowDmConvo) _origShowDmConvo(pUid, pName);
+};
+
+/* ── 7. V2 NEW MESSAGES BANNER ── */
+var _v2NewMsgCount = 0;
+var _v2BannerEl = null;
+function _v2ShowNewMsgBanner(count){
+  if(_bqDmVersion!=='v2') return;
+  var msgsEl=document.getElementById('bqdmmsgs');
+  if(!msgsEl) return;
+  if(!_v2BannerEl){
+    _v2BannerEl=document.createElement('div');
+    _v2BannerEl.className='bq-new-msg-banner';
+    _v2BannerEl.addEventListener('click',function(){
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+      _v2HideNewMsgBanner();
+    });
+    msgsEl.parentNode.style.position='relative';
+    msgsEl.parentNode.appendChild(_v2BannerEl);
+  }
+  _v2NewMsgCount = count;
+  _v2BannerEl.textContent = count===1 ? 'New message' : (count+' new messages');
+  _v2BannerEl.style.display='block';
+}
+function _v2HideNewMsgBanner(){
+  _v2NewMsgCount=0;
+  if(_v2BannerEl) _v2BannerEl.style.display='none';
+}
+
+// Hook into scrollD to show/hide banner
+var _origScrollD = typeof scrollD==='function' ? scrollD : null;
+window.scrollD = function(ctx, isMyMsg){
+  if(_bqDmVersion==='v2' && ctx==='dm'){
+    if(typeof _bqBatchRendering!=='undefined' && _bqBatchRendering) return;
+    var msgsEl=document.getElementById('bqdmmsgs');
+    if(!msgsEl) return;
+    if(isMyMsg){
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+      if(typeof dAtBot!=='undefined') dAtBot=true;
+      _v2HideNewMsgBanner();
+      return;
+    }
+    // RAF-debounced for non-mine
+    if(typeof _scrollDTimer!=='undefined' && _scrollDTimer) cancelAnimationFrame(_scrollDTimer);
+    _scrollDTimer=requestAnimationFrame(function(){
+      var distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+      if((typeof dAtBot!=='undefined'?dAtBot:false)||distFromBot<60){
+        msgsEl.scrollTop=msgsEl.scrollHeight;
+        if(typeof dAtBot!=='undefined') dAtBot=true;
+        _v2HideNewMsgBanner();
+      } else {
+        // Not at bottom — show new message banner
+        if(typeof dAtBot!=='undefined') dAtBot=false;
+        _v2NewMsgCount++;
+        _v2ShowNewMsgBanner(_v2NewMsgCount);
+      }
+    });
+    return;
+  }
+  if(_origScrollD) _origScrollD(ctx, isMyMsg);
+};
+
+/* ── 8. BROWSER NOTIFICATIONS ── */
+var _bqNotifPermission = Notification?.permission || 'default';
+var _bqNotifEnabled = localStorage.getItem('bq_notif_enabled') === 'true';
+
+function _bqRequestNotifPermission(){
+  if(!('Notification' in window)) return Promise.resolve('unsupported');
+  return Notification.requestPermission().then(function(p){
+    _bqNotifPermission = p;
+    _bqNotifEnabled = p==='granted';
+    localStorage.setItem('bq_notif_enabled', _bqNotifEnabled?'true':'false');
+    _bqUpdateNotifUI();
+    // Update push banner visibility
+    var banner=document.getElementById('bq-notif-push-banner');
+    if(banner) banner.style.display=(p==='granted'||p==='denied')?'none':'block';
+    return p;
+  });
+}
+
+function _bqShowBrowserNotif(title, body, tag, dmId){
+  if(!_bqNotifEnabled || _bqNotifPermission!=='granted') return;
+  if(document.visibilityState==='visible' && typeof isOpen!=='undefined' && isOpen) return;
+  try{
+    var n = new Notification(title, {
+      body: body,
+      tag: tag || 'bq-chat',
+      icon: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233b82f6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'),
+      badge: 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233b82f6"><circle cx="12" cy="12" r="10"/></svg>'),
+      silent: false
+    });
+    n.onclick = function(){
+      window.focus();
+      if(typeof openPanel==='function') openPanel();
+      if(dmId && typeof activeDmId!=='undefined'){
+        // Navigate to the DM conversation
+        var meta = typeof dmMeta!=='undefined'?dmMeta[dmId]:null;
+        if(meta){
+          var puid = meta.p1===(typeof uid!=='undefined'?uid:'')?meta.p2:meta.p1;
+          var pname = meta.p1===(typeof uid!=='undefined'?uid:'')?(meta.n2||'?'):(meta.n1||'?');
+          if(typeof showDmConvo==='function') showDmConvo(puid, pname);
+        }
+      }
+      n.close();
+    };
+    setTimeout(function(){ n.close(); }, 5000);
+  }catch(e){}
+}
+
+function _bqUpdateNotifUI(){
+  // Support both old (bqpf-push-btn) and new (bq-notif-push-enable) button IDs
+  var btn=document.getElementById('bqpf-push-btn') || document.getElementById('bq-notif-push-enable');
+  var status=document.getElementById('bqpf-push-status');
+  var banner=document.getElementById('bq-notif-push-banner');
+  var pushToggle=document.querySelector('[data-pref="push"]');
+  if(!btn && !banner && !pushToggle) return;
+  if(!('Notification' in window)){
+    if(btn) btn.textContent='Notifications Not Supported';
+    if(btn) btn.disabled=true;
+    if(status) status.textContent='Your browser does not support notifications';
+    if(banner) banner.style.display='none';
+    return;
+  }
+  if(_bqNotifPermission==='granted'){
+    if(btn){
+      if(btn.id==='bq-notif-push-enable'){
+        btn.innerHTML='<svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications Enabled';
+        btn.style.background='var(--bq-success)';
+      } else {
+        btn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications Enabled';
+        btn.style.background='var(--bq-success)';
+      }
+    }
+    if(status) status.textContent='✓ You will receive notifications for new messages';
+    if(banner) banner.style.display='none';
+    if(pushToggle) pushToggle.checked=true;
+  } else if(_bqNotifPermission==='denied'){
+    if(btn) btn.textContent='Notifications Blocked';
+    if(btn) btn.style.background='var(--bq-danger)';
+    if(btn) btn.disabled=true;
+    if(status) status.textContent='Notifications are blocked. Enable them in browser settings.';
+    if(banner) banner.style.display='none';
+    if(pushToggle) pushToggle.checked=false;
+  } else {
+    if(btn){
+      if(btn.id==='bq-notif-push-enable'){
+        btn.innerHTML='<svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Allow Notifications';
+      } else {
+        btn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Enable Notifications';
+      }
+    }
+    if(status) status.textContent='Click to allow browser notifications';
+    if(banner) banner.style.display='block';
+    if(pushToggle) pushToggle.checked=false;
+  }
+}
+
+// Hook notification button — supports both old (bqpf-push-btn) and new (bq-notif-push-enable) IDs
+function _bqWireNotifBtn(){
+  var btns = [
+    document.getElementById('bqpf-push-btn'),
+    document.getElementById('bq-notif-push-enable')
+  ];
+  btns.forEach(function(btn){
+    if(btn && !btn.dataset.v2wired){
+      btn.dataset.v2wired='1';
+      btn.addEventListener('click',function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        _bqRequestNotifPermission();
+      });
+    }
+  });
+  // Also hook the push toggle checkbox if present
+  var pushToggle = document.querySelector('[data-pref="push"]');
+  if(pushToggle && !pushToggle.dataset.v2wired){
+    pushToggle.dataset.v2wired='1';
+    pushToggle.addEventListener('change',function(){
+      if(pushToggle.checked){
+        _bqRequestNotifPermission().then(function(p){
+          if(p!=='granted') pushToggle.checked=false;
+        });
+      }
+    });
+  }
+  _bqUpdateNotifUI();
+}
+
+// Intercept the notification system to also show browser notifications
+var _origBqNotifAdd = window._bqNotifAdd;
+window._bqNotifAdd = function(sender, msg, ctx, dmId){
+  if(_origBqNotifAdd) _origBqNotifAdd(sender, msg, ctx, dmId);
+  // Show browser notification
+  _bqShowBrowserNotif(sender, msg, 'bq-'+ctx+'-'+(dmId||'global'), dmId);
+};
+
+/* ── 9. V2 TOGGLE INJECTION IN PROFILE ── */
+function _v2InjectToggle(){
+  var scroll=document.querySelector('.bqpf-scroll');
+  if(!scroll || document.getElementById('bq-dm-v2-row')) return;
+  var section=document.createElement('div');
+  section.className='bqpf-section';
+  section.id='bq-dm-v2-section';
+  section.innerHTML=
+    '<div class="bqpf-label">DM Version</div>'+
+    '<div id="bq-dm-v2-row">'+
+      '<div class="bq-info-row-left">'+
+        '<div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
+        '<div><div id="bq-dm-v2-label">'+(_bqDmVersion==='v2'?'DM V2 (Modern)':'DM V1 (Classic)')+'</div><div id="bq-dm-v2-sub">Telegram-inspired design with WhatsApp logic</div></div>'+
+      '</div>'+
+      '<label class="bq-toggle"><input type="checkbox" id="bq-dm-v2-toggle"'+(_bqDmVersion==='v2'?' checked':'')+'><span class="bq-toggle-slider"></span></label>'+
+    '</div>';
+  // Insert before the Push Notifications section
+  var pushSection = scroll.querySelector('.bqpf-section:nth-last-of-type(2)');
+  if(pushSection){
+    pushSection.parentNode.insertBefore(section, pushSection);
+  } else {
+    scroll.insertBefore(section, scroll.querySelector('.bqpf-savebtn'));
+  }
+  var tog=document.getElementById('bq-dm-v2-toggle');
+  if(tog){
+    tog.addEventListener('change',function(){
+      window._bqSetDmVersion(tog.checked?'v2':'v1');
+    });
+  }
+}
+
+/* ── 10. V2 INITIALIZATION ── */
+function _v2Init(){
+  // Apply V2 class if active
+  var p=document.getElementById('bqp');
+  if(p) p.classList.toggle('bq-dm-v2', _bqDmVersion==='v2');
+  // Inject DM search bar
+  _v2InjectDmSearch();
+  // Inject V2 toggle in profile
+  _v2InjectToggle();
+  // Wire notification button
+  _bqWireNotifBtn();
+  // Re-render DM list with V2 styles
+  if(typeof renderDmList==='function') renderDmList();
+  console.log('[bq] V69 patch loaded — DM V2 + Browser Notifications');
+}
+
+// Wait for widget to be ready
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(_v2Init,1500);});
+} else {
+  setTimeout(_v2Init,1500);
+}
+
+// Also re-inject on profile view open
+var _origBqNav = typeof bqNav==='function' ? bqNav : null;
+window.bqNav = function(targetView){
+  if(_origBqNav) _origBqNav(targetView);
+  if(targetView==='profile'){
+    setTimeout(function(){
+      _v2InjectToggle();
+      _bqWireNotifBtn();
+      _bqUpdateNotifUI();
+    },100);
+  }
+  if(targetView==='dms' && _bqDmVersion==='v2'){
+    _v2InjectDmSearch();
+  }
+};
+
+// Update notification UI when profile opens
+var _origUpdatePushUI = typeof updatePushUI==='function' ? updatePushUI : null;
+window.updatePushUI = function(){
+  if(_origUpdatePushUI) _origUpdatePushUI();
+  _bqWireNotifBtn();
+  _bqUpdateNotifUI();
+};
+
+}catch(e){ console.error('[bq] V69 patch error:', e); }
+})();
