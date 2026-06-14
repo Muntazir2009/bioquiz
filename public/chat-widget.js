@@ -787,7 +787,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqback svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
 /* ── MESSAGES ── */
-.bqmsgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;background:var(--bq-bg);}
+.bqmsgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:2px;background:var(--bq-bg);overflow-anchor:auto;will-change:scroll-position;-webkit-overflow-scrolling:touch;}
 .bqmsgs::-webkit-scrollbar{width:6px;}
 .bqmsgs::-webkit-scrollbar-track{background:transparent;}
 .bqmsgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px;transition:background .2s;}
@@ -804,7 +804,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 }
 
 /* Message row — messenger style — removed blanket animation (was animating ALL messages on render) */
-.bqr{display:flex;flex-direction:column;gap:2px;padding:0 4px;margin-top:8px;}
+.bqr{display:flex;flex-direction:column;gap:2px;padding:0 4px;margin-top:8px;contain:inline-size;}
 @keyframes bqUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 /* v18: directional entrance — only animate NEW messages via .bq-new class */
 .bqr.bq-new{animation:bqUp .26s ease both;}
@@ -973,9 +973,6 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bq-msg-inline .bq-ms-btn.danger{color:#ef4444;}
 .bq-msg-inline .bq-ms-btn span{display:none;}
 .bq-msg-inline .bq-ms-btn svg{width:16px;height:16px;}
-.bq-quick-react{display:inline-flex;gap:2px;margin-top:4px;padding:4px 6px;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:999px;animation:bqQuickReactIn .15s ease;}
-.bq-quick-react button{width:30px;height:30px;border:none;background:transparent;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s ease,background .1s ease;}
-.bq-quick-react button:hover{transform:scale(1.25);background:var(--bq-hover);}
 @keyframes bqQuickReactIn{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
 .bq-forward-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;animation:bqQuickReactIn .2s ease;}
 .bq-forward-panel{background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:16px;width:280px;max-height:300px;overflow:hidden;}
@@ -3084,7 +3081,7 @@ const HTML = `
           <textarea id="bqginp" class="bqinp" placeholder="Message everyone..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqgsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
-        <div class="bqifooter"><div class="bqcc" id="bqgcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
+        <div class="bqifooter"><div class="bqcc" id="bqgcc"></div></div>
       </div>
     </div>
 
@@ -3157,7 +3154,7 @@ const HTML = `
           <textarea id="bqdminp" class="bqinp" placeholder="Message..." rows="1" maxlength="${CHAR_LIMIT}"></textarea>
           <button class="bqsnd" id="bqdmsnd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg></button>
         </div>
-        <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div><div class="bqih">Enter send · Shift+Enter newline</div></div>
+        <div class="bqifooter"><div class="bqcc" id="bqdmcc"></div></div>
       </div>
     </div>
 
@@ -3489,6 +3486,7 @@ let dAtBot    = true;
 let gLastU=null, gLastT=0;
 let dLastU=null, dLastT=0;
 let _bqDelSuppressUntil=0; // timestamp: suppress ghost child_added after deletion
+let _bqBatchRendering=false; // suppress scrollD during initial load batch
 let _bqDmLoadedKeys={};    // Set of DM message keys loaded during initial load
 let _bqGlobalLoadedKeys={}; // Set of global message keys loaded during initial load
 let _bqDmInitialDone=false; // initial DM load complete?
@@ -3844,16 +3842,23 @@ function showDmConvo(pUid, pName) {
   if (db) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
     _bqDmLoadedKeys = {}; _bqDmInitialDone = false;
+    _bqBatchRendering=true;
+    var _dmBatchSafety=setTimeout(function(){ _bqBatchRendering=false; },10000); // safety: reset after 10s
     ref.on('child_added', s => {
       _bqDmLoadedKeys[s.key] = true;
       renderMsg('dm', s.val(), s.key);
     });
-    ref.once('value', () => { _bqDmInitialDone = true; });
+    ref.once('value', () => {
+      _bqDmInitialDone = true;
+      clearTimeout(_dmBatchSafety);
+      _bqBatchRendering=false;
+      var el=document.getElementById('bqdmmsgs');
+      if(el) el.scrollTop=el.scrollHeight;
+    });
     ref.on('child_changed', s => onMsgChanged('dm', s));
     ref.on('child_removed', s => {
       document.getElementById('bqmsg-dm-' + s.key)?.remove();
       delete _bqDmLoadedKeys[s.key];
-      _bqDelSuppressUntil = Date.now() + 3000;
     });
     dmListeners[activeDmId] = ref;
   }
@@ -4676,16 +4681,23 @@ function closeProfileCard(){
 function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
   _bqGlobalLoadedKeys = {}; _bqGlobalInitialDone = false;
+  _bqBatchRendering=true;
+  var _gBatchSafety=setTimeout(function(){ _bqBatchRendering=false; },10000); // safety: reset after 10s
   ref.on('child_added',s=>{
     _bqGlobalLoadedKeys[s.key] = true;
     renderMsg('global',s.val(),s.key);
   });
-  ref.once('value',()=>{ _bqGlobalInitialDone=true; });
+  ref.once('value',()=>{
+    _bqGlobalInitialDone=true;
+    clearTimeout(_gBatchSafety);
+    _bqBatchRendering=false;
+    var el=document.getElementById('bqgmsgs');
+    if(el) el.scrollTop=el.scrollHeight;
+  });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>{
     document.getElementById('bqmsg-global-'+s.key)?.remove();
     delete _bqGlobalLoadedKeys[s.key];
-    _bqDelSuppressUntil=Date.now()+3000;
   });
 }
 
@@ -5715,19 +5727,26 @@ function renderMsg(ctx,msg,key){
   const pfx='bqmsg-'+ctx+'-';
   if (document.getElementById(pfx + key)) return;
 
-  // ── GHOST FIX: After deleting a message, limitToLast shifts its window and
+  // ── GHOST FIX: After deleting, limitToLast shifts its window and
   // fires child_added for an older message that now enters the window.
-  // Two-layer suppression:
-  // 1. Time-based: 3s window after deletion, reject messages >500ms old
-  // 2. Key-based: after initial load, reject any key NOT in the loaded set
+  // Strategy: After initial load, only block messages that are BOTH:
+  //   - Not in the loaded keys set (wasn't part of initial or subsequent child_added events)
+  //   - Already exist in DOM (duplicate) OR are stale (>30s old = ghost from window shift)
+  // New messages (< 30s old) are ALWAYS allowed through — never block real-time messages.
   if(!_bqRenderBypass){
-    if(_bqDelSuppressUntil && Date.now() < _bqDelSuppressUntil){
-      var _msgAge = Date.now() - (msg.ts||0);
-      if(_msgAge > 500 && !document.getElementById(pfx+key)) return;
-    }
     var _keys = isG ? _bqGlobalLoadedKeys : _bqDmLoadedKeys;
     var _done = isG ? _bqGlobalInitialDone : _bqDmInitialDone;
-    if(_done && !_keys[key] && !document.getElementById(pfx+key)) return; // ghost from window shift
+    if(_done && !_keys[key] && !document.getElementById(pfx+key)){
+      // Key not in loaded set and not in DOM — likely a ghost from window shift
+      var _msgAge = Date.now() - (msg.ts||0);
+      if(_msgAge > 30000) return; // Ghost: old message entering window. Block it.
+      // Otherwise allow — could be a new message from Firebase reconnect
+    }
+    // Also check explicit deletion suppression (user deleted a message)
+    if(_bqDelSuppressUntil && Date.now() < _bqDelSuppressUntil){
+      var _msgAge2 = Date.now() - (msg.ts||0);
+      if(_msgAge2 > 30000 && !document.getElementById(pfx+key)) return;
+    }
   } else {
     _bqRenderBypass = false;
   }
@@ -5775,7 +5794,7 @@ function renderMsg(ctx,msg,key){
   row.dataset.msguid=msg.uid;
   // v18: mark rows rendered after initial load as "new" so they get the
   // directional slide-in animation; strip the class after it plays.
-  if(ts && (Date.now()-ts) < 15000){
+  if(ts && (Date.now()-ts) < 3000){
     row.classList.add('bq-new');
     setTimeout(()=>{ try{ row.classList.remove('bq-new'); }catch(_){}},600);
   }
@@ -5895,36 +5914,63 @@ function renderMsg(ctx,msg,key){
 }
 
 
-function ensureReactionPicker(){ return null; }
-function openReactionPicker(ctx,key){
-  // v68: Removed full-screen reaction picker. Quick emoji bar (long-press) still works.
-  // Instead, show a compact inline reaction bar (WhatsApp-style)
-  var row = document.querySelector('.bqr[id="bqmsg-'+ctx+'-'+key+'"]');
-  if(!row) return;
-  var existing = row.querySelector('.bq-quick-react');
-  if(existing){ existing.remove(); return; }
-  closeMsgActionSheet();
-  var emojis = ['👍','❤️','😂','😮','😢','🙏','🔥','👏'];
-  var bar = document.createElement('div');
-  bar.className = 'bq-quick-react';
-  bar.innerHTML = emojis.map(function(em){ return '<button data-e="'+em+'">'+em+'</button>'; }).join('');
-  bar.querySelectorAll('button').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      toggleRxn(ctx, key, btn.dataset.e);
-      bar.remove();
+var _rxCtx=null, _rxKey=null;
+function ensureReactionPicker(){
+  var el=document.getElementById('bq-rx-picker');
+  if(el) return el;
+  el=document.createElement('div');
+  el.id='bq-rx-picker';
+  // Build category tabs + panes from REACTION_CATEGORIES
+  var catKeys=Object.keys(REACTION_CATEGORIES);
+  var tabsHtml=catKeys.map(function(k,i){
+    return '<button class="bq-rx-tab'+(i===0?' active':'')+'" data-cat="'+k+'">'+k+'</button>';
+  }).join('');
+  var panesHtml=catKeys.map(function(k,i){
+    var emojis=REACTION_CATEGORIES[k];
+    var cells=emojis.map(function(em){ return '<button class="bq-rx-emo" data-e="'+em+'">'+em+'</button>'; }).join('');
+    return '<div class="bq-rx-pane'+(i===0?' active':'')+'" data-cat="'+k+'">'+cells+'</div>';
+  }).join('');
+  el.innerHTML='<div class="bq-rx-back"></div>'+
+    '<div class="bq-rx-panel">'+
+      '<div class="bq-rx-tabs">'+tabsHtml+'</div>'+
+      '<div class="bq-rx-panes">'+panesHtml+'</div>'+
+    '</div>';
+  // Tab switching
+  el.querySelectorAll('.bq-rx-tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      el.querySelectorAll('.bq-rx-tab').forEach(function(t){t.classList.remove('active');});
+      el.querySelectorAll('.bq-rx-pane').forEach(function(p){p.classList.remove('active');});
+      tab.classList.add('active');
+      var pane=el.querySelector('.bq-rx-pane[data-cat="'+tab.dataset.cat+'"]');
+      if(pane) pane.classList.add('active');
     });
   });
-  bar.addEventListener('mousedown', function(e){ e.stopPropagation(); });
-  var bw = row.querySelector('.bqbw');
-  if(bw) bw.appendChild(bar);
-  setTimeout(function(){
-    var off = function(ev){ if(!bar.contains(ev.target)){ bar.remove(); document.removeEventListener('click', off, true); } };
-    document.addEventListener('click', off, true);
-  }, 50);
+  // Emoji click → toggle reaction and close
+  el.querySelectorAll('.bq-rx-emo').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      if(_rxCtx&&_rxKey) toggleRxn(_rxCtx,_rxKey,btn.dataset.e);
+      closeReactionPicker();
+    });
+  });
+  // Backdrop click → close
+  el.querySelector('.bq-rx-back').addEventListener('click',closeReactionPicker);
+  // Append inside #bqp
+  var panel=document.getElementById('bqp');
+  if(panel) panel.appendChild(el);
+  return el;
+}
+function openReactionPicker(ctx,key){
+  closeMsgActionSheet();
+  _rxCtx=ctx; _rxKey=key;
+  var picker=ensureReactionPicker();
+  // Reset to first tab
+  picker.querySelectorAll('.bq-rx-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  picker.querySelectorAll('.bq-rx-pane').forEach(function(p,i){p.classList.toggle('active',i===0);});
+  picker.classList.add('open');
 }
 function closeReactionPicker(){
-  document.querySelectorAll('.bq-quick-react').forEach(function(el){ el.remove(); });
+  var el=document.getElementById('bq-rx-picker');
+  if(el) el.classList.remove('open');
 }
 
 function ensureMsgActionSheet(){
@@ -6215,20 +6261,26 @@ function openImagePreview(src){
 /* ─────────────────────────────────────────
   SCROLL
 ───────────────────────────────────────── */
+var _scrollDTimer=null;
 function scrollD(ctx, isMyMsg){
+  if(_bqBatchRendering) return; // skip during batch render
   const isG=ctx==='global';
   const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
   if(!msgsEl) return;
-  const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
-  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<60){
-    // v68: Direct scroll without double-RAF to reduce stutter
-    if(isMyMsg){
-      msgsEl.scrollTop=msgsEl.scrollHeight;
-    } else {
-      try{ msgsEl.scrollTo({top:msgsEl.scrollHeight, behavior:'smooth'}); }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
-    }
+  if(isMyMsg){
+    msgsEl.scrollTop=msgsEl.scrollHeight;
     if(isG) gAtBot=true; else dAtBot=true;
+    return;
   }
+  // Debounce non-mine scrolls with RAF to avoid layout thrashing
+  if(_scrollDTimer) cancelAnimationFrame(_scrollDTimer);
+  _scrollDTimer=requestAnimationFrame(function(){
+    const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+    if((isG?gAtBot:dAtBot)||distFromBot<60){
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+      if(isG) gAtBot=true; else dAtBot=true;
+    }
+  });
 }
 
 /* ─────────────────────────────────────────
@@ -15844,10 +15896,11 @@ if(document.readyState === 'loading'){
     if(msgsEl){
       var tRect = target.getBoundingClientRect();
       var cRect = msgsEl.getBoundingClientRect();
-      var offset = tRect.top - cRect.top - cRect.height/2 + target.offsetHeight/2;
+      // Position target at 1/3 from top of visible area (center was overshooting)
+      var offset = tRect.top - cRect.top - cRect.height * 0.3 + target.offsetHeight/2;
       try{ msgsEl.scrollTo({top: msgsEl.scrollTop + offset, behavior:'smooth'}); }catch(_){}
     } else {
-      try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+      try{ target.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(_){}
     }
 
     // Remove existing highlights
@@ -18127,7 +18180,6 @@ function startMonitor(){
   try{
     var renderObserver = new MutationObserver(function(mutations){
       var addedMsgs = 0;
-      var startTime = Date.now(); // v67: track render time
       mutations.forEach(function(m){
         m.addedNodes.forEach(function(node){
           if(node.nodeType === 1 && node.classList && node.classList.contains('bqr')){
@@ -18137,14 +18189,8 @@ function startMonitor(){
       });
       if(addedMsgs > 0){
         trackRender();
-        trackPerformance('renderMsg', Date.now() - startTime); // v67
-        // v67: Lock scroll position during batch renders
-        if(addedMsgs > 1){
-          var gMsgs = document.getElementById('bqgmsgs');
-          var dmMsgs = document.getElementById('bqdmmsgs');
-          if(gMsgs) lockScrollPosition('bqgmsgs');
-          if(dmMsgs) lockScrollPosition('bqdmmsgs');
-        }
+        // NOTE: Removed lockScrollPosition — it fights with scrollD's RAF debounce
+        // and causes double-scroll stutter. scrollD handles positioning correctly.
       }
     });
 
