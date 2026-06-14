@@ -5904,7 +5904,11 @@ function renderMsg(ctx,msg,key){
   if(!isOpen&&!isMine){
     if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
     updateBadges();
-    /* notifications removed */
+    // v72: Re-enabled notifications — call the v36 notification system
+    if(typeof window._bqNotifAdd === 'function'){
+      var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
+      window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, isG?'global':'dm', isG?null:activeDmId);
+    }
   }
   // Mark DM as read if currently viewing this DM
   if(!isG&&isOpen&&activeView==='dmconv'&&!isMine){
@@ -14245,6 +14249,8 @@ function playNotifSound(){
   try{
     if(!_notifAudioCtx) _notifAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
     const ctx = _notifAudioCtx;
+    // Resume AudioContext if suspended (happens when tab is in background)
+    if(ctx.state === 'suspended') ctx.resume();
     const now = ctx.currentTime;
     // Pleasant two-tone chime
     const osc1 = ctx.createOscillator();
@@ -14512,13 +14518,13 @@ function addNotification(sender, msg, type, dmId){
   renderNotifList();
 
   // In-app banner
-  if(prefs.inApp) showNotifBanner(notif);
+  if(prefs.inApp && !document.hidden) showNotifBanner(notif);
 
   // Sound
   playNotifSound();
 
-  // Browser push
-  if(prefs.push || document.hidden) showBrowserNotif(notif);
+  // Browser push — always show when tab is hidden, or when push pref is enabled
+  if(document.hidden || prefs.push) showBrowserNotif(notif);
 }
 
 function updateNotifBadge(){
@@ -14659,19 +14665,50 @@ function dismissBanner(banner){
 
 /* ── BROWSER PUSH NOTIFICATIONS ── */
 function showBrowserNotif(notif){
-  if(!('Notification' in window)) return;
-  if(Notification.permission !== 'granted') return;
+  // Check/request permission first
+  if('Notification' in window){
+    if(Notification.permission === 'denied') return;
+    if(Notification.permission === 'default'){
+      // Auto-request on first notification (browser will show the permission prompt)
+      Notification.requestPermission().then(function(){ showBrowserNotif(notif); });
+      return;
+    }
+  }
+  // Try service worker first (works when tab is in background or minimized)
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+    try{
+      navigator.serviceWorker.ready.then(function(reg){
+        var title = notif.type === 'dm' ? 'DM from ' + notif.sender : notif.sender + ' in Global Chat';
+        var options = {
+          body: notif.msg.slice(0,100),
+          icon: '/logo.svg',
+          badge: '/logo.svg',
+          tag: 'bq-' + notif.type + '-' + Date.now(),
+          data: {
+            type: notif.type,
+            dmId: notif.dmId || null,
+            url: '/'
+          },
+          vibrate: [100, 50, 100],
+          silent: false
+        };
+        reg.showNotification(title, options).catch(function(){});
+      });
+      return;
+    }catch(_){}
+  }
+  // Fallback: direct Notification API (only works while page is open)
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
   try{
     const n = new Notification('BioQuiz Chat', {
       body: notif.sender + ': ' + notif.msg.slice(0,80),
       icon: '/logo.svg',
       tag: 'bq-' + notif.type + '-' + Date.now(),
-      silent: !document.hidden // Silent when in foreground (we play our own sound)
+      silent: !document.hidden
     });
     n.onclick = () => {
       window.focus();
       try{
-        // Try to open the chat widget panel
         const panel = document.getElementById('bqp');
         if(panel && !panel.classList.contains('open')){
           panel.classList.add('open');
@@ -14714,67 +14751,68 @@ function patchMessageListeners(){
     const _getView = ()=> window.__bqActiveView || '';
     const _getActiveDmId = ()=> window.__bqActiveDm?.id || '';
 
-    // Listen for new GLOBAL messages when not on global chat view
-    let _lastGlobalTs = Date.now();
+    // Listen for new GLOBAL messages when widget is closed
+    // v72: Use limitToLast(1) but track the last seen key to avoid duplicates
+    let _lastGlobalKey = '';
     function hookGlobalMessages(){
       const db = _fdb();
       if(!db) return;
       db.ref('bq_messages').limitToLast(1).on('child_added', snap => {
         const msg = snap.val();
         if(!msg) return;
-        const now = Date.now();
-        if(msg.ts > _lastGlobalTs && now - msg.ts < 10000){
-          _lastGlobalTs = msg.ts;
-          const myUid = _uid();
-          // Don't notify for own messages
-          if(msg.uid === myUid) return;
-          // Don't notify if currently viewing global chat
-          if(_getView() === 'chat') return;
-          // Check if mentioned
-          const prefs = getNotifPrefs();
-          const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
-          const isMention = prefs.mentions && myName && msg.text && msg.text.toLowerCase().includes('@'+myName.toLowerCase());
-          if(isMention || prefs.globalChat){
-            addNotification('@'+(msg.uname||'?'), msg.text||'', 'global');
-          }
+        // Dedup by key — same message won't fire twice
+        if(snap.key === _lastGlobalKey) return;
+        _lastGlobalKey = snap.key;
+        const myUid = _uid();
+        // Don't notify for own messages
+        if(msg.uid === myUid) return;
+        // Don't notify if widget is open and on global chat
+        if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'chat') return;
+        // Check preferences
+        const prefs = getNotifPrefs();
+        const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
+        const isMention = prefs.mentions && myName && msg.text && msg.text.toLowerCase().includes('@'+myName.toLowerCase());
+        if(isMention || prefs.globalChat){
+          var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
+          addNotification('@'+(msg.uname||'?'), _nMsg, 'global');
         }
       });
     }
 
     // Listen for new DM messages when not in that DM conversation
     let _dmMsgListeners = {};
-    let _dmMetaCache = {};  // Cache DM meta for partner info
+    let _lastDmKeys = {};  // v72: track last key per DM instead of timestamp
+    let _dmMetaCache = {};
     function hookDmMessages(){
       const db = _fdb();
       if(!db) return;
       const myUid = _uid();
       if(!myUid) return;
 
-      // Listen for changes in the DM index (correct path: bq_user_dms, NOT bq_dm_index)
+      // Listen for changes in the DM index
       db.ref('bq_user_dms/'+myUid).on('child_added', dmSnap => {
         const dmId = dmSnap.key;
-        if(_dmMsgListeners[dmId]) return; // Already listening
-        _lastDmTs[dmId] = Date.now();
+        if(_dmMsgListeners[dmId]) return;
         // Fetch DM meta to get partner info for navigation
         db.ref('bq_dms/'+dmId+'/meta').once('value', metaSnap => {
           const meta = metaSnap.val();
           if(meta) _dmMetaCache[dmId] = meta;
         });
+        _lastDmKeys[dmId] = '';
         _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
           const msg = msgSnap.val();
           if(!msg) return;
-          const now = Date.now();
-          if(msg.ts > _lastDmTs[dmId] && now - msg.ts < 10000){
-            _lastDmTs[dmId] = msg.ts;
-            if(msg.uid === myUid) return;
-            // Don't notify if currently in this DM conversation
-            if(_getView() === 'dmconv' && _getActiveDmId() === dmId) return;
-            addNotification('@'+(msg.uname||'?'), msg.text||'Sent you a message', 'dm', dmId);
-          }
+          // v72: Dedup by key instead of timestamp
+          if(msgSnap.key === _lastDmKeys[dmId]) return;
+          _lastDmKeys[dmId] = msgSnap.key;
+          if(msg.uid === myUid) return;
+          // Don't notify if currently in this DM conversation
+          if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'dmconv' && _getActiveDmId() === dmId) return;
+          var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'Sent you a message');
+          addNotification('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
         });
       });
     }
-    let _lastDmTs = {};
 
     // Start listening after a delay to ensure Firebase is ready
     setTimeout(()=>{
