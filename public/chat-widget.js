@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '62.0.0';                     // V2 Major Upgrade
+const WIDGET_VERSION = '74.0.0';                     // V74: Notification fixes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3493,6 +3493,7 @@ let _bqDmInitialDone=false; // initial DM load complete?
 let _bqGlobalInitialDone=false; // initial global load complete?
 let _bqRenderBypass=false;  // bypass ghost check for explicit loads (reply navigation)
 let _bqNotifSuppressed=true; // suppress notifications during initial load — set false after first value event
+let _bqNotifWarmupUntil=Date.now()+8000; // V74: global warm-up — no sound/push for first 8s after page load (prevents old message replay)
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3845,6 +3846,7 @@ function showDmConvo(pUid, pName) {
     _bqDmLoadedKeys = {}; _bqDmInitialDone = false;
     _bqBatchRendering=true;
     _bqNotifSuppressed=true; // suppress notifications during initial DM load
+    _bqNotifWarmupUntil=Date.now()+5000; // V74: warm-up for DM switch — suppress sound/push for 5s
     var _dmBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
     ref.on('child_added', s => {
       _bqDmLoadedKeys[s.key] = true;
@@ -4686,6 +4688,7 @@ function subscribeGlobal(){
   _bqGlobalLoadedKeys = {}; _bqGlobalInitialDone = false;
   _bqBatchRendering=true;
   _bqNotifSuppressed=true; // suppress notifications during initial load
+  _bqNotifWarmupUntil=Date.now()+5000; // V74: warm-up for global load — suppress sound/push for 5s
   var _gBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
   ref.on('child_added',s=>{
     _bqGlobalLoadedKeys[s.key] = true;
@@ -14529,15 +14532,26 @@ function addNotification(sender, msg, type, dmId){
   // Skip sound, banner, and browser push during initial load (old message replay)
   if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
 
-  // In-app banner
-  if(prefs.inApp && !document.hidden) showNotifBanner(notif);
+  // V74: Global warm-up — skip sound/push for first 8s after page load
+  // This is a safety net against race conditions where _bqNotifSuppressed resets
+  // before all Firebase child_added replays complete
+  var _bqInWarmup = typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil;
 
-  // Sound
-  playNotifSound();
+  // V74: Use REAL visibilityState for sound (not overridden document.hidden)
+  // document.hidden may be overridden by V69.2 hook to suppress V36's showBrowserNotif.
+  // We use visibilityState (never overridden) for sound so it only plays when truly hidden.
+  // We keep document.hidden (possibly overridden) for showBrowserNotif so V69.2 can suppress it.
+  var _bqReallyHidden = document.visibilityState === 'hidden';
 
-  // Browser push — ONLY when tab is hidden (background/minimized)
-  // Never spam browser notifications while user is actively in the tab
-  if(document.hidden) showBrowserNotif(notif);
+  // In-app banner — only when tab is VISIBLE (user can see it) and warm-up is done
+  if(prefs.inApp && !_bqReallyHidden && !_bqInWarmup) showNotifBanner(notif);
+
+  // Sound — ONLY when tab is truly hidden AND warm-up is done
+  if(_bqReallyHidden && !_bqInWarmup) playNotifSound();
+
+  // Browser push — uses document.hidden which V69.2 hook may override to false
+  // Also skip during warm-up period
+  if(document.hidden && !_bqInWarmup) showBrowserNotif(notif);
 }
 
 function updateNotifBadge(){
@@ -14870,7 +14884,10 @@ function patchMessageListeners(){
         const isMention = prefs.mentions && myName && msg.text && msg.text.toLowerCase().includes('@'+myName.toLowerCase());
         if(isMention || prefs.globalChat){
           var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
-          addNotification('@'+(msg.uname||'?'), _nMsg, 'global');
+          // V74: Route through _bqNotifAdd hook (which uses V69.2 smart notifications)
+          // instead of calling addNotification directly (which bypasses V2 system)
+          if(typeof window._bqNotifAdd === 'function') window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, 'global');
+          else addNotification('@'+(msg.uname||'?'), _nMsg, 'global');
         }
       });
     }
@@ -14914,7 +14931,9 @@ function patchMessageListeners(){
           // Don't notify during initial load
           if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
           var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'Sent you a message');
-          addNotification('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
+          // V74: Route through _bqNotifAdd hook (which uses V69.2 smart notifications)
+          if(typeof window._bqNotifAdd === 'function') window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
+          else addNotification('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
         });
       });
     }
@@ -19117,6 +19136,8 @@ function _v2EnqueueNotif(sender, msg, type, dmId){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   // GUARD: Don't fire during initial load (old message replay)
   if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
+  // V74: GUARD: Don't fire during global warm-up period (first 8s after page load)
+  if(typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil) return;
 
   var tag = type === 'dm' ? 'bq-dm-' + (dmId || 'unknown') : 'bq-global';
 

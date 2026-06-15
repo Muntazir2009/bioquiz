@@ -99,3 +99,35 @@ Stage Summary:
 - Notifications only fire when tab is in background (document.hidden)
 - No more double notifications from V69+V36 overlap
 - All fixes verified with Agent Browser — zero JS errors
+
+---
+Task ID: 3
+Agent: main
+Task: Fix notification bugs — old messages triggering sound/push, spam persisting, sounds while tab is visible
+
+Work Log:
+- Analyzed all notification code paths in chat-widget.js (19.5K+ lines):
+  1. renderMsg → window._bqNotifAdd → V69.2 hook → addNotification + _v2EnqueueNotif
+  2. patchMessageListeners → addNotification (was bypassing V69.2 hook!)
+  3. addNotification → playNotifSound + showBrowserNotif
+- Root cause #1: playNotifSound() had NO visibility check — played sound even when tab was visible
+- Root cause #2: patchMessageListeners called addNotification() directly, bypassing V69.2 smart notification system (causing spam from V36 showBrowserNotif)
+- Root cause #3: _bqNotifSuppressed flag had race conditions — could be set to false before all Firebase child_added replays completed
+- Root cause #4: document.hidden getter override was correct for suppressing V36's showBrowserNotif, but addNotification used document.hidden for sound check too, so sound was suppressed when it shouldn't be and played when it shouldn't
+- Fixes applied:
+  1. addNotification: Changed sound check to use document.visibilityState (real, never overridden) instead of document.hidden (overridden by V69.2 hook)
+  2. addNotification: Sound now ONLY plays when document.visibilityState === 'hidden' (tab truly in background)
+  3. addNotification: Browser push still uses document.hidden (overridden by V69.2 hook) so V69.2 can properly suppress V36's showBrowserNotif
+  4. addNotification: Added _bqNotifWarmupUntil timestamp check — global 8s warm-up after page load prevents old message replay from triggering sound/push
+  5. subscribeGlobal/DM: Reset _bqNotifWarmupUntil to 5s on each re-subscribe
+  6. patchMessageListeners: Changed addNotification() calls to window._bqNotifAdd() so they go through V69.2 hook
+  7. _v2EnqueueNotif: Added _bqNotifWarmupUntil check as additional guard
+  8. Bumped WIDGET_VERSION to 74.0.0 and chat-widget-version.json to 74.0.0
+
+Stage Summary:
+- Sound only plays when tab is truly hidden (document.visibilityState === 'hidden')
+- No sound when user is actively in the tab
+- Old messages cannot trigger sound/push during page load (8s warm-up) or DM switch (5s warm-up)
+- All notification paths now go through V69.2 smart notification system (aggregation, throttling, action buttons)
+- V36's showBrowserNotif properly suppressed by document.hidden override
+- Badge count and notification queue still update during warm-up (visual feedback preserved)
