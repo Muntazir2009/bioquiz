@@ -3492,6 +3492,7 @@ let _bqGlobalLoadedKeys={}; // Set of global message keys loaded during initial 
 let _bqDmInitialDone=false; // initial DM load complete?
 let _bqGlobalInitialDone=false; // initial global load complete?
 let _bqRenderBypass=false;  // bypass ghost check for explicit loads (reply navigation)
+let _bqNotifSuppressed=true; // suppress notifications during initial load — set false after first value event
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3843,7 +3844,8 @@ function showDmConvo(pUid, pName) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
     _bqDmLoadedKeys = {}; _bqDmInitialDone = false;
     _bqBatchRendering=true;
-    var _dmBatchSafety=setTimeout(function(){ _bqBatchRendering=false; },10000); // safety: reset after 10s
+    _bqNotifSuppressed=true; // suppress notifications during initial DM load
+    var _dmBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
     ref.on('child_added', s => {
       _bqDmLoadedKeys[s.key] = true;
       renderMsg('dm', s.val(), s.key);
@@ -3852,6 +3854,7 @@ function showDmConvo(pUid, pName) {
       _bqDmInitialDone = true;
       clearTimeout(_dmBatchSafety);
       _bqBatchRendering=false;
+      _bqNotifSuppressed=false; // initial DM load done — allow notifications
       var el=document.getElementById('bqdmmsgs');
       if(el) el.scrollTop=el.scrollHeight;
     });
@@ -4682,7 +4685,8 @@ function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
   _bqGlobalLoadedKeys = {}; _bqGlobalInitialDone = false;
   _bqBatchRendering=true;
-  var _gBatchSafety=setTimeout(function(){ _bqBatchRendering=false; },10000); // safety: reset after 10s
+  _bqNotifSuppressed=true; // suppress notifications during initial load
+  var _gBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
   ref.on('child_added',s=>{
     _bqGlobalLoadedKeys[s.key] = true;
     renderMsg('global',s.val(),s.key);
@@ -4691,6 +4695,7 @@ function subscribeGlobal(){
     _bqGlobalInitialDone=true;
     clearTimeout(_gBatchSafety);
     _bqBatchRendering=false;
+    _bqNotifSuppressed=false; // initial load done — allow notifications for new messages
     var el=document.getElementById('bqgmsgs');
     if(el) el.scrollTop=el.scrollHeight;
   });
@@ -5901,13 +5906,17 @@ function renderMsg(ctx,msg,key){
   }
 
   // Notification + badge
-  if(!isOpen&&!isMine){
-    if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
-    updateBadges();
-    // v72: Re-enabled notifications — call the v36 notification system
-    if(typeof window._bqNotifAdd === 'function'){
-      var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
-      window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, isG?'global':'dm', isG?null:activeDmId);
+  // GUARD: Skip notifications during initial load (old messages being replayed by Firebase)
+  // Also skip if message is older than 60s — it's stale, not a real-time notification
+  if(!isOpen && !isMine && !_bqNotifSuppressed){
+    var _msgAge = Date.now() - (msg.ts || 0);
+    if(_msgAge < 60000){ // Only notify for messages less than 60 seconds old
+      if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
+      updateBadges();
+      if(typeof window._bqNotifAdd === 'function'){
+        var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
+        window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, isG?'global':'dm', isG?null:activeDmId);
+      }
     }
   }
   // Mark DM as read if currently viewing this DM
@@ -12895,7 +12904,7 @@ function bootV25(){
   wireTypingInput();
   wireAutoGrow();
   wireDoubleTap();
-  wireQuickEmoji();
+  if(typeof wireQuickEmoji === 'function') wireQuickEmoji();
   wireTimestampCopy();
   ensureScrollBottomBtn();
 }
@@ -14517,6 +14526,9 @@ function addNotification(sender, msg, type, dmId){
   // Update dropdown list
   renderNotifList();
 
+  // Skip sound, banner, and browser push during initial load (old message replay)
+  if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
+
   // In-app banner
   if(prefs.inApp && !document.hidden) showNotifBanner(notif);
 
@@ -14827,7 +14839,9 @@ function patchMessageListeners(){
     const _getActiveDmId = ()=> window.__bqActiveDm?.id || '';
 
     // Listen for new GLOBAL messages when widget is closed
-    // v72: Use limitToLast(1) but track the last seen key to avoid duplicates
+    // v73: Skip the first child_added (always an existing message replay)
+    //      and only notify for messages less than 60s old
+    let _globalFirstSkipped = false;
     let _lastGlobalKey = '';
     function hookGlobalMessages(){
       const db = _fdb();
@@ -14835,6 +14849,8 @@ function patchMessageListeners(){
       db.ref('bq_messages').limitToLast(1).on('child_added', snap => {
         const msg = snap.val();
         if(!msg) return;
+        // Skip first event — it's always a replay of an existing message
+        if(!_globalFirstSkipped){ _globalFirstSkipped = true; _lastGlobalKey = snap.key; return; }
         // Dedup by key — same message won't fire twice
         if(snap.key === _lastGlobalKey) return;
         _lastGlobalKey = snap.key;
@@ -14843,6 +14859,11 @@ function patchMessageListeners(){
         if(msg.uid === myUid) return;
         // Don't notify if widget is open and on global chat
         if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'chat') return;
+        // Don't notify for stale messages (>60s old)
+        var _msgAge = Date.now() - (msg.ts || 0);
+        if(_msgAge > 60000) return;
+        // Don't notify during initial load
+        if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
         // Check preferences
         const prefs = getNotifPrefs();
         const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
@@ -14856,7 +14877,8 @@ function patchMessageListeners(){
 
     // Listen for new DM messages when not in that DM conversation
     let _dmMsgListeners = {};
-    let _lastDmKeys = {};  // v72: track last key per DM instead of timestamp
+    let _lastDmKeys = {};  // track last key per DM
+    let _dmFirstSkipped = {};  // track whether first event was skipped per DM
     let _dmMetaCache = {};
     function hookDmMessages(){
       const db = _fdb();
@@ -14874,15 +14896,23 @@ function patchMessageListeners(){
           if(meta) _dmMetaCache[dmId] = meta;
         });
         _lastDmKeys[dmId] = '';
+        _dmFirstSkipped[dmId] = false;
         _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
           const msg = msgSnap.val();
           if(!msg) return;
-          // v72: Dedup by key instead of timestamp
+          // Skip first event — it's always a replay of an existing message
+          if(!_dmFirstSkipped[dmId]){ _dmFirstSkipped[dmId] = true; _lastDmKeys[dmId] = msgSnap.key; return; }
+          // Dedup by key
           if(msgSnap.key === _lastDmKeys[dmId]) return;
           _lastDmKeys[dmId] = msgSnap.key;
           if(msg.uid === myUid) return;
           // Don't notify if currently in this DM conversation
           if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'dmconv' && _getActiveDmId() === dmId) return;
+          // Don't notify for stale messages (>60s old)
+          var _msgAge = Date.now() - (msg.ts || 0);
+          if(_msgAge > 60000) return;
+          // Don't notify during initial load
+          if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
           var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'Sent you a message');
           addNotification('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
         });
@@ -18616,7 +18646,7 @@ console.log('[bq] v68 patch loaded — UI Immersion + Performance + Polish');
 try{
 
 /* ── 1. V2 DM VERSION TOGGLE ── */
-var _bqDmVersion = localStorage.getItem('bq_dm_version') || 'v1';
+var _bqDmVersion = localStorage.getItem('bq_dm_version') || 'v2';
 window._bqGetDmVersion = function(){ return _bqDmVersion; };
 window._bqSetDmVersion = function(v){
   _bqDmVersion = v;
@@ -18635,16 +18665,21 @@ window._bqSetDmVersion = function(v){
   // Update header badge
   var badge = document.getElementById('bq-dm-v2-badge');
   if(badge){
-    badge.textContent = v==='v2'?'V2':'V1';
+    if(v==='v2'){
+      badge.innerHTML = '<span class="beta-dot"></span>V2';
+    } else {
+      badge.textContent = 'V1';
+    }
     badge.className = 'bq-dm-v2-badge' + (v==='v2'?' active':'');
+    badge.title = 'Click to switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
   }
   // Update header title (preserve badge child element)
   var hdrTitle = document.querySelector('#bqv-dms .bqhtitle');
   if(hdrTitle){
-    var badge = document.getElementById('bq-dm-v2-badge');
+    var hdrBadge = document.getElementById('bq-dm-v2-badge');
     var textNodes = Array.from(hdrTitle.childNodes).filter(function(n){ return n.nodeType===3; });
     if(textNodes.length) textNodes[0].textContent = v==='v2'?'Chats':'Messages';
-    else hdrTitle.insertBefore(document.createTextNode(v==='v2'?'Chats':'Messages'), badge || null);
+    else hdrTitle.insertBefore(document.createTextNode(v==='v2'?'Chats':'Messages'), hdrBadge || null);
   }
   // Show/hide V2 header controls
   _v2UpdateHeaderControls();
@@ -18654,10 +18689,12 @@ window._bqSetDmVersion = function(v){
 var v2css = document.createElement('style');
 v2css.textContent = [
   /* ── V2 Header Badge (always visible on DM header) ── */
-  '.bq-dm-v2-badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.5px;background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);cursor:pointer;transition:all .2s ease;user-select:none;margin-left:6px;}',
-  '.bq-dm-v2-badge:hover{border-color:var(--bq-accent);color:var(--bq-accent);}',
-  '.bq-dm-v2-badge.active{background:var(--bq-accent);color:#fff;border-color:var(--bq-accent);box-shadow:0 0 8px rgba(96,165,250,.3);}',
-  '.bq-dm-v2-badge.beta-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;margin-right:4px;display:inline-block;}',
+  '.bq-dm-v2-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700;letter-spacing:.6px;background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);cursor:pointer;transition:all .2s ease;user-select:none;margin-left:8px;gap:4px;}',
+  '.bq-dm-v2-badge:hover{border-color:var(--bq-accent);color:var(--bq-accent);transform:scale(1.05);}',
+  '.bq-dm-v2-badge.active{background:var(--bq-accent);color:#fff;border-color:var(--bq-accent);box-shadow:0 0 12px rgba(96,165,250,.4);}',
+  '.bq-dm-v2-badge .beta-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;}',
+  '@keyframes bqV2Pulse{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.4);}70%{box-shadow:0 0 0 8px rgba(96,165,250,0);}}',
+  '.bq-dm-v2-badge.active{animation:bqV2Pulse 2.5s ease-in-out 3;}',
 
   /* ── V2 Header Controls (toggle row under DM header, V2 only) ── */
   '.bq-dm-v2-hdr-ctrls{display:none;padding:4px 12px 8px;border-bottom:1px solid var(--bq-border);background:var(--bq-bg-elevated);}',
@@ -19078,6 +19115,8 @@ function _v2EnqueueNotif(sender, msg, type, dmId){
   // GUARD: Only notify when tab is NOT visible
   if(document.visibilityState !== 'hidden') return;
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  // GUARD: Don't fire during initial load (old message replay)
+  if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
 
   var tag = type === 'dm' ? 'bq-dm-' + (dmId || 'unknown') : 'bq-global';
 
@@ -19187,35 +19226,39 @@ function _v2FlushNotif(tag){
 }
 
 // ── 8b. HOOK _bqNotifAdd to use our smart notification system ──
-// This replaces the V36 showBrowserNotif path with our improved version
-// Since V36's showBrowserNotif is a local closure we can't override,
-// we temporarily make document.hidden return false to prevent V36 from
-// firing its own browser notification, then use our own smart system.
+// This replaces the V36 showBrowserNotif path with our improved version.
+// Strategy: Override Document.prototype.hidden getter so that when our
+// suppress flag is set, V36's addNotification thinks the tab is visible
+// and skips showBrowserNotif. Our _v2EnqueueNotif uses the REAL
+// document.visibilityState (not overridden) for its own visibility check.
+var _bqSuppressV36Notif = false;
+var _origDocHiddenGetter = null;
+try{
+  var desc = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
+  if(desc && desc.get){
+    _origDocHiddenGetter = desc.get;
+    Object.defineProperty(Document.prototype, 'hidden', {
+      get: function(){ return _bqSuppressV36Notif ? false : _origDocHiddenGetter.call(this); },
+      configurable: true
+    });
+  }
+}catch(e){
+  console.warn('[bq] V69: could not override Document.prototype.hidden:', e);
+}
+
 var _origBqNotifAdd = window._bqNotifAdd;
 window._bqNotifAdd = function(sender, msg, ctx, dmId){
-  // Prevent V36's addNotification from calling showBrowserNotif
-  // by temporarily hiding the fact that the tab is hidden.
+  // Suppress V36's showBrowserNotif by making document.hidden return false
   // V36 checks: if(document.hidden) showBrowserNotif(notif)
-  // We want to handle browser notifications ourselves with better batching.
-  var _wasHidden = document.visibilityState === 'hidden';
-  if(_wasHidden){
-    try{
-      // Temporarily override document.hidden so V36 skips showBrowserNotif
-      Object.defineProperty(document, 'hidden', {value: false, configurable: true, writable: true});
-    }catch(_){}
-  }
+  // With our override, it sees false → skips showBrowserNotif entirely.
+  _bqSuppressV36Notif = true;
   try{
-    // Call original (handles in-app bell, badge, banner, sound)
+    // Call original (handles in-app bell, badge, banner, sound, NOTifBanner)
     if(_origBqNotifAdd) _origBqNotifAdd(sender, msg, ctx, dmId);
   }finally{
-    if(_wasHidden){
-      try{
-        // Restore document.hidden
-        delete document.hidden;
-      }catch(_){}
-    }
+    _bqSuppressV36Notif = false;
   }
-  // Use our smart browser notification system (which checks visibility itself)
+  // Use our smart browser notification system (checks REAL visibilityState)
   _v2EnqueueNotif(sender, msg, ctx||'global', dmId);
 };
 
@@ -19377,8 +19420,12 @@ function _v2InjectHeaderBadge(){
   var badge = document.createElement('span');
   badge.id = 'bq-dm-v2-badge';
   badge.className = 'bq-dm-v2-badge' + (_bqDmVersion==='v2'?' active':'');
-  badge.textContent = _bqDmVersion==='v2'?'V2':'V1';
-  badge.title = 'Click to switch DM version';
+  if(_bqDmVersion==='v2'){
+    badge.innerHTML = '<span class="beta-dot"></span>V2';
+  } else {
+    badge.textContent = 'V1';
+  }
+  badge.title = 'Click to switch DM version (' + (_bqDmVersion==='v2'?'V2 → V1':'V1 → V2') + ')';
   badge.addEventListener('click', function(e){
     e.stopPropagation();
     var next = _bqDmVersion==='v2'?'v1':'v2';
@@ -19448,19 +19495,37 @@ function _v2Init(){
     if(textNodes.length) textNodes[0].textContent = _bqDmVersion==='v2'?'Chats':'Messages';
     else hdrTitle.insertBefore(document.createTextNode(_bqDmVersion==='v2'?'Chats':'Messages'), existingBadge || null);
   }
-  console.log('[bq] V69.2 patch loaded — DM V2 + Smart Notifications');
+  console.log('[bq] V73 patch loaded — DM V2 + Smart Notifications + No stale notifs');
+}
+
+// ── MutationObserver: inject badge as soon as DM header appears in DOM ──
+var _v2DmObserver = null;
+function _v2StartBadgeObserver(){
+  if(_v2DmObserver) return;
+  _v2DmObserver = new MutationObserver(function(){
+    var hdr = document.querySelector('#bqv-dms .bqhdr .bqhtitle');
+    if(hdr && !document.getElementById('bq-dm-v2-badge')){
+      _v2InjectHeaderBadge();
+      _v2InjectDmSearch();
+    }
+  });
+  _v2DmObserver.observe(document.body, { childList: true, subtree: true });
+  setTimeout(function(){ if(_v2DmObserver){ _v2DmObserver.disconnect(); _v2DmObserver=null; } }, 30000);
 }
 
 // Wait for widget to be ready
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',function(){setTimeout(_v2Init,1500);});
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(_v2Init,800);});
 } else {
-  setTimeout(_v2Init,1500);
+  setTimeout(_v2Init,800);
 }
 
+// Start MutationObserver immediately for badge injection
+_v2StartBadgeObserver();
+
 // Retry header badge injection (widget might not be ready on first try)
-setTimeout(function(){ _v2InjectHeaderBadge(); }, 3000);
-setTimeout(function(){ _v2InjectHeaderBadge(); }, 6000);
+setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectDmSearch(); }, 2000);
+setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectDmSearch(); }, 5000);
 
 // Also re-inject on navigation
 var _origBqNav = typeof bqNav==='function' ? bqNav : null;
