@@ -183,3 +183,50 @@ Stage Summary:
 - V1/V2 toggle is now visible in TWO places: DM header (segmented switch) and profile settings (toggle row)
 - Verified with Agent Browser: zero JS errors, V1/V2 switch visible in DM header, DM Version toggle visible in profile, bidirectional sync working
 - UI enhanced with smoother animations, better empty states, custom scrollbars
+
+---
+Task ID: 5
+Agent: main
+Task: Fix "Muntazir joined the chat" system message spam, make V2 toggle immersive/aesthetic and visible everywhere, bump to V76
+
+Work Log:
+- ROOT CAUSE 1 — "joined the chat" notification: System messages (type==='system') like "@X joined the chat" are stored in Firebase and replayed via child_added every time the widget opens. They rendered as centered .bqsys divs — user saw them as "notifications" cluttering the chat.
+  - Fix: In renderMsg(), added age-based suppression for system messages:
+    - During initial load/warmup: skip system messages older than 30s
+    - After warmup: still skip system messages older than 120s (keeps recent, removes ancient noise)
+    - Real-time system messages (<30s) always show
+- ROOT CAUSE 2 — V2 toggle "invisible": The V2 toggle WAS in the DOM (badge in DMs header, toggle in profile) but:
+  - The badge was tiny (10px font) and used plain blue
+  - The profile toggle was buried among other settings, not prominent
+  - There was NO V2 toggle on the MAIN CHAT view (the default view when opening the widget)
+  - User opens widget → sees main chat → no V2 toggle visible → "can't see it"
+  - Fix: Added V2 toggle in THREE prominent locations:
+    1. MAIN CHAT header pill — "DM V2" with gradient, always visible when widget opens
+    2. DM list header — V1/V2 segmented switch (bigger, gradient active state)
+    3. Profile settings — IMMERSIVE CARD at the TOP of profile with:
+       - 44px gradient hero icon (purple gradient: #6366f1 → #8b5cf6 → #a855f7)
+       - "DM Version" title with "V2 ACTIVE" tag (gradient, green beta dot)
+       - Descriptive subtitle
+       - Large V1/V2 segmented control with "Classic"/"Modern" labels
+       - Features checklist (Telegram bubbles, grouping, date separators, search)
+- Redesigned all V2 toggle CSS:
+  - Badge: 11px font, 800 weight, purple gradient when active, glowing green beta dot
+  - Header switch: 12px font, 800 weight, 6px 16px padding, gradient active, hover lift
+  - Profile card: 16px border radius, subtle gradient background, radial glow accent
+  - Chat pill: 10px font, gradient when V2 active
+  - All use purple gradient (#6366f1 → #8b5cf6 → #a855f7) instead of plain blue
+- Updated _bqSetDmVersion to sync all 3 toggle locations bidirectionally
+- Updated MutationObserver to inject chat pill + check for bq-dm-v2-section (not old bq-dm-v2-row)
+- Added bqNav('chat'/'global') handler to inject chat pill on main chat navigation
+- Bumped WIDGET_VERSION to 76.0.0 and chat-widget-version.json to 76.0.0
+
+Stage Summary:
+- "Muntazir joined the chat" system messages no longer spam the chat on open (age-based suppression)
+- V2 toggle is now visible in 3 prominent locations:
+  1. Main chat header pill (FIRST thing user sees when opening widget) — "DM V2" gradient pill
+  2. DM list header — V1/V2 segmented switch with gradient active state
+  3. Profile settings (TOP) — immersive card with hero icon, title, tag, segment control, features
+- All toggles sync bidirectionally — changing one updates all three
+- Purple gradient theme (#6366f1 → #8b5cf6 → #a855f7) makes V2 feel premium and "beta-like"
+- Verified with Agent Browser: zero JS errors, all 3 toggle locations VISIBLE and interactive
+- Lint passes clean

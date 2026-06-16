@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '75.0.0';                     // V75: Push removed, V2 toggle fixed, spam fixed
+const WIDGET_VERSION = '76.0.0';                     // V76: Immersive V2 toggle, system msg spam fix
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -5761,6 +5761,16 @@ function renderMsg(ctx,msg,key){
 
   if(msg.type==='system'){
     if(document.getElementById(pfx+key)) return; // dedup
+    // V76: Skip OLD system messages entirely.
+    // System messages like "@X joined the chat" / "@X is now @Y" are only useful in real-time.
+    // When opening the chat, old system messages from Firebase replay are just noise.
+    // During initial load/warmup: skip anything older than 30s.
+    // After warmup: still skip anything older than 120s (keeps recent history, removes ancient noise).
+    var _sysAge = Date.now() - (msg.ts||0);
+    var _inWarmup = (typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) ||
+                    (typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil);
+    if(_inWarmup && _sysAge > 30000) return; // stale during load — skip
+    if(!_inWarmup && _sysAge > 120000) return; // ancient system msg — skip (keep last 2 min only)
     const d=document.createElement('div');d.id=pfx+key;d.className='bqsys';d.textContent=msg.text;
     msgsEl.appendChild(d);scrollD(ctx);return;
   }
@@ -18393,14 +18403,7 @@ window._bqSetDmVersion = function(v){
   if(p) p.classList.toggle('bq-dm-v2', v==='v2');
   // Re-render DM list if on dms view
   if(typeof renderDmList==='function') renderDmList();
-  // Update ALL toggle UIs
-  var tog = document.getElementById('bq-dm-v2-toggle');
-  if(tog) tog.checked = (v==='v2');
-  var hdrTog = document.getElementById('bq-dm-v2-hdr-toggle');
-  if(hdrTog) hdrTog.checked = (v==='v2');
-  var lbl = document.getElementById('bq-dm-v2-label');
-  if(lbl) lbl.textContent = v==='v2'?'DM V2 (Modern)':'DM V1 (Classic)';
-  // Update header badge
+  // Update header badge (DM list)
   var badge = document.getElementById('bq-dm-v2-badge');
   if(badge){
     if(v==='v2'){
@@ -18411,6 +18414,30 @@ window._bqSetDmVersion = function(v){
     badge.className = 'bq-dm-v2-badge' + (v==='v2'?' active':'');
     badge.title = 'Click to switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
   }
+  // V76: Update main chat pill
+  var chatPill = document.getElementById('bq-dm-v2-chat-pill');
+  if(chatPill){
+    chatPill.className = 'bq-dm-v2-chat-pill' + (v==='v2'?' on':'');
+    chatPill.innerHTML = v==='v2' ? '<span class="beta-dot"></span>DM V2' : 'DM V1';
+    chatPill.title = 'Switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
+  }
+  // V76: Update immersive profile card
+  var heroTag = document.getElementById('bq-dm-v2-hero-tag');
+  if(heroTag){
+    heroTag.innerHTML = '<span class="beta-dot"></span>' + (v==='v2'?'V2 ACTIVE':'V1 ACTIVE');
+  }
+  var heroSub = document.getElementById('bq-dm-v2-hero-sub');
+  if(heroSub){
+    heroSub.textContent = v==='v2' ? 'Telegram-inspired bubbles · WhatsApp logic · Zero lag' : 'Classic chat layout — the original experience';
+  }
+  // Update segment buttons in profile card
+  document.querySelectorAll('#bq-dm-v2-segment .bq-dm-v2-seg-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-ver') === v);
+  });
+  // Update features list (highlight when V2)
+  document.querySelectorAll('#bq-dm-v2-features .feat-row').forEach(function(r){
+    r.classList.toggle('on', v==='v2');
+  });
   // V75: Update header switch buttons (V1/V2 segmented control)
   var hdrBtns = document.querySelectorAll('.bq-dm-v2-btn');
   hdrBtns.forEach(function(btn){
@@ -18426,19 +18453,20 @@ window._bqSetDmVersion = function(v){
   }
   // Show/hide V2 header controls
   _v2UpdateHeaderControls();
-  // Re-inject toggle to ensure header switch exists
+  // Re-inject toggle to ensure header switch + chat pill exist
   _v2InjectToggle();
 };
 
 /* ── 2. V2 CSS ── */
 var v2css = document.createElement('style');
 v2css.textContent = [
-  /* ── V2 Header Badge (always visible on DM header) ── */
-  '.bq-dm-v2-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700;letter-spacing:.6px;background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);cursor:pointer;transition:all .2s ease;user-select:none;margin-left:8px;gap:4px;}',
+  /* ── V2 Header Badge (always visible on DM header) ── V76: bigger, gradient, glow */
+  '.bq-dm-v2-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 12px;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:.8px;background:var(--bq-bg-hover);color:var(--bq-text-muted);border:1px solid var(--bq-border);cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);user-select:none;margin-left:10px;gap:5px;font-family:Inter,sans-serif;}',
   '.bq-dm-v2-badge:hover{border-color:var(--bq-accent);color:var(--bq-accent);transform:scale(1.05);}',
-  '.bq-dm-v2-badge.active{background:var(--bq-accent);color:#fff;border-color:var(--bq-accent);box-shadow:0 0 12px rgba(96,165,250,.4);}',
-  '.bq-dm-v2-badge .beta-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;}',
-  '@keyframes bqV2Pulse{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.4);}70%{box-shadow:0 0 0 8px rgba(96,165,250,0);}}',
+  '.bq-dm-v2-badge.active{background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);color:#fff;border-color:transparent;box-shadow:0 0 16px rgba(139,92,246,.45),0 2px 8px rgba(0,0,0,.2);}',
+  '.bq-dm-v2-badge .beta-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px rgba(34,197,94,.7);animation:bqBetaBlink 1.6s ease-in-out infinite;}',
+  '@keyframes bqBetaBlink{0%,100%{opacity:1;}50%{opacity:.4;}}',
+  '@keyframes bqV2Pulse{0%,100%{box-shadow:0 0 16px rgba(139,92,246,.45),0 2px 8px rgba(0,0,0,.2);}50%{box-shadow:0 0 24px rgba(139,92,246,.6),0 2px 12px rgba(0,0,0,.25);}}',
   '.bq-dm-v2-badge.active{animation:bqV2Pulse 2.5s ease-in-out 3;}',
 
   /* ── V2 Header Controls (toggle row under DM header, V2 only) ── */
@@ -18641,11 +18669,42 @@ v2css.textContent = [
   '.bq-dm-v2 .bqdm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--bq-text-subtle);}',
   '.bq-dm-v2 .bqdm-search-icon svg{width:14px;height:14px;}',
 
-  /* ── V75: V1/V2 Segmented Switch in DM Header ── */
-  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:10px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;}',
-  '.bq-dm-v2-btn{padding:4px 12px;border-radius:8px;border:none;background:transparent;color:var(--bq-text-muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s ease;letter-spacing:.3px;}',
-  '.bq-dm-v2-btn:hover{color:var(--bq-text);}',
-  '.bq-dm-v2-btn.active{background:var(--bq-accent);color:#fff;box-shadow:0 1px 6px rgba(96,165,250,.35);}',
+  /* ── V76: V1/V2 Segmented Switch in DM Header — BIGGER, GRADIENT, PROMINENT ── */
+  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:12px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;box-shadow:inset 0 1px 3px rgba(0,0,0,.15);}',
+  '.bq-dm-v2-btn{padding:6px 16px;border-radius:9px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);letter-spacing:.5px;font-family:Inter,sans-serif;min-width:38px;text-align:center;}',
+  '.bq-dm-v2-btn:hover{color:var(--bq-text);background:rgba(255,255,255,.04);}',
+  '.bq-dm-v2-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 10px rgba(139,92,246,.4),inset 0 1px 0 rgba(255,255,255,.15);text-shadow:0 1px 2px rgba(0,0,0,.2);}',
+  '.bq-dm-v2-btn.active:hover{filter:brightness(1.1);transform:translateY(-1px);}',
+
+  /* ── V76: IMMERSIVE V2 MODE CARD in Profile — beautiful, aesthetic, prominent ── */
+  '#bq-dm-v2-section.bqpf-section{padding:0;margin:12px 16px;border-radius:16px;overflow:hidden;border:1px solid var(--bq-border);background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(168,85,247,.06));}',
+  '#bq-dm-v2-hero{padding:18px 18px 14px;position:relative;overflow:hidden;}',
+  '#bq-dm-v2-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(139,92,246,.12),transparent 50%);pointer-events:none;}',
+  '#bq-dm-v2-hero-top{display:flex;align-items:center;gap:12px;position:relative;}',
+  '#bq-dm-v2-hero-ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(139,92,246,.35);}',
+  '#bq-dm-v2-hero-ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}',
+  '#bq-dm-v2-hero-title-wrap{flex:1;min-width:0;}',
+  '#bq-dm-v2-hero-title{font-family:Inter,sans-serif;font-size:15px;font-weight:800;color:var(--bq-text);letter-spacing:-.2px;display:flex;align-items:center;gap:8px;}',
+  '#bq-dm-v2-hero-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;box-shadow:0 1px 6px rgba(139,92,246,.3);}',
+  '#bq-dm-v2-hero-tag .beta-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;box-shadow:0 0 4px rgba(34,197,94,.8);}',
+  '#bq-dm-v2-hero-sub{font-family:Inter,sans-serif;font-size:11px;color:var(--bq-text-subtle);margin-top:2px;line-height:1.4;}',
+  '#bq-dm-v2-segment{display:flex;gap:4px;padding:4px;background:var(--bq-bg-hover);border-radius:12px;margin-top:14px;position:relative;border:1px solid var(--bq-border);}',
+  '#bq-dm-v2-seg-btn{flex:1;padding:10px 12px;border-radius:9px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:.3px;}',
+  '#bq-dm-v2-seg-btn:hover{color:var(--bq-text);}',
+  '#bq-dm-v2-seg-btn.active, .bq-dm-v2-seg-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 3px 12px rgba(139,92,246,.35),inset 0 1px 0 rgba(255,255,255,.15);text-shadow:0 1px 2px rgba(0,0,0,.15);}',
+  '#bq-dm-v2-seg-btn .seg-label{font-size:13px;font-weight:800;}',
+  '#bq-dm-v2-seg-btn .seg-desc{font-size:9px;font-weight:600;opacity:.7;letter-spacing:.2px;}',
+  '#bq-dm-v2-features{padding:14px 18px 18px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--bq-border);}',
+  '#bq-dm-v2-features .feat-row{display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif;font-size:11px;color:var(--bq-text-muted);}',
+  '#bq-dm-v2-features .feat-ic{width:16px;height:16px;flex-shrink:0;color:#8b5cf6;}',
+  '#bq-dm-v2-features .feat-ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}',
+  '#bq-dm-v2-features .feat-row.on{color:var(--bq-text);}',
+
+  /* ── V76: Main chat header V2 pill — always visible on global chat ── */
+  '#bq-dm-v2-chat-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:9px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:all .25s ease;user-select:none;font-family:Inter,sans-serif;border:1px solid var(--bq-border);background:var(--bq-bg-hover);color:var(--bq-text-muted);margin-left:8px;}',
+  '#bq-dm-v2-chat-pill:hover{transform:scale(1.04);border-color:var(--bq-accent);}',
+  '#bq-dm-v2-chat-pill.on{background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);color:#fff;border-color:transparent;box-shadow:0 0 12px rgba(139,92,246,.4);}',
+  '#bq-dm-v2-chat-pill .beta-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;box-shadow:0 0 4px rgba(34,197,94,.7);}',
 
   /* ── V75: ENHANCEMENTS — Polish & Iterations ── */
   /* Smoother notification badge with pulse */
@@ -18935,45 +18994,58 @@ function _v2UpdateHeaderControls(){
   // Already handled by CSS .bq-dm-v2 class
 }
 
-/* ── 9b. V2 TOGGLE INJECTION IN PROFILE ── */
-// V75: Completely rewritten with multiple fallback strategies for maximum reliability.
-// The toggle will appear in the profile settings, DM header, AND as a floating button.
+/* ── 9b. V2 TOGGLE INJECTION — IMMERSIVE & AESTHETIC (V76) ── */
 function _v2InjectToggle(){
-  // Strategy 1: Inject into profile settings (.bqpf-scroll)
+  // ═══ Strategy 1: Immersive V2 Mode Card in Profile settings ═══
   var scroll=document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
-  if(scroll && !document.getElementById('bq-dm-v2-row')){
+  if(scroll && !document.getElementById('bq-dm-v2-section')){
     var section=document.createElement('div');
     section.className='bqpf-section';
     section.id='bq-dm-v2-section';
-    section.innerHTML=
-      '<div class="bqpf-label">DM Version</div>'+
-      '<div id="bq-dm-v2-row">'+
-        '<div class="bq-info-row-left">'+
-          '<div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
-          '<div><div id="bq-dm-v2-label">'+(_bqDmVersion==='v2'?'DM V2 (Modern)':'DM V1 (Classic)')+'</div><div id="bq-dm-v2-sub">Telegram-inspired design with WhatsApp logic</div></div>'+
+    var _isV2 = _bqDmVersion==='v2';
+    section.innerHTML =
+      '<div id="bq-dm-v2-hero">'+
+        '<div id="bq-dm-v2-hero-top">'+
+          '<div id="bq-dm-v2-hero-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
+          '<div id="bq-dm-v2-hero-title-wrap">'+
+            '<div id="bq-dm-v2-hero-title">DM Version'+
+              '<span id="bq-dm-v2-hero-tag"><span class="beta-dot"></span>'+( _isV2?'V2 ACTIVE':'V1 ACTIVE')+'</span>'+
+            '</div>'+
+            '<div id="bq-dm-v2-hero-sub">'+(_isV2?'Telegram-inspired bubbles · WhatsApp logic · Zero lag':'Classic chat layout — the original experience')+'</div>'+
+          '</div>'+
         '</div>'+
-        '<label class="bq-toggle"><input type="checkbox" id="bq-dm-v2-toggle"'+(_bqDmVersion==='v2'?' checked':'')+'><span class="bq-toggle-slider"></span></label>'+
+        '<div id="bq-dm-v2-segment">'+
+          '<button id="bq-dm-v2-seg-btn" class="bq-dm-v2-seg-btn'+(_isV2?'':' active')+'" data-ver="v1">'+
+            '<span class="seg-label">V1</span><span class="seg-desc">Classic</span>'+
+          '</button>'+
+          '<button class="bq-dm-v2-seg-btn'+(_isV2?' active':'')+'" data-ver="v2">'+
+            '<span class="seg-label">V2</span><span class="seg-desc">Modern</span>'+
+          '</button>'+
+        '</div>'+
+      '</div>'+
+      '<div id="bq-dm-v2-features">'+
+        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Telegram-style message bubbles</div>'+
+        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Consecutive message grouping</div>'+
+        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Smart date separators</div>'+
+        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Quick DM search & pinning</div>'+
       '</div>';
-    // Try multiple insertion strategies
-    var pushSection = scroll.querySelector('.bqpf-section:nth-last-of-type(2)');
-    var saveBtn = scroll.querySelector('.bqpf-savebtn');
-    if(pushSection){
-      pushSection.parentNode.insertBefore(section, pushSection);
-    } else if(saveBtn){
-      scroll.insertBefore(section, saveBtn);
+    // Insert at the TOP of profile (most prominent) — before first section
+    var firstSection = scroll.querySelector('.bqpf-section');
+    if(firstSection){
+      scroll.insertBefore(section, firstSection);
     } else {
       scroll.appendChild(section);
     }
-    var tog=document.getElementById('bq-dm-v2-toggle');
-    if(tog){
-      tog.addEventListener('change',function(){
-        window._bqSetDmVersion(tog.checked?'v2':'v1');
+    // Wire segment buttons
+    section.querySelectorAll('.bq-dm-v2-seg-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        window._bqSetDmVersion(btn.getAttribute('data-ver'));
       });
-    }
+    });
   }
 
-  // Strategy 2: Inject a V2 toggle switch directly in the DM list header
-  // This is ALWAYS visible when viewing the DM list, making it impossible to miss
+  // ═══ Strategy 2: V1/V2 segmented switch in DM list header ═══
   var dmHeader = document.querySelector('#bqv-dms .bqhdr');
   if(dmHeader && !document.getElementById('bq-dm-v2-hdr-switch')){
     var hdrSwitch = document.createElement('div');
@@ -18982,20 +19054,39 @@ function _v2InjectToggle(){
     hdrSwitch.innerHTML =
       '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v1'?' active':'')+'" data-ver="v1">V1</button>'+
       '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v2'?' active':'')+'" data-ver="v2">V2</button>';
-    // Insert after the title/badge area
     var hdrRight = dmHeader.querySelector('.bqhdr-right') || dmHeader;
     if(hdrRight === dmHeader){
       dmHeader.appendChild(hdrSwitch);
     } else {
       hdrRight.appendChild(hdrSwitch);
     }
-    // Wire buttons
     hdrSwitch.querySelectorAll('.bq-dm-v2-btn').forEach(function(btn){
       btn.addEventListener('click', function(e){
         e.stopPropagation();
         window._bqSetDmVersion(btn.getAttribute('data-ver'));
       });
     });
+  }
+
+  // ═══ Strategy 3: V2 pill on the MAIN CHAT header (always visible) ═══
+  var chatHeader = document.querySelector('#bqv-chat .bqhdr');
+  if(chatHeader && !document.getElementById('bq-dm-v2-chat-pill')){
+    var pill = document.createElement('span');
+    pill.id = 'bq-dm-v2-chat-pill';
+    pill.className = 'bq-dm-v2-chat-pill' + (_bqDmVersion==='v2'?' on':'');
+    pill.innerHTML = _bqDmVersion==='v2' ? '<span class="beta-dot"></span>DM V2' : 'DM V1';
+    pill.title = 'Switch DM version (' + (_bqDmVersion==='v2'?'V2 → V1':'V1 → V2') + ')';
+    pill.addEventListener('click', function(e){
+      e.stopPropagation();
+      var next = _bqDmVersion==='v2'?'v1':'v2';
+      window._bqSetDmVersion(next);
+    });
+    var chatTitle = chatHeader.querySelector('.bqhtitle');
+    if(chatTitle){
+      chatTitle.appendChild(pill);
+    } else {
+      chatHeader.appendChild(pill);
+    }
   }
 }
 
@@ -19022,12 +19113,10 @@ function _v2Init(){
     if(textNodes.length) textNodes[0].textContent = _bqDmVersion==='v2'?'Chats':'Messages';
     else hdrTitle.insertBefore(document.createTextNode(_bqDmVersion==='v2'?'Chats':'Messages'), existingBadge || null);
   }
-  console.log('[bq] V75 patch loaded — Push notifications removed, V2 toggle enhanced, spam fixed');
+  console.log('[bq] V76 patch loaded — Immersive V2 toggle, system msg spam fix, push removed');
 }
 
-// ── V75: PERSISTENT MutationObserver — keeps badge, switch, and toggle injected ──
-// This observer runs forever (not 30s) because the user can navigate to
-// profile/DMs at any time and the DOM gets rebuilt.
+// ── V76: PERSISTENT MutationObserver — keeps badge, switch, toggle, chat pill injected ──
 var _v2DmObserver = null;
 function _v2StartBadgeObserver(){
   if(_v2DmObserver) return;
@@ -19042,9 +19131,14 @@ function _v2StartBadgeObserver(){
     if(dmHdr && !document.getElementById('bq-dm-v2-hdr-switch')){
       _v2InjectToggle();
     }
-    // Inject profile toggle if profile section exists but toggle doesn't
+    // Inject profile immersive card if profile section exists but card doesn't
     var pfScroll = document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
-    if(pfScroll && !document.getElementById('bq-dm-v2-row')){
+    if(pfScroll && !document.getElementById('bq-dm-v2-section')){
+      _v2InjectToggle();
+    }
+    // V76: Inject chat pill on main chat header
+    var chatHdr = document.querySelector('#bqv-chat .bqhdr');
+    if(chatHdr && !document.getElementById('bq-dm-v2-chat-pill')){
       _v2InjectToggle();
     }
     // Inject DM search if V2 and not present
@@ -19089,6 +19183,11 @@ window.bqNav = function(targetView){
     _v2InjectToggle();
     if(_bqDmVersion==='v2') _v2InjectDmSearch();
     setTimeout(function(){ _v2InjectToggle(); _v2InjectHeaderBadge(); }, 200);
+  }
+  // V76: Also inject chat pill when navigating to main chat
+  if(targetView==='chat' || targetView==='global'){
+    _v2InjectToggle();
+    setTimeout(function(){ _v2InjectToggle(); }, 200);
   }
 };
 
