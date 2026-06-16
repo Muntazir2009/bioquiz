@@ -272,3 +272,59 @@ Stage Summary:
 - V2 visual polish: smoother animations, gradient bubbles, floating scroll button, pop animations on badges
 - Verified with Agent Browser: version 77.0.0, toggleCount=1, hdrSwitchOnly=true, searchIconRemoved=true, zero errors
 - Lint passes clean
+
+---
+Task ID: 7
+Agent: main
+Task: Fix caching + completely remove ALL push notifications (user still sees them in Chrome/Brave)
+
+Work Log:
+- ROOT CAUSE of "push notifications still there": The previous "removal" (Task 4) only added a no-op stub `subscribeToPush()` at line 3542, but the REAL `async function subscribeToPush()` at line ~14989 was still active and OVERRODE the stub (JS hoisting — second declaration wins). Additionally:
+  1. `bootV37()` ran on every page load and called `registerServiceWorker()` which registered `/sw.js`
+  2. `bootV37()` auto-subscribed to push if Notification permission was already granted
+  3. `_bqTriggerPush` fired on EVERY message send (lines 4731, 4973), calling `/api/push/broadcast` and `/api/push/notify`
+  4. The service worker `/sw.js` (registered in user's browser from previous sessions) received push events and called `self.registration.showNotification()`
+  5. The Push Notifications HTML section was still in the profile (line 3259-3273) with an "Enable Notifications" button
+  6. The push button was still wired to `subscribeToPush` (line 6814)
+  → So the ENTIRE push pipeline was still live: client triggers push → server sends web push → user's SW shows notification
+
+- ROOT CAUSE of "can't see changes" (caching): 
+  1. ChatWidget.tsx polled every 12s (OK) but the version.json fetch could be served from a stale service-worker fetch handler or browser HTTP cache despite `cache: "no-store"`
+  2. Once a service worker is registered, it can intercept fetch requests indefinitely until unregistered
+
+- FIXES APPLIED (V78):
+  1. **registerServiceWorker()** → rewritten to ACTIVELY UNREGISTER all service workers and unsubscribe from push. Iterates `navigator.serviceWorker.getRegistrations()`, calls `pushManager.getSubscription()` + `unsubscribe()` on each, then `reg.unregister()`. Runs twice to catch OneSignal/FCM workers too.
+  2. **subscribeToPush()** (real impl) → replaced with no-op that also actively unsubscribes from any existing push subscription. Returns null.
+  3. **unsubscribeFromPush()** → simplified to iterate all SW registrations and unsubscribe.
+  4. **_bqTriggerPush** → replaced with `async function(){ /* V78: removed */ }` — NO server calls made on message send.
+  5. **patchPushSettings()** → no-op (was wiring the push toggle).
+  6. **bootV37()** → rewritten as a CLEANUP function: calls registerServiceWorker() (now unregisters), forces `prefs.push = false` in localStorage, logs confirmation.
+  7. **Push Notifications HTML section** removed from profile (was lines 3259-3273).
+  8. **Push button event listener** removed (line 6814 → comment).
+  9. **WIDGET_VERSION** bumped 77.0.0 → 78.0.0.
+  10. **chat-widget-version.json** bumped to 78.0.0.
+  11. **ChatWidget.tsx** rewritten with stronger cache-busting:
+      - Fetches `/chat-widget-version.json?_t=${Date.now()}` (timestamp defeats ALL cache layers)
+      - Adds `Cache-Control: no-cache` header
+      - Polls every 8s (was 12s)
+      - Tracks `currentVersion` to only reload on actual change
+
+- VERIFICATION (Agent Browser):
+  - widgetVersion: "78.0.0" ✓
+  - scriptSrc: chat-widget.js?v=78.0.0 ✓ (cache-busted)
+  - toggleCount: 1 (only DM header switch) ✓
+  - chatPillCount: 0 (main chat pill removed) ✓
+  - profileSectionCount: 0 (profile card removed) ✓
+  - pushBtnExists: false ✓
+  - pushSectionInHTML: false ✓
+  - Service worker registrations: count 0, scopes [] ✓ (ALL unregistered)
+  - notifPrefs.push: false ✓ (forced off)
+  - Notification.permission: "default" (no auto-request) ✓
+  - V1/V2 toggle interactive: clicking V1 → dmVersion="v1", panel loses bq-dm-v2 class; clicking V2 → dmVersion="v2", class restored ✓
+  - Console log: "[bq] v78 boot — push notifications removed, service workers unregistered" ✓
+  - Zero JavaScript errors ✓
+
+Stage Summary:
+- Push notifications are now COMPLETELY DEAD: no service worker, no push subscription, no server triggers, no UI. Even users who previously granted Notification permission will stop receiving pushes because (a) their SW is unregistered, (b) their push subscription is unsubscribed, (c) the client never calls the push API anymore.
+- Caching is now bulletproof: timestamp query on version.json defeats any cache layer; 8s polling picks up new versions fast.
+- The single V1/V2 toggle in the DM header remains the only toggle, is interactive, and syncs correctly.

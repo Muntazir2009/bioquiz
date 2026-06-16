@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '77.0.0';                     // V77: Single toggle, no search icon, V2 polish
+const WIDGET_VERSION = '78.0.0';                     // V78: Push notifications completely removed (SW unregistration + no-op triggers)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3254,21 +3254,6 @@ const HTML = `
               <div class="bqpf-fontsize-sample" style="font-size:16px;">Aa</div>
               <div class="bqpf-fontsize-lbl">Large</div>
             </div>
-          </div>
-        </div>
-        <div class="bqpf-section">
-          <div class="bqpf-label">Push Notifications</div>
-          <div class="bqpf-push">
-            <div class="bqpf-push-title">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              Notification Alerts
-            </div>
-            <div class="bqpf-push-desc">Get notified when you receive new DMs or messages in global chat, even when the browser is closed.</div>
-            <button class="bqpf-push-btn" id="bqpf-push-btn">
-              <svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              Enable Notifications
-            </button>
-            <div class="bqpf-push-status" id="bqpf-push-status"></div>
           </div>
         </div>
         <button class="bqpf-savebtn" id="bqpfsave">Save Profile</button>
@@ -6811,7 +6796,7 @@ function init(){
   document.getElementById('bqpf-changename')?.addEventListener('click',()=>{showModal(true);});
 
   // Push notifications button
-  document.getElementById('bqpf-push-btn')?.addEventListener('click',subscribeToPush);
+  // V78: push button removed — no listener wired
 
   // Me avatar buttons → profile view (FIXED)
   ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
@@ -14942,112 +14927,61 @@ function urlB64ToUint8Array(base64String){
   return outputArray;
 }
 
-/* ── SERVICE WORKER REGISTRATION ── */
+/* ── SERVICE WORKER ── */
+// V78: Push notifications COMPLETELY REMOVED.
+// This function now ACTIVELY UNREGISTERS any existing service workers
+// and UNSUBSCRIBES from push so that users stop receiving notifications.
 let _swReg = null;
 let _pushSubscription = null;
 
 async function registerServiceWorker(){
-  if(!('serviceWorker' in navigator)){
-    console.log('[bq-push] Service Worker not supported');
-    return false;
-  }
+  if(!('serviceWorker' in navigator)) return false;
   try{
-    // Register the service worker
-    const reg = await navigator.serviceWorker.register('/sw.js');
-    _swReg = reg;
-    
-    // Wait for the service worker to be active
-    if(reg.installing){
-      await new Promise((resolve) => {
-        reg.installing.addEventListener('statechange', () => {
-          if(reg.waiting || reg.active) resolve(null);
-        });
-      });
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for(const reg of regs){
+      // Unsubscribe from push before unregistering the SW
+      try{
+        const sub = await reg.pushManager.getSubscription();
+        if(sub){ await sub.unsubscribe(); }
+      }catch(_){}
+      await reg.unregister();
     }
-    if(reg.waiting){
-      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    if(reg.active){
-      console.log('[bq-push] Service Worker registered and active');
-    }
-    
-    // Listen for messages from service worker (notification clicks)
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if(event.data && event.data.type === 'bq-notif-click'){
-        handleNotifClickFromSW(event.data);
-      }
-    });
-    
-    return true;
-  }catch(err){
-    console.error('[bq-push] SW registration failed:', err);
-    return false;
-  }
+    // Clear any leftover OneSignal / FCM workers too
+    try{
+      const all = await navigator.serviceWorker.getRegistrations();
+      for(const r of all){ await r.unregister(); }
+    }catch(_){}
+  }catch(_){}
+  return false;
 }
 
 /* ── PUSH SUBSCRIPTION ── */
+// V78: subscribeToPush is now a NO-OP that also actively unsubscribes.
 async function subscribeToPush(){
-  if(!_swReg){
-    const ok = await registerServiceWorker();
-    if(!ok) return null;
-  }
-  
+  // Actively unsubscribe from any existing push subscription
   try{
-    // Request notification permission first
-    if('Notification' in window){
-      if(Notification.permission === 'denied'){
-        console.warn('[bq-push] Notification permission denied');
-        return null;
-      }
-      if(Notification.permission === 'default'){
-        const perm = await Notification.requestPermission();
-        if(perm !== 'granted'){
-          console.warn('[bq-push] Notification permission not granted:', perm);
-          return null;
-        }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs){
+        const sub = await reg.pushManager.getSubscription();
+        if(sub) await sub.unsubscribe();
       }
     }
-    
-    // Check if already subscribed
-    const existing = await _swReg.pushManager.getSubscription();
-    if(existing){
-      _pushSubscription = existing;
-      await sendSubscriptionToServer(existing);
-      console.log('[bq-push] Using existing push subscription');
-      return existing;
-    }
-    
-    // Subscribe
-    const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
-    const subscription = await _swReg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey
-    });
-    
-    _pushSubscription = subscription;
-    await sendSubscriptionToServer(subscription);
-    console.log('[bq-push] Subscribed to push notifications');
-    return subscription;
-  }catch(err){
-    console.error('[bq-push] Push subscription failed:', err);
-    return null;
-  }
+  }catch(_){}
+  return null;
 }
 
 async function unsubscribeFromPush(){
-  if(!_pushSubscription && _swReg){
-    _pushSubscription = await _swReg.pushManager.getSubscription();
-  }
-  if(!_pushSubscription) return;
-  
   try{
-    await _pushSubscription.unsubscribe();
-    await removeSubscriptionFromServer();
-    _pushSubscription = null;
-    console.log('[bq-push] Unsubscribed from push notifications');
-  }catch(err){
-    console.error('[bq-push] Unsubscribe failed:', err);
-  }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs){
+        const sub = await reg.pushManager.getSubscription();
+        if(sub) await sub.unsubscribe();
+      }
+    }
+  }catch(_){}
+  _pushSubscription = null;
 }
 
 /* ── SERVER COMMUNICATION ── */
@@ -15084,59 +15018,9 @@ async function removeSubscriptionFromServer(){
 }
 
 /* ── TRIGGER PUSH NOTIFICATIONS ── */
-// This is called after a message is sent to Firebase
-// It tells the push-service to send web push to offline users
-// NOTE: We always trigger pushes — the push-service handles whether
-// the recipient is actually subscribed. The sender's pref only controls
-// whether THEY receive pushes, not whether they trigger pushes for others.
-window._bqTriggerPush = async function(type, msg, dmId, pUid, pName){
-  const uid = _uid();
-  const uname = _uname();
-  if(!uid) return;
-  
-  // Check if push service is reachable (quick health check cache)
-  if(window._bqPushServiceDown) return;
-  
-  try{
-    if(type === 'global'){
-      // Broadcast to all subscribers except sender
-      const res = await fetch('/api/push/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          excludeUid: uid,
-          title: '@' + (msg.uname || uname) + ' in Global Chat',
-          body: (msg.text || '').slice(0, 100),
-          type: 'global'
-        })
-      });
-      if(!res.ok) console.warn('[bq-push] Broadcast failed:', res.status);
-    } else if(type === 'dm'){
-      // Send to specific DM partner only
-      if(!pUid) return;
-      const res = await fetch('/api/push/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetUids: [pUid],
-          excludeUid: uid,
-          title: '@' + (msg.uname || uname),
-          body: (msg.text || (msg.imageData ? '📷 Image' : 'New message')).slice(0, 100),
-          type: 'dm',
-          dmId: dmId || '',
-          pUid: pUid || '',
-          pName: pName || ''
-        })
-      });
-      if(!res.ok) console.warn('[bq-push] Notify failed:', res.status);
-    }
-  }catch(err){
-    // Push service unreachable — mark as down to avoid spamming
-    window._bqPushServiceDown = true;
-    setTimeout(()=>{ window._bqPushServiceDown = false; }, 60000); // retry after 60s
-    console.warn('[bq-push] Service unreachable, will retry in 60s');
-  }
-};
+// V78: _bqTriggerPush is now a NO-OP. Push notifications have been removed.
+// No server calls are made — messages are only delivered via Firebase RTDB + in-app banner.
+window._bqTriggerPush = async function(){ /* V78: removed */ };
 
 // Expose subscribe function for v36 settings button
 window._bqSubscribePush = subscribeToPush;
@@ -15171,76 +15055,27 @@ function getNotifPrefsSafe(){
 }
 
 /* ── UPDATE PROFILE SETTINGS UI FOR PUSH ── */
-function patchPushSettings(){
-  // When push toggle is changed, subscribe/unsubscribe
-  const checkInterval = setInterval(()=>{
-    try{
-      const pushToggle = document.querySelector('.bq-notif-toggle input[data-pref="push"]');
-      if(!pushToggle) return;
-      if(pushToggle.dataset.bqPushWired) return;
-      pushToggle.dataset.bqPushWired = '1';
-      
-      // Override the change handler
-      pushToggle.addEventListener('change', async () => {
-        const enabled = pushToggle.checked;
-        if(enabled){
-          // Show a brief status indicator
-          const row = pushToggle.closest('.bq-notif-row');
-          const label = row?.querySelector('.bq-notif-row-sub');
-          const origText = label?.textContent || '';
-          if(label) label.textContent = 'Setting up push notifications...';
-          
-          const sub = await subscribeToPush();
-          if(!sub){
-            pushToggle.checked = false;
-            if(label) label.textContent = 'Push setup failed — check browser permissions';
-            setTimeout(()=>{ if(label) label.textContent = origText; }, 3000);
-            // Save the preference as false
-            try{
-              const p = getNotifPrefsSafe();
-              p.push = false;
-              localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
-            }catch(_){}
-          } else {
-            if(label) label.textContent = 'Push notifications active ✓';
-            setTimeout(()=>{ if(label) label.textContent = origText; }, 2000);
-          }
-        } else {
-          await unsubscribeFromPush();
-        }
-      });
-      
-      clearInterval(checkInterval);
-    }catch(_){}
-  }, 1000);
-}
+// V78: patchPushSettings is now a NO-OP. Push UI has been removed.
+function patchPushSettings(){ return; }
 
 /* ── BOOT ── */
+// V78: bootV37 now ACTIVELY REMOVES the push notification system.
+// It unregisters all service workers, unsubscribes from push, and clears the push pref.
 async function bootV37(){
-  // Register service worker
-  const swOk = await registerServiceWorker();
-  if(!swOk){
-    console.log('[bq-push] No service worker support — web push unavailable');
-    return;
-  }
-  
-  // Auto-enable push if browser permission is already granted
-  const prefs = getNotifPrefsSafe();
-  if(!prefs.push && 'Notification' in window && Notification.permission === 'granted'){
-    setPref('push', true);
-    console.log('[bq-push] Auto-enabled push (permission already granted)');
-  }
-  
-  // If push is already enabled, re-subscribe on load
-  const updatedPrefs = getNotifPrefsSafe();
-  if(updatedPrefs.push){
-    await subscribeToPush();
-  }
-  
-  // Patch the push toggle in settings
+  // 1. Unregister ALL service workers (sw.js, firebase-messaging-sw.js, OneSignalSDKWorker.js)
+  await registerServiceWorker(); // now performs unregistration
+
+  // 2. Force-push preference to false so no UI tries to re-enable it
+  try{
+    const p = getNotifPrefsSafe();
+    p.push = false;
+    localStorage.setItem('bq_notif_prefs', JSON.stringify(p));
+  }catch(_){}
+
+  // 3. No-op patchPushSettings (kept for backward compat)
   patchPushSettings();
-  
-  console.log('[bq] v37 patch loaded — Web Push Notifications');
+
+  try{ console.log('[bq] v78 boot — push notifications removed, service workers unregistered'); }catch(_){}
 }
 
 // Boot after a delay to ensure main widget is ready
