@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '78.0.0';                     // V78: Push notifications completely removed (SW unregistration + no-op triggers)
+const WIDGET_VERSION = '79.0.0';                     // V79: Notification bell icon removed from global chat header
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -14442,57 +14442,15 @@ document.head.appendChild(_notifCSS);
 
 /* ── INJECT NOTIFICATION BELL INTO HEADER ── */
 function injectNotifBell(){
-  // Find the header area — add bell before the fullscreen button
-  const fsBtn = document.getElementById('bq-fs-btn');
-  if(!fsBtn || document.getElementById('bq-notif-bell')) return;
-  const bell = document.createElement('div');
-  bell.className = 'bq-notif-bell';
-  bell.id = 'bq-notif-bell';
-  bell.innerHTML = `
-    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    <div class="bq-notif-badge" id="bq-notif-badge">0</div>
-  `;
-  fsBtn.parentNode.insertBefore(bell, fsBtn);
-
-  // Dropdown
-  const drop = document.createElement('div');
-  drop.className = 'bq-notif-dropdown';
-  drop.id = 'bq-notif-dropdown';
-  drop.innerHTML = `
-    <div class="bq-notif-drop-hdr">
-      <div class="bq-notif-drop-hdr-title">Notifications</div>
-      <button class="bq-notif-drop-clear" id="bq-notif-clear">Mark all read</button>
-    </div>
-    <div class="bq-notif-list" id="bq-notif-list">
-      <div class="bq-notif-empty">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        No notifications yet
-      </div>
-    </div>
-  `;
-  bell.style.position = 'relative';
-  bell.appendChild(drop);
-
-  // Toggle dropdown
-  bell.addEventListener('click', (e) => {
-    e.stopPropagation();
-    _notifDropdownOpen = !_notifDropdownOpen;
-    drop.classList.toggle('open', _notifDropdownOpen);
-    if(_notifDropdownOpen) markAllRead();
-  });
-
-  // Close on outside click
-  document.addEventListener('click', (e) => {
-    if(!bell.contains(e.target)){
-      _notifDropdownOpen = false;
-      drop.classList.remove('open');
-    }
-  });
-
-  // Mark all read
-  document.getElementById('bq-notif-clear')?.addEventListener('click', () => {
-    markAllRead();
-  });
+  // V79: Notification bell icon REMOVED from the global chat header per user request.
+  // The in-app notification system (banner, sound, badge logic) still works internally,
+  // but the bell icon + dropdown are no longer shown in the UI.
+  // Actively remove any bell that may have been injected by an older widget version.
+  const existing = document.getElementById('bq-notif-bell');
+  if(existing) existing.remove();
+  const existingDrop = document.getElementById('bq-notif-dropdown');
+  if(existingDrop) existingDrop.remove();
+  return;
 }
 
 /* ── NOTIFICATION LOGIC ── */

@@ -328,3 +328,29 @@ Stage Summary:
 - Push notifications are now COMPLETELY DEAD: no service worker, no push subscription, no server triggers, no UI. Even users who previously granted Notification permission will stop receiving pushes because (a) their SW is unregistered, (b) their push subscription is unsubscribed, (c) the client never calls the push API anymore.
 - Caching is now bulletproof: timestamp query on version.json defeats any cache layer; 8s polling picks up new versions fast.
 - The single V1/V2 toggle in the DM header remains the only toggle, is interactive, and syncs correctly.
+
+---
+Task ID: 8
+Agent: main
+Task: Remove the notifications bell icon from the global chat section
+
+Work Log:
+- Located the notification bell injection: `injectNotifBell()` at line ~14444 injects a `.bq-notif-bell` div (with SVG bell icon + badge + dropdown) before `#bq-fs-btn` (fullscreen button).
+- `#bq-fs-btn` only exists in the Global Chat header (`#bqv-chat`), so the bell only appeared in the global section — removing the injection removes it from there.
+- Rewrote `injectNotifBell()` as a no-op that also ACTIVELY REMOVES any bell + dropdown elements that may have been injected by an older widget version still running in the user's browser. This ensures the bell disappears even on first load before the new code fully takes over.
+- The internal notification system (addNotification, in-app banner, sound, badge logic) is preserved — only the bell ICON UI is removed.
+- Bumped WIDGET_VERSION 78.0.0 → 79.0.0 and chat-widget-version.json → 79.0.0.
+
+- VERIFICATION (Agent Browser):
+  - widgetVersion: "79.0.0" ✓
+  - bellExists: false ✓
+  - dropdownExists: false ✓
+  - bellCount: 0 ✓
+  - fsBtnExists: true ✓ (fullscreen button still there)
+  - After opening widget: bellExists still false, bellCount 0 ✓
+  - Zero JS errors ✓
+
+Stage Summary:
+- Notification bell icon is completely gone from the global chat header.
+- Internal notification logic (banner/sound) still works for new messages.
+- Version 79.0.0 live; will auto-reload in open tabs within 8s via the V78 cache-busting poller.
