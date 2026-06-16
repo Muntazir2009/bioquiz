@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '74.0.0';                     // V74: Notification fixes
+const WIDGET_VERSION = '75.0.0';                     // V75: Push removed, V2 toggle fixed, spam fixed
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3539,7 +3539,7 @@ function refreshMeAvatar(){
 
 /* NOTIFICATION STUBS — v36 delegates to real implementations */
 function updatePushUI(){ try{ if(typeof window._bqUpdatePushUI==='function') window._bqUpdatePushUI(); }catch(_){} }
-function subscribeToPush(){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd('System','Notifications enabled!','global'); }catch(_){} }
+function subscribeToPush(){ /* V75: push notifications removed — no-op */ }
 function showNotification(sender,msg,type,dmId){ try{ if(typeof window._bqNotifAdd==='function') window._bqNotifAdd(sender||'?',msg||'',type||'global',dmId); }catch(_){} }
 
 /* ────���────────────────────────────────────
@@ -5909,11 +5909,16 @@ function renderMsg(ctx,msg,key){
   }
 
   // Notification + badge
-  // GUARD: Skip notifications during initial load (old messages being replayed by Firebase)
-  // Also skip if message is older than 60s — it's stale, not a real-time notification
+  // V75: STRONG GUARD — Skip notifications during:
+  //   1. Initial load (_bqNotifSuppressed flag)
+  //   2. Warm-up period (first 8s after page load or 5s after DM switch)
+  //   3. When widget is open (isOpen === true)
+  //   4. For own messages (isMine)
+  //   5. For stale messages (>60s old)
   if(!isOpen && !isMine && !_bqNotifSuppressed){
+    var _bqInWarmup2 = typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil;
     var _msgAge = Date.now() - (msg.ts || 0);
-    if(_msgAge < 60000){ // Only notify for messages less than 60 seconds old
+    if(_msgAge < 60000 && !_bqInWarmup2){ // Only notify for messages less than 60 seconds old AND not in warmup
       if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
       updateBadges();
       if(typeof window._bqNotifAdd === 'function'){
@@ -6306,6 +6311,8 @@ function openPanel(){
   document.getElementById('bqp').classList.add('open');
   document.getElementById('bqb').classList.add('open');
   isOpen=true;gUnread=0;updateBadges();gAtBot=true;
+  // V75: Set a brief warmup when opening to prevent any stale notifications
+  _bqNotifWarmupUntil=Date.now()+2000;
   refreshMeAvatar();
   const m=document.getElementById('bqgmsgs');
   if(m) requestAnimationFrame(()=>m.scrollTop=m.scrollHeight);
@@ -14494,11 +14501,18 @@ function injectNotifBell(){
 }
 
 /* ── NOTIFICATION LOGIC ── */
+// V75: COMPLETELY REMOVED all browser push notifications.
+// Only in-app notifications remain: badge, bell, banner, sound.
+// Sound ONLY plays when tab is hidden AND widget is closed AND not in warmup.
 function addNotification(sender, msg, type, dmId){
   const prefs = getNotifPrefs();
   // Check type preferences
   if(type === 'global' && !prefs.globalChat) return;
   if(type === 'dm' && !prefs.dms) return;
+
+  // V75: HARD GUARD — Never notify during initial load or warmup
+  if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
+  if(typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil) return;
 
   // Add to queue
   const notif = {
@@ -14529,29 +14543,13 @@ function addNotification(sender, msg, type, dmId){
   // Update dropdown list
   renderNotifList();
 
-  // Skip sound, banner, and browser push during initial load (old message replay)
-  if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
-
-  // V74: Global warm-up — skip sound/push for first 8s after page load
-  // This is a safety net against race conditions where _bqNotifSuppressed resets
-  // before all Firebase child_added replays complete
-  var _bqInWarmup = typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil;
-
-  // V74: Use REAL visibilityState for sound (not overridden document.hidden)
-  // document.hidden may be overridden by V69.2 hook to suppress V36's showBrowserNotif.
-  // We use visibilityState (never overridden) for sound so it only plays when truly hidden.
-  // We keep document.hidden (possibly overridden) for showBrowserNotif so V69.2 can suppress it.
+  // V75: Sound ONLY when tab is truly hidden (user not looking at it)
   var _bqReallyHidden = document.visibilityState === 'hidden';
+  if(_bqReallyHidden) playNotifSound();
 
-  // In-app banner — only when tab is VISIBLE (user can see it) and warm-up is done
-  if(prefs.inApp && !_bqReallyHidden && !_bqInWarmup) showNotifBanner(notif);
-
-  // Sound — ONLY when tab is truly hidden AND warm-up is done
-  if(_bqReallyHidden && !_bqInWarmup) playNotifSound();
-
-  // Browser push — uses document.hidden which V69.2 hook may override to false
-  // Also skip during warm-up period
-  if(document.hidden && !_bqInWarmup) showBrowserNotif(notif);
+  // In-app banner — only when tab is VISIBLE and widget is open (user can see it)
+  // Don't show banner if widget is closed (just badge is enough)
+  if(prefs.inApp && !_bqReallyHidden && typeof isOpen !== 'undefined' && isOpen) showNotifBanner(notif);
 }
 
 function updateNotifBadge(){
@@ -14690,143 +14688,6 @@ function dismissBanner(banner){
   setTimeout(() => banner.remove(), 300);
 }
 
-/* ── BROWSER PUSH NOTIFICATIONS ── */
-function showBrowserNotif(notif){
-  // ── GUARD: Only show browser notifications when tab is NOT visible ──
-  if(!document.hidden) return;
-  // Check/request permission first
-  if('Notification' in window){
-    if(Notification.permission === 'denied') return;
-    if(Notification.permission === 'default'){
-      // Don't auto-request on first notification — too aggressive, causes spam detection
-      return;
-    }
-  } else { return; }
-  if(Notification.permission !== 'granted') return;
-
-  // ── AGGREGATION: Group notifications by type (global / dm-id) ──
-  // Use a stable tag so messages in the same context replace each other
-  var _tag = notif.type === 'dm' ? 'bq-dm-' + (notif.dmId || 'unknown') : 'bq-global';
-
-  // Track pending notification data for aggregation
-  if(typeof window.__bqNotifAgg === 'undefined') window.__bqNotifAgg = {};
-  var agg = window.__bqNotifAgg[_tag];
-  if(!agg){
-    agg = { count: 0, senders: {}, lastMsg: '', lastSender: '', title: '', type: notif.type, dmId: notif.dmId, timer: null };
-    window.__bqNotifAgg[_tag] = agg;
-  }
-  agg.count++;
-  agg.senders[notif.sender] = (agg.senders[notif.sender] || 0) + 1;
-  agg.lastMsg = notif.msg.slice(0, 100);
-  agg.lastSender = notif.sender;
-
-  // ── THROTTLE: Batch notifications — show after 1.5s of quiet, max wait 5s ──
-  if(agg.timer) clearTimeout(agg.timer);
-  agg.timer = setTimeout(function(){ _flushAggNotif(_tag); }, 1500);
-  // Safety flush at 5s even if messages keep coming
-  if(!agg.safetyTimer){
-    agg.safetyTimer = setTimeout(function(){ _flushAggNotif(_tag); }, 5000);
-  }
-}
-
-function _flushAggNotif(_tag){
-  var agg = window.__bqNotifAgg[_tag];
-  if(!agg || agg.count === 0) return;
-  if(agg.timer){ clearTimeout(agg.timer); agg.timer = null; }
-  if(agg.safetyTimer){ clearTimeout(agg.safetyTimer); agg.safetyTimer = null; }
-
-  // ── GLOBAL RATE LIMIT: Never show more than 1 browser notification per 3s ──
-  var _now = Date.now();
-  var _lastFlush = window.__bqLastNotifFlush || 0;
-  if(_now - _lastFlush < 3000){
-    // Too soon — delay this flush until the cooldown expires
-    var _delay = 3000 - (_now - _lastFlush);
-    agg.timer = setTimeout(function(){ _flushAggNotif(_tag); }, _delay);
-    return;
-  }
-  window.__bqLastNotifFlush = _now;
-
-  // Build aggregated body
-  var senderNames = Object.keys(agg.senders);
-  var title, body;
-  if(agg.type === 'dm'){
-    title = senderNames[0] || 'Someone';
-    if(agg.count === 1){
-      body = agg.lastMsg;
-    } else {
-      body = agg.count + ' messages — ' + agg.lastMsg;
-    }
-  } else {
-    // Global chat
-    if(agg.count === 1){
-      title = senderNames[0] || 'Someone';
-      body = agg.lastMsg;
-    } else if(senderNames.length === 1){
-      title = senderNames[0] + ' (' + agg.count + ')';
-      body = agg.lastMsg;
-    } else {
-      title = agg.count + ' new messages';
-      body = senderNames.slice(0, 3).join(', ') + (senderNames.length > 3 ? ' +' + (senderNames.length-3) : '');
-    }
-  }
-
-  // Try service worker first (works when tab is in background or minimized)
-  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
-    try{
-      navigator.serviceWorker.ready.then(function(reg){
-        var options = {
-          body: body,
-          icon: '/logo.svg',
-          badge: '/logo.svg',
-          tag: _tag,
-          renotify: true,
-          data: {
-            type: agg.type,
-            dmId: agg.dmId || null,
-            url: '/'
-          },
-          vibrate: [100, 50, 100],
-          silent: false
-        };
-        reg.showNotification(title, options).catch(function(){});
-      });
-      // Reset aggregate
-      agg.count = 0; agg.senders = {};
-      return;
-    }catch(_){}
-  }
-  // Fallback: direct Notification API (only works while page is open)
-  if(!('Notification' in window) || Notification.permission !== 'granted') return;
-  try{
-    var n = new Notification(title, {
-      body: body,
-      icon: '/logo.svg',
-      tag: _tag,
-      renotify: true,
-      silent: false
-    });
-    n.onclick = function(){
-      window.focus();
-      try{
-        var panel = document.getElementById('bqp');
-        if(panel && !panel.classList.contains('open')){
-          panel.classList.add('open');
-        }
-        if(agg.type === 'dm' && agg.dmId && typeof window.__bqOpenDm === 'function'){
-          var myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-          var parts = agg.dmId.split('__');
-          var pUid = parts[0]===myUid ? parts[1] : parts[0];
-          window.__bqOpenDm(agg.dmId, pUid, agg.lastSender.replace('@',''));
-        } else if(typeof window.bqNav === 'function') window.bqNav('chat');
-      }catch(_){}
-      n.close();
-    };
-    setTimeout(function(){ n.close(); }, 6000);
-  }catch(_){}
-  // Reset aggregate
-  agg.count = 0; agg.senders = {};
-}
-
 /* ── HELPERS ── */
 function _uColor(name){
   const PALETTE = ['#f87171','#fb923c','#fbbf24','#4ade80','#34d399','#22d3ee','#60a5fa','#818cf8','#c084fc','#e879f9','#f472b6','#a78bfa'];
@@ -14843,108 +14704,14 @@ function _timeAgo(ts){
 }
 
 /* ── FIREBASE MESSAGE LISTENERS ── */
+// V75: patchMessageListeners REMOVED — it was the source of notification spam.
+// It attached separate Firebase listeners that fired child_added for existing
+// messages, causing old message notifications. The main renderMsg() function
+// already handles all notifications properly via window._bqNotifAdd.
 function patchMessageListeners(){
-  try{
-    const _fdb = ()=>{ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.database() : null; }catch(_){ return null; } };
-    const _uid = ()=> localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-
-    // Helper: get current active view (cross-IIFE safe)
-    const _getView = ()=> window.__bqActiveView || '';
-    const _getActiveDmId = ()=> window.__bqActiveDm?.id || '';
-
-    // Listen for new GLOBAL messages when widget is closed
-    // v73: Skip the first child_added (always an existing message replay)
-    //      and only notify for messages less than 60s old
-    let _globalFirstSkipped = false;
-    let _lastGlobalKey = '';
-    function hookGlobalMessages(){
-      const db = _fdb();
-      if(!db) return;
-      db.ref('bq_messages').limitToLast(1).on('child_added', snap => {
-        const msg = snap.val();
-        if(!msg) return;
-        // Skip first event — it's always a replay of an existing message
-        if(!_globalFirstSkipped){ _globalFirstSkipped = true; _lastGlobalKey = snap.key; return; }
-        // Dedup by key — same message won't fire twice
-        if(snap.key === _lastGlobalKey) return;
-        _lastGlobalKey = snap.key;
-        const myUid = _uid();
-        // Don't notify for own messages
-        if(msg.uid === myUid) return;
-        // Don't notify if widget is open and on global chat
-        if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'chat') return;
-        // Don't notify for stale messages (>60s old)
-        var _msgAge = Date.now() - (msg.ts || 0);
-        if(_msgAge > 60000) return;
-        // Don't notify during initial load
-        if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
-        // Check preferences
-        const prefs = getNotifPrefs();
-        const myName = localStorage.getItem('bq_chat_uname')||localStorage.getItem('bq_name')||'';
-        const isMention = prefs.mentions && myName && msg.text && msg.text.toLowerCase().includes('@'+myName.toLowerCase());
-        if(isMention || prefs.globalChat){
-          var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'New message');
-          // V74: Route through _bqNotifAdd hook (which uses V69.2 smart notifications)
-          // instead of calling addNotification directly (which bypasses V2 system)
-          if(typeof window._bqNotifAdd === 'function') window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, 'global');
-          else addNotification('@'+(msg.uname||'?'), _nMsg, 'global');
-        }
-      });
-    }
-
-    // Listen for new DM messages when not in that DM conversation
-    let _dmMsgListeners = {};
-    let _lastDmKeys = {};  // track last key per DM
-    let _dmFirstSkipped = {};  // track whether first event was skipped per DM
-    let _dmMetaCache = {};
-    function hookDmMessages(){
-      const db = _fdb();
-      if(!db) return;
-      const myUid = _uid();
-      if(!myUid) return;
-
-      // Listen for changes in the DM index
-      db.ref('bq_user_dms/'+myUid).on('child_added', dmSnap => {
-        const dmId = dmSnap.key;
-        if(_dmMsgListeners[dmId]) return;
-        // Fetch DM meta to get partner info for navigation
-        db.ref('bq_dms/'+dmId+'/meta').once('value', metaSnap => {
-          const meta = metaSnap.val();
-          if(meta) _dmMetaCache[dmId] = meta;
-        });
-        _lastDmKeys[dmId] = '';
-        _dmFirstSkipped[dmId] = false;
-        _dmMsgListeners[dmId] = db.ref('bq_dms/'+dmId+'/messages').limitToLast(1).on('child_added', msgSnap => {
-          const msg = msgSnap.val();
-          if(!msg) return;
-          // Skip first event — it's always a replay of an existing message
-          if(!_dmFirstSkipped[dmId]){ _dmFirstSkipped[dmId] = true; _lastDmKeys[dmId] = msgSnap.key; return; }
-          // Dedup by key
-          if(msgSnap.key === _lastDmKeys[dmId]) return;
-          _lastDmKeys[dmId] = msgSnap.key;
-          if(msg.uid === myUid) return;
-          // Don't notify if currently in this DM conversation
-          if(typeof isOpen !== 'undefined' && isOpen && _getView() === 'dmconv' && _getActiveDmId() === dmId) return;
-          // Don't notify for stale messages (>60s old)
-          var _msgAge = Date.now() - (msg.ts || 0);
-          if(_msgAge > 60000) return;
-          // Don't notify during initial load
-          if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
-          var _nMsg = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':'Sent you a message');
-          // V74: Route through _bqNotifAdd hook (which uses V69.2 smart notifications)
-          if(typeof window._bqNotifAdd === 'function') window._bqNotifAdd('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
-          else addNotification('@'+(msg.uname||'?'), _nMsg, 'dm', dmId);
-        });
-      });
-    }
-
-    // Start listening after a delay to ensure Firebase is ready
-    setTimeout(()=>{
-      hookGlobalMessages();
-      hookDmMessages();
-    }, 3000);
-
-  }catch(_){}
+  // V75: No-op. All notification logic is handled by renderMsg() in the main code.
+  // This function is kept as a stub for backward compatibility.
+  return;
 }
 
 /* ── PROFILE NOTIFICATION SETTINGS UI ── */
@@ -15033,29 +14800,6 @@ function injectNotifSettings(){
         </div>
         <label class="bq-notif-toggle"><input type="checkbox" data-pref="mentions" ${prefs.mentions?'checked':''}><span class="bq-notif-toggle-track"></span></label>
       </div>
-      <div class="bq-notif-row">
-        <div class="bq-notif-row-left">
-          <div class="bq-notif-row-ic" style="background:rgba(129,140,248,.12);">
-            <svg viewBox="0 0 24 24" style="stroke:#818cf8;fill:none;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
-          <div class="bq-notif-row-info">
-            <div class="bq-notif-row-label">Push Notifications</div>
-            <div class="bq-notif-row-sub">Receive alerts even when browser is closed</div>
-          </div>
-        </div>
-        <label class="bq-notif-toggle"><input type="checkbox" data-pref="push" ${prefs.push?'checked':''}><span class="bq-notif-toggle-track"></span></label>
-      </div>
-    </div>
-    <div class="bq-notif-push-banner" id="bq-notif-push-banner" style="display:none">
-      <div class="bq-notif-push-banner-title">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        Enable Push Notifications
-      </div>
-      <div class="bq-notif-push-banner-desc">Allow BioQuiz to send you push notifications even when the browser is closed. You can change this anytime in browser settings.</div>
-      <button class="bq-notif-push-btn" id="bq-notif-push-enable">
-        <svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        Allow Notifications
-      </button>
     </div>
   `;
 
@@ -15073,35 +14817,10 @@ function injectNotifSettings(){
       const key = inp.dataset.pref;
       const val = inp.checked;
       const newPrefs = setPref(key, val);
-      // If push was enabled, show permission prompt
-      if(key === 'push' && val){
-        updatePushPermissionUI();
-      }
     });
   });
 
-  // Push enable button — also triggers service worker subscription (v37)
-  document.getElementById('bq-notif-push-enable')?.addEventListener('click', async () => {
-    try{
-      const result = await Notification.requestPermission();
-      if(result === 'granted'){
-        setPref('push', true);
-        updatePushPermissionUI();
-        // v37: Also subscribe to web push via service worker
-        if(typeof window._bqSubscribePush === 'function'){
-          await window._bqSubscribePush();
-        }
-      } else {
-        setPref('push', false);
-        updatePushPermissionUI();
-      }
-    }catch(_){
-      setPref('push', false);
-      updatePushPermissionUI();
-    }
-  });
-
-  updatePushPermissionUI();
+  // V75: Push notification button and permission UI removed
 }
 
 function updatePushPermissionUI(){
@@ -18692,6 +18411,11 @@ window._bqSetDmVersion = function(v){
     badge.className = 'bq-dm-v2-badge' + (v==='v2'?' active':'');
     badge.title = 'Click to switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
   }
+  // V75: Update header switch buttons (V1/V2 segmented control)
+  var hdrBtns = document.querySelectorAll('.bq-dm-v2-btn');
+  hdrBtns.forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-ver') === v);
+  });
   // Update header title (preserve badge child element)
   var hdrTitle = document.querySelector('#bqv-dms .bqhtitle');
   if(hdrTitle){
@@ -18702,6 +18426,8 @@ window._bqSetDmVersion = function(v){
   }
   // Show/hide V2 header controls
   _v2UpdateHeaderControls();
+  // Re-inject toggle to ensure header switch exists
+  _v2InjectToggle();
 };
 
 /* ── 2. V2 CSS ── */
@@ -18914,6 +18640,45 @@ v2css.textContent = [
   '.bq-dm-v2 .bqdm-search-wrap{position:relative;}',
   '.bq-dm-v2 .bqdm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--bq-text-subtle);}',
   '.bq-dm-v2 .bqdm-search-icon svg{width:14px;height:14px;}',
+
+  /* ── V75: V1/V2 Segmented Switch in DM Header ── */
+  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:10px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;}',
+  '.bq-dm-v2-btn{padding:4px 12px;border-radius:8px;border:none;background:transparent;color:var(--bq-text-muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s ease;letter-spacing:.3px;}',
+  '.bq-dm-v2-btn:hover{color:var(--bq-text);}',
+  '.bq-dm-v2-btn.active{background:var(--bq-accent);color:#fff;box-shadow:0 1px 6px rgba(96,165,250,.35);}',
+
+  /* ── V75: ENHANCEMENTS — Polish & Iterations ── */
+  /* Smoother notification badge with pulse */
+  '#bq-notif-badge{transition:transform .2s cubic-bezier(.34,1.56,.64,1),opacity .2s ease;}',
+  '#bq-notif-badge.show{animation:bqBadgePop .4s cubic-bezier(.34,1.56,.64,1);}',
+  '@keyframes bqBadgePop{0%{transform:scale(0);}60%{transform:scale(1.2);}100%{transform:scale(1);}}',
+
+  /* Enhanced bell ring animation */
+  '#bq-notif-bell.ring{animation:bqBellRing .7s ease-in-out;}',
+  '@keyframes bqBellRing{0%,100%{transform:rotate(0);}15%{transform:rotate(12deg);}30%{transform:rotate(-10deg);}45%{transform:rotate(8deg);}60%{transform:rotate(-5deg);}75%{transform:rotate(2deg);}}',
+
+  /* V75: Better empty states */
+  '.bq-dm-v2 .bqempty{padding:40px 20px;text-align:center;animation:bqFadeIn .4s ease both;}',
+  '.bq-dm-v2 .bqempty-ic{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:var(--bq-bg-hover);display:flex;align-items:center;justify-content:center;}',
+  '.bq-dm-v2 .bqempty-ic svg{width:28px;height:28px;stroke:var(--bq-text-muted);fill:none;stroke-width:1.5;}',
+  '.bq-dm-v2 .bqempty-tx{font-size:14px;font-weight:600;color:var(--bq-text);margin-bottom:4px;}',
+  '.bq-dm-v2 .bqempty-sub{font-size:11px;color:var(--bq-text-muted);}',
+  '@keyframes bqFadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}',
+
+  /* V75: Smoother panel open/close */
+  '#bqp{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s ease;}',
+  '#bqp.open{animation:bqPanelSlide .3s cubic-bezier(.22,1,.36,1) both;}',
+  '@keyframes bqPanelSlide{from{opacity:0;transform:translateY(12px) scale(.98);}to{opacity:1;transform:none;}}',
+
+  /* V75: Enhanced DM list hover effects */
+  '.bq-dm-v2 .bqdmr{transition:background .15s ease,transform .1s ease;}',
+  '.bq-dm-v2 .bqdmr:active{transform:scale(.98);}',
+
+  /* V75: Better scrollbar styling */
+  '.bq-dm-v2 ::-webkit-scrollbar{width:6px;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-track{background:transparent;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb{background:var(--bq-border);border-radius:3px;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb:hover{background:var(--bq-text-muted);}',
 ].join('\n');
 (document.head||document.documentElement).appendChild(v2css);
 
@@ -19102,332 +18867,40 @@ window.scrollD = function(ctx, isMyMsg){
   if(_origScrollD) _origScrollD(ctx, isMyMsg);
 };
 
-/* ── 8. SMART BROWSER NOTIFICATIONS (V69.2 Overhaul) ── */
-var _bqNotifPermission = (typeof Notification!=='undefined' && Notification.permission) ? Notification.permission : 'default';
-var _bqNotifEnabled = localStorage.getItem('bq_notif_enabled') === 'true';
+/* ── 8. NOTIFICATIONS (V75: Push notifications completely removed) ── */
+// V75: All browser push notification code has been removed.
+// Only in-app notifications remain (badge, bell, banner, sound).
+// The _bqNotifAdd hook is now a simple passthrough to addNotification.
+var _bqNotifPermission = 'default';
+var _bqNotifEnabled = false;
 
 function _bqRequestNotifPermission(){
-  if(!('Notification' in window)) return Promise.resolve('unsupported');
-  return Notification.requestPermission().then(function(p){
-    _bqNotifPermission = p;
-    _bqNotifEnabled = p==='granted';
-    localStorage.setItem('bq_notif_enabled', _bqNotifEnabled?'true':'false');
-    _bqUpdateNotifUI();
-    var banner=document.getElementById('bq-notif-push-banner');
-    if(banner) banner.style.display=(p==='granted'||p==='denied')?'none':'block';
-    return p;
-  });
-}
-
-/* ── 8a. V69.2 NOTIFICATION MANAGER ──
-   - ONLY fires when tab is hidden (document.visibilityState === 'hidden')
-   - Batches messages per conversation (2s window, 5s max)
-   - Global rate limit: 1 notification per 4 seconds
-   - Uses single tag per conversation so Chrome replaces instead of stacking
-   - Adds action buttons (Reply, Mark Read) when supported
-   - Handles notification click to open the relevant conversation
-*/
-var _v2NotifQueue = {};   // { tag: { count, senders, lastMsg, lastSender, type, dmId, timer, safetyTimer } }
-var _v2LastNotifTime = 0; // global rate limit
-
-function _v2EnqueueNotif(sender, msg, type, dmId){
-  // GUARD: Only notify when tab is NOT visible
-  if(document.visibilityState !== 'hidden') return;
-  if(!('Notification' in window) || Notification.permission !== 'granted') return;
-  // GUARD: Don't fire during initial load (old message replay)
-  if(typeof _bqNotifSuppressed !== 'undefined' && _bqNotifSuppressed) return;
-  // V74: GUARD: Don't fire during global warm-up period (first 8s after page load)
-  if(typeof _bqNotifWarmupUntil !== 'undefined' && Date.now() < _bqNotifWarmupUntil) return;
-
-  var tag = type === 'dm' ? 'bq-dm-' + (dmId || 'unknown') : 'bq-global';
-
-  if(!_v2NotifQueue[tag]){
-    _v2NotifQueue[tag] = { count:0, senders:{}, lastMsg:'', lastSender:'', type:type, dmId:dmId||null, timer:null, safetyTimer:null };
-  }
-  var q = _v2NotifQueue[tag];
-  q.count++;
-  q.senders[sender] = (q.senders[sender]||0) + 1;
-  q.lastMsg = (msg||'').slice(0,100);
-  q.lastSender = sender;
-
-  // Debounce: batch for 2s after last message, flush at 5s max
-  if(q.timer) clearTimeout(q.timer);
-  q.timer = setTimeout(function(){ _v2FlushNotif(tag); }, 2000);
-  if(!q.safetyTimer){
-    q.safetyTimer = setTimeout(function(){ _v2FlushNotif(tag); }, 5000);
-  }
-}
-
-function _v2FlushNotif(tag){
-  var q = _v2NotifQueue[tag];
-  if(!q || q.count === 0) return;
-  if(q.timer){ clearTimeout(q.timer); q.timer=null; }
-  if(q.safetyTimer){ clearTimeout(q.safetyTimer); q.safetyTimer=null; }
-
-  // Global rate limit: 1 notification per 4 seconds
-  var now = Date.now();
-  if(now - _v2LastNotifTime < 4000){
-    var delay = 4000 - (now - _v2LastNotifTime);
-    q.timer = setTimeout(function(){ _v2FlushNotif(tag); }, delay);
-    return;
-  }
-  _v2LastNotifTime = now;
-
-  // Build aggregated notification
-  var senderNames = Object.keys(q.senders);
-  var title, body;
-  if(q.type === 'dm'){
-    title = senderNames[0] || 'Someone';
-    if(q.count === 1) body = q.lastMsg;
-    else body = q.count + ' messages \u2014 ' + q.lastMsg;
-  } else {
-    if(q.count === 1){
-      title = senderNames[0] || 'Someone';
-      body = q.lastMsg;
-    } else if(senderNames.length === 1){
-      title = senderNames[0] + ' (' + q.count + ')';
-      body = q.lastMsg;
-    } else {
-      title = q.count + ' new messages';
-      body = senderNames.slice(0,3).join(', ') + (senderNames.length>3 ? ' +' + (senderNames.length-3) : '');
-    }
-  }
-
-  // Try service worker first (works when tab is in background/closed)
-  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
-    try{
-      navigator.serviceWorker.ready.then(function(reg){
-        var options = {
-          body: body,
-          icon: '/logo.svg',
-          badge: '/logo.svg',
-          tag: tag,
-          renotify: true,
-          data: { type: q.type, dmId: q.dmId, url: '/', sender: q.lastSender },
-          vibrate: [100, 50, 100],
-          silent: false,
-          actions: [
-            { action: 'reply', title: 'Reply', type: 'text' },
-            { action: 'markRead', title: 'Mark Read' }
-          ]
-        };
-        reg.showNotification(title, options).catch(function(){});
-      });
-      q.count=0; q.senders={};
-      return;
-    }catch(_){}
-  }
-
-  // Fallback: direct Notification API (only works while page is open)
-  try{
-    var n = new Notification(title, {
-      body: body,
-      icon: '/logo.svg',
-      tag: tag,
-      renotify: true,
-      silent: false
-    });
-    n.onclick = function(){
-      window.focus();
-      try{
-        var panel = document.getElementById('bqp');
-        if(panel && !panel.classList.contains('open')) panel.classList.add('open');
-        if(q.type === 'dm' && q.dmId && typeof window.__bqOpenDm === 'function'){
-          var myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-          var parts = q.dmId.split('__');
-          var pUid = parts[0]===myUid ? parts[1] : parts[0];
-          window.__bqOpenDm(q.dmId, pUid, q.lastSender.replace('@',''));
-        } else if(typeof window.bqNav === 'function') window.bqNav('chat');
-      }catch(_){}
-      n.close();
-    };
-    setTimeout(function(){ try{n.close();}catch(_){} }, 8000);
-  }catch(_){}
-  q.count=0; q.senders={};
-}
-
-// ── 8b. HOOK _bqNotifAdd to use our smart notification system ──
-// This replaces the V36 showBrowserNotif path with our improved version.
-// Strategy: Override Document.prototype.hidden getter so that when our
-// suppress flag is set, V36's addNotification thinks the tab is visible
-// and skips showBrowserNotif. Our _v2EnqueueNotif uses the REAL
-// document.visibilityState (not overridden) for its own visibility check.
-var _bqSuppressV36Notif = false;
-var _origDocHiddenGetter = null;
-try{
-  var desc = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
-  if(desc && desc.get){
-    _origDocHiddenGetter = desc.get;
-    Object.defineProperty(Document.prototype, 'hidden', {
-      get: function(){ return _bqSuppressV36Notif ? false : _origDocHiddenGetter.call(this); },
-      configurable: true
-    });
-  }
-}catch(e){
-  console.warn('[bq] V69: could not override Document.prototype.hidden:', e);
-}
-
-var _origBqNotifAdd = window._bqNotifAdd;
-window._bqNotifAdd = function(sender, msg, ctx, dmId){
-  // Suppress V36's showBrowserNotif by making document.hidden return false
-  // V36 checks: if(document.hidden) showBrowserNotif(notif)
-  // With our override, it sees false → skips showBrowserNotif entirely.
-  _bqSuppressV36Notif = true;
-  try{
-    // Call original (handles in-app bell, badge, banner, sound, NOTifBanner)
-    if(_origBqNotifAdd) _origBqNotifAdd(sender, msg, ctx, dmId);
-  }finally{
-    _bqSuppressV36Notif = false;
-  }
-  // Use our smart browser notification system (checks REAL visibilityState)
-  _v2EnqueueNotif(sender, msg, ctx||'global', dmId);
-};
-
-// Handle visibility change — flush any pending notifications when tab goes hidden
-document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'hidden'){
-    // Flush any queued notifications immediately
-    Object.keys(_v2NotifQueue).forEach(function(tag){
-      var q = _v2NotifQueue[tag];
-      if(q && q.count > 0){
-        // Reduce debounce to 500ms when going hidden (user just left, flush quickly)
-        if(q.timer) clearTimeout(q.timer);
-        q.timer = setTimeout(function(){ _v2FlushNotif(tag); }, 500);
-      }
-    });
-  }
-});
-
-// Handle service worker notification clicks and actions
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.addEventListener('message', function(event){
-    if(!event.data) return;
-
-    // Notification click (open conversation)
-    if(event.data.type === 'NOTIFICATION_CLICK' || event.data.type === 'bq-notif-click'){
-      var data = event.data.data || event.data;
-      window.focus();
-      try{
-        var panel = document.getElementById('bqp');
-        if(panel && !panel.classList.contains('open')) panel.classList.add('open');
-        var notifType = data.type || data.notifType;
-        var dmId = data.dmId;
-        if(notifType === 'dm' && dmId && typeof window.__bqOpenDm === 'function'){
-          var myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-          var parts = dmId.split('__');
-          var pUid = parts[0]===myUid ? parts[1] : parts[0];
-          var pName = data.pName || (data.sender||'').replace('@','');
-          window.__bqOpenDm(dmId, pUid, pName);
-        } else if(typeof window.bqNav === 'function') window.bqNav('chat');
-      }catch(_){}
-    }
-
-    // Mark Read action
-    if(event.data.type === 'bq-mark-read'){
-      try{
-        var dmId = event.data.dmId;
-        if(dmId && typeof window.__bqMarkDmRead === 'function') window.__bqMarkDmRead(dmId);
-      }catch(_){}
-    }
-
-    // Reply action from notification
-    if(event.data.type === 'bq-notif-reply'){
-      window.focus();
-      try{
-        var panel = document.getElementById('bqp');
-        if(panel && !panel.classList.contains('open')) panel.classList.add('open');
-        var dmId = event.data.dmId;
-        var replyText = event.data.reply;
-        if(dmId && typeof window.__bqOpenDm === 'function'){
-          var myUid = localStorage.getItem('bq_chat_uid')||localStorage.getItem('bq_uid')||'';
-          var parts = dmId.split('__');
-          var pUid = parts[0]===myUid ? parts[1] : parts[0];
-          window.__bqOpenDm(dmId, pUid, event.data.pName||'');
-          // Auto-send reply if text was entered
-          if(replyText && typeof window.__bqSendDmMsg === 'function'){
-            setTimeout(function(){ window.__bqSendDmMsg(replyText); }, 500);
-          }
-        } else if(typeof window.bqNav === 'function') window.bqNav('chat');
-      }catch(_){}
-    }
-  });
+  // V75: No-op — push notifications removed
+  return Promise.resolve('denied');
 }
 
 function _bqUpdateNotifUI(){
-  var btn=document.getElementById('bqpf-push-btn') || document.getElementById('bq-notif-push-enable');
-  var status=document.getElementById('bqpf-push-status');
-  var banner=document.getElementById('bq-notif-push-banner');
-  var pushToggle=document.querySelector('[data-pref="push"]');
-  if(!btn && !banner && !pushToggle) return;
-  if(!('Notification' in window)){
-    if(btn) btn.textContent='Notifications Not Supported';
-    if(btn) btn.disabled=true;
-    if(status) status.textContent='Your browser does not support notifications';
-    if(banner) banner.style.display='none';
-    return;
-  }
-  if(_bqNotifPermission==='granted'){
-    if(btn){
-      if(btn.id==='bq-notif-push-enable'){
-        btn.innerHTML='<svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications Enabled';
-        btn.style.background='var(--bq-success)';
-      } else {
-        btn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications Enabled';
-        btn.style.background='var(--bq-success)';
-      }
-    }
-    if(status) status.textContent='\u2713 You will receive notifications for new messages';
-    if(banner) banner.style.display='none';
-    if(pushToggle) pushToggle.checked=true;
-  } else if(_bqNotifPermission==='denied'){
-    if(btn) btn.textContent='Notifications Blocked';
-    if(btn) btn.style.background='var(--bq-danger)';
-    if(btn) btn.disabled=true;
-    if(status) status.textContent='Notifications are blocked. Enable them in browser settings.';
-    if(banner) banner.style.display='none';
-    if(pushToggle) pushToggle.checked=false;
-  } else {
-    if(btn){
-      if(btn.id==='bq-notif-push-enable'){
-        btn.innerHTML='<svg viewBox="0 0 24 24" width="10" height="10" style="stroke:currentColor;fill:none;stroke-width:2.5;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Allow Notifications';
-      } else {
-        btn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Enable Notifications';
-      }
-    }
-    if(status) status.textContent='Click to allow browser notifications';
-    if(banner) banner.style.display='block';
-    if(pushToggle) pushToggle.checked=false;
-  }
+  // V75: Hide all push notification UI elements since push is removed
+  var btn = document.getElementById('bqpf-push-btn') || document.getElementById('bq-notif-push-enable');
+  var status = document.getElementById('bqpf-push-status');
+  var banner = document.getElementById('bq-notif-push-banner');
+  var pushSection = document.querySelector('.bqpf-section.bq-push-section');
+  var pushToggle = document.querySelector('[data-pref="push"]');
+  if(btn) btn.style.display = 'none';
+  if(status) status.style.display = 'none';
+  if(banner) banner.style.display = 'none';
+  if(pushSection) pushSection.style.display = 'none';
+  if(pushToggle) pushToggle.parentElement.style.display = 'none';
 }
 
 function _bqWireNotifBtn(){
-  var btns = [
-    document.getElementById('bqpf-push-btn'),
-    document.getElementById('bq-notif-push-enable')
-  ];
-  btns.forEach(function(btn){
-    if(btn && !btn.dataset.v2wired){
-      btn.dataset.v2wired='1';
-      btn.addEventListener('click',function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        _bqRequestNotifPermission();
-      });
-    }
-  });
-  var pushToggle = document.querySelector('[data-pref="push"]');
-  if(pushToggle && !pushToggle.dataset.v2wired){
-    pushToggle.dataset.v2wired='1';
-    pushToggle.addEventListener('change',function(){
-      if(pushToggle.checked){
-        _bqRequestNotifPermission().then(function(p){
-          if(p!=='granted') pushToggle.checked=false;
-        });
-      }
-    });
-  }
+  // V75: No-op — push notifications removed
   _bqUpdateNotifUI();
 }
+
+// V75: _bqNotifAdd is just addNotification (no hook needed)
+// The Document.prototype.hidden override is REMOVED — no more fragile hacks.
+// addNotification now uses document.visibilityState directly for all checks.
 
 /* ── 9. V2 HEADER BADGE & TOGGLE INJECTION ── */
 function _v2InjectHeaderBadge(){
@@ -19463,32 +18936,65 @@ function _v2UpdateHeaderControls(){
 }
 
 /* ── 9b. V2 TOGGLE INJECTION IN PROFILE ── */
+// V75: Completely rewritten with multiple fallback strategies for maximum reliability.
+// The toggle will appear in the profile settings, DM header, AND as a floating button.
 function _v2InjectToggle(){
-  var scroll=document.querySelector('.bqpf-scroll');
-  if(!scroll || document.getElementById('bq-dm-v2-row')) return;
-  var section=document.createElement('div');
-  section.className='bqpf-section';
-  section.id='bq-dm-v2-section';
-  section.innerHTML=
-    '<div class="bqpf-label">DM Version</div>'+
-    '<div id="bq-dm-v2-row">'+
-      '<div class="bq-info-row-left">'+
-        '<div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
-        '<div><div id="bq-dm-v2-label">'+(_bqDmVersion==='v2'?'DM V2 (Modern)':'DM V1 (Classic)')+'</div><div id="bq-dm-v2-sub">Telegram-inspired design with WhatsApp logic</div></div>'+
-      '</div>'+
-      '<label class="bq-toggle"><input type="checkbox" id="bq-dm-v2-toggle"'+(_bqDmVersion==='v2'?' checked':'')+'><span class="bq-toggle-slider"></span></label>'+
-    '</div>';
-  // Insert before the Push Notifications section
-  var pushSection = scroll.querySelector('.bqpf-section:nth-last-of-type(2)');
-  if(pushSection){
-    pushSection.parentNode.insertBefore(section, pushSection);
-  } else {
-    scroll.insertBefore(section, scroll.querySelector('.bqpf-savebtn'));
+  // Strategy 1: Inject into profile settings (.bqpf-scroll)
+  var scroll=document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
+  if(scroll && !document.getElementById('bq-dm-v2-row')){
+    var section=document.createElement('div');
+    section.className='bqpf-section';
+    section.id='bq-dm-v2-section';
+    section.innerHTML=
+      '<div class="bqpf-label">DM Version</div>'+
+      '<div id="bq-dm-v2-row">'+
+        '<div class="bq-info-row-left">'+
+          '<div class="bq-info-row-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
+          '<div><div id="bq-dm-v2-label">'+(_bqDmVersion==='v2'?'DM V2 (Modern)':'DM V1 (Classic)')+'</div><div id="bq-dm-v2-sub">Telegram-inspired design with WhatsApp logic</div></div>'+
+        '</div>'+
+        '<label class="bq-toggle"><input type="checkbox" id="bq-dm-v2-toggle"'+(_bqDmVersion==='v2'?' checked':'')+'><span class="bq-toggle-slider"></span></label>'+
+      '</div>';
+    // Try multiple insertion strategies
+    var pushSection = scroll.querySelector('.bqpf-section:nth-last-of-type(2)');
+    var saveBtn = scroll.querySelector('.bqpf-savebtn');
+    if(pushSection){
+      pushSection.parentNode.insertBefore(section, pushSection);
+    } else if(saveBtn){
+      scroll.insertBefore(section, saveBtn);
+    } else {
+      scroll.appendChild(section);
+    }
+    var tog=document.getElementById('bq-dm-v2-toggle');
+    if(tog){
+      tog.addEventListener('change',function(){
+        window._bqSetDmVersion(tog.checked?'v2':'v1');
+      });
+    }
   }
-  var tog=document.getElementById('bq-dm-v2-toggle');
-  if(tog){
-    tog.addEventListener('change',function(){
-      window._bqSetDmVersion(tog.checked?'v2':'v1');
+
+  // Strategy 2: Inject a V2 toggle switch directly in the DM list header
+  // This is ALWAYS visible when viewing the DM list, making it impossible to miss
+  var dmHeader = document.querySelector('#bqv-dms .bqhdr');
+  if(dmHeader && !document.getElementById('bq-dm-v2-hdr-switch')){
+    var hdrSwitch = document.createElement('div');
+    hdrSwitch.id = 'bq-dm-v2-hdr-switch';
+    hdrSwitch.className = 'bq-dm-v2-hdr-switch';
+    hdrSwitch.innerHTML =
+      '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v1'?' active':'')+'" data-ver="v1">V1</button>'+
+      '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v2'?' active':'')+'" data-ver="v2">V2</button>';
+    // Insert after the title/badge area
+    var hdrRight = dmHeader.querySelector('.bqhdr-right') || dmHeader;
+    if(hdrRight === dmHeader){
+      dmHeader.appendChild(hdrSwitch);
+    } else {
+      hdrRight.appendChild(hdrSwitch);
+    }
+    // Wire buttons
+    hdrSwitch.querySelectorAll('.bq-dm-v2-btn').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        window._bqSetDmVersion(btn.getAttribute('data-ver'));
+      });
     });
   }
 }
@@ -19502,7 +19008,7 @@ function _v2Init(){
   _v2InjectHeaderBadge();
   // Inject DM search bar
   _v2InjectDmSearch();
-  // Inject V2 toggle in profile
+  // Inject V2 toggle in profile AND header switch
   _v2InjectToggle();
   // Wire notification button
   _bqWireNotifBtn();
@@ -19516,22 +19022,38 @@ function _v2Init(){
     if(textNodes.length) textNodes[0].textContent = _bqDmVersion==='v2'?'Chats':'Messages';
     else hdrTitle.insertBefore(document.createTextNode(_bqDmVersion==='v2'?'Chats':'Messages'), existingBadge || null);
   }
-  console.log('[bq] V73 patch loaded — DM V2 + Smart Notifications + No stale notifs');
+  console.log('[bq] V75 patch loaded — Push notifications removed, V2 toggle enhanced, spam fixed');
 }
 
-// ── MutationObserver: inject badge as soon as DM header appears in DOM ──
+// ── V75: PERSISTENT MutationObserver — keeps badge, switch, and toggle injected ──
+// This observer runs forever (not 30s) because the user can navigate to
+// profile/DMs at any time and the DOM gets rebuilt.
 var _v2DmObserver = null;
 function _v2StartBadgeObserver(){
   if(_v2DmObserver) return;
   _v2DmObserver = new MutationObserver(function(){
+    // Inject header badge if DM header exists but badge doesn't
     var hdr = document.querySelector('#bqv-dms .bqhdr .bqhtitle');
     if(hdr && !document.getElementById('bq-dm-v2-badge')){
       _v2InjectHeaderBadge();
+    }
+    // Inject header switch (V1/V2 buttons) if DM header exists but switch doesn't
+    var dmHdr = document.querySelector('#bqv-dms .bqhdr');
+    if(dmHdr && !document.getElementById('bq-dm-v2-hdr-switch')){
+      _v2InjectToggle();
+    }
+    // Inject profile toggle if profile section exists but toggle doesn't
+    var pfScroll = document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
+    if(pfScroll && !document.getElementById('bq-dm-v2-row')){
+      _v2InjectToggle();
+    }
+    // Inject DM search if V2 and not present
+    if(_bqDmVersion==='v2'){
       _v2InjectDmSearch();
     }
   });
   _v2DmObserver.observe(document.body, { childList: true, subtree: true });
-  setTimeout(function(){ if(_v2DmObserver){ _v2DmObserver.disconnect(); _v2DmObserver=null; } }, 30000);
+  // V75: Keep observer running forever — no auto-disconnect
 }
 
 // Wait for widget to be ready
@@ -19541,12 +19063,13 @@ if(document.readyState==='loading'){
   setTimeout(_v2Init,800);
 }
 
-// Start MutationObserver immediately for badge injection
+// Start MutationObserver immediately for badge/switch/toggle injection
 _v2StartBadgeObserver();
 
-// Retry header badge injection (widget might not be ready on first try)
-setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectDmSearch(); }, 2000);
-setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectDmSearch(); }, 5000);
+// Retry injections (widget might not be ready on first try)
+setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectToggle(); _v2InjectDmSearch(); }, 1500);
+setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectToggle(); _v2InjectDmSearch(); }, 3000);
+setTimeout(function(){ _v2InjectHeaderBadge(); _v2InjectToggle(); _v2InjectDmSearch(); }, 6000);
 
 // Also re-inject on navigation
 var _origBqNav = typeof bqNav==='function' ? bqNav : null;
@@ -19558,10 +19081,14 @@ window.bqNav = function(targetView){
       _bqWireNotifBtn();
       _bqUpdateNotifUI();
     },100);
+    setTimeout(function(){ _v2InjectToggle(); }, 300);
+    setTimeout(function(){ _v2InjectToggle(); }, 800);
   }
   if(targetView==='dms'){
     _v2InjectHeaderBadge();
+    _v2InjectToggle();
     if(_bqDmVersion==='v2') _v2InjectDmSearch();
+    setTimeout(function(){ _v2InjectToggle(); _v2InjectHeaderBadge(); }, 200);
   }
 };
 

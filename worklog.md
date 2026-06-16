@@ -131,3 +131,55 @@ Stage Summary:
 - All notification paths now go through V69.2 smart notification system (aggregation, throttling, action buttons)
 - V36's showBrowserNotif properly suppressed by document.hidden override
 - Badge count and notification queue still update during warm-up (visual feedback preserved)
+
+---
+Task ID: 4
+Agent: main
+Task: Remove ALL push notifications completely, fix sound firing on widget open, fix V2 toggle visibility, add enhancements
+
+Work Log:
+- COMPLETELY REMOVED all browser push notification code:
+  - Removed showBrowserNotif() and _flushAggNotif() functions entirely
+  - Removed _v2EnqueueNotif() and _v2FlushNotif() (V69.2 smart notification manager)
+  - Removed Document.prototype.hidden getter override (fragile hack)
+  - Removed _bqNotifAdd hook (window._bqNotifAdd now points directly to addNotification)
+  - Removed service worker notification click/reply/markRead handlers
+  - Removed patchMessageListeners() entirely (was the #1 source of spam — fired child_added for existing messages)
+  - Removed Push Notifications toggle row from profile settings
+  - Removed push permission banner and enable button
+  - Made _bqRequestNotifPermission, _bqWireNotifBtn, _bqUpdateNotifUI into no-ops that hide push UI
+  - Made subscribeToPush() a no-op
+
+- FIXED sound firing when opening chat:
+  - addNotification() now checks _bqNotifSuppressed AND _bqNotifWarmupBefore before doing anything
+  - Sound ONLY plays when document.visibilityState === 'hidden' (tab truly in background)
+  - Banner only shows when tab is visible AND widget is open (isOpen === true)
+  - openPanel() now sets _bqNotifWarmupUntil = Date.now()+2000 to suppress notifications for 2s after opening
+  - renderMsg() now also checks _bqNotifWarmupUntil before notifying
+
+- FIXED V2 toggle visibility:
+  - Added V1/V2 segmented switch (bq-dm-v2-hdr-switch) directly in DM list header — ALWAYS visible
+  - Rewrote _v2InjectToggle() with multiple insertion strategies for profile settings
+  - Made MutationObserver PERSISTENT (removed 30s auto-disconnect) — keeps all controls injected
+  - Added retry injections at 1.5s, 3s, 6s after load
+  - bqNav('profile') now retries toggle injection at 100ms, 300ms, 800ms
+  - bqNav('dms') now injects header badge + switch + retries at 200ms
+  - _bqSetDmVersion() now updates header switch buttons and re-injects toggle
+
+- ADDED enhancements (V75 CSS):
+  - Notification badge pop animation (scale bounce)
+  - Enhanced bell ring animation (multi-step rotation)
+  - Better empty states with fade-in animation
+  - Smoother panel open/close with slide animation
+  - DM list row active scale effect
+  - Custom scrollbar styling (6px, themed)
+  - Segmented V1/V2 switch with active glow
+
+- Bumped version to 75.0.0
+
+Stage Summary:
+- ALL push notifications completely removed (no more Chrome spam detection)
+- Sound only fires when tab is hidden AND message is genuinely new
+- V1/V2 toggle is now visible in TWO places: DM header (segmented switch) and profile settings (toggle row)
+- Verified with Agent Browser: zero JS errors, V1/V2 switch visible in DM header, DM Version toggle visible in profile, bidirectional sync working
+- UI enhanced with smoother animations, better empty states, custom scrollbars
