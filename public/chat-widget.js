@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '76.0.0';                     // V76: Immersive V2 toggle, system msg spam fix
+const WIDGET_VERSION = '77.0.0';                     // V77: Single toggle, no search icon, V2 polish
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -18414,31 +18414,12 @@ window._bqSetDmVersion = function(v){
     badge.className = 'bq-dm-v2-badge' + (v==='v2'?' active':'');
     badge.title = 'Click to switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
   }
-  // V76: Update main chat pill
-  var chatPill = document.getElementById('bq-dm-v2-chat-pill');
-  if(chatPill){
-    chatPill.className = 'bq-dm-v2-chat-pill' + (v==='v2'?' on':'');
-    chatPill.innerHTML = v==='v2' ? '<span class="beta-dot"></span>DM V2' : 'DM V1';
-    chatPill.title = 'Switch DM version (' + (v==='v2'?'V2 → V1':'V1 → V2') + ')';
-  }
-  // V76: Update immersive profile card
-  var heroTag = document.getElementById('bq-dm-v2-hero-tag');
-  if(heroTag){
-    heroTag.innerHTML = '<span class="beta-dot"></span>' + (v==='v2'?'V2 ACTIVE':'V1 ACTIVE');
-  }
-  var heroSub = document.getElementById('bq-dm-v2-hero-sub');
-  if(heroSub){
-    heroSub.textContent = v==='v2' ? 'Telegram-inspired bubbles · WhatsApp logic · Zero lag' : 'Classic chat layout — the original experience';
-  }
-  // Update segment buttons in profile card
-  document.querySelectorAll('#bq-dm-v2-segment .bq-dm-v2-seg-btn').forEach(function(btn){
-    btn.classList.toggle('active', btn.getAttribute('data-ver') === v);
-  });
-  // Update features list (highlight when V2)
-  document.querySelectorAll('#bq-dm-v2-features .feat-row').forEach(function(r){
-    r.classList.toggle('on', v==='v2');
-  });
-  // V75: Update header switch buttons (V1/V2 segmented control)
+  // V77: Remove stale profile card / chat pill from older versions if present
+  var oldSection = document.getElementById('bq-dm-v2-section');
+  if(oldSection) oldSection.remove();
+  var oldPill = document.getElementById('bq-dm-v2-chat-pill');
+  if(oldPill) oldPill.remove();
+  // Update header switch buttons (V1/V2 segmented control)
   var hdrBtns = document.querySelectorAll('.bq-dm-v2-btn');
   hdrBtns.forEach(function(btn){
     btn.classList.toggle('active', btn.getAttribute('data-ver') === v);
@@ -18453,7 +18434,7 @@ window._bqSetDmVersion = function(v){
   }
   // Show/hide V2 header controls
   _v2UpdateHeaderControls();
-  // Re-inject toggle to ensure header switch + chat pill exist
+  // Re-inject toggle to ensure header switch exists
   _v2InjectToggle();
 };
 
@@ -18492,26 +18473,29 @@ v2css.textContent = [
   /* ── V2 DM LIST ── */
   '.bq-dm-v2 #bqv-dms .bqhdr{background:var(--bq-bg-elevated);border-bottom:1px solid var(--bq-border);}',
   '.bq-dm-v2 #bqdml{padding:0 4px;overflow-y:auto;flex:1;}',
-  '.bq-dm-v2 .bqdmr{display:flex;align-items:center;padding:10px 8px;border-radius:12px;margin:2px 4px;cursor:pointer;transition:background .15s ease;position:relative;gap:12px;}',
-  '.bq-dm-v2 .bqdmr:hover{background:var(--bq-bg-hover);}',
-  '.bq-dm-v2 .bqdmr.active-row{background:var(--bq-accent-soft,rgba(96,165,250,.08));}',
-  '.bq-dm-v2 .bqdmr.unread-row{background:rgba(96,165,250,.04);}',
-  '.bq-dm-v2 .bqdmav{width:52px!important;height:52px!important;border-radius:50%!important;font-size:18px!important;font-weight:700!important;flex-shrink:0;position:relative;}',
-  '.bq-dm-v2 .bqdmav::after{content:"";position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bq-bg);display:none;}',
-  '.bq-dm-v2 .bqdmav[data-status="online"]::after{background:#22c55e;display:block;}',
+  '.bq-dm-v2 .bqdmr{display:flex;align-items:center;padding:10px 10px;border-radius:14px;margin:2px 4px;cursor:pointer;transition:background .2s cubic-bezier(.22,1,.36,1),transform .15s ease;position:relative;gap:12px;}',
+  '.bq-dm-v2 .bqdmr:hover{background:var(--bq-bg-hover);transform:translateX(2px);}',
+  '.bq-dm-v2 .bqdmr:active{transform:scale(.99);}',
+  '.bq-dm-v2 .bqdmr.active-row{background:linear-gradient(90deg,var(--bq-accent-soft,rgba(96,165,250,.1)),transparent);border-left:3px solid var(--bq-accent);padding-left:7px;}',
+  '.bq-dm-v2 .bqdmr.unread-row{background:rgba(96,165,250,.05);}',
+  '.bq-dm-v2 .bqdmav{width:50px!important;height:50px!important;border-radius:50%!important;font-size:17px!important;font-weight:700!important;flex-shrink:0;position:relative;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}',
+  '.bq-dm-v2 .bqdmr:hover .bqdmav{transform:scale(1.06);}',
+  '.bq-dm-v2 .bqdmav::after{content:"";position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--bq-bg);display:none;}',
+  '.bq-dm-v2 .bqdmav[data-status="online"]::after{background:#22c55e;display:block;box-shadow:0 0 6px rgba(34,197,94,.5);}',
   '.bq-dm-v2 .bqdmav[data-status="studying"]::after{background:#f59e0b;display:block;}',
   '.bq-dm-v2 .bqdmav[data-status="busy"]::after{background:#ef4444;display:block;}',
   '.bq-dm-v2 .bqdmin{flex:1;min-width:0;overflow:hidden;}',
-  '.bq-dm-v2 .bqdmn{font-size:14px;font-weight:600;color:var(--bq-text);display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-  '.bq-dm-v2 .bqdmp{font-size:12px;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;line-height:1.3;}',
-  '.bq-dm-v2 .bqdmp.unr{color:var(--bq-text);font-weight:500;}',
+  '.bq-dm-v2 .bqdmn{font-size:14.5px;font-weight:600;color:var(--bq-text);display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.1px;}',
+  '.bq-dm-v2 .bqdmp{font-size:12.5px;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;line-height:1.3;}',
+  '.bq-dm-v2 .bqdmp.unr{color:var(--bq-text);font-weight:600;}',
   '.bq-dm-v2 .bqdmm{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}',
-  '.bq-dm-v2 .bqdmt{font-size:10px;color:var(--bq-text-subtle);white-space:nowrap;}',
-  '.bq-dm-v2 .bqdmub{min-width:20px;height:20px;border-radius:10px;background:var(--bq-accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;}',
-  '.bq-dm-v2 .bqdmr-acts{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:2px;opacity:0;transition:opacity .15s ease;z-index:2;}',
+  '.bq-dm-v2 .bqdmt{font-size:10px;color:var(--bq-text-subtle);white-space:nowrap;font-weight:500;}',
+  '.bq-dm-v2 .bqdmub{min-width:20px;height:20px;border-radius:10px;background:linear-gradient(135deg,var(--bq-accent),#8b5cf6);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px;box-shadow:0 2px 6px rgba(96,165,250,.3);animation:bqV2BadgePop .3s cubic-bezier(.34,1.56,.64,1);}',
+  '@keyframes bqV2BadgePop{0%{transform:scale(0);}60%{transform:scale(1.15);}100%{transform:scale(1);}}',
+  '.bq-dm-v2 .bqdmr-acts{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:2px;opacity:0;transition:opacity .2s ease;z-index:2;}',
   '.bq-dm-v2 .bqdmr:hover .bqdmr-acts{opacity:1;}',
-  '.bq-dm-v2 .bqdmr-act{width:28px;height:28px;border-radius:8px;border:none;background:var(--bq-bg-hover);color:var(--bq-text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease;}',
-  '.bq-dm-v2 .bqdmr-act:hover{background:var(--bq-border-hover);color:var(--bq-text);}',
+  '.bq-dm-v2 .bqdmr-act{width:30px;height:30px;border-radius:9px;border:none;background:var(--bq-bg-hover);color:var(--bq-text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;}',
+  '.bq-dm-v2 .bqdmr-act:hover{background:var(--bq-border-hover);color:var(--bq-text);transform:scale(1.1);}',
   '.bq-dm-v2 .bqdmr-act svg{width:14px;height:14px;}',
   '.bq-dm-v2 .bqdmr-act.bq-pin.pinned{color:var(--bq-warning);}',
   '.bq-dm-v2 .bqdmr-confirm{display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--bq-bg-elevated);border:1px solid var(--bq-border);border-radius:10px;padding:8px;z-index:3;gap:4px;}',
@@ -18553,37 +18537,40 @@ v2css.textContent = [
   '.bq-dm-v2 .bqr.mine .bqbw{align-items:flex-end;}',
 
   '.bq-dm-v2 .bqbbl{',
-  '  padding:7px 10px 4px!important;',
-  '  border-radius:12px!important;',
+  '  padding:8px 12px 5px!important;',
+  '  border-radius:14px!important;',
   '  position:relative;',
   '  max-width:100%;',
   '  word-wrap:break-word;',
   '  box-shadow:none!important;',
   '  border:none!important;',
-  '  transition:transform .12s ease;',
+  '  transition:transform .15s cubic-bezier(.22,1,.36,1);',
+  '  animation:bqV2BubbleIn .3s cubic-bezier(.22,1,.36,1) both;',
   '}',
+  '@keyframes bqV2BubbleIn{from{opacity:0;transform:translateY(6px) scale(.97);}to{opacity:1;transform:none;}}',
   '.bq-dm-v2 .bqbbl:active{transform:scale(.985);}',
 
-  /* Mine bubbles — accent gradient */
+  /* Mine bubbles — accent gradient with subtle glow */
   '.bq-dm-v2 .bqr.mine .bqbbl{',
-  '  background:var(--bq-bubble-mine);',
-  '  border-radius:12px 4px 12px 12px!important;',
+  '  background:linear-gradient(145deg,#3b82f6,#6366f1);',
+  '  border-radius:14px 5px 14px 14px!important;',
   '  color:#fff;',
+  '  box-shadow:0 1px 3px rgba(99,102,241,.25)!important;',
   '}',
-  '.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:12px!important;}',
-  '.bq-dm-v2 .bqr.mine .bqbbl.media{padding:3px!important;border-radius:12px 4px 12px 12px!important;}',
-  '.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:12px!important;}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:14px!important;}',
+  '.bq-dm-v2 .bqr.mine .bqbbl.media{padding:3px!important;border-radius:14px 5px 14px 14px!important;}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:14px!important;}',
 
-  /* Theirs bubbles — dark card */
+  /* Theirs bubbles — elevated card with subtle border */
   '.bq-dm-v2 .bqr.theirs .bqbbl{',
   '  background:var(--bq-bg-elevated);',
   '  border:1px solid var(--bq-border);',
-  '  border-radius:4px 12px 12px 12px!important;',
+  '  border-radius:5px 14px 14px 14px!important;',
   '  color:var(--bq-text);',
   '}',
-  '.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:12px!important;}',
-  '.bq-dm-v2 .bqr.theirs .bqbbl.media{padding:3px!important;border-radius:4px 12px 12px 12px!important;}',
-  '.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:12px!important;}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:14px!important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl.media{padding:3px!important;border-radius:5px 14px 14px 14px!important;}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:14px!important;}',
 
   /* V2 Text styles */
   '.bq-dm-v2 .bqtxt{font-size:13.5px;line-height:1.45;margin-bottom:2px;}',
@@ -18619,28 +18606,30 @@ v2css.textContent = [
   /* V2 Sticker */
   '.bq-dm-v2 .bqsticker{font-size:52px;line-height:1.1;}',
 
-  /* V2 Date separator */
-  '.bq-dm-v2 .bqds{margin:12px 0;text-align:center;font-size:11px;color:var(--bq-text-subtle);position:relative;}',
-  '.bq-dm-v2 .bqds::before,.bq-dm-v2 .bqds::after{content:"";position:absolute;top:50%;width:calc(50% - 40px);height:1px;background:var(--bq-border);}',
+  /* V2 Date separator — pill style */
+  '.bq-dm-v2 .bqds{margin:14px 0 10px;text-align:center;font-size:10.5px;font-weight:600;color:var(--bq-text-subtle);position:relative;letter-spacing:.3px;text-transform:uppercase;}',
+  '.bq-dm-v2 .bqds::before,.bq-dm-v2 .bqds::after{content:"";position:absolute;top:50%;width:calc(50% - 48px);height:1px;background:var(--bq-border);}',
   '.bq-dm-v2 .bqds::before{left:0;}',
   '.bq-dm-v2 .bqds::after{right:0;}',
 
-  /* V2 Typing indicator */
-  '.bq-dm-v2 .bqtyp{padding:4px 16px;font-size:12px;color:var(--bq-accent);}',
-  '.bq-dm-v2 .bqtd{display:inline-flex;gap:3px;align-items:center;margin-right:4px;}',
-  '.bq-dm-v2 .bqtd span{width:5px;height:5px;border-radius:50%;background:var(--bq-accent);animation:bqV2TypeDot 1.2s ease-in-out infinite;}',
-  '.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.15s;}',
-  '.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.3s;}',
-  '@keyframes bqV2TypeDot{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}',
+  /* V2 Typing indicator — bubble style */
+  '.bq-dm-v2 .bqtyp{padding:4px 16px;font-size:12px;color:var(--bq-accent);font-style:italic;}',
+  '.bq-dm-v2 .bqtd{display:inline-flex;gap:4px;align-items:center;margin-right:5px;vertical-align:middle;}',
+  '.bq-dm-v2 .bqtd span{width:6px;height:6px;border-radius:50%;background:var(--bq-accent);animation:bqV2TypeDot 1.3s ease-in-out infinite;}',
+  '.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.18s;}',
+  '.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.36s;}',
+  '@keyframes bqV2TypeDot{0%,60%,100%{transform:translateY(0);opacity:.35;}30%{transform:translateY(-5px);opacity:1;}}',
 
-  /* V2 Input wrapper */
-  '.bq-dm-v2 .bqiw{background:var(--bq-bg-elevated);border-top:1px solid var(--bq-border);}',
-  '.bq-dm-v2 .bqinp{background:rgba(255,255,255,.05)!important;border:1px solid var(--bq-border)!important;border-radius:20px!important;padding:8px 14px!important;font-size:13.5px!important;}',
-  '.bq-dm-v2 .bqinp:focus{border-color:var(--bq-accent)!important;box-shadow:0 0 0 2px var(--bq-accent-soft,rgba(96,165,250,.15))!important;}',
+  /* V2 Input wrapper — cleaner, rounder */
+  '.bq-dm-v2 .bqiw{background:var(--bq-bg-elevated);border-top:1px solid var(--bq-border);padding:8px 10px;}',
+  '.bq-dm-v2 .bqinp{background:var(--bq-bg-hover)!important;border:1px solid var(--bq-border)!important;border-radius:22px!important;padding:9px 16px!important;font-size:13.5px!important;transition:all .2s ease!important;}',
+  '.bq-dm-v2 .bqinp:focus{border-color:var(--bq-accent)!important;background:var(--bq-bg-elevated)!important;box-shadow:0 0 0 3px rgba(96,165,250,.12)!important;}',
 
-  /* V2 Scroll button */
-  '.bq-dm-v2 .bqscr{bottom:72px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--bq-bg-elevated);border:1px solid var(--bq-border);box-shadow:0 2px 8px rgba(0,0,0,.3);}',
-  '.bq-dm-v2 .bqscr svg{width:18px;height:18px;}',
+  /* V2 Scroll button — floating, gradient */
+  '.bq-dm-v2 .bqscr{bottom:76px;right:14px;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--bq-accent),#8b5cf6);border:none;box-shadow:0 4px 14px rgba(99,102,241,.35);transition:transform .2s cubic-bezier(.34,1.56,.64,1);}',
+  '.bq-dm-v2 .bqscr:hover{transform:scale(1.08);}',
+  '.bq-dm-v2 .bqscr:active{transform:scale(.95);}',
+  '.bq-dm-v2 .bqscr svg{width:18px;height:18px;stroke:#fff;}',
 
   /* V2 Pinned bar */
   '.bq-dm-v2 #bq-pinned-bar{background:var(--bq-bg-elevated);border-bottom:1px solid var(--bq-border);margin:0;}',
@@ -18661,19 +18650,18 @@ v2css.textContent = [
   '.bq-notif-perm-btn:hover{filter:brightness(1.1);}',
   '.bq-notif-perm-status{font-size:11px;color:var(--bq-text-muted);}',
 
-  /* ── V2 Search in DM list ── */
+  /* ── V77: V2 Search in DM list — no icon, clean ── */
   '.bq-dm-v2 #bqdm-search{padding:8px 12px;}',
-  '.bq-dm-v2 #bqdm-search-inp{width:100%;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid var(--bq-border);background:var(--bq-bg-hover);color:var(--bq-text);font-size:13px;outline:none;transition:border-color .15s ease;}',
-  '.bq-dm-v2 #bqdm-search-inp:focus{border-color:var(--bq-accent);}',
+  '.bq-dm-v2 #bqdm-search-inp{width:100%;padding:9px 14px;border-radius:12px;border:1px solid var(--bq-border);background:var(--bq-bg-hover);color:var(--bq-text);font-size:13px;font-weight:500;outline:none;transition:all .2s ease;}',
+  '.bq-dm-v2 #bqdm-search-inp::placeholder{color:var(--bq-text-subtle);}',
+  '.bq-dm-v2 #bqdm-search-inp:focus{border-color:var(--bq-accent);background:var(--bq-bg-elevated);box-shadow:0 0 0 3px rgba(96,165,250,.1);}',
   '.bq-dm-v2 .bqdm-search-wrap{position:relative;}',
-  '.bq-dm-v2 .bqdm-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--bq-text-subtle);}',
-  '.bq-dm-v2 .bqdm-search-icon svg{width:14px;height:14px;}',
 
-  /* ── V76: V1/V2 Segmented Switch in DM Header — BIGGER, GRADIENT, PROMINENT ── */
-  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:12px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;box-shadow:inset 0 1px 3px rgba(0,0,0,.15);}',
-  '.bq-dm-v2-btn{padding:6px 16px;border-radius:9px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);letter-spacing:.5px;font-family:Inter,sans-serif;min-width:38px;text-align:center;}',
-  '.bq-dm-v2-btn:hover{color:var(--bq-text);background:rgba(255,255,255,.04);}',
-  '.bq-dm-v2-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 10px rgba(139,92,246,.4),inset 0 1px 0 rgba(255,255,255,.15);text-shadow:0 1px 2px rgba(0,0,0,.2);}',
+  /* ── V77: V1/V2 Segmented Switch in DM Header — the ONLY toggle, make it prominent ── */
+  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:0;padding:3px;border-radius:13px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;box-shadow:inset 0 1px 4px rgba(0,0,0,.2);}',
+  '.bq-dm-v2-btn{padding:7px 18px;border-radius:10px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);letter-spacing:.5px;font-family:Inter,sans-serif;min-width:42px;text-align:center;position:relative;overflow:hidden;}',
+  '.bq-dm-v2-btn:hover{color:var(--bq-text);background:rgba(255,255,255,.05);}',
+  '.bq-dm-v2-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 12px rgba(139,92,246,.4),inset 0 1px 0 rgba(255,255,255,.2);text-shadow:0 1px 2px rgba(0,0,0,.2);}',
   '.bq-dm-v2-btn.active:hover{filter:brightness(1.1);transform:translateY(-1px);}',
 
   /* ── V76: IMMERSIVE V2 MODE CARD in Profile — beautiful, aesthetic, prominent ── */
@@ -18842,13 +18830,14 @@ function _v2TsFormat(ts){
   return d.getDate()+'/'+(d.getMonth()+1);
 }
 
-/* ── 5. V2 SEARCH BAR INJECTION ── */
+/* ── 5. V2 SEARCH BAR INJECTION (V77: no icon, cleaner) ── */
 function _v2InjectDmSearch(){
   var dml=document.getElementById('bqdml');
   if(!dml||document.getElementById('bqdm-search')) return;
   var wrap=document.createElement('div');
   wrap.id='bqdm-search';
-  wrap.innerHTML='<div class="bqdm-search-wrap"><span class="bqdm-search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" id="bqdm-search-inp" placeholder="Search conversations..." autocomplete="off" autocorrect="off" autocapitalize="off"></div>';
+  // V77: Removed the large search SVG icon — just a clean text input
+  wrap.innerHTML='<div class="bqdm-search-wrap"><input type="text" id="bqdm-search-inp" placeholder="Search conversations…" autocomplete="off" autocorrect="off" autocapitalize="off"></div>';
   dml.parentNode.insertBefore(wrap, dml);
   var inp=document.getElementById('bqdm-search-inp');
   if(inp && typeof _filterDmList==='function'){
@@ -18994,58 +18983,10 @@ function _v2UpdateHeaderControls(){
   // Already handled by CSS .bq-dm-v2 class
 }
 
-/* ── 9b. V2 TOGGLE INJECTION — IMMERSIVE & AESTHETIC (V76) ── */
+/* ── 9b. V2 TOGGLE — SINGLE SWITCH IN DM HEADER (V77) ── */
 function _v2InjectToggle(){
-  // ═══ Strategy 1: Immersive V2 Mode Card in Profile settings ═══
-  var scroll=document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
-  if(scroll && !document.getElementById('bq-dm-v2-section')){
-    var section=document.createElement('div');
-    section.className='bqpf-section';
-    section.id='bq-dm-v2-section';
-    var _isV2 = _bqDmVersion==='v2';
-    section.innerHTML =
-      '<div id="bq-dm-v2-hero">'+
-        '<div id="bq-dm-v2-hero-top">'+
-          '<div id="bq-dm-v2-hero-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/></svg></div>'+
-          '<div id="bq-dm-v2-hero-title-wrap">'+
-            '<div id="bq-dm-v2-hero-title">DM Version'+
-              '<span id="bq-dm-v2-hero-tag"><span class="beta-dot"></span>'+( _isV2?'V2 ACTIVE':'V1 ACTIVE')+'</span>'+
-            '</div>'+
-            '<div id="bq-dm-v2-hero-sub">'+(_isV2?'Telegram-inspired bubbles · WhatsApp logic · Zero lag':'Classic chat layout — the original experience')+'</div>'+
-          '</div>'+
-        '</div>'+
-        '<div id="bq-dm-v2-segment">'+
-          '<button id="bq-dm-v2-seg-btn" class="bq-dm-v2-seg-btn'+(_isV2?'':' active')+'" data-ver="v1">'+
-            '<span class="seg-label">V1</span><span class="seg-desc">Classic</span>'+
-          '</button>'+
-          '<button class="bq-dm-v2-seg-btn'+(_isV2?' active':'')+'" data-ver="v2">'+
-            '<span class="seg-label">V2</span><span class="seg-desc">Modern</span>'+
-          '</button>'+
-        '</div>'+
-      '</div>'+
-      '<div id="bq-dm-v2-features">'+
-        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Telegram-style message bubbles</div>'+
-        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Consecutive message grouping</div>'+
-        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Smart date separators</div>'+
-        '<div class="feat-row'+(_isV2?' on':'')+'"><span class="feat-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Quick DM search & pinning</div>'+
-      '</div>';
-    // Insert at the TOP of profile (most prominent) — before first section
-    var firstSection = scroll.querySelector('.bqpf-section');
-    if(firstSection){
-      scroll.insertBefore(section, firstSection);
-    } else {
-      scroll.appendChild(section);
-    }
-    // Wire segment buttons
-    section.querySelectorAll('.bq-dm-v2-seg-btn').forEach(function(btn){
-      btn.addEventListener('click', function(e){
-        e.stopPropagation();
-        window._bqSetDmVersion(btn.getAttribute('data-ver'));
-      });
-    });
-  }
-
-  // ═══ Strategy 2: V1/V2 segmented switch in DM list header ═══
+  // V77: ONE toggle only — V1/V2 segmented switch in the DM list header.
+  // Removed profile card and main-chat pill per user request (too cluttered).
   var dmHeader = document.querySelector('#bqv-dms .bqhdr');
   if(dmHeader && !document.getElementById('bq-dm-v2-hdr-switch')){
     var hdrSwitch = document.createElement('div');
@@ -19066,27 +19007,6 @@ function _v2InjectToggle(){
         window._bqSetDmVersion(btn.getAttribute('data-ver'));
       });
     });
-  }
-
-  // ═══ Strategy 3: V2 pill on the MAIN CHAT header (always visible) ═══
-  var chatHeader = document.querySelector('#bqv-chat .bqhdr');
-  if(chatHeader && !document.getElementById('bq-dm-v2-chat-pill')){
-    var pill = document.createElement('span');
-    pill.id = 'bq-dm-v2-chat-pill';
-    pill.className = 'bq-dm-v2-chat-pill' + (_bqDmVersion==='v2'?' on':'');
-    pill.innerHTML = _bqDmVersion==='v2' ? '<span class="beta-dot"></span>DM V2' : 'DM V1';
-    pill.title = 'Switch DM version (' + (_bqDmVersion==='v2'?'V2 → V1':'V1 → V2') + ')';
-    pill.addEventListener('click', function(e){
-      e.stopPropagation();
-      var next = _bqDmVersion==='v2'?'v1':'v2';
-      window._bqSetDmVersion(next);
-    });
-    var chatTitle = chatHeader.querySelector('.bqhtitle');
-    if(chatTitle){
-      chatTitle.appendChild(pill);
-    } else {
-      chatHeader.appendChild(pill);
-    }
   }
 }
 
@@ -19113,10 +19033,10 @@ function _v2Init(){
     if(textNodes.length) textNodes[0].textContent = _bqDmVersion==='v2'?'Chats':'Messages';
     else hdrTitle.insertBefore(document.createTextNode(_bqDmVersion==='v2'?'Chats':'Messages'), existingBadge || null);
   }
-  console.log('[bq] V76 patch loaded — Immersive V2 toggle, system msg spam fix, push removed');
+  console.log('[bq] V77 patch loaded — Single V2 toggle in DMs, search icon removed, V2 improvements');
 }
 
-// ── V76: PERSISTENT MutationObserver — keeps badge, switch, toggle, chat pill injected ──
+// ── V77: PERSISTENT MutationObserver — keeps header switch injected ──
 var _v2DmObserver = null;
 function _v2StartBadgeObserver(){
   if(_v2DmObserver) return;
@@ -19131,16 +19051,11 @@ function _v2StartBadgeObserver(){
     if(dmHdr && !document.getElementById('bq-dm-v2-hdr-switch')){
       _v2InjectToggle();
     }
-    // Inject profile immersive card if profile section exists but card doesn't
-    var pfScroll = document.querySelector('.bqpf-scroll') || document.querySelector('#bqv-profile .bqpf-scroll');
-    if(pfScroll && !document.getElementById('bq-dm-v2-section')){
-      _v2InjectToggle();
-    }
-    // V76: Inject chat pill on main chat header
-    var chatHdr = document.querySelector('#bqv-chat .bqhdr');
-    if(chatHdr && !document.getElementById('bq-dm-v2-chat-pill')){
-      _v2InjectToggle();
-    }
+    // V77: Remove stale profile card / chat pill if they exist from older versions
+    var oldSection = document.getElementById('bq-dm-v2-section');
+    if(oldSection) oldSection.remove();
+    var oldPill = document.getElementById('bq-dm-v2-chat-pill');
+    if(oldPill) oldPill.remove();
     // Inject DM search if V2 and not present
     if(_bqDmVersion==='v2'){
       _v2InjectDmSearch();
@@ -19183,11 +19098,6 @@ window.bqNav = function(targetView){
     _v2InjectToggle();
     if(_bqDmVersion==='v2') _v2InjectDmSearch();
     setTimeout(function(){ _v2InjectToggle(); _v2InjectHeaderBadge(); }, 200);
-  }
-  // V76: Also inject chat pill when navigating to main chat
-  if(targetView==='chat' || targetView==='global'){
-    _v2InjectToggle();
-    setTimeout(function(){ _v2InjectToggle(); }, 200);
   }
 };
 

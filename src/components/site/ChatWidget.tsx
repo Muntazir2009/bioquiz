@@ -6,12 +6,11 @@ import { useEffect } from "react";
  * ChatWidget — loads the BioQuiz chat widget script.
  * - Cache-busts via version from /chat-widget-version.json
  * - Auto-reloads the widget when a new version is detected (for open tabs)
- * - The rePaintPoll stub is defined in layout.tsx's synchronous <script>
+ * - Polls every 12s so new versions appear quickly without a manual reload
  */
 export function ChatWidget() {
   useEffect(() => {
-    // Don't load twice
-    if (document.getElementById("bq-chat-script")) return;
+    let poll: ReturnType<typeof setInterval> | null = null;
 
     // Load the widget with cache-busting version query param
     function loadWidget(version?: string) {
@@ -40,21 +39,19 @@ export function ChatWidget() {
         const version = data?.version || Date.now().toString();
         loadWidget(version);
 
-        // Poll for version changes every 60s — auto-reload if updated
+        // V77: Poll every 12s (was 60s) so new versions appear quickly
         const CURRENT_VERSION = version;
-        const poll = setInterval(() => {
+        poll = setInterval(() => {
           fetch("/chat-widget-version.json", { cache: "no-store" })
             .then((r) => (r.ok ? r.json() : null))
             .then((d) => {
               if (d?.version && d.version !== CURRENT_VERSION) {
-                clearInterval(poll);
+                if (poll) clearInterval(poll);
                 loadWidget(d.version);
               }
             })
             .catch(() => {});
-        }, 60000);
-
-        return () => clearInterval(poll);
+        }, 12000);
       })
       .catch(() => {
         // Fallback: load without cache-bust
@@ -62,6 +59,7 @@ export function ChatWidget() {
       });
 
     return () => {
+      if (poll) clearInterval(poll);
       const el = document.getElementById("bq-chat-script");
       if (el) el.remove();
       const bubble = document.getElementById("bqb");

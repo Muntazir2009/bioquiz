@@ -230,3 +230,45 @@ Stage Summary:
 - Purple gradient theme (#6366f1 → #8b5cf6 → #a855f7) makes V2 feel premium and "beta-like"
 - Verified with Agent Browser: zero JS errors, all 3 toggle locations VISIBLE and interactive
 - Lint passes clean
+
+---
+Task ID: 6
+Agent: main
+Task: Fix caching (changes not appearing), remove all V2 toggles except one in DMs, remove large search icon, improve V2
+
+Work Log:
+- CACHING FIX — user reported "changes aren't there, maybe cached":
+  - Root cause: ChatWidget.tsx polled for version changes every 60s — too slow
+  - Also had a cleanup bug: `return () => clearInterval(poll)` was inside the .then() callback, never reaching useEffect's cleanup
+  - Fix: Reduced poll interval from 60s to 12s so new versions auto-load within 12s
+  - Fix: Moved poll variable to useEffect scope so cleanup works correctly
+- REMOVED ALL V2 TOGGLES EXCEPT ONE:
+  - Removed the immersive profile card (bq-dm-v2-section with hero, segment, features)
+  - Removed the main chat header pill (bq-dm-v2-chat-pill)
+  - Kept ONLY the V1/V2 segmented switch in the DM list header (#bq-dm-v2-hdr-switch)
+  - Updated _bqSetDmVersion to remove stale profile card / chat pill if they exist from older versions
+  - Updated MutationObserver to clean up stale elements and only inject the header switch
+  - Removed the chat view navigation handler (no more chat pill to inject)
+- REMOVED LARGE SEARCH ICON:
+  - Removed the SVG search icon from _v2InjectDmSearch() — now just a clean text input
+  - Updated CSS: removed left padding (was 32px for icon), cleaner border radius (12px), focus glow
+  - Added placeholder styling and smoother focus transition
+- V2 IMPROVEMENTS:
+  - DM list rows: smoother hover (translateX slide), active row has left accent border + gradient, avatar scale on hover, rounded 14px corners
+  - Unread badge: gradient background (accent → purple), pop animation, glow shadow
+  - Bubbles: bigger border radius (14px), bubble slide-in animation, mine bubbles have subtle gradient + glow shadow, theirs bubbles have cleaner border
+  - Date separator: uppercase, letter-spacing, pill style
+  - Typing indicator: bigger dots (6px), italic text, smoother bounce
+  - Input wrapper: cleaner padding, rounder (22px), focus glow
+  - Scroll button: floating gradient (accent → purple), scale on hover/active
+  - V1/V2 switch: more prominent (7px 18px padding, 13px radius, stronger glow)
+- Bumped WIDGET_VERSION to 77.0.0 and chat-widget-version.json to 77.0.0
+
+Stage Summary:
+- Caching fixed: new widget versions now auto-load within 12 seconds (was 60s)
+- Only ONE V2 toggle remains: the V1/V2 segmented switch in the DM list header
+- Profile card and main chat pill completely removed
+- Large search icon removed — clean text input only
+- V2 visual polish: smoother animations, gradient bubbles, floating scroll button, pop animations on badges
+- Verified with Agent Browser: version 77.0.0, toggleCount=1, hdrSwitchOnly=true, searchIconRemoved=true, zero errors
+- Lint passes clean
