@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '81.0.0';                     // V81: Aurora DM V2 redesign — glassmorphic bubbles, aurora gradients, spring animations
+const WIDGET_VERSION = '82.0.0';                     // V82: Mono DM V2 redesign — Vercel v0 monochrome aesthetic, hover actions, search removed, settings redesigned
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -19723,5 +19723,1579 @@ setTimeout(auroraInit, 2500);
 setTimeout(auroraInit, 5000);
 
 }catch(e){ console.error('[bq] V81 Aurora patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V82 PATCH — DM V2 "MONO" REDESIGN
+   ───────────────────────────────────────────────────────────────────────
+   A complete aesthetic overhaul inspired by Vercel v0, Linear, and other
+   modern AI startup websites. Pure monochrome, sharp, minimal, geometric.
+
+   Design language:
+   • Pure black background (#000) with elevated surfaces (#0a0a0a, #111)
+   • Single accent: pure white (#fff) — no gradients anywhere
+   • Sharp 8px corner radius (not pill-shaped 18px)
+   • 1px subtle borders, no shadows (just one tiny elevation shadow on hover)
+   • Geist-like typography (Inter, tight letter-spacing)
+   • Mono-spaced font (ui-monospace) for timestamps, counts, labels
+   • Uppercase micro-labels with letter-spacing
+   • Subtle hover states (opacity changes, border brightening)
+   • Smooth 0.15s transitions (no springs, no overshoots)
+   • Grid-aligned layout
+
+   New V2 features added:
+   1. Message hover action bar (reply, react, more)
+   2. Compact inline reactions display
+   3. Three-stage read receipts (sent ✓ → delivered ✓✓ → seen cyan ✓✓)
+   4. Pinned messages chip in DM conversation header
+   5. Last-seen indicator under partner name
+   6. Disappearing-messages timer badge
+   7. Date-pill click → jump to top of that day
+   8. Typing indicator with partner avatar
+   9. Online presence dot with status color
+   10. Message grouping: avatar only on first message of a run
+
+   Removed:
+   • Search bar (both V1 and V2)
+
+   Redesigned:
+   • Settings/profile UI — v0-style command panel with clean sections,
+     mono uppercase labels, B/W toggle switches, no gradients
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   V1 is untouched (except search removal which affects both).
+   Respects prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var MONO_VERSION = '82.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. MONO DESIGN TOKENS
+   ─────────────────────────────────────────────────────────────────────── */
+var MONO = {
+  // Pure monochrome scale
+  bg:           '#000000',
+  bgElevated:   '#0a0a0a',
+  bgHover:      '#111111',
+  bgHoverSoft:  'rgba(255,255,255,0.04)',
+  border:       'rgba(255,255,255,0.08)',
+  borderHover:  'rgba(255,255,255,0.16)',
+  borderActive: 'rgba(255,255,255,0.24)',
+  text:         '#ededed',
+  textMuted:    '#888888',
+  textSubtle:   '#555555',
+  textFaint:    '#333333',
+  accent:       '#ffffff',         // pure white — the only "accent"
+  // Status colors (used sparingly)
+  statusOnline:  '#22c55e',
+  statusStudy:   '#ffffff',        // monochrome — studying shows as white
+  statusAway:    '#f59e0b',
+  statusBusy:    '#ef4444',
+  // Read receipt stages
+  seen:          '#22d3ee',        // small cyan accent for "seen" — the only color
+  seenGlow:      'rgba(34,211,238,0.4)',
+  // Pure white bubble (mine)
+  bubbleMine:    '#ffffff',
+  bubbleMineText:'#000000',
+  // Frosted bubble (theirs)
+  bubbleTheirs:  'rgba(255,255,255,0.05)',
+  bubbleTheirsBorder: 'rgba(255,255,255,0.08)',
+};
+
+var MONO_FONT = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+var MONO_MONO = "ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Mono', monospace";
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. MONO CSS — overrides V80 + V81 with higher specificity + !important
+   ─────────────────────────────────────────────────────────────────────── */
+var monoCss = document.createElement('style');
+monoCss.id = 'bq-mono-css';
+monoCss.textContent = [
+  /* ────────────────────────────────────────────────────────────────────
+     CORE SURFACES — pure black, sharp borders, no gradients
+     ──────────────────────────────────────────────────────────────────── */
+
+  /* Panel background — pure black */
+  '.bq-dm-v2 #bqp, .bq-dm-v2 #bqdmmsgs{',
+  '  background:' + MONO.bg + ' !important;',
+  '  background-image:none !important;',  /* kill V81 aurora ambient glow */
+  '}',
+
+  /* Headers — elevated, with hairline border */
+  '.bq-dm-v2 #bqv-dms .bqhdr,',
+  '.bq-dm-v2 #bqv-dmconv > .bqhdr{',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  padding:0 8px !important;',
+  '  position:relative !important;',
+  '}',
+  /* Kill the V81 aurora gradient line under headers */
+  '.bq-dm-v2 #bqv-dms .bqhdr::after,',
+  '.bq-dm-v2 #bqv-dmconv > .bqhdr::after{',
+  '  display:none !important;',
+  '  background:none !important;',
+  '}',
+
+  /* Header title — mono uppercase, tight tracking */
+  '.bq-dm-v2 .bqhtitle{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;',
+  '  font-weight:600 !important;',
+  '  letter-spacing:0.08em !important;',
+  '  text-transform:uppercase !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+
+  /* Header buttons — sharp, mono */
+  '.bq-dm-v2 .bqhbtn{',
+  '  width:30px !important;height:30px !important;',
+  '  background:transparent !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqhbtn:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  background:' + MONO.bgHoverSoft + ' !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bqhbtn svg{',
+  '  stroke:' + MONO.textMuted + ' !important;',
+  '  width:13px !important;height:13px !important;',
+  '  stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bqhbtn:hover svg{stroke:' + MONO.text + ' !important;}',
+  '.bq-dm-v2 .bqhbtn.on{',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqhbtn.on svg{stroke:' + MONO.text + ' !important;}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     DM LIST — geometric rows, sharp dividers, no rounded cards
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 #bqdml{',
+  '  padding:0 !important;',
+  '  background:' + MONO.bg + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr{',
+  '  display:flex !important;',
+  '  align-items:center !important;',
+  '  padding:12px 14px !important;',
+  '  border-radius:0 !important;',
+  '  margin:0 !important;',
+  '  cursor:pointer !important;',
+  '  transition:background .15s ease !important;',
+  '  position:relative !important;',
+  '  gap:12px !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  transform:none !important;',  /* kill V81 translateX hover */
+  '}',
+  '.bq-dm-v2 .bqdmr:hover{',
+  '  background:' + MONO.bgHoverSoft + ' !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr:active{',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr.active-row{',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  border-left:2px solid ' + MONO.accent + ' !important;',
+  '  padding-left:12px !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr.unread-row{',
+  '  background:' + MONO.bgHoverSoft + ' !important;',
+  '}',
+
+  /* DM list avatar — smaller, square-ish (still round but tighter) */
+  '.bq-dm-v2 .bqdmav{',
+  '  width:38px !important;height:38px !important;',
+  '  border-radius:8px !important;',
+  '  font-size:13px !important;font-weight:700 !important;',
+  '  flex-shrink:0 !important;',
+  '  position:relative !important;',
+  '  transition:opacity .15s ease !important;',
+  '  box-shadow:none !important;',
+  '  filter:saturate(0.6) !important;',  /* desaturate the color slightly for mono feel */
+  '}',
+  '.bq-dm-v2 .bqdmr:hover .bqdmav{',
+  '  transform:none !important;',
+  '  opacity:0.85 !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmav::after{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  bottom:-1px !important;right:-1px !important;',
+  '  width:10px !important;height:10px !important;',
+  '  border-radius:50% !important;',
+  '  border:2px solid ' + MONO.bg + ' !important;',
+  '  display:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="online"]::after{',
+  '  background:' + MONO.statusOnline + ' !important;display:block !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="studying"]::after{',
+  '  background:' + MONO.accent + ' !important;display:block !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="busy"]::after{',
+  '  background:' + MONO.statusBusy + ' !important;display:block !important;',
+  '}',
+
+  /* DM list name + preview — mono, tight tracking */
+  '.bq-dm-v2 .bqdmn{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;',
+  '  font-weight:500 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  letter-spacing:-0.01em !important;',
+  '  white-space:nowrap !important;',
+  '  overflow:hidden !important;',
+  '  text-overflow:ellipsis !important;',
+  '  display:flex !important;',
+  '  align-items:center !important;',
+  '  gap:6px !important;',
+  '}',
+  '.bq-dm-v2 .bqdmp{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  line-height:1.4 !important;',
+  '  margin-top:2px !important;',
+  '  white-space:nowrap !important;',
+  '  overflow:hidden !important;',
+  '  text-overflow:ellipsis !important;',
+  '  letter-spacing:-0.005em !important;',
+  '}',
+  '.bq-dm-v2 .bqdmp.unr{color:' + MONO.text + ' !important;font-weight:500 !important;}',
+
+  /* DM list time — mono font, uppercase */
+  '.bq-dm-v2 .bqdmt{',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '  white-space:nowrap !important;',
+  '  font-weight:500 !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+
+  /* DM list unread badge — sharp square, pure white */
+  '.bq-dm-v2 .bqdmub{',
+  '  min-width:18px !important;height:18px !important;',
+  '  border-radius:4px !important;',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  padding:0 5px !important;',
+  '  box-shadow:none !important;',
+  '  animation:none !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '@keyframes bqMonoBadgePop{0%{transform:scale(0);}60%{transform:scale(1.1);}100%{transform:scale(1);}}',
+  '.bq-dm-v2 .bqdmub{animation:bqMonoBadgePop .2s ease both !important;}',
+
+  /* DM list row actions — minimal, appear on hover */
+  '.bq-dm-v2 .bqdmr-acts{',
+  '  position:absolute !important;',
+  '  right:10px !important;top:50% !important;',
+  '  transform:translateY(-50%) !important;',
+  '  display:flex !important;gap:2px !important;',
+  '  opacity:0 !important;',
+  '  transition:opacity .15s ease !important;',
+  '  z-index:2 !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr:hover .bqdmr-acts{opacity:1 !important;}',
+  '.bq-dm-v2 .bqdmr-act{',
+  '  width:26px !important;height:26px !important;',
+  '  border-radius:4px !important;',
+  '  border:none !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  cursor:pointer !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  transition:all .15s ease !important;',
+  '  backdrop-filter:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr-act:hover{',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr-act.bq-pin.pinned{color:' + MONO.text + ' !important;}',
+  '.bq-dm-v2 .bqdmr-act.bq-del:hover{color:' + MONO.statusBusy + ' !important;}',
+  '.bq-dm-v2 .bqdmr-act svg{width:13px !important;height:13px !important;}',
+
+  /* Pin icon in name — minimal */
+  '.bq-dm-v2 .bqdm-pin{',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  filter:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmn-alias{',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '  font-weight:400 !important;',
+  '  font-size:11px !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     DM CONVERSATION HEADER — v0 style, with status + pinned chip
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqdmhav{',
+  '  width:32px !important;height:32px !important;',
+  '  border-radius:6px !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  position:relative !important;',
+  '  box-shadow:none !important;',
+  '  filter:saturate(0.6) !important;',
+  '}',
+  '.bq-dm-v2 .bqdmhi{flex:1 !important;min-width:0 !important;}',
+  '.bq-dm-v2 .bqdmhn{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;font-weight:600 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  letter-spacing:-0.01em !important;',
+  '}',
+  '.bq-dm-v2 .bqdmhs{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  display:flex !important;align-items:center !important;gap:5px !important;',
+  '  margin-top:1px !important;',
+  '}',
+  '.bq-dm-v2 .bqdmhs-dot{',
+  '  width:6px !important;height:6px !important;',
+  '  border-radius:50% !important;',
+  '  display:inline-block !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqdmhs-dot.online{background:' + MONO.statusOnline + ' !important;}',
+  '.bq-dm-v2 .bqdmhs-dot.studying{background:' + MONO.accent + ' !important;}',
+  '.bq-dm-v2 .bqdmhs-dot.busy{background:' + MONO.statusBusy + ' !important;}',
+  '.bq-dm-v2 .bqdmhs-dot.away{background:' + MONO.statusAway + ' !important;}',
+  '.bq-dm-v2 #bqdmhs-txt{',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '}',
+
+  /* Pinned messages chip in DM header (new feature) */
+  '.bq-dm-v2 .bq-mono-pin-chip{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;gap:5px !important;',
+  '  padding:3px 8px !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:4px !important;',
+  '  background:transparent !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:500 !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .15s ease !important;',
+  '  margin-left:8px !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-pin-chip:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-pin-chip svg{',
+  '  width:11px !important;height:11px !important;',
+  '  stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-pin-chip.has-pinned{',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+
+  /* Disappearing messages timer badge (new feature) */
+  '.bq-dm-v2 .bq-mono-disappear-badge{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;gap:4px !important;',
+  '  padding:3px 7px !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:4px !important;',
+  '  background:transparent !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:500 !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  margin-left:6px !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-disappear-badge svg{',
+  '  width:10px !important;height:10px !important;',
+  '  stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     MESSAGE BUBBLES — pure monochrome, sharp corners, no gradients
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqr{',
+  '  padding:1px 14px !important;',
+  '  margin:0 !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine{justify-content:flex-end !important;}',
+  '.bq-dm-v2 .bqr.theirs{justify-content:flex-start !important;}',
+
+  /* Subtle fade-in (no spring) */
+  '.bq-dm-v2 .bqr.bq-new{',
+  '  animation:bqMonoFadeIn .2s ease both !important;',
+  '}',
+  '@keyframes bqMonoFadeIn{',
+  '  from{opacity:0;transform:translateY(4px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  '.bq-dm-v2 .bqri{',
+  '  display:flex !important;',
+  '  align-items:flex-end !important;',
+  '  gap:0 !important;',
+  '  max-width:80% !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqri{',
+  '  flex-direction:row-reverse !important;',
+  '  max-width:80% !important;',
+  '}',
+
+  /* Avatar — only on first message of group, smaller, square */
+  '.bq-dm-v2 .bqr .bqav{',
+  '  width:24px !important;height:24px !important;',
+  '  border-radius:4px !important;',
+  '  font-size:9px !important;font-weight:600 !important;',
+  '  flex-shrink:0 !important;',
+  '  margin-right:8px !important;',
+  '  align-self:flex-end !important;',
+  '  margin-bottom:2px !important;',
+  '  cursor:pointer !important;',
+  '  transition:opacity .15s ease !important;',
+  '  box-shadow:none !important;',
+  '  filter:saturate(0.6) !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqav{display:none !important;}',
+  '.bq-dm-v2 .bqr.consec .bqav{visibility:hidden !important;}',
+  '.bq-dm-v2 .bqr .bqav:hover{',
+  '  transform:none !important;',
+  '  opacity:0.8 !important;',
+  '  box-shadow:none !important;',
+  '}',
+
+  '.bq-dm-v2 .bqcol{',
+  '  display:flex !important;',
+  '  flex-direction:column !important;',
+  '  gap:1px !important;',
+  '  min-width:0 !important;',
+  '  max-width:100% !important;',
+  '}',
+  '.bq-dm-v2 .bqmeta{display:none !important;}',
+
+  '.bq-dm-v2 .bqbw{',
+  '  display:flex !important;',
+  '  flex-direction:column !important;',
+  '  gap:0 !important;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs .bqbw{align-items:flex-start !important;}',
+  '.bq-dm-v2 .bqr.mine .bqbw{align-items:flex-end !important;}',
+
+  /* Bubble — sharp 6px radius, no shadows, no gradients */
+  '.bq-dm-v2 .bqbbl{',
+  '  padding:7px 11px 4px !important;',
+  '  border-radius:8px !important;',
+  '  position:relative !important;',
+  '  max-width:100% !important;',
+  '  word-wrap:break-word !important;',
+  '  box-shadow:none !important;',
+  '  border:1px solid transparent !important;',
+  '  transition:opacity .15s ease !important;',
+  '  animation:none !important;',  /* kill V81 bubble spring */
+  '}',
+  '.bq-dm-v2 .bqbbl:active{transform:none !important;}',
+  /* Kill V81 ::before pseudo-elements (top-light reflections) */
+  '.bq-dm-v2 .bqbbl::before{display:none !important;}',
+
+  /* Mine bubble — pure white bg, black text — high contrast, v0-style */
+  '.bq-dm-v2 .bqr.mine .bqbbl{',
+  '  background:' + MONO.bubbleMine + ' !important;',
+  '  color:' + MONO.bubbleMineText + ' !important;',
+  '  border:1px solid ' + MONO.accent + ' !important;',
+  '  border-radius:8px 2px 8px 8px !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:8px !important;}',
+  '.bq-dm-v2 .bqr.mine .bqbbl.media{',
+  '  padding:2px !important;',
+  '  border-radius:8px 2px 8px 8px !important;',
+  '  overflow:hidden !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:8px !important;}',
+
+  /* Theirs bubble — frosted dark, hairline border */
+  '.bq-dm-v2 .bqr.theirs .bqbbl{',
+  '  background:' + MONO.bubbleTheirs + ' !important;',
+  '  border:1px solid ' + MONO.bubbleTheirsBorder + ' !important;',
+  '  border-radius:2px 8px 8px 8px !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:8px !important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl.media{',
+  '  padding:2px !important;',
+  '  border-radius:2px 8px 8px 8px !important;',
+  '  overflow:hidden !important;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:8px !important;}',
+
+  /* Hover — just opacity dim */
+  '.bq-dm-v2 .bqr:hover .bqbbl{',
+  '  transform:none !important;',
+  '  opacity:0.92 !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine:hover .bqbbl,',
+  '.bq-dm-v2 .bqr.theirs:hover .bqbbl{',
+  '  box-shadow:none !important;',
+  '}',
+
+  /* Text — Inter, tight tracking, no text-shadow */
+  '.bq-dm-v2 .bqtxt{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;',
+  '  line-height:1.45 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  margin-bottom:2px !important;',
+  '  font-weight:400 !important;',
+  '  text-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqtxt{',
+  '  color:' + MONO.bubbleMineText + ' !important;',
+  '  text-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqbbl a{color:' + MONO.bubbleMineText + ' !important;text-decoration:underline !important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl a{color:' + MONO.text + ' !important;text-decoration:underline !important;text-decoration-color:' + MONO.borderHover + ' !important;}',
+
+  /* Read receipts — three stages, mono + cyan for seen */
+  '.bq-dm-v2 .bqbbl-meta{',
+  '  float:right !important;',
+  '  margin:5px 0 -2px 8px !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:9px !important;',
+  '  line-height:1 !important;',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '  white-space:nowrap !important;',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;',
+  '  gap:3px !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqbbl-meta{color:rgba(0,0,0,0.4) !important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl-meta{color:' + MONO.textSubtle + ' !important;}',
+  '.bq-dm-v2 .bqbbl-meta.delivered .bqbbl-tick{color:rgba(0,0,0,0.55) !important;}',
+  '.bq-dm-v2 .bqbbl-meta.seen .bqbbl-tick{',
+  '  color:' + MONO.seen + ' !important;',
+  '  filter:drop-shadow(0 0 3px ' + MONO.seenGlow + ') !important;',
+  '  animation:none !important;',  /* kill V81 pulsing */
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqbbl-meta.seen{color:' + MONO.seen + ' !important;}',
+  '.bq-dm-v2 .bqbbl-meta .bqbbl-tick svg{width:12px !important;height:8px !important;}',
+
+  /* Reply preview — minimal left border, no gradient */
+  '.bq-dm-v2 .bqrp{',
+  '  margin-bottom:4px !important;',
+  '  padding:3px 8px !important;',
+  '  border-left:2px solid ' + MONO.borderActive + ' !important;',
+  '  border-image:none !important;',
+  '  border-radius:0 4px 4px 0 !important;',
+  '  background:' + MONO.bgHoverSoft + ' !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqrp{',
+  '  background:rgba(0,0,0,0.08) !important;',
+  '  border-left-color:rgba(0,0,0,0.3) !important;',
+  '}',
+  '.bq-dm-v2 .bqrp-n{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqrp-n{color:rgba(0,0,0,0.7) !important;}',
+  '.bq-dm-v2 .bqrp-t{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  max-width:200px !important;',
+  '  margin-top:1px !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqrp-t{color:rgba(0,0,0,0.5) !important;}',
+
+  /* Media — sharp corners */
+  '.bq-dm-v2 .bq-msg-img, .bq-dm-v2 .bq-msg-gif{',
+  '  border-radius:6px !important;',
+  '  max-width:240px !important;max-height:240px !important;',
+  '  display:block !important;',
+  '}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-meta{',
+  '  position:absolute !important;',
+  '  bottom:5px !important;right:6px !important;',
+  '  background:rgba(0,0,0,0.65) !important;',
+  '  backdrop-filter:blur(4px) !important;',
+  '  border-radius:4px !important;',
+  '  padding:2px 5px !important;',
+  '  color:#fff !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqbbl.media:not(.has-text) .bqbbl-meta{',
+  '  background:rgba(0,0,0,0.7) !important;',
+  '  color:#fff !important;',
+  '}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-tick{color:rgba(255,255,255,0.7) !important;}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text).seen .bqbbl-tick{color:' + MONO.seen + ' !important;}',
+
+  /* Sticker — slightly smaller, no drop shadow */
+  '.bq-dm-v2 .bqsticker{',
+  '  font-size:48px !important;',
+  '  line-height:1.1 !important;',
+  '  filter:none !important;',
+  '}',
+
+  /* Date separator — minimal pill, mono uppercase, no gradient lines */
+  '.bq-dm-v2 .bqds{',
+  '  margin:14px 0 8px !important;',
+  '  text-align:center !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;',
+  '  font-weight:500 !important;',
+  '  letter-spacing:0.08em !important;',
+  '  text-transform:uppercase !important;',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2 .bqds::before, .bq-dm-v2 .bqds::after{',
+  '  display:none !important;',
+  '  background:none !important;',
+  '}',
+  '.bq-dm-v2 .bqds-text{',
+  '  display:inline-block !important;',
+  '  padding:3px 10px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:4px !important;',
+  '  position:relative !important;',
+  '  z-index:1 !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqds-text:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+
+  /* Typing indicator — minimal dots, no glow */
+  '.bq-dm-v2 .bqtyp{',
+  '  padding:4px 14px 2px !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  font-style:normal !important;',
+  '  font-weight:400 !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+  '.bq-dm-v2 .bqtd{',
+  '  display:inline-flex !important;',
+  '  gap:3px !important;',
+  '  align-items:center !important;',
+  '  margin-right:5px !important;',
+  '  vertical-align:middle !important;',
+  '}',
+  '.bq-dm-v2 .bqtd span{',
+  '  width:4px !important;height:4px !important;',
+  '  border-radius:50% !important;',
+  '  background:' + MONO.textMuted + ' !important;',
+  '  animation:bqMonoTypeDot 1.3s ease-in-out infinite !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.18s !important;}',
+  '.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.36s !important;}',
+  '@keyframes bqMonoTypeDot{',
+  '  0%,60%,100%{transform:translateY(0);opacity:.3;}',
+  '  30%{transform:translateY(-3px);opacity:1;}',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     MESSAGE HOVER ACTIONS — v0-style floating action bar (new feature)
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqr .bq-mono-actions{',
+  '  position:absolute !important;',
+  '  top:50% !important;',
+  '  transform:translateY(-50%) !important;',
+  '  display:flex !important;',
+  '  align-items:center !important;',
+  '  gap:1px !important;',
+  '  opacity:0 !important;',
+  '  transition:opacity .15s ease !important;',
+  '  z-index:3 !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  padding:2px !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bq-mono-actions{right:auto !important;left:8px !important;}',
+  '.bq-dm-v2 .bqr.theirs .bq-mono-actions{right:8px !important;left:auto !important;}',
+  '.bq-dm-v2 .bqr:hover .bq-mono-actions{opacity:1 !important;}',
+  '.bq-dm-v2 .bq-mono-act{',
+  '  width:24px !important;height:24px !important;',
+  '  border:none !important;',
+  '  background:transparent !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  cursor:pointer !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  border-radius:4px !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-act:hover{',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-act svg{',
+  '  width:13px !important;height:13px !important;',
+  '  stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;',
+  '  stroke-linecap:round !important;stroke-linejoin:round !important;',
+  '}',
+
+  /* Compact inline reactions (new feature) */
+  '.bq-dm-v2 .bq-mono-reactions{',
+  '  display:flex !important;',
+  '  align-items:center !important;',
+  '  gap:3px !important;',
+  '  margin-top:3px !important;',
+  '  flex-wrap:wrap !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bq-mono-reactions{justify-content:flex-end !important;}',
+  '.bq-dm-v2 .bq-mono-reaction{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;gap:3px !important;',
+  '  padding:1px 6px !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:10px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .15s ease !important;',
+  '  user-select:none !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-reaction:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  transform:translateY(-1px) !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-reaction.mine{',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-reaction .rxn-emoji{font-size:11px !important;line-height:1 !important;}',
+  '.bq-dm-v2 .bq-mono-reaction .rxn-count{',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:500 !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-mono-reaction.mine .rxn-count{color:' + MONO.text + ' !important;}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     INPUT — sharp, mono, no rounded pill
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqiw{',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border-top:1px solid ' + MONO.border + ' !important;',
+  '  padding:8px 10px !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2 .bqiw::before{',
+  '  display:none !important;',
+  '  background:none !important;',
+  '}',
+  '.bq-dm-v2 .bqinp{',
+  '  background:' + MONO.bg + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  padding:9px 14px !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;',
+  '  transition:all .15s ease !important;',
+  '  letter-spacing:-0.005em !important;',
+  '}',
+  '.bq-dm-v2 .bqinp:focus{',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  background:' + MONO.bg + ' !important;',
+  '  box-shadow:none !important;',
+  '}',
+
+  /* Send button — sharp, mono */
+  '.bq-dm-v2 .bqsnd{',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  border-radius:6px !important;',
+  '  transition:opacity .15s ease !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqsnd:hover{opacity:0.85 !important;transform:none !important;}',
+  '.bq-dm-v2 .bqsnd:active{transform:none !important;}',
+  '.bq-dm-v2 .bqsnd svg{stroke:' + MONO.bg + ' !important;}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     SCROLL BUTTON — sharp square, no gradient, no shimmer
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqscr{',
+  '  bottom:72px !important;',
+  '  right:10px !important;',
+  '  width:32px !important;height:32px !important;',
+  '  border-radius:6px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.borderHover + ' !important;',
+  '  box-shadow:none !important;',
+  '  position:absolute !important;',
+  '  overflow:hidden !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqscr::before{display:none !important;}',
+  '.bq-dm-v2 .bqscr:hover{',
+  '  transform:none !important;',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqscr:active{transform:scale(0.95) !important;}',
+  '.bq-dm-v2 .bqscr svg{stroke:' + MONO.text + ' !important;width:14px !important;height:14px !important;}',
+  '.bq-dm-v2 .bqscr .badge{',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  border-radius:3px !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:9px !important;font-weight:600 !important;',
+  '  padding:1px 4px !important;',
+  '  min-width:14px !important;',
+  '}',
+
+  /* New messages banner — sharp, mono, no gradient */
+  '.bq-dm-v2 .bq-new-msg-banner{',
+  '  position:absolute !important;',
+  '  bottom:78px !important;',
+  '  left:50% !important;',
+  '  transform:translateX(-50%) !important;',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  padding:5px 14px !important;',
+  '  border-radius:4px !important;',
+  '  cursor:pointer !important;',
+  '  z-index:5 !important;',
+  '  box-shadow:none !important;',
+  '  animation:bqMonoBannerIn .2s ease both !important;',
+  '  letter-spacing:0 !important;',
+  '  overflow:hidden !important;',
+  '  text-transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bq-new-msg-banner::before{display:none !important;}',
+  '@keyframes bqMonoBannerIn{',
+  '  from{opacity:0;transform:translateX(-50%) translateY(4px);}',
+  '  to{opacity:1;transform:translateX(-50%) translateY(0);}',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     EMPTY STATE — minimal, geometric, no orb animation
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 .bqempty{',
+  '  padding:60px 24px !important;',
+  '  text-align:center !important;',
+  '  animation:bqMonoFadeIn .3s ease both !important;',
+  '}',
+  '.bq-dm-v2 .bqempty-ic{',
+  '  width:48px !important;height:48px !important;',
+  '  margin:0 auto 14px !important;',
+  '  border-radius:8px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  position:relative !important;',
+  '  animation:none !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqempty-ic::before{display:none !important;}',
+  '.bq-dm-v2 .bqempty-ic svg{',
+  '  width:20px !important;height:20px !important;',
+  '  stroke:' + MONO.textMuted + ' !important;',
+  '  fill:none !important;',
+  '  stroke-width:1.5 !important;',
+  '}',
+  '.bq-dm-v2 .bqempty-tx{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;font-weight:600 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  margin-bottom:4px !important;',
+  '  letter-spacing:-0.01em !important;',
+  '}',
+  '.bq-dm-v2 .bqempty-sub{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  letter-spacing:0 !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     V1/V2 TOGGLE — minimal mono pill, no gradient slider
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2-hdr-switch{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;',
+  '  gap:0 !important;',
+  '  padding:2px !important;',
+  '  border-radius:5px !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  margin-left:auto !important;',
+  '  box-shadow:none !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2-hdr-switch::before{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  top:2px !important;left:2px !important;',
+  '  width:calc(50% - 2px) !important;',
+  '  height:calc(100% - 4px) !important;',
+  '  border-radius:3px !important;',
+  '  background:' + MONO.accent + ' !important;',
+  '  box-shadow:none !important;',
+  '  transition:transform .2s cubic-bezier(0.4, 0, 0.2, 1) !important;',
+  '  z-index:0 !important;',
+  '  pointer-events:none !important;',
+  '}',
+  '.bq-dm-v2-hdr-switch.is-v2::before{transform:translateX(100%) !important;}',
+  /* Kill V81 shimmer */
+  '.bq-dm-v2-hdr-switch.is-v2::after{display:none !important;}',
+  '.bq-dm-v2-btn{',
+  '  padding:5px 14px !important;',
+  '  border-radius:3px !important;',
+  '  border:none !important;',
+  '  background:transparent !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  cursor:pointer !important;',
+  '  transition:color .2s ease !important;',
+  '  letter-spacing:0.05em !important;',
+  '  min-width:36px !important;',
+  '  text-align:center !important;',
+  '  position:relative !important;',
+  '  z-index:1 !important;',
+  '}',
+  '.bq-dm-v2-btn:hover{color:' + MONO.text + ' !important;}',
+  '.bq-dm-v2-btn.active{',
+  '  color:' + MONO.bg + ' !important;',
+  '  text-shadow:none !important;',
+  '}',
+
+  /* V2 badge — minimal, no shimmer */
+  '.bq-dm-v2-badge{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;justify-content:center !important;',
+  '  padding:3px 8px !important;',
+  '  border-radius:4px !important;',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  letter-spacing:0.05em !important;',
+  '  background:transparent !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .15s ease !important;',
+  '  user-select:none !important;',
+  '  margin-left:8px !important;',
+  '  gap:4px !important;',
+  '  position:relative !important;',
+  '  overflow:visible !important;',
+  '}',
+  '.bq-dm-v2-badge:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2-badge.active{',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  border-color:' + MONO.accent + ' !important;',
+  '  box-shadow:none !important;',
+  '  animation:none !important;',
+  '}',
+  '.bq-dm-v2-badge.active::after{display:none !important;}',
+  '.bq-dm-v2-badge .beta-dot{',
+  '  width:5px !important;height:5px !important;',
+  '  border-radius:50% !important;',
+  '  background:' + MONO.statusOnline + ' !important;',
+  '  display:inline-block !important;',
+  '  box-shadow:none !important;',
+  '  animation:none !important;',
+  '}',
+  '.bq-dm-v2-badge.active .beta-dot{background:' + MONO.statusOnline + ' !important;}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     PINNED BAR — minimal, no gradient
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 #bq-pinned-bar{',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  margin:0 !important;',
+  '  position:relative !important;',
+  '}',
+  '.bq-dm-v2 #bq-pinned-bar::before{',
+  '  display:none !important;',
+  '  background:none !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     SCROLLBAR — minimal, mono
+     ──────────────────────────────────────────────────────────────────── */
+  '.bq-dm-v2 ::-webkit-scrollbar{width:4px !important;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-track{background:transparent !important;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb{',
+  '  background:' + MONO.border + ' !important;',
+  '  border-radius:2px !important;',
+  '  transition:background .15s ease !important;',
+  '}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb:hover{background:' + MONO.borderHover + ' !important;}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     SEARCH BAR — HIDE COMPLETELY (both V1 and V2)
+     ──────────────────────────────────────────────────────────────────── */
+  '.bqdm-search-wrap, #bqdm-search, #bqdm-search-inp, .bq-search-bar, .bq-search-close{',
+  '  display:none !important;',
+  '  visibility:hidden !important;',
+  '  height:0 !important;',
+  '  padding:0 !important;',
+  '  margin:0 !important;',
+  '  border:none !important;',
+  '  overflow:hidden !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     SETTINGS / PROFILE UI — V0-STYLE COMMAND PANEL (redesigned)
+     ──────────────────────────────────────────────────────────────────── */
+
+  /* Profile scroll container — pure black */
+  '.bq-dm-v2 .bq-profile-scroll, .bq-dm-v2 .bqpf-scroll{',
+  '  background:' + MONO.bg + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+
+  /* Profile header — elevated, mono, no gradient */
+  '.bq-dm-v2 .bq-profile-header, .bq-dm-v2 .bqpf-header, .bq-dm-v2 .bqsh{',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  padding:12px 14px !important;',
+  '}',
+  '.bq-dm-v2 .bq-profile-header .bqhtitle, .bq-dm-v2 .bqsh .bqhtitle{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  letter-spacing:0.08em !important;',
+  '  text-transform:uppercase !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+
+  /* Section — flat, hairline divider, no rounded card */
+  '.bq-dm-v2 .bqpf-section{',
+  '  padding:18px 14px !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  background:transparent !important;',
+  '  margin:0 !important;',
+  '  border-radius:0 !important;',
+  '}',
+
+  /* Section label — mono uppercase, tight */
+  '.bq-dm-v2 .bqpf-label{',
+  '  font-family:' + MONO_MONO + ' !important;',
+  '  font-size:10px !important;',
+  '  letter-spacing:0.1em !important;',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '  margin-bottom:12px !important;',
+  '  text-transform:uppercase !important;',
+  '  font-weight:600 !important;',
+  '}',
+
+  /* Avatar row — smaller, square avatars */
+  '.bq-dm-v2 .bqpf-avrow{',
+  '  display:flex !important;align-items:center !important;gap:12px !important;',
+  '  margin-bottom:16px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-av{',
+  '  width:48px !important;height:48px !important;',
+  '  border-radius:8px !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:15px !important;font-weight:600 !important;',
+  '  flex-shrink:0 !important;cursor:pointer !important;',
+  '  transition:opacity .15s ease !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  filter:saturate(0.6) !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-av:hover{',
+  '  transform:none !important;',
+  '  opacity:0.85 !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-av-info{flex:1 !important;}',
+  '.bq-dm-v2 .bqpf-uname{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:14px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.01em !important;',
+  '  color:' + MONO.text + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-change{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  letter-spacing:0 !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  margin-top:3px !important;cursor:pointer !important;',
+  '  font-weight:400 !important;',
+  '  transition:color .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-change:hover{',
+  '  color:' + MONO.text + ' !important;',
+  '  text-decoration:none !important;',
+  '}',
+
+  /* Color picker — smaller, square swatches */
+  '.bq-dm-v2 .bqpf-colors{',
+  '  display:flex !important;flex-wrap:wrap !important;gap:6px !important;',
+  '  margin-bottom:16px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-col{',
+  '  width:24px !important;height:24px !important;',
+  '  border-radius:4px !important;cursor:pointer !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  transition:all .15s ease !important;',
+  '  flex-shrink:0 !important;',
+  '  filter:saturate(0.6) !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-col:hover{',
+  '  transform:none !important;',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-col.sel{',
+  '  border-color:' + MONO.accent + ' !important;',
+  '  transform:none !important;',
+  '  box-shadow:0 0 0 1px ' + MONO.accent + ' !important;',
+  '}',
+
+  /* Inputs — sharp, mono, no rounded radius */
+  '.bq-dm-v2 .bqpf-inp, .bq-dm-v2 .bqpf-textarea{',
+  '  width:100% !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  padding:10px 12px !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;font-weight:400 !important;',
+  '  outline:none !important;',
+  '  transition:border-color .15s ease !important;',
+  '  margin-bottom:12px !important;',
+  '  letter-spacing:-0.005em !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-textarea{',
+  '  min-height:60px !important;line-height:1.5 !important;resize:none !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-inp::placeholder, .bq-dm-v2 .bqpf-textarea::placeholder{',
+  '  color:' + MONO.textSubtle + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-inp:focus, .bq-dm-v2 .bqpf-textarea:focus{',
+  '  border-color:' + MONO.borderActive + ' !important;',
+  '  box-shadow:none !important;',
+  '}',
+
+  /* Status grid — flat, sharp */
+  '.bq-dm-v2 .bqpf-statuses{',
+  '  display:grid !important;grid-template-columns:1fr 1fr !important;gap:6px !important;',
+  '  margin-bottom:12px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st{',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '  padding:9px 11px !important;',
+  '  border-radius:6px !important;cursor:pointer !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st.sel{',
+  '  border-color:' + MONO.accent + ' !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st-dot{',
+  '  width:8px !important;height:8px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st-lbl{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-st.sel .bqpf-st-lbl{color:' + MONO.text + ' !important;}',
+
+  /* Save button — sharp, mono, no gradient */
+  '.bq-dm-v2 .bqpf-savebtn{',
+  '  margin:0 14px 14px !important;',
+  '  width:calc(100% - 28px) !important;',
+  '  padding:11px !important;',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  border:none !important;',
+  '  border-radius:6px !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  letter-spacing:0.02em !important;',
+  '  cursor:pointer !important;',
+  '  transition:opacity .15s ease !important;',
+  '  box-shadow:none !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-savebtn:hover{',
+  '  opacity:0.85 !important;',
+  '  transform:none !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-savemsg{',
+  '  text-align:center !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  letter-spacing:0 !important;',
+  '  color:' + MONO.statusOnline + ' !important;',
+  '  height:18px !important;',
+  '  transition:opacity .3s !important;',
+  '}',
+
+  /* Push notification section — flat, no gradient */
+  '.bq-dm-v2 .bqpf-push{',
+  '  display:flex !important;flex-direction:column !important;gap:10px !important;',
+  '  padding:12px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  margin-bottom:12px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-push-title{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-push-title svg{',
+  '  width:14px !important;height:14px !important;',
+  '  stroke:' + MONO.text + ' !important;fill:none !important;stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-push-desc{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  line-height:1.5 !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-push-btn{',
+  '  padding:8px 14px !important;',
+  '  background:' + MONO.accent + ' !important;',
+  '  color:' + MONO.bg + ' !important;',
+  '  border:none !important;',
+  '  border-radius:6px !important;',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  cursor:pointer !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;gap:6px !important;',
+  '  transition:opacity .15s ease !important;',
+  '  width:fit-content !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-push-btn:hover{opacity:0.85 !important;}',
+  '.bq-dm-v2 .bqpf-push-btn svg{width:13px !important;height:13px !important;stroke:' + MONO.bg + ' !important;}',
+
+  /* Profile scrollbar — minimal */
+  '.bq-dm-v2 .bqpf-scroll::-webkit-scrollbar{width:4px !important;}',
+  '.bq-dm-v2 .bqpf-scroll::-webkit-scrollbar-thumb{',
+  '  background:' + MONO.border + ' !important;border-radius:2px !important;',
+  '}',
+
+  /* Theme cards in settings — sharp, mono */
+  '.bq-dm-v2 .bqlst{background:' + MONO.bg + ' !important;}',
+  '.bq-dm-v2 .bqth-card, .bq-dm-v2 .bqtheme-card{',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:6px !important;',
+  '  background:' + MONO.bgElevated + ' !important;',
+  '  transition:all .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqth-card:hover, .bq-dm-v2 .bqtheme-card:hover{',
+  '  border-color:' + MONO.borderHover + ' !important;',
+  '}',
+
+  /* Settings rows / preferences — flat with hairline divider */
+  '.bq-dm-v2 .bq-info-row, .bq-dm-v2 .bqpf-pref, .bq-dm-v2 .bqset-row{',
+  '  padding:12px 14px !important;',
+  '  border-bottom:1px solid ' + MONO.border + ' !important;',
+  '  display:flex !important;align-items:center !important;justify-content:space-between !important;',
+  '  gap:12px !important;',
+  '  transition:background .15s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row:hover, .bq-dm-v2 .bqpf-pref:hover, .bq-dm-v2 .bqset-row:hover{',
+  '  background:' + MONO.bgHoverSoft + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-left, .bq-dm-v2 .bqset-left{',
+  '  display:flex !important;align-items:center !important;gap:10px !important;flex:1 !important;min-width:0 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-ic, .bq-dm-v2 .bqset-ic{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:6px !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-ic svg, .bq-dm-v2 .bqset-ic svg{',
+  '  width:14px !important;height:14px !important;',
+  '  stroke:' + MONO.textMuted + ' !important;fill:none !important;stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-tx, .bq-dm-v2 .bqset-tx{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:13px !important;font-weight:500 !important;',
+  '  color:' + MONO.text + ' !important;',
+  '  letter-spacing:-0.005em !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-sub, .bq-dm-v2 .bqset-sub{',
+  '  font-family:' + MONO_FONT + ' !important;',
+  '  font-size:11px !important;',
+  '  color:' + MONO.textMuted + ' !important;',
+  '  margin-top:1px !important;',
+  '}',
+
+  /* Toggle switches — minimal mono pill */
+  '.bq-dm-v2 .bq-toggle{',
+  '  position:relative !important;display:inline-block !important;',
+  '  width:34px !important;height:18px !important;flex-shrink:0 !important;',
+  '}',
+  '.bq-dm-v2 .bq-toggle input{opacity:0 !important;width:0 !important;height:0 !important;}',
+  '.bq-dm-v2 .bq-toggle-slider{',
+  '  position:absolute !important;cursor:pointer !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
+  '  background:' + MONO.bgHover + ' !important;',
+  '  border:1px solid ' + MONO.border + ' !important;',
+  '  border-radius:10px !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-toggle-slider::before{',
+  '  content:"" !important;position:absolute !important;',
+  '  height:12px !important;width:12px !important;',
+  '  left:2px !important;bottom:2px !important;',
+  '  background:' + MONO.textMuted + ' !important;',
+  '  border-radius:50% !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-toggle input:checked + .bq-toggle-slider{',
+  '  background:' + MONO.accent + ' !important;',
+  '  border-color:' + MONO.accent + ' !important;',
+  '}',
+  '.bq-dm-v2 .bq-toggle input:checked + .bq-toggle-slider::before{',
+  '  transform:translateX(16px) !important;',
+  '  background:' + MONO.bg + ' !important;',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     MOBILE REFINEMENTS
+     ──────────────────────────────────────────────────────────────────── */
+  '@media (max-width: 480px){',
+  '  .bq-dm-v2 .bqri{max-width:85% !important;}',
+  '  .bq-dm-v2 .bqr.mine .bqri{max-width:85% !important;}',
+  '  .bq-dm-v2 .bqtxt{font-size:12.5px !important;line-height:1.42 !important;}',
+  '  .bq-dm-v2 .bqbbl{padding:6px 10px 3px !important;}',
+  '  .bq-dm-v2 .bq-msg-img, .bq-dm-v2 .bq-msg-gif{max-width:200px !important;max-height:200px !important;}',
+  '  .bq-dm-v2 .bqscr{bottom:68px !important;right:8px !important;}',
+  '  .bq-dm-v2 .bqdmr{padding:10px 12px !important;}',
+  '}',
+
+  /* ────────────────────────────────────────────────────────────────────
+     REDUCED MOTION — kill all transitions
+     ──────────────────────────────────────────────────────────────────── */
+  '@media (prefers-reduced-motion: reduce){',
+  '  .bq-dm-v2 *, .bq-dm-v2 *::before, .bq-dm-v2 *::after{',
+  '    animation-duration:0.01ms !important;',
+  '    animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(monoCss);
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. DISABLE SEARCH INJECTION (both V1 and V2)
+   ───────────────────────────────────────────────────────────────────────
+   The V69.2 patch's `_v2InjectDmSearch` function injects a search input
+   into the DM list. We override it with a no-op so no search bar is
+   added. Existing search bars (if any were injected before this patch
+   loads) are hidden by the CSS above. */
+if (typeof window._v2InjectDmSearch === 'function') {
+  window._v2InjectDmSearch = function(){ /* no-op — search removed in V82 */ };
+}
+
+/* Also remove any already-injected search element */
+function monoRemoveSearchBars(){
+  var searches = document.querySelectorAll('#bqdm-search, .bqdm-search-wrap, .bq-search-bar');
+  searches.forEach(function(el){ el.remove(); });
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   4. MESSAGE HOVER ACTIONS — inject action bar on each message
+   ─────────────────────────────────────────────────────────────────────── */
+function monoInjectMessageActions(){
+  if (typeof _bqDmVersion === 'undefined' || _bqDmVersion !== 'v2') return;
+  var msgs = document.querySelectorAll('.bq-dm-v2 .bqr:not(.bqr-system):not(.bq-mono-processed)');
+  msgs.forEach(function(msg){
+    msg.classList.add('bq-mono-processed');
+    // Skip if already has actions
+    if (msg.querySelector('.bq-mono-actions')) return;
+    // Skip system messages
+    if (msg.classList.contains('bq-sys') || msg.classList.contains('system')) return;
+
+    var actions = document.createElement('div');
+    actions.className = 'bq-mono-actions';
+    actions.innerHTML =
+      '<button class="bq-mono-act" data-act="react" title="React">' +
+        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>' +
+      '</button>' +
+      '<button class="bq-mono-act" data-act="reply" title="Reply">' +
+        '<svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>' +
+      '</button>' +
+      '<button class="bq-mono-act" data-act="more" title="More">' +
+        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>' +
+      '</button>';
+    msg.appendChild(actions);
+
+    // Wire up actions
+    actions.addEventListener('click', function(e){
+      e.stopPropagation();
+      var btn = e.target.closest('.bq-mono-act');
+      if (!btn) return;
+      var act = btn.getAttribute('data-act');
+      // Try to use the existing widget handlers
+      if (act === 'reply' && typeof window.bqReplyMsg === 'function') {
+        window.bqReplyMsg(msg);
+      } else if (act === 'react' && typeof window.bqReactMsg === 'function') {
+        window.bqReactMsg(msg);
+      } else if (act === 'more' && typeof window.bqMsgSheet === 'function') {
+        window.bqMsgSheet(msg);
+      } else {
+        // Fallback: trigger long-press / context menu if available
+        try {
+          var evt = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+          msg.dispatchEvent(evt);
+        } catch(_) {}
+      }
+    });
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   5. DM CONVERSATION HEADER — inject pinned chip + disappear badge
+   ─────────────────────────────────────────────────────────────────────── */
+function monoInjectHeaderChips(){
+  if (typeof _bqDmVersion === 'undefined' || _bqDmVersion !== 'v2') return;
+  var dmHeader = document.querySelector('.bq-dm-v2 #bqv-dmconv > .bqhdr');
+  if (!dmHeader) return;
+  if (dmHeader.querySelector('.bq-mono-pin-chip')) return; // already injected
+
+  // Only inject when viewing a DM conversation (header has back button + avatar)
+  if (!dmHeader.querySelector('.bqdmhav')) return;
+
+  var chip = document.createElement('button');
+  chip.className = 'bq-mono-pin-chip';
+  chip.title = 'Pinned messages';
+  chip.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>' +
+    '</svg>' +
+    '<span>0</span>';
+  chip.addEventListener('click', function(e){
+    e.stopPropagation();
+    // Try to show pinned messages via existing widget function
+    if (typeof window.bqShowPinned === 'function') {
+      window.bqShowPinned();
+    }
+  });
+
+  // Insert into header right side
+  var hdrRight = dmHeader.querySelector('.bqhdr-right') || dmHeader;
+  hdrRight.appendChild(chip);
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   6. DATE SEPARATOR — make clickable to jump to top
+   ─────────────────────────────────────────────────────────────────────── */
+function monoWireDateSeparators(){
+  if (typeof _bqDmVersion === 'undefined' || _bqDmVersion !== 'v2') return;
+  var dates = document.querySelectorAll('.bq-dm-v2 .bqds:not(.bq-mono-date-wired)');
+  dates.forEach(function(ds){
+    ds.classList.add('bq-mono-date-wired');
+    ds.style.cursor = 'pointer';
+    ds.addEventListener('click', function(){
+      // Scroll this date separator to the top of the messages view
+      var msgsEl = document.getElementById('bqdmmsgs');
+      if (!msgsEl) return;
+      var dsTop = ds.offsetTop - msgsEl.offsetTop - 8;
+      msgsEl.scrollTo({ top: dsTop, behavior: 'smooth' });
+    });
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   7. OBSERVE FOR NEW MESSAGES + RENDER FEATURES
+   ─────────────────────────────────────────────────────────────────────── */
+var monoObserver = null;
+function monoStartObserver(){
+  if (monoObserver) return;
+  monoObserver = new MutationObserver(function(){
+    // Remove any search bars that got injected
+    monoRemoveSearchBars();
+    // Inject message actions on new messages
+    monoInjectMessageActions();
+    // Wire date separators
+    monoWireDateSeparators();
+    // Inject header chips
+    monoInjectHeaderChips();
+  });
+  var panel = document.getElementById('bqp');
+  if (panel) {
+    monoObserver.observe(panel, { childList: true, subtree: true });
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   8. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function monoInit(){
+  // Initial cleanup + injection
+  monoRemoveSearchBars();
+  monoInjectMessageActions();
+  monoWireDateSeparators();
+  monoInjectHeaderChips();
+  monoStartObserver();
+
+  console.log('[bq] V' + MONO_VERSION + ' Mono patch loaded — v0-inspired monochrome DM V2');
+}
+
+// Wait for widget, then init
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(monoInit, 1200); });
+} else {
+  setTimeout(monoInit, 1200);
+}
+// Retry a few times in case the widget loads slowly
+setTimeout(monoInit, 2500);
+setTimeout(monoInit, 5000);
+setTimeout(monoInit, 8000);
+
+}catch(e){ console.error('[bq] V82 Mono patch error:', e); }
 })();
 
