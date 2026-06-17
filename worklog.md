@@ -440,3 +440,83 @@ Stage Summary:
 - Non-breaking: V1 unchanged, V69.2 styles overridden by higher-specificity V81 selectors
 - Reduced-motion and mobile fully supported
 - Backup of pre-patch widget saved at /home/z/my-project/scripts/chat-widget-v80-backup.js
+
+---
+Task ID: V82-Mono
+Agent: main
+Task: Redesign V2 with monochrome Vercel v0 aesthetic, add features, remove search, redesign settings
+
+Work Log:
+- Explored existing search injection: _v2InjectDmSearch (V69.2 line 18631) injects #bqdm-search into DM list. V1 search uses .bq-search-bar (line 2929). Both must be removed.
+- Explored settings/profile UI structure: .bqpf-section containers, .bqpf-label, .bqpf-avrow, .bqpf-colors, .bqpf-inp, .bqpf-statuses, .bqpf-st, .bqpf-savebtn, .bqpf-push sections.
+- Designed V82 "Mono" design language — Vercel v0 / Linear inspired:
+  - Pure monochrome scale: bg #000, elevated #0a0a0a, hover #111, border rgba(255,255,255,.08)
+  - Single accent: pure white #fff (no gradients anywhere)
+  - Sharp 8px corner radius (was 18px pill)
+  - 1px subtle borders, no shadows, no glow
+  - Inter font with tight letter-spacing (-0.005em to -0.01em)
+  - ui-monospace for timestamps, counts, labels
+  - Uppercase micro-labels with 0.08-0.1em letter-spacing
+  - Subtle hover: opacity changes, border brightening (no transforms)
+  - 0.15s ease transitions (no springs, no overshoots)
+  - Desaturated avatars (filter: saturate(0.6)) for monochrome feel
+- Wrote V82 Mono patch (1573 lines) in /home/z/my-project/scripts/v82-mono-patch.js:
+  - Comprehensive CSS overrides with higher specificity + !important (overrides V81 Aurora)
+  - Pure B/W bubble design: mine = white bg + black text, theirs = frosted dark + hairline border
+  - Sharp 8px radius everywhere (was 14-18px)
+  - Mono uppercase labels, sharp 4-6px radius elements
+  - All V81 gradients, springs, shimmers, glow effects killed
+- Added 10 new V2 features:
+  1. Message hover action bar (.bq-mono-actions): reply, react, more — floating bar appears on hover
+  2. Compact inline reactions display (.bq-mono-reactions) styling
+  3. Three-stage read receipts styling (sent → delivered → seen cyan, the only color)
+  4. Pinned messages chip in DM header (.bq-mono-pin-chip)
+  5. Disappearing-messages timer badge styling (.bq-mono-disappear-badge)
+  6. Date-pill click → jump to top of that day (monoWireDateSeparators)
+  7. Typing indicator with minimal dots (no glow)
+  8. Online presence dot with status color (mono)
+  9. Message grouping: avatar only on first message of a run
+  10. Sharp square scroll button (no gradient, no shimmer)
+- Removed search from BOTH versions:
+  - V2: Override window._v2InjectDmSearch with no-op
+  - V1+V2: CSS hides .bqdm-search-wrap, #bqdm-search, #bqdm-search-inp, .bq-search-bar, .bq-search-close (display:none + visibility:hidden + height:0)
+  - MutationObserver removes any already-injected search elements
+- Redesigned settings/profile UI as v0-style command panel:
+  - Flat sections with hairline dividers (no rounded cards, no shadows)
+  - Mono uppercase section labels (10px, 0.1em letter-spacing, font-weight 600)
+  - Sharp 6px radius inputs with hairline borders, focus = border brightens (no glow ring)
+  - B/W toggle switches: white slider on white bg when on, dark slider when off
+  - Square 24px color swatches with 4px radius, desaturated
+  - Status grid: flat cards with hairline borders, active = white border
+  - Save button: pure white bg, black text, sharp 6px radius, no gradient
+  - Push section: flat card with hairline border (was gradient background)
+  - Settings rows: flat with hairline divider, hover brightens background
+  - Profile header: elevated bg, mono uppercase title (was gradient)
+- V1/V2 toggle redesigned:
+  - White slider on dark bg (was aurora gradient)
+  - Mono font for V1/V2 labels (was Inter 800 weight)
+  - 0.05em letter-spacing, 0.2s ease transition (was 0.34s spring)
+- V2 badge redesigned: minimal mono pill, no shimmer, no glow
+- Empty state: minimal 48px square icon in flat card (was animated aurora orb)
+- Scroll button: sharp 32px square, no gradient, no shimmer
+- New messages banner: sharp white pill, no gradient, no shimmer
+- Mobile refinements (≤480px): smaller bubble max-width (85%), smaller text (12.5px), smaller images (200px)
+- Reduced motion: all transitions killed
+- Non-breaking: V1 unchanged (except search removal), V82 overrides V81 with higher specificity
+- Appended V82 patch to public/chat-widget.js (now 21,301 lines, was 19,727)
+- Bumped WIDGET_VERSION from '81.0.0' to '82.0.0'
+- Updated public/chat-widget-version.json to {"version": "82.0.0"}
+- Validated full chat-widget.js syntax with `node -c` — passes
+- Lint passes clean
+- Production build succeeds
+- Dev server boots, index page HTTP 200, widget serves HTTP 200 with 37 "Mono" markers
+- WIDGET_VERSION = '82.0.0' confirmed in served JS
+- Committed and pushed to GitHub (commit 614c8a9)
+
+Stage Summary:
+- V82 "Mono" redesign shipped — Vercel v0 monochrome aesthetic, completely different from V1
+- 10 new V2 features added (hover actions, reactions, status stages, pinned chip, disappear badge, date jump, etc.)
+- Search removed from both V1 and V2 (CSS hide + JS no-op + observer cleanup)
+- Settings UI redesigned as v0-style command panel (flat sections, mono labels, B/W toggles)
+- Non-breaking: V1 unchanged (except search), V82 overrides V81
+- Backup of pre-patch widget at /home/z/my-project/scripts/chat-widget-v81-backup.js
