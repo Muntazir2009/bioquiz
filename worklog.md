@@ -560,3 +560,41 @@ Stage Summary:
 - Smooth 0.2s cubic-bezier transitions (no springs, no overshoots, no lag)
 - Non-breaking: V1 unchanged (except search removal), V83 overrides V81
 - Backups: scripts/chat-widget-v82-backup.js, scripts/v83-graphite-patch.js
+
+---
+Task ID: V84-Fix
+Agent: main
+Task: Fix 'reload the site' error page + complete settings redesign + more V2 UI improvements
+
+Work Log:
+- DIAGNOSED 'reload the site' error page: V69.2 patch (line 18861) set up _v2DmObserver on document.body with subtree:true and NO disconnect ('V75: Keep observer running forever'). Fired on EVERY DOM change across entire document — every keystroke, every Firebase render, every style update. Each callback ran 4 querySelector calls + DOM mutations. Caused: (1) residual lag even after V83, (2) crashes when it threw on stale DOM refs during rapid Firebase re-renders → showed the harsh Next.js error page telling user to reload.
+- Also discovered V83 only restyled .bqpf-* (My Profile) but MISSED two other settings panels: #bq-dm-info (.bq-info-* DM Settings) and #bq-info-float (.bq-if-* Floating Conversation Info card).
+- Backed up V83 to scripts/chat-widget-v83-backup.js
+- Wrote V84 patch (658 lines) in scripts/v84-fix-patch.js:
+  1. killV69Observer() — disconnects _v2DmObserver and overrides _v2StartBadgeObserver with no-op. V69.2's setTimeout retries (lines 18876-18878) still handle injection.
+  2. setupErrorFallback() — adds calm recovery card (replaces harsh reload page). Only triggers for widget crashes (checks filename contains 'chat-widget'). Shows 'Chat ran into an issue' with Reload + Dismiss buttons, Graphite-styled.
+  3. Complete settings redesign:
+     - #bq-dm-info (DM Settings — .bq-info-*): header, avatar section (64px with ring+shadow), sections (flat with hairline dividers, mono uppercase titles), rows (refined icon boxes), danger row (red tint on hover), theme chips (32px circles with cyan ring)
+     - #bq-info-float (Floating Info card — .bq-if-*): card, header, theme chips, bubble style picker (pill buttons with cyan active), font size picker (square buttons with cyan active)
+     - My Profile enhancements: initials input (60px centered, uppercase, cyan focus ring), font size picker (3-column grid with cyan active), banner preview (60px tall rounded card)
+  4. New V2 UI improvements:
+     - Message hover: refined scale + shadow (mine gets subtle cyan ring, theirs gets brighter border)
+     - Reaction chips: refined pill style, cyan when mine, lift on hover
+     - Online list rows: refined with hover background
+     - Message grouping: subtle 6px spacer between groups
+     - Pinned messages bar: amber tint with refined card
+     - Confirm dialog: refined dark card with red accent for danger
+     - Toast: refined dark card with shadow
+- Appended V84 patch to public/chat-widget.js (now 21,649 lines)
+- Bumped WIDGET_VERSION from '83.0.0' to '84.0.0'
+- Updated public/chat-widget-version.json to {"version": "84.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200 in 360ms, widget HTTP 200, 52 V84 markers, WIDGET_VERSION = '84.0.0', no errors
+- Committed (751243b) and pushed to GitHub
+
+Stage Summary:
+- V69.2 forever-observer KILLED — no more lag, no more crashes from stale DOM refs
+- 'Reload the site' error page replaced with calm in-app recovery card (Graphite-styled)
+- ALL THREE settings panels now redesigned: My Profile, DM Settings, Floating Info card
+- More V2 UI improvements: message hover, reactions, online list, confirm dialog, toast, pinned bar
+- Non-breaking: V1 unchanged, V84 overrides V83 with higher specificity
+- Backup: scripts/chat-widget-v83-backup.js
