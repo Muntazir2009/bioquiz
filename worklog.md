@@ -354,3 +354,43 @@ Stage Summary:
 - Notification bell icon is completely gone from the global chat header.
 - Internal notification logic (banner/sound) still works for new messages.
 - Version 79.0.0 live; will auto-reload in open tabs within 8s via the V78 cache-busting poller.
+
+---
+Task ID: 9
+Agent: main
+Task: Push V2 UI changes to GitHub (was stuck on v79) — implement v80 sliding-pill V1/V2 toggle animation
+
+Work Log:
+- Discovered local repo was at v74 while remote origin/main was already at v79 (another session had pushed v75→v79 V2 UI work: push-notification removal, system-message suppression, single-toggle consolidation, search-bar cleanup, bell-icon removal)
+- Synced local to remote (git reset --hard origin/main) to get the v79 baseline
+- Audited current V2 toggle: single V1/V2 segmented switch in DM list header (#bq-dm-v2-hdr-switch), V2 default
+- Implemented V80 — sliding-pill toggle animation:
+  1. Added `::before` pseudo-element on `.bq-dm-v2-hdr-switch` — a gradient pill (linear-gradient #6366f1→#8b5cf6→#a855f7) positioned at left button, width calc(50% - 3px)
+  2. Added `.bq-dm-v2-hdr-switch.is-v2::before { transform: translateX(100%); }` — slides pill to V2 side
+  3. Spring easing curve cubic-bezier(.34,1.56,.64,1) over 340ms for a bouncy slide
+  4. Made buttons transparent (z-index:1) so the pill shows through; removed per-button active background/shadow
+  5. Added `is-v2` class to switch container in `_v2InjectToggle` (initial state) and `_bqSetDmVersion` (on toggle)
+  6. pointer-events:none on pill so clicks pass through to buttons
+- Bumped WIDGET_VERSION 79.0.0 → 80.0.0 and chat-widget-version.json → 80.0.0
+- Updated V80 init console log message
+- Lint passes clean (bun run lint: no errors)
+- Restarted stuck dev server (was unresponsive at 22% CPU) with auto-restart watchdog
+- Verified with Agent Browser:
+  - Page loads HTTP 200, title "BioQuiz — The Biology Workspace"
+  - window.BQ_WIDGET_VERSION = "80.0.0" ✓
+  - version.json serves {"version": "80.0.0"} ✓
+  - Sliding pill CSS (::before, is-v2::before) present in served JS ✓
+  - V2 toggle switch in DOM (count=1) ✓
+  - Initial state: is-v2=true, panel bq-dm-v2 ACTIVE, active button=v2 ✓
+  - Click V1 → is-v2=false, panel loses bq-dm-v2, dm_version=v1 saved ✓
+  - Click V2 → is-v2=true, panel gains bq-dm-v2, dm_version=v2 saved ✓
+  - Bidirectional sync works, localStorage persists ✓
+  - Zero console errors throughout ✓
+- Committed and pushed to GitHub: b8efce6..15c6fed main -> main
+
+Stage Summary:
+- GitHub remote now at v80.0.0 (was v79)
+- V1/V2 toggle has a smooth sliding gradient pill that bounces between the two options
+- Pure CSS animation driven by a single is-v2 class — zero risk to existing JS logic
+- All existing V2 features preserved (Telegram bubbles, grouping, date separators, search, single toggle location)
+- Verified end-to-end with Agent Browser: zero errors, toggle interactive bidirectionally
