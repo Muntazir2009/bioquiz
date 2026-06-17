@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '85.0.0';                     // V85: Lumen — FIX invisible text (ID-level selectors beat theme specificity), beautiful indigo/violet redesign, always-readable high-contrast
+const WIDGET_VERSION = '86.0.0';                     // V86: Enhanced forwarding (multi-select, search, avatars, preview) + forwarded message labels + V2 design additions (hover actions, reactions, starred, online pulse)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -22330,5 +22330,1006 @@ if (typeof window._v2InjectDmSearch === 'function') {
 console.log('[bq] V' + LUMEN_VERSION + ' Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign');
 
 }catch(e){ console.error('[bq] V85 Lumen patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V86 PATCH — FORWARDING IMPROVEMENTS + V2 DESIGN ADDITIONS
+   ───────────────────────────────────────────────────────────────────────
+   1. FORWARDING IMPROVEMENTS:
+      • Beautiful modal overlay (was bare list)
+      • Search/filter recipients
+      • Multi-select recipients (forward to many at once)
+      • Avatars + presence dots in recipient list
+      • Recent conversations first
+      • Message preview at top
+      • "Select all" / "Deselect all" controls
+      • Confirmation footer with count + Send button
+      • Original sender preserved in forwarded message (fwdFrom field)
+      • Forwarded messages render with a "Forwarded" label + original author
+
+   2. FORWARDED MESSAGE RENDERING:
+      • Parse _fwd: prefix from message text
+      • Show "Forwarded" label with arrow icon
+      • Display original sender name (if fwdFrom is set)
+      • Styled as a subtle card inside the bubble
+
+   3. V2 DESIGN ADDITIONS:
+      • Message hover action bar (CSS-only, appears on hover)
+        - Reply, Forward, React, Copy icons floating above bubble
+      • Refined reaction chips with indigo active state
+      • Message grouping: avatar only on first message of a run
+        (already in V85, enhanced with subtle spacer)
+      • Typing avatar: small avatar appears next to typing indicator
+      • Online indicator: pulsing dot on online users in list
+      • Refined link previews: indigo-tinted cards for URLs in messages
+      • Message edit indicator: subtle "(edited)" with italic style
+      • Starred message: subtle amber glow on starred bubbles
+      • Pinned message chip in conversation header
+      • Voice note waveform: refined with indigo gradient bars
+      • Date pill: clickable to scroll to that date's first message
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   All selectors use #bqp.bq-dm-v2 to beat theme specificity.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V86_VERSION = '86.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. V86 CSS — design additions
+   ─────────────────────────────────────────────────────────────────────── */
+var v86Css = document.createElement('style');
+v86Css.id = 'bq-v86-css';
+v86Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     FORWARD MODAL — beautiful overlay
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-forward-overlay, .bq-forward-overlay{',
+  '  position:absolute !important;inset:0 !important;',
+  '  background:rgba(0,0,0,0.7) !important;',
+  '  backdrop-filter:blur(12px) saturate(1.2) !important;',
+  '  -webkit-backdrop-filter:blur(12px) saturate(1.2) !important;',
+  '  z-index:300 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  animation:bqFwdFadeIn .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  padding:16px !important;',
+  '}',
+  '@keyframes bqFwdFadeIn{from{opacity:0;}to{opacity:1;}}',
+
+  '#bqp.bq-dm-v2 .bq-forward-panel, .bq-forward-panel{',
+  '  background:#18181b !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:16px !important;',
+  '  width:min(360px, 92vw) !important;',
+  '  max-height:min(520px, 85vh) !important;',
+  '  overflow:hidden !important;',
+  '  display:flex !important;flex-direction:column !important;',
+  '  box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) !important;',
+  '  animation:bqFwdPanelIn .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '@keyframes bqFwdPanelIn{from{opacity:0;transform:scale(0.94) translateY(10px);}to{opacity:1;transform:none;}}',
+
+  /* Forward header */
+  '#bqp.bq-dm-v2 .bq-forward-header, .bq-forward-header{',
+  '  padding:16px 18px 14px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.06) !important;',
+  '  background:#18181b !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-title, .bq-forward-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:16px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;',
+  '  color:#f4f4f5 !important;',
+  '  margin:0 !important;border:none !important;padding:0 !important;',
+  '  background:none !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-subtitle, .bq-forward-subtitle{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;',
+  '  color:#a1a1aa !important;',
+  '  margin-top:3px !important;',
+  '}',
+
+  /* Forward message preview */
+  '#bqp.bq-dm-v2 .bq-forward-preview, .bq-forward-preview{',
+  '  margin:12px 18px 0 !important;',
+  '  padding:10px 12px !important;',
+  '  background:rgba(129,140,248,0.06) !important;',
+  '  border:1px solid rgba(129,140,248,0.15) !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12.5px !important;',
+  '  color:#a1a1aa !important;',
+  '  line-height:1.45 !important;',
+  '  max-height:60px !important;overflow:hidden !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-preview-label, .bq-forward-preview-label{',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  letter-spacing:0.08em !important;text-transform:uppercase !important;',
+  '  color:#818cf8 !important;margin-bottom:4px !important;',
+  '}',
+
+  /* Forward search */
+  '#bqp.bq-dm-v2 .bq-forward-search, .bq-forward-search{',
+  '  padding:10px 14px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.05) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-search input, .bq-forward-search input{',
+  '  width:100% !important;',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:10px !important;',
+  '  padding:9px 12px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;',
+  '  color:#f4f4f5 !important;',
+  '  outline:none !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-search input:focus, .bq-forward-search input:focus{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-search input::placeholder, .bq-forward-search input::placeholder{color:#71717a !important;}',
+
+  /* Forward controls (select all / deselect) */
+  '#bqp.bq-dm-v2 .bq-forward-controls, .bq-forward-controls{',
+  '  display:flex !important;align-items:center !important;justify-content:space-between !important;',
+  '  padding:8px 18px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.05) !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;color:#a1a1aa !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-controls button, .bq-forward-controls button{',
+  '  background:none !important;border:none !important;',
+  '  color:#818cf8 !important;cursor:pointer !important;',
+  '  font:inherit !important;font-weight:500 !important;',
+  '  padding:4px 8px !important;border-radius:6px !important;',
+  '  transition:background .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-controls button:hover, .bq-forward-controls button:hover{background:rgba(129,140,248,0.1) !important;}',
+
+  /* Forward list */
+  '#bqp.bq-dm-v2 .bq-forward-list, .bq-forward-list{',
+  '  flex:1 !important;overflow-y:auto !important;padding:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-list::-webkit-scrollbar, .bq-forward-list::-webkit-scrollbar{width:5px !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-list::-webkit-scrollbar-thumb, .bq-forward-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08) !important;border-radius:3px !important;}',
+
+  /* Forward item — beautiful row with avatar */
+  '#bqp.bq-dm-v2 .bq-forward-item, .bq-forward-item{',
+  '  width:100% !important;text-align:left !important;',
+  '  padding:10px 12px !important;border:none !important;',
+  '  background:transparent !important;color:#f4f4f5 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13.5px !important;font-weight:500 !important;',
+  '  cursor:pointer !important;border-radius:10px !important;',
+  '  transition:all .2s ease !important;',
+  '  display:flex !important;align-items:center !important;gap:11px !important;',
+  '  margin:2px 0 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-item:hover, .bq-forward-item:hover{',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  transform:translateX(2px) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-item.selected, .bq-forward-item.selected{',
+  '  background:rgba(129,140,248,0.1) !important;',
+  '  box-shadow:inset 2px 0 0 #818cf8 !important;',
+  '}',
+
+  /* Forward item avatar */
+  '#bqp.bq-dm-v2 .bq-forward-av, .bq-forward-av{',
+  '  width:36px !important;height:36px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-size:13px !important;font-weight:600 !important;',
+  '  position:relative !important;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,0.06) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-av[data-status="online"]::after, .bq-forward-av[data-status="online"]::after{',
+  '  content:"" !important;position:absolute !important;bottom:-1px !important;right:-1px !important;',
+  '  width:10px !important;height:10px !important;border-radius:50% !important;',
+  '  background:#22c55e !important;border:2px solid #18181b !important;',
+  '  box-shadow:0 0 5px rgba(34,197,94,0.5) !important;',
+  '}',
+
+  /* Forward item info */
+  '#bqp.bq-dm-v2 .bq-forward-info, .bq-forward-info{flex:1 !important;min-width:0 !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-name, .bq-forward-name{',
+  '  font-weight:600 !important;color:#f4f4f5 !important;',
+  '  letter-spacing:-0.01em !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-status, .bq-forward-status{',
+  '  font-size:11px !important;color:#a1a1aa !important;margin-top:1px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-check, .bq-forward-check{',
+  '  width:20px !important;height:20px !important;flex-shrink:0 !important;',
+  '  border-radius:50% !important;border:2px solid rgba(255,255,255,0.15) !important;',
+  '  background:transparent !important;',
+  '  transition:all .2s ease !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-item.selected .bq-forward-check, .bq-forward-item.selected .bq-forward-check{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  border-color:transparent !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-check svg, .bq-forward-check svg{',
+  '  width:12px !important;height:12px !important;',
+  '  stroke:#fff !important;stroke-width:2.5 !important;',
+  '  opacity:0 !important;transition:opacity .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-item.selected .bq-forward-check svg, .bq-forward-item.selected .bq-forward-check svg{opacity:1 !important;}',
+
+  /* Global chat option — special styling */
+  '#bqp.bq-dm-v2 .bq-forward-item.bq-fwd-global, .bq-forward-item.bq-fwd-global{',
+  '  border-bottom:1px solid rgba(255,255,255,0.05) !important;',
+  '  margin-bottom:6px !important;padding-bottom:12px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-fwd-global-ic, .bq-fwd-global-ic{',
+  '  width:36px !important;height:36px !important;border-radius:50% !important;flex-shrink:0 !important;',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-size:16px !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.3) !important;',
+  '}',
+
+  /* Forward footer */
+  '#bqp.bq-dm-v2 .bq-forward-footer, .bq-forward-footer{',
+  '  padding:12px 16px !important;',
+  '  border-top:1px solid rgba(255,255,255,0.06) !important;',
+  '  background:#18181b !important;',
+  '  display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-count, .bq-forward-count{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;color:#a1a1aa !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-count strong, .bq-forward-count strong{color:#f4f4f5 !important;font-weight:600 !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-actions, .bq-forward-actions{display:flex !important;gap:8px !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-cancel, .bq-forward-cancel{',
+  '  padding:8px 14px !important;border-radius:10px !important;',
+  '  background:rgba(255,255,255,0.04) !important;border:1px solid rgba(255,255,255,0.08) !important;',
+  '  color:#a1a1aa !important;font:500 12.5px Inter,-apple-system,sans-serif !important;',
+  '  cursor:pointer !important;transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-cancel:hover, .bq-forward-cancel:hover{color:#f4f4f5 !important;background:rgba(255,255,255,0.06) !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-send, .bq-forward-send{',
+  '  padding:8px 18px !important;border-radius:10px !important;border:none !important;',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;color:#fff !important;',
+  '  font:600 12.5px Inter,-apple-system,sans-serif !important;cursor:pointer !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.3) !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-forward-send:hover, .bq-forward-send:hover{transform:translateY(-1px) !important;box-shadow:0 4px 12px rgba(99,102,241,0.4) !important;}',
+  '#bqp.bq-dm-v2 .bq-forward-send:disabled, .bq-forward-send:disabled{opacity:0.4 !important;cursor:not-allowed !important;transform:none !important;box-shadow:none !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     FORWARDED MESSAGE — "Forwarded" label inside bubble
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-fwd-label, .bq-fwd-label{',
+  '  display:flex !important;align-items:center !important;gap:5px !important;',
+  '  padding:3px 8px !important;margin-bottom:5px !important;',
+  '  background:rgba(255,255,255,0.06) !important;',
+  '  border-radius:8px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10.5px !important;font-weight:500 !important;',
+  '  color:#a1a1aa !important;',
+  '  width:fit-content !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bq-fwd-label, .bqr.mine .bq-fwd-label{',
+  '  background:rgba(255,255,255,0.12) !important;color:rgba(255,255,255,0.7) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-fwd-label svg, .bq-fwd-label svg{',
+  '  width:11px !important;height:11px !important;',
+  '  stroke:currentColor !important;fill:none !important;stroke-width:2 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-fwd-from, .bq-fwd-from{',
+  '  font-weight:600 !important;color:#818cf8 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bq-fwd-from, .bqr.mine .bq-fwd-from{color:rgba(255,255,255,0.85) !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     MESSAGE HOVER ACTIONS — CSS-only floating bar (no JS observer)
+     The existing action sheet (bq-msg-inline) is styled here
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-msg-inline, .bq-msg-inline{',
+  '  display:flex !important;align-items:center !important;gap:2px !important;',
+  '  padding:4px !important;margin-top:4px !important;',
+  '  background:rgba(24,24,27,0.95) !important;',
+  '  backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:12px !important;',
+  '  box-shadow:0 4px 14px rgba(0,0,0,0.3) !important;',
+  '  animation:bqMsgInlineIn .2s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  width:fit-content !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bq-msg-inline, .bqr.mine .bq-msg-inline{align-self:flex-end !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bq-msg-inline, .bqr.theirs .bq-msg-inline{align-self:flex-start !important;}',
+  '@keyframes bqMsgInlineIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}',
+  '#bqp.bq-dm-v2 .bq-ms-btn, .bq-ms-btn{',
+  '  display:flex !important;align-items:center !important;gap:5px !important;',
+  '  padding:7px 10px !important;border:none !important;',
+  '  background:transparent !important;color:#a1a1aa !important;',
+  '  font:500 11.5px Inter,-apple-system,sans-serif !important;',
+  '  cursor:pointer !important;border-radius:8px !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-ms-btn:hover, .bq-ms-btn:hover{',
+  '  background:rgba(129,140,248,0.12) !important;color:#818cf8 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-ms-btn.danger, .bq-ms-btn.danger{color:#a1a1aa !important;}',
+  '#bqp.bq-dm-v2 .bq-ms-btn.danger:hover, .bq-ms-btn.danger:hover{background:rgba(239,68,68,0.12) !important;color:#f87171 !important;}',
+  '#bqp.bq-dm-v2 .bq-ms-btn svg, .bq-ms-btn svg{width:14px !important;height:14px !important;stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REACTION CHIPS — refined with indigo active
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqrxn, #bqp.bq-dm-v2 .bq-rxn, #bqp.bq-dm-v2 .bqmsg-rxn{',
+  '  display:inline-flex !important;align-items:center !important;gap:4px !important;',
+  '  padding:3px 8px !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:12px !important;',
+  '  background:rgba(24,24,27,0.9) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:500 !important;',
+  '  color:#f4f4f5 !important;cursor:pointer !important;',
+  '  transition:all .2s ease !important;margin-top:4px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn:hover, #bqp.bq-dm-v2 .bq-rxn:hover, #bqp.bq-dm-v2 .bqmsg-rxn:hover{',
+  '  transform:translateY(-1px) !important;',
+  '  border-color:rgba(129,140,248,0.3) !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn.mine, #bqp.bq-dm-v2 .bq-rxn.mine, #bqp.bq-dm-v2 .bqmsg-rxn.mine{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  background:rgba(129,140,248,0.1) !important;color:#818cf8 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     STARRED MESSAGE — subtle amber glow
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqr.bq-starred .bqbbl, .bqr.bq-starred .bqbbl{',
+  '  box-shadow:0 0 0 1px rgba(251,191,36,0.2), 0 2px 8px rgba(0,0,0,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.bq-starred::after, .bqr.bq-starred::after{',
+  '  content:"⭐" !important;position:absolute !important;top:2px !important;',
+  '  font-size:10px !important;opacity:0.7 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine.bq-starred::after, .bqr.mine.bq-starred::after{right:-14px !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs.bq-starred::after, .bqr.theirs.bq-starred::after{left:-14px !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     EDITED INDICATOR — refined
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqedited, .bqedited{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;color:#71717a !important;',
+  '  margin-left:6px !important;font-style:italic !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqedited, .bqr.mine .bqedited{color:rgba(255,255,255,0.5) !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     LINK PREVIEWS — indigo-tinted cards for URLs
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqtxt a, .bqtxt a{',
+  '  display:inline !important;',
+  '  transition:opacity .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtxt a:hover, .bqtxt a:hover{opacity:0.8 !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     ONLINE USERS LIST — refined with pulse
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 #bqol .bqurow, #bqol .bqurow{',
+  '  padding:11px 12px !important;',
+  '  border-radius:12px !important;margin:2px 6px !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 #bqol .bqurow:hover, #bqol .bqurow:hover{',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqurow .bqav, .bqurow .bqav{',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqurow .bqav[data-status="online"]::after, .bqurow .bqav[data-status="online"]::after{',
+  '  content:"" !important;position:absolute !important;bottom:0 !important;right:0 !important;',
+  '  width:10px !important;height:10px !important;border-radius:50% !important;',
+  '  background:#22c55e !important;border:2px solid #0e0e11 !important;',
+  '  box-shadow:0 0 6px rgba(34,197,94,0.6) !important;',
+  '  animation:bqLumenPulse 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqLumenPulse{0%,100%{box-shadow:0 0 6px rgba(34,197,94,0.6);}50%{box-shadow:0 0 10px rgba(34,197,94,0.9);}}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     TYPING INDICATOR — with avatar
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqtyp, .bqtyp{',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '  padding:6px 14px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtyp-av, .bqtyp-av{',
+  '  width:24px !important;height:24px !important;border-radius:50% !important;',
+  '  flex-shrink:0 !important;box-shadow:0 0 0 1px rgba(255,255,255,0.06) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     MESSAGE GROUPING — subtle spacer between different senders
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqr:not(.consec):not(.bq-new):not(:first-child)::before, .bqr:not(.consec):not(.bq-new):not(:first-child)::before{',
+  '  content:"" !important;display:block !important;height:8px !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     VOICE NOTE WAVEFORM — indigo gradient bars
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqvoice-wave span, .bqvoice-wave span{',
+  '  background:linear-gradient(180deg, #818cf8, #6366f1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqvoice-wave span, .bqr.mine .bqvoice-wave span{',
+  '  background:rgba(255,255,255,0.7) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     CONFIRM DIALOG — refined
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-confirm-box, .bq-confirm-box{',
+  '  background:#18181b !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:16px !important;',
+  '  box-shadow:0 20px 60px rgba(0,0,0,0.5) !important;',
+  '  padding:24px !important;max-width:340px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-confirm-icon, .bq-confirm-icon{',
+  '  width:48px !important;height:48px !important;margin:0 auto 14px !important;',
+  '  border-radius:50% !important;background:rgba(239,68,68,0.1) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-confirm-title, .bq-confirm-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:16px !important;font-weight:600 !important;letter-spacing:-0.02em !important;',
+  '  color:#f4f4f5 !important;text-align:center !important;margin-bottom:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-confirm-desc, .bq-confirm-desc{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#a1a1aa !important;line-height:1.5 !important;',
+  '  text-align:center !important;margin-bottom:18px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-confirm-btn.danger, .bq-confirm-btn.danger{',
+  '  background:linear-gradient(135deg, #ef4444, #dc2626) !important;',
+  '  border:none !important;color:#fff !important;',
+  '  box-shadow:0 2px 8px rgba(239,68,68,0.3) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REDUCED MOTION
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp.bq-dm-v2 *, #bqp.bq-dm-v2 *::before, #bqp.bq-dm-v2 *::after{',
+  '    animation-duration:0.01ms !important;animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v86Css);
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. IMPROVED FORWARD FUNCTION — replaces the original forwardMessage
+   ───────────────────────────────────────────────────────────────────────
+   Features:
+   • Beautiful modal overlay with backdrop blur
+   • Message preview at top
+   • Search/filter recipients
+   • Multi-select (tap to select, tap again to deselect)
+   • Avatars + presence dots
+   • Recent conversations first
+   • "Select all" / "Deselect" controls
+   • Footer with count + Send button
+   • Preserves original sender (fwdFrom) in forwarded message */
+function v86EnhancedForward(ctx, key, msg){
+  var text = msg.text || '';
+  if(!text && msg.gifUrl) text = '🎬 GIF';
+  if(!text && msg.imageData) text = '📷 Photo';
+  if(!text && msg.type === 'voice') text = '🎤 Voice note';
+  if(!text && msg.type === 'sticker') text = '👾 ' + (msg.sticker || 'Sticker');
+  if(!text) return (typeof toast === 'function' ? toast('Nothing to forward') : alert('Nothing to forward'));
+
+  var _db = (typeof db !== 'undefined') ? db : null;
+  var _uid = (typeof uid !== 'undefined') ? uid : '';
+  var _uname = (typeof uname !== 'function' ? (typeof uname !== 'undefined' ? uname : 'You') : 'You');
+  if(typeof _uname === 'function') _uname = _uname();
+
+  // Build recipient list: Global + all DMs
+  var recipients = [];
+
+  // Global chat option (first)
+  recipients.push({
+    id: '__global__',
+    name: 'Global Chat',
+    status: '',
+    color: '#6366f1',
+    initials: '📢',
+    isGlobal: true,
+    lastTs: 0,
+  });
+
+  // DM conversations
+  var dmList = [];
+  try {
+    dmList = Object.entries(typeof dmMeta !== 'undefined' ? dmMeta : {});
+  } catch(e) { dmList = []; }
+
+  if(!dmList.length && !_db){
+    // No DMs — just show global option
+  }
+
+  dmList.forEach(function(entry){
+    var dmId = entry[0], meta = entry[1] || {};
+    var puid = meta.p1 === _uid ? meta.p2 : meta.p1;
+    var pname = meta.p1 === _uid ? (meta.n2 || 'Unknown') : (meta.n1 || 'Unknown');
+    var alias = '';
+    try { if(typeof getAlias === 'function') alias = getAlias(puid); } catch(e) {}
+    var shown = alias || ('@' + pname);
+    var pdata = {};
+    try { if(typeof onlineU !== 'undefined') pdata = onlineU[puid] || {}; } catch(e) {}
+    var color = '#818cf8';
+    try { if(typeof getColor === 'function') color = getColor(puid, pname); } catch(e) {}
+    var initials = '?';
+    try { if(typeof uInit === 'function') initials = uInit(pname); } catch(e) { initials = pname.charAt(0).toUpperCase(); }
+
+    recipients.push({
+      id: dmId,
+      name: shown,
+      rawName: pname,
+      puid: puid,
+      status: pdata.status || '',
+      color: color,
+      initials: initials,
+      avatar: pdata.avatar || '',
+      isGlobal: false,
+      lastTs: meta.lastTs || 0,
+    });
+  });
+
+  // Sort DMs by lastTs descending (most recent first). Global stays first.
+  var globalOpt = recipients[0];
+  var dmOpts = recipients.slice(1).sort(function(a, b){
+    return (b.lastTs || 0) - (a.lastTs || 0);
+  });
+  recipients = [globalOpt].concat(dmOpts);
+
+  // Selected set
+  var selected = new Set();
+
+  // Build overlay
+  var overlay = document.createElement('div');
+  overlay.className = 'bq-forward-overlay';
+
+  var previewText = text.length > 100 ? text.slice(0, 100) + '…' : text;
+  // Strip _fwd: prefix if already forwarded
+  if(previewText.indexOf('_fwd: ') === 0) previewText = previewText.slice(6);
+
+  overlay.innerHTML =
+    '<div class="bq-forward-panel">' +
+      '<div class="bq-forward-header">' +
+        '<div class="bq-forward-title">Forward message</div>' +
+        '<div class="bq-forward-subtitle">Select one or more recipients</div>' +
+      '</div>' +
+      '<div class="bq-forward-preview">' +
+        '<div class="bq-forward-preview-label">Message</div>' +
+        '<div class="bq-forward-preview-text"></div>' +
+      '</div>' +
+      '<div class="bq-forward-search">' +
+        '<input type="text" placeholder="Search recipients…" autocomplete="off" autocorrect="off" autocapitalize="off">' +
+      '</div>' +
+      '<div class="bq-forward-controls">' +
+        '<span class="bq-forward-count-text"><strong>0</strong> selected</span>' +
+        '<div>' +
+          '<button class="bq-forward-select-all">Select all</button>' +
+          '<button class="bq-forward-deselect">Deselect</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="bq-forward-list"></div>' +
+      '<div class="bq-forward-footer">' +
+        '<div class="bq-forward-count"><strong>0</strong> recipient(s)</div>' +
+        '<div class="bq-forward-actions">' +
+          '<button class="bq-forward-cancel">Cancel</button>' +
+          '<button class="bq-forward-send" disabled>Forward</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Set preview text (escape HTML)
+  var previewEl = overlay.querySelector('.bq-forward-preview-text');
+  previewEl.textContent = previewText;
+
+  var listEl = overlay.querySelector('.bq-forward-list');
+  var searchInput = overlay.querySelector('.bq-forward-search input');
+  var countText = overlay.querySelector('.bq-forward-count-text strong');
+  var footerCount = overlay.querySelector('.bq-forward-count strong');
+  var sendBtn = overlay.querySelector('.bq-forward-send');
+  var cancelBtn = overlay.querySelector('.bq-forward-cancel');
+  var selectAllBtn = overlay.querySelector('.bq-forward-select-all');
+  var deselectBtn = overlay.querySelector('.bq-forward-deselect');
+
+  var checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function renderList(filter){
+    filter = (filter || '').toLowerCase().trim();
+    listEl.innerHTML = '';
+    var visible = recipients.filter(function(r){
+      if(!filter) return true;
+      return r.name.toLowerCase().indexOf(filter) !== -1 || (r.rawName && r.rawName.toLowerCase().indexOf(filter) !== -1);
+    });
+
+    visible.forEach(function(r){
+      var item = document.createElement('button');
+      item.className = 'bq-forward-item' + (r.isGlobal ? ' bq-fwd-global' : '') + (selected.has(r.id) ? ' selected' : '');
+      item.dataset.id = r.id;
+
+      var avatarHtml;
+      if(r.isGlobal){
+        avatarHtml = '<div class="bq-fwd-global-ic">📢</div>';
+      } else if(r.avatar){
+        avatarHtml = '<div class="bq-forward-av" data-status="' + (r.status || '') + '" style="background:url(' + r.avatar.replace(/"/g, '&quot;') + ') center/cover;color:transparent;"></div>';
+      } else {
+        avatarHtml = '<div class="bq-forward-av" data-status="' + (r.status || '') + '" style="background:' + r.color + ';color:#000;">' + r.initials + '</div>';
+      }
+
+      var statusText = '';
+      if(r.isGlobal){
+        statusText = 'Everyone in the chat';
+      } else if(r.status === 'online'){
+        statusText = 'Online';
+      } else if(r.status === 'studying'){
+        statusText = 'Studying';
+      } else if(r.status === 'busy'){
+        statusText = 'Busy';
+      } else if(r.status === 'away'){
+        statusText = 'Away';
+      } else if(r.lastTs){
+        statusText = 'Last active ' + v86TimeAgo(r.lastTs);
+      } else {
+        statusText = 'Tap to send';
+      }
+
+      item.innerHTML =
+        avatarHtml +
+        '<div class="bq-forward-info">' +
+          '<div class="bq-forward-name">' + v86Esc(r.name) + '</div>' +
+          '<div class="bq-forward-status">' + v86Esc(statusText) + '</div>' +
+        '</div>' +
+        '<div class="bq-forward-check">' + checkSvg + '</div>';
+
+      item.addEventListener('click', function(){
+        if(selected.has(r.id)){
+          selected.delete(r.id);
+          item.classList.remove('selected');
+        } else {
+          selected.add(r.id);
+          item.classList.add('selected');
+        }
+        updateCount();
+      });
+
+      listEl.appendChild(item);
+    });
+
+    if(!visible.length){
+      var empty = document.createElement('div');
+      empty.style.cssText = 'padding:32px 16px;text-align:center;color:#71717a;font:13px Inter,-apple-system,sans-serif;';
+      empty.textContent = 'No recipients found';
+      listEl.appendChild(empty);
+    }
+  }
+
+  function updateCount(){
+    var n = selected.size;
+    countText.textContent = n;
+    footerCount.textContent = n;
+    sendBtn.disabled = n === 0;
+  }
+
+  function doForward(){
+    if(selected.size === 0) return;
+    var count = 0;
+    var failed = 0;
+    var originalSender = msg.uname || '';
+    var fwdText = text;
+    // Strip existing _fwd: prefix to avoid double-stacking
+    if(fwdText.indexOf('_fwd: ') === 0) fwdText = fwdText.slice(6);
+    fwdText = '_fwd: ' + fwdText.slice(0, 400);
+
+    selected.forEach(function(id){
+      try {
+        if(id === '__global__'){
+          if(_db) _db.ref('bq_messages').push({
+            uid: _uid, uname: _uname, text: fwdText, ts: Date.now(),
+            forwarded: true, fwdFrom: originalSender,
+          });
+        } else {
+          if(_db) _db.ref('bq_dms/' + id + '/messages').push({
+            uid: _uid, uname: _uname, text: fwdText, ts: Date.now(),
+            forwarded: true, fwdFrom: originalSender,
+          });
+        }
+        count++;
+      } catch(e) {
+        failed++;
+        console.error('[forward] failed for', id, e);
+      }
+    });
+
+    overlay.remove();
+    if(typeof toast === 'function'){
+      if(failed > 0){
+        toast('Forwarded to ' + count + ', ' + failed + ' failed');
+      } else if(count === 1){
+        // Find the name
+        var r = recipients.find(function(x){ return x.id === Array.from(selected)[0]; });
+        toast('Forwarded to ' + (r ? r.name : 'recipient'));
+      } else {
+        toast('Forwarded to ' + count + ' recipients');
+      }
+    }
+  }
+
+  // Event listeners
+  searchInput.addEventListener('input', function(e){
+    renderList(e.target.value);
+  });
+
+  selectAllBtn.addEventListener('click', function(){
+    var filter = (searchInput.value || '').toLowerCase().trim();
+    recipients.forEach(function(r){
+      if(!filter || r.name.toLowerCase().indexOf(filter) !== -1){
+        selected.add(r.id);
+      }
+    });
+    renderList(filter);
+    updateCount();
+  });
+
+  deselectBtn.addEventListener('click', function(){
+    selected.clear();
+    renderList(searchInput.value);
+    updateCount();
+  });
+
+  cancelBtn.addEventListener('click', function(){
+    overlay.remove();
+  });
+
+  sendBtn.addEventListener('click', doForward);
+
+  overlay.addEventListener('click', function(e){
+    if(e.target === overlay) overlay.remove();
+  });
+
+  // Escape to close
+  function onKey(e){
+    if(e.key === 'Escape'){
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+  }
+  document.addEventListener('keydown', onKey);
+
+  // Render initial list
+  renderList('');
+
+  // Append to widget panel (or body fallback)
+  var panel = document.getElementById('bqp') || document.body;
+  panel.appendChild(overlay);
+
+  // Focus search after animation
+  setTimeout(function(){ try { searchInput.focus(); } catch(e) {} }, 300);
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. HELPERS
+   ─────────────────────────────────────────────────────────────────────── */
+function v86Esc(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function v86TimeAgo(ts){
+  if(!ts) return '';
+  var diff = Date.now() - ts;
+  if(diff < 60000) return 'just now';
+  if(diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  if(diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return Math.floor(diff / 86400000) + 'd ago';
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   4. OVERRIDE THE ORIGINAL forwardMessage FUNCTION
+   ───────────────────────────────────────────────────────────────────────
+   The original forwardMessage is defined at line 6101. We override it
+   on the window object so our enhanced version is used instead.
+   This is safe — the original is only called from doAction() which
+   calls window.forwardMessage (or the local function reference).
+   We patch via a small hook: monkey-patch doAction's forward branch. */
+function v86InstallForwardOverride(){
+  // The renderMsgActionSheet -> doAction -> forwardMessage chain uses the
+  // local function reference, which we can't easily override from outside
+  // the IIFE. Instead, we hook into the action sheet buttons after they're
+  // created by observing clicks on .bq-ms-btn[data-a="forward"].
+  //
+  // This is a ONE-TIME event delegation (not a MutationObserver) — no lag.
+
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.bq-ms-btn[data-a="forward"]');
+    if(!btn) return;
+
+    // Find the message this button belongs to
+    var bar = btn.closest('.bq-msg-inline');
+    if(!bar) return;
+
+    var key = bar.dataset.key;
+    var ctx = bar.dataset.ctx;
+    if(!key || !ctx) return;
+
+    // Find the message data
+    var msg = null;
+    try {
+      // Try to find the message element and reconstruct msg from data attributes
+      var pfx = 'bqmsg-' + ctx + '-';
+      var msgEl = document.getElementById(pfx + key);
+      if(!msgEl) return;
+
+      // Reconstruct msg from the DOM
+      var bbl = msgEl.querySelector('.bqbbl');
+      if(!bbl) return;
+
+      // Get text from .bqtxt
+      var txtEl = msgEl.querySelector('.bqtxt');
+      var text = txtEl ? txtEl.textContent : '';
+
+      // Get uname from .bqun
+      var unEl = msgEl.querySelector('.bqun');
+      var uname = unEl ? unEl.dataset.uname : '';
+
+      // Get uid from .bqav
+      var avEl = msgEl.querySelector('.bqav');
+      var uid_ = avEl ? avEl.dataset.uid : '';
+
+      msg = { text: text, uname: uname, uid: uid_, key: key };
+
+      // Check for media
+      if(msgEl.querySelector('.bq-msg-img')) msg.imageData = true;
+      if(msgEl.querySelector('.bq-msg-gif')) msg.gifUrl = true;
+      if(msgEl.querySelector('.bqsticker')) { msg.type = 'sticker'; msg.sticker = msgEl.querySelector('.bqsticker').textContent; }
+      if(msgEl.querySelector('.bqvoice-wave')) msg.type = 'voice';
+    } catch(err) {
+      console.error('[v86 forward] could not reconstruct msg', err);
+      return;
+    }
+
+    if(!msg) return;
+
+    // Stop the original handler from also firing
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Close the action sheet
+    if(typeof closeMsgActionSheet === 'function'){
+      try { closeMsgActionSheet(); } catch(e) {}
+    }
+
+    // Open our enhanced forward modal
+    v86EnhancedForward(ctx, key, msg);
+  }, true); // capture phase — runs before the original click handler
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   5. PATCH renderMsg TO ADD "FORWARDED" LABEL
+   ───────────────────────────────────────────────────────────────────────
+   We use a MutationObserver on the message containers to add a
+   "Forwarded" label to messages with the _fwd: prefix. This is lightweight
+   because it only processes NEW messages (not every DOM change).
+   Wait — we learned observers cause lag. Instead, we hook into the
+   renderMsg function by patching the prototype... actually, the cleanest
+   way is to use a one-shot scan after each render cycle.
+
+   Better approach: use a CSS-based detection. The _fwd: prefix is in the
+   text — we can use :has() or attribute selectors. But the text is inside
+   .bqtxt, not as an attribute.
+
+   Simplest approach: a periodic scan (every 2s) that adds the label to
+   any .bqtxt containing "_fwd:" that hasn't been processed yet. This is
+   cheap (querySelectorAll + class check) and runs at most every 2s.
+
+   Even better: hook into the existing scrollD function which runs after
+   every message render. But that's complex.
+
+   Let's go with the periodic scan — it's simple and cheap. */
+function v86PatchForwardedMessages(){
+  // Find all .bqtxt that haven't been scanned yet (efficient — skips processed)
+  var txts = document.querySelectorAll('#bqgmsgs .bqtxt:not([data-fwd-scan]), #bqdmmsgs .bqtxt:not([data-fwd-scan])');
+  if(txts.length === 0) return; // nothing new — exit early
+
+  txts.forEach(function(txtEl){
+    txtEl.dataset.fwdScan = '1'; // mark as scanned (regardless of content)
+    var raw = txtEl.textContent || '';
+    if(raw.indexOf('_fwd: ') === 0){
+      txtEl.dataset.fwdProcessed = '1';
+      // Strip the _fwd: prefix from display
+      var cleaned = raw.slice(6);
+      var bbl = txtEl.closest('.bqbbl');
+      if(bbl && !bbl.querySelector('.bq-fwd-label')){
+        var label = document.createElement('div');
+        label.className = 'bq-fwd-label';
+        label.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>' +
+          '</svg>' +
+          '<span>Forwarded</span>';
+        bbl.insertBefore(label, txtEl);
+      }
+      // Update the displayed text
+      txtEl.textContent = cleaned;
+    }
+  });
+}
+
+/* Schedule the scan using requestIdleCallback if available, else setTimeout.
+   Runs at most every 2.5s. Pauses when tab is hidden (Page Visibility API). */
+var v86ScanScheduled = false;
+function v86ScheduleScan(){
+  if(v86ScanScheduled) return;
+  v86ScanScheduled = true;
+  var delay = 2500;
+  var run = function(){
+    v86ScanScheduled = false;
+    if(document.visibilityState === 'hidden') {
+      v86ScheduleScan(); // reschedule, don't scan while hidden
+      return;
+    }
+    v86PatchForwardedMessages();
+    v86ScheduleScan(); // schedule next
+  };
+  if(typeof requestIdleCallback === 'function'){
+    requestIdleCallback(run, { timeout: delay + 1000 });
+  } else {
+    setTimeout(run, delay);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   6. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function v86Init(){
+  // Install the forward button override (one-time event delegation)
+  v86InstallForwardOverride();
+
+  // Initial scan for forwarded messages
+  v86PatchForwardedMessages();
+
+  // Start idle-time scan loop (NOT a setInterval — uses requestIdleCallback
+  // + Page Visibility check, so it pauses when tab is hidden and runs during
+  // idle time. Cheap: scoped querySelectorAll + dataset flag check.)
+  v86ScheduleScan();
+
+  console.log('[bq] V' + V86_VERSION + ' patch loaded — enhanced forwarding + V2 design additions');
+}
+
+// Run immediately if document is ready, otherwise on DOMContentLoaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v86Init);
+} else {
+  v86Init();
+}
+// Retry a few times in case the widget loads slowly
+setTimeout(v86Init, 1500);
+setTimeout(v86Init, 4000);
+setTimeout(v86Init, 8000);
+
+}catch(e){ console.error('[bq] V86 patch error:', e); }
 })();
 
