@@ -598,3 +598,48 @@ Stage Summary:
 - More V2 UI improvements: message hover, reactions, online list, confirm dialog, toast, pinned bar
 - Non-breaking: V1 unchanged, V84 overrides V83 with higher specificity
 - Backup: scripts/chat-widget-v83-backup.js
+
+---
+Task ID: V85-Lumen
+Agent: main
+Task: Fix invisible text in V2 + complete beautiful redesign
+
+Work Log:
+- DIAGNOSED invisible text: V83/V84 used class-only selectors (.bq-dm-v2 .bqr.mine .bqbbl, specificity 0-3-0). But ~20 theme-specific rules use #bqp.bq-theme-X .bqr.mine .bqbbl (ID+class, specificity 1-1-0) which BEATS V83/V84. Themes set color:#fff on V83/V84's light #f4f4f5 background = invisible white-on-white text.
+- Backed up V84 to scripts/chat-widget-v84-backup.js
+- Wrote V85 "Lumen" patch (684 lines) in scripts/v85-lumen-patch.js:
+  - ALL selectors use #bqp.bq-dm-v2 prefix (ID+class, 1-1-0 specificity)
+  - Since V85 loads LAST in file, wins specificity ties with theme rules
+  - Overrides --bq-bubble-mine CSS variable at #bqp.bq-dm-v2 level
+  - Explicitly sets .bqtxt color with ID-level selectors:
+    - Mine: color:#ffffff (white on indigo gradient)
+    - Theirs: color:#f4f4f5 (light on dark bubble)
+  - Text GUARANTEED visible regardless of active theme
+- NEW DESIGN — 'Lumen' (V83 Graphite + V84 Mono were too dark/boring):
+  - Beautiful indigo→violet gradient for mine bubbles (#6366f1 → #7c3aed → #8b5cf6)
+  - Inner top highlight + soft drop shadow + subtle glow on hover
+  - Refined dark theirs bubbles (rgba(255,255,255,0.06)) with hairline border
+  - Warm dark background (#0e0e11)
+  - Elevated headers with backdrop-blur + saturate (glassy)
+  - Refined 18px bubble radius with asymmetric tails
+  - Inter typography with -0.02em tracking
+  - Smooth 0.25s cubic-bezier transitions
+  - Hover: subtle lift + shadow enhancement + glow
+  - Indigo gradient on: send button, scroll button, V1/V2 toggle, V2 badge, unread badge, new-messages banner, save button, toggle switches
+  - Refined empty state with indigo glow
+  - Indigo focus rings on inputs (3px halo)
+  - Indigo typing dots with glow
+  - Indigo active-row indicator (inset 3px left border)
+- All surfaces restyled with #bqp.bq-dm-v2 selectors (beats all themes)
+- Appended V85 patch to public/chat-widget.js (now 22,334 lines)
+- Bumped WIDGET_VERSION from '84.0.0' to '85.0.0'
+- Updated public/chat-widget-version.json to {"version": "85.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200 in 360ms, widget HTTP 200, 200 V85 markers, 9 #bqp.bq-dm-v2 .bqr.mine .bqbbl rules (beats theme specificity), mine text = #ffffff, theirs text = #f4f4f5 (always readable), WIDGET_VERSION = '85.0.0', no errors
+- Committed (bb0e886) and pushed to GitHub
+
+Stage Summary:
+- INVISIBLE TEXT FIXED — root cause was CSS specificity (theme ID+class selectors beat V83/V84 class-only selectors). V85 uses #bqp.bq-dm-v2 ID+class selectors that load last, guaranteeing text is always visible.
+- Beautiful "Lumen" redesign — indigo→violet gradient mine bubbles, refined dark theirs, warm background, glassy headers, tasteful animations
+- All settings panels restyled with ID-level selectors (My Profile, DM Settings, Floating Info)
+- Non-breaking: V1 unchanged, V85 overrides V83/V84 with higher specificity
+- Backup: scripts/chat-widget-v84-backup.js
