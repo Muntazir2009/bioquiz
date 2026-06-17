@@ -49,14 +49,33 @@ export function SharedFileView({ shareId, onClose }: { shareId: string; onClose:
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/share/${shareId}`)
+    const controller = new AbortController();
+    fetch(`/api/share/${shareId}`, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error(r.status === 403 ? "This file is private" : r.status === 410 ? "This file has expired" : "File not found");
         return r.json();
       })
       .then((data) => setFile(data.file))
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        if (e.name === "AbortError") return;
+        setError(e.message);
+      });
+    return () => controller.abort();
   }, [shareId]);
+
+  // Close on Escape + lock body scroll while the modal is mounted.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);

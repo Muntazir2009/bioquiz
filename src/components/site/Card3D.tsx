@@ -31,6 +31,7 @@ export const Card3D = memo(function Card3D({
     return (
       <a
         href={m.href}
+        aria-label={`Open ${m.title} module`}
         style={
           {
             "--c": m.color,
@@ -41,7 +42,7 @@ export const Card3D = memo(function Card3D({
             animationDelay: `${index * 60}ms`,
           } as React.CSSProperties
         }
-        className="card-3d group relative flex flex-col sm:flex-row items-center gap-6 overflow-hidden rounded-2xl border border-border bg-card/90 backdrop-blur-sm cursor-pointer animate-[card-in_0.45s_ease_both] p-7"
+        className="card-3d group relative flex flex-col sm:flex-row items-center gap-6 overflow-hidden rounded-2xl border border-border bg-card/90 sm:backdrop-blur-sm cursor-pointer animate-[card-in_0.45s_ease_both] p-6 sm:p-7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
       >
         {/* Top gradient line */}
         <div
@@ -61,7 +62,7 @@ export const Card3D = memo(function Card3D({
               height: "72px",
             }}
           >
-            <Icon className="h-7 w-7 text-background" strokeWidth={1.8} />
+            <Icon className="h-7 w-7 text-background" strokeWidth={1.8} aria-hidden />
           </div>
         </div>
 
@@ -104,7 +105,7 @@ export const Card3D = memo(function Card3D({
             }}
           >
             <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2 w-2 motion-ok">
                 <span
                   className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-50"
                   style={{ background: "var(--c)" }}
@@ -129,7 +130,7 @@ export const Card3D = memo(function Card3D({
                 color: "var(--c)",
               }}
             >
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </div>
           </div>
         </div>
@@ -141,6 +142,7 @@ export const Card3D = memo(function Card3D({
   return (
     <a
       href={m.href}
+      aria-label={`Open ${m.title} module`}
       style={
         {
           "--c": m.color,
@@ -151,7 +153,7 @@ export const Card3D = memo(function Card3D({
           animationDelay: `${index * 60}ms`,
         } as React.CSSProperties
       }
-      className="card-3d group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card/90 backdrop-blur-sm cursor-pointer animate-[card-in_0.45s_ease_both]"
+      className="card-3d group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card/90 sm:backdrop-blur-sm cursor-pointer animate-[card-in_0.45s_ease_both] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
     >
       {/* Top gradient line */}
       <div
@@ -161,7 +163,7 @@ export const Card3D = memo(function Card3D({
       />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col gap-4 p-6">
+      <div className="relative z-10 flex flex-col gap-4 p-5 sm:p-6">
         {/* Head: chip + status */}
         <div className="flex items-center justify-between">
           <span
@@ -195,7 +197,7 @@ export const Card3D = memo(function Card3D({
               boxShadow: "0 4px 20px -4px var(--accent-ring), inset 0 1px 0 rgba(255,255,255,0.12)",
             }}
           >
-            <Icon className="h-6 w-6 text-background" strokeWidth={1.8} />
+            <Icon className="h-6 w-6 text-background" strokeWidth={1.8} aria-hidden />
           </div>
         </div>
 
@@ -210,14 +212,14 @@ export const Card3D = memo(function Card3D({
 
       {/* Launch bar */}
       <div
-        className="relative z-10 mt-auto px-6 py-3 flex items-center justify-between border-t"
+        className="relative z-10 mt-auto px-5 sm:px-6 py-3 flex items-center justify-between border-t"
         style={{
           borderColor: "color-mix(in oklab, var(--c) 12%, var(--border))",
           background: "color-mix(in oklab, var(--c) 4%, transparent)",
         }}
       >
         <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2 w-2">
+          <span className="relative flex h-2 w-2 motion-ok">
             <span
               className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-50"
               style={{ background: "var(--c)" }}
@@ -242,7 +244,7 @@ export const Card3D = memo(function Card3D({
             color: "var(--c)",
           }}
         >
-          <ArrowUpRight className="h-3.5 w-3.5" />
+          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
         </div>
       </div>
     </a>

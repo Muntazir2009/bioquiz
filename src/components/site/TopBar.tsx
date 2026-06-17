@@ -12,25 +12,53 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
   const [time, setTime] = useState("");
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 0);
+    // Use a microtask-free mounted flag — safe in React 19.
+    setMounted(true);
+
     const update = () => {
-      setTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      setTime(
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
     };
     update();
-    const id = setInterval(update, 30_000);
-    return () => { clearInterval(id); clearTimeout(t); };
+
+    // Align the next tick to the start of the next minute, then update every
+    // 60s. Updating every 30s with HH:MM precision meant the displayed minute
+    // could be up to 30s stale — now it flips within ~1s of the actual minute.
+    const now = new Date();
+    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    const startupTimer = setTimeout(() => {
+      update();
+      const id = setInterval(update, 60_000);
+      // Store cleanup on the timeout so the outer return can clear both.
+      // (We can't reference `id` in the outer return because it's defined
+      // inside this closure, so we attach it to the timeout function.)
+      (startupTimer as unknown as { _interval?: ReturnType<typeof setInterval> })._interval = id;
+    }, msUntilNextMinute);
+
+    return () => {
+      clearTimeout(startupTimer);
+      const intervalId = (startupTimer as unknown as { _interval?: ReturnType<typeof setInterval> })._interval;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "brown" : "dark");
   }, [theme, setTheme]);
 
+  const iconBtnClass =
+    "group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60";
+
   return (
     <TooltipProvider delayDuration={300}>
       <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Brand */}
-          <a href="/" className="flex items-center gap-2.5 group">
+          <a href="/" className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 rounded-md" aria-label="BioQuiz home">
             <div className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground text-[11px] font-semibold tracking-tight transition-transform group-hover:scale-105">
               B
             </div>
@@ -43,8 +71,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
           {/* Actions */}
           <div className="flex items-center gap-1.5">
             {mounted && (
-              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground mr-1">
-                <Clock className="h-3 w-3" />
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground mr-1" aria-label={`Current time ${time}`}>
+                <Clock className="h-3 w-3" aria-hidden />
                 <span className="tabular-nums">{time}</span>
               </div>
             )}
@@ -56,12 +84,13 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={toggleTheme}
-                    className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
+                    className={iconBtnClass}
+                    aria-label={theme === "dark" ? "Switch to brown mode" : "Switch to dark mode"}
                   >
                     {theme === "dark" ? (
-                      <Sun className="h-4 w-4 text-amber-500" />
+                      <Sun className="h-4 w-4 text-amber-500" aria-hidden />
                     ) : (
-                      <Moon className="h-4 w-4" />
+                      <Moon className="h-4 w-4" aria-hidden />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -75,9 +104,10 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <a
                   href="/admin"
-                  className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
+                  className={iconBtnClass}
+                  aria-label="Open admin panel"
                 >
-                  <ShieldCheck className="h-4 w-4" />
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
                 </a>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Admin</TooltipContent>
@@ -87,9 +117,10 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={onFilePanelOpen}
-                  className="group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm"
+                  className={iconBtnClass}
+                  aria-label="Open files panel"
                 >
-                  <CloudUpload className="h-4 w-4" />
+                  <CloudUpload className="h-4 w-4" aria-hidden />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">Files</TooltipContent>

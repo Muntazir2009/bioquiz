@@ -29,9 +29,10 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get("share");
-    if (sid) {
-      queueMicrotask(() => setShareId(sid));
-    }
+    // setState in useEffect is already batched by React 19 — no need for
+    // queueMicrotask (which used to cause an extra synchronous re-render
+    // before paint and a small frame drop on slow devices).
+    if (sid) setShareId(sid);
   }, []);
 
   const closeShareView = useCallback(() => {
@@ -45,9 +46,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Skip-to-content link — visible on keyboard focus, hidden on mouse */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:border focus:border-border"
+      >
+        Skip to content
+      </a>
+
       <Loader />
       <TopBar onFilePanelOpen={openFiles} />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <Hero onOpenFiles={openFiles} />
         <ModulesGrid />
       </main>

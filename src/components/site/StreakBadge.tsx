@@ -6,6 +6,9 @@ import { Flame } from "lucide-react";
 import { getStreak, setStreak, type StreakData } from "@/lib/firebase";
 
 const STORAGE_KEY = "bq.streak.v2";
+// Cap how long we'll wait for Firebase RTDB before falling back to local-only.
+// Without this, a slow / blocked network leaves the badge spinning forever.
+const REMOTE_TIMEOUT_MS = 4000;
 
 type StreakState = {
   count: number;
@@ -135,12 +138,16 @@ export function StreakBadge() {
       // 1. Read local streak
       const localStreak = readStreak();
 
-      // 2. Try to sync with Firebase
+      // 2. Try to sync with Firebase — but race against a timeout so a slow
+      //    network never leaves the badge in a "loading" state forever.
       const uid = getChatUid();
       if (uid && !syncDone.current) {
         syncDone.current = true;
         try {
-          const remoteStreak = await getStreak(uid);
+          const remoteStreak = await Promise.race([
+            getStreak(uid),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), REMOTE_TIMEOUT_MS)),
+          ]);
           const merged = mergeStreaks(localStreak, remoteStreak);
           const next = computeStreak(merged);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -155,7 +162,7 @@ export function StreakBadge() {
             setTimeout(() => setPulse(false), 1200);
           }
 
-          // Sync back to Firebase
+          // Sync back to Firebase (best-effort, no await)
           syncToFirebase(next);
         } catch {
           // Fall back to local-only
@@ -184,8 +191,10 @@ export function StreakBadge() {
     return () => clearTimeout(timer);
   }, [syncToFirebase]);
 
+  // Placeholder matches the final badge dimensions closely (h-8, ~80–96px wide)
+  // so there's no visible layout shift when the real badge mounts.
   if (!state) {
-    return <div className="h-8 w-[88px] rounded-full border border-border bg-card/60" />;
+    return <div className="h-8 w-[84px] rounded-full border border-border bg-card/60 animate-pulse" aria-hidden />;
   }
 
   return (

@@ -64,23 +64,66 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [getHeaders]);
 
-  // Initial fetch + polling when panel opens
+  // Initial fetch + polling when panel opens.
+  // Polling pauses when the tab is hidden so background tabs don't hammer the API.
   useEffect(() => {
     if (!open) return;
 
+    // Use queueMicrotask so the first fetch doesn't block paint on the panel-open animation.
     queueMicrotask(() => fetchFiles());
 
-    pollRef.current = setInterval(() => {
-      fetchFiles();
-    }, 5000);
-
-    return () => {
+    const startPolling = () => {
+      if (pollRef.current) return;
+      pollRef.current = setInterval(() => {
+        if (document.visibilityState !== "visible") return;
+        fetchFiles();
+      }, 5000);
+    };
+    const stopPolling = () => {
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
       }
     };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        // Refresh immediately on focus, then resume polling.
+        fetchFiles();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === "visible") startPolling();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [open, fetchFiles]);
+
+  // Close on Escape — standard modal behavior.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Lock body scroll while the panel is open so the background doesn't scroll
+  // under it on mobile.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   // Delete a single file
   const handleDelete = useCallback(async (id: string) => {
@@ -182,19 +225,26 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — clicking it closes the panel. aria-hidden because the
+          panel itself announces via role=dialog. */}
       <div
+        aria-hidden
         className="fixed inset-0 z-40 bg-foreground/10 backdrop-blur-sm transition-opacity duration-200"
         onClick={onClose}
       />
 
       {/* Floating panel */}
-      <div className="file-panel-floating fixed z-50 flex flex-col rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Files panel"
+        className="file-panel-floating fixed z-50 flex flex-col rounded-2xl border border-border bg-background/95 backdrop-blur-xl shadow-2xl"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <div className="grid h-7 w-7 place-items-center rounded-lg bg-foreground/5">
-              <CloudUpload className="h-3.5 w-3.5 text-muted-foreground" />
+              <CloudUpload className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
             </div>
             <div>
               <h2 className="text-sm font-semibold">Files</h2>
@@ -204,19 +254,21 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`inline-block h-1.5 w-1.5 rounded-full transition-colors ${connected ? "bg-green-500" : "bg-amber-500 animate-pulse"}`} />
+            <span className={`inline-block h-1.5 w-1.5 rounded-full transition-colors ${connected ? "bg-green-500" : "bg-amber-500 animate-pulse"}`} aria-hidden />
             <button
               onClick={() => fetchFiles()}
-              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               title="Refresh"
+              aria-label="Refresh file list"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
             </button>
             <button
               onClick={onClose}
-              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              aria-label="Close files panel"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden />
             </button>
           </div>
         </div>

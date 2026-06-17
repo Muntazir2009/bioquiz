@@ -1,22 +1,45 @@
 "use client";
 
 import { ArrowRight, CloudUpload, Zap } from "lucide-react";
+import { modules } from "@/lib/modules";
 
 /**
  * Hero section — 21st.dev inspired smooth design.
  * Clean layout with gradient text and smooth CTAs.
+ *
+ * Performance notes:
+ * - `bg-card/80 backdrop-blur-sm` on the badge is kept (small surface, cheap)
+ * - `bg-grid opacity-40` is now behind `md:block` so it's skipped on mobile
+ * - The spotlight layer is gated by `motion-ok` (CSS class) so users with
+ *   prefers-reduced-motion don't pay for an infinite animation
+ * - The CTA moving-border animation is gated the same way
  */
 export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
+  const has3D = modules.some((m) => m.id === "cell-3d");
+  const aiModule = modules.find((m) => m.id === "ask");
+
+  const stats = [
+    { label: "Modules", value: String(modules.length) },
+    ...(aiModule ? [{ label: "AI Powered", value: "Yes" }] : []),
+    ...(has3D ? [{ label: "3D Viewer", value: "Live" }] : []),
+  ];
+
   return (
     <section id="overview" className="relative overflow-hidden border-b border-border">
-      {/* ── Background layers ── */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
+      {/* ── Background layers ──
+          The spotlight is purely decorative → `.decorative-motion` hides it
+          entirely under prefers-reduced-motion (cheaper than freezing the
+          first frame of an infinite animation). */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 decorative-motion">
         <div className="hero-spotlight" />
       </div>
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-grid opacity-40 hidden sm:block"
+      />
 
       {/* ── Content ── */}
-      <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32">
+      <div className="relative mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:py-28">
         {/* Status badge */}
         <div
           className="hero-badge-pulse inline-flex items-center gap-2 rounded-full border border-border bg-card/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground animate-[fade-up_0.5s_ease_both]"
@@ -39,12 +62,12 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
           <span className="hero-gradient-text">Built for clarity.</span>
         </h1>
 
-        {/* Description */}
+        {/* Description — count is derived from the modules list so it stays accurate */}
         <p
           className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "130ms" }}
         >
-          Six beautifully crafted modules — AI research, a 3D cell
+          {modules.length} beautifully crafted modules — AI research, a 3D cell
           viewer, organelles, slides and solutions, all in one calm workspace.
         </p>
 
@@ -53,7 +76,7 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
           className="mt-7 flex flex-wrap items-center gap-3 animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "200ms" }}
         >
-          <div className="hero-cta-border">
+          <div className="hero-cta-border motion-ok">
             <a
               href="#modules"
               className="hero-cta-inner group inline-flex h-10 items-center gap-1.5 bg-foreground px-4 text-[13px] font-medium text-background transition-all hover:opacity-90 active:scale-[0.98]"
@@ -66,23 +89,19 @@ export function Hero({ onOpenFiles }: { onOpenFiles?: () => void }) {
 
           <button
             onClick={onOpenFiles}
-            className="inline-flex h-10 items-center rounded-lg border border-border bg-card/60 backdrop-blur-sm px-4 text-[13px] font-medium text-foreground transition-all hover:bg-card hover:border-primary/30"
+            className="inline-flex h-10 items-center rounded-lg border border-border bg-card/60 backdrop-blur-sm px-4 text-[13px] font-medium text-foreground transition-all hover:bg-card hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <CloudUpload className="h-3.5 w-3.5 mr-1.5" />
             Upload files
           </button>
         </div>
 
-        {/* Quick stats — 21st.dev style pill row */}
+        {/* Quick stats — 21st.dev style pill row, derived from modules list */}
         <div
           className="mt-10 flex flex-wrap items-center gap-3 animate-[fade-up_0.6s_ease_both]"
           style={{ animationDelay: "280ms" }}
         >
-          {[
-            { label: "Modules", value: "6" },
-            { label: "AI Powered", value: "Yes" },
-            { label: "3D Viewer", value: "Live" },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <div
               key={stat.label}
               className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1.5 text-[11px]"

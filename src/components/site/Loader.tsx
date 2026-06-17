@@ -1,28 +1,69 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, animate } from "framer-motion";
+import { motion, AnimatePresence, animate, useReducedMotion } from "framer-motion";
 
 /**
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *  "CELL" — Black monochrome atom/cell loader
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *
- *  Optimized: 1.1s duration (was 1.4s), no heavy effects.
+ *  Optimized: 0.85s duration, no heavy effects.
  *  Pure black & white. Atom icon with 3 orbital rings.
+ *
+ *  Session-aware: only shows ONCE per browser session (sessionStorage),
+ *  so navigating back to home or refreshing within the same session
+ *  doesn't re-block the UI for ~1s.
+ *
+ *  Reduced-motion-aware: skips the orbital animation, just fades in/out.
  */
 
 const BRAND = "BIOQUIZ";
 const DURATION = 0.85;
+const SESSION_KEY = "bq.loader.seen";
 
 export function Loader() {
+  const reduceMotion = useReducedMotion();
+  // SSR-safe: assume "show" on first render, then re-check in useEffect.
+  // If we've already seen the loader this session, skip it entirely.
   const [show, setShow] = useState(true);
   const barRef = useRef<HTMLDivElement>(null);
   const pctRef = useRef<HTMLSpanElement>(null);
   const phaseRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Skip the loader if we've already shown it this session.
+    try {
+      if (sessionStorage.getItem(SESSION_KEY) === "1") {
+        setShow(false);
+        return;
+      }
+    } catch {
+      // sessionStorage can throw in private mode / sandbox — fall through
+    }
+
     let cancelled = false;
+
+    // Mark as seen immediately so a fast navigation doesn't re-trigger it
+    try {
+      sessionStorage.setItem(SESSION_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+
+    // Reduced motion: skip the count-up animation, just hold briefly then fade.
+    if (reduceMotion) {
+      if (barRef.current) barRef.current.style.width = "100%";
+      if (pctRef.current) pctRef.current.textContent = "100";
+      if (phaseRef.current) phaseRef.current.textContent = "Ready";
+      const t = setTimeout(() => {
+        if (!cancelled) setShow(false);
+      }, 300);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+      };
+    }
 
     const ctrl = animate(0, 100, {
       duration: DURATION,
@@ -52,13 +93,16 @@ export function Loader() {
       cancelled = true;
       ctrl.stop();
     };
-  }, []);
+  }, [reduceMotion]);
 
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           key="loader"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading BioQuiz workspace"
           className="loader-mono fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}

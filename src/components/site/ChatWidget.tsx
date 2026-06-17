@@ -4,16 +4,18 @@ import { useEffect } from "react";
 
 /**
  * ChatWidget — loads the BioQuiz chat widget script.
+ *
  * - Cache-busts via version from /chat-widget-version.json
  * - Auto-reloads the widget when a new version is detected (for open tabs)
- * - Polls every 8s so new versions appear quickly without a manual reload
- * - V78: adds a timestamp query to version.json fetch to defeat any
- *   stale service-worker / CDN / browser-HTTP cache that could pin an old version
+ * - Polls every 12s when the tab is VISIBLE, pauses entirely when hidden
+ *   (Page Visibility API) so background tabs don't burn bandwidth/CPU
+ * - V78: timestamp query on version.json defeats stale SW / CDN / browser cache
  */
 export function ChatWidget() {
   useEffect(() => {
     let poll: ReturnType<typeof setInterval> | null = null;
     let currentVersion: string | null = null;
+    let stopped = false;
 
     /** Fetch the latest version, always bypassing every cache layer. */
     function fetchVersion(): Promise<string | null> {
@@ -46,25 +48,65 @@ export function ChatWidget() {
       document.body.appendChild(script);
     }
 
-    // Initial load
-    fetchVersion().then((v) => {
-      const version = v || Date.now().toString();
-      currentVersion = version;
-      loadWidget(version);
-
-      // Poll every 8s so new versions appear quickly
+    function startPolling() {
+      if (poll) return; // already running
       poll = setInterval(() => {
+        // Double-check visibility inside the interval — if the tab was hidden
+        // between the visibilitychange event firing and the next tick, skip.
+        if (document.visibilityState !== "visible") return;
         fetchVersion().then((latest) => {
+          if (stopped) return;
           if (latest && latest !== currentVersion) {
             currentVersion = latest;
             loadWidget(latest);
           }
         });
-      }, 8000);
+      }, 12_000);
+    }
+
+    function stopPolling() {
+      if (poll) {
+        clearInterval(poll);
+        poll = null;
+      }
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        // Tab became visible again — immediately check for a new version,
+        // then resume polling. This catches updates that shipped while hidden.
+        fetchVersion().then((latest) => {
+          if (stopped) return;
+          if (latest && latest !== currentVersion) {
+            currentVersion = latest;
+            loadWidget(latest);
+          }
+        });
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    }
+
+    // Initial load
+    fetchVersion().then((v) => {
+      if (stopped) return;
+      const version = v || Date.now().toString();
+      currentVersion = version;
+      loadWidget(version);
+
+      // Only start polling if the tab is currently visible
+      if (document.visibilityState === "visible") {
+        startPolling();
+      }
     });
 
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
-      if (poll) clearInterval(poll);
+      stopped = true;
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       const el = document.getElementById("bq-chat-script");
       if (el) el.remove();
       const bubble = document.getElementById("bqb");

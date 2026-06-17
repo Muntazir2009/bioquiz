@@ -128,9 +128,49 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Optimize text rendering — subpixel AA gives crispier text on most
+       displays and is faster than the browser's grayscale fallback. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Newer browsers: hint that we'll do scroll-driven effects so the
+       compositor can prepare. Cheap to set, ignored if unused. */
+    overscroll-behavior-y: none;
   }
   html {
     scroll-behavior: smooth;
+  }
+}
+
+/* Respect reduced-motion for smooth scroll — the @layer base rule above
+   applies regardless of motion preference, which can be jarring. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Motion utilities for prefers-reduced-motion:
+
+   `.motion-ok`  — applied to elements whose ANIMATIONS should be
+                   killed under reduced motion, but the element itself
+                   MUST stay visible (e.g. a button wrapped in an
+                   animated border, a status dot with a ping ring).
+
+   `.decorative-motion` — applied to elements that are PURELY decorative
+                          (Hero spotlight, floating orbs, particle field).
+                          Under reduced motion they are hidden entirely,
+                          which is cheaper than freezing the first frame
+                          and avoids compositing a static layer.
+   ────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .motion-ok,
+  .motion-ok * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .decorative-motion {
+    display: none !important;
   }
 }
 
@@ -561,24 +601,38 @@
 
 /* ═══════════════════════════════════════════════════════
    REDUCED MOTION
-   ═══════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════
+
+   Note: the global "kill all animations" rule is intentionally
+   scoped to elements that NEED it (the loader orbital scene,
+   hero spotlight, etc.) via the `.motion-ok` / `.decorative-motion`
+   utilities above. A blanket `animation-duration: 0.01ms !important`
+   on every element breaks things like the loader progress bar
+   transition (which uses width, not animation) and is overkill.
+
+   The rules below are additional, element-specific overrides
+   that complement the utility classes. */
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  /* The loader orbital scene animates a 3D rotation — disable it.
+     The Loader component itself also short-circuits via useReducedMotion. */
   .loader-atom-scene,
   .loader-atom-nucleus,
   .loader-atom-electron-spin,
-  .loader-mono-skeleton,
-  .hero-spotlight,
-  .hero-gradient-text,
-  .hero-badge-pulse { animation: none; }
-  .hero-orb { display: none; }
-  .hero-cta-border { animation: none; background: oklch(0.7 0.12 250 / 0.4); }
-  .brown .hero-cta-border { background: oklch(0.58 0.14 58 / 0.40); }
+  .loader-mono-skeleton { animation: none !important; }
+
+  /* Gradient text normally shifts position — freeze it on the first frame. */
+  .hero-gradient-text { animation: none !important; }
+
+  /* Hero badge pulse — freeze. */
+  .hero-badge-pulse { animation: none !important; }
+
+  /* Floating orbs — hidden entirely (purely decorative). */
+  .hero-orb { display: none !important; }
+
+  /* CTA border rotating gradient — kill the animation but keep the
+     static gradient so the button still looks intentional. */
+  .hero-cta-border { animation: none !important; }
 }
 
 /* ── Custom scrollbar ── */
@@ -622,7 +676,10 @@
   background: oklch(0.20 0.03 55);
 }
 
-/* ── Subtle grain texture ── */
+/* ── Subtle grain texture ──
+   Disabled on mobile (small screens) and reduced-motion because it forces
+   a full-viewport fixed-position repaint layer that costs GPU memory on
+   low-end devices. */
 .grain-overlay::after {
   content: "";
   position: fixed;
@@ -633,6 +690,24 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 128px 128px;
+  /* Hint to the compositor: this layer won't change, so it can be cached. */
+  will-change: auto;
+}
+
+/* Skip the grain layer on small screens — it's barely visible at 0.015
+   opacity but still costs a full-viewport paint layer. */
+@media (max-width: 640px) {
+  .grain-overlay::after {
+    content: none;
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain-overlay::after {
+    content: none;
+    display: none;
+  }
 }
 
 /* ── Smooth button press ── */
