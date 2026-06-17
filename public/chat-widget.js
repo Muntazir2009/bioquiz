@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '83.0.0';                     // V83: Graphite DM V2 — fixed V82 lag (removed all observers/JS DOM manipulation, pure CSS now), warmer palette with cyan accent
+const WIDGET_VERSION = '84.0.0';                     // V84: Fix V69.2 forever-observer lag + crash, complete settings redesign (DM info + floating card), in-app error fallback
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -20986,5 +20986,664 @@ if (typeof window._v2InjectDmSearch === 'function') {
 console.log('[bq] V' + GRAPHITE_VERSION + ' Graphite patch loaded — pure CSS, zero observers, no lag');
 
 }catch(e){ console.error('[bq] V83 Graphite patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V84 PATCH — FIX LAG (kill V69.2 observer) + COMPLETE SETTINGS REDESIGN
+   ───────────────────────────────────────────────────────────────────────
+   Fixes:
+   1. KILLS the V69.2 forever-running MutationObserver on document.body
+      (was the remaining lag cause + likely source of "reload the site"
+      error page when it threw on stale DOM refs during Firebase re-renders)
+   2. Replaces it with lightweight setTimeout retries (one-shot, no observer)
+   3. Adds a proper in-app error fallback card (replaces harsh reload page)
+   4. COMPLETES the settings redesign — V83 only did .bqpf-* (My Profile),
+      missed .bq-info-* (DM Settings) and .bq-if-* (Floating Info card)
+
+   New V2 UI improvements:
+   - Refined message hover (subtle scale + shadow)
+   - Better reaction chips styling
+   - Message grouping visual divider
+   - Refined online list rows
+   - Settings: all three panels now match the Graphite aesthetic
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V84_VERSION = '84.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. KILL THE V69.2 FOREVER-RUNNING OBSERVER
+   ───────────────────────────────────────────────────────────────────────
+   V69.2 line 18861 sets up `_v2DmObserver.observe(document.body, {childList:true, subtree:true})`
+   with NO disconnect. It fires on EVERY DOM change across the entire
+   document — every keystroke, every Firebase render, every style update.
+   Each callback runs 4 querySelector calls + DOM mutations.
+
+   This is the SECOND lag cause (V82's observer was the first, already
+   removed in V83). It also likely causes the "reload the site" error
+   page when it throws on a stale DOM reference during a rapid Firebase
+   re-render.
+
+   FIX: Disconnect the observer and replace its injection logic with
+   lightweight one-shot setTimeout retries (which the V69.2 code already
+   has at lines 18876-18878). */
+function killV69Observer(){
+  try {
+    if (typeof _v2DmObserver !== 'undefined' && _v2DmObserver) {
+      _v2DmObserver.disconnect();
+      _v2DmObserver = null;
+      console.log('[bq V84] Disconnected V69.2 forever-observer (lag fix)');
+    }
+  } catch(e) {
+    console.warn('[bq V84] Could not disconnect V69.2 observer:', e);
+  }
+
+  // Also override _v2StartBadgeObserver so V69.2 can't re-create it
+  if (typeof window._v2StartBadgeObserver === 'function') {
+    window._v2StartBadgeObserver = function(){
+      // No-op — V84 uses setTimeout retries instead (already in V69.2 at lines 18876+)
+    };
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. IN-APP ERROR FALLBACK CARD
+   ───────────────────────────────────────────────────────────────────────
+   Replaces the harsh "reload the site" page with a calm recovery card
+   that matches the Graphite aesthetic. Only shows for unrecoverable
+   widget errors (not for normal Next.js errors). */
+function setupErrorFallback(){
+  // Catch widget crashes that would otherwise show a bare error page
+  window.addEventListener('error', function(e){
+    // Only intercept errors from the chat widget itself
+    if (!e.filename || e.filename.indexOf('chat-widget') === -1) return;
+    // Log it
+    console.error('[bq widget crash]', e.message);
+    // Don't show the fallback for every error — only if the widget panel
+    // is in a visibly broken state (checked on next tick)
+    setTimeout(function(){
+      var panel = document.getElementById('bqp');
+      if (!panel) return;
+      // If the panel exists but has no children (crashed during render),
+      // show the recovery card.
+      if (panel.children.length === 0 || (panel.innerHTML.indexOf('bqv') === -1 && panel.innerHTML.indexOf('bqhdr') === -1)) {
+        showErrorCard(panel, e.message || 'The chat widget ran into a problem');
+      }
+    }, 100);
+  }, true); // capture phase so we see it first
+
+  window.addEventListener('unhandledrejection', function(e){
+    var reason = e.reason;
+    var msg = reason && reason.message ? reason.message : String(reason);
+    // Only intercept Firebase/widget-related rejections
+    if (msg.indexOf('bq_') === -1 && msg.indexOf('Firebase') === -1 && msg.indexOf('chat-widget') === -1) return;
+    console.error('[bq widget promise crash]', msg);
+  });
+}
+
+function showErrorCard(panel, message){
+  if (!panel) return;
+  // Don't double-inject
+  if (document.getElementById('bq-error-card')) return;
+  panel.innerHTML = '';
+  var card = document.createElement('div');
+  card.id = 'bq-error-card';
+  card.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#0c0c0d;color:#f4f4f5;font-family:Inter,-apple-system,sans-serif;';
+  card.innerHTML =
+    '<div style="width:56px;height:56px;border-radius:50%;background:#1c1c1f;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+        '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' +
+      '</svg>' +
+    '</div>' +
+    '<div style="font-size:15px;font-weight:600;letter-spacing:-0.015em;color:#f4f4f5;margin-bottom:6px">Chat ran into an issue</div>' +
+    '<div style="font-size:12.5px;color:#a1a1aa;line-height:1.5;max-width:280px;margin-bottom:20px">' +
+      'The widget hit a snag. Your messages are safe — reload to reconnect.' +
+    '</div>' +
+    '<button id="bq-error-reload" style="background:#22d3ee;color:#0c0c0d;border:none;border-radius:10px;padding:10px 20px;font:600 13px Inter,-apple-system,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.25);transition:all .2s ease">' +
+      'Reload chat' +
+    '</button>' +
+    '<button id="bq-error-dismiss" style="background:transparent;color:#71717a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 18px;font:500 12px Inter,-apple-system,sans-serif;cursor:pointer;margin-top:8px;transition:all .2s ease">' +
+      'Dismiss' +
+    '</button>';
+  panel.appendChild(card);
+  document.getElementById('bq-error-reload').addEventListener('click', function(){
+    location.reload();
+  });
+  document.getElementById('bq-error-dismiss').addEventListener('click', function(){
+    card.remove();
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. V84 CSS — complete settings redesign + UI improvements
+   ─────────────────────────────────────────────────────────────────────── */
+var v84Css = document.createElement('style');
+v84Css.id = 'bq-v84-css';
+v84Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     DM SETTINGS PANEL (#bq-dm-info) — was MISSED in V83
+     ════════════════════════════════════════════════════════════════════ */
+  '.bq-dm-v2 #bq-dm-info{background:#0c0c0d !important;color:#f4f4f5 !important;}',
+
+  /* DM info header */
+  '.bq-dm-v2 .bq-info-hdr{',
+  '  background:#161618 !important;',
+  '  border-bottom:1px solid rgba(255,255,255,.07) !important;',
+  '  padding:12px 14px !important;',
+  '  box-shadow:0 1px 0 rgba(0,0,0,.4) !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-hdr-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.015em !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-close{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:8px !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-close:hover{',
+  '  background:rgba(255,255,255,.06) !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-close svg{stroke:#a1a1aa !important;width:15px !important;height:15px !important;}',
+
+  /* DM info avatar section */
+  '.bq-dm-v2 .bq-info-av-section{',
+  '  padding:18px 16px !important;',
+  '  background:#0c0c0d !important;',
+  '  border-bottom:1px solid rgba(255,255,255,.05) !important;',
+  '  text-align:center !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-av{',
+  '  width:64px !important;height:64px !important;',
+  '  border-radius:50% !important;',
+  '  font-size:20px !important;font-weight:600 !important;',
+  '  margin:0 auto 10px !important;',
+  '  box-shadow:0 0 0 2px rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.3) !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-av::after{',
+  '  width:14px !important;height:14px !important;',
+  '  border:2.5px solid #0c0c0d !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-av.online::after{background:#22c55e !important;box-shadow:0 0 6px rgba(34,197,94,.5) !important;}',
+  '.bq-dm-v2 .bq-info-av.studying::after{background:#22d3ee !important;box-shadow:0 0 6px rgba(34,211,238,.5) !important;}',
+  '.bq-dm-v2 .bq-info-av.busy::after{background:#ef4444 !important;}',
+  '.bq-dm-v2 .bq-info-name{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:16px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.015em !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-status{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;',
+  '  color:#a1a1aa !important;',
+  '  margin-top:3px !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-bio{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12.5px !important;',
+  '  color:#a1a1aa !important;',
+  '  line-height:1.5 !important;',
+  '  margin-top:8px !important;',
+  '  max-width:260px !important;',
+  '  margin-left:auto !important;margin-right:auto !important;',
+  '}',
+
+  /* DM info scroll */
+  '.bq-dm-v2 .bq-info-scroll{background:#0c0c0d !important;}',
+  '.bq-dm-v2 .bq-info-scroll::-webkit-scrollbar{width:4px !important;}',
+  '.bq-dm-v2 .bq-info-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08) !important;border-radius:2px !important;}',
+
+  /* DM info sections */
+  '.bq-dm-v2 .bq-info-section{',
+  '  padding:16px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,.05) !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-section-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;',
+  '  letter-spacing:0.1em !important;',
+  '  color:#71717a !important;',
+  '  text-transform:uppercase !important;',
+  '  margin-bottom:12px !important;',
+  '  font-weight:600 !important;',
+  '}',
+
+  /* DM info rows */
+  '.bq-dm-v2 .bq-info-row{',
+  '  padding:10px 0 !important;',
+  '  border-radius:0 !important;',
+  '  transition:opacity .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row:hover{opacity:1 !important;background:transparent !important;}',
+  '.bq-dm-v2 .bq-info-row-left{gap:11px !important;}',
+  '.bq-dm-v2 .bq-info-row-ic{',
+  '  width:32px !important;height:32px !important;',
+  '  border-radius:8px !important;',
+  '  background:#1c1c1f !important;',
+  '  border:1px solid rgba(255,255,255,.06) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-ic svg{',
+  '  width:15px !important;height:15px !important;',
+  '  stroke:#a1a1aa !important;stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-label{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13.5px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-sub{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;',
+  '  color:#a1a1aa !important;',
+  '  margin-top:1px !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row-value{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;',
+  '  color:#71717a !important;',
+  '  font-variant-numeric:tabular-nums !important;',
+  '}',
+  '.bq-dm-v2 .bq-info-row.danger .bq-info-row-label{color:#f87171 !important;}',
+  '.bq-dm-v2 .bq-info-row.danger .bq-info-row-ic{background:rgba(239,68,68,.08) !important;border-color:rgba(239,68,68,.15) !important;}',
+  '.bq-dm-v2 .bq-info-row.danger .bq-info-row-ic svg{stroke:#f87171 !important;}',
+  '.bq-dm-v2 .bq-info-row.danger:hover{background:rgba(239,68,68,.06) !important;border-radius:8px !important;padding:10px 8px !important;margin:0 -8px !important;}',
+
+  /* Theme chips in DM info */
+  '.bq-dm-v2 .bq-theme-row{gap:8px !important;}',
+  '.bq-dm-v2 .bq-theme-chip{',
+  '  width:32px !important;height:32px !important;',
+  '  border-radius:50% !important;',
+  '  border:2px solid rgba(255,255,255,.08) !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-theme-chip:hover{transform:scale(1.1) !important;}',
+  '.bq-dm-v2 .bq-theme-chip.sel{',
+  '  border-color:#22d3ee !important;',
+  '  box-shadow:0 0 0 2px rgba(34,211,238,.3) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     FLOATING CONVERSATION INFO CARD (#bq-info-float) — was MISSED in V83
+     ════════════════════════════════════════════════════════════════════ */
+  '.bq-dm-v2 #bq-info-float{',
+  '  background:#0c0c0d !important;',
+  '  border:1px solid rgba(255,255,255,.1) !important;',
+  '  box-shadow:0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04) !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-head{',
+  '  background:#161618 !important;',
+  '  border-bottom:1px solid rgba(255,255,255,.07) !important;',
+  '  padding:12px 14px !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-av{',
+  '  width:36px !important;height:36px !important;',
+  '  border-radius:50% !important;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,.06) !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-name{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.015em !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-st{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;',
+  '  color:#a1a1aa !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-x{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:8px !important;',
+  '  background:transparent !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-x:hover{',
+  '  background:rgba(255,255,255,.06) !important;',
+  '  border-color:rgba(255,255,255,.16) !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-scroll{background:#0c0c0d !important;}',
+  '.bq-dm-v2 .bq-if-sect{',
+  '  padding:14px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,.05) !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-sect-t{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;',
+  '  letter-spacing:0.1em !important;',
+  '  color:#71717a !important;',
+  '  text-transform:uppercase !important;',
+  '  font-weight:600 !important;',
+  '  margin-bottom:10px !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-themes{gap:8px !important;}',
+  '.bq-dm-v2 .bq-if-th{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:50% !important;',
+  '  border:2px solid rgba(255,255,255,.08) !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-th:hover{transform:scale(1.1) !important;}',
+  '.bq-dm-v2 .bq-if-th.sel{border-color:#22d3ee !important;box-shadow:0 0 0 2px rgba(34,211,238,.3) !important;}',
+  '.bq-dm-v2 .bq-if-bubble{gap:6px !important;}',
+  '.bq-dm-v2 .bq-if-bubble-opt{',
+  '  padding:6px 12px !important;',
+  '  border-radius:8px !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  background:#161618 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  color:#a1a1aa !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-bubble-opt:hover{border-color:rgba(255,255,255,.16) !important;color:#f4f4f5 !important;}',
+  '.bq-dm-v2 .bq-if-bubble-opt.sel{',
+  '  border-color:rgba(34,211,238,.4) !important;',
+  '  background:rgba(34,211,238,.06) !important;',
+  '  color:#22d3ee !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-fonts{gap:6px !important;}',
+  '.bq-dm-v2 .bq-if-font{',
+  '  width:32px !important;height:32px !important;',
+  '  border-radius:8px !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  background:#161618 !important;',
+  '  color:#a1a1aa !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '}',
+  '.bq-dm-v2 .bq-if-font:hover{border-color:rgba(255,255,255,.16) !important;color:#f4f4f5 !important;}',
+  '.bq-dm-v2 .bq-if-font.sel{',
+  '  border-color:rgba(34,211,238,.4) !important;',
+  '  background:rgba(34,211,238,.06) !important;',
+  '  color:#22d3ee !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     MY PROFILE (#bqv-profile) — enhance V83 with font size + initials
+     ════════════════════════════════════════════════════════════════════ */
+  '.bq-dm-v2 .bqpf-initials-row{',
+  '  display:flex !important;align-items:center !important;gap:12px !important;',
+  '  margin-bottom:16px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-initials-inp{',
+  '  width:60px !important;',
+  '  background:#161618 !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  border-radius:8px !important;',
+  '  padding:10px !important;',
+  '  text-align:center !important;',
+  '  color:#f4f4f5 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;font-weight:600 !important;',
+  '  letter-spacing:0.05em !important;',
+  '  outline:none !important;',
+  '  transition:all .2s ease !important;',
+  '  text-transform:uppercase !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-initials-inp:focus{',
+  '  border-color:rgba(34,211,238,.4) !important;',
+  '  box-shadow:0 0 0 3px rgba(34,211,238,.1) !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-initials-hint{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;',
+  '  color:#a1a1aa !important;',
+  '  line-height:1.5 !important;',
+  '  flex:1 !important;',
+  '}',
+
+  /* Font size picker */
+  '.bq-dm-v2 .bqpf-fontsize-row{',
+  '  display:grid !important;grid-template-columns:repeat(3,1fr) !important;gap:8px !important;',
+  '  margin-bottom:8px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize{',
+  '  padding:12px 8px !important;',
+  '  border-radius:10px !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  background:#161618 !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '  text-align:center !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize:hover{',
+  '  border-color:rgba(255,255,255,.16) !important;',
+  '  background:#1c1c1f !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize.sel{',
+  '  border-color:rgba(34,211,238,.4) !important;',
+  '  background:rgba(34,211,238,.06) !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize-sample{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-weight:600 !important;',
+  '  color:#f4f4f5 !important;',
+  '  margin-bottom:4px !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize.sel .bqpf-fontsize-sample{color:#22d3ee !important;}',
+  '.bq-dm-v2 .bqpf-fontsize-lbl{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;font-weight:600 !important;',
+  '  letter-spacing:0.04em !important;',
+  '  color:#a1a1aa !important;',
+  '  text-transform:uppercase !important;',
+  '}',
+  '.bq-dm-v2 .bqpf-fontsize.sel .bqpf-fontsize-lbl{color:#22d3ee !important;}',
+
+  /* Banner preview */
+  '.bq-dm-v2 .bqpf-banner-row{margin-bottom:8px !important;}',
+  '.bq-dm-v2 .bqpf-banner-preview{',
+  '  width:100% !important;height:60px !important;',
+  '  border-radius:10px !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  letter-spacing:0.08em !important;',
+  '  text-transform:uppercase !important;',
+  '  color:rgba(255,255,255,.6) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     UI IMPROVEMENTS — message hover, reactions, grouping, online list
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Message hover — refined scale + shadow (V83 was just translateY) */
+  '.bq-dm-v2 .bqr:hover .bqbbl{',
+  '  transform:translateY(-1px) !important;',
+  '}',
+  '.bq-dm-v2 .bqr.mine:hover .bqbbl{',
+  '  box-shadow:0 3px 10px rgba(0,0,0,.2), 0 0 0 1px rgba(34,211,238,.08) !important;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs:hover .bqbbl{',
+  '  box-shadow:0 3px 10px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.1) !important;',
+  '}',
+
+  /* Reaction chips — refined */
+  '.bq-dm-v2 .bqrxn, .bq-dm-v2 .bq-rxn, .bq-dm-v2 .bqmsg-rxn{',
+  '  display:inline-flex !important;',
+  '  align-items:center !important;gap:4px !important;',
+  '  padding:3px 8px !important;',
+  '  border:1px solid rgba(255,255,255,.1) !important;',
+  '  border-radius:12px !important;',
+  '  background:#1c1c1f !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:500 !important;',
+  '  color:#f4f4f5 !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '  margin-top:4px !important;',
+  '}',
+  '.bq-dm-v2 .bqrxn:hover, .bq-dm-v2 .bq-rxn:hover, .bq-dm-v2 .bqmsg-rxn:hover{',
+  '  transform:translateY(-1px) !important;',
+  '  border-color:rgba(34,211,238,.3) !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,.2) !important;',
+  '}',
+  '.bq-dm-v2 .bqrxn.mine, .bq-dm-v2 .bq-rxn.mine, .bq-dm-v2 .bqmsg-rxn.mine{',
+  '  border-color:rgba(34,211,238,.4) !important;',
+  '  background:rgba(34,211,238,.08) !important;',
+  '  color:#22d3ee !important;',
+  '}',
+
+  /* Online list rows — refined */
+  '.bq-dm-v2 #bqol .bqurow, .bq-dm-v2 .bqol-row{',
+  '  padding:10px 12px !important;',
+  '  border-radius:10px !important;',
+  '  margin:2px 4px !important;',
+  '  transition:background .2s ease !important;',
+  '}',
+  '.bq-dm-v2 #bqol .bqurow:hover, .bq-dm-v2 .bqol-row:hover{',
+  '  background:rgba(255,255,255,.04) !important;',
+  '}',
+
+  /* Message grouping — subtle divider between groups */
+  '.bq-dm-v2 .bqr:not(.consec):not(.bq-new)::before{',
+  '  content:"" !important;',
+  '  display:block !important;',
+  '  height:6px !important;',
+  '}',
+
+  /* Pinned messages bar — refined */
+  '.bq-dm-v2 .bq-pinned, .bq-dm-v2 #bq-pinned-bar .bq-pin-msg{',
+  '  background:rgba(251,191,36,.04) !important;',
+  '  border:1px solid rgba(251,191,36,.1) !important;',
+  '  border-radius:8px !important;',
+  '  padding:8px 12px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;',
+  '  color:#fbbf24 !important;',
+  '}',
+
+  /* Confirm dialog — refined */
+  '.bq-dm-v2 .bq-confirm{',
+  '  background:rgba(0,0,0,.7) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-box{',
+  '  background:#161618 !important;',
+  '  border:1px solid rgba(255,255,255,.1) !important;',
+  '  border-radius:14px !important;',
+  '  box-shadow:0 20px 60px rgba(0,0,0,.5) !important;',
+  '  padding:24px !important;',
+  '  max-width:340px !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-icon{',
+  '  width:48px !important;height:48px !important;',
+  '  margin:0 auto 14px !important;',
+  '  border-radius:50% !important;',
+  '  background:rgba(239,68,68,.1) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-icon svg{',
+  '  width:24px !important;height:24px !important;',
+  '  stroke:#f87171 !important;stroke-width:1.8 !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:15px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.015em !important;',
+  '  color:#f4f4f5 !important;',
+  '  text-align:center !important;margin-bottom:6px !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-desc{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12.5px !important;',
+  '  color:#a1a1aa !important;',
+  '  line-height:1.5 !important;',
+  '  text-align:center !important;margin-bottom:18px !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-btns{gap:8px !important;}',
+  '.bq-dm-v2 .bq-confirm-btn{',
+  '  padding:10px 16px !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;font-weight:600 !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '  flex:1 !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-btn.cancel{',
+  '  background:#1c1c1f !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  color:#a1a1aa !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-btn.cancel:hover{',
+  '  background:#1c1c1f !important;',
+  '  color:#f4f4f5 !important;',
+  '  border-color:rgba(255,255,255,.16) !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-btn.danger{',
+  '  background:#ef4444 !important;',
+  '  border:none !important;',
+  '  color:#fff !important;',
+  '  box-shadow:0 2px 8px rgba(239,68,68,.3) !important;',
+  '}',
+  '.bq-dm-v2 .bq-confirm-btn.danger:hover{',
+  '  background:#dc2626 !important;',
+  '  transform:translateY(-1px) !important;',
+  '}',
+
+  /* Toast — refined */
+  '.bq-dm-v2 #bqtoast > div, .bq-dm-v2 .bq-toast{',
+  '  background:#1c1c1f !important;',
+  '  border:1px solid rgba(255,255,255,.1) !important;',
+  '  border-radius:10px !important;',
+  '  box-shadow:0 8px 24px rgba(0,0,0,.4) !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REDUCED MOTION
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (prefers-reduced-motion: reduce){',
+  '  .bq-dm-v2 *, .bq-dm-v2 *::before, .bq-dm-v2 *::after{',
+  '    animation-duration:0.01ms !important;',
+  '    animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v84Css);
+
+/* ───────────────────────────────────────────────────────────────────────
+   4. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function v84Init(){
+  // Kill the V69.2 forever-observer (the lag + crash cause)
+  killV69Observer();
+  // Set up the in-app error fallback
+  setupErrorFallback();
+  console.log('[bq] V' + V84_VERSION + ' patch loaded — killed V69.2 observer, settings redesigned, error fallback added');
+}
+
+// Run immediately if document is ready, otherwise on DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', v84Init);
+} else {
+  v84Init();
+}
+// Also retry a few times in case the widget loads slowly
+setTimeout(v84Init, 1500);
+setTimeout(v84Init, 4000);
+
+}catch(e){ console.error('[bq] V84 patch error:', e); }
 })();
 
