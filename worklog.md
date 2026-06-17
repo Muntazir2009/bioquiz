@@ -520,3 +520,43 @@ Stage Summary:
 - Settings UI redesigned as v0-style command panel (flat sections, mono labels, B/W toggles)
 - Non-breaking: V1 unchanged (except search), V82 overrides V81
 - Backup of pre-patch widget at /home/z/my-project/scripts/chat-widget-v81-backup.js
+
+---
+Task ID: V83-Graphite
+Agent: main
+Task: Fix V82 lag + boring UI — replace with V83 Graphite (pure CSS, warmer palette)
+
+Work Log:
+- DIAGNOSED V82 lag: MutationObserver on #bqp with subtree:true fired on EVERY DOM change (every keystroke, scroll, Firebase render). Each callback ran 3 expensive querySelectorAll scans + DOM mutations (monoInjectMessageActions, monoRemoveSearchBars, monoWireDateSeparators, monoInjectHeaderChips). On an 18K-line widget with frequent Firebase updates, this created a feedback loop making the page unresponsive.
+- Backed up V82 to scripts/chat-widget-v82-backup.js
+- Truncated public/chat-widget.js to end of V81 (line 19727)
+- Wrote V83 "Graphite" patch (1262 lines) in scripts/v83-graphite-patch.js:
+  - PURE CSS ONLY — zero JS, zero observers, zero DOM manipulation
+  - Removed all V82 JS functions: monoInjectMessageActions, monoRemoveSearchBars, monoWireDateSeparators, monoInjectHeaderChips, monoStartObserver
+  - Search still removed via CSS (display:none + visibility:hidden) + _v2InjectDmSearch no-op override (one-time, no observer)
+- DESIGN — 'Warm Graphite' (V82 was too austere/boring):
+  - Warm graphite bg (#0c0c0d, not pure #000)
+  - Elevated warm surfaces (#161618, #1c1c1f)
+  - Single restrained accent: soft cyan (#22d3ee) used SPARINGLY
+  - Refined 14px bubble radius (was 8px in V82 — too sharp)
+  - Subtle layered shadows on elevated elements
+  - Avatars keep FULL COLOR (V82 desaturated them — felt dead)
+  - Soft white mine bubbles (#f4f4f5 bg, #18181b text — high contrast, warm)
+  - Warm graphite theirs bubbles (#1c1c1f bg, hairline border)
+  - Hover: subtle lift (translateY -1px) + shadow brighten (not opacity dim)
+  - 0.2s cubic-bezier(.4,0,.2,1) transitions
+  - Refined typography: Inter, -0.015em tracking on headings, tabular-nums on times
+- All surfaces restyled (pure CSS): bubbles, DM list rows (cyan active inset border), headers, date pills, typing dots (cyan + glow), scroll button (dark with cyan hover ring), empty state (calm 56px circle), V1/V2 toggle (cyan slider), V2 badge (cyan when active), settings/profile (flat with cyan focus rings), input (cyan focus halo), send button (cyan with shadow), read receipts (3 stages, cyan for seen), scrollbar (cyan on hover)
+- Verified: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 11 V83 Graphite markers, 0 V82 Mono markers (fully removed), WIDGET_VERSION = '83.0.0', no errors
+- Committed (9250289) and pushed to GitHub
+
+Stage Summary:
+- V82 lag FIXED — root cause was MutationObserver firing on every DOM change, removed entirely
+- V83 is PURE CSS — zero JS overhead, browser handles natively
+- UI is WARMER and more visually interesting — graphite tones + restrained cyan accent
+- Avatars back to full color (V82 desaturation made it feel dead)
+- Soft white mine bubbles with dark text (high contrast, warm)
+- Subtle depth via layered shadows (not flat/boring like V82)
+- Smooth 0.2s cubic-bezier transitions (no springs, no overshoots, no lag)
+- Non-breaking: V1 unchanged (except search removal), V83 overrides V81
+- Backups: scripts/chat-widget-v82-backup.js, scripts/v83-graphite-patch.js
