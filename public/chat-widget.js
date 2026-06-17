@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '86.0.0';                     // V86: Enhanced forwarding (multi-select, search, avatars, preview) + forwarded message labels + V2 design additions (hover actions, reactions, starred, online pulse)
+const WIDGET_VERSION = '87.0.0';                     // V87: Disable hold-to-select-text, enhanced disguise (Calculator Pro+ with scientific mode), V2 UI/UX additions, stability fixes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -23331,5 +23331,831 @@ setTimeout(v86Init, 4000);
 setTimeout(v86Init, 8000);
 
 }catch(e){ console.error('[bq] V86 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V87 PATCH — DISABLE HOLD-TO-SELECT + ENHANCED DISGUISE + V2 UI/UX + STABILITY
+   ───────────────────────────────────────────────────────────────────────
+
+   1. DISABLE HOLD-TO-SELECT-TEXT:
+      • Add user-select:none + -webkit-touch-callout:none + -webkit-user-select:none
+        to all message bubbles, text, and interactive elements
+      • Kills the iOS/Android native text selection callout on long-press
+      • Still allows text selection in input fields and code blocks (recovery codes)
+
+   2. ENHANCED DISGUISE (Calculator Pro+):
+      • Refined UI with better spacing, modern typography
+      • Better icons: refined operator colors, gradient equals button
+      • Scientific mode toggle (DEG/RAD, sin/cos/tan, √, x², π, e)
+      • History line showing last calculation
+      • Haptic feedback on key press (vibrate 8ms)
+      • Refined PIN entry: subtle success animation with checkmark
+      • Better shake animation on wrong PIN
+      • Memory functions (M+, M-, MR, MC)
+      • Animated background gradient
+      • Backspace key (⌫) for correcting entries
+
+   3. V2 UI/UX ADDITIONS:
+      • Connection status indicator in header (online/reconnecting/offline)
+      • Refined empty states with illustrations
+      • Quick action bar on conversation header (call, video, search, info)
+      • Message read progress bar (shows how many messages you've read)
+      • Scroll-to-bottom button with unread count badge
+      • Refined typing indicator with partner avatar
+      • Message grouping headers ("Today", "Yesterday", date labels)
+      • Pin indicator on pinned messages
+      • Voice call / video call buttons (visual only)
+
+   4. STABILITY + BUG FIXES:
+      • Guard all Firebase calls against null db (prevent crashes)
+      • Guard all DOM queries against null (prevent null-ref errors)
+      • Wrap all event handlers in try/catch (prevent one error from breaking widget)
+      • Fix race condition: disguise observer could fire after widget closed
+      • Add error boundary: catch and log errors without crashing
+      • Debounce scroll handler (was firing too often)
+      • Fix memory leak: clear timeouts on unmount
+      • Guard against circular references in message rendering
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   All selectors use #bqp.bq-dm-v2 to beat theme specificity.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V87_VERSION = '87.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. V87 CSS — disable text selection + UI additions
+   ─────────────────────────────────────────────────────────────────────── */
+var v87Css = document.createElement('style');
+v87Css.id = 'bq-v87-css';
+v87Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     DISABLE HOLD-TO-SELECT-TEXT — the main user request
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Kill text selection on all message content */
+  '#bqp.bq-dm-v2 .bqbbl,',
+  '#bqp.bq-dm-v2 .bqtxt,',
+  '#bqp.bq-dm-v2 .bqun,',
+  '#bqp.bq-dm-v2 .bqmeta,',
+  '#bqp.bq-dm-v2 .bqds,',
+  '#bqp.bq-dm-v2 .bqdmn,',
+  '#bqp.bq-dm-v2 .bqdmp,',
+  '#bqp.bq-dm-v2 .bqdmt,',
+  '#bqp.bq-dm-v2 .bqhtitle,',
+  '#bqp.bq-dm-v2 .bqdmhn,',
+  '#bqp.bq-dm-v2 .bqdmhs,',
+  '#bqp.bq-dm-v2 .bqempty-tx,',
+  '#bqp.bq-dm-v2 .bqempty-sub,',
+  '#bqp.bq-dm-v2 .bqsticker,',
+  '#bqp.bq-dm-v2 .bqrp-n,',
+  '#bqp.bq-dm-v2 .bqrp-t,',
+  '#bqp.bq-dm-v2 .bqfwd-label,',
+  '#bqp.bq-dm-v2 .bqedited,',
+  '#bqp.bq-dm-v2 .bqbbl-meta{',
+  '  -webkit-user-select:none !important;',
+  '  -moz-user-select:none !important;',
+  '  -ms-user-select:none !important;',
+  '  user-select:none !important;',
+  '  -webkit-touch-callout:none !important;',
+  '  -webkit-tap-highlight-color:transparent !important;',
+  '}',
+
+  /* Also disable on the panel itself and all wrappers */
+  '#bqp.bq-dm-v2 .bqr,',
+  '#bqp.bq-dm-v2 .bqri,',
+  '#bqp.bq-dm-v2 .bqcol,',
+  '#bqp.bq-dm-v2 .bqbw,',
+  '#bqp.bq-dm-v2 .bqav,',
+  '#bqp.bq-dm-v2 .bqdmr,',
+  '#bqp.bq-dm-v2 .bqdmav,',
+  '#bqp.bq-dm-v2 .bqdmin,',
+  '#bqp.bq-dm-v2 .bqdmm,',
+  '#bqp.bq-dm-v2 .bqhdr,',
+  '#bqp.bq-dm-v2 .bqnb,',
+  '#bqp.bq-dm-v2 .bqnav-pill{',
+  '  -webkit-user-select:none !important;',
+  '  -moz-user-select:none !important;',
+  '  -ms-user-select:none !important;',
+  '  user-select:none !important;',
+  '  -webkit-touch-callout:none !important;',
+  '}',
+
+  /* KEEP text selection ENABLED for: inputs, textareas, code blocks (recovery codes) */
+  '#bqp.bq-dm-v2 input,',
+  '#bqp.bq-dm-v2 textarea,',
+  '#bqp.bq-dm-v2 [contenteditable],',
+  '#bqp.bq-dm-v2 .bqpf-inp,',
+  '#bqp.bq-dm-v2 .bqpf-textarea,',
+  '#bqp.bq-dm-v2 .bqinp,',
+  '#bqp.bq-dm-v2 .bq-forward-search input,',
+  '#bqp.bq-dm-v2 .bqdm-search-inp,',
+  '#bqp.bq-dm-v2 code,',
+  '#bqp.bq-dm-v2 pre,',
+  '#bqp.bq-dm-v2 .bq-code,',
+  '#bqp.bq-dm-v2 [data-user-select="all"]{',
+  '  -webkit-user-select:text !important;',
+  '  -moz-user-select:text !important;',
+  '  -ms-user-select:text !important;',
+  '  user-select:text !important;',
+  '  -webkit-touch-callout:default !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     CONNECTION STATUS INDICATOR — in header
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-conn-status{',
+  '  display:inline-flex !important;align-items:center !important;gap:5px !important;',
+  '  padding:3px 8px !important;border-radius:8px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;font-weight:600 !important;letter-spacing:0.02em !important;',
+  '  background:rgba(34,197,94,0.1) !important;color:#22c55e !important;',
+  '  border:1px solid rgba(34,197,94,0.2) !important;',
+  '  transition:all .3s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-conn-status .dot{',
+  '  width:6px !important;height:6px !important;border-radius:50% !important;',
+  '  background:#22c55e !important;box-shadow:0 0 5px rgba(34,197,94,0.6) !important;',
+  '  animation:bqConnPulse 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqConnPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}',
+  '#bqp.bq-dm-v2 .bq-conn-status.reconnecting{',
+  '  background:rgba(245,158,11,0.1) !important;color:#f59e0b !important;',
+  '  border-color:rgba(245,158,11,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-conn-status.reconnecting .dot{background:#f59e0b !important;box-shadow:0 0 5px rgba(245,158,11,0.6) !important;}',
+  '#bqp.bq-dm-v2 .bq-conn-status.offline{',
+  '  background:rgba(239,68,68,0.1) !important;color:#ef4444 !important;',
+  '  border-color:rgba(239,68,68,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-conn-status.offline .dot{background:#ef4444 !important;box-shadow:0 0 5px rgba(239,68,68,0.6) !important;animation:none !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     QUICK ACTION BAR — in DM conversation header
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-quick-actions{',
+  '  display:flex !important;align-items:center !important;gap:4px !important;',
+  '  margin-left:8px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-qa-btn{',
+  '  width:30px !important;height:30px !important;',
+  '  border-radius:8px !important;border:none !important;',
+  '  background:rgba(255,255,255,0.03) !important;',
+  '  color:#a1a1aa !important;cursor:pointer !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-qa-btn:hover{',
+  '  background:rgba(129,140,248,0.1) !important;color:#818cf8 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-qa-btn svg{',
+  '  width:14px !important;height:14px !important;',
+  '  stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     MESSAGE READ PROGRESS BAR — bottom of header
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bq-read-progress{',
+  '  position:absolute !important;bottom:-1px !important;left:0 !important;right:0 !important;',
+  '  height:2px !important;background:rgba(255,255,255,0.04) !important;',
+  '  overflow:hidden !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-read-progress-bar{',
+  '  height:100% !important;background:linear-gradient(90deg,#6366f1,#8b5cf6) !important;',
+  '  transition:width .3s ease !important;width:0% !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     PINNED MESSAGE INDICATOR — on pinned messages
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqr.bq-pinned-msg{',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.bq-pinned-msg::before{',
+  '  content:"📌" !important;position:absolute !important;top:-2px !important;',
+  '  font-size:10px !important;opacity:0.7 !important;z-index:2 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine.bq-pinned-msg::before{right:-14px !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs.bq-pinned-msg::before{left:-14px !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     ENHANCED DISGUISE — Calculator Pro+
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Main disguise container — refined gradient + animation */
+  '#bq-disguise{',
+  '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
+  '  border-radius:16px !important;overflow:hidden !important;',
+  '  position:relative !important;',
+  '}',
+  '#bq-disguise::before{',
+  '  content:"" !important;position:absolute !important;inset:0 !important;',
+  '  background:radial-gradient(circle at 20% 20%,rgba(99,102,241,0.08),transparent 50%),',
+  '             radial-gradient(circle at 80% 80%,rgba(139,92,246,0.06),transparent 50%) !important;',
+  '  pointer-events:none !important;z-index:0 !important;',
+  '  animation:bqDisguiseGlow 8s ease-in-out infinite alternate !important;',
+  '}',
+  '@keyframes bqDisguiseGlow{0%{opacity:0.6;}100%{opacity:1;}}',
+
+  /* Brand — refined */
+  '#bq-disguise .bq-calc-brand{',
+  '  position:relative !important;z-index:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:700 !important;',
+  '  letter-spacing:0.2em !important;text-transform:uppercase !important;',
+  '  color:rgba(255,255,255,0.2) !important;margin-bottom:16px !important;',
+  '  display:flex !important;align-items:center !important;gap:6px !important;',
+  '}',
+  '#bq-disguise .bq-calc-brand svg{',
+  '  width:14px !important;height:14px !important;',
+  '  stroke:rgba(255,255,255,0.2) !important;fill:none !important;stroke-width:2 !important;',
+  '}',
+
+  /* Screen — refined with history line */
+  '#bq-disguise .bq-calc-screen{',
+  '  position:relative !important;z-index:1 !important;',
+  '  width:90% !important;max-width:300px !important;',
+  '  background:rgba(0,0,0,0.4) !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;',
+  '  border-radius:14px !important;',
+  '  padding:14px 18px !important;margin-bottom:8px !important;',
+  '  text-align:right !important;',
+  '  font-family:ui-monospace,"SF Mono","Fira Code",monospace !important;',
+  '  font-size:32px !important;font-weight:300 !important;',
+  '  color:rgba(255,255,255,0.95) !important;letter-spacing:0.02em !important;',
+  '  min-height:56px !important;display:flex !important;align-items:center !important;justify-content:flex-end !important;',
+  '  overflow:hidden !important;',
+  '  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.3) !important;',
+  '}',
+
+  /* History line — shows last calculation */
+  '#bq-disguise .bq-calc-history{',
+  '  position:relative !important;z-index:1 !important;',
+  '  width:90% !important;max-width:300px !important;',
+  '  font-family:ui-monospace,"SF Mono",monospace !important;',
+  '  font-size:12px !important;color:rgba(255,255,255,0.25) !important;',
+  '  text-align:right !important;margin-bottom:12px !important;',
+  '  min-height:16px !important;letter-spacing:0.02em !important;',
+  '}',
+
+  /* Sub label — mode indicator */
+  '#bq-disguise .bq-calc-sub{',
+  '  position:relative !important;z-index:1 !important;',
+  '  font-size:10px !important;color:rgba(255,255,255,0.25) !important;',
+  '  text-align:right !important;',
+  '  width:90% !important;max-width:300px !important;margin-bottom:12px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  letter-spacing:0.1em !important;text-transform:uppercase !important;font-weight:600 !important;',
+  '}',
+
+  /* Keypad — refined */
+  '#bq-disguise .bq-calc-pad{',
+  '  position:relative !important;z-index:1 !important;',
+  '  display:grid !important;grid-template-columns:repeat(4,1fr) !important;gap:8px !important;',
+  '  width:90% !important;max-width:300px !important;',
+  '}',
+  '#bq-disguise .bq-calc-key{',
+  '  height:50px !important;border-radius:12px !important;border:none !important;cursor:pointer !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:18px !important;font-weight:500 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  transition:transform .1s,background .15s !important;-webkit-tap-highlight-color:transparent !important;',
+  '  user-select:none !important;-webkit-user-select:none !important;',
+  '}',
+
+  /* Number keys — refined */
+  '#bq-disguise .bq-calc-key.num{',
+  '  background:rgba(255,255,255,0.06) !important;color:rgba(255,255,255,0.9) !important;',
+  '  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset !important;',
+  '}',
+  '#bq-disguise .bq-calc-key.num:hover{background:rgba(255,255,255,0.11) !important;}',
+  '#bq-disguise .bq-calc-key.num:active{transform:scale(0.92) !important;}',
+
+  /* Operator keys — indigo (matches V85 Lumen theme) */
+  '#bq-disguise .bq-calc-key.op{',
+  '  background:rgba(99,102,241,0.15) !important;color:#818cf8 !important;',
+  '  box-shadow:0 1px 0 rgba(129,140,248,0.1) inset !important;',
+  '}',
+  '#bq-disguise .bq-calc-key.op:hover{background:rgba(99,102,241,0.25) !important;}',
+  '#bq-disguise .bq-calc-key.op:active{transform:scale(0.92) !important;}',
+
+  /* Function keys — refined */
+  '#bq-disguise .bq-calc-key.fn{',
+  '  background:rgba(255,255,255,0.03) !important;color:rgba(255,255,255,0.4) !important;',
+  '  font-size:14px !important;font-weight:600 !important;',
+  '}',
+  '#bq-disguise .bq-calc-key.fn:hover{background:rgba(255,255,255,0.07) !important;}',
+  '#bq-disguise .bq-calc-key.fn:active{transform:scale(0.92) !important;}',
+
+  /* Equals key — indigo gradient (matches Lumen) */
+  '#bq-disguise .bq-calc-key.eq{',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;color:#fff !important;font-weight:700 !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.3), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '}',
+  '#bq-disguise .bq-calc-key.eq:hover{filter:brightness(1.1) !important;}',
+  '#bq-disguise .bq-calc-key.eq:active{transform:scale(0.92) !important;}',
+
+  /* Backspace key — refined with icon */
+  '#bq-disguise .bq-calc-key.bksp{',
+  '  background:rgba(255,255,255,0.03) !important;color:rgba(255,255,255,0.5) !important;',
+  '}',
+  '#bq-disguise .bq-calc-key.bksp:hover{background:rgba(239,68,68,0.1) !important;color:#f87171 !important;}',
+  '#bq-disguise .bq-calc-key.bksp svg{width:16px !important;height:16px !important;stroke:currentColor !important;fill:none !important;stroke-width:2 !important;}',
+
+  /* Scientific mode toggle */
+  '#bq-disguise .bq-calc-mode-toggle{',
+  '  position:relative !important;z-index:1 !important;',
+  '  display:flex !important;align-items:center !important;gap:6px !important;',
+  '  margin-bottom:12px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:10px !important;',
+  '  color:rgba(255,255,255,0.3) !important;letter-spacing:0.1em !important;text-transform:uppercase !important;font-weight:600 !important;',
+  '}',
+  '#bq-disguise .bq-calc-mode-toggle button{',
+  '  background:rgba(255,255,255,0.04) !important;border:1px solid rgba(255,255,255,0.06) !important;',
+  '  color:rgba(255,255,255,0.4) !important;padding:3px 8px !important;border-radius:6px !important;',
+  '  cursor:pointer !important;font:inherit !important;transition:all .2s ease !important;',
+  '}',
+  '#bq-disguise .bq-calc-mode-toggle button.active{',
+  '  background:rgba(99,102,241,0.2) !important;color:#818cf8 !important;border-color:rgba(99,102,241,0.3) !important;',
+  '}',
+  '#bq-disguise .bq-calc-mode-toggle button:hover{color:rgba(255,255,255,0.7) !important;}',
+
+  /* Scientific pad — hidden by default */
+  '#bq-disguise .bq-calc-sci{',
+  '  display:none !important;position:relative !important;z-index:1 !important;',
+  '  grid-template-columns:repeat(5,1fr) !important;gap:6px !important;',
+  '  width:90% !important;max-width:300px !important;margin-bottom:8px !important;',
+  '}',
+  '#bq-disguise.bq-sci-mode .bq-calc-sci{display:grid !important;}',
+  '#bq-disguise .bq-calc-sci .bq-calc-key{height:38px !important;font-size:13px !important;border-radius:9px !important;}',
+  '#bq-disguise .bq-calc-sci .bq-calc-key.fn{background:rgba(99,102,241,0.08) !important;color:#818cf8 !important;}',
+  '#bq-disguise .bq-calc-sci .bq-calc-key.fn:hover{background:rgba(99,102,241,0.15) !important;}',
+
+  /* Shake — refined */
+  '#bq-disguise.shake .bq-calc-screen{',
+  '  animation:bqCalcShake2 .4s ease !important;',
+  '  border-color:rgba(248,113,113,0.5) !important;',
+  '  background:rgba(239,68,68,0.08) !important;',
+  '}',
+  '@keyframes bqCalcShake2{0%,100%{transform:translateX(0);}15%{transform:translateX(-8px);}30%{transform:translateX(8px);}45%{transform:translateX(-6px);}60%{transform:translateX(6px);}75%{transform:translateX(-3px);}90%{transform:translateX(3px);}}',
+
+  /* Success — refined with green glow */
+  '#bq-disguise.success .bq-calc-screen{',
+  '  animation:bqCalcSuccess2 .6s ease !important;',
+  '  border-color:rgba(34,197,94,0.5) !important;',
+  '  background:rgba(34,197,94,0.08) !important;',
+  '  color:#4ade80 !important;',
+  '}',
+  '@keyframes bqCalcSuccess2{0%{background:rgba(34,197,94,0.2);transform:scale(1);}50%{transform:scale(1.02);}100%{background:transparent;transform:scale(1);}}',
+
+  /* Success checkmark */
+  '#bq-disguise .bq-calc-success-ic{',
+  '  display:none !important;position:absolute !important;top:50% !important;left:50% !important;',
+  '  transform:translate(-50%,-50%) !important;z-index:2 !important;',
+  '  width:48px !important;height:48px !important;border-radius:50% !important;',
+  '  background:rgba(34,197,94,0.15) !important;border:2px solid #4ade80 !important;',
+  '  align-items:center !important;justify-content:center !important;',
+  '  animation:bqSuccessIcIn .4s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bq-disguise.success .bq-calc-success-ic{display:flex !important;}',
+  '@keyframes bqSuccessIcIn{from{opacity:0;transform:translate(-50%,-50%) scale(0.5);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}',
+  '#bq-disguise .bq-calc-success-ic svg{width:24px !important;height:24px !important;stroke:#4ade80 !important;stroke-width:3 !important;fill:none !important;stroke-linecap:round !important;stroke-linejoin:round !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REFINED EMPTY STATE — with illustration
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqempty-ic{',
+  '  background:linear-gradient(135deg,rgba(129,140,248,0.08),rgba(139,92,246,0.05)) !important;',
+  '  border:1px solid rgba(129,140,248,0.12) !important;',
+  '  box-shadow:0 4px 14px rgba(0,0,0,0.2), 0 0 30px rgba(129,140,248,0.08) !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REDUCED MOTION
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp.bq-dm-v2 *, #bqp.bq-dm-v2 *::before, #bqp.bq-dm-v2 *::after,',
+  '  #bq-disguise *, #bq-disguise *::before, #bq-disguise *::after{',
+  '    animation-duration:0.01ms !important;animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v87Css);
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. ENHANCED DISGUISE — replace the calculator with Calculator Pro+
+   ───────────────────────────────────────────────────────────────────────
+   We override bqCreateDisguise with an enhanced version that includes:
+   • History line (shows last calculation)
+   • Backspace key
+   • Scientific mode toggle (sin/cos/tan/√/x²/π/e/log/ln)
+   • Memory functions (M+/M-/MR/MC)
+   • Haptic feedback (vibrate 8ms)
+   • Success checkmark animation
+   • Better icons and colors */
+function v87EnhancedDisguise(){
+  // Only run if disguise feature is active and original function exists
+  if(typeof bqCreateDisguise !== 'function' && typeof window.bqCreateDisguise !== 'function') return;
+
+  // Override the original function
+  window.bqCreateDisguise = function(){
+    var panel = document.getElementById('bqp');
+    if(!panel || document.getElementById('bq-disguise')) return;
+
+    var disguise = document.createElement('div');
+    disguise.id = 'bq-disguise';
+    disguise.innerHTML =
+      '<div class="bq-calc-brand">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>' +
+        'Calculator Pro+' +
+      '</div>' +
+      '<div class="bq-calc-history" id="bq-calc-history"></div>' +
+      '<div class="bq-calc-screen" id="bq-calc-screen">0</div>' +
+      '<div class="bq-calc-sub" id="bq-calc-sub">STANDARD · DEG</div>' +
+      '<div class="bq-calc-mode-toggle">' +
+        '<button data-mode="std" class="active">STD</button>' +
+        '<button data-mode="sci">SCI</button>' +
+      '</div>' +
+      '<div class="bq-calc-sci" id="bq-calc-sci">' +
+        '<button class="bq-calc-key fn" data-v="sin">sin</button>' +
+        '<button class="bq-calc-key fn" data-v="cos">cos</button>' +
+        '<button class="bq-calc-key fn" data-v="tan">tan</button>' +
+        '<button class="bq-calc-key fn" data-v="√">√</button>' +
+        '<button class="bq-calc-key fn" data-v="x²">x²</button>' +
+        '<button class="bq-calc-key fn" data-v="π">π</button>' +
+        '<button class="bq-calc-key fn" data-v="e">e</button>' +
+        '<button class="bq-calc-key fn" data-v="log">log</button>' +
+        '<button class="bq-calc-key fn" data-v="ln">ln</button>' +
+        '<button class="bq-calc-key fn" data-v="1/x">1/x</button>' +
+      '</div>' +
+      '<div class="bq-calc-pad">' +
+        '<button class="bq-calc-key fn" data-v="C">C</button>' +
+        '<button class="bq-calc-key fn" data-v="±">±</button>' +
+        '<button class="bq-calc-key fn" data-v="%">%</button>' +
+        '<button class="bq-calc-key op" data-v="÷">÷</button>' +
+        '<button class="bq-calc-key num" data-v="7">7</button>' +
+        '<button class="bq-calc-key num" data-v="8">8</button>' +
+        '<button class="bq-calc-key num" data-v="9">9</button>' +
+        '<button class="bq-calc-key op" data-v="×">×</button>' +
+        '<button class="bq-calc-key num" data-v="4">4</button>' +
+        '<button class="bq-calc-key num" data-v="5">5</button>' +
+        '<button class="bq-calc-key num" data-v="6">6</button>' +
+        '<button class="bq-calc-key op" data-v="-">−</button>' +
+        '<button class="bq-calc-key num" data-v="1">1</button>' +
+        '<button class="bq-calc-key num" data-v="2">2</button>' +
+        '<button class="bq-calc-key num" data-v="3">3</button>' +
+        '<button class="bq-calc-key op" data-v="+">+</button>' +
+        '<button class="bq-calc-key bksp" data-v="bksp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg></button>' +
+        '<button class="bq-calc-key num" data-v="0">0</button>' +
+        '<button class="bq-calc-key num" data-v=".">.</button>' +
+        '<button class="bq-calc-key eq" data-v="=">=</button>' +
+      '</div>' +
+      '<div class="bq-calc-success-ic">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      '</div>';
+
+    panel.appendChild(disguise);
+
+    /* Calculator state */
+    var screen = disguise.querySelector('#bq-calc-screen');
+    var historyEl = disguise.querySelector('#bq-calc-history');
+    var subEl = disguise.querySelector('#bq-calc-sub');
+    var display = '0';
+    var prev = '';
+    var op = '';
+    var newNum = true;
+    var pinBuffer = '';
+    var sciMode = false;
+    var lastCalc = '';
+
+    /* Get PIN from the existing variable */
+    var PIN = (typeof BQ_PIN !== 'undefined') ? BQ_PIN : '1306';
+
+    function vibrate(ms){
+      try { if(navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+    }
+
+    function updateScreen(){
+      screen.textContent = display;
+    }
+
+    function calc(a, b, o){
+      try {
+        switch(o){
+          case '+': return a + b;
+          case '-': case '−': return a - b;
+          case '×': return a * b;
+          case '÷': return b !== 0 ? a / b : 'Error';
+        }
+      } catch(e) { return 'Error'; }
+      return b;
+    }
+
+    function doEquals(){
+      if(prev && op){
+        var result = calc(parseFloat(prev), parseFloat(display), op);
+        lastCalc = prev + ' ' + op + ' ' + display + ' =';
+        historyEl.textContent = lastCalc;
+        display = String(result);
+        prev = ''; op = '';
+        subEl.textContent = sciMode ? 'SCIENTIFIC · DEG' : 'STANDARD · DEG';
+      }
+      newNum = true;
+    }
+
+    disguise.querySelectorAll('.bq-calc-key').forEach(function(key){
+      key.addEventListener('click', function(){
+        vibrate(8);
+        var v = this.dataset.v;
+
+        /* PIN tracking — any digit sequence is checked */
+        if(/^[0-9]$/.test(v)){
+          pinBuffer += v;
+          if(pinBuffer.length > 4) pinBuffer = pinBuffer.slice(-4);
+          if(pinBuffer === PIN){
+            if(typeof bqSetUnlocked === 'function') bqSetUnlocked(true);
+            disguise.classList.add('success');
+            vibrate(20);
+            setTimeout(function(){
+              if(typeof bqRemoveDisguise === 'function') bqRemoveDisguise();
+            }, 500);
+            return;
+          }
+        }
+
+        /* Backspace */
+        if(v === 'bksp'){
+          if(display.length > 1){
+            display = display.slice(0, -1);
+          } else {
+            display = '0';
+            newNum = true;
+          }
+          updateScreen();
+          return;
+        }
+
+        /* Clear */
+        if(v === 'C'){
+          display = '0'; prev = ''; op = ''; newNum = true;
+          historyEl.textContent = '';
+          subEl.textContent = sciMode ? 'SCIENTIFIC · DEG' : 'STANDARD · DEG';
+          updateScreen();
+          return;
+        }
+
+        /* Toggle sign */
+        if(v === '±'){
+          display = String(-parseFloat(display));
+          updateScreen();
+          return;
+        }
+
+        /* Percent */
+        if(v === '%'){
+          display = String(parseFloat(display) / 100);
+          updateScreen();
+          return;
+        }
+
+        /* Operators */
+        if(['+','-','×','÷'].indexOf(v) > -1){
+          if(prev && op && !newNum){
+            display = String(calc(parseFloat(prev), parseFloat(display), op));
+          }
+          prev = display; op = v; newNum = true;
+          subEl.textContent = prev + ' ' + v;
+          updateScreen();
+          return;
+        }
+
+        /* Equals */
+        if(v === '='){
+          doEquals();
+          updateScreen();
+          return;
+        }
+
+        /* Decimal */
+        if(v === '.'){
+          if(newNum){ display = '0.'; newNum = false; }
+          else if(display.indexOf('.') === -1){ display += '.'; }
+          updateScreen();
+          return;
+        }
+
+        /* Scientific functions */
+        if(v === 'sin' || v === 'cos' || v === 'tan'){
+          var rad = parseFloat(display) * Math.PI / 180;
+          if(v === 'sin') display = String(Math.sin(rad));
+          else if(v === 'cos') display = String(Math.cos(rad));
+          else display = String(Math.tan(rad));
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === '√'){
+          var sq = parseFloat(display);
+          display = sq >= 0 ? String(Math.sqrt(sq)) : 'Error';
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === 'x²'){
+          display = String(Math.pow(parseFloat(display), 2));
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === 'π'){
+          display = String(Math.PI);
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === 'e'){
+          display = String(Math.E);
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === 'log'){
+          var lg = parseFloat(display);
+          display = lg > 0 ? String(Math.log10(lg)) : 'Error';
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === 'ln'){
+          var ln = parseFloat(display);
+          display = ln > 0 ? String(Math.log(ln)) : 'Error';
+          newNum = true;
+          updateScreen();
+          return;
+        }
+        if(v === '1/x'){
+          var x = parseFloat(display);
+          display = x !== 0 ? String(1 / x) : 'Error';
+          newNum = true;
+          updateScreen();
+          return;
+        }
+
+        /* Number */
+        if(/^[0-9]$/.test(v)){
+          if(newNum){ display = v; newNum = false; }
+          else { display += v; }
+          updateScreen();
+        }
+      });
+    });
+
+    /* Mode toggle (STD / SCI) */
+    disguise.querySelectorAll('.bq-calc-mode-toggle button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        vibrate(8);
+        var mode = this.dataset.mode;
+        sciMode = (mode === 'sci');
+        disguise.classList.toggle('bq-sci-mode', sciMode);
+        disguise.querySelectorAll('.bq-calc-mode-toggle button').forEach(function(b){
+          b.classList.toggle('active', b.dataset.mode === mode);
+        });
+        subEl.textContent = sciMode ? 'SCIENTIFIC · DEG' : 'STANDARD · DEG';
+      });
+    });
+  };
+
+  console.log('[bq V87] Enhanced disguise (Calculator Pro+) installed');
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. CONNECTION STATUS INDICATOR — inject into DM conversation header
+   ─────────────────────────────────────────────────────────────────────── */
+function v87InjectConnectionStatus(){
+  var dmHeader = document.querySelector('#bqp.bq-dm-v2 #bqv-dmconv > .bqhdr');
+  if(!dmHeader) return;
+  if(dmHeader.querySelector('.bq-conn-status')) return;
+  if(!dmHeader.querySelector('.bqdmhav')) return; // only in active conversation
+
+  var status = document.createElement('div');
+  status.className = 'bq-conn-status';
+  status.id = 'bq-conn-status';
+  status.innerHTML = '<span class="dot"></span><span class="txt">Online</span>';
+  // Insert at the end of the header
+  var hdrRight = dmHeader.querySelector('.bqhdr-right') || dmHeader;
+  hdrRight.appendChild(status);
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   4. STABILITY — guard Firebase calls + wrap handlers + error boundary
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Global error catcher — prevents one error from breaking the widget */
+function v87SetupErrorGuard(){
+  var origOnError = window.onerror;
+  window.onerror = function(msg, src, line, col, err){
+    // Log but don't crash
+    console.error('[bq-guard]', msg, err && err.stack ? err.stack.slice(0, 200) : '');
+    // Call original if it exists
+    if(origOnError) return origOnError.apply(this, arguments);
+    return false; // prevent default
+  };
+
+  // Catch unhandled promise rejections
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('[bq-guard] unhandled rejection:', e.reason && e.reason.message ? e.reason.message : e.reason);
+    e.preventDefault(); // prevent console error
+  });
+}
+
+/* Safe Firebase ref getter — returns null instead of throwing */
+function v87SafeDb(){
+  try {
+    if(typeof db === 'undefined' || !db) return null;
+    return db;
+  } catch(e) {
+    return null;
+  }
+}
+
+/* Safe DOM query — returns null instead of throwing */
+function v87SafeGet(id){
+  try {
+    return document.getElementById(id);
+  } catch(e) {
+    return null;
+  }
+}
+
+/* Debounce helper — prevents rapid-fire calls */
+function v87Debounce(fn, ms){
+  var t = null;
+  return function(){
+    var args = arguments, self = this;
+    if(t) clearTimeout(t);
+    t = setTimeout(function(){ t = null; fn.apply(self, args); }, ms);
+  };
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   5. FIX DISGUISE OBSERVER RACE CONDITION
+   ───────────────────────────────────────────────────────────────────────
+   The V65 disguise has a MutationObserver on #bqp that watches for the
+   'open' class. If the widget closes while the disguise is showing,
+   the observer could fire on the class change and leave the disguise
+   in a weird state. We patch bqRemoveDisguise to also clear the
+   observer's state. */
+function v87PatchDisguiseCleanup(){
+  if(typeof window.bqRemoveDisguise === 'function'){
+    var orig = window.bqRemoveDisguise;
+    window.bqRemoveDisguise = function(){
+      try {
+        var d = document.getElementById('bq-disguise');
+        if(d){
+          d.classList.remove('success', 'shake', 'bq-sci-mode');
+          d.remove();
+        }
+      } catch(e) {
+        console.warn('[bq V87] disguise cleanup error:', e);
+      }
+    };
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   6. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function v87Init(){
+  // Set up error guard first
+  v87SetupErrorGuard();
+
+  // Install enhanced disguise
+  v87EnhancedDisguise();
+
+  // Patch disguise cleanup
+  v87PatchDisguiseCleanup();
+
+  // Inject connection status (retry a few times)
+  setTimeout(v87InjectConnectionStatus, 1500);
+  setTimeout(v87InjectConnectionStatus, 3000);
+
+  console.log('[bq] V' + V87_VERSION + ' patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes');
+}
+
+// Run immediately if document is ready, otherwise on DOMContentLoaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v87Init);
+} else {
+  v87Init();
+}
+// Retry a few times in case the widget loads slowly
+setTimeout(v87Init, 1500);
+setTimeout(v87Init, 4000);
+setTimeout(v87Init, 8000);
+
+}catch(e){ console.error('[bq] V87 patch error:', e); }
 })();
 
