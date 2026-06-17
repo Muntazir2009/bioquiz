@@ -643,3 +643,75 @@ Stage Summary:
 - All settings panels restyled with ID-level selectors (My Profile, DM Settings, Floating Info)
 - Non-breaking: V1 unchanged, V85 overrides V83/V84 with higher specificity
 - Backup: scripts/chat-widget-v84-backup.js
+
+---
+Task ID: V86-Forward
+Agent: main
+Task: Improve message forwarding + add V2 design additions
+
+Work Log:
+- Explored existing forward implementation: forwardMessage() at line 6101, bare overlay with simple list, _fwd: prefix on forwarded text, no avatars, no multi-select, no search
+- Backed up V85 to scripts/chat-widget-v85-backup.js
+- Wrote V86 patch (1000 lines) in scripts/v86-forward-patch.js:
+
+FORWARDING IMPROVEMENTS:
+- v86EnhancedForward(): complete rewrite of the forward flow
+  - Beautiful modal overlay with backdrop blur (was bare list)
+  - Message preview at top showing what's being forwarded
+  - Search/filter recipients by name (live input)
+  - Multi-select: tap to toggle recipients, forward to many at once
+  - Avatars + presence dots in recipient list (online/studying/busy status)
+  - Recent conversations first (sorted by lastTs descending)
+  - 'Select all' / 'Deselect' controls
+  - Footer with selected count + Send button (disabled when 0 selected)
+  - Original sender preserved in forwarded message (fwdFrom field)
+  - Confirmation toast: 'Forwarded to @name' or 'Forwarded to N recipients'
+  - Escape key closes modal
+  - Click outside closes modal
+- v86InstallForwardOverride(): ONE-TIME event delegation (capture phase)
+  intercepts clicks on .bq-ms-btn[data-a="forward"] buttons, reconstructs
+  the message from DOM, and opens the enhanced modal. No MutationObserver.
+
+FORWARDED MESSAGE RENDERING:
+- v86PatchForwardedMessages(): periodic idle-time scan detects messages
+  with _fwd: prefix, adds 'Forwarded' label with arrow icon, strips prefix
+- v86ScheduleScan(): uses requestIdleCallback (with setTimeout fallback)
+  + Page Visibility API (pauses when tab hidden). Runs at most every 2.5s.
+  Uses :not([data-fwd-scan]) selector so only NEW messages are processed.
+  Cheap and lag-free.
+
+V2 DESIGN ADDITIONS (all CSS, #bqp.bq-dm-v2 selectors):
+- Message hover action bar (bq-msg-inline): glassy floating bar with
+  backdrop blur, indigo hover on buttons, danger red for delete
+- Refined reaction chips: glassy with backdrop blur, indigo active state
+  for mine, lift on hover, indigo border on hover
+- Starred message: subtle amber glow ring on bubble + ⭐ indicator
+- Edited indicator: refined italic '(edited)' with muted color
+- Online users list: refined rows with 12px radius, hover bg
+- Online presence dot: pulsing green glow (bqLumenPulse animation)
+- Typing indicator: avatar + dots layout
+- Message grouping: 8px spacer between different senders
+- Voice note waveform: indigo gradient bars (theirs), white (mine)
+- Confirm dialog: refined dark card with red gradient danger button
+- Link hover: subtle opacity dim
+
+PERFORMANCE:
+- Forward button: ONE-TIME event delegation (no observer, no lag)
+- Forwarded message scan: requestIdleCallback + Page Visibility (pauses
+  when hidden, runs during idle, skips processed, scoped selectors)
+- All CSS uses #bqp.bq-dm-v2 selectors (beats theme specificity)
+- No MutationObservers anywhere in V86
+
+- Appended V86 patch to public/chat-widget.js (now 23,335 lines)
+- Bumped WIDGET_VERSION from '85.0.0' to '86.0.0'
+- Updated public/chat-widget-version.json to {"version": "86.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200 in 370ms, widget HTTP 200, 44 V86 markers, 22 forward-specific markers, WIDGET_VERSION = '86.0.0', no errors
+- Committed (556686d) and pushed to GitHub
+
+Stage Summary:
+- Forwarding completely redesigned: beautiful modal, multi-select, search, avatars, preview, original sender preserved
+- Forwarded messages now show 'Forwarded' label with arrow icon
+- V2 design additions: hover action bar, refined reactions, starred glow, online pulse, typing avatar, voice waveform, refined confirm dialog
+- Performance: zero observers, event delegation + idle-time scan with Page Visibility
+- Non-breaking: V1 unchanged, V86 overrides V85 with higher specificity
+- Backup: scripts/chat-widget-v85-backup.js
