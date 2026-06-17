@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '79.0.0';                     // V79: Notification bell icon removed from global chat header
+const WIDGET_VERSION = '80.0.0';                     // V80: Sliding-pill V1/V2 toggle animation
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -18217,6 +18217,9 @@ window._bqSetDmVersion = function(v){
   hdrBtns.forEach(function(btn){
     btn.classList.toggle('active', btn.getAttribute('data-ver') === v);
   });
+  // V80: slide the toggle pill — toggle is-v2 class on the switch container
+  var hdrSwitch = document.getElementById('bq-dm-v2-hdr-switch');
+  if(hdrSwitch) hdrSwitch.classList.toggle('is-v2', v==='v2');
   // Update header title (preserve badge child element)
   var hdrTitle = document.querySelector('#bqv-dms .bqhtitle');
   if(hdrTitle){
@@ -18451,11 +18454,12 @@ v2css.textContent = [
   '.bq-dm-v2 .bqdm-search-wrap{position:relative;}',
 
   /* ── V77: V1/V2 Segmented Switch in DM Header — the ONLY toggle, make it prominent ── */
-  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:0;padding:3px;border-radius:13px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;box-shadow:inset 0 1px 4px rgba(0,0,0,.2);}',
-  '.bq-dm-v2-btn{padding:7px 18px;border-radius:10px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);letter-spacing:.5px;font-family:Inter,sans-serif;min-width:42px;text-align:center;position:relative;overflow:hidden;}',
-  '.bq-dm-v2-btn:hover{color:var(--bq-text);background:rgba(255,255,255,.05);}',
-  '.bq-dm-v2-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 12px rgba(139,92,246,.4),inset 0 1px 0 rgba(255,255,255,.2);text-shadow:0 1px 2px rgba(0,0,0,.2);}',
-  '.bq-dm-v2-btn.active:hover{filter:brightness(1.1);transform:translateY(-1px);}',
+  '.bq-dm-v2-hdr-switch{display:inline-flex;align-items:center;gap:0;padding:3px;border-radius:13px;background:var(--bq-bg-hover);border:1px solid var(--bq-border);margin-left:auto;box-shadow:inset 0 1px 4px rgba(0,0,0,.2);position:relative;}',
+  '.bq-dm-v2-hdr-switch::before{content:"";position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);box-shadow:0 2px 12px rgba(139,92,246,.4),inset 0 1px 0 rgba(255,255,255,.2);transition:transform .34s cubic-bezier(.34,1.56,.64,1);z-index:0;pointer-events:none;}',
+  '.bq-dm-v2-hdr-switch.is-v2::before{transform:translateX(100%);}',
+  '.bq-dm-v2-btn{padding:7px 18px;border-radius:10px;border:none;background:transparent;color:var(--bq-text-muted);font-size:12px;font-weight:800;cursor:pointer;transition:color .25s cubic-bezier(.22,1,.36,1);letter-spacing:.5px;font-family:Inter,sans-serif;min-width:42px;text-align:center;position:relative;z-index:1;}',
+  '.bq-dm-v2-btn:hover{color:var(--bq-text);}',
+  '.bq-dm-v2-btn.active{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);}',
 
   /* ── V76: IMMERSIVE V2 MODE CARD in Profile — beautiful, aesthetic, prominent ── */
   '#bq-dm-v2-section.bqpf-section{padding:0;margin:12px 16px;border-radius:16px;overflow:hidden;border:1px solid var(--bq-border);background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(168,85,247,.06));}',
@@ -18784,7 +18788,7 @@ function _v2InjectToggle(){
   if(dmHeader && !document.getElementById('bq-dm-v2-hdr-switch')){
     var hdrSwitch = document.createElement('div');
     hdrSwitch.id = 'bq-dm-v2-hdr-switch';
-    hdrSwitch.className = 'bq-dm-v2-hdr-switch';
+    hdrSwitch.className = 'bq-dm-v2-hdr-switch' + (_bqDmVersion==='v2' ? ' is-v2' : '');
     hdrSwitch.innerHTML =
       '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v1'?' active':'')+'" data-ver="v1">V1</button>'+
       '<button class="bq-dm-v2-btn'+(_bqDmVersion==='v2'?' active':'')+'" data-ver="v2">V2</button>';
@@ -18826,7 +18830,7 @@ function _v2Init(){
     if(textNodes.length) textNodes[0].textContent = _bqDmVersion==='v2'?'Chats':'Messages';
     else hdrTitle.insertBefore(document.createTextNode(_bqDmVersion==='v2'?'Chats':'Messages'), existingBadge || null);
   }
-  console.log('[bq] V77 patch loaded — Single V2 toggle in DMs, search icon removed, V2 improvements');
+  console.log('[bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header');
 }
 
 // ── V77: PERSISTENT MutationObserver — keeps header switch injected ──
