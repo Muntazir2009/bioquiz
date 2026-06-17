@@ -715,3 +715,64 @@ Stage Summary:
 - Performance: zero observers, event delegation + idle-time scan with Page Visibility
 - Non-breaking: V1 unchanged, V86 overrides V85 with higher specificity
 - Backup: scripts/chat-widget-v85-backup.js
+
+---
+Task ID: V87-Stability
+Agent: main
+Task: Disable hold-to-select-text, enhance disguise, V2 UI/UX additions, stability fixes
+
+Work Log:
+- Re-cloned repo (was deleted), confirmed V86 baseline
+- Explored text selection: bubbles had -webkit-tap-highlight-color:transparent but NO user-select:none or -webkit-touch-callout:none → iOS/Android native text selection callout fired on long-press
+- Explored disguise: V65 'Calculator Pro' with basic 4-function calc, PIN entry via digit sequence, MutationObserver on #bqp for 'open' class
+- Backed up V86 to scripts/chat-widget-v86-backup.js
+- Wrote V87 patch (825 lines) in scripts/v87-stability-patch.js:
+
+DISABLE HOLD-TO-SELECT-TEXT:
+- Added user-select:none + -webkit-touch-callout:none + -webkit-user-select:none to all message content: bubbles, text, names, timestamps, stickers, reply previews, forwarded labels, edited indicators, meta
+- Also on panel wrappers, headers, nav, avatars, DM list rows
+- KEPT text selection ENABLED for: inputs, textareas, code blocks (recovery codes), contenteditable — so users can still copy recovery codes
+
+ENHANCED DISGUISE (Calculator Pro+):
+- Refined UI: better spacing, ui-monospace for screen, modern typography
+- Better icons: calculator brand icon (SVG), backspace icon (⌫ SVG), refined operator colors
+- Indigo color scheme (matches V85 Lumen): operators indigo, equals button indigo gradient with shadow
+- Scientific mode toggle (STD/SCI buttons): shows/hides scientific keypad with sin, cos, tan, √, x², π, e, log, ln, 1/x
+- History line showing last calculation (e.g. '5 × 3 = 15')
+- Haptic feedback on every key press (vibrate 8ms)
+- Refined PIN entry: success animation with green checkmark icon + screen glow + 20ms vibrate
+- Better shake animation on wrong PIN (8-step shake with red bg)
+- Backspace key (⌫) for correcting entries
+- Animated background gradient with subtle indigo/violet glow (bqDisguiseGlow)
+- Mode indicator (STANDARD · DEG / SCIENTIFIC · DEG)
+- Spring-animated success checkmark (bqSuccessIcIn)
+- Memory: full scientific functions implemented (sin/cos/tan in degrees, sqrt, square, pi, e, log10, ln, reciprocal)
+
+V2 UI/UX ADDITIONS:
+- Connection status indicator in DM conversation header: green 'Online' pill with pulsing dot, amber 'Reconnecting', red 'Offline' (bqConnPulse animation)
+- Quick action bar styling (call/video/search/info buttons) — .bq-qa-btn class
+- Message read progress bar styling (indigo gradient under header)
+- Pinned message indicator (📌 on pinned messages)
+- Refined empty state with indigo glow gradient
+
+STABILITY + BUG FIXES:
+- Global error guard: window.onerror override + unhandledrejection handler — logs errors but prevents them from breaking the widget
+- v87SafeDb() helper: returns null instead of throwing if db is undefined
+- v87SafeGet() helper: safe DOM query that returns null on error
+- v87Debounce() helper: prevents rapid-fire calls
+- Patched bqRemoveDisguise to clear all state classes (success, shake, sci-mode) before removing — fixes race condition where disguise could leave stale classes
+- All V87 code wrapped in try/catch to prevent cascade failures
+
+- Appended V87 patch to public/chat-widget.js (now 24,161 lines)
+- Bumped WIDGET_VERSION from '86.0.0' to '87.0.0'
+- Updated public/chat-widget-version.json to {"version": "87.0.0"}
+- Validated: full widget syntax valid, ESLint clean (after npm install), build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 27 V87 markers, 27 user-select:none rules, WIDGET_VERSION = '87.0.0', no errors
+- Committed (fd51746) and pushed to GitHub
+
+Stage Summary:
+- Hold-to-select-text DISABLED — no more iOS/Android text selection callout on long-press
+- Disguise completely redesigned as 'Calculator Pro+' with scientific mode, history, haptic feedback, refined UI, better icons
+- V2 UI/UX: connection status, quick action bar, read progress, pinned indicators
+- Stability: global error guard, safe helpers, race condition fix, debounce
+- Non-breaking: V1 unchanged, V87 overrides V86 with higher specificity
+- Backup: scripts/chat-widget-v86-backup.js
