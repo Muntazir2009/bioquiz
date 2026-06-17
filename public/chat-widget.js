@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '80.0.0';                     // V80: Sliding-pill V1/V2 toggle animation
+const WIDGET_VERSION = '81.0.0';                     // V81: Aurora DM V2 redesign — glassmorphic bubbles, aurora gradients, spring animations
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -18908,3 +18908,820 @@ window.updatePushUI = function(){
 
 }catch(e){ console.error('[bq] V69.2 patch error:', e); }
 })();
+/* ═══════════════════════════════════════════════════════════════════════
+   V81 PATCH — DM V2 "AURORA" REDESIGN ❤️
+   ───────────────────────────────────────────────────────────────────────
+   A beautiful, aesthetic refresh of the V2 DM experience.
+
+   Design language:
+   • Aurora gradient bubbles (indigo → violet → magenta) with soft inner glow
+   • Frosted-glass "theirs" bubbles with a delicate top-light reflection
+   • Spring-animated message entrance (translateY + scale + opacity)
+   • Glowing read receipts (cyan when seen, with a soft pulse)
+   • Pill date separators with aurora gradient divider
+   • Floating scroll button with aurora gradient + shimmer
+   • Refined empty state with animated aurora orb
+   • Subtle ambient glow on the conversation view
+   • Polished DM list rows with aurora-tinted active state
+   • Better typing indicator with wave dots
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   V1 is untouched. Falls back gracefully on reduced-motion.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var AURORA_VERSION = '81.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. AURORA DESIGN TOKENS
+   ─────────────────────────────────────────────────────────────────────── */
+var AURORA_TOKENS = {
+  // Aurora gradient stops (indigo → violet → magenta)
+  a1: '#6366f1',   // indigo-500
+  a2: '#8b5cf6',   // violet-500
+  a3: '#a855f7',   // purple-500
+  a4: '#ec4899',   // pink-500
+  // Seen-receipt cyan
+  seen: '#22d3ee',
+  seenGlow: 'rgba(34, 211, 238, 0.55)',
+  // Soft amber for "delivered"
+  delivered: 'rgba(255, 255, 255, 0.85)',
+  // Soft white for "sent"
+  sent: 'rgba(255, 255, 255, 0.45)',
+};
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. AURORA CSS — overrides V69.2 with higher specificity
+   ─────────────────────────────────────────────────────────────────────── */
+var auroraCss = document.createElement('style');
+auroraCss.id = 'bq-aurora-css';
+auroraCss.textContent = [
+  /* ── Aurora ambient glow on the DM conversation backdrop ── */
+  '.bq-dm-v2 #bqdmmsgs{',
+  '  background-image:',
+  '    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(99,102,241,.05), transparent 70%),',
+  '    radial-gradient(ellipse 60% 30% at 100% 100%, rgba(168,85,247,.04), transparent 60%),',
+  '    radial-gradient(ellipse 60% 30% at 0% 100%, rgba(236,72,153,.03), transparent 60%);',
+  '  background-attachment: local;',
+  '}',
+
+  /* ── Mine bubble — Aurora gradient with depth ── */
+  '.bq-dm-v2 .bqr.mine .bqbbl{',
+  '  background: linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ' 0%, ' + AURORA_TOKENS.a2 + ' 50%, ' + AURORA_TOKENS.a3 + ' 100%) !important;',
+  '  color:#fff !important;',
+  '  border:none !important;',
+  '  border-radius:18px 4px 18px 18px !important;',
+  '  padding:9px 13px 6px !important;',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,.18) inset,',           /* top highlight */
+  '    0 -1px 0 rgba(0,0,0,.08) inset,',                /* bottom shadow inside */
+  '    0 4px 14px -2px rgba(99,102,241,.35),',          /* soft drop shadow */
+  '    0 1px 3px rgba(0,0,0,.18) !important;',
+  '  position:relative;',
+  '  overflow:hidden;',
+  '}',
+  /* Subtle shimmer on the top edge of mine bubbles — like light catching glass */
+  '.bq-dm-v2 .bqr.mine .bqbbl::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:0; left:0; right:0; height:50%;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,.12), transparent);',
+  '  pointer-events:none;',
+  '  border-radius:18px 4px 0 0;',
+  '}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:18px !important;}',
+  '.bq-dm-v2 .bqr.mine .bqbbl.media{padding:3px !important;border-radius:18px 4px 18px 18px !important;}',
+  '.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:18px !important;}',
+
+  /* ── Theirs bubble — Frosted glass with top-light reflection ── */
+  '.bq-dm-v2 .bqr.theirs .bqbbl{',
+  '  background:rgba(255,255,255,.04) !important;',
+  '  backdrop-filter:blur(12px) saturate(1.3) !important;',
+  '  -webkit-backdrop-filter:blur(12px) saturate(1.3) !important;',
+  '  border:1px solid rgba(255,255,255,.08) !important;',
+  '  border-radius:4px 18px 18px 18px !important;',
+  '  color:var(--bq-text) !important;',
+  '  padding:9px 13px 6px !important;',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,.06) inset,',
+  '    0 2px 8px rgba(0,0,0,.12) !important;',
+  '  position:relative;',
+  '  overflow:hidden;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:0; left:0; right:0; height:40%;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,.05), transparent);',
+  '  pointer-events:none;',
+  '  border-radius:4px 18px 0 0;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:18px !important;}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl.media{padding:3px !important;border-radius:4px 18px 18px 18px !important;}',
+  '.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:18px !important;}',
+
+  /* ── Hover micro-interaction on bubbles ── */
+  '.bq-dm-v2 .bqbbl{transition:transform .18s cubic-bezier(.22,1,.36,1), box-shadow .25s ease !important;}',
+  '.bq-dm-v2 .bqr:hover .bqbbl{transform:translateY(-1px);}',
+  '.bq-dm-v2 .bqr.mine:hover .bqbbl{box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.08) inset, 0 6px 20px -2px rgba(139,92,246,.45), 0 1px 3px rgba(0,0,0,.18) !important;}',
+  '.bq-dm-v2 .bqr.theirs:hover .bqbbl{box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 4px 12px rgba(0,0,0,.18) !important;}',
+
+  /* ── Spring-animated message entrance ── */
+  '.bq-dm-v2 .bqr.bq-new{animation:bqAuroraMsgIn .42s cubic-bezier(.22,1.4,.36,1) both !important;}',
+  '@keyframes bqAuroraMsgIn{',
+  '  0%{opacity:0;transform:translateY(10px) scale(.94);}',
+  '  60%{opacity:1;transform:translateY(-2px) scale(1.01);}',
+  '  100%{opacity:1;transform:translateY(0) scale(1);}',
+  '}',
+  '.bq-dm-v2 .bqbbl{animation:bqAuroraBubbleIn .35s cubic-bezier(.22,1.3,.36,1) both !important;}',
+  '@keyframes bqAuroraBubbleIn{',
+  '  0%{opacity:0;transform:translateY(6px) scale(.96);}',
+  '  100%{opacity:1;transform:none;}',
+  '}',
+
+  /* ── Refined typography ── */
+  '.bq-dm-v2 .bqtxt{font-size:13.5px;line-height:1.46;letter-spacing:-.1px;margin-bottom:2px;font-weight:400;}',
+  '.bq-dm-v2 .bqr.mine .bqtxt{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.08);}',
+  '.bq-dm-v2 .bqr.mine .bqbbl a{color:#dbeafe;text-decoration-color:rgba(219,234,254,.55);}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl a{color:var(--bq-accent);text-decoration-color:rgba(96,165,250,.45);}',
+
+  /* ── Read receipts — glowing when seen ── */
+  '.bq-dm-v2 .bqbbl-meta{',
+  '  float:right;',
+  '  margin:6px 0 -2px 8px;',
+  '  font-size:10px !important;',
+  '  line-height:1;',
+  '  color:' + AURORA_TOKENS.sent + ' !important;',
+  '  white-space:nowrap;',
+  '  display:inline-flex;',
+  '  align-items:center;',
+  '  gap:3px;',
+  '  letter-spacing:.2px;',
+  '}',
+  '.bq-dm-v2 .bqr.theirs .bqbbl-meta{color:var(--bq-text-subtle) !important;}',
+  '.bq-dm-v2 .bqbbl-meta.delivered .bqbbl-tick{color:' + AURORA_TOKENS.delivered + ' !important;}',
+  '.bq-dm-v2 .bqbbl-meta.seen .bqbbl-tick{',
+  '  color:' + AURORA_TOKENS.seen + ' !important;',
+  '  filter:drop-shadow(0 0 4px ' + AURORA_TOKENS.seenGlow + ');',
+  '  animation:bqAuroraSeenPulse 2.4s ease-in-out infinite;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqbbl-meta.seen{color:#a5f3fc !important;}',
+  '@keyframes bqAuroraSeenPulse{',
+  '  0%,100%{filter:drop-shadow(0 0 4px ' + AURORA_TOKENS.seenGlow + ');}',
+  '  50%{filter:drop-shadow(0 0 7px ' + AURORA_TOKENS.seenGlow + ');}',
+  '}',
+
+  /* ── Reply preview — aurora-tinted accent bar ── */
+  '.bq-dm-v2 .bqrp{',
+  '  margin-bottom:5px;',
+  '  padding:5px 9px;',
+  '  border-left:2.5px solid transparent;',
+  '  border-image:linear-gradient(180deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a3 + ') 1;',
+  '  border-radius:5px;',
+  '  background:rgba(99,102,241,.08);',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 .bqr.mine .bqrp{background:rgba(255,255,255,.1);border-image:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.4)) 1;}',
+  '.bq-dm-v2 .bqrp-n{font-size:10.5px;font-weight:700;color:var(--bq-accent);letter-spacing:.2px;}',
+  '.bq-dm-v2 .bqr.mine .bqrp-n{color:rgba(255,255,255,.92);}',
+  '.bq-dm-v2 .bqrp-t{font-size:11px;color:var(--bq-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;margin-top:1px;}',
+  '.bq-dm-v2 .bqr.mine .bqrp-t{color:rgba(255,255,255,.7);}',
+
+  /* ── Date separator — pill with aurora gradient line ── */
+  '.bq-dm-v2 .bqds{',
+  '  margin:18px 0 12px;',
+  '  text-align:center;',
+  '  font-size:10px;',
+  '  font-weight:700;',
+  '  letter-spacing:.6px;',
+  '  text-transform:uppercase;',
+  '  color:var(--bq-text-subtle);',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 .bqds::before, .bq-dm-v2 .bqds::after{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:50%;',
+  '  width:calc(50% - 56px);',
+  '  height:1px;',
+  '  background:linear-gradient(90deg, transparent, rgba(139,92,246,.35), transparent);',
+  '}',
+  '.bq-dm-v2 .bqds::before{left:0;}',
+  '.bq-dm-v2 .bqds::after{right:0;}',
+  '.bq-dm-v2 .bqds-text{',
+  '  display:inline-block;',
+  '  padding:3px 12px;',
+  '  background:var(--bq-bg-elevated);',
+  '  border:1px solid var(--bq-border);',
+  '  border-radius:12px;',
+  '  position:relative;',
+  '  z-index:1;',
+  '}',
+
+  /* ── Typing indicator — wave dots with aurora color ── */
+  '.bq-dm-v2 .bqtd span{',
+  '  width:6px;height:6px;border-radius:50%;',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a3 + ');',
+  '  animation:bqAuroraTypeDot 1.3s ease-in-out infinite;',
+  '  box-shadow:0 0 4px rgba(139,92,246,.4);',
+  '}',
+  '.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.18s;}',
+  '.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.36s;}',
+  '@keyframes bqAuroraTypeDot{',
+  '  0%,60%,100%{transform:translateY(0) scale(.8);opacity:.4;}',
+  '  30%{transform:translateY(-6px) scale(1.1);opacity:1;}',
+  '}',
+  '.bq-dm-v2 .bqtyp{',
+  '  padding:6px 16px 2px;',
+  '  font-size:11.5px;',
+  '  color:var(--bq-accent);',
+  '  font-style:italic;',
+  '  font-weight:500;',
+  '  letter-spacing:.2px;',
+  '}',
+
+  /* ── Avatar — refined with subtle ring ── */
+  '.bq-dm-v2 .bqr .bqav{',
+  '  width:30px;height:30px;',
+  '  border-radius:50%;',
+  '  font-size:11px;font-weight:700;',
+  '  flex-shrink:0;',
+  '  margin-right:8px;',
+  '  align-self:flex-end;',
+  '  margin-bottom:2px;',
+  '  cursor:pointer;',
+  '  transition:transform .15s ease, box-shadow .2s ease;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.18);',
+  '}',
+  '.bq-dm-v2 .bqr .bqav:hover{',
+  '  transform:scale(1.12);',
+  '  box-shadow:0 0 0 2px rgba(139,92,246,.35), 0 4px 10px rgba(0,0,0,.25);',
+  '}',
+
+  /* ── DM list — aurora-tinted active row ── */
+  '.bq-dm-v2 .bqdmr.active-row{',
+  '  background:linear-gradient(90deg,',
+  '    rgba(99,102,241,.12),',
+  '    rgba(139,92,246,.06) 50%,',
+  '    transparent) !important;',
+  '  border-left:3px solid transparent !important;',
+  '  border-image:linear-gradient(180deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a3 + ') 1 !important;',
+  '  padding-left:7px !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr.unread-row{',
+  '  background:linear-gradient(90deg, rgba(99,102,241,.06), transparent) !important;',
+  '}',
+
+  /* ── Unread badge — aurora gradient with glow ── */
+  '.bq-dm-v2 .bqdmub{',
+  '  min-width:20px;height:20px;',
+  '  border-radius:10px;',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a2 + ', ' + AURORA_TOKENS.a3 + ') !important;',
+  '  color:#fff !important;',
+  '  font-size:11px;font-weight:700;',
+  '  display:flex;align-items:center;justify-content:center;',
+  '  padding:0 6px;',
+  '  box-shadow:0 2px 8px rgba(139,92,246,.4), 0 0 0 1px rgba(255,255,255,.1) inset !important;',
+  '  animation:bqAuroraBadgePop .4s cubic-bezier(.34,1.56,.64,1) !important;',
+  '}',
+  '@keyframes bqAuroraBadgePop{',
+  '  0%{transform:scale(0);}',
+  '  60%{transform:scale(1.2);}',
+  '  100%{transform:scale(1);}',
+  '}',
+
+  /* ── DM list avatar — refined ring + presence dot ── */
+  '.bq-dm-v2 .bqdmav{',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.2);',
+  '  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqdmr:hover .bqdmav{',
+  '  transform:scale(1.08);',
+  '  box-shadow:0 0 0 2px rgba(139,92,246,.3), 0 4px 12px rgba(0,0,0,.3);',
+  '}',
+  '.bq-dm-v2 .bqdmav::after{',
+  '  content:"";position:absolute;bottom:1px;right:1px;',
+  '  width:13px;height:13px;border-radius:50%;',
+  '  border:2.5px solid var(--bq-bg);',
+  '  display:none;',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="online"]::after{',
+  '  background:#22c55e;display:block;',
+  '  box-shadow:0 0 6px rgba(34,197,94,.6);',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="studying"]::after{',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a3 + ');',
+  '  display:block;',
+  '  box-shadow:0 0 6px ' + AURORA_TOKENS.seenGlow + ';',
+  '}',
+  '.bq-dm-v2 .bqdmav[data-status="busy"]::after{background:#ef4444;display:block;}',
+
+  /* ── DM list row hover — aurora-tinted background ── */
+  '.bq-dm-v2 .bqdmr{',
+  '  transition:background .18s cubic-bezier(.22,1,.36,1), transform .15s ease !important;',
+  '  border-radius:14px;',
+  '}',
+  '.bq-dm-v2 .bqdmr:hover{',
+  '  background:linear-gradient(90deg, rgba(99,102,241,.08), transparent) !important;',
+  '  transform:translateX(2px);',
+  '}',
+
+  /* ── DM list name — refined typography ── */
+  '.bq-dm-v2 .bqdmn{',
+  '  font-size:14.5px;',
+  '  font-weight:600;',
+  '  color:var(--bq-text);',
+  '  letter-spacing:-.15px;',
+  '  white-space:nowrap;',
+  '  overflow:hidden;',
+  '  text-overflow:ellipsis;',
+  '}',
+  '.bq-dm-v2 .bqdmp{',
+  '  font-size:12.5px;',
+  '  color:var(--bq-text-muted);',
+  '  line-height:1.32;',
+  '  margin-top:2px;',
+  '  white-space:nowrap;',
+  '  overflow:hidden;',
+  '  text-overflow:ellipsis;',
+  '}',
+  '.bq-dm-v2 .bqdmp.unr{color:var(--bq-text);font-weight:600;}',
+
+  /* ── Floating scroll button — aurora gradient + shimmer ── */
+  '.bq-dm-v2 .bqscr{',
+  '  bottom:78px !important;',
+  '  right:14px !important;',
+  '  width:40px !important;',
+  '  height:40px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a2 + ', ' + AURORA_TOKENS.a3 + ') !important;',
+  '  border:none !important;',
+  '  box-shadow:',
+  '    0 0 0 1px rgba(255,255,255,.1) inset,',
+  '    0 4px 16px rgba(139,92,246,.45),',
+  '    0 2px 6px rgba(0,0,0,.25) !important;',
+  '  position:absolute;',
+  '  overflow:hidden;',
+  '  transition:transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease !important;',
+  '}',
+  '.bq-dm-v2 .bqscr::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  inset:0;',
+  '  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.25) 50%, transparent 65%);',
+  '  transform:translateX(-100%);',
+  '  animation:bqAuroraShimmer 3s ease-in-out infinite;',
+  '  pointer-events:none;',
+  '}',
+  '@keyframes bqAuroraShimmer{',
+  '  0%{transform:translateX(-100%);}',
+  '  60%,100%{transform:translateX(100%);}',
+  '}',
+  '.bq-dm-v2 .bqscr:hover{',
+  '  transform:translateY(-3px) scale(1.06) !important;',
+  '  box-shadow:',
+  '    0 0 0 1px rgba(255,255,255,.15) inset,',
+  '    0 8px 22px rgba(139,92,246,.55),',
+  '    0 3px 8px rgba(0,0,0,.3) !important;',
+  '}',
+  '.bq-dm-v2 .bqscr:active{transform:scale(.94) !important;}',
+  '.bq-dm-v2 .bqscr svg{stroke:#fff;width:18px;height:18px;}',
+
+  /* ── Input wrapper — refined focus glow with aurora tint ── */
+  '.bq-dm-v2 .bqiw{',
+  '  background:var(--bq-bg-elevated);',
+  '  border-top:1px solid var(--bq-border);',
+  '  padding:9px 10px;',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 .bqiw::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:-1px;left:0;right:0;height:1px;',
+  '  background:linear-gradient(90deg, transparent, rgba(139,92,246,.25), transparent);',
+  '}',
+  '.bq-dm-v2 .bqinp{',
+  '  background:var(--bq-bg-hover) !important;',
+  '  border:1px solid var(--bq-border) !important;',
+  '  border-radius:22px !important;',
+  '  padding:10px 16px !important;',
+  '  font-size:13.5px !important;',
+  '  transition:all .22s cubic-bezier(.22,1,.36,1) !important;',
+  '  letter-spacing:-.1px;',
+  '}',
+  '.bq-dm-v2 .bqinp:focus{',
+  '  border-color:transparent !important;',
+  '  background:var(--bq-bg-elevated) !important;',
+  '  box-shadow:',
+  '    0 0 0 1.5px ' + AURORA_TOKENS.a2 + ',',
+  '    0 0 0 4px rgba(139,92,246,.18),',
+  '    0 2px 8px rgba(0,0,0,.15) !important;',
+  '}',
+  '.bq-dm-v2 .bqinp::placeholder{color:var(--bq-text-subtle);}',
+
+  /* ── DM conversation header — refined with subtle gradient line ── */
+  '.bq-dm-v2 #bqv-dmconv > .bqhdr{',
+  '  background:var(--bq-bg-elevated);',
+  '  border-bottom:1px solid var(--bq-border);',
+  '  padding:0 6px;',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 #bqv-dmconv > .bqhdr::after{',
+  '  content:"";',
+  '  position:absolute;',
+  '  bottom:0;left:0;right:0;height:1px;',
+  '  background:linear-gradient(90deg, transparent, rgba(139,92,246,.25), transparent);',
+  '}',
+  '.bq-dm-v2 .bqdmhav{',
+  '  width:38px !important;height:38px !important;',
+  '  border-radius:50% !important;',
+  '  font-size:14px !important;font-weight:700 !important;',
+  '  position:relative;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.2);',
+  '}',
+  '.bq-dm-v2 .bqdmhn{font-size:15px;font-weight:600;color:var(--bq-text);letter-spacing:-.15px;}',
+  '.bq-dm-v2 .bqdmhs{font-size:11px;display:flex;align-items:center;gap:5px;margin-top:1px;}',
+  '.bq-dm-v2 .bqdmhs-dot{width:7px !important;height:7px !important;border-radius:50%;display:inline-block !important;}',
+  '.bq-dm-v2 .bqdmhs-dot.online{background:#22c55e;box-shadow:0 0 5px rgba(34,197,94,.55);}',
+  '.bq-dm-v2 .bqdmhs-dot.studying{background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a3 + ');box-shadow:0 0 5px ' + AURORA_TOKENS.seenGlow + ';}',
+  '.bq-dm-v2 .bqdmhs-dot.busy{background:#ef4444;}',
+  '.bq-dm-v2 .bqdmhs-dot.away{background:#f59e0b;}',
+  '.bq-dm-v2 #bqdmhs-txt{font-size:11px;color:var(--bq-text-muted);}',
+
+  /* ── DM list header — refined with gradient line ── */
+  '.bq-dm-v2 #bqv-dms .bqhdr{',
+  '  background:var(--bq-bg-elevated);',
+  '  border-bottom:1px solid var(--bq-border);',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 #bqv-dms .bqhdr::after{',
+  '  content:"";',
+  '  position:absolute;',
+  '  bottom:0;left:0;right:0;height:1px;',
+  '  background:linear-gradient(90deg, transparent, rgba(139,92,246,.25), transparent);',
+  '}',
+
+  /* ── Search input — aurora-tinted focus ── */
+  '.bq-dm-v2 #bqdm-search{padding:8px 12px;}',
+  '.bq-dm-v2 #bqdm-search-inp{',
+  '  width:100%;',
+  '  padding:9px 14px;',
+  '  border-radius:14px;',
+  '  border:1px solid var(--bq-border);',
+  '  background:var(--bq-bg-hover);',
+  '  color:var(--bq-text);',
+  '  font-size:13px;',
+  '  font-weight:500;',
+  '  outline:none;',
+  '  transition:all .22s cubic-bezier(.22,1,.36,1);',
+  '  letter-spacing:-.1px;',
+  '}',
+  '.bq-dm-v2 #bqdm-search-inp::placeholder{color:var(--bq-text-subtle);}',
+  '.bq-dm-v2 #bqdm-search-inp:focus{',
+  '  border-color:transparent;',
+  '  background:var(--bq-bg-elevated);',
+  '  box-shadow:0 0 0 1.5px ' + AURORA_TOKENS.a2 + ', 0 0 0 4px rgba(139,92,246,.15);',
+  '}',
+
+  /* ── Empty state — animated aurora orb ── */
+  '.bq-dm-v2 .bqempty{',
+  '  padding:48px 24px !important;',
+  '  text-align:center;',
+  '  animation:bqAuroraFadeIn .5s ease both !important;',
+  '}',
+  '.bq-dm-v2 .bqempty-ic{',
+  '  width:72px !important;height:72px !important;',
+  '  margin:0 auto 14px !important;',
+  '  border-radius:50% !important;',
+  '  background:radial-gradient(circle at 30% 30%, rgba(139,92,246,.25), rgba(99,102,241,.08) 60%, transparent) !important;',
+  '  display:flex !important;',
+  '  align-items:center !important;',
+  '  justify-content:center !important;',
+  '  position:relative;',
+  '  animation:bqAuroraOrbPulse 3s ease-in-out infinite;',
+  '}',
+  '.bq-dm-v2 .bqempty-ic::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  inset:-8px;',
+  '  border-radius:50%;',
+  '  background:radial-gradient(circle, rgba(139,92,246,.15), transparent 70%);',
+  '  z-index:-1;',
+  '  animation:bqAuroraOrbHalo 3s ease-in-out infinite;',
+  '}',
+  '@keyframes bqAuroraOrbPulse{',
+  '  0%,100%{transform:scale(1);box-shadow:0 0 0 1px rgba(255,255,255,.06) inset;}',
+  '  50%{transform:scale(1.04);box-shadow:0 0 0 1px rgba(255,255,255,.1) inset, 0 0 20px rgba(139,92,246,.2);}',
+  '}',
+  '@keyframes bqAuroraOrbHalo{',
+  '  0%,100%{opacity:.6;transform:scale(1);}',
+  '  50%{opacity:1;transform:scale(1.1);}',
+  '}',
+  '.bq-dm-v2 .bqempty-ic svg{',
+  '  width:30px !important;height:30px !important;',
+  '  stroke:var(--bq-text-muted);',
+  '  fill:none;',
+  '  stroke-width:1.5;',
+  '}',
+  '.bq-dm-v2 .bqempty-tx{',
+  '  font-size:15px !important;',
+  '  font-weight:600;',
+  '  color:var(--bq-text);',
+  '  margin-bottom:5px !important;',
+  '  letter-spacing:-.2px;',
+  '}',
+  '.bq-dm-v2 .bqempty-sub{',
+  '  font-size:12px !important;',
+  '  color:var(--bq-text-muted);',
+  '  letter-spacing:.1px;',
+  '}',
+  '@keyframes bqAuroraFadeIn{',
+  '  from{opacity:0;transform:translateY(8px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* ── V1/V2 toggle pill — refined aurora shimmer on active ── */
+  '.bq-dm-v2-hdr-switch{',
+  '  display:inline-flex;',
+  '  align-items:center;',
+  '  gap:0;',
+  '  padding:3px;',
+  '  border-radius:13px;',
+  '  background:var(--bq-bg-hover);',
+  '  border:1px solid var(--bq-border);',
+  '  margin-left:auto;',
+  '  box-shadow:inset 0 1px 4px rgba(0,0,0,.2);',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2-hdr-switch::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:3px;left:3px;',
+  '  width:calc(50% - 3px);',
+  '  height:calc(100% - 6px);',
+  '  border-radius:10px;',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a2 + ', ' + AURORA_TOKENS.a3 + ');',
+  '  box-shadow:',
+  '    0 2px 12px rgba(139,92,246,.45),',
+  '    inset 0 1px 0 rgba(255,255,255,.25);',
+  '  transition:transform .36s cubic-bezier(.34,1.56,.64,1);',
+  '  z-index:0;',
+  '  pointer-events:none;',
+  '  overflow:hidden;',
+  '}',
+  '.bq-dm-v2-hdr-switch.is-v2::before{transform:translateX(100%);}',
+  /* Subtle shimmer on the toggle pill */
+  '.bq-dm-v2-hdr-switch.is-v2::after{',
+  '  content:"";',
+  '  position:absolute;',
+  '  top:3px;',
+  '  right:3px;',
+  '  width:calc(50% - 3px);',
+  '  height:calc(100% - 6px);',
+  '  border-radius:10px;',
+  '  background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.2) 50%, transparent 60%);',
+  '  transform:translateX(-100%);',
+  '  animation:bqAuroraShimmer 3.5s ease-in-out infinite;',
+  '  z-index:1;',
+  '  pointer-events:none;',
+  '}',
+  '.bq-dm-v2-btn{',
+  '  padding:7px 18px;',
+  '  border-radius:10px;',
+  '  border:none;',
+  '  background:transparent;',
+  '  color:var(--bq-text-muted);',
+  '  font-size:12px;',
+  '  font-weight:800;',
+  '  cursor:pointer;',
+  '  transition:color .25s cubic-bezier(.22,1,.36,1);',
+  '  letter-spacing:.5px;',
+  '  font-family:Inter,sans-serif;',
+  '  min-width:42px;',
+  '  text-align:center;',
+  '  position:relative;',
+  '  z-index:2;',
+  '}',
+  '.bq-dm-v2-btn:hover{color:var(--bq-text);}',
+  '.bq-dm-v2-btn.active{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);}',
+
+  /* ── V2 badge — refined with shimmer ── */
+  '.bq-dm-v2-badge{',
+  '  position:relative;',
+  '  overflow:hidden;',
+  '}',
+  '.bq-dm-v2-badge.active::after{',
+  '  content:"";',
+  '  position:absolute;',
+  '  inset:0;',
+  '  background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.18) 50%, transparent 60%);',
+  '  transform:translateX(-100%);',
+  '  animation:bqAuroraShimmer 3.5s ease-in-out infinite;',
+  '  pointer-events:none;',
+  '}',
+
+  /* ── New messages banner — aurora gradient + shimmer ── */
+  '.bq-dm-v2 .bq-new-msg-banner{',
+  '  position:absolute;',
+  '  bottom:82px;',
+  '  left:50%;',
+  '  transform:translateX(-50%);',
+  '  background:linear-gradient(135deg, ' + AURORA_TOKENS.a1 + ', ' + AURORA_TOKENS.a2 + ', ' + AURORA_TOKENS.a3 + ') !important;',
+  '  color:#fff !important;',
+  '  font-size:12px;',
+  '  font-weight:600;',
+  '  padding:7px 18px !important;',
+  '  border-radius:18px !important;',
+  '  cursor:pointer;',
+  '  z-index:5;',
+  '  box-shadow:',
+  '    0 0 0 1px rgba(255,255,255,.12) inset,',
+  '    0 4px 16px rgba(139,92,246,.45),',
+  '    0 2px 6px rgba(0,0,0,.25) !important;',
+  '  animation:bqAuroraBannerIn .35s cubic-bezier(.22,1.4,.36,1) both !important;',
+  '  letter-spacing:.2px;',
+  '  overflow:hidden;',
+  '}',
+  '.bq-dm-v2 .bq-new-msg-banner::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  inset:0;',
+  '  background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.25) 50%, transparent 60%);',
+  '  transform:translateX(-100%);',
+  '  animation:bqAuroraShimmer 2.5s ease-in-out infinite;',
+  '  pointer-events:none;',
+  '}',
+  '@keyframes bqAuroraBannerIn{',
+  '  from{opacity:0;transform:translateX(-50%) translateY(10px) scale(.9);}',
+  '  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}',
+  '}',
+
+  /* ── Media bubbles — refined rounded corners with overlay meta ── */
+  '.bq-dm-v2 .bq-msg-img, .bq-dm-v2 .bq-msg-gif{',
+  '  border-radius:12px;',
+  '  max-width:260px;',
+  '  max-height:260px;',
+  '  display:block;',
+  '}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-meta{',
+  '  position:absolute;',
+  '  bottom:6px;',
+  '  right:8px;',
+  '  background:rgba(0,0,0,.6);',
+  '  backdrop-filter:blur(6px);',
+  '  border-radius:10px;',
+  '  padding:3px 7px;',
+  '  color:#fff !important;',
+  '  border:1px solid rgba(255,255,255,.08);',
+  '}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text) .bqbbl-tick{color:rgba(255,255,255,.7) !important;}',
+  '.bq-dm-v2 .bqbbl.media:not(.has-text).seen .bqbbl-tick{color:' + AURORA_TOKENS.seen + ' !important;}',
+
+  /* ── Sticker — slightly larger with subtle drop shadow ── */
+  '.bq-dm-v2 .bqsticker{',
+  '  font-size:54px;',
+  '  line-height:1.1;',
+  '  filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));',
+  '}',
+
+  /* ── Pinned bar — aurora-tinted accent ── */
+  '.bq-dm-v2 #bq-pinned-bar{',
+  '  background:var(--bq-bg-elevated);',
+  '  border-bottom:1px solid var(--bq-border);',
+  '  margin:0;',
+  '  position:relative;',
+  '}',
+  '.bq-dm-v2 #bq-pinned-bar::before{',
+  '  content:"";',
+  '  position:absolute;',
+  '  bottom:0;left:0;right:0;height:1px;',
+  '  background:linear-gradient(90deg, transparent, rgba(245,158,11,.3), transparent);',
+  '}',
+
+  /* ── DM list — refined scrollbar ── */
+  '.bq-dm-v2 ::-webkit-scrollbar{width:6px;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-track{background:transparent;}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb{',
+  '  background:rgba(139,92,246,.25);',
+  '  border-radius:3px;',
+  '  transition:background .2s ease;',
+  '}',
+  '.bq-dm-v2 ::-webkit-scrollbar-thumb:hover{background:rgba(139,92,246,.45);}',
+
+  /* ── DM list row actions (pin/delete) — refined ── */
+  '.bq-dm-v2 .bqdmr-act{',
+  '  width:30px;height:30px;',
+  '  border-radius:9px;',
+  '  border:none;',
+  '  background:rgba(255,255,255,.06);',
+  '  backdrop-filter:blur(8px);',
+  '  color:var(--bq-text-muted);',
+  '  cursor:pointer;',
+  '  display:flex;align-items:center;justify-content:center;',
+  '  transition:all .2s ease;',
+  '}',
+  '.bq-dm-v2 .bqdmr-act:hover{',
+  '  background:rgba(139,92,246,.18);',
+  '  color:var(--bq-text);',
+  '  transform:scale(1.1);',
+  '}',
+  '.bq-dm-v2 .bqdmr-act.bq-pin.pinned{color:#f59e0b;}',
+  '.bq-dm-v2 .bqdmr-act.bq-del:hover{background:rgba(239,68,68,.18);color:#fca5a5;}',
+
+  /* ── Pin icon in DM name — refined ── */
+  '.bq-dm-v2 .bqdm-pin{color:#f59e0b;filter:drop-shadow(0 1px 3px rgba(245,158,11,.4));}',
+
+  /* ── Reduced motion — kill all aurora animations ── */
+  '@media (prefers-reduced-motion: reduce){',
+  '  .bq-dm-v2 .bqr.bq-new,',
+  '  .bq-dm-v2 .bqbbl,',
+  '  .bq-dm-v2 .bqtd span,',
+  '  .bq-dm-v2 .bqscr::before,',
+  '  .bq-dm-v2 .bq-dm-v2-hdr-switch.is-v2::after,',
+  '  .bq-dm-v2 .bq-dm-v2-badge.active::after,',
+  '  .bq-dm-v2 .bq-new-msg-banner,',
+  '  .bq-dm-v2 .bq-new-msg-banner::before,',
+  '  .bq-dm-v2 .bqempty-ic,',
+  '  .bq-dm-v2 .bqempty-ic::before,',
+  '  .bq-dm-v2 .bqbbl-meta.seen .bqbbl-tick{',
+  '    animation:none !important;',
+  '  }',
+  '  .bq-dm-v2 .bqr:hover .bqbbl{transform:none !important;}',
+  '  .bq-dm-v2 .bqdmr:hover{transform:none !important;}',
+  '}',
+
+  /* ── Mobile refinements (smaller screens) ── */
+  '@media (max-width: 480px){',
+  '  .bq-dm-v2 .bqri{max-width:88% !important;}',
+  '  .bq-dm-v2 .bqr.mine .bqri{max-width:88% !important;}',
+  '  .bq-dm-v2 .bqtxt{font-size:13px;line-height:1.42;}',
+  '  .bq-dm-v2 .bqbbl{padding:8px 12px 5px !important;}',
+  '  .bq-dm-v2 .bq-msg-img, .bq-dm-v2 .bq-msg-gif{max-width:220px;max-height:220px;}',
+  '  .bq-dm-v2 .bqscr{bottom:72px !important;right:10px !important;width:36px !important;height:36px !important;}',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(auroraCss);
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. ENHANCE DATE SEPARATORS — wrap text in a pill span
+   ───────────────────────────────────────────────────────────────────────
+   The V69.2 CSS expects a `.bqds-text` span inside `.bqds` for the pill
+   style. We use a MutationObserver to wrap any bare text node in
+   `.bqds` elements so the pill style applies automatically. */
+function auroraWrapDateSeparators(){
+  var separators = document.querySelectorAll('.bq-dm-v2 .bqds');
+  separators.forEach(function(el){
+    if(el.querySelector('.bqds-text')) return; // already wrapped
+    var text = el.textContent.trim();
+    if(!text) return;
+    el.textContent = '';
+    var pill = document.createElement('span');
+    pill.className = 'bqds-text';
+    pill.textContent = text;
+    el.appendChild(pill);
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   4. AURORA INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function auroraInit(){
+  // Wrap any existing date separators
+  auroraWrapDateSeparators();
+
+  // Watch for new messages / date separators being rendered
+  var observer = new MutationObserver(function(mutations){
+    var needsWrap = false;
+    for(var i = 0; i < mutations.length; i++){
+      if(mutations[i].addedNodes && mutations[i].addedNodes.length){
+        needsWrap = true;
+        break;
+      }
+    }
+    if(needsWrap) auroraWrapDateSeparators();
+  });
+  var panel = document.getElementById('bqp');
+  if(panel){
+    observer.observe(panel, { childList: true, subtree: true });
+  }
+
+  console.log('[bq] V' + AURORA_VERSION + ' Aurora patch loaded — beautiful DM V2 ❤️');
+}
+
+// Wait for widget to be ready, then init
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(auroraInit, 1200);
+  });
+} else {
+  setTimeout(auroraInit, 1200);
+}
+// Also retry a few times in case the widget loads slowly
+setTimeout(auroraInit, 2500);
+setTimeout(auroraInit, 5000);
+
+}catch(e){ console.error('[bq] V81 Aurora patch error:', e); }
+})();
+

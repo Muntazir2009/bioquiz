@@ -394,3 +394,49 @@ Stage Summary:
 - Pure CSS animation driven by a single is-v2 class — zero risk to existing JS logic
 - All existing V2 features preserved (Telegram bubbles, grouping, date separators, search, single toggle location)
 - Verified end-to-end with Agent Browser: zero errors, toggle interactive bidirectionally
+
+---
+Task ID: V81-Aurora
+Agent: main
+Task: Add new aesthetic V2 DM UI ("Aurora" redesign) ❤️
+
+Work Log:
+- Explored existing V69.2 V2 DM patch (lines 18179-18910 of chat-widget.js) to understand:
+  - Toggle mechanism: `_bqDmVersion` localStorage var + `.bq-dm-v2` class on #bqp
+  - CSS structure: `.bq-dm-v2` selector prefix, uses --bq-* CSS variables
+  - Render structure: .bqr (row) > .bqri (inner) > .bqbw > .bqbbl (bubble) > .bqtxt + .bqbbl-meta
+  - DM list: .bqdmr rows with .bqdmav avatar, .bqdmn name, .bqdmp preview, .bqdmub unread badge
+- Designed "Aurora" design language:
+  - Aurora gradient (indigo #6366f1 → violet #8b5cf6 → purple #a855f7 → pink #ec4899)
+  - Glassmorphic theirs bubbles with backdrop-blur + top-light reflection pseudo-element
+  - Mine bubbles with aurora gradient + inner top highlight + soft drop shadow
+  - Spring-animated message entrance (translateY + scale + opacity with overshoot)
+  - Glowing cyan read receipts with pulsing drop-shadow when seen
+  - Pill date separators with aurora gradient divider lines
+  - Floating scroll button with aurora gradient + shimmer animation
+  - Refined empty state with animated aurora orb + halo pulse
+  - Aurora-tinted active/unread rows in DM list
+  - Refined input focus glow with aurora ring
+  - V1/V2 toggle pill with shimmer on active state
+- Wrote V81 Aurora patch as standalone IIFE in /home/z/my-project/scripts/v81-aurora-patch.js (816 lines)
+- Patch is non-breaking: only activates when `.bq-dm-v2` class is on #bqp, V1 untouched
+- Patch includes reduced-motion guard that kills all aurora animations
+- Patch includes mobile refinements (smaller max-width, smaller images, repositioned scroll button)
+- Added MutationObserver to wrap bare date-separator text nodes in `.bqds-text` span for pill styling
+- Appended patch to public/chat-widget.js (now 19,727 lines, was 18,910)
+- Bumped WIDGET_VERSION constant from '80.0.0' to '81.0.0'
+- Updated public/chat-widget-version.json to {"version": "81.0.0"}
+- Validated full chat-widget.js syntax with `node -c` — passes
+- Lint passes clean on all src/ files
+- Production build succeeds — `/` route still statically prerendered
+- Dev server boots in ~260ms, index page HTTP 200 in 48ms
+- Widget serves HTTP 200 with 34 occurrences of "Aurora" markers
+- Version check confirms WIDGET_VERSION = '81.0.0'
+
+Stage Summary:
+- New "Aurora" V2 DM UI shipped as V81, beautiful and aesthetic ❤️
+- Glassmorphic + aurora-gradient design language applied to all DM V2 surfaces
+- Spring animations, glowing read receipts, shimmer effects on scroll button / toggle / banner
+- Non-breaking: V1 unchanged, V69.2 styles overridden by higher-specificity V81 selectors
+- Reduced-motion and mobile fully supported
+- Backup of pre-patch widget saved at /home/z/my-project/scripts/chat-widget-v80-backup.js
