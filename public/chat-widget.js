@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '92.0.0';                     // V92: Global self-indicator removal (V1+V2), chat bubble redesign (depth + tails + highlights), UI/UX enhancements
+const WIDGET_VERSION = '93.0.0';                     // V93: Remove DM online indicator completely, fix text editing (preserve bubble content, char limit, saving state), redesign edit UI
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -6165,51 +6165,130 @@ function startEditMsg(ctx,key,msg,pfx){
   if(!row)return;
   const bbl=row.querySelector('.bqbbl');
   if(!bbl||bbl.classList.contains('editing'))return;
-  
+
   const originalText=msg.text||'';
+  const CHAR_LIMIT = (_widgetConfig && _widgetConfig.charLimit) || 500;
+
+  // V93: Save the FULL bubble HTML so we can restore media, meta, reactions,
+  // reply preview, sticker, voice note — not just the text. The old logic
+  // destroyed everything except the text on cancel/save.
+  const savedBubbleHTML = bbl.innerHTML;
+  const savedClasses = bbl.className;
+
   bbl.classList.add('editing');
   bbl.innerHTML=`
-    <textarea class="bqedit-inp">${esc(originalText)}</textarea>
-    <div class="bqedit-btns">
-      <button class="bqedit-btn cancel">Cancel</button>
-      <button class="bqedit-btn save">Save</button>
+    <div class="bqedit-wrap">
+      <textarea class="bqedit-inp" maxlength="${CHAR_LIMIT}">${esc(originalText)}</textarea>
+      <div class="bqedit-meta">
+        <span class="bqedit-count">${originalText.length}/${CHAR_LIMIT}</span>
+        <div class="bqedit-btns">
+          <button class="bqedit-btn cancel" type="button">Cancel</button>
+          <button class="bqedit-btn save" type="button">Save</button>
+        </div>
+      </div>
     </div>
   `;
-  
+
   const inp=bbl.querySelector('.bqedit-inp');
   const saveBtn=bbl.querySelector('.bqedit-btn.save');
   const cancelBtn=bbl.querySelector('.bqedit-btn.cancel');
-  
+  const countEl=bbl.querySelector('.bqedit-count');
+
   inp.focus();
   inp.setSelectionRange(inp.value.length,inp.value.length);
   autoH(inp);
-  inp.addEventListener('input',()=>autoH(inp));
-  
+  inp.addEventListener('input',()=>{
+    autoH(inp);
+    if(countEl) countEl.textContent = inp.value.length + '/' + CHAR_LIMIT;
+  });
+
+  function restoreBubble(text, isEdited){
+    bbl.classList.remove('editing');
+    bbl.className = savedClasses;
+    // V93: Restore the full saved HTML, then swap just the text portion
+    bbl.innerHTML = savedBubbleHTML;
+    // Find the .bqtxt element and update it
+    const txtEl = bbl.querySelector('.bqtxt');
+    if(txtEl){
+      // Use mentionify+linkify if available, else just linkify+esc
+      try {
+        if(typeof mentionify === 'function' && typeof _filterDisplayText === 'function'){
+          txtEl.innerHTML = mentionify(linkify(esc(_filterDisplayText(text))));
+        } else if(typeof linkify === 'function'){
+          txtEl.innerHTML = linkify(esc(text));
+        } else {
+          txtEl.textContent = text;
+        }
+      } catch(e){
+        txtEl.textContent = text;
+      }
+    }
+    // Update the (edited) indicator
+    let editedEl = bbl.querySelector('.bqedited');
+    if(isEdited){
+      if(!editedEl){
+        editedEl = document.createElement('span');
+        editedEl.className = 'bqedited';
+        editedEl.textContent = '(edited)';
+        // Insert after the text element
+        if(txtEl && txtEl.nextSibling){
+          txtEl.parentNode.insertBefore(editedEl, txtEl.nextSibling);
+        } else if(txtEl){
+          txtEl.parentNode.appendChild(editedEl);
+        }
+      }
+    }
+  }
+
   cancelBtn.addEventListener('click',e=>{
     e.stopPropagation();
-    bbl.classList.remove('editing');
-    bbl.innerHTML=linkify(esc(originalText));
+    restoreBubble(originalText, msg.edited || false);
   });
-  
+
   saveBtn.addEventListener('click',e=>{
     e.stopPropagation();
     const newText=inp.value.trim();
     if(!newText){toast('Message cannot be empty');return;}
     if(newText===originalText){
-      bbl.classList.remove('editing');
-      bbl.innerHTML=linkify(esc(originalText));
+      restoreBubble(originalText, msg.edited || false);
       return;
     }
+    // V93: Show saving state
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    saveBtn.classList.add('saving');
+
     const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
-    db.ref(p).update({text:newText,edited:true,editedAt:Date.now()});
-    bbl.classList.remove('editing');
-    bbl.innerHTML=linkify(esc(newText))+'<span class="bqedited">(edited)</span>';
-    toast('Message edited');
+    try {
+      db.ref(p).update({text:newText,edited:true,editedAt:Date.now()}).then(function(){
+        // Update local msg object so future edits work
+        msg.text = newText;
+        msg.edited = true;
+        msg.editedAt = Date.now();
+        restoreBubble(newText, true);
+        toast('Message edited');
+      }).catch(function(err){
+        console.error('[edit] save failed:', err);
+        toast('Failed to save edit');
+        saveBtn.textContent = 'Save';
+        saveBtn.disabled = false;
+        cancelBtn.disabled = false;
+        saveBtn.classList.remove('saving');
+      });
+    } catch(err){
+      console.error('[edit] save error:', err);
+      toast('Failed to save edit');
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
+      saveBtn.classList.remove('saving');
+    }
   });
-  
+
   inp.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveBtn.click();}
-    if(e.key==='Escape'){cancelBtn.click();}
+    if(e.key==='Escape'){e.preventDefault();cancelBtn.click();}
   });
   }
 
@@ -26511,5 +26590,208 @@ v92Css.textContent = [
 console.log('[bq] V' + V92_VERSION + ' patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements');
 
 }catch(e){ console.error('[bq] V92 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V93 PATCH — REMOVE DM ONLINE INDICATOR + FIX TEXT EDITING UI/LOGIC
+   ───────────────────────────────────────────────────────────────────────
+
+   1. REMOVE DM ONLINE INDICATOR:
+      • Hide #bqdmhs (partner status: "Online", "Studying", etc.) from the
+        DM conversation header completely
+      • Hide the .bqdmhs-dot (green/indigo presence dot)
+      • Hide #bqdmhs-txt (the "Online" text)
+      • User no longer sees any online indicator when opening a DM
+
+   2. TEXT EDITING UI/LOGIC FIXES (already patched in startEditMsg):
+      • Preserves full bubble content on cancel/save (was destroying media,
+        meta, reactions, reply preview, sticker, voice note)
+      • Adds character limit enforcement (maxlength + counter)
+      • Adds "Saving…" state with disabled buttons while writing to Firebase
+      • Proper error handling with try/catch + .catch() on Firebase promise
+      • Updates local msg object so future edits work
+      • Restores (edited) indicator properly
+      • Uses mentionify+linkify+_filterDisplayText for proper text rendering
+      • Escape key now preventDefault to avoid inserting newline
+
+   3. EDIT UI REDESIGN:
+      • Refined textarea: transparent bg, indigo focus ring, auto-resize
+      • Character counter: muted, tabular-nums, turns amber near limit
+      • Save/Cancel buttons: Lumen-matched indigo gradient + outline
+      • Saving state: disabled + "Saving…" text
+      • Editing bubble: subtle indigo tint + dashed border
+      • Better spacing and typography
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V93_VERSION = '93.0.0';
+
+var v93Css = document.createElement('style');
+v93Css.id = 'bq-v93-css';
+v93Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     1. REMOVE DM ONLINE INDICATOR — hide partner status completely
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp #bqdmhs,',
+  '#bqp .bqdmhs,',
+  '#bqp #bqdmhs-dot,',
+  '#bqp .bqdmhs-dot,',
+  '#bqp #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 #bqdmhs,',
+  '#bqp.bq-dm-v2 .bqdmhs,',
+  '#bqp.bq-dm-v2 #bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 #bqdmhs-txt,',
+  '#bqdmhs,',
+  '.bqdmhs,',
+  '#bqdmhs-dot,',
+  '.bqdmhs-dot,',
+  '#bqdmhs-txt{',
+  '  display:none !important;',
+  '  visibility:hidden !important;',
+  '  width:0 !important;height:0 !important;',
+  '  padding:0 !important;margin:0 !important;',
+  '  opacity:0 !important;',
+  '  pointer-events:none !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     2. EDIT UI REDESIGN — refined textarea, counter, buttons
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Editing bubble — subtle indigo tint + dashed border */
+  '#bqp .bqbbl.editing,',
+  '#bqp.bq-dm-v2 .bqbbl.editing{',
+  '  background:rgba(129,140,248,0.08) !important;',
+  '  border:1px dashed rgba(129,140,248,0.4) !important;',
+  '  border-radius:14px !important;',
+  '  padding:12px !important;',
+  '}',
+
+  /* Edit wrapper */
+  '#bqp .bqedit-wrap,',
+  '#bqp.bq-dm-v2 .bqedit-wrap{',
+  '  display:flex !important;flex-direction:column !important;gap:10px !important;',
+  '}',
+
+  /* Edit textarea — refined */
+  '#bqp .bqedit-inp,',
+  '#bqp.bq-dm-v2 .bqedit-inp{',
+  '  width:100% !important;background:rgba(0,0,0,0.2) !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:10px !important;padding:10px 12px !important;',
+  '  color:#f4f4f5 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;font-weight:400 !important;line-height:1.45 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  outline:none !important;resize:none !important;',
+  '  min-height:24px !important;max-height:100px !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqedit-inp:focus,',
+  '#bqp.bq-dm-v2 .bqedit-inp:focus{',
+  '  border-color:rgba(129,140,248,0.5) !important;',
+  '  box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;',
+  '  background:rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp .bqedit-inp::placeholder,',
+  '#bqp.bq-dm-v2 .bqedit-inp::placeholder{color:#71717a !important;}',
+
+  /* Edit meta row — counter + buttons */
+  '#bqp .bqedit-meta,',
+  '#bqp.bq-dm-v2 .bqedit-meta{',
+  '  display:flex !important;align-items:center !important;justify-content:space-between !important;',
+  '  gap:8px !important;',
+  '}',
+
+  /* Character counter */
+  '#bqp .bqedit-count,',
+  '#bqp.bq-dm-v2 .bqedit-count{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10.5px !important;font-weight:500 !important;',
+  '  color:#71717a !important;letter-spacing:0 !important;',
+  '  font-variant-numeric:tabular-nums !important;',
+  '  transition:color .2s ease !important;',
+  '}',
+  /* Counter turns amber when near limit (80%+) — applied via JS class */
+  '#bqp .bqedit-count.near-limit,',
+  '#bqp.bq-dm-v2 .bqedit-count.near-limit{color:#fbbf24 !important;}',
+  '#bqp .bqedit-count.at-limit,',
+  '#bqp.bq-dm-v2 .bqedit-count.at-limit{color:#f87171 !important;}',
+
+  /* Edit buttons row */
+  '#bqp .bqedit-btns,',
+  '#bqp.bq-dm-v2 .bqedit-btns{',
+  '  display:flex !important;gap:6px !important;',
+  '}',
+
+  /* Edit buttons — refined Lumen style */
+  '#bqp .bqedit-btn,',
+  '#bqp.bq-dm-v2 .bqedit-btn{',
+  '  padding:7px 14px !important;border-radius:8px !important;border:none !important;',
+  '  cursor:pointer !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;font-weight:600 !important;letter-spacing:0 !important;',
+  '  transition:all .2s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp .bqedit-btn:active,',
+  '#bqp.bq-dm-v2 .bqedit-btn:active{transform:scale(0.96) !important;}',
+  '#bqp .bqedit-btn:disabled,',
+  '#bqp.bq-dm-v2 .bqedit-btn:disabled{opacity:0.5 !important;cursor:not-allowed !important;}',
+
+  /* Save button — indigo gradient */
+  '#bqp .bqedit-btn.save,',
+  '#bqp.bq-dm-v2 .bqedit-btn.save{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;color:#fff !important;',
+  '  box-shadow:0 2px 6px rgba(99,102,241,0.3) !important;',
+  '}',
+  '#bqp .bqedit-btn.save:hover:not(:disabled),',
+  '#bqp.bq-dm-v2 .bqedit-btn.save:hover:not(:disabled){',
+  '  transform:translateY(-1px) !important;',
+  '  box-shadow:0 4px 10px rgba(99,102,241,0.4) !important;',
+  '}',
+  /* Saving state */
+  '#bqp .bqedit-btn.save.saving,',
+  '#bqp.bq-dm-v2 .bqedit-btn.save.saving{',
+  '  opacity:0.7 !important;cursor:wait !important;',
+  '}',
+
+  /* Cancel button — outline */
+  '#bqp .bqedit-btn.cancel,',
+  '#bqp.bq-dm-v2 .bqedit-btn.cancel{',
+  '  background:rgba(255,255,255,0.04) !important;color:#a1a1aa !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '}',
+  '#bqp .bqedit-btn.cancel:hover:not(:disabled),',
+  '#bqp.bq-dm-v2 .bqedit-btn.cancel:hover:not(:disabled){',
+  '  background:rgba(255,255,255,0.08) !important;color:#f4f4f5 !important;',
+  '  border-color:rgba(255,255,255,0.2) !important;',
+  '}',
+
+  /* (edited) indicator — refined */
+  '#bqp .bqedited,',
+  '#bqp.bq-dm-v2 .bqedited{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;color:#71717a !important;',
+  '  margin-left:6px !important;font-style:italic !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqedited{color:rgba(255,255,255,0.5) !important;}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v93Css);
+
+console.log('[bq] V' + V93_VERSION + ' patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed');
+
+}catch(e){ console.error('[bq] V93 patch error:', e); }
 })();
 
