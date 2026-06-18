@@ -1084,3 +1084,34 @@ Stage Summary:
 - Edit UI redesigned: indigo theme, refined textarea/buttons/counter
 - Non-breaking: V1 unchanged (except indicator removal), V93 overrides V92
 - Backup: scripts/chat-widget-v92-backup.js
+
+---
+Task ID: V94-RestoreIndicator
+Agent: main
+Task: Restore DM online indicator (removed in V93) with enhanced styling
+
+Work Log:
+- User reported V93 removed the 'Last Online / Last Seen' indicator — the green dot with pulse + 'Online' text to the right of the 3-dot menu
+- V93 had hidden #bqdmhs, .bqdmhs-dot, #bqdmhs-txt with display:none !important
+- Replaced the V93 hiding CSS with ENHANCED styling:
+  - Glassy pill: rgba(255,255,255,0.04) bg + backdrop-blur(8px) + hairline border
+  - 12px radius, 3px 10px padding, max-width 200px with ellipsis
+  - Status dot: 7px, glow shadow (0 0 6px currentColor)
+  - Status text: Inter 11.5px, 500 weight, -0.005em tracking
+  - Smooth transitions on all properties
+  - display:inline-flex !important + visibility:visible !important + opacity:1 !important
+- Indicator now shows:
+  - Online: green dot (pulsing) + 'Online' / 'Studying' / 'Busy' / 'Away'
+  - Offline: muted dot + 'Last seen X min ago' (or 'Offline' if never seen)
+- Kept all V93 text editing fixes (preserve bubble content, char limit, saving state, edit UI redesign)
+- Bumped WIDGET_VERSION from '93.0.0' to '94.0.0'
+- Updated public/chat-widget-version.json to {"version": "94.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, enhanced indicator CSS present (display:inline-flex), 0 hiding rules remaining, WIDGET_VERSION = '94.0.0', no errors
+- Committed (1878e0d) and pushed to GitHub
+
+Stage Summary:
+- DM online indicator RESTORED with enhanced glassy pill design + glowing dot
+- Shows 'Online' (green pulsing dot) when partner is online
+- Shows 'Last seen X min ago' when partner is offline
+- All V93 edit fixes preserved
+- Non-breaking: V1 unchanged, V94 overrides V93
