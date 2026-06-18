@@ -842,3 +842,62 @@ Stage Summary:
 - Better animations everywhere: springs on messages/modals/buttons, staggered list reveals, refined hover lifts, smooth transitions
 - Non-breaking: V1 unchanged, V88 overrides V87 with higher specificity
 - Backup: scripts/chat-widget-v87-backup.js
+
+---
+Task ID: V89-Beautify
+Agent: main
+Task: Remove self online indicator from DMs, beautify UI, use better components
+
+Work Log:
+- Confirmed V88 baseline
+- Explored self online indicator: .bq-me-av appears in 4 headers (global chat, DM list, DM conversation, online list) via refreshMeAvatar() at line 3509. User sees their own avatar + online status in every DM — redundant.
+- Backed up V88 to scripts/chat-widget-v88-backup.js
+- Wrote V89 patch (557 lines) in scripts/v89-beautify-patch.js:
+
+REMOVE SELF ONLINE INDICATOR:
+- Hid .bq-me-av from ALL DM headers: #bq-me-av, #bq-me-av-dms, #bq-me-av-dm, #bq-me-av-online
+- All set to display:none + visibility:hidden + width:0 + height:0 + opacity:0 + pointer-events:none
+- Profile still accessible via profile nav button
+
+BEAUTIFY UI:
+- Bottom nav: glassy pill with backdrop-blur, active tab gets indigo gradient with spring pop (bqNavPopV89)
+- Headers: min-height 52px, refined typography
+- Back button: 32px square, hover slides left + indigo tint
+- DM list: better row spacing (11px padding, 14px radius)
+- Conversation view: better message spacing (2px padding, 4px gap between senders)
+- Scrollbars: thinner (5px), indigo on hover
+- Focus states: consistent indigo ring (2px solid + 4px halo)
+- Typography: refined letter-spacing (-0.02em names, -0.005em body), tabular-nums on times, 14px messages with 1.45 line-height
+
+BETTER COMPONENTS (unified design system):
+- Primary button: indigo gradient, shadow, hover lift, active scale, disabled opacity
+- Secondary button: outline, muted, hover brightens
+- Ghost button: transparent, hover indigo tint
+- Danger button: red gradient, shadow, hover lift
+- Cards: glassy with backdrop-blur, 16px radius, layered shadow
+- Inputs: consistent 12px radius, indigo focus ring
+- Toggles: indigo gradient when on, spring knob
+- Badges: indigo gradient with glow
+- Chips: 50% radius, active ring + scale
+- Avatars: triple-ring shadow, hover scale 1.06 + indigo ring
+- Dividers: subtle gradient lines
+- Section titles: indigo gradient accent bar
+- Status grid: card-style with hover lift
+- Font-size picker: card-style with indigo active
+- Empty state: indigo glow gradient
+- Date separator: pill with uppercase tracking
+- Scroll button, new messages banner, V1/V2 toggle, V2 badge, typing dots, read receipts, active DM row, nav badges — all refined with indigo accent
+
+- Appended V89 patch to public/chat-widget.js (now 25,338 lines)
+- Bumped WIDGET_VERSION from '88.0.0' to '89.0.0'
+- Updated public/chat-widget-version.json to {"version": "89.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 11 V89 markers, self-indicator hiding confirmed (all 4 me-av IDs set to display:none), WIDGET_VERSION = '89.0.0', no errors
+- Committed (d18d05f) and pushed to GitHub
+
+Stage Summary:
+- Self online indicator REMOVED from all DM headers — no more seeing your own avatar in every DM
+- UI beautified: glassy nav pill, refined headers, better spacing, consistent typography
+- Unified component system: 4 button variants, glassy cards, refined inputs/toggles/badges/chips/avatars/dividers
+- All components use consistent indigo accent, spring animations, hover states
+- Non-breaking: V1 unchanged, V89 overrides V88 with higher specificity
+- Backup: scripts/chat-widget-v88-backup.js
