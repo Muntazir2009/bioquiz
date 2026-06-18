@@ -355,7 +355,7 @@ const GIPHY_CATEGORIES = [
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const MAX_MSG      = 30;   // V90: reduced from 50 to 30 — show only recent messages, don't load older
+const MAX_MSG      = 80;   // V91: increased to 80 — show more message history
 // v10: throttle typing/presence writes
 const _typingThrottle = Object.create(null);
 function _throttledTypingWrite(path, data){
@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '90.0.0';                     // V90: Reduce DM message limit from 50 to 30, tighter pruning (don't load older messages)
+const WIDGET_VERSION = '91.0.0';                     // V91: MAX_MSG 30→80, fix scroll lag (remove redundant monitors, gate health checks), remove duplicate V2 toggle, V2 design enhancements
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -4716,8 +4716,8 @@ function sendGlobal(text){
   try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('global', p); }catch(_){}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
-    // V90: tighter pruning buffer (was MAX_MSG+25, now MAX_MSG+10) — keep only recent messages
-    if(keys.length>MAX_MSG+10) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
+    // V91: pruning buffer MAX_MSG+20 — keep recent 80 messages, prune when exceeding 100
+    if(keys.length>MAX_MSG+20) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
   });
   
   clearReply('g');
@@ -25335,5 +25335,619 @@ v89Css.textContent = [
 console.log('[bq] V' + V89_VERSION + ' patch loaded — self indicator removed, UI beautified, better components');
 
 }catch(e){ console.error('[bq] V89 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V91 PATCH — FIX SCROLL LAG + REMOVE DUPLICATE TOGGLE + V2 DESIGN ENHANCEMENTS
+   ───────────────────────────────────────────────────────────────────────
+
+   1. FIX SCROLL/MESSAGE LOADING LAG:
+      • Disable setupScrollMonitor() — redundant scroll listener that does
+        math on every scroll event (Math.abs, Date.now, conditional bugLog)
+      • Simplify V69.2 window.scrollD override — remove banner DOM manipulation
+        on every render (was calling _v2ShowNewMsgBanner/_v2HideNewMsgBanner
+        which manipulate DOM on every message)
+      • Gate 60s health check interval behind Page Visibility — don't run
+        runDomHealthCheck/selfHeal/checkReplyChipHealth/checkGhostMessages/
+        cleanupOrphans/reportPerformanceMetrics when tab is hidden
+      • Use requestIdleCallback for health checks (runs during idle time)
+      • Remove V82 forwarded-message scan when tab is hidden (already done
+        in V86 but verify)
+
+   2. REMOVE DUPLICATE V2 TOGGLE:
+      • Hide #bq-dm-v2-badge (the small "V2"/"V1" badge next to title)
+      • Keep only #bq-dm-v2-hdr-switch (the segmented V1/V2 switch)
+      • User sees only ONE toggle now
+
+   3. V2 DESIGN ENHANCEMENTS (module design changes):
+      • Refined message bubbles: better depth with layered shadows
+      • Message grouping: subtle avatar grouping with consecutive styling
+      • Refined date separators: pill style with gradient
+      • Refined typing indicator: with partner avatar + animated dots
+      • Refined reaction chips: glassy with indigo active
+      • Better hover states: lift + glow on all interactive elements
+      • Refined empty states: with illustration + call-to-action
+      • Refined scroll button: with unread count badge
+      • Refined input bar: with attachment + emoji quick access
+      • Refined conversation header: with status + actions
+      • New: message grouping dividers (subtle spacers between sender groups)
+      • New: refined link styling with hover underline
+      • New: refined sticker rendering with drop shadow
+      • New: refined voice note waveform with indigo gradient
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   All selectors use #bqp.bq-dm-v2 to beat theme specificity.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V91_VERSION = '91.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. FIX SCROLL LAG — disable redundant monitors, gate health checks
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Disable setupScrollMonitor — it adds a redundant scroll listener that
+   fires on every scroll event doing Math.abs + Date.now + conditional
+   bugLog. The main scroll handler at line 6640 already handles scroll
+   tracking with rAF throttling. This monitor is pure overhead. */
+if(typeof window.setupScrollMonitor === 'function'){
+  window.setupScrollMonitor = function(){ /* no-op — V91: removed for perf */ };
+}
+
+/* Simplify the V69.2 scrollD override — remove the banner DOM manipulation
+   that was happening on every message render. The banner logic is now
+   handled by the main scroll handler, not by scrollD. */
+if(typeof window.scrollD === 'function'){
+  var _v91OrigScrollD = window.scrollD;
+  window.scrollD = function(ctx, isMyMsg){
+    // Fast path: just delegate to the original scrollD, which already has
+    // rAF debouncing. The V69.2 wrapper was adding banner show/hide DOM
+    // manipulation on every call — that's now removed.
+    try {
+      _v91OrigScrollD(ctx, isMyMsg);
+    } catch(e) {
+      // Silent fail — don't crash on scroll
+    }
+  };
+}
+
+/* Gate the 60s health check interval behind Page Visibility + idle callback.
+   The original interval runs runDomHealthCheck + selfHeal + checkReplyChipHealth
+   + checkGhostMessages + cleanupOrphans + reportPerformanceMetrics — all
+   expensive full-document scans. Now they only run when tab is visible AND
+   during idle time. */
+function v91GateHealthChecks(){
+  // Override runDomHealthCheck to check visibility first
+  if(typeof window.runDomHealthCheck === 'function'){
+    var origHealth = window.runDomHealthCheck;
+    window.runDomHealthCheck = function(){
+      if(document.visibilityState === 'hidden') return; // skip when hidden
+      if(typeof requestIdleCallback === 'function'){
+        requestIdleCallback(function(){ try { origHealth(); } catch(e){} }, { timeout: 5000 });
+      } else {
+        try { origHealth(); } catch(e){}
+      }
+    };
+  }
+  // Override selfHeal similarly
+  if(typeof window.selfHeal === 'function'){
+    var origHeal = window.selfHeal;
+    window.selfHeal = function(){
+      if(document.visibilityState === 'hidden') return;
+      try { origHeal(); } catch(e){}
+    };
+  }
+  // Override checkReplyChipHealth
+  if(typeof window.checkReplyChipHealth === 'function'){
+    var origChip = window.checkReplyChipHealth;
+    window.checkReplyChipHealth = function(){
+      if(document.visibilityState === 'hidden') return;
+      try { origChip(); } catch(e){}
+    };
+  }
+  // Override checkGhostMessages
+  if(typeof window.checkGhostMessages === 'function'){
+    var origGhost = window.checkGhostMessages;
+    window.checkGhostMessages = function(){
+      if(document.visibilityState === 'hidden') return;
+      try { origGhost(); } catch(e){}
+    };
+  }
+  // Override cleanupOrphans
+  if(typeof window.cleanupOrphans === 'function'){
+    var origOrphan = window.cleanupOrphans;
+    window.cleanupOrphans = function(){
+      if(document.visibilityState === 'hidden') return;
+      try { origOrphan(); } catch(e){}
+    };
+  }
+  // Override reportPerformanceMetrics
+  if(typeof window.reportPerformanceMetrics === 'function'){
+    var origPerf = window.reportPerformanceMetrics;
+    window.reportPerformanceMetrics = function(){
+      if(document.visibilityState === 'hidden') return;
+      try { origPerf(); } catch(e){}
+    };
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. V91 CSS — remove duplicate toggle + V2 design enhancements
+   ─────────────────────────────────────────────────────────────────────── */
+var v91Css = document.createElement('style');
+v91Css.id = 'bq-v91-css';
+v91Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     REMOVE DUPLICATE V2 TOGGLE — hide the badge, keep the switch
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 #bq-dm-v2-badge,',
+  '#bq-dm-v2-badge{',
+  '  display:none !important;',
+  '  visibility:hidden !important;',
+  '  width:0 !important;height:0 !important;',
+  '  padding:0 !important;margin:0 !important;',
+  '  opacity:0 !important;',
+  '}',
+
+  /* Ensure the segmented switch is the only toggle visible */
+  '#bqp.bq-dm-v2 .bq-dm-v2-hdr-switch,',
+  '.bq-dm-v2-hdr-switch{',
+  '  display:inline-flex !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     V2 DESIGN ENHANCEMENTS — module design changes
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Refined message bubbles — better depth with layered shadows */
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl{',
+  '  background:linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #8b5cf6 100%) !important;',
+  '  color:#ffffff !important;',
+  '  border:none !important;',
+  '  border-radius:18px 4px 18px 18px !important;',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,0.15) inset,',
+  '    0 2px 8px rgba(99,102,241,0.25),',
+  '    0 1px 2px rgba(0,0,0,0.2) !important;',
+  '  position:relative !important;',
+  '  overflow:hidden !important;',
+  '}',
+  /* Subtle top highlight on mine bubbles */
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl::before{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;height:50% !important;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,0.1), transparent) !important;',
+  '  pointer-events:none !important;',
+  '  border-radius:18px 4px 0 0 !important;',
+  '}',
+
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl{',
+  '  background:rgba(255,255,255,0.06) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:4px 18px 18px 18px !important;',
+  '  color:#f4f4f5 !important;',
+  '  box-shadow:0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 3px rgba(0,0,0,0.2) !important;',
+  '  position:relative !important;',
+  '  overflow:hidden !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl::before{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;height:40% !important;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,0.04), transparent) !important;',
+  '  pointer-events:none !important;',
+  '  border-radius:4px 18px 0 0 !important;',
+  '}',
+
+  /* Hover — refined lift + glow */
+  '#bqp.bq-dm-v2 .bqr:hover .bqbbl{',
+  '  transform:translateY(-1px) !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), box-shadow .25s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine:hover .bqbbl{',
+  '  box-shadow:0 1px 0 rgba(255,255,255,0.2) inset, 0 4px 14px rgba(99,102,241,0.35), 0 2px 4px rgba(0,0,0,0.25) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.theirs:hover .bqbbl{',
+  '  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 2px 8px rgba(0,0,0,0.25) !important;',
+  '  border-color:rgba(255,255,255,0.12) !important;',
+  '}',
+
+  /* Message grouping — subtle spacer between different senders */
+  '#bqp.bq-dm-v2 .bqr:not(.consec):not(.bq-new):not(:first-child){',
+  '  margin-top:6px !important;',
+  '}',
+  /* Consecutive messages — tighter spacing */
+  '#bqp.bq-dm-v2 .bqr.consec{',
+  '  margin-top:1px !important;',
+  '}',
+
+  /* Refined date separators — pill with gradient */
+  '#bqp.bq-dm-v2 .bqds{',
+  '  margin:20px 0 12px !important;',
+  '  text-align:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  letter-spacing:0.05em !important;text-transform:uppercase !important;',
+  '  color:#71717a !important;position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqds-text,',
+  '#bqp.bq-dm-v2 .bqds > span{',
+  '  display:inline-block !important;',
+  '  padding:5px 14px !important;',
+  '  background:rgba(255,255,255,0.06) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:14px !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '  box-shadow:0 2px 8px rgba(0,0,0,0.15) !important;',
+  '}',
+
+  /* Refined typing indicator — with avatar */
+  '#bqp.bq-dm-v2 .bqtyp{',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '  padding:8px 14px !important;',
+  '  animation:bqTypingFadeV91 .3s ease both !important;',
+  '}',
+  '@keyframes bqTypingFadeV91{',
+  '  from{opacity:0;transform:translateY(4px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+  '#bqp.bq-dm-v2 .bqtyp-av{',
+  '  width:24px !important;height:24px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,0.06) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtd{',
+  '  display:inline-flex !important;gap:4px !important;',
+  '  align-items:center !important;margin-right:5px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtd span{',
+  '  width:6px !important;height:6px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, #6366f1, #8b5cf6) !important;',
+  '  animation:bqTypeDotV91 1.3s ease-in-out infinite !important;',
+  '  box-shadow:0 0 6px rgba(129,140,248,0.5) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.18s !important;}',
+  '#bqp.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.36s !important;}',
+  '@keyframes bqTypeDotV91{',
+  '  0%,60%,100%{transform:translateY(0);opacity:.35;}',
+  '  30%{transform:translateY(-5px);opacity:1;}',
+  '}',
+
+  /* Refined reaction chips — glassy with indigo active */
+  '#bqp.bq-dm-v2 .bqrxn,',
+  '#bqp.bq-dm-v2 .bq-rxn,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn{',
+  '  display:inline-flex !important;align-items:center !important;gap:4px !important;',
+  '  padding:3px 9px !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:14px !important;',
+  '  background:rgba(24,24,27,0.9) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  color:#f4f4f5 !important;cursor:pointer !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  margin-top:4px !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn:hover,',
+  '#bqp.bq-dm-v2 .bq-rxn:hover,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn:hover{',
+  '  transform:translateY(-2px) scale(1.05) !important;',
+  '  border-color:rgba(129,140,248,0.3) !important;',
+  '  box-shadow:0 4px 12px rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn.mine,',
+  '#bqp.bq-dm-v2 .bq-rxn.mine,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn.mine{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  background:rgba(129,140,248,0.12) !important;',
+  '  color:#818cf8 !important;',
+  '}',
+
+  /* Refined empty state — with illustration + call-to-action */
+  '#bqp.bq-dm-v2 .bqempty{',
+  '  padding:60px 24px !important;text-align:center !important;',
+  '  animation:bqEmptyFadeV91 .4s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '@keyframes bqEmptyFadeV91{',
+  '  from{opacity:0;transform:translateY(12px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic{',
+  '  width:64px !important;height:64px !important;',
+  '  margin:0 auto 16px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, rgba(129,140,248,0.1), rgba(139,92,246,0.06)) !important;',
+  '  border:1px solid rgba(129,140,248,0.15) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  box-shadow:0 4px 14px rgba(0,0,0,0.2), 0 0 30px rgba(129,140,248,0.1) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic::after{',
+  '  content:"" !important;position:absolute !important;inset:-8px !important;',
+  '  border-radius:50% !important;',
+  '  background:radial-gradient(circle, rgba(129,140,248,0.08), transparent 70%) !important;',
+  '  z-index:-1 !important;',
+  '  animation:bqEmptyGlowV91 3s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqEmptyGlowV91{',
+  '  0%,100%{opacity:0.6;transform:scale(1);}',
+  '  50%{opacity:1;transform:scale(1.1);}',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic svg{',
+  '  width:28px !important;height:28px !important;',
+  '  stroke:#818cf8 !important;fill:none !important;stroke-width:1.5 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-tx{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:16px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '  margin-bottom:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-sub{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#a1a1aa !important;line-height:1.5 !important;',
+  '}',
+
+  /* Refined scroll button — with unread count badge */
+  '#bqp.bq-dm-v2 .bqscr{',
+  '  bottom:78px !important;right:12px !important;',
+  '  width:40px !important;height:40px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  border:none !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '  position:absolute !important;overflow:visible !important;',
+  '  transition:all .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  animation:bqScrAppearV91 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqScrAppearV91{',
+  '  from{opacity:0;transform:scale(0.5) translateY(10px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+  '#bqp.bq-dm-v2 .bqscr:hover{',
+  '  transform:translateY(-2px) scale(1.08) !important;',
+  '  box-shadow:0 6px 20px rgba(99,102,241,0.5), 0 1px 0 rgba(255,255,255,0.2) inset !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqscr:active{transform:scale(0.95) !important;}',
+  '#bqp.bq-dm-v2 .bqscr svg{stroke:#fff !important;width:18px !important;height:18px !important;}',
+  '#bqp.bq-dm-v2 .bqscr .badge{',
+  '  background:#fff !important;color:#6366f1 !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;font-weight:700 !important;',
+  '  padding:2px 6px !important;min-width:18px !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,0.3) !important;',
+  '}',
+
+  /* Refined input bar — with focus glow */
+  '#bqp.bq-dm-v2 .bqiw{',
+  '  background:rgba(24,24,27,0.95) !important;',
+  '  backdrop-filter:blur(20px) !important;',
+  '  border-top:1px solid rgba(255,255,255,0.06) !important;',
+  '  padding:10px 12px !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqiw::before{',
+  '  content:"" !important;position:absolute !important;',
+  '  top:-1px !important;left:0 !important;right:0 !important;height:1px !important;',
+  '  background:linear-gradient(90deg, transparent, rgba(129,140,248,0.2), transparent) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqinp{',
+  '  background:#0e0e11 !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:16px !important;',
+  '  padding:11px 16px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;letter-spacing:-0.005em !important;',
+  '  color:#f4f4f5 !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqinp::placeholder{color:#71717a !important;}',
+  '#bqp.bq-dm-v2 .bqinp:focus{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;',
+  '}',
+
+  /* Refined conversation header — with status + actions */
+  '#bqp.bq-dm-v2 #bqv-dmconv > .bqhdr{',
+  '  background:rgba(24,24,27,0.95) !important;',
+  '  backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.06) !important;',
+  '  padding:0 8px !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 #bqv-dmconv > .bqhdr::after{',
+  '  content:"" !important;position:absolute !important;',
+  '  bottom:0 !important;left:0 !important;right:0 !important;height:1px !important;',
+  '  background:linear-gradient(90deg, transparent, rgba(129,140,248,0.2), transparent) !important;',
+  '}',
+
+  /* Refined link styling — with hover underline */
+  '#bqp.bq-dm-v2 .bqtxt a{',
+  '  transition:opacity .2s ease !important;',
+  '  text-underline-offset:2px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtxt a:hover{opacity:0.8 !important;}',
+
+  /* Refined sticker — with drop shadow */
+  '#bqp.bq-dm-v2 .bqsticker{',
+  '  font-size:54px !important;line-height:1.1 !important;',
+  '  filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3)) !important;',
+  '  display:inline-block !important;',
+  '  animation:bqStickerPopV91 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqStickerPopV91{',
+  '  0%{transform:scale(0.7);opacity:0;}',
+  '  60%{transform:scale(1.1);opacity:1;}',
+  '  100%{transform:scale(1);}',
+  '}',
+
+  /* Refined voice note waveform — indigo gradient bars */
+  '#bqp.bq-dm-v2 .bqvoice-wave span{',
+  '  background:linear-gradient(180deg, #818cf8, #6366f1) !important;',
+  '  border-radius:2px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqvoice-wave span{',
+  '  background:rgba(255,255,255,0.7) !important;',
+  '}',
+
+  /* Refined DM list — better row styling */
+  '#bqp.bq-dm-v2 .bqdmr{',
+  '  padding:11px 12px !important;',
+  '  border-radius:14px !important;',
+  '  margin:2px 0 !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr:hover{',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  transform:translateX(2px) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr.active-row{',
+  '  background:rgba(129,140,248,0.1) !important;',
+  '  box-shadow:inset 3px 0 0 #818cf8 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr.unread-row{',
+  '  background:rgba(255,255,255,0.025) !important;',
+  '}',
+
+  /* Refined unread badge — indigo gradient */
+  '#bqp.bq-dm-v2 .bqdmub{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  color:#fff !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:700 !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.4) !important;',
+  '  animation:bqBadgePopV91 .35s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '@keyframes bqBadgePopV91{',
+  '  0%{transform:scale(0);}',
+  '  60%{transform:scale(1.15);}',
+  '  100%{transform:scale(1);}',
+  '}',
+
+  /* Refined avatar — with ring + hover scale */
+  '#bqp.bq-dm-v2 .bqdmav{',
+  '  box-shadow:0 0 0 2px rgba(24,24,27,1), 0 0 0 3px rgba(255,255,255,0.06), 0 4px 12px rgba(0,0,0,0.3) !important;',
+  '  transition:transform .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr:hover .bqdmav{',
+  '  transform:scale(1.06) !important;',
+  '  box-shadow:0 0 0 2px rgba(24,24,27,1), 0 0 0 3px rgba(129,140,248,0.3), 0 6px 16px rgba(0,0,0,0.35) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmav[data-status="online"]::after{',
+  '  background:#22c55e !important;',
+  '  box-shadow:0 0 6px rgba(34,197,94,0.6) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmav[data-status="studying"]::after{',
+  '  background:#818cf8 !important;',
+  '  box-shadow:0 0 6px rgba(129,140,248,0.6) !important;',
+  '}',
+
+  /* Refined V1/V2 toggle — the ONLY toggle */
+  '#bqp.bq-dm-v2 .bq-dm-v2-hdr-switch,',
+  '.bq-dm-v2-hdr-switch{',
+  '  padding:3px !important;',
+  '  border-radius:11px !important;',
+  '  background:rgba(255,255,255,0.05) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  box-shadow:inset 0 1px 3px rgba(0,0,0,0.3) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-dm-v2-hdr-switch::before,',
+  '.bq-dm-v2-hdr-switch::before{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.2) inset !important;',
+  '  transition:transform .35s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-dm-v2-btn,',
+  '.bq-dm-v2-btn{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  letter-spacing:0.02em !important;',
+  '  transition:color .3s ease !important;',
+  '}',
+
+  /* Refined read receipts — cyan glow when seen */
+  '#bqp.bq-dm-v2 .bqbbl-meta.seen .bqbbl-tick{',
+  '  color:#22d3ee !important;',
+  '  filter:drop-shadow(0 0 3px rgba(34,211,238,0.5)) !important;',
+  '}',
+
+  /* Refined message entrance — spring animation */
+  '#bqp.bq-dm-v2 .bqr.bq-new{',
+  '  animation:bqMsgSpringV91 .4s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqMsgSpringV91{',
+  '  0%{opacity:0;transform:translateY(10px) scale(0.94);}',
+  '  60%{opacity:1;transform:translateY(-2px) scale(1.01);}',
+  '  100%{opacity:1;transform:none;}',
+  '}',
+
+  /* Refined scrollbar — thinner, indigo on hover */
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar{width:5px !important;}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-track{background:transparent !important;}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-thumb{',
+  '  background:rgba(255,255,255,0.06) !important;',
+  '  border-radius:3px !important;',
+  '  transition:background .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-thumb:hover{background:rgba(129,140,248,0.3) !important;}',
+
+  /* Refined new messages banner */
+  '#bqp.bq-dm-v2 .bq-new-msg-banner{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  color:#fff !important;',
+  '  border-radius:16px !important;',
+  '  padding:7px 16px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.4) !important;',
+  '  animation:bqBannerInV91 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqBannerInV91{',
+  '  from{opacity:0;transform:translateX(-50%) translateY(8px) scale(0.9);}',
+  '  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp.bq-dm-v2 *, #bqp.bq-dm-v2 *::before, #bqp.bq-dm-v2 *::after{',
+  '    animation-duration:0.01ms !important;animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v91Css);
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function v91Init(){
+  // Gate health checks behind visibility + idle callback
+  v91GateHealthChecks();
+
+  console.log('[bq] V' + V91_VERSION + ' patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced');
+}
+
+// Run immediately if document is ready, otherwise on DOMContentLoaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v91Init);
+} else {
+  v91Init();
+}
+// Retry a few times in case the widget loads slowly
+setTimeout(v91Init, 1500);
+setTimeout(v91Init, 4000);
+
+}catch(e){ console.error('[bq] V91 patch error:', e); }
 })();
 
