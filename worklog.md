@@ -1026,3 +1026,61 @@ Stage Summary:
 - UI/UX enhanced: avatars, input, send button, headers, DM list, badges, empty state, scroll button, typing indicator, date separators, reactions, banner, scrollbar
 - Non-breaking: V1 unchanged (except self-avatar removal), V92 overrides V91
 - Backup: scripts/chat-widget-v91-backup.js
+
+---
+Task ID: V93-EditFix
+Agent: main
+Task: Remove DM online indicator completely, fix text editing UI/logic
+
+Work Log:
+- Confirmed V92 baseline
+- Identified DM online indicator: #bqdmhs (partner status pill with dot + text) in DM conversation header
+- Identified text editing bugs in startEditMsg():
+  1. Cancel did bbl.innerHTML=linkify(esc(originalText)) — destroyed media, meta, reactions, reply preview, sticker, voice note
+  2. Save did same destruction
+  3. No char limit enforcement
+  4. No saving state (double-click risk)
+  5. No error handling on Firebase write
+  6. Local msg object not updated
+  7. Escape key inserted newline before cancel
+- Backed up V92 to scripts/chat-widget-v92-backup.js
+- Fixed startEditMsg() in-place:
+  - Save full bubble HTML (savedBubbleHTML) + classes before editing
+  - restoreBubble() function: restore saved HTML, swap just .bqtxt via mentionify+linkify+_filterDisplayText
+  - Added maxlength=CHAR_LIMIT (500) on textarea
+  - Character counter (bqedit-count) updates on input
+  - 'Saving…' state: disable buttons, .saving class
+  - Firebase .then()/.catch() + try/catch
+  - Updates msg.text/edited/editedAt on success
+  - Escape preventDefault
+- Wrote V93 CSS patch (202 lines):
+
+REMOVE DM ONLINE INDICATOR:
+- Hid #bqdmhs, .bqdmhs, #bqdmhs-dot, .bqdmhs-dot, #bqdmhs-txt globally (V1+V2)
+- display:none + visibility:hidden + opacity:0 + pointer-events:none
+
+EDIT UI REDESIGN:
+- Editing bubble: indigo tint + dashed border
+- .bqedit-wrap: flex column, 10px gap
+- Textarea: dark bg, 10px radius, indigo focus ring, auto-resize
+- .bqedit-count: tabular-nums, muted, amber near limit, red at limit
+- Save button: indigo gradient + shadow + hover lift + disabled state
+- Cancel button: outline + hover brightens
+- .saving state: opacity 0.7, cursor wait
+- (edited) indicator: refined typography
+
+- Appended V93 patch to public/chat-widget.js (now 26,797 lines)
+- Bumped WIDGET_VERSION from '92.0.0' to '93.0.0'
+- Updated public/chat-widget-version.json to {"version": "93.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 28 V93 markers, savedBubbleHTML confirmed (edit fix), DM indicator hidden, WIDGET_VERSION = '93.0.0', no errors
+- Committed (2be99ae) and pushed to GitHub
+
+Stage Summary:
+- DM online indicator COMPLETELY REMOVED — no more partner status pill in DM conversation header
+- Text editing FIXED: preserves full bubble content (media, meta, reactions, reply, sticker, voice) on cancel/save
+- Character limit enforced with counter
+- Saving state prevents double-clicks
+- Proper error handling
+- Edit UI redesigned: indigo theme, refined textarea/buttons/counter
+- Non-breaking: V1 unchanged (except indicator removal), V93 overrides V92
+- Backup: scripts/chat-widget-v92-backup.js
