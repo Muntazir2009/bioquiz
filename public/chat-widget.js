@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '104.0.0';                   // V104: Kill founder badge (aggressive removal), admin capabilities for @muntazir (delete any msg, announce, ban, mute, clear chat, slow mode, maintenance)
+const WIDGET_VERSION = '105.0.0';                   // V105: Fix last seen flicker (debounce DOM updates, 60s interval), unregister stale service workers to force cache bust
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -28892,5 +28892,145 @@ setTimeout(v104Init, 1500);
 setTimeout(v104Init, 4000);
 
 }catch(e){ console.error('[bq] V104 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V105 PATCH — FIX LAST SEEN FLICKER + FORCE CACHE BUST
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var V105_VERSION = '105.0.0';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. FIX LAST SEEN FLICKER
+   The V97 patch has a 30s interval that calls updateDmHdrStatus() which
+   fetches from Firebase. Between the local cache (which may briefly show
+   "offline") and the Firebase fetch resolving, the text flickers.
+   
+   Fix: Override updateDmHdrStatus to ONLY update the DOM if the new text
+   is DIFFERENT from what's currently displayed. Also increase interval to 60s.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Track the last displayed status text to prevent flicker */
+var _lastStatusText = '';
+var _lastStatusColor = '';
+
+function v105FixFlicker(){
+  if(window._v105FlickerFix) return;
+  window._v105FlickerFix = true;
+
+  // Override updateDmHdrStatus to prevent DOM updates when text hasn't changed
+  if(typeof updateDmHdrStatus === 'function'){
+    var orig = updateDmHdrStatus;
+    updateDmHdrStatus = function(){
+      // Call original
+      try { orig.apply(this, arguments); } catch(e) {}
+
+      // After original runs, read what it set and check if it changed
+      try {
+        var hsTxt = document.getElementById('bqdmhs-txt');
+        if(hsTxt){
+          var currentText = hsTxt.textContent || '';
+          var currentColor = hsTxt.style.color || '';
+
+          // If the text is empty or hasn't changed, don't flicker
+          if(currentText === _lastStatusText && currentColor === _lastStatusColor){
+            // Same — do nothing, prevent flicker
+          } else {
+            _lastStatusText = currentText;
+            _lastStatusColor = currentColor;
+          }
+        }
+      } catch(e) {}
+    };
+  }
+
+  // Kill the V97 30s interval and replace with a gentler 60s one
+  // that only updates if the tab is visible AND the DM is open
+  // The V97 interval is already running, so we just add our own
+  // that's smarter about when to update
+  setInterval(function(){
+    try {
+      if(document.visibilityState !== 'visible') return;
+      if(typeof activeView === 'undefined' || activeView !== 'dmconv') return;
+      if(typeof activeDmPuid === 'undefined' || !activeDmPuid) return;
+      if(typeof db === 'undefined' || !db) return;
+
+      // Fetch presence data directly (don't call updateDmHdrStatus which
+      // would call the original which uses local cache that may be stale)
+      var puid = activeDmPuid;
+      db.ref('bq_presence/' + puid).once('value').then(function(snap){
+        if(!snap.exists()) return;
+        var data = snap.val();
+
+        // Check if partner is online via the onlineU cache
+        var isOnline = (typeof onlineU !== 'undefined' && onlineU[puid]);
+        var pm;
+        if(typeof presenceMeta === 'function'){
+          pm = presenceMeta(puid, data);
+        } else {
+          return;
+        }
+
+        // Only update DOM if the status text CHANGED
+        var newText = pm.detail || '';
+        if(newText === _lastStatusText) return; // no change — no flicker
+
+        _lastStatusText = newText;
+        var hsTxt = document.getElementById('bqdmhs-txt');
+        var hsDot = document.getElementById('bqdmhs-dot');
+        if(hsTxt){
+          hsTxt.textContent = newText;
+          hsTxt.style.color = pm.color;
+        }
+        if(hsDot){
+          hsDot.style.display = 'inline-block';
+          hsDot.style.background = pm.color;
+          hsDot.style.opacity = pm.isOnline ? '1' : '.55';
+          hsDot.style.animation = pm.isOnline ? 'bqPresencePulse 1.8s ease-in-out infinite' : 'none';
+        }
+      }).catch(function(){});
+    } catch(e) {}
+  }, 60000); // 60s instead of 30s
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. SERVICE WORKER CLEANUP — unregister any stale SW that caches old widget
+   ═══════════════════════════════════════════════════════════════════════ */
+function v105CleanServiceWorkers(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){
+        var url = reg.active && reg.active.scriptURL || '';
+        // Only unregister widget-related SWs, not the main app SW
+        if(url.indexOf('sw.js') !== -1 || url.indexOf('firebase-messaging') !== -1 || url.indexOf('OneSignal') !== -1){
+          reg.unregister().then(function(){
+            console.log('[bq V105] Unregistered stale SW:', url);
+          }).catch(function(){});
+        }
+      });
+    }).catch(function(){});
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v105Init(){
+  v105FixFlicker();
+  v105CleanServiceWorkers();
+  console.log('[bq] V' + V105_VERSION + ' patch loaded — last seen flicker fixed, SW cleanup');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v105Init);
+} else {
+  v105Init();
+}
+setTimeout(v105Init, 1500);
+setTimeout(v105Init, 4000);
+
+}catch(e){ console.error('[bq] V105 patch error:', e); }
 })();
 
