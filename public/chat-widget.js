@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '101.0.0';                    // V101: Remove status pill from DM header completely, remove Profile from bottom nav (accessible via top-left avatar only)
+const WIDGET_VERSION = '101.0.0';                    // V101: Enhanced last seen/online indicator restored (glassy pill, glowing pulsing dot, lowercase text), profile via top-left avatar only, nav 3 buttons
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -527,9 +527,7 @@ function presenceMeta(targetUid,pdata){
     data,
     isOnline,
     label:isOnline?st.label:'Offline',
-    // V100: When online, show empty text (just the dot). When offline, show 'last seen X ago'.
-    // User requested: remove the 'online' text but keep 'last seen'
-    detail:isOnline?'':(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
+    detail:isOnline?st.label:(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
     color:isOnline?st.color:'var(--bq-text-subtle)',
     status:isOnline?(data.status||'online'):'offline'
   };
@@ -28176,7 +28174,7 @@ setTimeout(v100Init, 4000);
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════
-   V101 PATCH — REMOVE STATUS PILL FROM DM HEADER + REMOVE PROFILE FROM NAV
+   V101 PATCH — ENHANCED LAST SEEN/ONLINE INDICATOR + PROFILE AVATAR + NAV FIX
    ═══════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
@@ -28184,31 +28182,109 @@ try{
 var v101Css = document.createElement('style');
 v101Css.id = 'bq-v101-css';
 v101Css.textContent = [
-  /* COMPLETELY HIDE the status pill (#bqdmhs) from the DM conversation header */
-  '#bqp #bqdmhs,',
+  /* ════════════════════════════════════════════════════════════════════
+     ENHANCED LAST SEEN / ONLINE INDICATOR — beautiful, visible, compact
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Status pill — enhanced glassy style */
   '#bqp .bqdmhs,',
-  '#bqp #bqdmhs-dot,',
-  '#bqp .bqdmhs-dot,',
-  '#bqp #bqdmhs-txt,',
-  '#bqp.bq-dm-v2 #bqdmhs,',
-  '#bqp.bq-dm-v2 .bqdmhs,',
-  '#bqp.bq-dm-v2 #bqdmhs-dot,',
-  '#bqp.bq-dm-v2 .bqdmhs-dot,',
-  '#bqp.bq-dm-v2 #bqdmhs-txt,',
-  '#bqdmhs,',
-  '.bqdmhs,',
-  '#bqdmhs-dot,',
-  '.bqdmhs-dot,',
-  '#bqdmhs-txt{',
-  '  display:none !important;',
-  '  visibility:hidden !important;',
-  '  height:0 !important;width:0 !important;',
-  '  padding:0 !important;margin:0 !important;',
-  '  opacity:0 !important;',
-  '  pointer-events:none !important;',
+  '#bqp.bq-dm-v2 .bqdmhs{',
+  '  display:inline-flex !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  align-items:center !important;gap:6px !important;',
+  '  padding:3px 10px !important;',
+  '  border-radius:12px !important;',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  -webkit-backdrop-filter:blur(8px) !important;',
+  '  margin-top:3px !important;',
+  '  width:max-content !important;max-width:200px !important;',
+  '  transition:all .25s ease !important;',
+  '  box-shadow:0 2px 8px rgba(0,0,0,0.12) !important;',
+  '}',
+  '#bqp .bqdmhs:hover,',
+  '#bqp.bq-dm-v2 .bqdmhs:hover{',
+  '  background:rgba(255,255,255,0.07) !important;',
+  '  border-color:rgba(255,255,255,0.12) !important;',
   '}',
 
-  /* Profile avatar top-left — make sure it's visible and styled */
+  /* Status dot — enhanced with glow */
+  '#bqp .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;',
+  '  visibility:visible !important;',
+  '  width:7px !important;height:7px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  transition:all .25s ease !important;',
+  '}',
+  '#bqp .bqdmhs-dot[style*="background"]{',
+  '  box-shadow:0 0 6px currentColor !important;',
+  '}',
+
+  /* Status text — enhanced typography */
+  '#bqp #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  display:inline !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.01em !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  transition:color .25s ease !important;',
+  '  text-transform:lowercase !important;',
+  '}',
+
+  /* Online dot — green pulsing ring */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(34,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#22c55e"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-success)"]{',
+  '  animation:bqV101OnlinePulse 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV101OnlinePulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(34,197,94,0.5), 0 0 0 0 rgba(34,197,94,0.4) !important;}',
+  '  50%{box-shadow:0 0 12px rgba(34,197,94,0.7), 0 0 0 5px rgba(34,197,94,0) !important;}',
+  '}',
+
+  /* Studying dot — indigo pulsing ring */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(129,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#818cf8"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-accent)"]{',
+  '  animation:bqV101StudyingPulse 2.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV101StudyingPulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(129,140,248,0.5), 0 0 0 0 rgba(129,140,248,0.4) !important;}',
+  '  50%{box-shadow:0 0 12px rgba(129,140,248,0.7), 0 0 0 5px rgba(129,140,248,0) !important;}',
+  '}',
+
+  /* Busy dot — red pulsing */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(239,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#ef4444"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-danger)"]{',
+  '  animation:bqV101BusyPulse 1.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV101BusyPulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(239,68,68,0.5), 0 0 0 0 rgba(239,68,68,0.4) !important;}',
+  '  50%{box-shadow:0 0 10px rgba(239,68,68,0.7), 0 0 0 4px rgba(239,68,68,0) !important;}',
+  '}',
+
+  /* Away dot — amber static glow */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(245,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#f59e0b"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-warning)"]{',
+  '  box-shadow:0 0 6px rgba(245,158,11,0.5) !important;',
+  '}',
+
+  /* Offline dot — muted, no glow */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="opacity"]{',
+  '  box-shadow:none !important;animation:none !important;opacity:0.4 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     Profile avatar top-left
+     ════════════════════════════════════════════════════════════════════ */
   '#bqp .bq-profile-avatar{',
   '  width:28px !important;height:28px !important;',
   '  border-radius:50% !important;flex-shrink:0 !important;',
