@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '98.0.0';                     // V98: Fix edit/delete meta (preserve bqbbl-meta), mobile design enhancements, @muntazir buffs (founder badge, gold name, VIP streak, gold avatar ring)
+const WIDGET_VERSION = '99.0.0';                     // V99: Remove all @muntazir buffs, add Profile button to bottom nav (profile customization now accessible)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3277,6 +3277,9 @@ const HTML = `
       <button class="bqnb" data-v="online">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Online
         <div class="bqnnb" id="bqonb"></div>
+      </button>
+      <button class="bqnb" data-v="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
       </button>
     </div>
   </div>
@@ -27840,5 +27843,192 @@ setTimeout(v98Init, 4000);
 setTimeout(v98Init, 8000);
 
 }catch(e){ console.error('[bq] V98 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V99 PATCH — REMOVE @MUNTAZIR BUFFS + ENSURE PROFILE NAV WORKS
+   ───────────────────────────────────────────────────────────────────────
+
+   1. REMOVE ALL @MUNTAZIR BUFFS:
+      • Disable isMuntazir() — always returns false
+      • Disable v98ApplyMuntazirBuffs() — no-op
+      • Disable v98AddFounderBadges() — no-op
+      • Remove all CSS targeting muntazir (founder badge, gold name, gold ring,
+        gold VIP dot) via !important overrides
+      • Clear any localStorage streak boost
+      • Clear any Firebase VIP flags
+
+   2. PROFILE NAV BUTTON:
+      • Added Profile button to bottom nav (data-v="profile")
+      • The existing bqNav('profile') handler already works
+      • CSS ensures 4 nav buttons fit nicely in the pill
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V99_VERSION = '99.0.0';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. DISABLE ALL @MUNTAZIR BUFFS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Override isMuntazir to always return false */
+if(typeof window.isMuntazir === 'function' || typeof isMuntazir === 'function'){
+  window.isMuntazir = function(){ return false; };
+}
+/* Also override in local scope if it exists */
+try { isMuntazir = function(){ return false; }; } catch(e) {}
+
+/* Override v98ApplyMuntazirBuffs to be a no-op */
+if(typeof window.v98ApplyMuntazirBuffs === 'function'){
+  window.v98ApplyMuntazirBuffs = function(){ /* no-op — buffs removed */ };
+}
+
+/* Override v98AddFounderBadges to remove any existing badges */
+if(typeof window.v98AddFounderBadges === 'function'){
+  window.v98AddFounderBadges = function(){
+    // Remove any existing founder badges
+    var badges = document.querySelectorAll('.bq-founder-badge');
+    badges.forEach(function(b){ b.remove(); });
+  };
+}
+
+/* Clear the streak boost from localStorage */
+function v99ClearBuffs(){
+  try {
+    // Reset streak to 1 (was boosted to 100)
+    var streakKey = 'bq.streak.v2';
+    var raw = localStorage.getItem(streakKey);
+    if(raw){
+      var data = JSON.parse(raw);
+      if(data.count >= 100){
+        // Reset to realistic value
+        data.count = 1;
+        data.bestStreak = 1;
+        localStorage.setItem(streakKey, JSON.stringify(data));
+      }
+    }
+  } catch(e) {}
+
+  // Reset profile color if it was set to gold
+  try {
+    var profRaw = localStorage.getItem('bq_chat_profile');
+    if(profRaw){
+      var prof = JSON.parse(profRaw);
+      if(prof.color === '#fbbf24'){
+        prof.color = ''; // reset to default
+        localStorage.setItem('bq_chat_profile', JSON.stringify(prof));
+      }
+    }
+  } catch(e) {}
+
+  // Clear VIP flag from Firebase
+  try {
+    if(typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid){
+      db.ref('bq_presence/' + uid + '/vip').remove();
+      db.ref('bq_presence/' + uid + '/vipTier').remove();
+    }
+  } catch(e) {}
+
+  // Remove any founder badges in the DOM
+  var badges = document.querySelectorAll('.bq-founder-badge');
+  badges.forEach(function(b){ b.remove(); });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. CSS — neutralize all muntazir CSS + 4-button nav
+   ═══════════════════════════════════════════════════════════════════════ */
+var v99Css = document.createElement('style');
+v99Css.id = 'bq-v99-css';
+v99Css.textContent = [
+  /* Neutralize all muntazir CSS — reset to normal */
+  '.bq-founder-badge{display:none !important;}',
+
+  /* Reset gold name color */
+  '.bqun[data-uname="muntazir"], .bqun[data-uname="Muntazir"], .bqun[data-uname="MUNTAZIR"],',
+  '.bqun[data-uname="muntazir2009"]{',
+  '  background:none !important;',
+  '  -webkit-text-fill-color:initial !important;',
+  '  color:inherit !important;',
+  '}',
+
+  /* Reset gold avatar ring */
+  '.bqav[data-uname="muntazir"], .bqav[data-uname="Muntazir"],',
+  '.bqdmav[data-pname="muntazir"], .bqdmav[data-pname="Muntazir"],',
+  '.bqdmhav[data-pname="muntazir"], .bqdmhav[data-pname="Muntazir"]{',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,0.06) !important;',
+  '}',
+
+  /* Reset gold VIP status dot */
+  '.bqav[data-uname="muntazir"]::after, .bqav[data-uname="Muntazir"]::after,',
+  '.bqdmav[data-pname="muntazir"]::after, .bqdmav[data-pname="Muntazir"]::after,',
+  '.bqdmhav[data-pname="muntazir"]::after, .bqdmhav[data-pname="Muntazir"]::after{',
+  '  background:inherit !important;',
+  '  box-shadow:none !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     4-BUTTON NAV — ensure profile button fits
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp .bqnb, #bqp.bq-dm-v2 .bqnb{',
+  '  flex:1 !important;',
+  '  padding:8px 4px !important;',
+  '}',
+  '#bqp .bqnb svg, #bqp.bq-dm-v2 .bqnb svg{',
+  '  width:16px !important;height:16px !important;',
+  '}',
+  '#bqp .bqnb, #bqp.bq-dm-v2 .bqnb{',
+  '  font-size:8.5px !important;',
+  '}',
+
+  /* On mobile, 4 buttons need to be compact */
+  '@media (max-width: 600px){',
+  '  #bqp .bqnb, #bqp.bq-dm-v2 .bqnb{',
+  '    padding:10px 4px !important;font-size:9px !important;',
+  '  }',
+  '  #bqp .bqnb svg, #bqp.bq-dm-v2 .bqnb svg{',
+  '    width:18px !important;height:18px !important;',
+  '  }',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v99Css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v99Init(){
+  // Clear all buffs immediately
+  v99ClearBuffs();
+
+  // Also clear periodically (in case V98's interval tries to re-apply)
+  setInterval(function(){
+    if(document.visibilityState === 'visible'){
+      var badges = document.querySelectorAll('.bq-founder-badge');
+      badges.forEach(function(b){ b.remove(); });
+    }
+  }, 3000);
+
+  console.log('[bq] V' + V99_VERSION + ' patch loaded — @muntazir buffs removed, profile nav button added');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v99Init);
+} else {
+  v99Init();
+}
+setTimeout(v99Init, 1500);
+setTimeout(v99Init, 4000);
+
+}catch(e){ console.error('[bq] V99 patch error:', e); }
 })();
 
