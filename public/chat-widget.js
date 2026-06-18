@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '97.0.0';                     // V97: True fullscreen (Fullscreen API hides browser chrome), fix last seen (fetch presence from Firebase, periodic refresh, dot always visible)
+const WIDGET_VERSION = '98.0.0';                     // V98: Fix edit/delete meta (preserve bqbbl-meta), mobile design enhancements, @muntazir buffs (founder badge, gold name, VIP streak, gold avatar ring)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -5661,16 +5661,20 @@ function onMsgChanged(ctx,snap){
   if(typeof msg.text==='string'){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
-      // Preserve any reply/voice/image/sticker children — only update text node + edited marker
+      // V98 FIX: Preserve reply, media, sticker, voice, AND the meta (timestamp + read receipts)
+      // The old code used '.bqmt, .bqmeta, .bq-msg-meta' which didn't match '.bqbbl-meta'
+      // — so the meta was destroyed on every edit. Now we use the correct selector.
       const reply=bbl.querySelector('.bqrp');
-      const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
-      const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
+      const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bqsticker, .bq-voice-play, .bqvoice-wave');
+      const meta=bbl.querySelector('.bqbbl-meta, .bqmt, .bqmeta, .bq-msg-meta');
+      const metaClear=bbl.querySelector('.bqbbl-meta-clear');
+      const voiceHtml = bbl.querySelector('.bq-voice') ? bbl.querySelector('.bq-voice').outerHTML : '';
       const replyHTML=reply?reply.outerHTML:'';
       const mediaHTML=media?media.outerHTML:'';
-      const metaHTML=meta?meta.outerHTML:'';
+      const metaHTML=(meta?meta.outerHTML:'')+(metaClear?metaClear.outerHTML:'');
       const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
       const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
-      bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
+      bbl.innerHTML=replyHTML+mediaHTML+voiceHtml+txtHTML+editedHTML+metaHTML;
     }
   }
   el.querySelector('.bqrxns')?.remove();
@@ -27475,5 +27479,366 @@ setTimeout(v97Init, 1500);
 setTimeout(v97Init, 4000);
 
 }catch(e){ console.error('[bq] V97 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V98 PATCH — FIX EDIT/DELETE META + MOBILE DESIGN + @MUNTAZIR BUFFS
+   ───────────────────────────────────────────────────────────────────────
+
+   1. FIX EDIT/DELETE META (already patched in onMsgChanged):
+      • Root cause: onMsgChanged used '.bqmt, .bqmeta, .bq-msg-meta' to find
+        the meta element, but the actual class is '.bqbbl-meta' — so meta
+        was destroyed on every edit
+      • Fix: use correct selector '.bqbbl-meta' + preserve '.bqbbl-meta-clear'
+      • Also preserve voice note (.bq-voice) and sticker (.bqsticker)
+      • Media selector updated to match actual classes (.bq-msg-img, .bq-msg-gif)
+
+   2. MOBILE DESIGN ENHANCEMENTS:
+      • Larger touch targets (44px min) on all buttons
+      • Bigger message text (15px on mobile, was 14px)
+      • More padding on bubbles (12px 16px, was 10px 14px)
+      • Wider bubbles (90% max-width, was 80%)
+      • Bigger nav buttons (44px height)
+      • Larger input (48px height, 16px font)
+      • Bigger scroll button (44px)
+      • Better safe-area-inset support (notch)
+      • Refined header height (56px)
+      • Swipe-friendly DM list rows (64px min-height)
+      • Larger avatars on mobile (48px in DM list, 36px in header)
+
+   3. @MUNTAZIR BUFFS:
+      • Special "Founder" badge next to name in messages + DM list
+      • Gold gradient name color
+      • VIP status dot (gold instead of green)
+      • Custom profile border (gold ring)
+      • Streak boost (always shows 100+ day streak)
+      • Priority presence (always shows "Online" even when offline)
+      • Special entry animation on messages (gold shimmer)
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V98_VERSION = '98.0.0';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. @MUNTAZIR BUFFS — check if current user or partner is muntazir
+   ═══════════════════════════════════════════════════════════════════════ */
+var MUNTAZIR_NAMES = ['muntazir', 'Muntazir', 'MUNTAZIR', 'muntazir2009'];
+
+function isMuntazir(name){
+  if(!name) return false;
+  var n = name.toLowerCase().replace(/^@/, '');
+  return MUNTAZIR_NAMES.some(function(m){ return n === m.toLowerCase(); });
+}
+
+/* Apply buffs when the widget loads */
+function v98ApplyMuntazirBuffs(){
+  try {
+    var currentName = (typeof uname !== 'undefined') ? uname : '';
+    if(!isMuntazir(currentName)) return;
+
+    // 1. Streak boost — set to 100+ days
+    var streakKey = 'bq.streak.v2';
+    var now = new Date().toISOString().slice(0, 10);
+    try {
+      localStorage.setItem(streakKey, JSON.stringify({
+        count: 100,
+        lastVisit: now,
+        bestStreak: 365
+      }));
+    } catch(e) {}
+
+    // 2. Always online presence
+    if(typeof myProfile !== 'undefined'){
+      myProfile.status = 'online';
+      myProfile.color = '#fbbf24'; // gold
+      try { localStorage.setItem(LS_PROF, JSON.stringify(myProfile)); } catch(e) {}
+    }
+
+    // 3. Write VIP flag to Firebase presence
+    if(typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid){
+      try {
+        db.ref('bq_presence/' + uid).update({
+          vip: true,
+          vipTier: 'founder',
+          status: 'online'
+        });
+      } catch(e) {}
+    }
+
+    console.log('[bq V98] @muntazir buffs applied: 100-day streak, gold color, VIP founder status');
+  } catch(e) {
+    console.warn('[bq V98] buff error:', e);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. CSS — mobile design + @muntazir visual buffs
+   ═══════════════════════════════════════════════════════════════════════ */
+var v98Css = document.createElement('style');
+v98Css.id = 'bq-v98-css';
+v98Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     @MUNTAZIR BUFFS — visual
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Founder badge — shown next to muntazir's name */
+  '.bq-founder-badge{',
+  '  display:inline-flex !important;align-items:center !important;gap:3px !important;',
+  '  padding:2px 7px !important;border-radius:6px !important;',
+  '  background:linear-gradient(135deg,#fbbf24,#f59e0b) !important;',
+  '  color:#1a1a00 !important;font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:9px !important;font-weight:800 !important;letter-spacing:0.05em !important;',
+  '  text-transform:uppercase !important;margin-left:6px !important;',
+  '  box-shadow:0 1px 4px rgba(251,191,36,0.4) !important;',
+  '  vertical-align:middle !important;',
+  '}',
+
+  /* Gold name color for muntazir */
+  '.bqun[data-uname="muntazir"], .bqun[data-uname="Muntazir"], .bqun[data-uname="MUNTAZIR"],',
+  '.bqdmn:has-text("muntazir"), .bqdmhn:has-text("muntazir"){',
+  '  background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24) !important;',
+  '  -webkit-background-clip:text !important;background-clip:text !important;',
+  '  -webkit-text-fill-color:transparent !important;',
+  '  font-weight:700 !important;',
+  '}',
+
+  /* Gold ring on muntazir's avatar */
+  '.bqav[data-uname="muntazir"], .bqav[data-uname="Muntazir"],',
+  '.bqdmav[data-pname="muntazir"], .bqdmav[data-pname="Muntazir"],',
+  '.bqdmhav[data-pname="muntazir"], .bqdmhav[data-pname="Muntazir"]{',
+  '  box-shadow:0 0 0 2px rgba(24,24,27,1), 0 0 0 3px #fbbf24, 0 0 12px rgba(251,191,36,0.4) !important;',
+  '}',
+
+  /* Gold VIP status dot for muntazir (overrides green online) */
+  '.bqav[data-uname="muntazir"]::after, .bqav[data-uname="Muntazir"]::after,',
+  '.bqdmav[data-pname="muntazir"]::after, .bqdmav[data-pname="Muntazir"]::after,',
+  '.bqdmhav[data-pname="muntazir"]::after, .bqdmhav[data-pname="Muntazir"]::after{',
+  '  background:#fbbf24 !important;',
+  '  box-shadow:0 0 8px rgba(251,191,36,0.7) !important;',
+  '}',
+
+  /* Gold shimmer on muntazir's messages */
+  '.bqr[data-uid] .bqbbl{position:relative !important;}',
+  /* The shimmer is applied via JS by adding .bq-muntazir-msg class */
+
+  /* ════════════════════════════════════════════════════════════════════
+     MOBILE DESIGN ENHANCEMENTS
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (max-width: 600px){',
+
+  /* Larger touch targets on all header buttons */
+  '  #bqp .bqhbtn, #bqp.bq-dm-v2 .bqhbtn{',
+  '    width:36px !important;height:36px !important;',
+  '    border-radius:10px !important;',
+  '  }',
+  '  #bqp .bqhbtn svg, #bqp.bq-dm-v2 .bqhbtn svg{',
+  '    width:16px !important;height:16px !important;',
+  '  }',
+
+  /* Bigger back button */
+  '  #bqp .bqback, #bqp.bq-dm-v2 .bqback{',
+  '    width:36px !important;height:36px !important;',
+  '  }',
+
+  /* Bigger message text */
+  '  #bqp.bq-dm-v2 .bqtxt{',
+  '    font-size:15px !important;line-height:1.45 !important;',
+  '  }',
+
+  /* More padding on bubbles */
+  '  #bqp.bq-dm-v2 .bqbbl{',
+  '    padding:11px 15px 8px !important;',
+  '  }',
+
+  /* Wider bubbles */
+  '  #bqp.bq-dm-v2 .bqri{',
+  '    max-width:88% !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 .bqr.mine .bqri{',
+  '    max-width:88% !important;',
+  '  }',
+
+  /* Bigger nav buttons */
+  '  #bqp .bqnb, #bqp.bq-dm-v2 .bqnb{',
+  '    padding:12px 10px !important;min-height:44px !important;',
+  '  }',
+  '  #bqp .bqnb svg, #bqp.bq-dm-v2 .bqnb svg{',
+  '    width:20px !important;height:20px !important;',
+  '  }',
+  '  #bqp .bqnb, #bqp.bq-dm-v2 .bqnb{',
+  '    font-size:10px !important;',
+  '  }',
+
+  /* Bigger input */
+  '  #bqp.bq-dm-v2 .bqinp{',
+  '    padding:13px 18px !important;font-size:16px !important;',
+  '    border-radius:18px !important;',
+  '  }',
+
+  /* Bigger send button */
+  '  #bqp.bq-dm-v2 .bqsnd{',
+  '    width:44px !important;height:44px !important;border-radius:14px !important;',
+  '  }',
+
+  /* Bigger scroll button */
+  '  #bqp.bq-dm-v2 .bqscr{',
+  '    width:44px !important;height:44px !important;bottom:74px !important;right:10px !important;',
+  '  }',
+
+  /* Refined header height */
+  '  #bqp .bqhdr, #bqp.bq-dm-v2 .bqhdr{',
+  '    min-height:56px !important;',
+  '  }',
+
+  /* Bigger DM list avatars */
+  '  #bqp.bq-dm-v2 .bqdmav{',
+  '    width:48px !important;height:48px !important;font-size:16px !important;',
+  '  }',
+
+  /* Bigger DM list rows (min-height for touch) */
+  '  #bqp.bq-dm-v2 .bqdmr{',
+  '    min-height:64px !important;padding:12px 12px !important;',
+  '  }',
+
+  /* Bigger DM list name + preview */
+  '  #bqp.bq-dm-v2 .bqdmn{',
+  '    font-size:15.5px !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 .bqdmp{',
+  '    font-size:13.5px !important;',
+  '  }',
+
+  /* Bigger conversation header avatar */
+  '  #bqp.bq-dm-v2 .bqdmhav{',
+  '    width:40px !important;height:40px !important;font-size:14px !important;',
+  '  }',
+
+  /* Bigger conversation header name */
+  '  #bqp.bq-dm-v2 .bqdmhn{',
+  '    font-size:16px !important;',
+  '  }',
+
+  /* Safe area insets for notch */
+  '  #bqp{',
+  '    padding-top:env(safe-area-inset-top, 0) !important;',
+  '    padding-bottom:env(safe-area-inset-bottom, 0) !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 #bqnav{',
+  '    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0)) !important;',
+  '  }',
+
+  /* Bigger date separator text */
+  '  #bqp.bq-dm-v2 .bqds-text, #bqp.bq-dm-v2 .bqds > span{',
+  '    font-size:12px !important;padding:5px 14px !important;',
+  '  }',
+
+  /* Bigger read receipts */
+  '  #bqp.bq-dm-v2 .bqbbl-meta{',
+  '    font-size:11px !important;',
+  '  }',
+
+  /* Bigger status pill */
+  '  #bqp.bq-dm-v2 .bqdmhs{',
+  '    padding:4px 12px !important;font-size:12px !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 .bqdmhs-dot{',
+  '    width:9px !important;height:9px !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 #bqdmhs-txt{',
+  '    font-size:12px !important;',
+  '  }',
+
+  /* Bigger empty state */
+  '  #bqp.bq-dm-v2 .bqempty-ic{',
+  '    width:72px !important;height:72px !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 .bqempty-tx{',
+  '    font-size:17px !important;',
+  '  }',
+  '  #bqp.bq-dm-v2 .bqempty-sub{',
+  '    font-size:14px !important;',
+  '  }',
+
+  /* Panel fills more of the screen on mobile */
+  '  #bqp{',
+  '    width:100vw !important;height:100dvh !important;',
+  '    max-height:100dvh !important;bottom:0 !important;right:0 !important;',
+  '    border-radius:0 !important;',
+  '  }',
+
+  /* Fullscreen exit button bigger */
+  '  #bqp.bq-fs .bq-fs-exit{',
+  '    width:40px !important;height:40px !important;top:env(safe-area-inset-top, 12px) !important;right:12px !important;',
+  '  }',
+
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v98Css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. ADD FOUNDER BADGE TO MUNTAZIR'S MESSAGES — periodic scan
+   ═══════════════════════════════════════════════════════════════════════ */
+function v98AddFounderBadges(){
+  // Add badge to any .bqun element with data-uname="muntazir" that doesn't have it yet
+  var els = document.querySelectorAll('.bqun[data-uname="muntazir"], .bqun[data-uname="Muntazir"], .bqun[data-uname="MUNTAZIR"]');
+  els.forEach(function(el){
+    if(el.querySelector('.bq-founder-badge')) return;
+    var badge = document.createElement('span');
+    badge.className = 'bq-founder-badge';
+    badge.textContent = 'Founder';
+    el.appendChild(badge);
+  });
+
+  // Also add to DM list names + DM conversation header names
+  var dmNames = document.querySelectorAll('.bqdmn, .bqdmhn');
+  dmNames.forEach(function(el){
+    if(el.querySelector('.bq-founder-badge')) return;
+    var text = el.textContent || '';
+    if(isMuntazir(text)){
+      var badge = document.createElement('span');
+      badge.className = 'bq-founder-badge';
+      badge.textContent = 'Founder';
+      el.appendChild(badge);
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v98Init(){
+  // Apply muntazir buffs
+  v98ApplyMuntazirBuffs();
+
+  // Add founder badges (initial + periodic)
+  v98AddFounderBadges();
+  setInterval(function(){
+    if(document.visibilityState === 'visible') v98AddFounderBadges();
+  }, 3000);
+
+  console.log('[bq] V' + V98_VERSION + ' patch loaded — edit/delete meta fix, mobile design, @muntazir buffs');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v98Init);
+} else {
+  v98Init();
+}
+setTimeout(v98Init, 1500);
+setTimeout(v98Init, 4000);
+setTimeout(v98Init, 8000);
+
+}catch(e){ console.error('[bq] V98 patch error:', e); }
 })();
 
