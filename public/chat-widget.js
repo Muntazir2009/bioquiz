@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '91.0.0';                     // V91: MAX_MSG 30→80, fix scroll lag (remove redundant monitors, gate health checks), remove duplicate V2 toggle, V2 design enhancements
+const WIDGET_VERSION = '92.0.0';                     // V92: Global self-indicator removal (V1+V2), chat bubble redesign (depth + tails + highlights), UI/UX enhancements
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -25949,5 +25949,567 @@ setTimeout(v91Init, 1500);
 setTimeout(v91Init, 4000);
 
 }catch(e){ console.error('[bq] V91 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V92 PATCH — GLOBAL SELF-INDICATOR REMOVAL + BUBBLE REDESIGN + UI/UX
+   ───────────────────────────────────────────────────────────────────────
+
+   1. GLOBAL SELF-INDICATOR REMOVAL:
+      • V89 only hid .bq-me-av when .bq-dm-v2 class was on #bqp (V2 mode)
+      • V92 hides it GLOBALLY — works in V1 AND V2
+      • Removes the self avatar from ALL headers:
+        - Global chat header (#bq-me-av)
+        - DM list header (#bq-me-av-dms)
+        - DM conversation header (#bq-me-av-dm)
+        - Online list header (#bq-me-av-online)
+      • No more seeing your own avatar/online status
+
+   2. CHAT BUBBLE REDESIGN (better aesthetic):
+      • Mine bubbles: refined gradient with depth + tail
+      • Theirs bubbles: frosted glass with subtle border + tail
+      • Better corner radius (asymmetric tails)
+      • Layered shadows for genuine depth
+      • Inner top highlight for "glass" feel
+      • Refined hover: lift + glow + scale
+      • Better text contrast and readability
+      • Refined meta (timestamps + read receipts) inside bubbles
+      • Better spacing between bubbles in a group
+
+   3. UI/UX ENHANCEMENTS:
+      • Refined message grouping: better visual hierarchy
+      • Refined avatars: better ring + status dot
+      • Refined input bar: floating style with quick actions
+      • Refined header: glassy with better spacing
+      • Refined DM list: better hover states
+      • Refined empty states: with illustrations
+      • Refined scroll button: with badge
+      • Refined typing indicator: with avatar
+      • Better animations: smooth springs everywhere
+      • Better focus states: consistent rings
+      • Better typography: refined hierarchy
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V92_VERSION = '92.0.0';
+
+var v92Css = document.createElement('style');
+v92Css.id = 'bq-v92-css';
+v92Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     1. GLOBAL SELF-INDICATOR REMOVAL — works in V1 AND V2
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp .bq-me-av,',
+  '#bqp #bq-me-av,',
+  '#bqp #bq-me-av-dms,',
+  '#bqp #bq-me-av-dm,',
+  '#bqp #bq-me-av-online,',
+  '#bqp.bq-dm-v2 .bq-me-av,',
+  '#bqp.bq-dm-v2 #bq-me-av,',
+  '#bqp.bq-dm-v2 #bq-me-av-dms,',
+  '#bqp.bq-dm-v2 #bq-me-av-dm,',
+  '#bqp.bq-dm-v2 #bq-me-av-online,',
+  '.bq-me-av,',
+  '#bq-me-av,',
+  '#bq-me-av-dms,',
+  '#bq-me-av-dm,',
+  '#bq-me-av-online{',
+  '  display:none !important;',
+  '  visibility:hidden !important;',
+  '  width:0 !important;height:0 !important;',
+  '  padding:0 !important;margin:0 !important;',
+  '  opacity:0 !important;',
+  '  pointer-events:none !important;',
+  '  position:absolute !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     2. CHAT BUBBLE REDESIGN — better aesthetic (V2 only)
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Mine bubble — refined indigo gradient with depth + tail */
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl{',
+  '  background:linear-gradient(135deg, #6366f1 0%, #7c3aed 45%, #8b5cf6 100%) !important;',
+  '  color:#ffffff !important;',
+  '  border:none !important;',
+  '  border-radius:20px 6px 20px 20px !important;',
+  '  padding:10px 14px 7px !important;',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,0.18) inset,',
+  '    0 2px 10px rgba(99,102,241,0.28),',
+  '    0 1px 3px rgba(0,0,0,0.22) !important;',
+  '  position:relative !important;',
+  '  overflow:hidden !important;',
+  '  max-width:100% !important;',
+  '  word-wrap:break-word !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), box-shadow .25s ease !important;',
+  '}',
+  /* Inner top highlight — light catching the glass */
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl::before{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;height:60% !important;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,0.12), transparent) !important;',
+  '  pointer-events:none !important;',
+  '  border-radius:20px 6px 0 0 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine.consec .bqbbl{border-radius:20px !important;}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl.media{padding:3px !important;border-radius:20px 6px 20px 20px !important;overflow:hidden !important;}',
+  '#bqp.bq-dm-v2 .bqr.mine.consec .bqbbl.media{border-radius:20px !important;}',
+
+  /* Theirs bubble — frosted glass with subtle border + tail */
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl{',
+  '  background:rgba(255,255,255,0.05) !important;',
+  '  backdrop-filter:blur(12px) saturate(1.3) !important;',
+  '  -webkit-backdrop-filter:blur(12px) saturate(1.3) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:6px 20px 20px 20px !important;',
+  '  padding:10px 14px 7px !important;',
+  '  color:#f4f4f5 !important;',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,0.05) inset,',
+  '    0 2px 8px rgba(0,0,0,0.25) !important;',
+  '  position:relative !important;',
+  '  overflow:hidden !important;',
+  '  max-width:100% !important;',
+  '  word-wrap:break-word !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), box-shadow .25s ease !important;',
+  '}',
+  /* Inner top highlight for theirs */
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl::before{',
+  '  content:"" !important;',
+  '  position:absolute !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;height:50% !important;',
+  '  background:linear-gradient(180deg, rgba(255,255,255,0.05), transparent) !important;',
+  '  pointer-events:none !important;',
+  '  border-radius:6px 20px 0 0 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.theirs.consec .bqbbl{border-radius:20px !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl.media{padding:3px !important;border-radius:6px 20px 20px 20px !important;overflow:hidden !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs.consec .bqbbl.media{border-radius:20px !important;}',
+
+  /* Hover — refined lift + glow + subtle scale */
+  '#bqp.bq-dm-v2 .bqr:hover .bqbbl{',
+  '  transform:translateY(-2px) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine:hover .bqbbl{',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,0.22) inset,',
+  '    0 6px 20px rgba(99,102,241,0.4),',
+  '    0 2px 6px rgba(0,0,0,0.28) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.theirs:hover .bqbbl{',
+  '  box-shadow:',
+  '    0 1px 0 rgba(255,255,255,0.08) inset,',
+  '    0 4px 14px rgba(0,0,0,0.3) !important;',
+  '  border-color:rgba(129,140,248,0.2) !important;',
+  '}',
+
+  /* Bubble active state (press) */
+  '#bqp.bq-dm-v2 .bqbbl:active{transform:scale(0.98) !important;}',
+
+  /* Refined text inside bubbles */
+  '#bqp.bq-dm-v2 .bqtxt{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;',
+  '  line-height:1.45 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  margin-bottom:2px !important;',
+  '  font-weight:400 !important;',
+  '  display:inline !important;',
+  '  text-shadow:none !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqtxt{color:#ffffff !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqtxt{color:#f4f4f5 !important;}',
+
+  /* Refined meta (timestamps + read receipts) inside bubbles */
+  '#bqp.bq-dm-v2 .bqbbl-meta{',
+  '  float:right !important;',
+  '  margin:6px 0 -2px 8px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;line-height:1 !important;',
+  '  white-space:nowrap !important;',
+  '  display:inline-flex !important;align-items:center !important;gap:3px !important;',
+  '  font-variant-numeric:tabular-nums !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl-meta{color:rgba(255,255,255,0.7) !important;}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl-meta .bqbbl-tick{color:rgba(255,255,255,0.7) !important;}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl-meta.delivered .bqbbl-tick{color:rgba(255,255,255,0.95) !important;}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl-meta.seen .bqbbl-tick{',
+  '  color:#a5f3fc !important;',
+  '  filter:drop-shadow(0 0 4px rgba(165,243,252,0.6)) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl-meta.seen{color:#a5f3fc !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl-meta{color:#71717a !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl-meta .bqbbl-tick{color:#71717a !important;}',
+
+  /* Links inside bubbles */
+  '#bqp.bq-dm-v2 .bqr.mine .bqbbl a{color:#c7d2fe !important;text-decoration:underline !important;text-decoration-color:rgba(199,210,254,0.5) !important;}',
+  '#bqp.bq-dm-v2 .bqr.theirs .bqbbl a{color:#818cf8 !important;text-decoration:underline !important;text-decoration-color:rgba(129,140,248,0.4) !important;}',
+
+  /* Better spacing between bubbles in a group */
+  '#bqp.bq-dm-v2 .bqr:not(.consec):not(.bq-new):not(:first-child){margin-top:8px !important;}',
+  '#bqp.bq-dm-v2 .bqr.consec{margin-top:2px !important;}',
+
+  /* Refined bubble entrance animation */
+  '#bqp.bq-dm-v2 .bqr.bq-new{',
+  '  animation:bqBubbleSpringV92 .42s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqBubbleSpringV92{',
+  '  0%{opacity:0;transform:translateY(12px) scale(0.92);}',
+  '  60%{opacity:1;transform:translateY(-3px) scale(1.02);}',
+  '  100%{opacity:1;transform:none;}',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     3. UI/UX ENHANCEMENTS
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Refined avatars — better ring + status dot */
+  '#bqp.bq-dm-v2 .bqav,',
+  '#bqp.bq-dm-v2 .bqdmav,',
+  '#bqp.bq-dm-v2 .bqdmhav,',
+  '#bqp.bq-dm-v2 .bqpf-av,',
+  '#bqp.bq-dm-v2 .bq-info-av{',
+  '  box-shadow:0 0 0 2px rgba(24,24,27,1), 0 0 0 3px rgba(255,255,255,0.08), 0 4px 12px rgba(0,0,0,0.3) !important;',
+  '  transition:transform .3s cubic-bezier(0.34,1.4,0.64,1), box-shadow .3s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqav:hover,',
+  '#bqp.bq-dm-v2 .bqdmav:hover,',
+  '#bqp.bq-dm-v2 .bqdmhav:hover,',
+  '#bqp.bq-dm-v2 .bqpf-av:hover{',
+  '  transform:scale(1.08) !important;',
+  '  box-shadow:0 0 0 2px rgba(24,24,27,1), 0 0 0 3px rgba(129,140,248,0.35), 0 6px 18px rgba(0,0,0,0.4) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmav[data-status="online"]::after{',
+  '  background:#22c55e !important;',
+  '  box-shadow:0 0 8px rgba(34,197,94,0.7) !important;',
+  '  width:13px !important;height:13px !important;',
+  '  border:2.5px solid #0e0e11 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmav[data-status="studying"]::after{',
+  '  background:#818cf8 !important;',
+  '  box-shadow:0 0 8px rgba(129,140,248,0.7) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmav[data-status="busy"]::after{background:#ef4444 !important;}',
+
+  /* Refined input bar — floating style */
+  '#bqp.bq-dm-v2 .bqiw{',
+  '  background:rgba(24,24,27,0.95) !important;',
+  '  backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  border-top:1px solid rgba(255,255,255,0.06) !important;',
+  '  padding:10px 12px !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqiw::before{',
+  '  content:"" !important;position:absolute !important;',
+  '  top:-1px !important;left:0 !important;right:0 !important;height:1px !important;',
+  '  background:linear-gradient(90deg, transparent, rgba(129,140,248,0.25), transparent) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqinp{',
+  '  background:#0e0e11 !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:18px !important;',
+  '  padding:11px 16px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;letter-spacing:-0.005em !important;',
+  '  color:#f4f4f5 !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqinp::placeholder{color:#71717a !important;}',
+  '#bqp.bq-dm-v2 .bqinp:focus{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  box-shadow:0 0 0 3px rgba(129,140,248,0.15) !important;',
+  '}',
+
+  /* Refined send button */
+  '#bqp.bq-dm-v2 .bqsnd{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  color:#fff !important;border:none !important;',
+  '  border-radius:14px !important;',
+  '  box-shadow:0 2px 10px rgba(99,102,241,0.35), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqsnd:hover{',
+  '  transform:translateY(-1px) scale(1.04) !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.45), 0 1px 0 rgba(255,255,255,0.2) inset !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqsnd:active{transform:scale(0.95) !important;}',
+  '#bqp.bq-dm-v2 .bqsnd svg{stroke:#fff !important;}',
+
+  /* Refined header — glassy with better spacing */
+  '#bqp.bq-dm-v2 #bqv-dms .bqhdr,',
+  '#bqp.bq-dm-v2 #bqv-dmconv > .bqhdr,',
+  '#bqp.bq-dm-v2 #bqv-profile .bqhdr,',
+  '#bqp.bq-dm-v2 #bqv-online .bqhdr{',
+  '  background:rgba(24,24,27,0.95) !important;',
+  '  backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.06) !important;',
+  '  min-height:54px !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 #bqv-dmconv > .bqhdr::after,',
+  '#bqp.bq-dm-v2 #bqv-dms .bqhdr::after{',
+  '  content:"" !important;position:absolute !important;',
+  '  bottom:0 !important;left:0 !important;right:0 !important;height:1px !important;',
+  '  background:linear-gradient(90deg, transparent, rgba(129,140,248,0.2), transparent) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqhtitle{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:15px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '}',
+
+  /* Refined DM list — better hover states */
+  '#bqp.bq-dm-v2 .bqdmr{',
+  '  padding:12px 12px !important;',
+  '  border-radius:14px !important;',
+  '  margin:2px 0 !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr:hover{',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  transform:translateX(2px) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr:active{',
+  '  background:rgba(255,255,255,0.07) !important;',
+  '  transform:scale(0.99) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr.active-row{',
+  '  background:rgba(129,140,248,0.1) !important;',
+  '  box-shadow:inset 3px 0 0 #818cf8 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr.unread-row{',
+  '  background:rgba(255,255,255,0.025) !important;',
+  '}',
+
+  /* Refined DM list name + preview */
+  '#bqp.bq-dm-v2 .bqdmn{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14.5px !important;font-weight:600 !important;',
+  '  color:#f4f4f5 !important;letter-spacing:-0.02em !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmp{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#a1a1aa !important;',
+  '  line-height:1.4 !important;margin-top:2px !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  letter-spacing:-0.005em !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmp.unr{color:#f4f4f5 !important;font-weight:500 !important;}',
+  '#bqp.bq-dm-v2 .bqdmt{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;color:#71717a !important;',
+  '  font-variant-numeric:tabular-nums !important;',
+  '}',
+
+  /* Refined unread badge */
+  '#bqp.bq-dm-v2 .bqdmub{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  color:#fff !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:700 !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.4) !important;',
+  '  animation:bqBadgePopV92 .35s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '@keyframes bqBadgePopV92{',
+  '  0%{transform:scale(0);}',
+  '  60%{transform:scale(1.15);}',
+  '  100%{transform:scale(1);}',
+  '}',
+
+  /* Refined empty state */
+  '#bqp.bq-dm-v2 .bqempty{',
+  '  padding:60px 24px !important;text-align:center !important;',
+  '  animation:bqEmptyFadeV92 .4s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '@keyframes bqEmptyFadeV92{',
+  '  from{opacity:0;transform:translateY(12px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic{',
+  '  width:64px !important;height:64px !important;',
+  '  margin:0 auto 16px !important;border-radius:50% !important;',
+  '  background:linear-gradient(135deg, rgba(129,140,248,0.1), rgba(139,92,246,0.06)) !important;',
+  '  border:1px solid rgba(129,140,248,0.15) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  box-shadow:0 4px 14px rgba(0,0,0,0.2), 0 0 30px rgba(129,140,248,0.1) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic::after{',
+  '  content:"" !important;position:absolute !important;inset:-8px !important;',
+  '  border-radius:50% !important;',
+  '  background:radial-gradient(circle, rgba(129,140,248,0.1), transparent 70%) !important;',
+  '  z-index:-1 !important;',
+  '  animation:bqEmptyGlowV92 3s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqEmptyGlowV92{',
+  '  0%,100%{opacity:0.6;transform:scale(1);}',
+  '  50%{opacity:1;transform:scale(1.1);}',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-ic svg{stroke:#818cf8 !important;fill:none !important;stroke-width:1.5 !important;}',
+  '#bqp.bq-dm-v2 .bqempty-tx{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:16px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;margin-bottom:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqempty-sub{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#a1a1aa !important;line-height:1.5 !important;',
+  '}',
+
+  /* Refined scroll button */
+  '#bqp.bq-dm-v2 .bqscr{',
+  '  bottom:78px !important;right:12px !important;',
+  '  width:40px !important;height:40px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  border:none !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '  transition:all .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqscr:hover{',
+  '  transform:translateY(-2px) scale(1.08) !important;',
+  '  box-shadow:0 6px 20px rgba(99,102,241,0.5), 0 1px 0 rgba(255,255,255,0.2) inset !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqscr:active{transform:scale(0.95) !important;}',
+  '#bqp.bq-dm-v2 .bqscr svg{stroke:#fff !important;}',
+  '#bqp.bq-dm-v2 .bqscr .badge{',
+  '  background:#fff !important;color:#6366f1 !important;',
+  '  border-radius:10px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:10px !important;font-weight:700 !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,0.3) !important;',
+  '}',
+
+  /* Refined typing indicator */
+  '#bqp.bq-dm-v2 .bqtyp{',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '  padding:8px 14px !important;',
+  '  animation:bqTypingFadeV92 .3s ease both !important;',
+  '}',
+  '@keyframes bqTypingFadeV92{',
+  '  from{opacity:0;transform:translateY(4px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+  '#bqp.bq-dm-v2 .bqtd span{',
+  '  width:7px !important;height:7px !important;',
+  '  border-radius:50% !important;',
+  '  background:linear-gradient(135deg, #6366f1, #8b5cf6) !important;',
+  '  animation:bqTypeDotV92 1.3s ease-in-out infinite !important;',
+  '  box-shadow:0 0 8px rgba(129,140,248,0.6) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqtd span:nth-child(2){animation-delay:.18s !important;}',
+  '#bqp.bq-dm-v2 .bqtd span:nth-child(3){animation-delay:.36s !important;}',
+  '@keyframes bqTypeDotV92{',
+  '  0%,60%,100%{transform:translateY(0);opacity:.35;}',
+  '  30%{transform:translateY(-6px);opacity:1;}',
+  '}',
+
+  /* Refined date separator */
+  '#bqp.bq-dm-v2 .bqds{',
+  '  margin:20px 0 12px !important;text-align:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:600 !important;',
+  '  letter-spacing:0.05em !important;text-transform:uppercase !important;',
+  '  color:#71717a !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqds-text,',
+  '#bqp.bq-dm-v2 .bqds > span{',
+  '  display:inline-block !important;padding:5px 14px !important;',
+  '  background:rgba(255,255,255,0.06) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:14px !important;',
+  '  box-shadow:0 2px 8px rgba(0,0,0,0.15) !important;',
+  '}',
+
+  /* Refined reaction chips */
+  '#bqp.bq-dm-v2 .bqrxn,',
+  '#bqp.bq-dm-v2 .bq-rxn,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn{',
+  '  display:inline-flex !important;align-items:center !important;gap:4px !important;',
+  '  padding:3px 9px !important;',
+  '  border:1px solid rgba(255,255,255,0.1) !important;',
+  '  border-radius:14px !important;',
+  '  background:rgba(24,24,27,0.9) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  color:#f4f4f5 !important;cursor:pointer !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  margin-top:4px !important;',
+  '  box-shadow:0 2px 6px rgba(0,0,0,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn:hover,',
+  '#bqp.bq-dm-v2 .bq-rxn:hover,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn:hover{',
+  '  transform:translateY(-2px) scale(1.05) !important;',
+  '  border-color:rgba(129,140,248,0.3) !important;',
+  '  box-shadow:0 4px 12px rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqrxn.mine,',
+  '#bqp.bq-dm-v2 .bq-rxn.mine,',
+  '#bqp.bq-dm-v2 .bqmsg-rxn.mine{',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '  background:rgba(129,140,248,0.12) !important;color:#818cf8 !important;',
+  '}',
+
+  /* Refined scroll button appear animation */
+  '#bqp.bq-dm-v2 .bqscr.show{',
+  '  animation:bqScrAppearV92 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqScrAppearV92{',
+  '  from{opacity:0;transform:scale(0.5) translateY(10px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Refined new messages banner */
+  '#bqp.bq-dm-v2 .bq-new-msg-banner{',
+  '  background:linear-gradient(135deg, #6366f1, #7c3aed) !important;',
+  '  color:#fff !important;',
+  '  border-radius:16px !important;padding:7px 16px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;font-weight:600 !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.4) !important;',
+  '  animation:bqBannerInV92 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqBannerInV92{',
+  '  from{opacity:0;transform:translateX(-50%) translateY(8px) scale(0.9);}',
+  '  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}',
+  '}',
+
+  /* Refined scrollbar */
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar{width:5px !important;}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-track{background:transparent !important;}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-thumb{',
+  '  background:rgba(255,255,255,0.06) !important;border-radius:3px !important;',
+  '  transition:background .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 ::-webkit-scrollbar-thumb:hover{background:rgba(129,140,248,0.3) !important;}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp.bq-dm-v2 *, #bqp.bq-dm-v2 *::before, #bqp.bq-dm-v2 *::after{',
+  '    animation-duration:0.01ms !important;animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v92Css);
+
+console.log('[bq] V' + V92_VERSION + ' patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements');
+
+}catch(e){ console.error('[bq] V92 patch error:', e); }
 })();
 
