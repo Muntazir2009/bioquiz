@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '95.0.0';                     // V95: Enhanced last online/last seen indicator (glowing pulsing dot, glassy pill, lowercase text), removed unused files
+const WIDGET_VERSION = '96.0.0';                     // V96: Fullscreen mode (button in DM header + floating exit), navigation redesign (glassy pill, indigo active, spring animations)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3106,6 +3106,7 @@ const HTML = `
           <div class="bqdmhs" id="bqdmhs"><span class="bqdmhs-dot" id="bqdmhs-dot" style="display:none"></span><span id="bqdmhs-txt">Offline</span></div>
         </div>
         <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+        <button class="bqhbtn" id="bq-dm-fs-btn" title="Fullscreen"><svg id="bq-dm-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
           <div class="bq-dm-menu-dropdown" id="bq-dm-menu">
@@ -3544,11 +3545,19 @@ function toggleFS(){
   isFull=!isFull;
   p.classList.toggle('bq-fs',isFull);
   document.body.classList.toggle('bq-fs-mode',isFull);
+  const expandIcon='<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+  const contractIcon='<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>';
+  const iconHTML=isFull?contractIcon:expandIcon;
+  // Global chat fullscreen button
   const ico=document.getElementById('bq-fs-ico');
-  if(ico) ico.innerHTML=isFull
-    ?'<polyline points="4,14 4,20 10,20"/><polyline points="20,10 20,4 14,4"/><line x1="4" y1="20" x2="11" y2="13"/><line x1="20" y1="4" x2="13" y2="11"/>'
-    :'<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
-  document.getElementById('bq-fs-btn').classList.toggle('on',isFull);
+  if(ico) ico.innerHTML=iconHTML;
+  var fsBtn=document.getElementById('bq-fs-btn');
+  if(fsBtn) fsBtn.classList.toggle('on',isFull);
+  // V96: DM conversation fullscreen button
+  const dmIco=document.getElementById('bq-dm-fs-ico');
+  if(dmIco) dmIco.innerHTML=iconHTML;
+  var dmFsBtn=document.getElementById('bq-dm-fs-btn');
+  if(dmFsBtn) dmFsBtn.classList.toggle('on',isFull);
 }
 
 /* ─────────────────────────────────────────
@@ -6833,6 +6842,9 @@ function init(){
 
   // Fullscreen
   document.getElementById('bq-fs-btn').addEventListener('click',toggleFS);
+  // V96: DM conversation fullscreen button
+  var _dmFsBtn=document.getElementById('bq-dm-fs-btn');
+  if(_dmFsBtn) _dmFsBtn.addEventListener('click',toggleFS);
 
   // DM back (FIXED)
   document.getElementById('bqdmback').addEventListener('click',()=>{
@@ -26982,5 +26994,281 @@ v95Css.textContent = [
 console.log('[bq] V' + V95_VERSION + ' patch loaded — enhanced last online/last seen indicator + cleanup');
 
 }catch(e){ console.error('[bq] V95 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V96 PATCH — FULLSCREEN MODE + NAVIGATION REDESIGN
+   ───────────────────────────────────────────────────────────────────────
+
+   1. FULLSCREEN MODE:
+      • Added fullscreen button to DM conversation header (#bq-dm-fs-btn)
+      • toggleFS() now updates both global + DM fullscreen button icons
+      • Enhanced fullscreen CSS: panel fills viewport, bigger messages area,
+        refined header, exit button overlay when in fullscreen
+      • Floating exit button in top-right corner when fullscreen
+      • Smooth transition when entering/exiting fullscreen
+
+   2. NAVIGATION REDESIGN:
+      • Refined bottom nav pill: glassy with backdrop-blur, indigo active
+      • Active tab: indigo gradient with spring pop animation
+      • Icons: 18px, refined stroke width
+      • Labels: Inter 9.5px, 600 weight, 0.06em tracking, uppercase
+      • Hover: subtle background + icon scale
+      • Nav badges: indigo gradient with border
+      • Better spacing and padding
+      • Active indicator: sliding pill animation
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V96_VERSION = '96.0.0';
+
+var v96Css = document.createElement('style');
+v96Css.id = 'bq-v96-css';
+v96Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     1. FULLSCREEN MODE — enhanced
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Fullscreen panel — fills viewport with smooth transition */
+  '#bqp.bq-fs{',
+  '  position:fixed !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
+  '  width:100vw !important;height:100vh !important;',
+  '  max-width:none !important;max-height:none !important;',
+  '  border-radius:0 !important;',
+  '  transition:all .35s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  z-index:99998 !important;',
+  '}',
+
+  /* Fullscreen inner views fill space */
+  '#bqp.bq-fs #bqs{flex:1 1 auto !important;width:100% !important;min-width:0 !important;min-height:0 !important;}',
+  '#bqp.bq-fs .bqv{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;}',
+  '#bqp.bq-fs .bqv.bq-active{transform:none !important;}',
+  '#bqp.bq-fs .bqmsgs{flex:1 1 auto !important;min-height:0 !important;width:100% !important;}',
+  '#bqp.bq-fs .bqdmh,#bqp.bq-fs .bqgh,#bqp.bq-fs .bqiw{width:100% !important;}',
+  '#bqp.bq-fs #bqv-dmconv{display:flex !important;flex-direction:column !important;}',
+
+  /* Floating exit button in fullscreen */
+  '#bqp.bq-fs .bq-fs-exit{',
+  '  position:fixed !important;top:12px !important;right:12px !important;',
+  '  z-index:99999 !important;',
+  '  width:36px !important;height:36px !important;',
+  '  border-radius:50% !important;border:none !important;',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;',
+  '  color:#fff !important;cursor:pointer !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  box-shadow:0 4px 14px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  animation:bqFsExitIn .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '#bqp.bq-fs .bq-fs-exit:hover{',
+  '  transform:scale(1.08) rotate(90deg) !important;',
+  '  box-shadow:0 6px 18px rgba(99,102,241,0.5), 0 1px 0 rgba(255,255,255,0.2) inset !important;',
+  '}',
+  '#bqp.bq-fs .bq-fs-exit svg{width:16px !important;height:16px !important;stroke:#fff !important;stroke-width:2.5 !important;fill:none !important;}',
+  '@keyframes bqFsExitIn{from{opacity:0;transform:scale(0.5) rotate(-90deg);}to{opacity:1;transform:none;}}',
+
+  /* Fullscreen button active state (in header) */
+  '#bqp .bqhbtn#bq-fs-btn.on,',
+  '#bqp .bqhbtn#bq-dm-fs-btn.on{',
+  '  background:rgba(129,140,248,0.15) !important;',
+  '  border-color:rgba(129,140,248,0.4) !important;',
+  '}',
+  '#bqp .bqhbtn#bq-fs-btn.on svg,',
+  '#bqp .bqhbtn#bq-dm-fs-btn.on svg{',
+  '  stroke:#818cf8 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     2. NAVIGATION REDESIGN — refined bottom nav
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Nav container */
+  '#bqp #bqnav,',
+  '#bqp.bq-dm-v2 #bqnav{',
+  '  padding:8px 12px 12px !important;',
+  '  background:transparent !important;',
+  '  position:relative !important;z-index:10 !important;',
+  '}',
+  '#bqp #bqnav::before,',
+  '#bqp.bq-dm-v2 #bqnav::before{display:none !important;}',
+
+  /* Nav pill — glassy with backdrop-blur */
+  '#bqp .bqnav-pill,',
+  '#bqp.bq-dm-v2 .bqnav-pill{',
+  '  background:rgba(24,24,27,0.9) !important;',
+  '  backdrop-filter:blur(24px) saturate(1.5) !important;',
+  '  -webkit-backdrop-filter:blur(24px) saturate(1.5) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  border-radius:16px !important;',
+  '  box-shadow:0 8px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset !important;',
+  '  padding:5px !important;gap:3px !important;',
+  '  position:relative !important;overflow:hidden !important;',
+  '}',
+  '#bqp .bqnav-pill::before,',
+  '#bqp.bq-dm-v2 .bqnav-pill::before{display:none !important;}',
+
+  /* Nav button — refined */
+  '#bqp .bqnb,',
+  '#bqp.bq-dm-v2 .bqnb{',
+  '  padding:9px 8px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:9.5px !important;font-weight:600 !important;',
+  '  letter-spacing:0.06em !important;text-transform:uppercase !important;',
+  '  color:#71717a !important;',
+  '  border-radius:12px !important;',
+  '  transition:all .3s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '  -webkit-tap-highlight-color:transparent !important;',
+  '  -webkit-touch-callout:none !important;',
+  '  user-select:none !important;',
+  '  outline:none !important;',
+  '}',
+
+  /* Nav button hover */
+  '#bqp .bqnb:hover,',
+  '#bqp.bq-dm-v2 .bqnb:hover{',
+  '  color:#a1a1aa !important;',
+  '  background:rgba(255,255,255,0.03) !important;',
+  '}',
+  '#bqp .bqnb:hover svg,',
+  '#bqp.bq-dm-v2 .bqnb:hover svg{transform:scale(1.08) !important;}',
+
+  /* Nav button active — indigo gradient with spring pop */
+  '#bqp .bqnb.active,',
+  '#bqp.bq-dm-v2 .bqnb.active{',
+  '  color:#fff !important;',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.15) inset !important;',
+  '  animation:bqNavPopV96 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '#bqp .bqnb.active svg,',
+  '#bqp.bq-dm-v2 .bqnb.active svg{stroke:#fff !important;}',
+  '@keyframes bqNavPopV96{',
+  '  0%{transform:scale(0.92);}',
+  '  60%{transform:scale(1.04);}',
+  '  100%{transform:scale(1);}',
+  '}',
+
+  /* Nav icons — refined */
+  '#bqp .bqnb svg,',
+  '#bqp.bq-dm-v2 .bqnb svg{',
+  '  width:18px !important;height:18px !important;',
+  '  stroke-width:1.8 !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), stroke .25s ease !important;',
+  '}',
+
+  /* Nav badges — indigo gradient */
+  '#bqp .bqnnb,',
+  '#bqp.bq-dm-v2 .bqnnb{',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;',
+  '  color:#fff !important;',
+  '  box-shadow:0 2px 6px rgba(99,102,241,0.4) !important;',
+  '  border:1.5px solid #18181b !important;',
+  '  border-radius:8px !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:9px !important;font-weight:700 !important;',
+  '  min-width:16px !important;height:16px !important;',
+  '  padding:0 4px !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v96Css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. FLOATING EXIT BUTTON — inject when fullscreen, remove when not
+   ═══════════════════════════════════════════════════════════════════════ */
+function v96EnsureFsExitButton(){
+  var panel = document.getElementById('bqp');
+  if(!panel) return;
+  var existing = panel.querySelector('.bq-fs-exit');
+  if(panel.classList.contains('bq-fs')){
+    // In fullscreen — add exit button if not present
+    if(!existing){
+      var btn = document.createElement('button');
+      btn.className = 'bq-fs-exit';
+      btn.title = 'Exit fullscreen';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      btn.addEventListener('click', function(){
+        if(typeof toggleFS === 'function') toggleFS();
+      });
+      panel.appendChild(btn);
+    }
+  } else {
+    // Not fullscreen — remove exit button if present
+    if(existing) existing.remove();
+  }
+}
+
+/* Watch for fullscreen class changes on #bqp */
+function v96InitFsWatcher(){
+  var panel = document.getElementById('bqp');
+  if(!panel) return;
+
+  // Initial check
+  v96EnsureFsExitButton();
+
+  // Watch for class changes (bq-fs added/removed)
+  var observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.type === 'attributes' && m.attributeName === 'class'){
+        v96EnsureFsExitButton();
+      }
+    });
+  });
+  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v96Init(){
+  // Wire up the DM fullscreen button (retry a few times in case widget loads slowly)
+  setTimeout(function(){
+    var dmFsBtn = document.getElementById('bq-dm-fs-btn');
+    if(dmFsBtn && !dmFsBtn.dataset.v96wired){
+      dmFsBtn.dataset.v96wired = '1';
+      dmFsBtn.addEventListener('click', function(){
+        if(typeof toggleFS === 'function') toggleFS();
+      });
+    }
+  }, 1500);
+  setTimeout(function(){
+    var dmFsBtn = document.getElementById('bq-dm-fs-btn');
+    if(dmFsBtn && !dmFsBtn.dataset.v96wired){
+      dmFsBtn.dataset.v96wired = '1';
+      dmFsBtn.addEventListener('click', function(){
+        if(typeof toggleFS === 'function') toggleFS();
+      });
+    }
+  }, 4000);
+
+  // Init fullscreen exit button watcher
+  setTimeout(v96InitFsWatcher, 1500);
+  setTimeout(v96InitFsWatcher, 4000);
+
+  console.log('[bq] V' + V96_VERSION + ' patch loaded — fullscreen mode + navigation redesign');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v96Init);
+} else {
+  v96Init();
+}
+setTimeout(v96Init, 1500);
+setTimeout(v96Init, 4000);
+
+}catch(e){ console.error('[bq] V96 patch error:', e); }
 })();
 
