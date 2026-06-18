@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '93.0.0';                     // V93: Remove DM online indicator completely, fix text editing (preserve bubble content, char limit, saving state), redesign edit UI
+const WIDGET_VERSION = '94.0.0';                     // V94: Restore enhanced DM online indicator (glassy pill + glowing dot), keep edit UI fixes from V93
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -26634,29 +26634,59 @@ var v93Css = document.createElement('style');
 v93Css.id = 'bq-v93-css';
 v93Css.textContent = [
   /* ════════════════════════════════════════════════════════════════════
-     1. REMOVE DM ONLINE INDICATOR — hide partner status completely
+     1. ENHANCED DM ONLINE INDICATOR — restored + beautified
+     (V93 originally removed this; V94 brings it back enhanced)
      ════════════════════════════════════════════════════════════════════ */
-  '#bqp #bqdmhs,',
+
+  /* Status pill — refined glassy style */
   '#bqp .bqdmhs,',
-  '#bqp #bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs{',
+  '  display:inline-flex !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  align-items:center !important;gap:6px !important;',
+  '  padding:3px 10px !important;',
+  '  border-radius:12px !important;',
+  '  background:rgba(255,255,255,0.04) !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  -webkit-backdrop-filter:blur(8px) !important;',
+  '  margin-top:3px !important;',
+  '  width:max-content !important;max-width:200px !important;',
+  '  transition:all .25s ease !important;',
+  '}',
+
+  /* Status dot — refined with better pulse */
   '#bqp .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;',
+  '  visibility:visible !important;',
+  '  width:7px !important;height:7px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  transition:all .25s ease !important;',
+  '}',
+  /* Online dot — green with refined pulse */
+  '#bqp .bqdmhs-dot[style*="background"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background"]{',
+  '  box-shadow:0 0 6px currentColor !important;',
+  '}',
+
+  /* Status text — refined typography */
   '#bqp #bqdmhs-txt,',
-  '#bqp.bq-dm-v2 #bqdmhs,',
-  '#bqp.bq-dm-v2 .bqdmhs,',
-  '#bqp.bq-dm-v2 #bqdmhs-dot,',
-  '#bqp.bq-dm-v2 .bqdmhs-dot,',
-  '#bqp.bq-dm-v2 #bqdmhs-txt,',
-  '#bqdmhs,',
-  '.bqdmhs,',
-  '#bqdmhs-dot,',
-  '.bqdmhs-dot,',
-  '#bqdmhs-txt{',
-  '  display:none !important;',
-  '  visibility:hidden !important;',
-  '  width:0 !important;height:0 !important;',
-  '  padding:0 !important;margin:0 !important;',
-  '  opacity:0 !important;',
-  '  pointer-events:none !important;',
+  '#bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  display:inline !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.005em !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  transition:color .25s ease !important;',
+  '}',
+
+  /* V94: Add a subtle glow ring around the dot when online */
+  '#bqp.bq-dm-v2 .bqdmhs{',
+  '  position:relative !important;',
   '}',
 
   /* ════════════════════════════════════════════════════════════════════
