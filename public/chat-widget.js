@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '102.0.0';                    // V102: Force cache bust — enhanced last seen/online indicator is live (glassy pill, pulsing dot, lowercase text)
+const WIDGET_VERSION = '103.0.0';                   // V103: Profile redesign (hero card, card sections, display name, pronouns, custom status, name color, bio counter) + RTDB sync for all fields
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3200,60 +3200,58 @@ const HTML = `
       <div id="bqol"></div>
     </div>
 
-    <!-- VIEW: Profile Settings (ENHANCED) -->
+    <!-- VIEW: Profile Settings (V103 REDESIGNED) -->
     <div class="bqv" id="bqv-profile">
       <div class="bqhdr">
         <button class="bqback" id="bqprofback"><svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>Back</button>
-        <div class="bqhtitle">My Profile</div>
+        <div class="bqhtitle">Profile</div>
       </div>
       <div class="bqpf-scroll">
-        <div class="bqpf-section">
-          <div class="bqpf-label">Avatar & Initials</div>
-          <div class="bqpf-initials-row">
-            <input type="text" class="bqpf-initials-inp" id="bqpf-initials" maxlength="2" placeholder="AB">
-            <div class="bqpf-initials-hint">Custom initials (1-2 letters)<br>Leave empty to use auto-generated</div>
-          </div>
-          <div class="bqpf-avrow">
-            <div class="bqpf-av" id="bqpfav"></div>
-            <div class="bqpf-av-info">
-              <div class="bqpf-uname" id="bqpfuname">@username</div>
-              <div class="bqpf-change" id="bqpf-changename">Change username</div>
+        <!-- Hero card -->
+        <div class="bqpf-hero">
+          <div class="bqpf-hero-banner" id="bqpf-banner-preview"></div>
+          <div class="bqpf-hero-body">
+            <div class="bqpf-hero-av" id="bqpfav"></div>
+            <div class="bqpf-hero-info">
+              <div class="bqpf-hero-name" id="bqpfuname">@username</div>
+              <div class="bqpf-hero-status" id="bqpf-hero-status">online</div>
             </div>
+            <button class="bqpf-hero-edit" id="bqpf-changename">Edit</button>
           </div>
-          <div class="bqpf-label">Avatar Colour</div>
-          <div class="bqpf-colors" id="bqpfcols"></div>
-          <div class="bqpf-label">Banner Colour</div>
-          <div class="bqpf-banner-row">
-            <div class="bqpf-banner-preview" id="bqpf-banner-preview">Preview</div>
-          </div>
-          <div class="bqpf-colors" id="bqpf-banner-cols"></div>
         </div>
-        <div class="bqpf-section">
-          <div class="bqpf-label">Status</div>
+        <!-- Identity -->
+        <div class="bqpf-card">
+          <div class="bqpf-card-title">Identity</div>
+          <div class="bqpf-grid2">
+            <div class="bqpf-field"><label class="bqpf-field-label">Display Name</label><input id="bqpf-displayname" class="bqpf-inp" type="text" placeholder="Your name" maxlength="32" autocomplete="off"></div>
+            <div class="bqpf-field"><label class="bqpf-field-label">Initials</label><input type="text" class="bqpf-inp bqpf-initials-inp" id="bqpf-initials" maxlength="2" placeholder="AB"></div>
+            <div class="bqpf-field"><label class="bqpf-field-label">Pronouns</label><input id="bqpf-pronouns" class="bqpf-inp" type="text" placeholder="he/him, she/her..." maxlength="20" autocomplete="off"></div>
+            <div class="bqpf-field"><label class="bqpf-field-label">Name Color</label><div class="bqpf-colors" id="bqpf-namecols"></div></div>
+          </div>
+          <div class="bqpf-field"><label class="bqpf-field-label">Avatar Color</label><div class="bqpf-colors" id="bqpfcols"></div></div>
+          <div class="bqpf-field"><label class="bqpf-field-label">Banner Color</label><div class="bqpf-colors" id="bqpf-banner-cols"></div></div>
+        </div>
+        <!-- Status -->
+        <div class="bqpf-card">
+          <div class="bqpf-card-title">Status</div>
           <div class="bqpf-statuses" id="bqpfsts"></div>
-          <div class="bqpf-label">Activity (Rich Presence)</div>
-          <input id="bqpfact" class="bqpf-inp" type="text" placeholder="e.g. Studying Biology..." maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off">
+          <div class="bqpf-field"><label class="bqpf-field-label">Activity</label><input id="bqpfact" class="bqpf-inp" type="text" placeholder="Studying Biology..." maxlength="60" autocomplete="off"></div>
+          <div class="bqpf-field"><label class="bqpf-field-label">Custom Status</label><input id="bqpf-customstatus" class="bqpf-inp" type="text" placeholder="Feeling great!" maxlength="60" autocomplete="off"></div>
         </div>
-        <div class="bqpf-section">
-          <div class="bqpf-label">Bio</div>
+        <!-- Bio -->
+        <div class="bqpf-card">
+          <div class="bqpf-card-title">Bio</div>
           <textarea id="bqpfbio" class="bqpf-textarea" placeholder="Write something about yourself..." maxlength="120" autocorrect="off"></textarea>
+          <div class="bqpf-char-row"><span id="bqpf-bio-count">0/120</span></div>
         </div>
-        <div class="bqpf-section">
-          <div class="bqpf-label">Appearance</div>
-          <div class="bqpf-label" style="margin-top:8px;font-size:9px;color:var(--bq-text-muted);">Font Size</div>
+        <!-- Appearance -->
+        <div class="bqpf-card">
+          <div class="bqpf-card-title">Appearance</div>
+          <label class="bqpf-field-label">Font Size</label>
           <div class="bqpf-fontsize-row" id="bqpf-fontsize">
-            <div class="bqpf-fontsize" data-size="sm">
-              <div class="bqpf-fontsize-sample" style="font-size:12px;">Aa</div>
-              <div class="bqpf-fontsize-lbl">Small</div>
-            </div>
-            <div class="bqpf-fontsize sel" data-size="md">
-              <div class="bqpf-fontsize-sample" style="font-size:14px;">Aa</div>
-              <div class="bqpf-fontsize-lbl">Medium</div>
-            </div>
-            <div class="bqpf-fontsize" data-size="lg">
-              <div class="bqpf-fontsize-sample" style="font-size:16px;">Aa</div>
-              <div class="bqpf-fontsize-lbl">Large</div>
-            </div>
+            <div class="bqpf-fontsize" data-size="sm"><div class="bqpf-fontsize-sample" style="font-size:12px;">Aa</div><div class="bqpf-fontsize-lbl">Small</div></div>
+            <div class="bqpf-fontsize sel" data-size="md"><div class="bqpf-fontsize-sample" style="font-size:14px;">Aa</div><div class="bqpf-fontsize-lbl">Medium</div></div>
+            <div class="bqpf-fontsize" data-size="lg"><div class="bqpf-fontsize-sample" style="font-size:16px;">Aa</div><div class="bqpf-fontsize-lbl">Large</div></div>
           </div>
         </div>
         <button class="bqpf-savebtn" id="bqpfsave">Save Profile</button>
@@ -6549,11 +6547,50 @@ function refreshProfileView(){
     });
   }
   
+  // V103: New fields — display name, pronouns, custom status, name color
+  const dn=document.getElementById('bqpf-displayname');
+  if(dn) dn.value=myProfile.displayName||'';
+  const pn=document.getElementById('bqpf-pronouns');
+  if(pn) pn.value=myProfile.pronouns||'';
+  const cs=document.getElementById('bqpf-customstatus');
+  if(cs) cs.value=myProfile.customStatus||'';
+  
+  // Name color chips
+  const nameCols=document.getElementById('bqpf-namecols');
+  if(nameCols){
+    nameCols.innerHTML='';
+    PALETTE.forEach(c=>{
+      const chip=document.createElement('div');
+      chip.className='bqpf-col'+(c===(myProfile.nameColor||'')?' sel':'');
+      chip.style.background=c;
+      chip.addEventListener('click',()=>{
+        myProfile.nameColor=c;
+        nameCols.querySelectorAll('.bqpf-col').forEach(x=>x.classList.toggle('sel',x===chip));
+      });
+      nameCols.appendChild(chip);
+    });
+  }
+  
+  // Hero status text
+  const heroStatus=document.getElementById('bqpf-hero-status');
+  if(heroStatus){
+    const st=statusInfo(myProfile.status||'online');
+    heroStatus.textContent=st.label.toLowerCase();
+    heroStatus.style.color=st.color;
+  }
+  
+  // Bio char counter
+  const bioEl=document.getElementById('bqpfbio');
+  const bioCount=document.getElementById('bqpf-bio-count');
+  if(bioEl && bioCount){
+    bioCount.textContent=(bioEl.value.length||0)+'/120';
+    bioEl.addEventListener('input',()=>{bioCount.textContent=bioEl.value.length+'/120';});
+  }
+  
   // Activity + bio
   const act=document.getElementById('bqpfact');
-  const bio=document.getElementById('bqpfbio');
   if(act) act.value=myProfile.activity||'';
-  if(bio) bio.value=myProfile.bio||'';
+  if(bioEl) bioEl.value=myProfile.bio||'';
   
   // Update push UI
   updatePushUI();
@@ -6563,9 +6600,15 @@ function saveProfile(){
   const act=document.getElementById('bqpfact')?.value.trim()||'';
   const bio=document.getElementById('bqpfbio')?.value.trim()||'';
   const initials=document.getElementById('bqpf-initials')?.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'';
+  const displayName=document.getElementById('bqpf-displayname')?.value.trim()||'';
+  const pronouns=document.getElementById('bqpf-pronouns')?.value.trim()||'';
+  const customStatus=document.getElementById('bqpf-customstatus')?.value.trim()||'';
   myProfile.activity=act;
   myProfile.bio=bio;
   myProfile.initials=initials;
+  myProfile.displayName=displayName;
+  myProfile.pronouns=pronouns;
+  myProfile.customStatus=customStatus;
   localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
   if(db&&uname) startPresence();
   refreshMeAvatar();
@@ -28309,5 +28352,172 @@ v101Css.textContent = [
 (document.head || document.documentElement).appendChild(v101Css);
 console.log('[bq] V101 patch loaded — status pill removed from DM header, profile removed from nav');
 }catch(e){ console.error('[bq] V101 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V103 PATCH — PROFILE REDESIGN + RTDB SYNC
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var css = document.createElement('style');
+css.id = 'bq-v103-css';
+css.textContent = [
+  /* Profile scroll container */
+  '#bqp .bqpf-scroll{background:#0e0e11 !important;padding:12px !important;}',
+
+  /* Hero card */
+  '#bqp .bqpf-hero{',
+  '  border-radius:16px !important;overflow:hidden !important;margin-bottom:14px !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  box-shadow:0 4px 14px rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp .bqpf-hero-banner{',
+  '  height:80px !important;width:100% !important;',
+  '  background:linear-gradient(135deg,rgba(129,140,248,0.3),rgba(139,92,246,0.15)) !important;',
+  '}',
+  '#bqp .bqpf-hero-body{',
+  '  display:flex !important;align-items:center !important;gap:14px !important;',
+  '  padding:0 16px 16px !important;margin-top:-28px !important;position:relative !important;',
+  '}',
+  '#bqp .bqpf-hero-av{',
+  '  width:56px !important;height:56px !important;border-radius:50% !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-size:18px !important;font-weight:700 !important;color:#000 !important;flex-shrink:0 !important;',
+  '  box-shadow:0 0 0 3px #0e0e11, 0 0 0 4px rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp .bqpf-hero-info{flex:1 !important;min-width:0 !important;}',
+  '#bqp .bqpf-hero-name{',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:17px !important;',
+  '  font-weight:600 !important;letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '}',
+  '#bqp .bqpf-hero-status{',
+  '  font-size:12px !important;color:#22c55e !important;margin-top:2px !important;',
+  '  text-transform:lowercase !important;',
+  '}',
+  '#bqp .bqpf-hero-edit{',
+  '  padding:7px 14px !important;border-radius:10px !important;border:1px solid rgba(255,255,255,0.1) !important;',
+  '  background:rgba(255,255,255,0.04) !important;color:#a1a1aa !important;',
+  '  font:600 12px Inter,-apple-system,sans-serif !important;cursor:pointer !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqpf-hero-edit:hover{background:rgba(129,140,248,0.1) !important;color:#818cf8 !important;border-color:rgba(129,140,248,0.3) !important;}',
+
+  /* Card sections */
+  '#bqp .bqpf-card{',
+  '  background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.06) !important;',
+  '  border-radius:14px !important;padding:16px !important;margin-bottom:12px !important;',
+  '}',
+  '#bqp .bqpf-card-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:13px !important;',
+  '  font-weight:600 !important;letter-spacing:-0.01em !important;color:#f4f4f5 !important;',
+  '  margin-bottom:14px !important;display:flex !important;align-items:center !important;gap:8px !important;',
+  '}',
+  '#bqp .bqpf-card-title::before{',
+  '  content:"" !important;width:3px !important;height:14px !important;',
+  '  background:linear-gradient(180deg,#6366f1,#8b5cf6) !important;border-radius:2px !important;',
+  '}',
+
+  /* Field labels */
+  '#bqp .bqpf-field-label{',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:11px !important;',
+  '  font-weight:600 !important;letter-spacing:0.04em !important;text-transform:uppercase !important;',
+  '  color:#71717a !important;margin-bottom:8px !important;display:block !important;',
+  '}',
+
+  /* Grid for 2-column fields */
+  '#bqp .bqpf-grid2{display:grid !important;grid-template-columns:1fr 1fr !important;gap:12px !important;margin-bottom:12px !important;}',
+  '@media(max-width:400px){#bqp .bqpf-grid2{grid-template-columns:1fr !important;}}',
+
+  /* Fields */
+  '#bqp .bqpf-field{margin-bottom:14px !important;}',
+
+  /* Inputs — refined */
+  '#bqp .bqpf-inp{',
+  '  width:100% !important;background:rgba(255,255,255,0.04) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;border-radius:10px !important;',
+  '  padding:10px 14px !important;color:#f4f4f5 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:14px !important;',
+  '  outline:none !important;transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqpf-inp:focus{border-color:rgba(129,140,248,0.4) !important;box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;}',
+  '#bqp .bqpf-inp::placeholder{color:#71717a !important;}',
+
+  /* Textarea */
+  '#bqp .bqpf-textarea{',
+  '  width:100% !important;background:rgba(255,255,255,0.04) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;border-radius:10px !important;',
+  '  padding:10px 14px !important;color:#f4f4f5 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;font-size:14px !important;',
+  '  outline:none !important;resize:vertical !important;min-height:64px !important;line-height:1.5 !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqpf-textarea:focus{border-color:rgba(129,140,248,0.4) !important;box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;}',
+
+  /* Char counter */
+  '#bqp .bqpf-char-row{text-align:right !important;margin-top:4px !important;}',
+  '#bqp #bqpf-bio-count{font:500 10px Inter,-apple-system,sans-serif !important;color:#71717a !important;}',
+
+  /* Color chips */
+  '#bqp .bqpf-colors{display:flex !important;flex-wrap:wrap !important;gap:8px !important;}',
+  '#bqp .bqpf-col{',
+  '  width:28px !important;height:28px !important;border-radius:50% !important;cursor:pointer !important;',
+  '  border:2px solid transparent !important;transition:all .2s ease !important;flex-shrink:0 !important;',
+  '}',
+  '#bqp .bqpf-col:hover{transform:scale(1.1) !important;}',
+  '#bqp .bqpf-col.sel{border-color:#818cf8 !important;box-shadow:0 0 0 2px rgba(129,140,248,0.25) !important;transform:scale(1.05) !important;}',
+
+  /* Status grid */
+  '#bqp .bqpf-statuses{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;margin-bottom:14px !important;}',
+  '#bqp .bqpf-st{',
+  '  display:flex !important;align-items:center !important;gap:8px !important;',
+  '  padding:10px 12px !important;border-radius:10px !important;cursor:pointer !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;background:rgba(255,255,255,0.02) !important;',
+  '  transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqpf-st:hover{background:rgba(255,255,255,0.05) !important;}',
+  '#bqp .bqpf-st.sel{border-color:rgba(129,140,248,0.3) !important;background:rgba(129,140,248,0.08) !important;}',
+  '#bqp .bqpf-st-dot{width:9px !important;height:9px !important;border-radius:50% !important;flex-shrink:0 !important;}',
+  '#bqp .bqpf-st-lbl{font:500 13px Inter,-apple-system,sans-serif !important;color:#f4f4f5 !important;}',
+
+  /* Font size picker */
+  '#bqp .bqpf-fontsize-row{display:grid !important;grid-template-columns:repeat(3,1fr) !important;gap:8px !important;}',
+  '#bqp .bqpf-fontsize{',
+  '  padding:12px 8px !important;border-radius:10px !important;cursor:pointer !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;background:rgba(255,255,255,0.02) !important;',
+  '  text-align:center !important;transition:all .2s ease !important;',
+  '}',
+  '#bqp .bqpf-fontsize:hover{background:rgba(255,255,255,0.05) !important;}',
+  '#bqp .bqpf-fontsize.sel{border-color:rgba(129,140,248,0.3) !important;background:rgba(129,140,248,0.08) !important;}',
+  '#bqp .bqpf-fontsize-sample{font-family:Inter,-apple-system,sans-serif !important;font-weight:600 !important;color:#f4f4f5 !important;}',
+  '#bqp .bqpf-fontsize.sel .bqpf-fontsize-sample{color:#818cf8 !important;}',
+  '#bqp .bqpf-fontsize-lbl{font:600 10px Inter,-apple-system,sans-serif !important;color:#71717a !important;text-transform:uppercase !important;letter-spacing:0.04em !important;margin-top:4px !important;}',
+
+  /* Save button */
+  '#bqp .bqpf-savebtn{',
+  '  width:100% !important;padding:13px !important;border-radius:12px !important;border:none !important;',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;color:#fff !important;',
+  '  font:600 14px Inter,-apple-system,sans-serif !important;cursor:pointer !important;',
+  '  box-shadow:0 2px 10px rgba(99,102,241,0.3) !important;transition:all .2s ease !important;',
+  '  margin-top:4px !important;',
+  '}',
+  '#bqp .bqpf-savebtn:hover{transform:translateY(-1px) !important;box-shadow:0 4px 14px rgba(99,102,241,0.4) !important;}',
+  '#bqp .bqpf-savebtn:active{transform:scale(0.98) !important;}',
+
+  /* Save message */
+  '#bqp .bqpf-savemsg{text-align:center !important;font:500 12px Inter,-apple-system,sans-serif !important;color:#22c55e !important;padding:8px !important;transition:opacity .3s !important;}',
+
+  /* Hide old section styling */
+  '#bqp .bqpf-section{padding:0 !important;border:none !important;margin:0 !important;}',
+  '#bqp .bqpf-label{display:none !important;}',
+  '#bqp .bqpf-avrow{display:none !important;}',
+  '#bqp .bqpf-initials-row{display:none !important;}',
+  '#bqp .bqpf-banner-row{display:none !important;}',
+
+  '@media (prefers-reduced-motion: reduce){#bqp *{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+console.log('[bq] V103 patch loaded — profile redesign');
+}catch(e){ console.error('[bq] V103 patch error:', e); }
 })();
 
