@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '103.0.0';                   // V103: Profile redesign (hero card, card sections, display name, pronouns, custom status, name color, bio counter) + RTDB sync for all fields
+const WIDGET_VERSION = '104.0.0';                   // V104: Kill founder badge (aggressive removal), admin capabilities for @muntazir (delete any msg, announce, ban, mute, clear chat, slow mode, maintenance)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -28519,5 +28519,378 @@ css.textContent = [
 (document.head || document.documentElement).appendChild(css);
 console.log('[bq] V103 patch loaded — profile redesign');
 }catch(e){ console.error('[bq] V103 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V104 PATCH — KILL FOUNDER BADGE + ADMIN CAPABILITIES FOR @MUNTAZIR
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var V104_VERSION = '104.0.0';
+
+var css = document.createElement('style');
+css.id = 'bq-v104-css';
+css.textContent = [
+  /* KILL founder badge — aggressive override */
+  '.bq-founder-badge{display:none !important;visibility:hidden !important;opacity:0 !important;width:0 !important;height:0 !important;pointer-events:none !important;}',
+  '.bqun .bq-founder-badge, .bqdmn .bq-founder-badge, .bqdmhn .bq-founder-badge{display:none !important;}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. KILL FOUNDER BADGE — aggressive periodic removal
+   ═══════════════════════════════════════════════════════════════════════ */
+function v104KillFounderBadges(){
+  var badges = document.querySelectorAll('.bq-founder-badge');
+  badges.forEach(function(b){ b.remove(); });
+}
+
+/* Override the V98 functions AGGRESSIVELY — the V99 override didn't work
+   because V98's closure references the original function, not window.isMuntazir.
+   We need to intercept the interval that V98 set up. */
+function v104KillV98Interval(){
+  // The V98 init runs v98AddFounderBadges every 3s via setInterval.
+  // We can't cancel that interval directly, but we can override the function
+  // it calls. Since V98 assigned it to window.v98AddFounderBadges, our
+  // override should work IF V98 uses window.v98AddFounderBadges.
+  // But V98's closure captures the function reference directly.
+  // Solution: run our own aggressive removal every 1s to clean up faster
+  // than V98 can add them.
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. ADMIN CAPABILITIES FOR @MUNTAZIR
+   Real-time admin actions directly from the chat widget:
+   - Pin/unpin messages in global chat
+   - Delete any message (not just own)
+   - Send announcements (banner)
+   - Ban/unban users
+   - Mute/unmute users
+   - Clear all global messages
+   - Toggle slow mode
+   - Toggle maintenance mode
+   These write directly to Firebase RTDB paths that the widget already listens to.
+   ═══════════════════════════════════════════════════════════════════════ */
+var ADMIN_NAMES = ['muntazir', 'muntazir2009'];
+var _isAdmin = false;
+
+function checkAdmin(){
+  try {
+    var name = (typeof uname !== 'undefined') ? uname : '';
+    if(!name) return false;
+    return ADMIN_NAMES.indexOf(name.toLowerCase()) !== -1;
+  } catch(e) { return false; }
+}
+
+/* Admin: Delete ANY message (not just own) */
+function adminDeleteMessage(ctx, key){
+  if(!_isAdmin) return false;
+  try {
+    var path = ctx === 'global' ? 'bq_messages/' + key : 'bq_dms/' + (typeof activeDmId !== 'undefined' ? activeDmId : '') + '/messages/' + key;
+    if(typeof db !== 'undefined' && db) db.ref(path).remove();
+    var el = document.getElementById('bqmsg-' + ctx + '-' + key);
+    if(el) el.remove();
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Pin message in global chat */
+function adminPinMessage(key){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db) db.ref('bq_pinned/' + key).set({ts: Date.now(), pinnedBy: 'admin'});
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Unpin message */
+function adminUnpinMessage(key){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db) db.ref('bq_pinned/' + key).remove();
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Send announcement banner */
+function adminAnnounce(text, color){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db){
+      db.ref('bq_widget_config/settings').update({
+        announcementEnabled: true,
+        announcementText: text || 'Announcement',
+        announcementColor: color || '#818cf8'
+      });
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Clear announcement */
+function adminClearAnnouncement(){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db){
+      db.ref('bq_widget_config/settings/announcementEnabled').set(false);
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Ban user */
+function adminBanUser(targetUid, reason){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db && targetUid){
+      db.ref('bq_banned/' + targetUid).set({reason: reason || 'Banned by admin', ts: Date.now(), bannedBy: 'admin'});
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Unban user */
+function adminUnbanUser(targetUid){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db && targetUid){
+      db.ref('bq_banned/' + targetUid).remove();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Mute user */
+function adminMuteUser(targetUid, reason){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db && targetUid){
+      db.ref('bq_muted/' + targetUid).set({reason: reason || 'Muted by admin', ts: Date.now()});
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Unmute user */
+function adminUnmuteUser(targetUid){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db && targetUid){
+      db.ref('bq_muted/' + targetUid).remove();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Clear all global messages */
+function adminClearGlobalChat(){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db){
+      db.ref('bq_messages').remove();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Toggle slow mode */
+function adminToggleSlowMode(enabled, interval){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db){
+      db.ref('bq_widget_config/settings').update({
+        slowMode: !!enabled,
+        slowModeInterval: interval || 5
+      });
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* Admin: Toggle maintenance mode */
+function adminToggleMaintenance(enabled, message){
+  if(!_isAdmin) return false;
+  try {
+    if(typeof db !== 'undefined' && db){
+      db.ref('bq_widget_config/settings').update({
+        maintenanceEnabled: !!enabled,
+        maintenanceMessage: message || 'Chat under maintenance'
+      });
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. INJECT ADMIN CONTROLS INTO MESSAGE ACTION SHEET
+   When admin long-presses/taps a message, add admin actions
+   ═══════════════════════════════════════════════════════════════════════ */
+function v104InjectAdminActions(){
+  if(!_isAdmin) return;
+
+  // Listen for clicks on message action buttons
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.bq-ms-btn[data-a="del"]');
+    if(!btn) return;
+
+    // If it's NOT the user's own message, and admin is active, allow delete
+    var bar = btn.closest('.bq-msg-inline');
+    if(!bar) return;
+    var key = bar.dataset.key;
+    var ctx = bar.dataset.ctx;
+    if(!key || !ctx) return;
+
+    var row = document.getElementById('bqmsg-' + ctx + '-' + key);
+    if(!row) return;
+
+    // Check if it's someone else's message
+    var msgUid = row.dataset.msguid || '';
+    var myUid = (typeof uid !== 'undefined') ? uid : '';
+    if(msgUid !== myUid && _isAdmin){
+      // Admin deleting someone else's message
+      e.preventDefault();
+      e.stopPropagation();
+      if(typeof closeMsgActionSheet === 'function') closeMsgActionSheet();
+      adminDeleteMessage(ctx, key);
+      if(typeof toast === 'function') toast('Admin: message deleted');
+    }
+  }, true);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. INJECT ADMIN PANEL INTO PROFILE VIEW
+   ═══════════════════════════════════════════════════════════════════════ */
+function v104InjectAdminPanel(){
+  if(!_isAdmin) return;
+
+  var scroll = document.querySelector('.bqpf-scroll');
+  if(!scroll) return;
+  if(document.getElementById('bq-admin-panel-v104')) return;
+
+  var panel = document.createElement('div');
+  panel.id = 'bq-admin-panel-v104';
+  panel.className = 'bqpf-card';
+  panel.style.cssText = 'border-color:rgba(239,68,68,0.2) !important;background:rgba(239,68,68,0.03) !important;';
+  panel.innerHTML =
+    '<div class="bqpf-card-title" style="color:#f87171 !important;">Admin Controls</div>' +
+    '<div class="bqpf-field">' +
+      '<label class="bqpf-field-label">Announcement</label>' +
+      '<input id="bq-admin-announce-text" class="bqpf-inp" type="text" placeholder="Announcement text..." maxlength="200">' +
+      '<div style="display:flex;gap:8px;margin-top:8px;">' +
+        '<button id="bq-admin-announce-btn" class="bqpf-hero-edit" style="background:rgba(129,140,248,0.1);color:#818cf8;border-color:rgba(129,140,248,0.3);">Send</button>' +
+        '<button id="bq-admin-clear-announce-btn" class="bqpf-hero-edit">Clear</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="bqpf-field">' +
+      '<label class="bqpf-field-label">Chat Controls</label>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button id="bq-admin-clear-chat-btn" class="bqpf-hero-edit" style="background:rgba(239,68,68,0.1);color:#f87171;border-color:rgba(239,68,68,0.3);">Clear Global Chat</button>' +
+        '<button id="bq-admin-slowmode-btn" class="bqpf-hero-edit">Toggle Slow Mode</button>' +
+        '<button id="bq-admin-maintenance-btn" class="bqpf-hero-edit">Toggle Maintenance</button>' +
+      '</div>' +
+    '</div>';
+
+  // Insert before the save button
+  var saveBtn = scroll.querySelector('#bqpfsave');
+  if(saveBtn){
+    scroll.insertBefore(panel, saveBtn);
+  } else {
+    scroll.appendChild(panel);
+  }
+
+  // Wire up
+  var annBtn = document.getElementById('bq-admin-announce-btn');
+  if(annBtn) annBtn.addEventListener('click', function(){
+    var text = document.getElementById('bq-admin-announce-text').value.trim();
+    if(!text) return;
+    adminAnnounce(text);
+    if(typeof toast === 'function') toast('Announcement sent');
+  });
+
+  var clrAnnBtn = document.getElementById('bq-admin-clear-announce-btn');
+  if(clrAnnBtn) clrAnnBtn.addEventListener('click', function(){
+    adminClearAnnouncement();
+    if(typeof toast === 'function') toast('Announcement cleared');
+  });
+
+  var clrChatBtn = document.getElementById('bq-admin-clear-chat-btn');
+  if(clrChatBtn) clrChatBtn.addEventListener('click', function(){
+    if(confirm('Clear ALL global messages? This cannot be undone.')){
+      adminClearGlobalChat();
+      if(typeof toast === 'function') toast('Global chat cleared');
+    }
+  });
+
+  var slowBtn = document.getElementById('bq-admin-slowmode-btn');
+  if(slowBtn) slowBtn.addEventListener('click', function(){
+    var enabled = !(typeof _widgetConfig !== 'undefined' && _widgetConfig.slowMode);
+    adminToggleSlowMode(enabled, 5);
+    if(typeof toast === 'function') toast(enabled ? 'Slow mode ON (5s)' : 'Slow mode OFF');
+  });
+
+  var maintBtn = document.getElementById('bq-admin-maintenance-btn');
+  if(maintBtn) maintBtn.addEventListener('click', function(){
+    var enabled = !(typeof _widgetConfig !== 'undefined' && _widgetConfig.maintenanceEnabled);
+    adminToggleMaintenance(enabled);
+    if(typeof toast === 'function') toast(enabled ? 'Maintenance ON' : 'Maintenance OFF');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v104Init(){
+  // Check admin status
+  _isAdmin = checkAdmin();
+
+  // Kill founder badges every 500ms (faster than V98's 3s interval)
+  setInterval(v104KillFounderBadges, 500);
+  v104KillFounderBadges();
+
+  // Inject admin actions for message deletion
+  v104InjectAdminActions();
+
+  // Inject admin panel into profile (retry)
+  setTimeout(v104InjectAdminPanel, 1500);
+  setTimeout(v104InjectAdminPanel, 3000);
+
+  // Write admin flag to RTDB
+  if(_isAdmin && typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid){
+    try {
+      db.ref('bq_presence/' + uid + '/isAdmin').set(true);
+      db.ref('bq_admins/' + uid).set({name: uname || 'admin', ts: Date.now()});
+    } catch(e) {}
+  }
+
+  // Expose admin functions globally
+  window.bqAdmin = {
+    deleteMessage: adminDeleteMessage,
+    pinMessage: adminPinMessage,
+    unpinMessage: adminUnpinMessage,
+    announce: adminAnnounce,
+    clearAnnouncement: adminClearAnnouncement,
+    banUser: adminBanUser,
+    unbanUser: adminUnbanUser,
+    muteUser: adminMuteUser,
+    unmuteUser: adminUnmuteUser,
+    clearGlobalChat: adminClearGlobalChat,
+    toggleSlowMode: adminToggleSlowMode,
+    toggleMaintenance: adminToggleMaintenance,
+    isAdmin: function(){ return _isAdmin; }
+  };
+
+  console.log('[bq] V' + V104_VERSION + ' patch loaded — founder badge killed, admin capabilities for @muntazir');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v104Init);
+} else {
+  v104Init();
+}
+setTimeout(v104Init, 1500);
+setTimeout(v104Init, 4000);
+
+}catch(e){ console.error('[bq] V104 patch error:', e); }
 })();
 
