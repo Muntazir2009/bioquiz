@@ -776,3 +776,69 @@ Stage Summary:
 - Stability: global error guard, safe helpers, race condition fix, debounce
 - Non-breaking: V1 unchanged, V87 overrides V86 with higher specificity
 - Backup: scripts/chat-widget-v86-backup.js
+
+---
+Task ID: V88-Fix
+Agent: main
+Task: Fix disguise (chat icon + background visible), enhance DM settings UI, add better animations
+
+Work Log:
+- Re-cloned repo (was deleted), confirmed V87 baseline
+- DIAGNOSED disguise bugs:
+  1. V87 set position:relative !important on #bq-disguise, which OVERRODE the original position:absolute;inset:0 → disguise collapsed to content height, leaving 'Pick a Username' screen (#bqnm) visible in background
+  2. Chat bubble #bqb has z-index:9900, position:fixed — sits outside panel, shows on top of disguise (z-index:100)
+  3. Disguise z-index:100 was below #bqb's 9900
+- Backed up V87 to scripts/chat-widget-v87-backup.js
+- Wrote V88 patch (618 lines) in scripts/v88-fix-patch.js:
+
+FIX DISGUISE:
+- Restored position:absolute;inset:0 with !important (explicit top/left/right/bottom:0)
+- Raised z-index from 100 to 99999 (above #bqb's 9900 and #bqnm's 30)
+- v88PatchDisguiseBubble(): patches bqShowDisguise to add body.bq-disguise-active + #bqb.bq-disguise-hidden (opacity:0, pointer-events:none, scale 0.8); patches bqRemoveDisguise to restore
+- Added #bq-disguise::after solid bg layer (#0f0f1a) for full opacity
+- All disguise children z-index:1 (above bg layers)
+- Refined entrance animation (bqDisguiseInV88, 0.35s spring)
+
+ENHANCED DM SETTINGS UI (#bq-dm-info):
+- Header: glassy with backdrop-blur, gradient accent line under title, close button rotates 90deg + turns red on hover
+- Avatar section: 72px avatar with triple-ring shadow (bg ring + indigo ring + drop shadow), radial glow behind, hover scale 1.05
+- Section titles: uppercase with letter-spacing + indigo gradient bar (::before)
+- Sections: staggered reveal animation (bqSettingsReveal, 60ms delay each)
+- Rows: card-style with 12px radius, hover lift (translateX 2px) + indigo tint + border brighten
+- Row icons: 36px rounded with indigo bg, hover scale 1.05
+- Danger row: red gradient card, hover intensifies red
+- Theme chips: 36px with active ring + ✓ checkmark when selected
+- Toggle switches: refined with indigo gradient when on, spring animation on slider
+
+BETTER ANIMATIONS (all chat widget):
+- Panel open: refined slide-up with overshoot (bqPanelOpenV88, 0.4s spring)
+- Message entrance: refined spring with scale + fade (bqMsgSpringV88, 0.4s)
+- Bubble entrance: refined scale + fade (bqBubbleInV88, 0.35s)
+- Button press: refined scale 0.95 on active (all buttons)
+- DM list rows: staggered reveal (bqDmRowReveal, 40ms delay each, slide from left)
+- Modal/drawer: spring scale + translateY (bqModalSpringV88, 0.35s)
+- Hover: refined lift + glow on bubbles
+- Reaction picker: spring bounce (bqReactionSpringV88, 0.3s)
+- Toast: slide + fade + scale (bqToastSlideV88, 0.3s)
+- Empty state: refined fade (bqEmptyFadeV88, 0.4s)
+- Date separator: refined fade (bqDateFadeV88, 0.3s)
+- Scroll button: spring appear (bqScrAppearV88, 0.3s)
+- Typing indicator: fade (bqTypingFadeV88, 0.3s)
+- Pinned bar: slide-down (bqPinnedSlideV88, 0.3s)
+- V1/V2 toggle: refined pill slide (0.35s spring)
+- Input focus: ring expand animation (bqInputFocusV88, 0.25s)
+- Avatar hover: refined spring scale
+- Shimmer loading: refined 1.5s ease-in-out
+
+- Appended V88 patch to public/chat-widget.js (now 24,780 lines)
+- Bumped WIDGET_VERSION from '87.0.0' to '88.0.0'
+- Updated public/chat-widget-version.json to {"version": "88.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 40 V88 markers, disguise position:absolute confirmed, WIDGET_VERSION = '88.0.0', no errors
+- Committed (e0b2c54) and pushed to GitHub
+
+Stage Summary:
+- Disguise FIXED: position:absolute restored, z-index raised to 99999, chat bubble hidden when disguise active, fully opaque background
+- DM settings UI enhanced: glassy header, avatar with triple-ring + glow, staggered section reveals, card-style rows, indigo accents, refined toggles + theme chips
+- Better animations everywhere: springs on messages/modals/buttons, staggered list reveals, refined hover lifts, smooth transitions
+- Non-breaking: V1 unchanged, V88 overrides V87 with higher specificity
+- Backup: scripts/chat-widget-v87-backup.js
