@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '96.0.0';                     // V96: Fullscreen mode (button in DM header + floating exit), navigation redesign (glassy pill, indigo active, spring animations)
+const WIDGET_VERSION = '97.0.0';                     // V97: True fullscreen (Fullscreen API hides browser chrome), fix last seen (fetch presence from Firebase, periodic refresh, dot always visible)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3558,6 +3558,24 @@ function toggleFS(){
   if(dmIco) dmIco.innerHTML=iconHTML;
   var dmFsBtn=document.getElementById('bq-dm-fs-btn');
   if(dmFsBtn) dmFsBtn.classList.toggle('on',isFull);
+
+  // V97: Use the real Fullscreen API to hide the browser status bar + URL bar
+  // This makes it TRULY fullscreen (like a native app), not just CSS resize
+  try {
+    if(isFull){
+      // Request fullscreen on the panel element (or document as fallback)
+      var reqEl = p || document.documentElement;
+      if(reqEl.requestFullscreen) reqEl.requestFullscreen().catch(function(){});
+      else if(reqEl.webkitRequestFullscreen) reqEl.webkitRequestFullscreen();
+      else if(reqEl.msRequestFullscreen) reqEl.msRequestFullscreen();
+    } else {
+      if(document.fullscreenElement) document.exitFullscreen().catch(function(){});
+      else if(document.webkitFullscreenElement) document.webkitExitFullscreen();
+      else if(document.msFullscreenElement) document.msExitFullscreen();
+    }
+  } catch(e) {
+    // Silent fail — CSS fullscreen still works as fallback
+  }
 }
 
 /* ─────────────────────────────────────────
@@ -27270,5 +27288,192 @@ setTimeout(v96Init, 1500);
 setTimeout(v96Init, 4000);
 
 }catch(e){ console.error('[bq] V96 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V97 PATCH — TRUE FULLSCREEN API + FIX LAST SEEN
+   ───────────────────────────────────────────────────────────────────────
+
+   1. TRUE FULLSCREEN (hides browser status bar + URL bar):
+      • V96 only did CSS resize (panel fills viewport) but the browser's
+        status bar and URL bar were still visible
+      • V97 uses the real Fullscreen API (requestFullscreen / exitFullscreen)
+        which hides ALL browser chrome — status bar, URL bar, navigation bar
+      • Already patched toggleFS() to call requestFullscreen()/exitFullscreen()
+      • V97 adds a fullscreenchange listener so pressing Esc to exit browser
+        fullscreen also syncs the widget's isFull state + button icons
+      • Fallback: if Fullscreen API is denied (e.g. iOS Safari), the CSS
+        fullscreen from V96 still works
+
+   2. FIX LAST SEEN NOT SHOWING:
+      • The presence data (onlineU[puid]) might be empty when the DM opens
+      • V97 adds a Firebase fetch for the partner's last-seen data when
+        opening a DM, so the status text always shows
+      • Also ensures the dot is always visible (inline-block) even if the
+        partner has never been seen (shows muted dot + "offline")
+      • Adds a periodic refresh (every 30s) of the partner's last-seen
+        while the DM conversation is open
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V97_VERSION = '97.0.0';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. FULLSCREEN CHANGE LISTENER — sync widget state when browser exits FS
+   ═══════════════════════════════════════════════════════════════════════ */
+function v97SetupFullscreenSync(){
+  // Don't double-register
+  if(window._v97FsSync) return;
+  window._v97FsSync = true;
+
+  function onFsChange(){
+    // If browser exited fullscreen (Esc key) but widget thinks it's still FS
+    var isInBrowserFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+    var widgetThinksFs = typeof isFull !== 'undefined' && isFull;
+
+    if(!isInBrowserFs && widgetThinksFs){
+      // Browser exited FS but widget still thinks it's FS — sync
+      try { toggleFS(); } catch(e) {}
+    }
+  }
+
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+  document.addEventListener('msfullscreenchange', onFsChange);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. FIX LAST SEEN — fetch partner's presence data from Firebase
+   ═══════════════════════════════════════════════════════════════════════
+   The issue: when opening a DM, the partner's presence data might not be
+   in the local onlineU cache yet, so the status shows "offline" with no
+   last-seen info. V97 fetches it from Firebase directly. */
+function v97FixLastSeen(){
+  // Don't double-register
+  if(window._v97LastSeenFix) return;
+  window._v97LastSeenFix = true;
+
+  // Patch the showDmConvo flow to fetch partner presence from Firebase
+  // We hook into updateDmHdrStatus (which is called after DM opens)
+  if(typeof updateDmHdrStatus === 'function'){
+    var origUpdate = updateDmHdrStatus;
+    updateDmHdrStatus = function(){
+      // Call original first
+      try { origUpdate.apply(this, arguments); } catch(e) {}
+
+      // Then fetch fresh presence data from Firebase
+      try {
+        if(typeof activeDmPuid !== 'undefined' && activeDmPuid && typeof db !== 'undefined' && db){
+          var puid = activeDmPuid;
+          // Check if we already have presence data
+          var hasData = (typeof onlineU !== 'undefined' && onlineU[puid]);
+          // Also check bq_lastseen path (used by v20 patch)
+          db.ref('bq_presence/' + puid).once('value').then(function(snap){
+            if(!snap.exists()) return;
+            var data = snap.val();
+            // Update local cache
+            if(typeof onlineU !== 'undefined'){
+              if(!onlineU[puid]) onlineU[puid] = {};
+              // Merge: keep existing online status, add lastSeen
+              if(data.ts && !onlineU[puid].ts) onlineU[puid].ts = data.ts;
+              if(data.status && !onlineU[puid].status) onlineU[puid].status = data.status;
+            }
+            // Now re-render the status
+            var pm = (typeof presenceMeta === 'function') ? presenceMeta(puid, data) : null;
+            if(pm){
+              var hsTxt = document.getElementById('bqdmhs-txt');
+              var hsDot = document.getElementById('bqdmhs-dot');
+              if(hsTxt){
+                hsTxt.textContent = pm.detail;
+                hsTxt.style.color = pm.color;
+              }
+              if(hsDot){
+                hsDot.style.display = 'inline-block';
+                hsDot.style.background = pm.color;
+                hsDot.style.opacity = pm.isOnline ? '1' : '.55';
+                hsDot.style.animation = pm.isOnline ? 'bqPresencePulse 1.8s ease-in-out infinite' : 'none';
+              }
+            }
+          }).catch(function(){});
+        }
+      } catch(e) {}
+    };
+  }
+
+  // Periodic refresh of partner's last-seen while DM is open (every 30s)
+  setInterval(function(){
+    try {
+      if(typeof activeView !== 'undefined' && activeView === 'dmconv' &&
+         typeof activeDmPuid !== 'undefined' && activeDmPuid &&
+         document.visibilityState === 'visible'){
+        if(typeof updateDmHdrStatus === 'function') updateDmHdrStatus();
+      }
+    } catch(e) {}
+  }, 30000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. CSS — ensure dot always shows, better fullscreen sizing
+   ═══════════════════════════════════════════════════════════════════════ */
+var v97Css = document.createElement('style');
+v97Css.id = 'bq-v97-css';
+v97Css.textContent = [
+  /* Ensure the status dot is ALWAYS visible (override the inline display:none) */
+  '#bqp .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;',
+  '}',
+
+  /* True fullscreen — use 100dvh for mobile + ensure no gaps */
+  '#bqp.bq-fs,',
+  '#bqp.bq-fs:fullscreen,',
+  '#bqp.bq-fs:-webkit-full-screen{',
+  '  width:100vw !important;',
+  '  height:100vh !important;',
+  '  max-height:100vh !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
+  '  border-radius:0 !important;border:none !important;',
+  '  z-index:2147483647 !important;',
+  '}',
+  /* When in browser fullscreen mode, the element gets :fullscreen pseudo */
+  '#bqp:fullscreen,',
+  '#bqp:-webkit-full-screen{',
+  '  width:100vw !important;',
+  '  height:100vh !important;',
+  '  border-radius:0 !important;border:none !important;',
+  '  background:var(--bq-bg) !important;',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v97Css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v97Init(){
+  v97SetupFullscreenSync();
+  v97FixLastSeen();
+  console.log('[bq] V' + V97_VERSION + ' patch loaded — true fullscreen API + last seen fix');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v97Init);
+} else {
+  v97Init();
+}
+setTimeout(v97Init, 1500);
+setTimeout(v97Init, 4000);
+
+}catch(e){ console.error('[bq] V97 patch error:', e); }
 })();
 
