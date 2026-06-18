@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '99.0.0';                     // V99: Remove all @muntazir buffs, add Profile button to bottom nav (profile customization now accessible)
+const WIDGET_VERSION = '100.0.0';                    // V100: Header declutter (remove profile button), profile avatar top-left with initials, remove online text (keep last seen)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -527,7 +527,9 @@ function presenceMeta(targetUid,pdata){
     data,
     isOnline,
     label:isOnline?st.label:'Offline',
-    detail:isOnline?st.label:(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
+    // V100: When online, show empty text (just the dot). When offline, show 'last seen X ago'.
+    // User requested: remove the 'online' text but keep 'last seen'
+    detail:isOnline?'':(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
     color:isOnline?st.color:'var(--bq-text-subtle)',
     status:isOnline?(data.status||'online'):'offline'
   };
@@ -3029,6 +3031,7 @@ const HTML = `
     <!-- VIEW: Global Chat -->
 <div class="bqv bq-active" id="bqv-chat">
   <div class="bqhdr">
+  <div class="bq-profile-avatar" id="bq-profile-avatar-g" title="My Profile"></div>
   <div class="bqlive"></div>
   <div class="bqhtitle">Global Chat</div>
   <div class="bqhdr-menu">
@@ -3088,10 +3091,10 @@ const HTML = `
     <!-- VIEW: DM List -->
     <div class="bqv" id="bqv-dms">
       <div class="bqhdr">
+        <div class="bq-profile-avatar" id="bq-profile-avatar-dms" title="My Profile"></div>
         <div class="bqlive"></div>
         <div class="bqhtitle">Messages</div>
         <button class="bqhbtn" id="bqdmnewbtn" title="New DM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-        <div class="bq-me-av" id="bq-me-av-dms" title="My profile"></div>
       </div>
       <div id="bqdml"></div>
     </div>
@@ -3105,7 +3108,6 @@ const HTML = `
           <div class="bqdmhn" id="bqdmhn"></div>
           <div class="bqdmhs" id="bqdmhs"><span class="bqdmhs-dot" id="bqdmhs-dot" style="display:none"></span><span id="bqdmhs-txt">Offline</span></div>
         </div>
-        <button class="bqhbtn" id="bqdmprof" title="View profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
         <button class="bqhbtn" id="bq-dm-fs-btn" title="Fullscreen"><svg id="bq-dm-fs-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
         <div style="position:relative">
           <button class="bqhbtn" id="bq-dm-menu-btn" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
@@ -3116,7 +3118,6 @@ const HTML = `
                         <div class="bq-dm-menu-item danger" id="bq-dm-menu-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Messages</div>
           </div>
         </div>
-        <div class="bq-me-av" id="bq-me-av-dm" title="My profile"></div>
       </div>
       <div id="bq-pinned-bar">
         <span class="bq-pinbar-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg></span>
@@ -3193,10 +3194,10 @@ const HTML = `
     <!-- VIEW: Online Users -->
     <div class="bqv" id="bqv-online">
       <div class="bqhdr">
+        <div class="bq-profile-avatar" id="bq-profile-avatar-online" title="My Profile"></div>
         <div class="bqlive"></div>
         <div class="bqhtitle">Online Now</div>
         <span id="bqocnt" style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.04em;color:var(--bq-text-subtle);"></span>
-        <div class="bq-me-av" id="bq-me-av-online" title="My profile"></div>
       </div>
       <div id="bqol"></div>
     </div>
@@ -3513,7 +3514,8 @@ let aliasT=null;
 function refreshMeAvatar(){
   const col=myProfile.color||uColor(uname||'u');
   const initials=myInit();
-  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
+  // V100: Include new profile avatar elements
+  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online','bq-profile-avatar-g','bq-profile-avatar-dms','bq-profile-avatar-online'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     el.style.background=col;el.style.color='#000';el.textContent=initials;
   });
@@ -6915,8 +6917,8 @@ function init(){
   // Push notifications button
   // V78: push button removed — no listener wired
 
-  // Me avatar buttons → profile view (FIXED)
-  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online'].forEach(id=>{
+  // Me avatar buttons → profile view (FIXED) + V100: new profile avatar elements
+  ['bq-me-av','bq-me-av-dms','bq-me-av-dm','bq-me-av-online','bq-profile-avatar-g','bq-profile-avatar-dms','bq-profile-avatar-online'].forEach(id=>{
     document.getElementById(id)?.addEventListener('click',e=>{
       e.stopPropagation();
       if(!uname){showModal(false);return;}
@@ -28030,5 +28032,149 @@ setTimeout(v99Init, 1500);
 setTimeout(v99Init, 4000);
 
 }catch(e){ console.error('[bq] V99 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V100 PATCH — HEADER DECLUTTER + PROFILE AVATAR TOP-LEFT + REMOVE ONLINE TEXT
+   ───────────────────────────────────────────────────────────────────────
+
+   1. HEADER DECLUTTER:
+      • Removed profile button (#bqdmprof) from DM conversation header
+      • Removed self-avatar (#bq-me-av-dm) from DM conversation header
+      • DM conversation header now has: back, partner avatar, name+status,
+        fullscreen, 3-dot menu — much cleaner
+
+   2. PROFILE AVATAR TOP-LEFT:
+      • Added .bq-profile-avatar to top-left of global chat, DM list, and
+        online list headers
+      • Small 28px circle with user initials + color
+      • Clicking opens profile customization view
+      • Wired in refreshMeAvatar() + event listeners
+
+   3. REMOVE ONLINE TEXT:
+      • presenceMeta() now returns empty string for detail when online
+      • When partner is online: just shows the pulsing dot (no "online" text)
+      • When partner is offline: shows "last seen Xm ago" (preserved)
+      • Status pill collapses to just the dot when online (compact)
+
+   Non-breaking: works in V1 and V2.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V100_VERSION = '100.0.0';
+
+var v100Css = document.createElement('style');
+v100Css.id = 'bq-v100-css';
+v100Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     PROFILE AVATAR — top-left of headers
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp .bq-profile-avatar{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:700 !important;',
+  '  cursor:pointer !important;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.2) !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  color:#000 !important;',
+  '}',
+  '#bqp .bq-profile-avatar:hover{',
+  '  transform:scale(1.08) !important;',
+  '  box-shadow:0 0 0 1px rgba(129,140,248,0.3), 0 4px 10px rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp .bq-profile-avatar:active{transform:scale(0.95) !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     HEADER DECLUTTER — better spacing, less cramped
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* DM conversation header — more breathing room */
+  '#bqp #bqv-dmconv .bqhdr,',
+  '#bqp.bq-dm-v2 #bqv-dmconv .bqhdr{',
+  '  gap:8px !important;',
+  '  padding:0 10px !important;',
+  '}',
+
+  /* Partner info takes available space */
+  '#bqp .bqdmhi, #bqp.bq-dm-v2 .bqdmhi{',
+  '  flex:1 !important;min-width:0 !important;',
+  '}',
+
+  /* Status pill — compact when online (no text, just dot) */
+  '#bqp .bqdmhs:has(#bqdmhs-txt:empty),',
+  '#bqp.bq-dm-v2 .bqdmhs:has(#bqdmhs-txt:empty){',
+  '  padding:4px !important;',
+  '  width:auto !important;',
+  '}',
+
+  /* When status text is empty, center the dot */
+  '#bqp #bqdmhs-txt:empty{',
+  '  display:none !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     MOBILE — profile avatar slightly bigger, header more spacious
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (max-width: 600px){',
+  '  #bqp .bq-profile-avatar{',
+  '    width:32px !important;height:32px !important;',
+  '    font-size:12px !important;',
+  '  }',
+  '  #bqp #bqv-dmconv .bqhdr,',
+  '  #bqp.bq-dm-v2 #bqv-dmconv .bqhdr{',
+  '    gap:6px !important;padding:0 8px !important;',
+  '  }',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp *, #bqp *::before, #bqp *::after{',
+  '    animation-duration:0.01ms !important;transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v100Css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INIT — wire up profile avatars (retry for late widget load)
+   ═══════════════════════════════════════════════════════════════════════ */
+function v100Init(){
+  // Wire profile avatars
+  ['bq-profile-avatar-g','bq-profile-avatar-dms','bq-profile-avatar-online'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && !el.dataset.v100wired){
+      el.dataset.v100wired = '1';
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(typeof uname !== 'undefined' && !uname){
+          if(typeof showModal === 'function') showModal(false);
+          return;
+        }
+        if(typeof bqNav === 'function') bqNav('profile');
+      });
+    }
+  });
+
+  // Populate avatars with initials
+  if(typeof refreshMeAvatar === 'function'){
+    try { refreshMeAvatar(); } catch(e) {}
+  }
+
+  console.log('[bq] V' + V100_VERSION + ' patch loaded — header declutter, profile avatar top-left, online text removed');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v100Init);
+} else {
+  v100Init();
+}
+setTimeout(v100Init, 1500);
+setTimeout(v100Init, 4000);
+
+}catch(e){ console.error('[bq] V100 patch error:', e); }
 })();
 
