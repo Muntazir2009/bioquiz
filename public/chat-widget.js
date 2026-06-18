@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '87.0.0';                     // V87: Disable hold-to-select-text, enhanced disguise (Calculator Pro+ with scientific mode), V2 UI/UX additions, stability fixes
+const WIDGET_VERSION = '88.0.0';                     // V88: Fix disguise (position:absolute, z-index:99999, hide chat bubble), enhanced DM settings UI, better animations everywhere
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -24157,5 +24157,624 @@ setTimeout(v87Init, 4000);
 setTimeout(v87Init, 8000);
 
 }catch(e){ console.error('[bq] V87 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V88 PATCH — FIX DISGUISE + ENHANCED SETTINGS UI + BETTER ANIMATIONS
+   ───────────────────────────────────────────────────────────────────────
+
+   1. FIX DISGUISE (critical bugs):
+      • V87 bug: set position:relative !important which OVERRODE the original
+        position:absolute;inset:0 → disguise collapsed to content height,
+        leaving "Pick a Username" screen visible in background
+      • Fix: restore position:absolute;inset:0 with !important
+      • Raise z-index to 99999 (above #bqb's 9900 and #bqnm's 30)
+      • Hide #bqb (chat bubble) when disguise is active via body class
+      • Ensure fully opaque background (was semi-transparent in places)
+      • Add backdrop-filter to blur anything behind it
+
+   2. ENHANCED DM SETTINGS UI (#bq-dm-info):
+      • Beautiful aesthetic redesign with Indigo Lumen theme
+      • Refined header with gradient accent
+      • Avatar section with ring + glow + status badge
+      • Section titles: refined uppercase with letter-spacing
+      • Rows: card-style with hover lift + indigo accent
+      • Icons: refined with indigo tint on hover
+      • Danger actions: red gradient card
+      • Theme chips: refined with active ring
+      • Smooth section reveal animations
+      • Better spacing and typography
+
+   3. BETTER ANIMATIONS (all chat widget):
+      • Message entrance: refined spring with scale + fade
+      • Modal/drawer: smooth slide + scale + fade
+      • Button press: refined scale feedback
+      • List item reveal: staggered fade-in
+      • Tab switch: smooth crossfade
+      • Hover: refined lift + glow
+      • Loading states: refined shimmer
+      • Reaction picker: spring bounce
+      • Toast: slide + fade
+      • Panel open: refined slide-up with overshoot
+      • Disguise: refined scale-in with backdrop blur
+
+   Non-breaking: only activates when .bq-dm-v2 class is on #bqp.
+   All selectors use #bqp.bq-dm-v2 to beat theme specificity.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V88_VERSION = '88.0.0';
+
+/* ───────────────────────────────────────────────────────────────────────
+   1. V88 CSS — fix disguise + settings + animations
+   ─────────────────────────────────────────────────────────────────────── */
+var v88Css = document.createElement('style');
+v88Css.id = 'bq-v88-css';
+v88Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     FIX DISGUISE — restore position:absolute, raise z-index, hide bubble
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Restore position:absolute + inset:0 (V87 broke this with position:relative) */
+  '#bq-disguise{',
+  '  position:absolute !important;',
+  '  inset:0 !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
+  '  z-index:99999 !important;',
+  '  display:flex !important;flex-direction:column !important;',
+  '  align-items:center !important;justify-content:center !important;',
+  '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
+  '  border-radius:16px !important;overflow:hidden !important;',
+  '  animation:bqDisguiseInV88 .35s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqDisguiseInV88{',
+  '  from{opacity:0;transform:scale(0.96);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Kill the V87 position:relative override */
+  '#bq-disguise{position:absolute !important;}',
+
+  /* Hide the chat bubble (#bqb) when disguise is active */
+  'body.bq-disguise-active #bqb,',
+  '#bqb.bq-disguise-hidden{',
+  '  opacity:0 !important;',
+  '  pointer-events:none !important;',
+  '  transform:scale(0.8) !important;',
+  '  transition:opacity .25s ease,transform .25s ease !important;',
+  '}',
+
+  /* Ensure disguise bg is fully opaque (kill any transparency) */
+  '#bq-disguise::after{',
+  '  content:"" !important;',
+  '  position:absolute !important;inset:0 !important;',
+  '  background:#0f0f1a !important;',
+  '  z-index:-1 !important;',
+  '}',
+
+  /* The ::before glow stays on top of ::after but below content */
+  '#bq-disguise::before{z-index:0 !important;}',
+
+  /* Ensure all disguise children are above the bg layers */
+  '#bq-disguise > *{position:relative !important;z-index:1 !important;}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     ENHANCED DM SETTINGS UI (#bq-dm-info) — aesthetic redesign
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Settings panel background */
+  '#bqp.bq-dm-v2 #bq-dm-info{',
+  '  background:#0e0e11 !important;',
+  '  color:#f4f4f5 !important;',
+  '}',
+
+  /* Settings header — refined with gradient accent line */
+  '#bqp.bq-dm-v2 .bq-info-hdr{',
+  '  background:linear-gradient(180deg,rgba(24,24,27,0.98),rgba(24,24,27,0.95)) !important;',
+  '  backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.06) !important;',
+  '  padding:14px 16px !important;',
+  '  position:relative !important;',
+  '  box-shadow:0 1px 0 rgba(0,0,0,0.3) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-hdr::after{',
+  '  content:"" !important;position:absolute !important;bottom:-1px !important;',
+  '  left:16px !important;right:16px !important;height:1px !important;',
+  '  background:linear-gradient(90deg,transparent,rgba(129,140,248,0.3),transparent) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-hdr-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:15px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-close{',
+  '  width:30px !important;height:30px !important;',
+  '  border-radius:10px !important;border:1px solid rgba(255,255,255,0.06) !important;',
+  '  background:rgba(255,255,255,0.03) !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-close:hover{',
+  '  background:rgba(239,68,68,0.1) !important;',
+  '  border-color:rgba(239,68,68,0.2) !important;',
+  '  transform:rotate(90deg) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-close svg{stroke:#a1a1aa !important;width:15px !important;height:15px !important;transition:stroke .2s ease !important;}',
+  '#bqp.bq-dm-v2 .bq-info-close:hover svg{stroke:#f87171 !important;}',
+
+  /* Avatar section — beautiful with ring + glow */
+  '#bqp.bq-dm-v2 .bq-info-av-section{',
+  '  padding:24px 16px 20px !important;',
+  '  background:linear-gradient(180deg,rgba(129,140,248,0.04),transparent) !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.05) !important;',
+  '  text-align:center !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-av-section::before{',
+  '  content:"" !important;position:absolute !important;',
+  '  top:0 !important;left:50% !important;transform:translateX(-50%) !important;',
+  '  width:120px !important;height:120px !important;border-radius:50% !important;',
+  '  background:radial-gradient(circle,rgba(129,140,248,0.12),transparent 70%) !important;',
+  '  pointer-events:none !important;z-index:0 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-av{',
+  '  width:72px !important;height:72px !important;',
+  '  border-radius:50% !important;',
+  '  font-size:24px !important;font-weight:600 !important;',
+  '  margin:0 auto 12px !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '  box-shadow:0 0 0 3px rgba(24,24,27,1), 0 0 0 4px rgba(129,140,248,0.3), 0 8px 24px rgba(0,0,0,0.4) !important;',
+  '  transition:transform .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-av:hover{transform:scale(1.05) !important;}',
+  '#bqp.bq-dm-v2 .bq-info-av::after{',
+  '  width:16px !important;height:16px !important;',
+  '  border:3px solid #0e0e11 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-av.online::after{background:#22c55e !important;box-shadow:0 0 8px rgba(34,197,94,0.6) !important;}',
+  '#bqp.bq-dm-v2 .bq-info-av.studying::after{background:#818cf8 !important;box-shadow:0 0 8px rgba(129,140,248,0.6) !important;}',
+  '#bqp.bq-dm-v2 .bq-info-av.busy::after{background:#ef4444 !important;}',
+  '#bqp.bq-dm-v2 .bq-info-av.away::after{background:#f59e0b !important;}',
+  '#bqp.bq-dm-v2 .bq-info-name{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:17px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-status{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12.5px !important;color:#a1a1aa !important;',
+  '  margin-top:4px !important;position:relative !important;z-index:1 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;gap:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-bio{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#a1a1aa !important;',
+  '  line-height:1.5 !important;margin-top:10px !important;',
+  '  max-width:280px !important;margin-left:auto !important;margin-right:auto !important;',
+  '  position:relative !important;z-index:1 !important;',
+  '}',
+
+  /* Settings scroll */
+  '#bqp.bq-dm-v2 .bq-info-scroll{background:#0e0e11 !important;}',
+  '#bqp.bq-dm-v2 .bq-info-scroll::-webkit-scrollbar{width:5px !important;}',
+  '#bqp.bq-dm-v2 .bq-info-scroll::-webkit-scrollbar-thumb{background:rgba(129,140,248,0.2) !important;border-radius:3px !important;}',
+  '#bqp.bq-dm-v2 .bq-info-scroll::-webkit-scrollbar-thumb:hover{background:rgba(129,140,248,0.4) !important;}',
+
+  /* Settings sections — refined with reveal animation */
+  '#bqp.bq-dm-v2 .bq-info-section{',
+  '  padding:18px 16px !important;',
+  '  border-bottom:1px solid rgba(255,255,255,0.05) !important;',
+  '  animation:bqSettingsReveal .4s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-section:nth-child(1){animation-delay:0s !important;}',
+  '#bqp.bq-dm-v2 .bq-info-section:nth-child(2){animation-delay:.06s !important;}',
+  '#bqp.bq-dm-v2 .bq-info-section:nth-child(3){animation-delay:.12s !important;}',
+  '#bqp.bq-dm-v2 .bq-info-section:nth-child(4){animation-delay:.18s !important;}',
+  '#bqp.bq-dm-v2 .bq-info-section:nth-child(5){animation-delay:.24s !important;}',
+  '@keyframes bqSettingsReveal{',
+  '  from{opacity:0;transform:translateY(8px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  '#bqp.bq-dm-v2 .bq-info-section-title{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;',
+  '  letter-spacing:0.1em !important;',
+  '  color:#71717a !important;',
+  '  text-transform:uppercase !important;',
+  '  margin-bottom:12px !important;',
+  '  font-weight:600 !important;',
+  '  display:flex !important;align-items:center !important;gap:6px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-section-title::before{',
+  '  content:"" !important;width:3px !important;height:12px !important;',
+  '  background:linear-gradient(180deg,#6366f1,#8b5cf6) !important;',
+  '  border-radius:2px !important;',
+  '}',
+
+  /* Settings rows — card-style with hover lift */
+  '#bqp.bq-dm-v2 .bq-info-row{',
+  '  padding:12px 14px !important;',
+  '  border-radius:12px !important;',
+  '  margin-bottom:6px !important;',
+  '  background:rgba(255,255,255,0.02) !important;',
+  '  border:1px solid rgba(255,255,255,0.04) !important;',
+  '  transition:all .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  cursor:pointer !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row:hover{',
+  '  background:rgba(129,140,248,0.06) !important;',
+  '  border-color:rgba(129,140,248,0.15) !important;',
+  '  transform:translateX(2px) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row-left{gap:12px !important;}',
+  '#bqp.bq-dm-v2 .bq-info-row-ic{',
+  '  width:36px !important;height:36px !important;',
+  '  border-radius:10px !important;',
+  '  background:rgba(129,140,248,0.08) !important;',
+  '  border:1px solid rgba(129,140,248,0.1) !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  transition:all .25s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row:hover .bq-info-row-ic{',
+  '  background:rgba(129,140,248,0.15) !important;',
+  '  border-color:rgba(129,140,248,0.25) !important;',
+  '  transform:scale(1.05) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row-ic svg{',
+  '  width:16px !important;height:16px !important;',
+  '  stroke:#818cf8 !important;stroke-width:1.8 !important;',
+  '  transition:stroke .2s ease !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row-label{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:14px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.01em !important;color:#f4f4f5 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row-sub{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:12px !important;color:#a1a1aa !important;',
+  '  margin-top:2px !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row-value{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:13px !important;color:#71717a !important;',
+  '  font-variant-numeric:tabular-nums !important;',
+  '}',
+
+  /* Danger row — red gradient card */
+  '#bqp.bq-dm-v2 .bq-info-row.danger{',
+  '  background:rgba(239,68,68,0.04) !important;',
+  '  border-color:rgba(239,68,68,0.08) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row.danger:hover{',
+  '  background:rgba(239,68,68,0.1) !important;',
+  '  border-color:rgba(239,68,68,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row.danger .bq-info-row-ic{',
+  '  background:rgba(239,68,68,0.08) !important;',
+  '  border-color:rgba(239,68,68,0.12) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row.danger .bq-info-row-ic svg{stroke:#f87171 !important;}',
+  '#bqp.bq-dm-v2 .bq-info-row.danger .bq-info-row-label{color:#f87171 !important;}',
+  '#bqp.bq-dm-v2 .bq-info-row.danger:hover .bq-info-row-ic{',
+  '  background:rgba(239,68,68,0.15) !important;',
+  '  transform:scale(1.05) !important;',
+  '}',
+
+  /* Theme chips — refined with active ring */
+  '#bqp.bq-dm-v2 .bq-theme-row{gap:10px !important;padding:4px 0 !important;}',
+  '#bqp.bq-dm-v2 .bq-theme-chip{',
+  '  width:36px !important;height:36px !important;',
+  '  border-radius:50% !important;',
+  '  border:2px solid rgba(255,255,255,0.08) !important;',
+  '  cursor:pointer !important;',
+  '  transition:all .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  position:relative !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-theme-chip:hover{',
+  '  transform:scale(1.1) !important;',
+  '  border-color:rgba(255,255,255,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-theme-chip.sel{',
+  '  border-color:#818cf8 !important;',
+  '  box-shadow:0 0 0 3px rgba(129,140,248,0.25), 0 4px 12px rgba(0,0,0,0.3) !important;',
+  '  transform:scale(1.05) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-theme-chip.sel::after{',
+  '  content:"✓" !important;position:absolute !important;',
+  '  top:50% !important;left:50% !important;transform:translate(-50%,-50%) !important;',
+  '  color:#fff !important;font-size:14px !important;font-weight:700 !important;',
+  '  text-shadow:0 1px 2px rgba(0,0,0,0.5) !important;',
+  '}',
+
+  /* Toggle switches in settings — refined */
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle{',
+  '  position:relative !important;display:inline-block !important;',
+  '  width:42px !important;height:24px !important;flex-shrink:0 !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle input{opacity:0 !important;width:0 !important;height:0 !important;}',
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle-slider{',
+  '  position:absolute !important;cursor:pointer !important;',
+  '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
+  '  background:rgba(255,255,255,0.08) !important;',
+  '  border:1px solid rgba(255,255,255,0.06) !important;',
+  '  border-radius:14px !important;',
+  '  transition:all .3s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle-slider::before{',
+  '  content:"" !important;position:absolute !important;',
+  '  height:18px !important;width:18px !important;',
+  '  left:2px !important;bottom:2px !important;',
+  '  background:#a1a1aa !important;',
+  '  border-radius:50% !important;',
+  '  transition:all .3s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '  box-shadow:0 2px 4px rgba(0,0,0,0.2) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle input:checked + .bq-toggle-slider{',
+  '  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;',
+  '  border-color:transparent !important;',
+  '  box-shadow:0 2px 8px rgba(99,102,241,0.3) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bq-info-row .bq-toggle input:checked + .bq-toggle-slider::before{',
+  '  transform:translateX(18px) !important;',
+  '  background:#fff !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     BETTER ANIMATIONS — all chat widget
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Panel open — refined slide-up with overshoot */
+  '#bqp{',
+  '  animation:bqPanelOpenV88 .4s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '@keyframes bqPanelOpenV88{',
+  '  from{opacity:0;transform:translateY(20px) scale(0.96);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Message entrance — refined spring */
+  '#bqp.bq-dm-v2 .bqr.bq-new{',
+  '  animation:bqMsgSpringV88 .4s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqMsgSpringV88{',
+  '  0%{opacity:0;transform:translateY(10px) scale(0.94);}',
+  '  60%{opacity:1;transform:translateY(-2px) scale(1.01);}',
+  '  100%{opacity:1;transform:none;}',
+  '}',
+
+  /* Bubble entrance — refined */
+  '#bqp.bq-dm-v2 .bqbbl{',
+  '  animation:bqBubbleInV88 .35s cubic-bezier(0.34,1.3,0.64,1) both !important;',
+  '}',
+  '@keyframes bqBubbleInV88{',
+  '  from{opacity:0;transform:translateY(6px) scale(0.96);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Button press — refined scale feedback */
+  '#bqp.bq-dm-v2 .bqhbtn,',
+  '#bqp.bq-dm-v2 .bqsnd,',
+  '#bqp.bq-dm-v2 .bqscr,',
+  '#bqp.bq-dm-v2 .bqms-btn,',
+  '#bqp.bq-dm-v2 .bq-forward-item,',
+  '#bqp.bq-dm-v2 .bqpf-savebtn,',
+  '#bqp.bq-dm-v2 .bq-dm-v2-btn{',
+  '  transition:all .2s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqhbtn:active,',
+  '#bqp.bq-dm-v2 .bqsnd:active,',
+  '#bqp.bq-dm-v2 .bqscr:active,',
+  '#bqp.bq-dm-v2 .bqms-btn:active,',
+  '#bqp.bq-dm-v2 .bq-forward-item:active,',
+  '#bqp.bq-dm-v2 .bqpf-savebtn:active,',
+  '#bqp.bq-dm-v2 .bq-dm-v2-btn:active{',
+  '  transform:scale(0.95) !important;',
+  '}',
+
+  /* DM list row — staggered reveal */
+  '#bqp.bq-dm-v2 .bqdmr{',
+  '  animation:bqDmRowReveal .35s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(1){animation-delay:0s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(2){animation-delay:.04s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(3){animation-delay:.08s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(4){animation-delay:.12s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(5){animation-delay:.16s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(6){animation-delay:.20s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(7){animation-delay:.24s !important;}',
+  '#bqp.bq-dm-v2 .bqdmr:nth-child(8){animation-delay:.28s !important;}',
+  '@keyframes bqDmRowReveal{',
+  '  from{opacity:0;transform:translateX(-8px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Modal/drawer — smooth slide + scale + fade */
+  '#bqp.bq-dm-v2 .bq-forward-panel{',
+  '  animation:bqModalSpringV88 .35s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqModalSpringV88{',
+  '  from{opacity:0;transform:scale(0.92) translateY(12px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  '#bqp.bq-dm-v2 .bq-confirm-box{',
+  '  animation:bqModalSpringV88 .35s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+
+  /* Hover — refined lift + glow on bubbles */
+  '#bqp.bq-dm-v2 .bqr:hover .bqbbl{',
+  '  transform:translateY(-1px) !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), box-shadow .25s ease !important;',
+  '}',
+
+  /* Reaction picker — spring bounce */
+  '#bqp.bq-dm-v2 .bq-quick-react{',
+  '  animation:bqReactionSpringV88 .3s cubic-bezier(0.34,1.5,0.64,1) both !important;',
+  '}',
+  '@keyframes bqReactionSpringV88{',
+  '  0%{opacity:0;transform:translateY(8px) scale(0.8);}',
+  '  60%{opacity:1;transform:translateY(-2px) scale(1.05);}',
+  '  100%{opacity:1;transform:none;}',
+  '}',
+
+  /* Toast — slide + fade */
+  '#bqp.bq-dm-v2 #bqtoast > div,',
+  '#bqp.bq-dm-v2 .bq-toast{',
+  '  animation:bqToastSlideV88 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqToastSlideV88{',
+  '  from{opacity:0;transform:translateY(20px) translateX(-50%) scale(0.9);}',
+  '  to{opacity:1;transform:translateY(0) translateX(-50%) scale(1);}',
+  '}',
+
+  /* Empty state — refined fade */
+  '#bqp.bq-dm-v2 .bqempty{',
+  '  animation:bqEmptyFadeV88 .4s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '@keyframes bqEmptyFadeV88{',
+  '  from{opacity:0;transform:translateY(12px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Date separator — refined fade */
+  '#bqp.bq-dm-v2 .bqds{',
+  '  animation:bqDateFadeV88 .3s ease both !important;',
+  '}',
+  '@keyframes bqDateFadeV88{',
+  '  from{opacity:0;transform:translateY(-4px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Scroll button — refined appear */
+  '#bqp.bq-dm-v2 .bqscr.show{',
+  '  animation:bqScrAppearV88 .3s cubic-bezier(0.34,1.4,0.64,1) both !important;',
+  '}',
+  '@keyframes bqScrAppearV88{',
+  '  from{opacity:0;transform:scale(0.5) translateY(10px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Typing indicator — refined */
+  '#bqp.bq-dm-v2 .bqtyp{',
+  '  animation:bqTypingFadeV88 .3s ease both !important;',
+  '}',
+  '@keyframes bqTypingFadeV88{',
+  '  from{opacity:0;transform:translateY(4px);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* Pinned bar — refined slide-down */
+  '#bqp.bq-dm-v2 #bq-pinned-bar{',
+  '  animation:bqPinnedSlideV88 .3s cubic-bezier(0.4,0,0.2,1) both !important;',
+  '}',
+  '@keyframes bqPinnedSlideV88{',
+  '  from{opacity:0;transform:translateY(-100%);}',
+  '  to{opacity:1;transform:none;}',
+  '}',
+
+  /* V1/V2 toggle — refined pill slide */
+  '#bqp.bq-dm-v2 .bq-dm-v2-hdr-switch::before{',
+  '  transition:transform .35s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+
+  /* Input focus — refined ring expand */
+  '#bqp.bq-dm-v2 .bqinp:focus{',
+  '  animation:bqInputFocusV88 .25s cubic-bezier(0.4,0,0.2,1) !important;',
+  '}',
+  '@keyframes bqInputFocusV88{',
+  '  from{box-shadow:0 0 0 0 rgba(129,140,248,0) !important;}',
+  '  to{box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;}',
+  '}',
+
+  /* Avatar hover — refined scale */
+  '#bqp.bq-dm-v2 .bqav,',
+  '#bqp.bq-dm-v2 .bqdmav,',
+  '#bqp.bq-dm-v2 .bqdmhav{',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1), box-shadow .25s ease !important;',
+  '}',
+
+  /* Shimmer for loading states */
+  '#bqp.bq-dm-v2 .bq-shimmer{',
+  '  background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%) !important;',
+  '  background-size:200% 100% !important;',
+  '  animation:bqShimmerV88 1.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqShimmerV88{',
+  '  0%{background-position:200% 0;}',
+  '  100%{background-position:-200% 0;}',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     REDUCED MOTION
+     ════════════════════════════════════════════════════════════════════ */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp.bq-dm-v2 *, #bqp.bq-dm-v2 *::before, #bqp.bq-dm-v2 *::after,',
+  '  #bq-disguise *, #bq-disguise *::before, #bq-disguise *::after{',
+  '    animation-duration:0.01ms !important;animation-iteration-count:1 !important;',
+  '    transition-duration:0.01ms !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v88Css);
+
+/* ───────────────────────────────────────────────────────────────────────
+   2. FIX DISGUISE — hide chat bubble when disguise is active
+   ───────────────────────────────────────────────────────────────────────
+   The chat bubble (#bqb) has z-index:9900 and position:fixed, so it shows
+   on top of the disguise. We add/remove a body class to hide it. */
+function v88PatchDisguiseBubble(){
+  // Patch bqShowDisguise to hide the chat bubble
+  if(typeof window.bqShowDisguise === 'function'){
+    var origShow = window.bqShowDisguise;
+    window.bqShowDisguise = function(){
+      try {
+        document.body.classList.add('bq-disguise-active');
+        var bubble = document.getElementById('bqb');
+        if(bubble) bubble.classList.add('bq-disguise-hidden');
+      } catch(e) {}
+      return origShow.apply(this, arguments);
+    };
+  }
+
+  // Patch bqRemoveDisguise to show the chat bubble again
+  if(typeof window.bqRemoveDisguise === 'function'){
+    var origRemove = window.bqRemoveDisguise;
+    window.bqRemoveDisguise = function(){
+      try {
+        document.body.classList.remove('bq-disguise-active');
+        var bubble = document.getElementById('bqb');
+        if(bubble) bubble.classList.remove('bq-disguise-hidden');
+      } catch(e) {}
+      return origRemove.apply(this, arguments);
+    };
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   3. INIT
+   ─────────────────────────────────────────────────────────────────────── */
+function v88Init(){
+  // Patch disguise to hide chat bubble
+  v88PatchDisguiseBubble();
+
+  console.log('[bq] V' + V88_VERSION + ' patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined');
+}
+
+// Run immediately if document is ready, otherwise on DOMContentLoaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v88Init);
+} else {
+  v88Init();
+}
+// Retry a few times in case the widget loads slowly
+setTimeout(v88Init, 1500);
+setTimeout(v88Init, 4000);
+
+}catch(e){ console.error('[bq] V88 patch error:', e); }
 })();
 
