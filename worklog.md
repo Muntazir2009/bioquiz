@@ -966,3 +966,63 @@ Stage Summary:
 - V2 design enhanced — refined bubbles, grouping, typing indicator, reactions, empty state, scroll button, input, header, stickers, voice notes, avatars, toggle, read receipts, animations
 - Non-breaking: V1 unchanged, V91 overrides V90 with higher specificity
 - Backup: scripts/chat-widget-v90-backup.js
+
+---
+Task ID: V92-BubbleRedesign
+Agent: main
+Task: Global self-indicator removal (V1+V2), chat bubble redesign, UI/UX enhancements
+
+Work Log:
+- Confirmed V91 baseline
+- Diagnosed self-indicator issue: V89 CSS only hid .bq-me-av when #bqp had .bq-dm-v2 class (V2 mode only). In V1 mode, the self avatar still showed.
+- Backed up V91 to scripts/chat-widget-v91-backup.js
+- Wrote V92 patch (561 lines):
+
+GLOBAL SELF-INDICATOR REMOVAL:
+- Added CSS selectors WITHOUT .bq-dm-v2 prefix so it works in V1 AND V2:
+  #bqp .bq-me-av, #bqp #bq-me-av, #bqp #bq-me-av-dms, #bqp #bq-me-av-dm,
+  #bqp #bq-me-av-online, .bq-me-av, #bq-me-av, #bq-me-av-dms,
+  #bq-me-av-dm, #bq-me-av-online
+- All set to display:none + visibility:hidden + opacity:0 + position:absolute
+- Self avatar now hidden in ALL headers regardless of V1/V2 mode
+
+CHAT BUBBLE REDESIGN:
+- Mine: refined 3-stop indigo gradient, asymmetric tail (20px 6px 20px 20px),
+  inner top highlight (60% white gradient), layered shadows, larger padding
+- Theirs: frosted glass (backdrop-blur 12px), asymmetric tail (6px 20px 20px 20px),
+  inner top highlight (50%), hairline border, layered shadows
+- Hover: lift (translateY -2px) + glow enhancement
+- Active: scale 0.98
+- Better text contrast, refined meta with tabular-nums
+- Read receipts: cyan glow when seen
+- Links: indigo-tinted underline
+- Better spacing: 8px between senders, 2px consecutive
+- Spring entrance (bqBubbleSpringV92, 0.42s with overshoot)
+
+UI/UX ENHANCEMENTS:
+- Avatars: triple-ring + hover scale 1.08 + indigo ring
+- Input bar: glassy, gradient top border, 18px radius, indigo focus
+- Send button: indigo gradient, hover lift + scale
+- Headers: glassy with backdrop-blur, gradient accent line, min-height 54px
+- DM list: hover translateX, active inset border, refined typography
+- Unread badge: indigo gradient + pop animation
+- Empty state: 64px illustration with radial glow animation
+- Scroll button: indigo gradient + spring appear + white badge
+- Typing indicator: indigo gradient dots with glow (7px, wave)
+- Date separator: pill with gradient + shadow
+- Reaction chips: glassy with backdrop-blur, hover lift + scale
+- New messages banner: indigo gradient + spring entrance
+- Scrollbar: thinner (5px), indigo on hover
+
+- Appended V92 patch to public/chat-widget.js (now 26,515 lines)
+- Bumped WIDGET_VERSION from '91.0.0' to '92.0.0'
+- Updated public/chat-widget-version.json to {"version": "92.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, 22 V92 markers, global me-av hiding confirmed, WIDGET_VERSION = '92.0.0', no errors
+- Committed (051edcb) and pushed to GitHub
+
+Stage Summary:
+- Self online indicator GLOBALLY REMOVED — works in V1 AND V2 (V89 only did V2)
+- Chat bubbles redesigned: indigo gradient mine with tail + highlight, frosted glass theirs with tail, layered shadows, spring entrance
+- UI/UX enhanced: avatars, input, send button, headers, DM list, badges, empty state, scroll button, typing indicator, date separators, reactions, banner, scrollbar
+- Non-breaking: V1 unchanged (except self-avatar removal), V92 overrides V91
+- Backup: scripts/chat-widget-v91-backup.js
