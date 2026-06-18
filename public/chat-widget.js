@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '105.0.0';                   // V105: Fix last seen flicker (debounce DOM updates, 60s interval), unregister stale service workers to force cache bust
+const WIDGET_VERSION = '106.0.0';                   // V106: Fix admin timing (recheck after login), force profile CSS override, rework schedule menu (beautiful UI, correct input IDs, custom datetime picker)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -11788,7 +11788,7 @@ function draftKey(){
   return null;
 }
 function wireDrafts(){
-  ['bqgi','bqdmi'].forEach(id=>{
+  ['bqginp','bqdminp'].forEach(id=>{
     const inp=$(id); if(!inp || inp._bqDraft) return; inp._bqDraft=true;
     const save=debounce(()=>{
       const k=draftKey(); if(!k) return;
@@ -11848,7 +11848,7 @@ function dispatchScheduled(){
 }
 function showScheduleMenu(anchor){
   $('bq-sched-menu')?.remove();
-  const text=($('bqgi')?.value||$('bqdmi')?.value||'').trim();
+  const text=($('bqginp')?.value||$('bqdminp')?.value||'').trim();
   if(!text){ _toast('Type a message first'); return; }
   const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
   const dmId=ctx==='dm'?activeDmId():'';
@@ -11877,7 +11877,7 @@ function showScheduleMenu(anchor){
       } else { at=Date.now()+delta; }
       if(at<=Date.now()){ _toast('Pick a future time','err'); return; }
       // Clear input
-      const inp=$(ctx==='global'?'bqgi':'bqdmi'); if(inp){ inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+      const inp=$(ctx==='global'?'bqginp':'bqdminp'); if(inp){ inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
       scheduleMessage(ctx, dmId, text, at);
       m.remove();
     };
@@ -11939,7 +11939,7 @@ function showDisappearMenu(anchor){
 
 /* Inject disappear button into composer */
 function mountDisappearBtn(){
-  ['bqgi','bqdmi'].forEach(id=>{
+  ['bqginp','bqdminp'].forEach(id=>{
     const inp=$(id); if(!inp) return;
     const composer=inp.closest('.bqcomp')||inp.parentElement;
     if(!composer || composer.querySelector('.bq-dis-btn')) return;
@@ -29032,5 +29032,307 @@ setTimeout(v105Init, 1500);
 setTimeout(v105Init, 4000);
 
 }catch(e){ console.error('[bq] V105 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V106 PATCH — FIX ADMIN TIMING + FORCE PROFILE CSS + REWORK SCHEDULE
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var V106_VERSION = '106.0.0';
+
+var css = document.createElement('style');
+css.id = 'bq-v106-css';
+css.textContent = [
+  /* FORCE PROFILE REDESIGN CSS — override old .bqpf-section etc. */
+  '#bqp .bqpf-scroll{background:#0e0e11 !important;padding:12px !important;}',
+  '#bqp .bqpf-section{padding:0 !important;border:none !important;margin:0 !important;background:transparent !important;border-radius:0 !important;}',
+  '#bqp .bqpf-label{display:none !important;}',
+  '#bqp .bqpf-avrow{display:none !important;}',
+  '#bqp .bqpf-initials-row{display:none !important;}',
+  '#bqp .bqpf-banner-row{display:none !important;}',
+
+  /* Hero card */
+  '#bqp .bqpf-hero{border-radius:16px !important;overflow:hidden !important;margin-bottom:14px !important;border:1px solid rgba(255,255,255,0.08) !important;box-shadow:0 4px 14px rgba(0,0,0,0.3) !important;}',
+  '#bqp .bqpf-hero-banner{height:80px !important;width:100% !important;background:linear-gradient(135deg,rgba(129,140,248,0.3),rgba(139,92,246,0.15)) !important;}',
+  '#bqp .bqpf-hero-body{display:flex !important;align-items:center !important;gap:14px !important;padding:0 16px 16px !important;margin-top:-28px !important;}',
+  '#bqp .bqpf-hero-av{width:56px !important;height:56px !important;border-radius:50% !important;display:flex !important;align-items:center !important;justify-content:center !important;font-size:18px !important;font-weight:700 !important;color:#000 !important;flex-shrink:0 !important;box-shadow:0 0 0 3px #0e0e11,0 0 0 4px rgba(255,255,255,0.1),0 4px 12px rgba(0,0,0,0.3) !important;}',
+  '#bqp .bqpf-hero-info{flex:1 !important;min-width:0 !important;}',
+  '#bqp .bqpf-hero-name{font-family:Inter,-apple-system,sans-serif !important;font-size:17px !important;font-weight:600 !important;letter-spacing:-0.02em !important;color:#f4f4f5 !important;}',
+  '#bqp .bqpf-hero-status{font-size:12px !important;color:#22c55e !important;margin-top:2px !important;text-transform:lowercase !important;}',
+  '#bqp .bqpf-hero-edit{padding:7px 14px !important;border-radius:10px !important;border:1px solid rgba(255,255,255,0.1) !important;background:rgba(255,255,255,0.04) !important;color:#a1a1aa !important;font:600 12px Inter,-apple-system,sans-serif !important;cursor:pointer !important;transition:all .2s ease !important;}',
+  '#bqp .bqpf-hero-edit:hover{background:rgba(129,140,248,0.1) !important;color:#818cf8 !important;border-color:rgba(129,140,248,0.3) !important;}',
+
+  /* Card sections */
+  '#bqp .bqpf-card{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:14px !important;padding:16px !important;margin-bottom:12px !important;}',
+  '#bqp .bqpf-card-title{font-family:Inter,-apple-system,sans-serif !important;font-size:13px !important;font-weight:600 !important;letter-spacing:-0.01em !important;color:#f4f4f5 !important;margin-bottom:14px !important;display:flex !important;align-items:center !important;gap:8px !important;}',
+  '#bqp .bqpf-card-title::before{content:"" !important;width:3px !important;height:14px !important;background:linear-gradient(180deg,#6366f1,#8b5cf6) !important;border-radius:2px !important;}',
+  '#bqp .bqpf-field-label{font-family:Inter,-apple-system,sans-serif !important;font-size:11px !important;font-weight:600 !important;letter-spacing:0.04em !important;text-transform:uppercase !important;color:#71717a !important;margin-bottom:8px !important;display:block !important;}',
+  '#bqp .bqpf-grid2{display:grid !important;grid-template-columns:1fr 1fr !important;gap:12px !important;margin-bottom:12px !important;}',
+  '@media(max-width:400px){#bqp .bqpf-grid2{grid-template-columns:1fr !important;}}',
+  '#bqp .bqpf-field{margin-bottom:14px !important;}',
+  '#bqp .bqpf-inp{width:100% !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(255,255,255,0.08) !important;border-radius:10px !important;padding:10px 14px !important;color:#f4f4f5 !important;font-family:Inter,-apple-system,sans-serif !important;font-size:14px !important;outline:none !important;transition:all .2s ease !important;}',
+  '#bqp .bqpf-inp:focus{border-color:rgba(129,140,248,0.4) !important;box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;}',
+  '#bqp .bqpf-inp::placeholder{color:#71717a !important;}',
+  '#bqp .bqpf-textarea{width:100% !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(255,255,255,0.08) !important;border-radius:10px !important;padding:10px 14px !important;color:#f4f4f5 !important;font-family:Inter,-apple-system,sans-serif !important;font-size:14px !important;outline:none !important;resize:vertical !important;min-height:64px !important;line-height:1.5 !important;transition:all .2s ease !important;}',
+  '#bqp .bqpf-textarea:focus{border-color:rgba(129,140,248,0.4) !important;box-shadow:0 0 0 3px rgba(129,140,248,0.12) !important;}',
+  '#bqp .bqpf-char-row{text-align:right !important;margin-top:4px !important;}',
+  '#bqp #bqpf-bio-count{font:500 10px Inter,-apple-system,sans-serif !important;color:#71717a !important;}',
+  '#bqp .bqpf-colors{display:flex !important;flex-wrap:wrap !important;gap:8px !important;}',
+  '#bqp .bqpf-col{width:28px !important;height:28px !important;border-radius:50% !important;cursor:pointer !important;border:2px solid transparent !important;transition:all .2s ease !important;flex-shrink:0 !important;}',
+  '#bqp .bqpf-col:hover{transform:scale(1.1) !important;}',
+  '#bqp .bqpf-col.sel{border-color:#818cf8 !important;box-shadow:0 0 0 2px rgba(129,140,248,0.25) !important;transform:scale(1.05) !important;}',
+  '#bqp .bqpf-statuses{display:grid !important;grid-template-columns:1fr 1fr !important;gap:8px !important;margin-bottom:14px !important;}',
+  '#bqp .bqpf-st{display:flex !important;align-items:center !important;gap:8px !important;padding:10px 12px !important;border-radius:10px !important;cursor:pointer !important;border:1px solid rgba(255,255,255,0.06) !important;background:rgba(255,255,255,0.02) !important;transition:all .2s ease !important;}',
+  '#bqp .bqpf-st:hover{background:rgba(255,255,255,0.05) !important;}',
+  '#bqp .bqpf-st.sel{border-color:rgba(129,140,248,0.3) !important;background:rgba(129,140,248,0.08) !important;}',
+  '#bqp .bqpf-st-dot{width:9px !important;height:9px !important;border-radius:50% !important;flex-shrink:0 !important;}',
+  '#bqp .bqpf-st-lbl{font:500 13px Inter,-apple-system,sans-serif !important;color:#f4f4f5 !important;}',
+  '#bqp .bqpf-fontsize-row{display:grid !important;grid-template-columns:repeat(3,1fr) !important;gap:8px !important;}',
+  '#bqp .bqpf-fontsize{padding:12px 8px !important;border-radius:10px !important;cursor:pointer !important;border:1px solid rgba(255,255,255,0.06) !important;background:rgba(255,255,255,0.02) !important;text-align:center !important;transition:all .2s ease !important;}',
+  '#bqp .bqpf-fontsize:hover{background:rgba(255,255,255,0.05) !important;}',
+  '#bqp .bqpf-fontsize.sel{border-color:rgba(129,140,248,0.3) !important;background:rgba(129,140,248,0.08) !important;}',
+  '#bqp .bqpf-fontsize-sample{font-family:Inter,-apple-system,sans-serif !important;font-weight:600 !important;color:#f4f4f5 !important;}',
+  '#bqp .bqpf-fontsize.sel .bqpf-fontsize-sample{color:#818cf8 !important;}',
+  '#bqp .bqpf-fontsize-lbl{font:600 10px Inter,-apple-system,sans-serif !important;color:#71717a !important;text-transform:uppercase !important;letter-spacing:0.04em !important;margin-top:4px !important;}',
+  '#bqp .bqpf-savebtn{width:100% !important;padding:13px !important;border-radius:12px !important;border:none !important;background:linear-gradient(135deg,#6366f1,#7c3aed) !important;color:#fff !important;font:600 14px Inter,-apple-system,sans-serif !important;cursor:pointer !important;box-shadow:0 2px 10px rgba(99,102,241,0.3) !important;transition:all .2s ease !important;margin-top:4px !important;}',
+  '#bqp .bqpf-savebtn:hover{transform:translateY(-1px) !important;box-shadow:0 4px 14px rgba(99,102,241,0.4) !important;}',
+  '#bqp .bqpf-savebtn:active{transform:scale(0.98) !important;}',
+  '#bqp .bqpf-savemsg{text-align:center !important;font:500 12px Inter,-apple-system,sans-serif !important;color:#22c55e !important;padding:8px !important;transition:opacity .3s !important;}',
+
+  /* Schedule menu — reworked */
+  '#bq-sched-menu{position:fixed !important;background:#18181b !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:14px !important;padding:6px !important;z-index:2147483646 !important;box-shadow:0 12px 40px rgba(0,0,0,0.6) !important;min-width:200px !important;animation:bqSchedIn .2s ease both !important;}',
+  '@keyframes bqSchedIn{from{opacity:0;transform:translateY(-6px) scale(0.96);}to{opacity:1;transform:none;}}',
+  '#bq-sched-menu .bq-sched-header{font:600 11px Inter,-apple-system,sans-serif !important;color:#71717a !important;padding:8px 12px 6px !important;text-transform:uppercase !important;letter-spacing:0.06em !important;}',
+  '#bq-sched-menu button{display:flex !important;align-items:center !important;gap:8px !important;width:100% !important;text-align:left !important;background:none !important;border:none !important;color:#f4f4f5 !important;padding:9px 12px !important;border-radius:8px !important;cursor:pointer !important;font:500 13px Inter,-apple-system,sans-serif !important;transition:background .15s ease !important;}',
+  '#bq-sched-menu button:hover{background:rgba(129,140,248,0.1) !important;color:#818cf8 !important;}',
+  '#bq-sched-menu button svg{width:14px !important;height:14px !important;stroke:currentColor !important;fill:none !important;stroke-width:1.8 !important;}',
+  '#bq-sched-menu .bq-sched-custom{margin:6px !important;padding:8px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(255,255,255,0.08) !important;border-radius:8px !important;}',
+  '#bq-sched-menu .bq-sched-custom label{font:600 10px Inter,-apple-system,sans-serif !important;color:#71717a !important;text-transform:uppercase !important;letter-spacing:0.04em !important;display:block !important;margin-bottom:4px !important;}',
+  '#bq-sched-menu .bq-sched-custom input{width:100% !important;background:rgba(0,0,0,0.3) !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:6px !important;padding:6px 8px !important;color:#f4f4f5 !important;font:13px Inter,-apple-system,sans-serif !important;outline:none !important;}',
+  '#bq-sched-menu .bq-sched-custom input:focus{border-color:rgba(129,140,248,0.4) !important;}',
+  '#bq-sched-menu .bq-sched-send{background:linear-gradient(135deg,#6366f1,#7c3aed) !important;color:#fff !important;justify-content:center !important;font-weight:600 !important;margin-top:4px !important;}',
+  '#bq-sched-menu .bq-sched-send:hover{filter:brightness(1.1) !important;}',
+
+  '@media (prefers-reduced-motion: reduce){#bqp *{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. FIX ADMIN TIMING — recheck admin after login
+   ═══════════════════════════════════════════════════════════════════════ */
+function v106FixAdminTiming(){
+  // Recheck admin status every 2s for the first 30s (covers login delay)
+  var checks = 0;
+  var interval = setInterval(function(){
+    checks++;
+    try {
+      var name = (typeof uname !== 'undefined') ? uname : '';
+      if(name && ADMIN_NAMES.indexOf(name.toLowerCase()) !== -1){
+        _isAdmin = true;
+        // Write admin flag
+        if(typeof db !== 'undefined' && db && typeof uid !== 'undefined' && uid){
+          db.ref('bq_presence/' + uid + '/isAdmin').set(true);
+          db.ref('bq_admins/' + uid).set({name: name, ts: Date.now()});
+        }
+        // Inject admin panel
+        v104InjectAdminPanel();
+        // Expose API
+        window.bqAdmin = window.bqAdmin || {
+          deleteMessage: adminDeleteMessage,
+          pinMessage: adminPinMessage,
+          unpinMessage: adminUnpinMessage,
+          announce: adminAnnounce,
+          clearAnnouncement: adminClearAnnouncement,
+          banUser: adminBanUser,
+          unbanUser: adminUnbanUser,
+          muteUser: adminMuteUser,
+          unmuteUser: adminUnmuteUser,
+          clearGlobalChat: adminClearGlobalChat,
+          toggleSlowMode: adminToggleSlowMode,
+          toggleMaintenance: adminToggleMaintenance,
+          isAdmin: function(){ return true; }
+        };
+        console.log('[bq V106] Admin capabilities activated for @' + name);
+        clearInterval(interval);
+        return;
+      }
+    } catch(e) {}
+    if(checks >= 15) clearInterval(interval); // stop after 30s
+  }, 2000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. REWORK SCHEDULE MENU — beautiful UI, reliable
+   ═══════════════════════════════════════════════════════════════════════ */
+function v106ReworkScheduleMenu(){
+  // Override showScheduleMenu with a better version
+  if(typeof window.showScheduleMenu === 'function'){
+    window.showScheduleMenu = function(anchor){
+      document.getElementById('bq-sched-menu')?.remove();
+
+      // Get text from the correct input IDs
+      var ginp = document.getElementById('bqginp');
+      var dminp = document.getElementById('bqdminp');
+      var text = '';
+      var ctx = '';
+      var dmId = '';
+
+      if(ginp && ginp.value && ginp.value.trim()){
+        text = ginp.value.trim();
+        ctx = 'global';
+      } else if(dminp && dminp.value && dminp.value.trim()){
+        text = dminp.value.trim();
+        ctx = 'dm';
+        dmId = (typeof activeDmId !== 'undefined') ? activeDmId : '';
+      }
+
+      if(!text){
+        if(typeof _toast === 'function') _toast('Type a message first');
+        else if(typeof toast === 'function') toast('Type a message first');
+        return;
+      }
+
+      var clockIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      var sendIcon = '<svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>';
+
+      var m = document.createElement('div');
+      m.id = 'bq-sched-menu';
+      m.innerHTML =
+        '<div class="bq-sched-header">Schedule message</div>' +
+        '<button data-preset="1m">' + clockIcon + ' In 1 minute</button>' +
+        '<button data-preset="5m">' + clockIcon + ' In 5 minutes</button>' +
+        '<button data-preset="1h">' + clockIcon + ' In 1 hour</button>' +
+        '<button data-preset="tonight">' + clockIcon + ' Tonight 8pm</button>' +
+        '<button data-preset="tomorrow">' + clockIcon + ' Tomorrow 9am</button>' +
+        '<div class="bq-sched-custom">' +
+          '<label>Custom date & time</label>' +
+          '<input type="datetime-local" id="bq-sched-custom-input">' +
+        '</div>' +
+        '<button class="bq-sched-send" id="bq-sched-custom-send">' + sendIcon + ' Schedule custom</button>';
+
+      m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
+
+      // Preset buttons
+      m.querySelectorAll('button[data-preset]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var preset = btn.dataset.preset;
+          var at = Date.now();
+          if(preset === '1m') at = Date.now() + 60000;
+          else if(preset === '5m') at = Date.now() + 300000;
+          else if(preset === '1h') at = Date.now() + 3600000;
+          else if(preset === 'tonight'){
+            var d = new Date(); d.setHours(20,0,0,0);
+            if(d <= new Date()) d.setDate(d.getDate()+1);
+            at = d.getTime();
+          } else if(preset === 'tomorrow'){
+            var d2 = new Date(); d2.setDate(d2.getDate()+1); d2.setHours(9,0,0,0);
+            at = d2.getTime();
+          }
+          if(at <= Date.now()){
+            if(typeof _toast === 'function') _toast('Pick a future time','err');
+            return;
+          }
+          // Clear input
+          var inp = document.getElementById(ctx === 'global' ? 'bqginp' : 'bqdminp');
+          if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+          // Schedule
+          if(typeof scheduleMessage === 'function'){
+            scheduleMessage(ctx, dmId, text, at);
+          } else {
+            // Fallback: save to localStorage
+            var arr = [];
+            try { arr = JSON.parse(localStorage.getItem('bq_sched_v23') || '[]'); } catch(e) {}
+            arr.push({id:'s_'+Date.now(),ctx:ctx,dmId:dmId||'',text:text,atMs:at});
+            localStorage.setItem('bq_sched_v23', JSON.stringify(arr));
+          }
+          if(typeof _toast === 'function') _toast('Scheduled for ' + new Date(at).toLocaleString(), 'ok');
+          else if(typeof toast === 'function') toast('Scheduled for ' + new Date(at).toLocaleString());
+          m.remove();
+        });
+      });
+
+      // Custom send button
+      var customSend = m.querySelector('#bq-sched-custom-send');
+      if(customSend){
+        customSend.addEventListener('click', function(){
+          var input = m.querySelector('#bq-sched-custom-input');
+          if(!input || !input.value){
+            if(typeof _toast === 'function') _toast('Pick a date and time','err');
+            return;
+          }
+          var at = new Date(input.value).getTime();
+          if(isNaN(at) || at <= Date.now()){
+            if(typeof _toast === 'function') _toast('Pick a valid future time','err');
+            return;
+          }
+          var inp = document.getElementById(ctx === 'global' ? 'bqginp' : 'bqdminp');
+          if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+          if(typeof scheduleMessage === 'function'){
+            scheduleMessage(ctx, dmId, text, at);
+          } else {
+            var arr = [];
+            try { arr = JSON.parse(localStorage.getItem('bq_sched_v23') || '[]'); } catch(e) {}
+            arr.push({id:'s_'+Date.now(),ctx:ctx,dmId:dmId||'',text:text,atMs:at});
+            localStorage.setItem('bq_sched_v23', JSON.stringify(arr));
+          }
+          if(typeof _toast === 'function') _toast('Scheduled for ' + new Date(at).toLocaleString(), 'ok');
+          else if(typeof toast === 'function') toast('Scheduled for ' + new Date(at).toLocaleString());
+          m.remove();
+        });
+      }
+
+      document.body.appendChild(m);
+
+      // Position near anchor
+      if(anchor){
+        var r = anchor.getBoundingClientRect();
+        m.style.left = Math.max(8, r.right - 220) + 'px';
+        m.style.top = (r.top - m.offsetHeight - 8) + 'px';
+        // If off-screen top, show below
+        if(parseInt(m.style.top) < 8){
+          m.style.top = (r.bottom + 8) + 'px';
+        }
+      }
+
+      // Close on outside click
+      setTimeout(function(){
+        var off = function(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
+        document.addEventListener('pointerdown', off, true);
+      }, 10);
+    };
+  }
+
+  // Also ensure dispatchScheduled runs (checks every 5s for due messages)
+  if(typeof dispatchScheduled === 'function' && !window._v106SchedDispatch){
+    window._v106SchedDispatch = true;
+    setInterval(function(){
+      if(document.visibilityState === 'visible'){
+        try { dispatchScheduled(); } catch(e) {}
+      }
+    }, 5000);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. INIT
+   ═══════════════════════════════════════════════════════════════════════ */
+function v106Init(){
+  v106FixAdminTiming();
+  setTimeout(v106ReworkScheduleMenu, 2000);
+  setTimeout(v106ReworkScheduleMenu, 5000);
+  console.log('[bq] V' + V106_VERSION + ' patch loaded — admin timing fix, profile CSS force, schedule rework');
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', v106Init);
+} else {
+  v106Init();
+}
+setTimeout(v106Init, 1500);
+setTimeout(v106Init, 4000);
+
+}catch(e){ console.error('[bq] V106 patch error:', e); }
 })();
 
