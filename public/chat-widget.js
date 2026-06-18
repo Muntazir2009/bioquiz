@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '94.0.0';                     // V94: Restore enhanced DM online indicator (glassy pill + glowing dot), keep edit UI fixes from V93
+const WIDGET_VERSION = '95.0.0';                     // V95: Enhanced last online/last seen indicator (glowing pulsing dot, glassy pill, lowercase text), removed unused files
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -502,10 +502,10 @@ function tsStr(ts){ return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digi
 function lastSeenStr(ts){
   if(!ts) return 'Never';
   const now=Date.now(),diff=now-ts;
-  if(diff<60000) return 'Just now';
-  if(diff<3600000) return Math.floor(diff/60000)+' min ago';
-  if(diff<86400000) return Math.floor(diff/3600000)+' hr ago';
-  if(diff<604800000) return Math.floor(diff/86400000)+' days ago';
+  if(diff<60000) return 'just now';
+  if(diff<3600000) return Math.floor(diff/60000)+'m ago';
+  if(diff<86400000) return Math.floor(diff/3600000)+'h ago';
+  if(diff<604800000) return Math.floor(diff/86400000)+'d ago';
   return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 function dateLabel(ts){
@@ -527,7 +527,7 @@ function presenceMeta(targetUid,pdata){
     data,
     isOnline,
     label:isOnline?st.label:'Offline',
-    detail:isOnline?st.label:(data.ts?'Last seen '+lastSeenStr(data.ts):'Offline'),
+    detail:isOnline?st.label:(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
     color:isOnline?st.color:'var(--bq-text-subtle)',
     status:isOnline?(data.status||'online'):'offline'
   };
@@ -26823,5 +26823,164 @@ v93Css.textContent = [
 console.log('[bq] V' + V93_VERSION + ' patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed');
 
 }catch(e){ console.error('[bq] V93 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V95 PATCH — ENHANCED LAST ONLINE / LAST SEEN INDICATOR
+   ───────────────────────────────────────────────────────────────────────
+   The user asked for an enhanced version of the last online/last seen
+   indicator. V94 restored it but it was basic. V95 makes it beautiful:
+
+   • Glassy pill with backdrop-blur
+   • Glowing pulsing dot (green for online, amber for away, muted for offline)
+   • Refined ring animation around the dot when online
+   • Better typography (lowercase, tighter tracking)
+   • Color-coded: online=green, studying=indigo, busy=red, away=amber, offline=muted
+   • "last seen 5m ago" format (lowercase, compact)
+   • Subtle hover effect on the pill
+
+   Also: cleaned up unused files (math.html, quiz-editor.html, admin.html,
+   old widget versions, logs, zips, screenshots, dev scripts).
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+
+var V95_VERSION = '95.0.0';
+
+var v95Css = document.createElement('style');
+v95Css.id = 'bq-v95-css';
+v95Css.textContent = [
+  /* ════════════════════════════════════════════════════════════════════
+     ENHANCED LAST ONLINE / LAST SEEN INDICATOR
+     ════════════════════════════════════════════════════════════════════ */
+
+  /* Status pill — enhanced glassy style */
+  '#bqp .bqdmhs,',
+  '#bqp.bq-dm-v2 .bqdmhs{',
+  '  display:inline-flex !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  align-items:center !important;gap:7px !important;',
+  '  padding:4px 12px !important;',
+  '  border-radius:14px !important;',
+  '  background:rgba(255,255,255,0.05) !important;',
+  '  border:1px solid rgba(255,255,255,0.08) !important;',
+  '  backdrop-filter:blur(10px) saturate(1.3) !important;',
+  '  -webkit-backdrop-filter:blur(10px) saturate(1.3) !important;',
+  '  margin-top:4px !important;',
+  '  width:max-content !important;max-width:220px !important;',
+  '  transition:all .3s cubic-bezier(0.4,0,0.2,1) !important;',
+  '  box-shadow:0 2px 8px rgba(0,0,0,0.15) !important;',
+  '}',
+  '#bqp .bqdmhs:hover,',
+  '#bqp.bq-dm-v2 .bqdmhs:hover{',
+  '  background:rgba(255,255,255,0.08) !important;',
+  '  border-color:rgba(255,255,255,0.14) !important;',
+  '  transform:translateY(-1px) !important;',
+  '  box-shadow:0 4px 12px rgba(0,0,0,0.25) !important;',
+  '}',
+
+  /* Status dot — enhanced with glow + ring pulse */
+  '#bqp .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;',
+  '  visibility:visible !important;',
+  '  width:8px !important;height:8px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  position:relative !important;',
+  '  transition:all .3s ease !important;',
+  '}',
+  /* Glow around dot */
+  '#bqp .bqdmhs-dot[style*="background"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background"]{',
+  '  box-shadow:0 0 8px currentColor, 0 0 0 0 currentColor !important;',
+  '}',
+
+  /* Status text — enhanced typography */
+  '#bqp #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  display:inline !important;',
+  '  visibility:visible !important;',
+  '  opacity:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.01em !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  transition:color .3s ease !important;',
+  '  text-transform:lowercase !important;',
+  '}',
+
+  /* Online state — green glow ring pulse */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(34,"],',  /* #22c55e */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#22c55e"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-success)"]{',
+  '  animation:bqV95OnlinePulse 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV95OnlinePulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(34,197,94,0.5), 0 0 0 0 rgba(34,197,94,0.4) !important;}',
+  '  50%{box-shadow:0 0 12px rgba(34,197,94,0.7), 0 0 0 6px rgba(34,197,94,0) !important;}',
+  '}',
+
+  /* Studying state — indigo glow ring pulse */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(129,"],',  /* #818cf8 */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#818cf8"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-accent)"]{',
+  '  animation:bqV95StudyingPulse 2.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV95StudyingPulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(129,140,248,0.5), 0 0 0 0 rgba(129,140,248,0.4) !important;}',
+  '  50%{box-shadow:0 0 12px rgba(129,140,248,0.7), 0 0 0 6px rgba(129,140,248,0) !important;}',
+  '}',
+
+  /* Busy state — red glow */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(239,"],',  /* #ef4444 */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#ef4444"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-danger)"]{',
+  '  animation:bqV95BusyPulse 1.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV95BusyPulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(239,68,68,0.5), 0 0 0 0 rgba(239,68,68,0.4) !important;}',
+  '  50%{box-shadow:0 0 10px rgba(239,68,68,0.7), 0 0 0 5px rgba(239,68,68,0) !important;}',
+  '}',
+
+  /* Away state — amber glow (static, no pulse) */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(245,"],',  /* #f59e0b */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#f59e0b"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-warning)"]{',
+  '  box-shadow:0 0 6px rgba(245,158,11,0.5) !important;',
+  '}',
+
+  /* Offline state — muted, no glow, no animation */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="opacity"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="rgba(255,255,255"]{',
+  '  box-shadow:none !important;',
+  '  animation:none !important;',
+  '  opacity:0.4 !important;',
+  '}',
+
+  /* ════════════════════════════════════════════════════════════════════
+     DM CONVERSATION HEADER — refined spacing for indicator
+     ════════════════════════════════════════════════════════════════════ */
+  '#bqp.bq-dm-v2 .bqdmhi{flex:1 !important;min-width:0 !important;}',
+  '#bqp.bq-dm-v2 .bqdmhn{',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:15px !important;font-weight:600 !important;',
+  '  letter-spacing:-0.02em !important;color:#f4f4f5 !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '}',
+
+  /* REDUCED MOTION */
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp .bqdmhs-dot, #bqp.bq-dm-v2 .bqdmhs-dot{',
+  '    animation:none !important;',
+  '  }',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v95Css);
+
+console.log('[bq] V' + V95_VERSION + ' patch loaded — enhanced last online/last seen indicator + cleanup');
+
+}catch(e){ console.error('[bq] V95 patch error:', e); }
 })();
 

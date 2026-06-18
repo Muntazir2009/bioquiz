@@ -1,2 +1,0 @@
-$ bun --hot index.ts
-[file-ws] Realtime service running on port 3003
