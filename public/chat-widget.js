@@ -355,7 +355,7 @@ const GIPHY_CATEGORIES = [
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const MAX_MSG      = 50;
+const MAX_MSG      = 30;   // V90: reduced from 50 to 30 — show only recent messages, don't load older
 // v10: throttle typing/presence writes
 const _typingThrottle = Object.create(null);
 function _throttledTypingWrite(path, data){
@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '89.0.0';                     // V89: Remove self online indicator from DMs, beautify UI, unified component system (buttons, cards, inputs, toggles, badges)
+const WIDGET_VERSION = '90.0.0';                     // V90: Reduce DM message limit from 50 to 30, tighter pruning (don't load older messages)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -4716,7 +4716,8 @@ function sendGlobal(text){
   try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('global', p); }catch(_){}
   db.ref('bq_messages').once('value',snap=>{
     const keys=[];snap.forEach(c=>keys.push(c.key));
-    if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
+    // V90: tighter pruning buffer (was MAX_MSG+25, now MAX_MSG+10) — keep only recent messages
+    if(keys.length>MAX_MSG+10) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
   });
   
   clearReply('g');
