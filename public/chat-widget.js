@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '106.0.0';                   // V106: Fix admin timing (recheck after login), force profile CSS override, rework schedule menu (beautiful UI, correct input IDs, custom datetime picker)
+const WIDGET_VERSION = '107.0.0';                   // V107: Fix schedule (activeCtx wrong IDs, wireSchedule wrong button IDs, dispatchScheduled wrong db), rework schedule UI (beautiful menu, datetime picker, preset times)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -11596,7 +11596,7 @@ function maybeShowPendingCode(){
 /* ─────────── Helpers: which chat is active ─────────── */
 function activeCtx(){
   // 'global' if global chat is visible, 'dm' if dm view is visible
-  const g=$('bqv-global'); const d=$('bqv-dm');
+  const g=$('bqv-chat'); const d=$('bqv-dmconv');
   const dmActive = d && (d.classList.contains('bq-active') || getComputedStyle(d).display!=='none');
   const gActive = g && (g.classList.contains('bq-active') || getComputedStyle(g).display!=='none');
   if(dmActive) return 'dm';
@@ -11828,74 +11828,109 @@ function scheduleMessage(ctx, dmId, text, atMs){
   _toast('Scheduled for '+new Date(atMs).toLocaleString(),'ok');
 }
 function dispatchScheduled(){
-  const now=Date.now();
-  const arr=getScheduled();
-  let changed=false;
-  for(let i=arr.length-1;i>=0;i--){
-    const s=arr[i];
+  var now=Date.now();
+  var arr=getScheduled();
+  var changed=false;
+  for(var i=arr.length-1;i>=0;i--){
+    var s=arr[i];
     if(s.atMs<=now){
       try{
-        const db=_db(); const u=_uid(); const n=_uname();
-        if(db && u && n){
-          if(s.ctx==='global'){ db.ref('bq_messages').push({uid:u,uname:n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
-          else if(s.dmId){ db.ref('bq_dms/'+s.dmId+'/messages').push({uid:u,uname:n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
+        // Use the main widget's db, uid, uname (not the v23 helper functions
+        // which use different localStorage keys)
+        var _d=(typeof db!=='undefined')?db:null;
+        var _u=(typeof uid!=='undefined')?uid:(localStorage.getItem('bq_chat_uid')||'');
+        var _n=(typeof uname!=='undefined')?uname:(localStorage.getItem('bq_chat_uname')||'');
+        if(_d && _u && _n){
+          if(s.ctx==='global'){ _d.ref('bq_messages').push({uid:_u,uname:_n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
+          else if(s.dmId){ _d.ref('bq_dms/'+s.dmId+'/messages').push({uid:_u,uname:_n,text:String(s.text).slice(0,2000),ts:Date.now()}); }
         }
-      }catch(_){}
+      }catch(e){}
       arr.splice(i,1); changed=true;
     }
   }
   if(changed) setScheduled(arr);
 }
 function showScheduleMenu(anchor){
-  $('bq-sched-menu')?.remove();
-  const text=($('bqginp')?.value||$('bqdminp')?.value||'').trim();
-  if(!text){ _toast('Type a message first'); return; }
-  const ctx=activeCtx(); if(!ctx){ _toast('Open a chat first'); return; }
-  const dmId=ctx==='dm'?activeDmId():'';
-  const m=document.createElement('div'); m.id='bq-sched-menu';
-  const opts=[
-    ['In 1 minute', 60*1000],
-    ['In 1 hour', 60*60*1000],
-    ['Tonight 8pm', null],
-    ['Tomorrow 9am', null],
-    ['Custom time…', 'custom']
-  ];
-  opts.forEach(([label,delta])=>{
-    const b=document.createElement('button'); b.textContent=label;
-    b.onclick=()=>{
-      let at=Date.now();
-      if(delta==='custom'){
-        const v=prompt('Send at (YYYY-MM-DD HH:MM, 24h):');
-        if(!v) return;
-        const t=new Date(v.replace(' ','T'));
-        if(isNaN(t)) { _toast('Invalid date','err'); return; }
-        at=t.getTime();
-      } else if(label==='Tonight 8pm'){
-        const d=new Date(); d.setHours(20,0,0,0); if(d<=Date.now()) d.setDate(d.getDate()+1); at=d.getTime();
-      } else if(label==='Tomorrow 9am'){
-        const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); at=d.getTime();
-      } else { at=Date.now()+delta; }
-      if(at<=Date.now()){ _toast('Pick a future time','err'); return; }
-      // Clear input
-      const inp=$(ctx==='global'?'bqginp':'bqdminp'); if(inp){ inp.value=''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
-      scheduleMessage(ctx, dmId, text, at);
-      m.remove();
-    };
-    m.appendChild(b);
+  document.getElementById('bq-sched-menu')?.remove();
+  var ginp=document.getElementById('bqginp');
+  var dminp=document.getElementById('bqdminp');
+  var text='';
+  var ctx='';
+  var dmId='';
+  if(ginp&&ginp.value&&ginp.value.trim()){text=ginp.value.trim();ctx='global';}
+  else if(dminp&&dminp.value&&dminp.value.trim()){text=dminp.value.trim();ctx='dm';dmId=(typeof activeDmId==='function'?activeDmId():'')||'';}
+  if(!text){if(typeof _toast==='function')_toast('Type a message first');else if(typeof toast==='function')toast('Type a message first');return;}
+
+  var m=document.createElement('div');
+  m.id='bq-sched-menu';
+  m.innerHTML=
+    '<div class="bq-sched-header">Schedule message</div>'+
+    '<button data-preset="1m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> In 1 minute</button>'+
+    '<button data-preset="5m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> In 5 minutes</button>'+
+    '<button data-preset="15m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> In 15 minutes</button>'+
+    '<button data-preset="1h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> In 1 hour</button>'+
+    '<button data-preset="tonight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Tonight 8pm</button>'+
+    '<button data-preset="tomorrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Tomorrow 9am</button>'+
+    '<div class="bq-sched-custom">'+
+      '<label>Or pick a custom time</label>'+
+      '<input type="datetime-local" id="bq-sched-custom-input">'+
+    '</div>'+
+    '<button class="bq-sched-send" id="bq-sched-custom-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg> Schedule it</button>';
+
+  m.addEventListener('mousedown',function(ev){ev.stopPropagation();});
+
+  function doSchedule(at){
+    if(at<=Date.now()){if(typeof _toast==='function')_toast('Pick a future time','err');return;}
+    var inp=document.getElementById(ctx==='global'?'bqginp':'bqdminp');
+    if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));}
+    var arr=[];
+    try{arr=JSON.parse(localStorage.getItem('bq_sched_v23')||'[]');}catch(e){}
+    arr.push({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),ctx:ctx,dmId:dmId||'',text:text,atMs:at});
+    try{localStorage.setItem('bq_sched_v23',JSON.stringify(arr));}catch(e){}
+    if(typeof _toast==='function')_toast('Scheduled for '+new Date(at).toLocaleString(),'ok');
+    else if(typeof toast==='function')toast('Scheduled for '+new Date(at).toLocaleString());
+    m.remove();
+  }
+
+  m.querySelectorAll('button[data-preset]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var preset=btn.dataset.preset;
+      var at=Date.now();
+      if(preset==='1m')at=Date.now()+60000;
+      else if(preset==='5m')at=Date.now()+300000;
+      else if(preset==='15m')at=Date.now()+900000;
+      else if(preset==='1h')at=Date.now()+3600000;
+      else if(preset==='tonight'){var d=new Date();d.setHours(20,0,0,0);if(d<=new Date())d.setDate(d.getDate()+1);at=d.getTime();}
+      else if(preset==='tomorrow'){var d2=new Date();d2.setDate(d2.getDate()+1);d2.setHours(9,0,0,0);at=d2.getTime();}
+      doSchedule(at);
+    });
   });
-  // FIX: Stop mousedown propagation so the outside-click handler doesn't close the widget
-  m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
+
+  var customSend=m.querySelector('#bq-sched-custom-send');
+  if(customSend){
+    customSend.addEventListener('click',function(){
+      var input=m.querySelector('#bq-sched-custom-input');
+      if(!input||!input.value){if(typeof _toast==='function')_toast('Pick a date and time','err');return;}
+      var at=new Date(input.value).getTime();
+      if(isNaN(at)){if(typeof _toast==='function')_toast('Invalid date','err');return;}
+      doSchedule(at);
+    });
+  }
+
   document.body.appendChild(m);
-  const r=anchor.getBoundingClientRect();
-  m.style.left=Math.max(8, r.right - 220)+'px';
-  m.style.top=(r.top - m.offsetHeight - 8)+'px';
-  setTimeout(()=>{
-    const off=(e)=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
-    document.addEventListener('pointerdown', off, true);
+  if(anchor){
+    var r=anchor.getBoundingClientRect();
+    m.style.left=Math.max(8,r.right-220)+'px';
+    m.style.top=(r.top-m.offsetHeight-8)+'px';
+    if(parseInt(m.style.top)<8){m.style.top=(r.bottom+8)+'px';}
+  }
+  setTimeout(function(){
+    var off=function(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('pointerdown',off,true);}};
+    document.addEventListener('pointerdown',off,true);
   },10);
 }
 function wireScheduleSendButton(){
-  ['bqgs','bqdms'].forEach(id=>{
+  ['bqgsnd','bqdmsnd'].forEach(id=>{
     const btn=$(id); if(!btn || btn._bqSched) return; btn._bqSched=true;
     let pressTimer=null;
     btn.addEventListener('pointerdown',(e)=>{
@@ -12100,7 +12135,7 @@ function boot(){
   try{ wireSwipeReply(); }catch(_){}
   try{
     // Watch view changes for draft restore
-    ['bqv-global','bqv-dm'].forEach(id=>{ const e=$(id); if(e) draftViewObs.observe(e,{attributes:true,attributeFilter:['class']}); });
+    ['bqv-chat','bqv-dmconv'].forEach(id=>{ const e=$(id); if(e) draftViewObs.observe(e,{attributes:true,attributeFilter:['class']}); });
   }catch(_){}
   // Pending code re-attempt
   const tryEnsure=()=>{ if(_db() && _uname()) ensureRecoveryCode(); };
