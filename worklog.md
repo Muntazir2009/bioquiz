@@ -901,3 +901,68 @@ Stage Summary:
 - All components use consistent indigo accent, spring animations, hover states
 - Non-breaking: V1 unchanged, V89 overrides V88 with higher specificity
 - Backup: scripts/chat-widget-v88-backup.js
+
+---
+Task ID: V91-PerfDesign
+Agent: main
+Task: MAX_MSG to 80, fix scroll/message loading lag, remove duplicate V2 toggle, V2 design enhancements
+
+Work Log:
+- Confirmed V90 baseline
+- Explored scroll lag causes:
+  1. setupScrollMonitor() — redundant scroll listener doing Math.abs + Date.now on every scroll event
+  2. V69.2 window.scrollD override — banner DOM manipulation on every message render
+  3. 60s health check interval — runDomHealthCheck + selfHeal + checkReplyChipHealth + checkGhostMessages + cleanupOrphans + reportPerformanceMetrics, all full-document querySelectorAll scans
+- Found duplicate V2 toggle: #bq-dm-v2-badge (small badge next to title) AND #bq-dm-v2-hdr-switch (segmented V1/V2 switch)
+- Backed up V90 to scripts/chat-widget-v90-backup.js
+- Wrote V91 patch (613 lines):
+
+MESSAGE LIMIT:
+- MAX_MSG: 30 → 80
+- Pruning buffer: MAX_MSG+10 → MAX_MSG+20 (prune at 100, keep 80)
+
+FIX SCROLL/MESSAGE LOADING LAG:
+- Disabled setupScrollMonitor() via no-op override
+- Simplified V69.2 window.scrollD override — removed banner DOM manipulation, delegates to original with try/catch
+- v91GateHealthChecks(): all 6 health check functions gated behind Page Visibility + requestIdleCallback:
+  - runDomHealthCheck, selfHeal, checkReplyChipHealth, checkGhostMessages, cleanupOrphans, reportPerformanceMetrics
+  - Skip when tab hidden, run during idle time
+
+REMOVE DUPLICATE V2 TOGGLE:
+- Hidden #bq-dm-v2-badge via CSS (display:none + visibility:hidden)
+- Kept only #bq-dm-v2-hdr-switch (segmented V1/V2)
+
+V2 DESIGN ENHANCEMENTS:
+- Refined bubbles: layered shadows + inner top highlight
+- Message grouping: 6px spacer between senders, 1px consecutive
+- Refined date separators: pill with gradient + shadow
+- Refined typing indicator: avatar + indigo gradient dots with glow
+- Refined reaction chips: glassy, indigo active, hover lift
+- Refined empty state: 64px illustration with radial glow animation
+- Refined scroll button: indigo gradient, spring appear, badge
+- Refined input bar: glassy, gradient top border, indigo focus
+- Refined conversation header: glassy with gradient accent line
+- Refined sticker: pop animation + drop shadow
+- Refined voice note waveform: indigo gradient bars
+- Refined DM list: hover translateX, active inset border
+- Refined unread badge: indigo gradient + pop
+- Refined avatar: triple-ring + hover scale + indigo ring
+- Refined V1/V2 toggle: indigo gradient slider (ONLY toggle)
+- Refined read receipts: cyan glow when seen
+- Refined message entrance: spring animation
+- Refined scrollbar: thinner, indigo on hover
+- Refined new messages banner: indigo gradient + spring
+
+- Appended V91 patch to public/chat-widget.js (now 25,953 lines)
+- Bumped WIDGET_VERSION from '90.0.0' to '91.0.0'
+- Updated public/chat-widget-version.json to {"version": "91.0.0"}
+- Validated: full widget syntax valid, ESLint clean, build succeeds, dev server boots, index HTTP 200, widget HTTP 200, MAX_MSG = 80 confirmed, 29 V91 markers, duplicate badge hidden, WIDGET_VERSION = '91.0.0', no errors
+- Committed (ceb2063) and pushed to GitHub
+
+Stage Summary:
+- MAX_MSG increased to 80 — more message history shown
+- Scroll lag FIXED — removed redundant scroll monitor, simplified scrollD override, gated all health checks behind visibility + idle callback
+- Duplicate V2 toggle REMOVED — only the segmented V1/V2 switch remains
+- V2 design enhanced — refined bubbles, grouping, typing indicator, reactions, empty state, scroll button, input, header, stickers, voice notes, avatars, toggle, read receipts, animations
+- Non-breaking: V1 unchanged, V91 overrides V90 with higher specificity
+- Backup: scripts/chat-widget-v90-backup.js
