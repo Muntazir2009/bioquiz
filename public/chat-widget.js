@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '100.0.0';                    // V100: Header declutter (remove profile button), profile avatar top-left with initials, remove online text (keep last seen)
+const WIDGET_VERSION = '101.0.0';                    // V101: Remove status pill from DM header completely, remove Profile from bottom nav (accessible via top-left avatar only)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -3278,9 +3278,6 @@ const HTML = `
       <button class="bqnb" data-v="online">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>Online
         <div class="bqnnb" id="bqonb"></div>
-      </button>
-      <button class="bqnb" data-v="profile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
       </button>
     </div>
   </div>
@@ -28176,5 +28173,65 @@ setTimeout(v100Init, 1500);
 setTimeout(v100Init, 4000);
 
 }catch(e){ console.error('[bq] V100 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V101 PATCH — REMOVE STATUS PILL FROM DM HEADER + REMOVE PROFILE FROM NAV
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var v101Css = document.createElement('style');
+v101Css.id = 'bq-v101-css';
+v101Css.textContent = [
+  /* COMPLETELY HIDE the status pill (#bqdmhs) from the DM conversation header */
+  '#bqp #bqdmhs,',
+  '#bqp .bqdmhs,',
+  '#bqp #bqdmhs-dot,',
+  '#bqp .bqdmhs-dot,',
+  '#bqp #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 #bqdmhs,',
+  '#bqp.bq-dm-v2 .bqdmhs,',
+  '#bqp.bq-dm-v2 #bqdmhs-dot,',
+  '#bqp.bq-dm-v2 .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 #bqdmhs-txt,',
+  '#bqdmhs,',
+  '.bqdmhs,',
+  '#bqdmhs-dot,',
+  '.bqdmhs-dot,',
+  '#bqdmhs-txt{',
+  '  display:none !important;',
+  '  visibility:hidden !important;',
+  '  height:0 !important;width:0 !important;',
+  '  padding:0 !important;margin:0 !important;',
+  '  opacity:0 !important;',
+  '  pointer-events:none !important;',
+  '}',
+
+  /* Profile avatar top-left — make sure it's visible and styled */
+  '#bqp .bq-profile-avatar{',
+  '  width:28px !important;height:28px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  display:flex !important;align-items:center !important;justify-content:center !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:700 !important;',
+  '  cursor:pointer !important;color:#000 !important;',
+  '  box-shadow:0 0 0 1px rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.2) !important;',
+  '  transition:transform .25s cubic-bezier(0.34,1.4,0.64,1) !important;',
+  '}',
+  '#bqp .bq-profile-avatar:hover{',
+  '  transform:scale(1.08) !important;',
+  '  box-shadow:0 0 0 2px rgba(129,140,248,0.3), 0 4px 10px rgba(0,0,0,0.3) !important;',
+  '}',
+  '@media (max-width:600px){',
+  '  #bqp .bq-profile-avatar{width:32px !important;height:32px !important;font-size:12px !important;}',
+  '}',
+
+  /* Nav back to 3 buttons — wider */
+  '#bqp .bqnb{flex:1 !important;}',
+].join('\n');
+(document.head || document.documentElement).appendChild(v101Css);
+console.log('[bq] V101 patch loaded — status pill removed from DM header, profile removed from nav');
+}catch(e){ console.error('[bq] V101 patch error:', e); }
 })();
 
