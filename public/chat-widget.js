@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '110.0.0';                   // V110: onMsgChanged rebuilt — sync edit/reply/forward/meta on all clients, update reply previews when original message changes
+const WIDGET_VERSION = '111.0.0';                   // V111: Rebuild meta from msg data (not old DOM), preserve meta on delete tombstone, preserve read receipt state
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -5649,24 +5649,39 @@ function onMsgChanged(ctx,snap){
   if(msg.deleted){
     const bbl=el.querySelector('.bqbbl');
     if(bbl){
-      bbl.innerHTML='<span style="opacity:.55;font-style:italic">Message deleted</span>';
+      // V111: Preserve meta (timestamp) on the tombstone
+      var tStrDel = msg.ts ? tsStr(msg.ts) : '';
+      var tickDel = (msg.uid===(typeof uid!=='undefined'?uid:'') && ctx!=='global') ? '<span class="bqbbl-tick">'+TICK_SINGLE+'</span>' : '';
+      var metaDel = tStrDel ? '<span class="bqbbl-meta" title="Sent">'+tStrDel+tickDel+'</span><span class="bqbbl-meta-clear"></span>' : '';
+      bbl.innerHTML='<span style="opacity:.55;font-style:italic">Message deleted</span>'+metaDel;
       bbl.classList.add('bq-tombstone');
     }
     el.querySelector('.bqrxns')?.remove();
     return;
   }
-  // V110 — sync edited text + reply + forwarded label + meta to ALL clients
+  // V111 — sync edited text + reply + forwarded label + REBUILT meta to ALL clients
   if(typeof msg.text==='string'){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
+      // V111: Rebuild meta FROM msg data instead of preserving old DOM meta
+      // This ensures the meta always reflects the current message state
+      var _ts = msg.ts || (typeof tsStr==='function' ? tsStr(Date.now()) : '');
+      var _tStr = (typeof tsStr==='function' && _ts) ? tsStr(_ts) : _ts;
+      var _isMine = msg.uid === (typeof uid !== 'undefined' ? uid : '');
+      var _isG = ctx === 'global';
+      var _tickHtml = (_isMine && !_isG) ? '<span class="bqbbl-tick">'+TICK_SINGLE+'</span>' : '';
+      // Preserve read receipt state from existing DOM meta
+      var existingMeta = bbl.querySelector('.bqbbl-meta');
+      var metaClass = '';
+      if(existingMeta){
+        if(existingMeta.classList.contains('delivered')) metaClass=' delivered';
+        if(existingMeta.classList.contains('seen')) metaClass=' seen';
+      }
+      var metaHTML = '<span class="bqbbl-meta'+metaClass+'" title="Sent">'+_tStr+_tickHtml+'</span><span class="bqbbl-meta-clear"></span>';
+
       // Preserve media (images, gifs, stickers, voice)
       const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bqsticker, .bq-voice-play, .bqvoice-wave, .bq-voice');
       const mediaHTML=media?media.outerHTML:'';
-
-      // Preserve meta (timestamp + read receipts) — extract outerHTML
-      const meta=bbl.querySelector('.bqbbl-meta, .bqmt, .bqmeta, .bq-msg-meta');
-      const metaClear=bbl.querySelector('.bqbbl-meta-clear');
-      const metaHTML=(meta?meta.outerHTML:'')+(metaClear?metaClear.outerHTML:'');
 
       // Rebuild reply preview from msg.replyTo (if it exists in the updated data)
       var replyHTML='';
@@ -5675,7 +5690,6 @@ function onMsgChanged(ctx,snap){
           '<div class="bqrp-n">@'+esc(msg.replyTo.uname||'')+'</div>'+
           '<div class="bqrp-t">'+esc((msg.replyTo.text||'').slice(0,80))+'</div></div>';
       } else {
-        // No replyTo in msg data — preserve existing reply from DOM
         const existingReply=bbl.querySelector('.bqrp');
         if(existingReply) replyHTML=existingReply.outerHTML;
       }
@@ -5686,7 +5700,6 @@ function onMsgChanged(ctx,snap){
         var fwdFrom=msg.fwdFrom?('from @'+esc(msg.fwdFrom)):'Forwarded';
         fwdHTML='<div class="bq-fwd-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg><span>'+fwdFrom+'</span></div>';
       } else {
-        // Preserve existing forwarded label from DOM
         const existingFwd=bbl.querySelector('.bq-fwd-label');
         if(existingFwd) fwdHTML=existingFwd.outerHTML;
       }
@@ -5700,7 +5713,7 @@ function onMsgChanged(ctx,snap){
       // Edited indicator — only show if msg.edited is true
       var editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
 
-      // Assemble: reply + forwarded label + media + text + edited + meta
+      // Assemble: reply + forwarded label + media + text + edited + REBUILT meta
       bbl.innerHTML=replyHTML+fwdHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
     }
   }
@@ -5709,14 +5722,11 @@ function onMsgChanged(ctx,snap){
   if(msg.reactions) renderRxns(ctx,el,msg.reactions,snap.key);
 
   // V110: If this message is a reply target, update any reply previews
-  // that reference this message's key
   var msgKey=snap.key;
   var ctxPrefix='bqmsg-'+ctx+'-';
   document.querySelectorAll('.bqrp[data-reply-key="'+msgKey+'"]').forEach(function(rp){
-    // Find the parent message element
     var parentMsg=rp.closest('.bqr[id]');
     if(parentMsg && parentMsg.id.startsWith(ctxPrefix)){
-      // Update the reply preview text
       var rpText=rp.querySelector('.bqrp-t');
       if(rpText){
         var newText=(msg.text||'').slice(0,80);
