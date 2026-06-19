@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '112.0.0';                   // V112: Bring back last seen (force visible), blue/bloom colors (blue online, purple studying, red busy, amber away)
+const WIDGET_VERSION = '113.0.0';                   // V113: Redesigned last seen/online indicator — no pill, just dot+bloom+text, color-matched per status
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -29618,5 +29618,162 @@ v112FixDot();
 
 console.log('[bq] V112 patch loaded — last seen restored + blue/bloom colors');
 }catch(e){ console.error('[bq] V112 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V113 PATCH — REDESIGNED LAST SEEN / ONLINE INDICATOR
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var css = document.createElement('style');
+css.id = 'bq-v113-css';
+css.textContent = [
+  /* ═══ INDICATOR CONTAINER — minimal, no pill, inline ═══ */
+  '#bqp #bqdmhs, #bqp .bqdmhs,',
+  '#bqp.bq-dm-v2 #bqdmhs, #bqp.bq-dm-v2 .bqdmhs{',
+  '  display:inline-flex !important;visibility:visible !important;opacity:1 !important;',
+  '  align-items:center !important;gap:5px !important;',
+  '  padding:0 !important;margin-top:2px !important;',
+  '  background:none !important;border:none !important;',
+  '  backdrop-filter:none !important;-webkit-backdrop-filter:none !important;',
+  '  box-shadow:none !important;border-radius:0 !important;',
+  '  width:auto !important;max-width:180px !important;',
+  '}',
+
+  /* ═══ DOT — refined, smaller, with bloom glow ═══ */
+  '#bqp #bqdmhs-dot, #bqp .bqdmhs-dot,',
+  '#bqp.bq-dm-v2 #bqdmhs-dot, #bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;visibility:visible !important;opacity:1 !important;',
+  '  width:7px !important;height:7px !important;',
+  '  border-radius:50% !important;flex-shrink:0 !important;',
+  '  position:relative !important;',
+  '  transition:all .3s ease !important;',
+  '}',
+
+  /* ═══ TEXT — refined, no pill bg, just text ═══ */
+  '#bqp #bqdmhs-txt, #bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  display:inline !important;visibility:visible !important;opacity:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.01em !important;text-transform:lowercase !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '  transition:color .3s ease !important;',
+  '}',
+
+  /* ═══ ONLINE — blue bloom ═══ */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(34,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#22c55e"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-success)"],',
+  '#bqp .bqdmhs-dot.online{',
+  '  background:#3b82f6 !important;',
+  '  box-shadow:0 0 0 0 rgba(59,130,246,0.5) !important;',
+  '  animation:bqV113Bloom 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV113Bloom{',
+  '  0%{box-shadow:0 0 0 0 rgba(59,130,246,0.5),0 0 4px rgba(59,130,246,0.3) !important;}',
+  '  70%{box-shadow:0 0 0 5px rgba(59,130,246,0),0 0 8px rgba(59,130,246,0.5) !important;}',
+  '  100%{box-shadow:0 0 0 0 rgba(59,130,246,0),0 0 4px rgba(59,130,246,0.3) !important;}',
+  '}',
+
+  /* ═══ STUDYING — purple bloom ═══ */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(129,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#818cf8"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-accent)"],',
+  '#bqp .bqdmhs-dot.studying{',
+  '  background:#8b5cf6 !important;',
+  '  box-shadow:0 0 0 0 rgba(139,92,246,0.5) !important;',
+  '  animation:bqV113BloomPurple 2.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV113BloomPurple{',
+  '  0%{box-shadow:0 0 0 0 rgba(139,92,246,0.5),0 0 4px rgba(139,92,246,0.3) !important;}',
+  '  70%{box-shadow:0 0 0 5px rgba(139,92,246,0),0 0 8px rgba(139,92,246,0.5) !important;}',
+  '  100%{box-shadow:0 0 0 0 rgba(139,92,246,0),0 0 4px rgba(139,92,246,0.3) !important;}',
+  '}',
+
+  /* ═══ BUSY — red bloom (faster) ═══ */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(239,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#ef4444"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-danger)"],',
+  '#bqp .bqdmhs-dot.busy{',
+  '  background:#ef4444 !important;',
+  '  box-shadow:0 0 0 0 rgba(239,68,68,0.5) !important;',
+  '  animation:bqV113BloomRed 1.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV113BloomRed{',
+  '  0%{box-shadow:0 0 0 0 rgba(239,68,68,0.5),0 0 4px rgba(239,68,68,0.3) !important;}',
+  '  70%{box-shadow:0 0 0 4px rgba(239,68,68,0),0 0 8px rgba(239,68,68,0.5) !important;}',
+  '  100%{box-shadow:0 0 0 0 rgba(239,68,68,0),0 0 4px rgba(239,68,68,0.3) !important;}',
+  '}',
+
+  /* ═══ AWAY — amber static glow ═══ */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(245,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#f59e0b"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-warning)"],',
+  '#bqp .bqdmhs-dot.away{',
+  '  background:#f59e0b !important;',
+  '  box-shadow:0 0 6px rgba(245,158,11,0.5) !important;',
+  '}',
+
+  /* ═══ OFFLINE — muted, no glow ═══ */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="opacity"],',
+  '#bqp .bqdmhs-dot.offline{',
+  '  background:#6b7280 !important;',
+  '  box-shadow:none !important;animation:none !important;opacity:0.4 !important;',
+  '}',
+
+  /* ═══ TEXT COLORS — match status ═══ */
+  /* Online text — blue */
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:rgb(34,"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:#22c55e"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot.online) #bqdmhs-txt{',
+  '  color:#60a5fa !important;',
+  '}',
+  /* Studying text — purple */
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:rgb(129,"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:#818cf8"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot.studying) #bqdmhs-txt{',
+  '  color:#a78bfa !important;',
+  '}',
+  /* Busy text — red */
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:rgb(239,"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:#ef4444"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot.busy) #bqdmhs-txt{',
+  '  color:#f87171 !important;',
+  '}',
+  /* Away text — amber */
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:rgb(245,"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="background:#f59e0b"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot.away) #bqdmhs-txt{',
+  '  color:#fbbf24 !important;',
+  '}',
+  /* Offline text — muted */
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot[style*="opacity"]) #bqdmhs-txt,',
+  '#bqp.bq-dm-v2 .bqdmhs:has(.bqdmhs-dot.offline) #bqdmhs-txt{',
+  '  color:#71717a !important;',
+  '}',
+  /* Fallback text color */
+  '#bqp #bqdmhs-txt{color:#60a5fa !important;}',
+
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp .bqdmhs-dot{animation:none !important;}',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+/* Force visible every 2s */
+function v113Fix(){
+  var dot=document.getElementById('bqdmhs-dot');
+  if(dot){dot.style.display='inline-block';dot.style.visibility='visible';dot.style.opacity='1';}
+  var hs=document.getElementById('bqdmhs');
+  if(hs){hs.style.display='inline-flex';hs.style.visibility='visible';hs.style.opacity='1';}
+  var txt=document.getElementById('bqdmhs-txt');
+  if(txt){txt.style.display='inline';txt.style.visibility='visible';txt.style.opacity='1';}
+}
+setInterval(function(){if(document.visibilityState==='visible')v113Fix();},2000);
+v113Fix();
+
+console.log('[bq] V113 patch loaded — last seen redesigned');
+}catch(e){ console.error('[bq] V113 patch error:', e); }
 })();
 
