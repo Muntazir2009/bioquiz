@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '109.0.0';                   // V109: Fix forwarding (correct dmMeta fields p1/p2/n1/n2, remove search bar, single menu, working dispatch), disable V86 override
+const WIDGET_VERSION = '110.0.0';                   // V110: onMsgChanged rebuilt — sync edit/reply/forward/meta on all clients, update reply previews when original message changes
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -5655,28 +5655,76 @@ function onMsgChanged(ctx,snap){
     el.querySelector('.bqrxns')?.remove();
     return;
   }
-  // v22 — sync edited text to ALL clients (was previously sender-only)
+  // V110 — sync edited text + reply + forwarded label + meta to ALL clients
   if(typeof msg.text==='string'){
     const bbl=el.querySelector('.bqbbl');
     if(bbl && !bbl.classList.contains('editing')){
-      // V98 FIX: Preserve reply, media, sticker, voice, AND the meta (timestamp + read receipts)
-      // The old code used '.bqmt, .bqmeta, .bq-msg-meta' which didn't match '.bqbbl-meta'
-      // — so the meta was destroyed on every edit. Now we use the correct selector.
-      const reply=bbl.querySelector('.bqrp');
-      const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bqsticker, .bq-voice-play, .bqvoice-wave');
+      // Preserve media (images, gifs, stickers, voice)
+      const media=bbl.querySelector('.bq-msg-img, .bq-msg-gif, .bqsticker, .bq-voice-play, .bqvoice-wave, .bq-voice');
+      const mediaHTML=media?media.outerHTML:'';
+
+      // Preserve meta (timestamp + read receipts) — extract outerHTML
       const meta=bbl.querySelector('.bqbbl-meta, .bqmt, .bqmeta, .bq-msg-meta');
       const metaClear=bbl.querySelector('.bqbbl-meta-clear');
-      const voiceHtml = bbl.querySelector('.bq-voice') ? bbl.querySelector('.bq-voice').outerHTML : '';
-      const replyHTML=reply?reply.outerHTML:'';
-      const mediaHTML=media?media.outerHTML:'';
       const metaHTML=(meta?meta.outerHTML:'')+(metaClear?metaClear.outerHTML:'');
-      const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
-      const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
-      bbl.innerHTML=replyHTML+mediaHTML+voiceHtml+txtHTML+editedHTML+metaHTML;
+
+      // Rebuild reply preview from msg.replyTo (if it exists in the updated data)
+      var replyHTML='';
+      if(msg.replyTo){
+        replyHTML='<div class="bqrp" data-reply-key="'+esc(msg.replyTo.key||'')+'">'+
+          '<div class="bqrp-n">@'+esc(msg.replyTo.uname||'')+'</div>'+
+          '<div class="bqrp-t">'+esc((msg.replyTo.text||'').slice(0,80))+'</div></div>';
+      } else {
+        // No replyTo in msg data — preserve existing reply from DOM
+        const existingReply=bbl.querySelector('.bqrp');
+        if(existingReply) replyHTML=existingReply.outerHTML;
+      }
+
+      // Rebuild forwarded label from msg.forwarded (if it exists)
+      var fwdHTML='';
+      if(msg.forwarded){
+        var fwdFrom=msg.fwdFrom?('from @'+esc(msg.fwdFrom)):'Forwarded';
+        fwdHTML='<div class="bq-fwd-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg><span>'+fwdFrom+'</span></div>';
+      } else {
+        // Preserve existing forwarded label from DOM
+        const existingFwd=bbl.querySelector('.bq-fwd-label');
+        if(existingFwd) fwdHTML=existingFwd.outerHTML;
+      }
+
+      // Build text HTML — strip _fwd: prefix for display
+      var displayText=msg.text||'';
+      var wasForwarded=msg.forwarded||(displayText.indexOf('_fwd: ')===0);
+      if(wasForwarded && displayText.indexOf('_fwd: ')===0) displayText=displayText.slice(6);
+      var txtHTML=displayText?('<div class="bqtxt">'+(window.linkify?linkify(esc(displayText)):esc(displayText))+'</div>'):'';
+
+      // Edited indicator — only show if msg.edited is true
+      var editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
+
+      // Assemble: reply + forwarded label + media + text + edited + meta
+      bbl.innerHTML=replyHTML+fwdHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
     }
   }
+  // Update reactions
   el.querySelector('.bqrxns')?.remove();
   if(msg.reactions) renderRxns(ctx,el,msg.reactions,snap.key);
+
+  // V110: If this message is a reply target, update any reply previews
+  // that reference this message's key
+  var msgKey=snap.key;
+  var ctxPrefix='bqmsg-'+ctx+'-';
+  document.querySelectorAll('.bqrp[data-reply-key="'+msgKey+'"]').forEach(function(rp){
+    // Find the parent message element
+    var parentMsg=rp.closest('.bqr[id]');
+    if(parentMsg && parentMsg.id.startsWith(ctxPrefix)){
+      // Update the reply preview text
+      var rpText=rp.querySelector('.bqrp-t');
+      if(rpText){
+        var newText=(msg.text||'').slice(0,80);
+        if(newText.indexOf('_fwd: ')===0) newText=newText.slice(6);
+        rpText.textContent=newText;
+      }
+    }
+  });
 }
 
 function renderRxns(ctx,rowEl,rxns,key){
