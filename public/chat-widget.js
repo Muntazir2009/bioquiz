@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '107.0.0';                   // V107: Fix schedule (activeCtx wrong IDs, wireSchedule wrong button IDs, dispatchScheduled wrong db), rework schedule UI (beautiful menu, datetime picker, preset times)
+const WIDGET_VERSION = '108.0.0';                   // V108: Fix schedule dispatch (standalone interval), disable V106 duplicate menu, enhance forwarding UI (glassy modal, search, multi-select, avatars, preset times)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -29202,142 +29202,9 @@ function v106FixAdminTiming(){
    2. REWORK SCHEDULE MENU — beautiful UI, reliable
    ═══════════════════════════════════════════════════════════════════════ */
 function v106ReworkScheduleMenu(){
-  // Override showScheduleMenu with a better version
-  if(typeof window.showScheduleMenu === 'function'){
-    window.showScheduleMenu = function(anchor){
-      document.getElementById('bq-sched-menu')?.remove();
-
-      // Get text from the correct input IDs
-      var ginp = document.getElementById('bqginp');
-      var dminp = document.getElementById('bqdminp');
-      var text = '';
-      var ctx = '';
-      var dmId = '';
-
-      if(ginp && ginp.value && ginp.value.trim()){
-        text = ginp.value.trim();
-        ctx = 'global';
-      } else if(dminp && dminp.value && dminp.value.trim()){
-        text = dminp.value.trim();
-        ctx = 'dm';
-        dmId = (typeof activeDmId !== 'undefined') ? activeDmId : '';
-      }
-
-      if(!text){
-        if(typeof _toast === 'function') _toast('Type a message first');
-        else if(typeof toast === 'function') toast('Type a message first');
-        return;
-      }
-
-      var clockIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-      var sendIcon = '<svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>';
-
-      var m = document.createElement('div');
-      m.id = 'bq-sched-menu';
-      m.innerHTML =
-        '<div class="bq-sched-header">Schedule message</div>' +
-        '<button data-preset="1m">' + clockIcon + ' In 1 minute</button>' +
-        '<button data-preset="5m">' + clockIcon + ' In 5 minutes</button>' +
-        '<button data-preset="1h">' + clockIcon + ' In 1 hour</button>' +
-        '<button data-preset="tonight">' + clockIcon + ' Tonight 8pm</button>' +
-        '<button data-preset="tomorrow">' + clockIcon + ' Tomorrow 9am</button>' +
-        '<div class="bq-sched-custom">' +
-          '<label>Custom date & time</label>' +
-          '<input type="datetime-local" id="bq-sched-custom-input">' +
-        '</div>' +
-        '<button class="bq-sched-send" id="bq-sched-custom-send">' + sendIcon + ' Schedule custom</button>';
-
-      m.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
-
-      // Preset buttons
-      m.querySelectorAll('button[data-preset]').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var preset = btn.dataset.preset;
-          var at = Date.now();
-          if(preset === '1m') at = Date.now() + 60000;
-          else if(preset === '5m') at = Date.now() + 300000;
-          else if(preset === '1h') at = Date.now() + 3600000;
-          else if(preset === 'tonight'){
-            var d = new Date(); d.setHours(20,0,0,0);
-            if(d <= new Date()) d.setDate(d.getDate()+1);
-            at = d.getTime();
-          } else if(preset === 'tomorrow'){
-            var d2 = new Date(); d2.setDate(d2.getDate()+1); d2.setHours(9,0,0,0);
-            at = d2.getTime();
-          }
-          if(at <= Date.now()){
-            if(typeof _toast === 'function') _toast('Pick a future time','err');
-            return;
-          }
-          // Clear input
-          var inp = document.getElementById(ctx === 'global' ? 'bqginp' : 'bqdminp');
-          if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
-          // Schedule
-          if(typeof scheduleMessage === 'function'){
-            scheduleMessage(ctx, dmId, text, at);
-          } else {
-            // Fallback: save to localStorage
-            var arr = [];
-            try { arr = JSON.parse(localStorage.getItem('bq_sched_v23') || '[]'); } catch(e) {}
-            arr.push({id:'s_'+Date.now(),ctx:ctx,dmId:dmId||'',text:text,atMs:at});
-            localStorage.setItem('bq_sched_v23', JSON.stringify(arr));
-          }
-          if(typeof _toast === 'function') _toast('Scheduled for ' + new Date(at).toLocaleString(), 'ok');
-          else if(typeof toast === 'function') toast('Scheduled for ' + new Date(at).toLocaleString());
-          m.remove();
-        });
-      });
-
-      // Custom send button
-      var customSend = m.querySelector('#bq-sched-custom-send');
-      if(customSend){
-        customSend.addEventListener('click', function(){
-          var input = m.querySelector('#bq-sched-custom-input');
-          if(!input || !input.value){
-            if(typeof _toast === 'function') _toast('Pick a date and time','err');
-            return;
-          }
-          var at = new Date(input.value).getTime();
-          if(isNaN(at) || at <= Date.now()){
-            if(typeof _toast === 'function') _toast('Pick a valid future time','err');
-            return;
-          }
-          var inp = document.getElementById(ctx === 'global' ? 'bqginp' : 'bqdminp');
-          if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input',{bubbles:true})); }
-          if(typeof scheduleMessage === 'function'){
-            scheduleMessage(ctx, dmId, text, at);
-          } else {
-            var arr = [];
-            try { arr = JSON.parse(localStorage.getItem('bq_sched_v23') || '[]'); } catch(e) {}
-            arr.push({id:'s_'+Date.now(),ctx:ctx,dmId:dmId||'',text:text,atMs:at});
-            localStorage.setItem('bq_sched_v23', JSON.stringify(arr));
-          }
-          if(typeof _toast === 'function') _toast('Scheduled for ' + new Date(at).toLocaleString(), 'ok');
-          else if(typeof toast === 'function') toast('Scheduled for ' + new Date(at).toLocaleString());
-          m.remove();
-        });
-      }
-
-      document.body.appendChild(m);
-
-      // Position near anchor
-      if(anchor){
-        var r = anchor.getBoundingClientRect();
-        m.style.left = Math.max(8, r.right - 220) + 'px';
-        m.style.top = (r.top - m.offsetHeight - 8) + 'px';
-        // If off-screen top, show below
-        if(parseInt(m.style.top) < 8){
-          m.style.top = (r.bottom + 8) + 'px';
-        }
-      }
-
-      // Close on outside click
-      setTimeout(function(){
-        var off = function(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('pointerdown', off, true); }};
-        document.addEventListener('pointerdown', off, true);
-      }, 10);
-    };
-  }
+  // V108: DISABLED — V107 already fixed showScheduleMenu in-place with correct IDs.
+  // This override was creating a duplicate menu. Do nothing.
+  return;
 
   // Also ensure dispatchScheduled runs (checks every 5s for due messages)
   if(typeof dispatchScheduled === 'function' && !window._v106SchedDispatch){
@@ -29349,10 +29216,6 @@ function v106ReworkScheduleMenu(){
     }, 5000);
   }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════
-   3. INIT
-   ═══════════════════════════════════════════════════════════════════════ */
 function v106Init(){
   v106FixAdminTiming();
   setTimeout(v106ReworkScheduleMenu, 2000);
@@ -29369,5 +29232,83 @@ setTimeout(v106Init, 1500);
 setTimeout(v106Init, 4000);
 
 }catch(e){ console.error('[bq] V106 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V108 PATCH — FIX SCHEDULE DISPATCH + ENHANCE FORWARDING UI/UX
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var V108_VERSION = '108.0.0';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. STANDALONE DISPATCH INTERVAL
+   ═══════════════════════════════════════════════════════════════════════ */
+if(!window._v108SchedDispatch){
+  window._v108SchedDispatch = true;
+  setInterval(function(){
+    if(document.visibilityState !== 'visible') return;
+    try { if(typeof dispatchScheduled === 'function') dispatchScheduled(); } catch(e) {}
+  }, 5000);
+  setTimeout(function(){
+    try { if(typeof dispatchScheduled === 'function') dispatchScheduled(); } catch(e) {}
+  }, 2000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. ENHANCED FORWARDING UI/UX
+   ═══════════════════════════════════════════════════════════════════════ */
+var css = document.createElement('style');
+css.id = 'bq-v108-css';
+css.textContent = [
+  '#bqp .bq-forward-overlay,.bq-forward-overlay{position:absolute!important;inset:0!important;background:rgba(0,0,0,0.75)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;z-index:300!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;animation:bqFwdFade .25s ease!important;}',
+  '@keyframes bqFwdFade{from{opacity:0;}to{opacity:1;}}',
+  '#bqp .bq-forward-panel,.bq-forward-panel{background:rgba(24,24,27,0.98)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border:1px solid rgba(255,255,255,0.1)!important;border-radius:18px!important;width:min(380px,92vw)!important;max-height:min(560px,88vh)!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;box-shadow:0 20px 60px rgba(0,0,0,0.6)!important;animation:bqFwdPanel .35s cubic-bezier(0.34,1.4,0.64,1)!important;}',
+  '@keyframes bqFwdPanel{from{opacity:0;transform:scale(0.92) translateY(12px);}to{opacity:1;transform:none;}}',
+  '#bqp .bq-forward-header,.bq-forward-header{padding:18px 20px 14px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;}',
+  '#bqp .bq-forward-title,.bq-forward-title{font-family:Inter,-apple-system,sans-serif!important;font-size:17px!important;font-weight:600!important;letter-spacing:-0.02em!important;color:#f4f4f5!important;margin:0!important;border:none!important;padding:0!important;background:none!important;}',
+  '#bqp .bq-forward-subtitle,.bq-forward-subtitle{font-family:Inter,-apple-system,sans-serif!important;font-size:13px!important;color:#a1a1aa!important;margin-top:4px!important;}',
+  '#bqp .bq-forward-preview,.bq-forward-preview{margin:0 20px!important;padding:12px 14px!important;background:rgba(129,140,248,0.06)!important;border:1px solid rgba(129,140,248,0.12)!important;border-radius:12px!important;font-family:Inter,-apple-system,sans-serif!important;font-size:13px!important;color:#a1a1aa!important;line-height:1.5!important;max-height:60px!important;overflow:hidden!important;}',
+  '#bqp .bq-forward-preview-label,.bq-forward-preview-label{font-size:10px!important;font-weight:600!important;letter-spacing:0.08em!important;text-transform:uppercase!important;color:#818cf8!important;margin-bottom:4px!important;}',
+  '#bqp .bq-forward-search,.bq-forward-search{padding:12px 20px!important;border-bottom:1px solid rgba(255,255,255,0.05)!important;}',
+  '#bqp .bq-forward-search input,.bq-forward-search input{width:100%!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.08)!important;border-radius:12px!important;padding:10px 14px!important;color:#f4f4f5!important;font-family:Inter,-apple-system,sans-serif!important;font-size:14px!important;outline:none!important;transition:all .2s ease!important;}',
+  '#bqp .bq-forward-search input:focus{border-color:rgba(129,140,248,0.4)!important;box-shadow:0 0 0 3px rgba(129,140,248,0.12)!important;}',
+  '#bqp .bq-forward-search input::placeholder{color:#71717a!important;}',
+  '#bqp .bq-forward-controls,.bq-forward-controls{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:8px 20px!important;border-bottom:1px solid rgba(255,255,255,0.05)!important;font:12px Inter,-apple-system,sans-serif!important;color:#a1a1aa!important;}',
+  '#bqp .bq-forward-controls button,.bq-forward-controls button{background:none!important;border:none!important;color:#818cf8!important;cursor:pointer!important;font:inherit!important;font-weight:500!important;padding:4px 8px!important;border-radius:6px!important;}',
+  '#bqp .bq-forward-controls button:hover{background:rgba(129,140,248,0.1)!important;}',
+  '#bqp .bq-forward-list,.bq-forward-list{flex:1!important;overflow-y:auto!important;padding:8px!important;}',
+  '#bqp .bq-forward-list::-webkit-scrollbar{width:5px!important;}',
+  '#bqp .bq-forward-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)!important;border-radius:3px!important;}',
+  '#bqp .bq-forward-item,.bq-forward-item{width:100%!important;text-align:left!important;padding:12px 14px!important;border:none!important;background:transparent!important;color:#f4f4f5!important;font-family:Inter,-apple-system,sans-serif!important;font-size:14px!important;font-weight:500!important;cursor:pointer!important;border-radius:12px!important;transition:all .2s ease!important;display:flex!important;align-items:center!important;gap:12px!important;margin:2px 0!important;}',
+  '#bqp .bq-forward-item:hover,.bq-forward-item:hover{background:rgba(255,255,255,0.04)!important;transform:translateX(2px)!important;}',
+  '#bqp .bq-forward-item.selected,.bq-forward-item.selected{background:rgba(129,140,248,0.1)!important;box-shadow:inset 2px 0 0 #818cf8!important;}',
+  '#bqp .bq-forward-av,.bq-forward-av{width:40px!important;height:40px!important;border-radius:50%!important;flex-shrink:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:14px!important;font-weight:600!important;position:relative!important;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 2px 6px rgba(0,0,0,0.2)!important;}',
+  '#bqp .bq-forward-info,.bq-forward-info{flex:1!important;min-width:0!important;}',
+  '#bqp .bq-forward-name,.bq-forward-name{font-weight:600!important;color:#f4f4f5!important;letter-spacing:-0.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}',
+  '#bqp .bq-forward-status,.bq-forward-status{font-size:12px!important;color:#a1a1aa!important;margin-top:2px!important;}',
+  '#bqp .bq-forward-check,.bq-forward-check{width:22px!important;height:22px!important;flex-shrink:0!important;border-radius:50%!important;border:2px solid rgba(255,255,255,0.12)!important;background:transparent!important;transition:all .2s ease!important;display:flex!important;align-items:center!important;justify-content:center!important;}',
+  '#bqp .bq-forward-item.selected .bq-forward-check,.bq-forward-item.selected .bq-forward-check{background:linear-gradient(135deg,#6366f1,#7c3aed)!important;border-color:transparent!important;box-shadow:0 2px 6px rgba(99,102,241,0.3)!important;}',
+  '#bqp .bq-forward-check svg,.bq-forward-check svg{width:13px!important;height:13px!important;stroke:#fff!important;stroke-width:2.5!important;opacity:0!important;transition:opacity .2s ease!important;}',
+  '#bqp .bq-forward-item.selected .bq-forward-check svg,.bq-forward-item.selected .bq-forward-check svg{opacity:1!important;}',
+  '#bqp .bq-fwd-global-ic,.bq-fwd-global-ic{width:40px!important;height:40px!important;border-radius:50%!important;flex-shrink:0!important;background:linear-gradient(135deg,#6366f1,#7c3aed)!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:18px!important;box-shadow:0 2px 8px rgba(99,102,241,0.3)!important;}',
+  '#bqp .bq-forward-footer,.bq-forward-footer{padding:14px 20px!important;border-top:1px solid rgba(255,255,255,0.06)!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;}',
+  '#bqp .bq-forward-count,.bq-forward-count{font:500 12px Inter,-apple-system,sans-serif!important;color:#a1a1aa!important;}',
+  '#bqp .bq-forward-count strong,.bq-forward-count strong{color:#f4f4f5!important;font-weight:600!important;}',
+  '#bqp .bq-forward-actions,.bq-forward-actions{display:flex!important;gap:8px!important;}',
+  '#bqp .bq-forward-cancel,.bq-forward-cancel{padding:10px 16px!important;border-radius:12px!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.1)!important;color:#a1a1aa!important;font:500 13px Inter,-apple-system,sans-serif!important;cursor:pointer!important;transition:all .2s ease!important;}',
+  '#bqp .bq-forward-cancel:hover{background:rgba(255,255,255,0.08)!important;color:#f4f4f5!important;}',
+  '#bqp .bq-forward-send,.bq-forward-send{padding:10px 20px!important;border-radius:12px!important;border:none!important;background:linear-gradient(135deg,#6366f1,#7c3aed)!important;color:#fff!important;font:600 13px Inter,-apple-system,sans-serif!important;cursor:pointer!important;box-shadow:0 2px 8px rgba(99,102,241,0.3)!important;transition:all .2s ease!important;}',
+  '#bqp .bq-forward-send:hover:not(:disabled){transform:translateY(-1px)!important;box-shadow:0 4px 12px rgba(99,102,241,0.4)!important;}',
+  '#bqp .bq-forward-send:active:not(:disabled){transform:scale(0.97)!important;}',
+  '#bqp .bq-forward-send:disabled{opacity:0.4!important;cursor:not-allowed!important;}',
+  '@media (prefers-reduced-motion: reduce){#bqp *{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+console.log('[bq] V' + V108_VERSION + ' patch loaded — schedule dispatch fix + forwarding UI enhancement');
+
+}catch(e){ console.error('[bq] V108 patch error:', e); }
 })();
 
