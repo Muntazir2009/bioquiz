@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '114.0.0';                   // V114: Fix caching — _headers no-cache on widget + timestamp cache buster in ChatWidget.tsx
+const WIDGET_VERSION = '115.0.0';                   // V115: Fix duplicate schedule menu (disable v24), fix v24 ID definitions, fix activeDmId variable vs function, fix _headers caching
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -12028,7 +12028,7 @@ function showScheduleMenu(anchor){
   var ctx='';
   var dmId='';
   if(ginp&&ginp.value&&ginp.value.trim()){text=ginp.value.trim();ctx='global';}
-  else if(dminp&&dminp.value&&dminp.value.trim()){text=dminp.value.trim();ctx='dm';dmId=(typeof activeDmId==='function'?activeDmId():'')||'';}
+  else if(dminp&&dminp.value&&dminp.value.trim()){text=dminp.value.trim();ctx='dm';dmId=(typeof activeDmId!=='undefined'?(typeof activeDmId==='function'?activeDmId():activeDmId):'')||'';}
   if(!text){if(typeof _toast==='function')_toast('Type a message first');else if(typeof toast==='function')toast('Type a message first');return;}
 
   var m=document.createElement('div');
@@ -12369,7 +12369,7 @@ const ID={
   ginp:'bqginp', dminp:'bqdminp',
   gsnd:'bqgsnd', dmsnd:'bqdmsnd',
   gmsgs:'bqgmsgs', dmmsgs:'bqdmmsgs',
-  gview:'bqv-global', dmview:'bqv-dmconv'
+  gview:'bqv-chat', dmview:'bqv-dmconv'
 };
 function activeCtx(){
   const g=$(ID.gview), d=$(ID.dmview);
@@ -12465,6 +12465,9 @@ function showSchedMenu(anchor){
   },10);
 }
 function wireSchedV24(){
+  // V115: DISABLED — showScheduleMenu (v23) is the single schedule menu.
+  // This v24 function created a DUPLICATE menu on long-press.
+  return;
   [ID.gsnd, ID.dmsnd].forEach(id=>{
     const btn=$(id); if(!btn || btn._v24Sched) return; btn._v24Sched=true;
     let pt=null;
@@ -12708,7 +12711,7 @@ function _toast(m,kind){
     setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translate(-50%,-8px)'; setTimeout(()=>t.remove(),220); }, 2400);
   }catch(_){}
 }
-const ID = { ginp:'bqginp', gsnd:'bqgsnd', dminp:'bqdmi', dmsnd:'bqdms' };
+const ID = { ginp:'bqginp', gsnd:'bqgsnd', dminp:'bqdminp', dmsnd:'bqdmsnd' };
 
 /* ──────────────────────────────────────────────────────────────────────
    1) REMOVE SLASH COMMANDS (v23 + v24) — fully neutralise.

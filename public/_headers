@@ -1,8 +1,5 @@
 /chat-widget.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/chat-widget_v*.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: public, max-age=60, stale-while-revalidate=600
 
 /chat-widget-version.json
   Cache-Control: no-cache, no-store, must-revalidate
