@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '108.0.0';                   // V108: Fix schedule dispatch (standalone interval), disable V106 duplicate menu, enhance forwarding UI (glassy modal, search, multi-select, avatars, preset times)
+const WIDGET_VERSION = '109.0.0';                   // V109: Fix forwarding (correct dmMeta fields p1/p2/n1/n2, remove search bar, single menu, working dispatch), disable V86 override
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -6132,39 +6132,151 @@ function forwardMessage(ctx,key,msg){
   var text = msg.text || '';
   if(!text && msg.gifUrl) text = '🎬 GIF';
   if(!text && msg.imageData) text = '📷 Photo';
-  if(!text) return toast('Nothing to forward');
-  // Show DM list to pick a conversation to forward to
-  var dmList = Object.keys(dmMeta || {});
-  if(!dmList.length){ toast('No DMs to forward to'); return; }
+  if(!text && msg.type === 'voice') text = '🎤 Voice note';
+  if(!text && msg.type === 'sticker') text = '👾 ' + (msg.sticker || 'Sticker');
+  if(!text) { if(typeof toast==='function') toast('Nothing to forward'); return; }
+
+  var _db = (typeof db !== 'undefined') ? db : null;
+  var _uid = (typeof uid !== 'undefined') ? uid : '';
+  var _uname = (typeof uname !== 'undefined') ? uname : 'You';
+
+  // Build recipient list: Global + all DMs (using correct p1/p2/n1/n2 fields)
+  var recipients = [];
+  recipients.push({id:'__global__', name:'Global Chat', isGlobal:true, initials:'📢', color:'#6366f1', lastTs:0});
+
+  try {
+    var dmEntries = Object.entries(typeof dmMeta !== 'undefined' ? dmMeta : {});
+    dmEntries.forEach(function(entry){
+      var dmId = entry[0], meta = entry[1] || {};
+      var puid = meta.p1 === _uid ? meta.p2 : meta.p1;
+      var pname = meta.p1 === _uid ? (meta.n2 || 'Unknown') : (meta.n1 || 'Unknown');
+      var alias = '';
+      try { if(typeof getAlias === 'function') alias = getAlias(puid); } catch(e) {}
+      var shown = alias || ('@' + pname);
+      var pdata = {};
+      try { if(typeof onlineU !== 'undefined') pdata = onlineU[puid] || {}; } catch(e) {}
+      var color = '#818cf8';
+      try { if(typeof getColor === 'function') color = getColor(puid, pname); } catch(e) {}
+      var initials = '?';
+      try { if(typeof uInit === 'function') initials = uInit(pname); } catch(e) { initials = pname.charAt(0).toUpperCase(); }
+      recipients.push({
+        id: dmId, name: shown, rawName: pname, puid: puid,
+        status: pdata.status || '', color: color, initials: initials,
+        avatar: pdata.avatar || '', isGlobal: false, lastTs: meta.lastTs || 0
+      });
+    });
+  } catch(e) {}
+
+  var selected = new Set();
+  var checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  var previewText = text;
+  if(previewText.indexOf('_fwd: ') === 0) previewText = previewText.slice(6);
+  if(previewText.length > 100) previewText = previewText.slice(0, 100) + '…';
+
   var overlay = document.createElement('div');
   overlay.className = 'bq-forward-overlay';
-  overlay.innerHTML = '<div class="bq-forward-panel"><div class="bq-forward-title">Forward to...</div><div class="bq-forward-list"></div></div>';
-  var list = overlay.querySelector('.bq-forward-list');
-  dmList.forEach(function(dmId){
-    var meta = dmMeta[dmId] || {};
-    var name = meta.pname || 'Unknown';
-    var btn = document.createElement('button');
-    btn.className = 'bq-forward-item';
-    btn.innerHTML = '<span class="bq-forward-name">' + esc(name) + '</span>';
-    btn.addEventListener('click', function(){
-      db.ref('bq_dms/'+dmId+'/messages').push({uid:uid,uname:uname,text:'_fwd: '+text.slice(0,400),ts:Date.now(),forwarded:true});
-      overlay.remove();
-      toast('Forwarded to @'+name);
+  overlay.innerHTML =
+    '<div class="bq-forward-panel">' +
+      '<div class="bq-forward-header">' +
+        '<div class="bq-forward-title">Forward</div>' +
+        '<div class="bq-forward-subtitle">Select recipients</div>' +
+      '</div>' +
+      '<div class="bq-forward-preview">' +
+        '<div class="bq-forward-preview-label">Message</div>' +
+        '<div class="bq-forward-preview-text"></div>' +
+      '</div>' +
+      '<div class="bq-forward-list"></div>' +
+      '<div class="bq-forward-footer">' +
+        '<div class="bq-forward-count"><strong>0</strong> selected</div>' +
+        '<div class="bq-forward-actions">' +
+          '<button class="bq-forward-cancel">Cancel</button>' +
+          '<button class="bq-forward-send" disabled>Forward</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  overlay.querySelector('.bq-forward-preview-text').textContent = previewText;
+  var listEl = overlay.querySelector('.bq-forward-list');
+  var footerCount = overlay.querySelector('.bq-forward-count strong');
+  var sendBtn = overlay.querySelector('.bq-forward-send');
+  var cancelBtn = overlay.querySelector('.bq-forward-cancel');
+
+  function renderList(){
+    listEl.innerHTML = '';
+    recipients.forEach(function(r){
+      var item = document.createElement('button');
+      item.className = 'bq-forward-item' + (r.isGlobal ? ' bq-fwd-global' : '') + (selected.has(r.id) ? ' selected' : '');
+
+      var avatarHtml;
+      if(r.isGlobal){
+        avatarHtml = '<div class="bq-fwd-global-ic">📢</div>';
+      } else if(r.avatar){
+        avatarHtml = '<div class="bq-forward-av" data-status="' + (r.status||'') + '" style="background:url(' + r.avatar.replace(/"/g,'&quot;') + ') center/cover;color:transparent;"></div>';
+      } else {
+        avatarHtml = '<div class="bq-forward-av" data-status="' + (r.status||'') + '" style="background:' + r.color + ';color:#000;">' + r.initials + '</div>';
+      }
+
+      var statusText = r.isGlobal ? 'Everyone in global chat' :
+        (r.status === 'online' ? 'Online' :
+         r.status === 'studying' ? 'Studying' :
+         r.status === 'busy' ? 'Busy' :
+         r.lastTs ? 'Last active ' + new Date(r.lastTs).toLocaleDateString() : 'Tap to select');
+
+      item.innerHTML = avatarHtml +
+        '<div class="bq-forward-info"><div class="bq-forward-name"></div><div class="bq-forward-status"></div></div>' +
+        '<div class="bq-forward-check">' + checkSvg + '</div>';
+      item.querySelector('.bq-forward-name').textContent = r.name;
+      item.querySelector('.bq-forward-status').textContent = statusText;
+
+      item.addEventListener('click', function(){
+        if(selected.has(r.id)){ selected.delete(r.id); item.classList.remove('selected'); }
+        else { selected.add(r.id); item.classList.add('selected'); }
+        var n = selected.size;
+        footerCount.textContent = n;
+        sendBtn.disabled = n === 0;
+      });
+      listEl.appendChild(item);
     });
-    list.appendChild(btn);
-  });
-  // Add global chat option
-  var gBtn = document.createElement('button');
-  gBtn.className = 'bq-forward-item';
-  gBtn.innerHTML = '<span class="bq-forward-name">📢 Global Chat</span>';
-  gBtn.addEventListener('click', function(){
-    db.ref('bq_messages').push({uid:uid,uname:uname,text:'_fwd: '+text.slice(0,400),ts:Date.now(),forwarded:true});
+    if(!recipients.length){
+      listEl.innerHTML = '<div style="padding:32px;text-align:center;color:#71717a;font:13px Inter,sans-serif;">No recipients available</div>';
+    }
+  }
+
+  function doForward(){
+    if(selected.size === 0) return;
+    var count = 0, failed = 0;
+    var fwdText = text;
+    if(fwdText.indexOf('_fwd: ') === 0) fwdText = fwdText.slice(6);
+    fwdText = '_fwd: ' + fwdText.slice(0, 400);
+
+    selected.forEach(function(id){
+      try {
+        if(id === '__global__'){
+          if(_db) _db.ref('bq_messages').push({uid:_uid, uname:_uname, text:fwdText, ts:Date.now(), forwarded:true, fwdFrom:(msg.uname||'')});
+        } else {
+          if(_db) _db.ref('bq_dms/' + id + '/messages').push({uid:_uid, uname:_uname, text:fwdText, ts:Date.now(), forwarded:true, fwdFrom:(msg.uname||'')});
+        }
+        count++;
+      } catch(e) { failed++; }
+    });
+
     overlay.remove();
-    toast('Forwarded to Global Chat');
-  });
-  list.insertBefore(gBtn, list.firstChild);
-  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
-  (document.getElementById('bqp')||document.body).appendChild(overlay);
+    if(typeof toast === 'function'){
+      toast(count === 1 ? 'Forwarded' : 'Forwarded to ' + count + ' recipients');
+    }
+  }
+
+  cancelBtn.addEventListener('click', function(){ overlay.remove(); });
+  sendBtn.addEventListener('click', doForward);
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+
+  // Escape to close
+  function onKey(e){ if(e.key === 'Escape'){ overlay.remove(); document.removeEventListener('keydown', onKey); } }
+  document.addEventListener('keydown', onKey);
+
+  renderList();
+  (document.getElementById('bqp') || document.body).appendChild(overlay);
 }
 
 function dmReplyFromGlobal(key,msg){
@@ -23347,7 +23459,7 @@ function v86TimeAgo(ts){
    This is safe — the original is only called from doAction() which
    calls window.forwardMessage (or the local function reference).
    We patch via a small hook: monkey-patch doAction's forward branch. */
-function v86InstallForwardOverride(){
+function v86InstallForwardOverride(){ return; // V109: disabled — original forwardMessage is now the enhanced version
   // The renderMsgActionSheet -> doAction -> forwardMessage chain uses the
   // local function reference, which we can't easily override from outside
   // the IIFE. Instead, we hook into the action sheet buttons after they're
