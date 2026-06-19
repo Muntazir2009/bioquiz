@@ -42,8 +42,8 @@ export function ChatWidget() {
 
       const script = document.createElement("script");
       script.id = "bq-chat-script";
-      // Cache-bust: append version so browsers fetch a fresh copy on update
-      script.src = `/chat-widget.js?v=${encodeURIComponent(version)}`;
+      // Cache-bust: append version + timestamp so browsers AND CDNs fetch fresh
+      script.src = `/chat-widget.js?v=${encodeURIComponent(version)}&_t=${Date.now()}`;
       script.async = true;
       document.body.appendChild(script);
     }
