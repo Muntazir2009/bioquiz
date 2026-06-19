@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '111.0.0';                   // V111: Rebuild meta from msg data (not old DOM), preserve meta on delete tombstone, preserve read receipt state
+const WIDGET_VERSION = '112.0.0';                   // V112: Bring back last seen (force visible), blue/bloom colors (blue online, purple studying, red busy, amber away)
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -29480,5 +29480,143 @@ css.textContent = [
 console.log('[bq] V' + V108_VERSION + ' patch loaded — schedule dispatch fix + forwarding UI enhancement');
 
 }catch(e){ console.error('[bq] V108 patch error:', e); }
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   V112 PATCH — BRING BACK LAST SEEN + BLUE/BLOOM COLORS
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+try{
+var css = document.createElement('style');
+css.id = 'bq-v112-css';
+css.textContent = [
+  /* FORCE INDICATOR VISIBLE — override everything */
+  '#bqp #bqdmhs, #bqp .bqdmhs, #bqp.bq-dm-v2 #bqdmhs, #bqp.bq-dm-v2 .bqdmhs{',
+  '  display:inline-flex !important;visibility:visible !important;opacity:1 !important;',
+  '  align-items:center !important;gap:6px !important;',
+  '  padding:3px 10px !important;border-radius:12px !important;',
+  '  background:rgba(59,130,246,0.06) !important;',
+  '  border:1px solid rgba(59,130,246,0.12) !important;',
+  '  backdrop-filter:blur(8px) !important;',
+  '  margin-top:3px !important;width:max-content !important;max-width:200px !important;',
+  '  transition:all .25s ease !important;',
+  '}',
+
+  /* FORCE DOT VISIBLE — override inline style="display:none" */
+  '#bqp #bqdmhs-dot, #bqp .bqdmhs-dot, #bqp.bq-dm-v2 #bqdmhs-dot, #bqp.bq-dm-v2 .bqdmhs-dot{',
+  '  display:inline-block !important;visibility:visible !important;opacity:1 !important;',
+  '  width:8px !important;height:8px !important;border-radius:50% !important;',
+  '  flex-shrink:0 !important;transition:all .25s ease !important;',
+  '}',
+
+  /* FORCE TEXT VISIBLE */
+  '#bqp #bqdmhs-txt, #bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  display:inline !important;visibility:visible !important;opacity:1 !important;',
+  '  font-family:Inter,-apple-system,sans-serif !important;',
+  '  font-size:11.5px !important;font-weight:500 !important;',
+  '  letter-spacing:-0.01em !important;text-transform:lowercase !important;',
+  '  white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;',
+  '}',
+
+  /* BLUE/BLOOM COLORS — online = blue, offline = muted, studying = purple */
+  '#bqp .bqdmhs-dot[style*="background"], #bqp.bq-dm-v2 .bqdmhs-dot[style*="background"]{',
+  '  box-shadow:0 0 8px currentColor !important;',
+  '}',
+
+  /* Online — blue bloom pulse */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(34,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#22c55e"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-success)"]{',
+  '  background:#3b82f6 !important;color:#3b82f6 !important;',
+  '  animation:bqV112BluePulse 2s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV112BluePulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(59,130,246,0.6),0 0 0 0 rgba(59,130,246,0.4) !important;}',
+  '  50%{box-shadow:0 0 14px rgba(59,130,246,0.8),0 0 0 6px rgba(59,130,246,0) !important;}',
+  '}',
+
+  /* Studying — purple bloom pulse */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(129,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#818cf8"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-accent)"]{',
+  '  background:#8b5cf6 !important;color:#8b5cf6 !important;',
+  '  animation:bqV112PurplePulse 2.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV112PurplePulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(139,92,246,0.6),0 0 0 0 rgba(139,92,246,0.4) !important;}',
+  '  50%{box-shadow:0 0 14px rgba(139,92,246,0.8),0 0 0 6px rgba(139,92,246,0) !important;}',
+  '}',
+
+  /* Busy — red bloom */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(239,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#ef4444"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-danger)"]{',
+  '  background:#ef4444 !important;color:#ef4444 !important;',
+  '  animation:bqV112RedPulse 1.5s ease-in-out infinite !important;',
+  '}',
+  '@keyframes bqV112RedPulse{',
+  '  0%,100%{box-shadow:0 0 6px rgba(239,68,68,0.6),0 0 0 0 rgba(239,68,68,0.4) !important;}',
+  '  50%{box-shadow:0 0 12px rgba(239,68,68,0.8),0 0 0 5px rgba(239,68,68,0) !important;}',
+  '}',
+
+  /* Away — amber bloom (static) */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:rgb(245,"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:#f59e0b"],',
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="background:var(--bq-warning)"]{',
+  '  background:#f59e0b !important;color:#f59e0b !important;',
+  '  box-shadow:0 0 8px rgba(245,158,11,0.6) !important;',
+  '}',
+
+  /* Offline — muted, no glow */
+  '#bqp.bq-dm-v2 .bqdmhs-dot[style*="opacity"]{',
+  '  background:#6b7280 !important;color:#6b7280 !important;',
+  '  box-shadow:none !important;animation:none !important;opacity:0.5 !important;',
+  '}',
+
+  /* Text colors — blue/bloom theme */
+  '#bqp #bqdmhs-txt, #bqp.bq-dm-v2 #bqdmhs-txt{',
+  '  color:#93c5fd !important;',
+  '}',
+  /* Offline text — muted */
+  '#bqp .bqdmhs:has(#bqdmhs-txt:nth-child(2):not(:empty)) #bqdmhs-txt{',
+  '  color:#6b7280 !important;',
+  '}',
+
+  '@media (prefers-reduced-motion: reduce){',
+  '  #bqp .bqdmhs-dot{animation:none !important;}',
+  '}',
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+/* Also force the dot visible via JS — override the inline style="display:none" */
+function v112FixDot(){
+  var dot = document.getElementById('bqdmhs-dot');
+  if(dot){
+    dot.style.display = 'inline-block';
+    dot.style.visibility = 'visible';
+    dot.style.opacity = '1';
+  }
+  var hs = document.getElementById('bqdmhs');
+  if(hs){
+    hs.style.display = 'inline-flex';
+    hs.style.visibility = 'visible';
+    hs.style.opacity = '1';
+  }
+  var txt = document.getElementById('bqdmhs-txt');
+  if(txt){
+    txt.style.display = 'inline';
+    txt.style.visibility = 'visible';
+    txt.style.opacity = '1';
+  }
+}
+
+setInterval(function(){
+  if(document.visibilityState === 'visible') v112FixDot();
+}, 2000);
+v112FixDot();
+
+console.log('[bq] V112 patch loaded — last seen restored + blue/bloom colors');
+}catch(e){ console.error('[bq] V112 patch error:', e); }
 })();
 
