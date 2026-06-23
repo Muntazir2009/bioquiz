@@ -1115,3 +1115,35 @@ Stage Summary:
 - Shows 'Last seen X min ago' when partner is offline
 - All V93 edit fixes preserved
 - Non-breaking: V1 unchanged, V94 overrides V93
+
+---
+Task ID: V117-CalcIcon
+Agent: main
+Task: Replace chat widget launcher icon with a 3D puzzle-piece (🧩) calculator icon
+
+Work Log:
+- User requested the chat widget launcher icon be changed to a calculator icon with 3D aesthetics and a 🧩 (puzzle piece) design
+- Located launcher SVG at public/chat-widget.js line 2955 (inside the HTML template string): previously a flat white chat-bubble SVG (24×24, fill="currentColor")
+- Designed a new icon that fuses a jigsaw puzzle-piece silhouette with a calculator interface:
+  - Body path: classic 🧩 shape with tab on top (peak y=4), tab on right (peak x=28), blank on bottom (valley y=24), blank on left (valley x=8) — viewBox 0 0 32 32
+  - Body fill: 4-stop vertical linear gradient #93c5fd → #3b82f6 → #1e3a8a → #0c1e4f (sky blue → indigo → deep navy) for 3D depth
+  - Top glossy highlight stripe: white→transparent gradient at 55% opacity for 3D sheen
+  - Outer drop shadow filter (dy=1.4, stdDev=0.7, opacity 0.6) for raised effect
+  - LCD screen: 14×3.2 rect with cyan gradient (#a5f3fc → #0891b2), inner white digits hint
+  - Button grid: 3 rows × 4 cols (white gradient buttons, orange operator column, cyan equals button)
+  - Per-button drop shadow filter for individual 3D depth
+- Patched HTML at lines 2954-3013 (button#bqb block) — new SVG is 32×32 (was 24×24) for better visibility in the 56px circular button
+- All SVG gradient/filter IDs prefixed with `bqCalc*` to avoid collisions with other widget SVGs
+- Bumped WIDGET_VERSION from '116.0.0' → '117.0.0'
+- Updated public/chat-widget-version.json to {"version": "117.0.0"}
+- Validated: `node -c public/chat-widget.js` → SYNTAX OK
+- Rendered standalone preview at /home/z/my-project/download/v117_calc_icon_preview.png (3× DPI via Playwright)
+- VLM (glm-4.6v) verified the rendered icon: confirmed puzzle-piece silhouette with tab on top + blank on bottom, calculator screen + button grid, blue gradient body, 3D shadow/highlight effects — all design goals met
+- Committing and pushing to GitHub
+
+Stage Summary:
+- Launcher icon replaced: flat chat bubble → 3D 🧩 puzzle-piece calculator
+- Icon features: gradient body (blue), glossy highlight, drop shadow, LCD screen (cyan), 3×4 button grid (white + orange operators + cyan equals)
+- 32×32 SVG scaled to fit existing 56px circular black button — no button CSS changes needed
+- Non-breaking: V1 widget unchanged, only the V117 launcher icon HTML updated
+- Version bumped 116 → 117, will auto-deploy to all site visitors via version-polling mechanism (12s interval)
