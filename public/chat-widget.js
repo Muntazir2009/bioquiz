@@ -373,7 +373,7 @@ const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
 const LS_THEME = 'bq_theme_v2';                 // v9: persisted global theme id
-const WIDGET_VERSION = '117.0.0';                   // V117: Replace launcher bubble icon with 3D puzzle-piece (🧩) calculator icon — gradient body, glossy highlight, drop shadow, LCD screen, button grid
+const WIDGET_VERSION = '118.0.0';                   // V118: Realistic Apple Calculator launcher — drop circle + puzzle piece, full calculator shape with display "0", labeled buttons (AC/±/%/÷/×/−/+/=/digits), dark graphite body, orange operators, glossy top, per-button 3D radial gradients + drop shadows
 // You can override with window.BQ_IMAGE_HOST = 'https://your-uploader' before loading the widget.
 const IMAGE_HOST_URL = ''; // v10: image hosting removed
 window.BQ_WIDGET_VERSION = WIDGET_VERSION;
@@ -570,23 +570,25 @@ const CSS = `
 }
 
 /* ── BUBBLE ── */
+/* V118: Launcher is no longer a circle — the calculator SVG defines its own shape.
+   Button is a transparent flex container that sizes to its SVG content. */
 #bqb{
   position:fixed;bottom:24px;right:24px;z-index:9900;
-  width:56px;height:56px;border-radius:50%;
-  background:#000;
   border:none;cursor:pointer;padding:0;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1) inset;
-  transition:transform .28s var(--bq-transition),box-shadow .25s;
+  background:transparent;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+  transition:transform .28s var(--bq-transition),box-shadow .25s,filter .25s;
   will-change:transform;
 }
-#bqb:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.15) inset;}
-#bqb:active{transform:scale(.95);}
-#bqb.open{background:var(--bq-bg-elevated);box-shadow:0 8px 32px rgba(0,0,0,.5);}
-.bqi{position:absolute;transition:opacity .22s,transform .22s;}
-.bqi-c{fill:#fff;}
-#bqb.open .bqi-c{opacity:0;transform:scale(.6) rotate(-90deg);}
-.bqi-x{opacity:0;fill:none;stroke:rgba(255,255,255,.8);stroke-width:2.5;stroke-linecap:round;transform:scale(.6) rotate(90deg);}
+#bqb:hover{transform:scale(1.06);box-shadow:0 14px 40px rgba(0,0,0,.6);filter:brightness(1.08);}
+#bqb:active{transform:scale(.96);}
+#bqb.open{background:transparent;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.bqi{position:absolute;transition:opacity .28s,transform .28s,filter .28s;}
+.bqi-c{fill:none;}
+/* V118: When open, calculator dims + shrinks slightly (stays visible as a backdrop for the X) */
+#bqb.open .bqi-c{opacity:.22;transform:scale(.92);filter:brightness(.55) saturate(.6);}
+.bqi-x{opacity:0;fill:none;stroke:#fff;stroke-width:2.8;stroke-linecap:round;transform:scale(.6) rotate(90deg);filter:drop-shadow(0 1px 4px rgba(0,0,0,.9));}
 #bqb.open .bqi-x{opacity:1;transform:scale(1) rotate(0deg);}
 #bqbadge{
   position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;
@@ -2952,63 +2954,129 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 ───────────────────────────────────────── */
 const HTML = `
 <button id="bqb" aria-label="Chat">
-  <svg viewBox="0 0 32 32" class="bqi bqi-c" width="32" height="32" fill="none" aria-hidden="true">
+  <svg viewBox="0 0 60 90" class="bqi bqi-c" width="60" height="90" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="bqCalcBody" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#93c5fd"/>
-        <stop offset="30%" stop-color="#3b82f6"/>
-        <stop offset="70%" stop-color="#1e3a8a"/>
-        <stop offset="100%" stop-color="#0c1e4f"/>
+        <stop offset="0%" stop-color="#48484a"/>
+        <stop offset="40%" stop-color="#1c1c1e"/>
+        <stop offset="100%" stop-color="#08080a"/>
       </linearGradient>
-      <linearGradient id="bqCalcScreen" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#a5f3fc"/>
-        <stop offset="100%" stop-color="#0891b2"/>
+      <linearGradient id="bqCalcDisp" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1a1a1c"/>
+        <stop offset="50%" stop-color="#000000"/>
+        <stop offset="100%" stop-color="#0a0a0a"/>
       </linearGradient>
-      <linearGradient id="bqCalcBtn" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ffffff"/>
-        <stop offset="100%" stop-color="#cbd5e1"/>
+      <linearGradient id="bqCalcDispGloss" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.10"/>
+        <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
       </linearGradient>
-      <linearGradient id="bqCalcOp" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#fde68a"/>
-        <stop offset="100%" stop-color="#f59e0b"/>
-      </linearGradient>
-      <linearGradient id="bqCalcEq" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#67e8f9"/>
-        <stop offset="100%" stop-color="#0891b2"/>
-      </linearGradient>
-      <linearGradient id="bqCalcHi" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <radialGradient id="bqCalcDig" cx="0.5" cy="0.22" r="0.9">
+        <stop offset="0%" stop-color="#7a7a7c"/>
+        <stop offset="50%" stop-color="#3a3a3c"/>
+        <stop offset="100%" stop-color="#161618"/>
+      </radialGradient>
+      <radialGradient id="bqCalcFn" cx="0.5" cy="0.22" r="0.9">
+        <stop offset="0%" stop-color="#ececee"/>
+        <stop offset="50%" stop-color="#a5a5a8"/>
+        <stop offset="100%" stop-color="#48484a"/>
+      </radialGradient>
+      <radialGradient id="bqCalcOp" cx="0.5" cy="0.22" r="0.9">
+        <stop offset="0%" stop-color="#ffd089"/>
+        <stop offset="50%" stop-color="#ff9f0a"/>
+        <stop offset="100%" stop-color="#8c4a00"/>
+      </radialGradient>
+      <linearGradient id="bqCalcGloss" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.24"/>
         <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
       </linearGradient>
-      <filter id="bqCalcSh" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="1.4" stdDeviation="0.7" flood-color="#000" flood-opacity="0.6"/>
+      <linearGradient id="bqCalcBottomShade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.5"/>
+      </linearGradient>
+      <linearGradient id="bqCalcBtnHi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="bqCalcShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
       </filter>
-      <filter id="bqCalcBtnSh" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="0.4" stdDeviation="0.2" flood-color="#000" flood-opacity="0.55"/>
+      <filter id="bqCalcBtnShadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000" flood-opacity="0.8"/>
       </filter>
     </defs>
-    <g filter="url(#bqCalcSh)">
-      <path d="M 6 6 L 13 6 C 13 4, 19 4, 19 6 L 26 6 L 26 13 C 28 13, 28 19, 26 19 L 26 26 L 19 26 C 19 24, 13 24, 13 26 L 6 26 L 6 19 C 8 19, 8 13, 6 13 Z" fill="url(#bqCalcBody)" stroke="rgba(255,255,255,0.45)" stroke-width="0.5"/>
+    <g filter="url(#bqCalcShadow)">
+      <rect x="0" y="0" width="60" height="90" rx="13" fill="url(#bqCalcBody)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
     </g>
-    <path d="M 6.6 6.6 L 13 6.6 C 13 5, 19 5, 19 6.6 L 25.4 6.6 L 25.4 11 L 6.6 11 Z" fill="url(#bqCalcHi)" opacity="0.55"/>
-    <rect x="9" y="9.8" width="14" height="3.2" rx="0.6" fill="url(#bqCalcScreen)" stroke="rgba(0,0,0,0.4)" stroke-width="0.3"/>
-    <rect x="9.6" y="10.5" width="6.5" height="1.5" rx="0.25" fill="rgba(255,255,255,0.8)"/>
-    <rect x="16.8" y="10.5" width="2" height="1.5" rx="0.25" fill="rgba(255,255,255,0.45)"/>
-    <g filter="url(#bqCalcBtnSh)">
-      <rect x="9"    y="14.0" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="12.6" y="14.0" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="16.2" y="14.0" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="19.8" y="14.0" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcOp)"/>
-      <rect x="9"    y="17.2" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="12.6" y="17.2" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="16.2" y="17.2" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="19.8" y="17.2" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcOp)"/>
-      <rect x="9"    y="20.4" width="6.8" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="16.2" y="20.4" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcBtn)"/>
-      <rect x="19.8" y="20.4" width="3.2" height="2.4" rx="0.5" fill="url(#bqCalcEq)"/>
+    <rect x="2" y="2" width="56" height="28" rx="11" fill="url(#bqCalcGloss)"/>
+    <rect x="0" y="55" width="60" height="35" rx="13" fill="url(#bqCalcBottomShade)"/>
+    <rect x="5" y="5" width="50" height="18" rx="2.5" fill="url(#bqCalcDisp)" stroke="rgba(0,0,0,0.6)" stroke-width="0.5"/>
+    <rect x="5" y="5" width="50" height="18" rx="2.5" fill="url(#bqCalcDispGloss)"/>
+    <text x="52" y="14" font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" font-size="13" font-weight="200" fill="#ffffff" text-anchor="end" dominant-baseline="central">0</text>
+    <g filter="url(#bqCalcBtnShadow)">
+      <rect x="5"  y="27" width="11" height="10" rx="5" fill="url(#bqCalcFn)"/>
+      <rect x="18" y="27" width="11" height="10" rx="5" fill="url(#bqCalcFn)"/>
+      <rect x="31" y="27" width="11" height="10" rx="5" fill="url(#bqCalcFn)"/>
+      <rect x="44" y="27" width="11" height="10" rx="5" fill="url(#bqCalcOp)"/>
+      <rect x="5"  y="39" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="18" y="39" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="31" y="39" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="44" y="39" width="11" height="10" rx="5" fill="url(#bqCalcOp)"/>
+      <rect x="5"  y="51" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="18" y="51" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="31" y="51" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="44" y="51" width="11" height="10" rx="5" fill="url(#bqCalcOp)"/>
+      <rect x="5"  y="63" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="18" y="63" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="31" y="63" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="44" y="63" width="11" height="10" rx="5" fill="url(#bqCalcOp)"/>
+      <rect x="5"  y="75" width="24" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="31" y="75" width="11" height="10" rx="5" fill="url(#bqCalcDig)"/>
+      <rect x="44" y="75" width="11" height="10" rx="5" fill="url(#bqCalcOp)"/>
+    </g>
+    <g>
+      <rect x="6"  y="28" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="19" y="28" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="32" y="28" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="45" y="28" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="6"  y="40" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="19" y="40" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="32" y="40" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="45" y="40" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="6"  y="52" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="19" y="52" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="32" y="52" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="45" y="52" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="6"  y="64" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="19" y="64" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="32" y="64" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="45" y="64" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="6"  y="76" width="22" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="32" y="76" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+      <rect x="45" y="76" width="9" height="3" rx="1.5" fill="url(#bqCalcBtnHi)"/>
+    </g>
+    <g font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" text-anchor="middle" dominant-baseline="central" font-weight="500">
+      <text x="10.5" y="32" font-size="4.8" font-weight="700" fill="#000">AC</text>
+      <text x="23.5" y="32" font-size="7"   fill="#000">±</text>
+      <text x="36.5" y="32" font-size="7"   fill="#000">%</text>
+      <text x="49.5" y="32" font-size="8.5" font-weight="600" fill="#fff">÷</text>
+      <text x="10.5" y="44" font-size="7"   fill="#fff">7</text>
+      <text x="23.5" y="44" font-size="7"   fill="#fff">8</text>
+      <text x="36.5" y="44" font-size="7"   fill="#fff">9</text>
+      <text x="49.5" y="44" font-size="8.5" font-weight="600" fill="#fff">×</text>
+      <text x="10.5" y="56" font-size="7"   fill="#fff">4</text>
+      <text x="23.5" y="56" font-size="7"   fill="#fff">5</text>
+      <text x="36.5" y="56" font-size="7"   fill="#fff">6</text>
+      <text x="49.5" y="56" font-size="8.5" font-weight="600" fill="#fff">−</text>
+      <text x="10.5" y="68" font-size="7"   fill="#fff">1</text>
+      <text x="23.5" y="68" font-size="7"   fill="#fff">2</text>
+      <text x="36.5" y="68" font-size="7"   fill="#fff">3</text>
+      <text x="49.5" y="68" font-size="8.5" font-weight="600" fill="#fff">+</text>
+      <text x="17"   y="80" font-size="7"   fill="#fff">0</text>
+      <text x="36.5" y="80" font-size="7"   fill="#fff">.</text>
+      <text x="49.5" y="80" font-size="8.5" font-weight="600" fill="#fff">=</text>
     </g>
   </svg>
-  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <svg viewBox="0 0 24 24" class="bqi bqi-x" width="28" height="28"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   <div id="bqbadge"></div>
 </button>
 
