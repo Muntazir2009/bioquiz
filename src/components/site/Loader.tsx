@@ -151,7 +151,7 @@ export function Loader() {
       {/* Botanical background — blurred 40px, darkened overlay */}
       <img
         ref={imgRef}
-        src="https://images.unsplash.com/photo-1490750967868-88aa4f44baee?auto=format&fit=crop&w=1400&q=80"
+        src="/claura-flowers.png"
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover scale-110"

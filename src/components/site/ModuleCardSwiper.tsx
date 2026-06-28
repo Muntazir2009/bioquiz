@@ -311,7 +311,19 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
   /* ------------------------------------------------------------------ */
 
   return (
-    <div className="w-full h-full flex flex-col" style={{ background: "#F8F5F0" }}>
+    <div className="w-full h-full flex flex-col relative" style={{ background: "#F8F5F0" }}>
+      {/* ── Claura flower wallpaper — subtle background ── */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none select-none"
+        style={{
+          backgroundImage: "url('/claura-flowers.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 60%",
+          opacity: 0.25,
+          filter: "saturate(1.2)",
+        }}
+      />
       {/* ── Compact header ── */}
       <div
         className="flex-shrink-0 px-5 sm:px-8 pt-16 sm:pt-[72px] pb-3"

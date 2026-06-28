@@ -155,6 +155,7 @@ export default function Home() {
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ background: "#F8F5F0" }}>
+
       {/* Skip-to-content link */}
       <a
         href="#main-content"
@@ -175,6 +176,19 @@ export default function Home() {
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
           <div className="w-full h-full flex flex-col justify-between px-6 sm:px-10 lg:px-16 pt-20 pb-10 relative">
+            {/* ── Claura flower wallpaper — full background ── */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none select-none"
+              style={{
+                backgroundImage: "url('/claura-flowers.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center 30%",
+                opacity: 0.4,
+                filter: "saturate(1.3)",
+              }}
+            />
+
             {/* Floating bio-molecules */}
             <BioMolecules />
 
@@ -183,9 +197,9 @@ export default function Home() {
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: `
-                  radial-gradient(ellipse 600px 400px at 50% 20%, rgba(196,168,130,0.06) 0%, transparent 70%),
-                  radial-gradient(ellipse 400px 300px at 80% 80%, rgba(196,168,130,0.03) 0%, transparent 60%),
-                  radial-gradient(ellipse 300px 250px at 15% 70%, rgba(196,168,130,0.04) 0%, transparent 60%)
+                  radial-gradient(ellipse 600px 400px at 50% 20%, rgba(196,168,130,0.03) 0%, transparent 70%),
+                  radial-gradient(ellipse 400px 300px at 80% 80%, rgba(196,168,130,0.02) 0%, transparent 60%),
+                  radial-gradient(ellipse 300px 250px at 15% 70%, rgba(196,168,130,0.02) 0%, transparent 60%)
                 `,
               }}
             />
