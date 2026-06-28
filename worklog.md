@@ -1202,3 +1202,35 @@ Stage Summary:
 - Open state: calculator dims to 22% opacity and shrinks slightly, X icon overlays with drop shadow for visibility
 - Non-breaking: V1 widget unchanged, only V118 launcher HTML/CSS updated
 - Version bumped 117 → 118, auto-deploys via 12s version polling
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Complete visual redesign of BioQuiz homepage — Claura-style horizontal sliding layout, Apple loading screen, widget icon admin controls, bug fixes
+
+Work Log:
+- Read and analyzed current project structure: page.tsx (7 slides), Slideshow.tsx, Loader.tsx, TopBar.tsx, Footer.tsx, ChatWidget.tsx, admin/page.tsx, modules.ts, globals.css, layout.tsx
+- Verified layout.tsx already had Cormorant Garamond + Inter fonts and Claura color CSS variables
+- Confirmed GSAP was already installed (v3.15.0)
+- Rewrote Loader.tsx: Apple iPhone-style loading screen with next/image for botanical background, GSAP timeline (progress fill 2.2s → unblur 1.2s → fade out text/bar/hint), 5-second fallback timeout, proper mounted state check for SSR safety
+- Rewrote page.tsx: Converted from 7 individual slides (hero + 6 modules) to 3 editorial slides:
+  - Slide 1: Hero — serif headline, stats badges, "Get Started" CTA, "Swipe to explore" hint
+  - Slide 2: Modules Grid — 6 modules as premium cards (2-col mobile, 3-col desktop) with GSAP stagger entrance + hover lift animations, module number, icon, title, description, status badge, link
+  - Slide 3: Stats/Footer — 3 stat counters, quick links, brand, copyright with ♥ entity, system status indicator
+- Updated Slideshow.tsx: Refined GSAP animations (dot container fade-in, back.out easing for active dot), improved touch swipe detection (horizontal-only threshold), keyboard navigation excludes input/textarea, moved ref assignment into useEffect
+- Fixed Footer.tsx: Replaced Lucide Heart SVG with HTML entity &#9829; for reliable rendering
+- Fixed /ask.html: Added display:none + onerror/onload handlers to lightbox image with empty src
+- Fixed /cell-3d.html: Added Sketchfab iframe fallback with 8-second timeout, error event listener, absolute-positioned overlay with message and direct Sketchfab link
+- Created /api/widget-settings/route.ts: GET/POST API for widget icon position and size, file-based storage (db/widget-settings.json) with Cloudflare D1 hook for production
+- Added "Widget Icon" section to admin page sidebar (under Settings) with: position dropdown, size slider (40-80px), save button, live preview showing icon in selected position/size
+- Updated ChatWidget.tsx: Added applyWidgetSettings() function that fetches saved settings from API and applies them to #bqb element (position, width, height), polls for #bqb creation after widget script loads
+- Fixed lint errors: moved ref assignment into useEffect in Slideshow.tsx, added eslint-disable for require in API route
+
+Stage Summary:
+- Homepage redesigned from 7-slide vertical layout to 3-slide horizontal Claura-style slideshow
+- All animations use GSAP exclusively (no CSS transitions/keyframes for animations)
+- Loading screen is robust with fallback timeout and proper SSR guards
+- Widget icon admin controls fully functional with live preview
+- 4 bugs fixed: loading screen stuck, broken ask.html image, missing footer heart, Sketchfab iframe fallback
+- All files pass ESLint, server returns HTTP 200, browser verification confirmed slide navigation works
+- Pre-existing issues noted: better-sqlite3 doesn't work in Turbopack dev (affects existing D1 routes too), chat-widget.js has rePaintPoll errors (untouchable file)
