@@ -499,8 +499,8 @@
   background: conic-gradient(
     from var(--hero-border-angle),
     transparent 40%,
-    oklch(0.75 0.15 250 / 0.5),
-    oklch(0.7 0.12 200 / 0.25),
+    oklch(0.65 0.16 60 / 0.60),
+    oklch(0.75 0.12 55 / 0.30),
     transparent 80%
   );
   animation: border-rotate 4s linear infinite;
@@ -508,7 +508,7 @@
 
 @supports not (background: conic-gradient(from 0deg, red, blue)) {
   .hero-cta-border {
-    background: oklch(0.7 0.12 250 / 0.4);
+    background: oklch(0.65 0.14 60 / 0.50);
   }
 }
 
@@ -829,4 +829,56 @@
 }
 .animate-shake {
   animation: shake 0.5s ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODULE CARD EFFECTS
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Card shimmer sweep ── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Animated gradient border for active module card ── */
+@property --card-border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes card-border-rotate {
+  to { --card-border-angle: 360deg; }
+}
+
+/* ── Floating bio-molecules on hero ── */
+@keyframes bio-float-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -15px) rotate(90deg); }
+  50% { transform: translate(-5px, -25px) rotate(180deg); }
+  75% { transform: translate(-15px, -10px) rotate(270deg); }
+}
+@keyframes bio-float-2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-12px, -8px) rotate(-90deg); }
+  50% { transform: translate(8px, -20px) rotate(-180deg); }
+  75% { transform: translate(15px, -5px) rotate(-270deg); }
+}
+@keyframes bio-float-3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  33% { transform: translate(8px, -18px) rotate(120deg) scale(1.1); }
+  66% { transform: translate(-10px, -12px) rotate(240deg) scale(0.95); }
+}
+
+/* ── Subtle pulse for status dots ── */
+@keyframes status-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+}
+
+/* ── Card entrance with 3D tilt ── */
+@keyframes card-tilt-in {
+  from { opacity: 0; transform: perspective(800px) rotateY(-8deg) translateY(20px) scale(0.92); }
+  to   { opacity: 1; transform: perspective(800px) rotateY(0deg) translateY(0) scale(1); }
 }

@@ -18,12 +18,15 @@ export type Module = {
   status: string;
   color: string;        // CSS color for the module accent
   accent: {
-    from: string;
-    to: string;
-    ring: string;
+    from: string;       // Gradient start
+    via?: string;       // Gradient midpoint (optional 3-stop)
+    to: string;         // Gradient end
+    ring: string;       // Active card shadow color
     glow: string;       // Large ambient glow color
+    border: string;     // Animated border color
   };
-  featured?: boolean;   // Wide card for first module
+  emoji: string;        // Decorative emoji watermark
+  featured?: boolean;
 };
 
 export const modules: Module[] = [
@@ -35,13 +38,16 @@ export const modules: Module[] = [
     href: "/presentation.html",
     icon: MonitorPlay,
     status: "READY TO LAUNCH",
-    color: "#8b5cf6",   // violet/fire
+    color: "#e85d75",
     accent: {
-      from: "oklch(0.72 0.18 280)",
-      to: "oklch(0.58 0.22 300)",
-      ring: "oklch(0.72 0.18 280 / 0.35)",
-      glow: "oklch(0.72 0.18 280 / 0.08)",
+      from: "#e85d75",
+      via: "#d4446a",
+      to: "#8b2252",
+      ring: "rgba(232, 93, 117, 0.35)",
+      glow: "rgba(232, 93, 117, 0.10)",
+      border: "rgba(232, 93, 117, 0.50)",
     },
+    emoji: "🧬",
     featured: true,
   },
   {
@@ -52,13 +58,16 @@ export const modules: Module[] = [
     href: "/ask.html",
     icon: Sparkles,
     status: "AI ONLINE",
-    color: "#a78bfa",   // violet
+    color: "#f59e42",
     accent: {
-      from: "oklch(0.80 0.18 290)",
-      to: "oklch(0.68 0.22 300)",
-      ring: "oklch(0.76 0.20 295 / 0.35)",
-      glow: "oklch(0.76 0.20 295 / 0.08)",
+      from: "#f5b942",
+      via: "#f59e42",
+      to: "#c2690a",
+      ring: "rgba(245, 158, 66, 0.35)",
+      glow: "rgba(245, 158, 66, 0.10)",
+      border: "rgba(245, 158, 66, 0.50)",
     },
+    emoji: "🤖",
   },
   {
     id: "organelles",
@@ -68,13 +77,16 @@ export const modules: Module[] = [
     href: "/organelles.html",
     icon: Microscope,
     status: "READY",
-    color: "#34d399",   // green
+    color: "#22c55e",
     accent: {
-      from: "oklch(0.78 0.18 160)",
-      to: "oklch(0.62 0.20 170)",
-      ring: "oklch(0.72 0.18 165 / 0.35)",
-      glow: "oklch(0.72 0.18 165 / 0.08)",
+      from: "#4ade80",
+      via: "#22c55e",
+      to: "#15803d",
+      ring: "rgba(34, 197, 94, 0.35)",
+      glow: "rgba(34, 197, 94, 0.10)",
+      border: "rgba(34, 197, 94, 0.50)",
     },
+    emoji: "🔬",
   },
   {
     id: "cell-3d",
@@ -84,13 +96,16 @@ export const modules: Module[] = [
     href: "/cell-3d.html",
     icon: Atom,
     status: "3D ACTIVE",
-    color: "#22d3ee",   // teal
+    color: "#14b8a6",
     accent: {
-      from: "oklch(0.75 0.20 195)",
-      to: "oklch(0.62 0.24 200)",
-      ring: "oklch(0.70 0.22 197 / 0.35)",
-      glow: "oklch(0.70 0.22 197 / 0.08)",
+      from: "#2dd4bf",
+      via: "#14b8a6",
+      to: "#0f766e",
+      ring: "rgba(20, 184, 166, 0.35)",
+      glow: "rgba(20, 184, 166, 0.10)",
+      border: "rgba(20, 184, 166, 0.50)",
     },
+    emoji: "🧫",
   },
   {
     id: "solutions",
@@ -100,13 +115,16 @@ export const modules: Module[] = [
     href: "/solutions.html",
     icon: BookOpenCheck,
     status: "READY",
-    color: "#f59e0b",   // amber
+    color: "#d97706",
     accent: {
-      from: "oklch(0.80 0.18 75)",
-      to: "oklch(0.68 0.20 65)",
-      ring: "oklch(0.76 0.18 70 / 0.35)",
-      glow: "oklch(0.76 0.18 70 / 0.08)",
+      from: "#fbbf24",
+      via: "#d97706",
+      to: "#92400e",
+      ring: "rgba(217, 119, 6, 0.35)",
+      glow: "rgba(217, 119, 6, 0.10)",
+      border: "rgba(217, 119, 6, 0.50)",
     },
+    emoji: "📝",
   },
   {
     id: "suggestions",
@@ -116,12 +134,15 @@ export const modules: Module[] = [
     href: "/suggestions.html",
     icon: Lightbulb,
     status: "OPEN",
-    color: "#c084fc",   // pink
+    color: "#ec4899",
     accent: {
-      from: "oklch(0.82 0.16 310)",
-      to: "oklch(0.68 0.20 320)",
-      ring: "oklch(0.76 0.18 315 / 0.35)",
-      glow: "oklch(0.76 0.18 315 / 0.08)",
+      from: "#f472b6",
+      via: "#ec4899",
+      to: "#9d174d",
+      ring: "rgba(236, 72, 153, 0.35)",
+      glow: "rgba(236, 72, 153, 0.10)",
+      border: "rgba(236, 72, 153, 0.50)",
     },
+    emoji: "💡",
   },
 ];

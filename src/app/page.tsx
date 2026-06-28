@@ -7,7 +7,7 @@ import { TopBar } from "@/components/site/TopBar";
 import { Slideshow, type SlideshowRef } from "@/components/site/Slideshow";
 import { ModuleCardSwiper } from "@/components/site/ModuleCardSwiper";
 import { modules } from "@/lib/modules";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 // Dynamic imports for heavy / rarely-used components
 const FilePanel = dynamic(
@@ -22,6 +22,80 @@ const ChatWidget = dynamic(
   () => import("@/components/site/ChatWidget").then((mod) => ({ default: mod.ChatWidget })),
   { ssr: false }
 );
+
+/* ── Floating bio-molecule decorations ── */
+function BioMolecules() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none decorative-motion" aria-hidden>
+      {/* DNA helix dot pattern — top right */}
+      <div
+        className="absolute top-16 right-[15%] w-32 h-32 opacity-[0.12]"
+        style={{ animation: "bio-float-1 18s ease-in-out infinite" }}
+      >
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="4" fill="#C4A882" />
+          <circle cx="60" cy="40" r="3" fill="#C4A882" />
+          <circle cx="100" cy="20" r="4" fill="#C4A882" />
+          <circle cx="40" cy="60" r="3.5" fill="#C4A882" />
+          <circle cx="80" cy="80" r="3" fill="#C4A882" />
+          <circle cx="20" cy="100" r="4" fill="#C4A882" />
+          <circle cx="100" cy="100" r="3" fill="#C4A882" />
+          <line x1="20" y1="20" x2="60" y2="40" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+          <line x1="60" y1="40" x2="100" y2="20" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+          <line x1="40" y1="60" x2="80" y2="80" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+          <line x1="20" y1="100" x2="100" y2="100" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
+        </svg>
+      </div>
+
+      {/* Cell-like circle cluster — bottom left */}
+      <div
+        className="absolute bottom-24 left-[10%] w-40 h-40 opacity-[0.10]"
+        style={{ animation: "bio-float-2 22s ease-in-out infinite" }}
+      >
+        <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="80" cy="80" r="30" stroke="#C4A882" strokeWidth="1" opacity="0.6" />
+          <circle cx="80" cy="80" r="18" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
+          <circle cx="80" cy="80" r="6" fill="#C4A882" opacity="0.5" />
+          {/* Organelle dots */}
+          <circle cx="95" cy="65" r="8" stroke="#C4A882" strokeWidth="0.8" opacity="0.5" />
+          <circle cx="65" cy="90" r="6" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
+          <circle cx="90" cy="95" r="5" stroke="#C4A882" strokeWidth="0.8" opacity="0.3" />
+        </svg>
+      </div>
+
+      {/* Floating hexagon molecule — mid left */}
+      <div
+        className="absolute top-[40%] left-[5%] w-24 h-24 opacity-[0.09] hidden sm:block"
+        style={{ animation: "bio-float-3 20s ease-in-out infinite" }}
+      >
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" stroke="#C4A882" strokeWidth="1.2" fill="none" />
+          <circle cx="50" cy="50" r="12" stroke="#C4A882" strokeWidth="0.8" fill="none" />
+          <circle cx="50" cy="50" r="3" fill="#C4A882" />
+          <line x1="50" y1="38" x2="50" y2="5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
+          <line x1="50" y1="62" x2="50" y2="95" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
+          <line x1="38" y1="44" x2="5" y2="27.5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
+          <line x1="62" y1="56" x2="95" y2="72.5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
+        </svg>
+      </div>
+
+      {/* Small dots scattered — top left area */}
+      <div className="absolute top-[25%] left-[20%] flex gap-3 opacity-[0.14]" style={{ animation: "bio-float-1 25s ease-in-out infinite reverse" }}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#C4A882]" />
+        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
+        <span className="w-2 h-2 rounded-full bg-[#C4A882]" />
+      </div>
+
+      {/* Small dots — bottom right */}
+      <div className="absolute bottom-[30%] right-[8%] flex gap-2 opacity-[0.12]" style={{ animation: "bio-float-2 16s ease-in-out infinite" }}>
+        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#C4A882]" />
+        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
+        <span className="w-2 h-2 rounded-full bg-[#C4A882]" />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [filePanelOpen, setFilePanelOpen] = useState(false);
@@ -89,58 +163,143 @@ export default function Home() {
       <main id="main-content" className="flex-1 flex flex-col">
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
-          <div className="w-full h-full flex flex-col justify-between px-6 sm:px-10 lg:px-16 pt-20 pb-10">
+          <div className="w-full h-full flex flex-col justify-between px-6 sm:px-10 lg:px-16 pt-20 pb-10 relative">
+            {/* Floating bio-molecules */}
+            <BioMolecules />
+
+            {/* Subtle gradient mesh background */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `
+                  radial-gradient(ellipse 600px 400px at 50% 20%, rgba(196,168,130,0.06) 0%, transparent 70%),
+                  radial-gradient(ellipse 400px 300px at 80% 80%, rgba(196,168,130,0.03) 0%, transparent 60%),
+                  radial-gradient(ellipse 300px 250px at 15% 70%, rgba(196,168,130,0.04) 0%, transparent 60%)
+                `,
+              }}
+            />
+
             {/* Top content: Title, subtitle, stats, CTA */}
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center relative z-10">
+              {/* Version badge above title */}
+              <div className="hero-anim opacity-0 mb-3">
+                <span
+                  className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
+                  style={{
+                    color: "#A09A94",
+                    background: "rgba(196,168,130,0.08)",
+                    border: "1px solid rgba(196,168,130,0.12)",
+                  }}
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-40" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                  </span>
+                  v2.0 — Live
+                </span>
+              </div>
+
               {/* Title */}
               <h1
                 className="hero-anim opacity-0 font-light tracking-tight"
                 style={{
                   color: "#1C1C1C",
                   fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: "clamp(2.8rem, 10vw, 5rem)",
-                  lineHeight: 1.1,
+                  fontSize: "clamp(3rem, 10vw, 5.2rem)",
+                  lineHeight: 1.08,
                 }}
               >
                 BioQuiz
               </h1>
 
+              {/* Decorative underline */}
+              <div
+                className="hero-anim opacity-0 mt-1 h-[2px] rounded-full"
+                style={{
+                  width: "clamp(40px, 8vw, 72px)",
+                  background: "linear-gradient(90deg, #C4A882, rgba(196,168,130,0.15))",
+                }}
+              />
+
               {/* Subtitle */}
               <p
-                className="hero-anim opacity-0 mt-2 text-sm sm:text-base"
-                style={{ color: "#8A8580", maxWidth: 420 }}
+                className="hero-anim opacity-0 mt-3 text-sm sm:text-[15px] leading-relaxed"
+                style={{ color: "#8A8580", maxWidth: 440 }}
               >
                 The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
               </p>
 
               {/* Stats line */}
-              <div className="hero-anim opacity-0 mt-4 flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs font-medium" style={{ color: "#6B6560" }}>
-                <span>{modules.length} MODULES</span>
+              <div
+                className="hero-anim opacity-0 mt-5 inline-flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium px-4 py-2 rounded-full"
+                style={{ color: "#6B6560", background: "rgba(196,168,130,0.06)", border: "1px solid rgba(196,168,130,0.10)" }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full" style={{ background: "#C4A882" }} />
+                  {modules.length} MODULES
+                </span>
                 <span style={{ color: "#C4A882" }}>·</span>
                 <span>AI RESEARCH</span>
                 <span style={{ color: "#C4A882" }}>·</span>
                 <span>3D VIEWER</span>
               </div>
 
-              {/* CTA */}
-              <button
-                onClick={goToModules}
-                className="hero-anim opacity-0 mt-6 group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                style={{
-                  background: "#1C1C1C",
-                  boxShadow: "0 2px 8px rgba(28,28,28,0.15), 0 8px 24px rgba(28,28,28,0.1)",
-                }}
-              >
-                Get Started
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </button>
+              {/* CTA button with animated border */}
+              <div className="hero-anim opacity-0 mt-7">
+                <div
+                  className="hero-cta-border"
+                  style={{ borderRadius: 9999, display: "inline-block" }}
+                >
+                  <button
+                    onClick={goToModules}
+                    className="hero-cta-inner group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 relative z-10"
+                    style={{
+                      background: "#1C1C1C",
+                    }}
+                  >
+                    Get Started
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Bottom: Swipe hint + mini footer */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-3 relative z-10">
+              {/* Module preview pills */}
+              <div className="hero-anim opacity-0 flex items-center gap-2 flex-wrap justify-center">
+                {modules.slice(0, 4).map((m) => (
+                  <span
+                    key={m.id}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full transition-transform duration-200 hover:scale-105 cursor-default"
+                    style={{
+                      color: m.color,
+                      background: `${m.color}10`,
+                      border: `1px solid ${m.color}18`,
+                    }}
+                  >
+                    <m.icon className="h-2.5 w-2.5" />
+                    {m.title}
+                  </span>
+                ))}
+                <span
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-full"
+                  style={{ color: "#A09A94", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}
+                >
+                  +{modules.length - 4} more
+                </span>
+              </div>
+
               {/* Swipe hint */}
-              <div className="hero-anim opacity-0 flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase" style={{ color: "#A09A94" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <div
+                className="hero-anim opacity-0 flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
+                style={{ color: "#A09A94" }}
+              >
+                <svg
+                  className="animate-bounce"
+                  style={{ animationDuration: "2s" }}
+                  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                >
                   <path d="M5 12h14" />
                   <path d="m12 5 7 7-7 7" />
                 </svg>
@@ -148,15 +307,10 @@ export default function Home() {
               </div>
 
               {/* Mini footer */}
-              <div className="hero-anim opacity-0 flex items-center gap-4 text-[10px]" style={{ color: "#A09A94" }}>
-                <span className="flex items-center gap-1.5">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-40" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
-                  </span>
-                  Operational
-                </span>
-                <span>·</span>
+              <div
+                className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
+                style={{ color: "#A09A94" }}
+              >
                 <span>&copy; {new Date().getFullYear()} BioQuiz</span>
                 <span>·</span>
                 <span>Built with <span style={{ color: "#C4A882" }}>&#9829;</span></span>

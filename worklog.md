@@ -1286,3 +1286,22 @@ Stage Summary:
 - Zero runtime console errors (confirmed via agent-browser)
 - Module cards are now visually striking square gradient cards with cover-flow GSAP effect
 - All GSAP imports remain SSR-safe (dynamic inside useEffect only)
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Add card hover micro-interactions and enhanced carousel polish
+
+Work Log:
+- Added active card hover lift: onMouseEnter animates y: -4px with enhanced shadow (deeper, wider spread) via GSAP dynamic import; onMouseLeave animates back. Only triggers on the active card.
+- Added decorative module number watermark: large semi-transparent number (e.g. "1", "2") positioned absolutely at bottom-right of each card, using clamp(80px, 20vw, 120px), weight 800, rgba(255,255,255,0.06), Cormorant Garamond font. Uses parseInt(m.num) to strip leading zeros.
+- Enhanced dot indicators: active dot is now 6px tall with borderRadius: 9999 (pill shape), inactive dots remain 5px circles.
+- Added one-time swipe hint nudge animation: 1.5s after mount, track translates -12px then back to 0 (power2.inOut, 0.35s + 0.4s), hinting that cards are swipeable. Only plays once.
+- Enhanced header: added border-bottom (1px solid rgba(0,0,0,0.04)) and a subtle 2px gradient line under "Modules" heading (40px wide, #C4A882 → transparent, 50% opacity).
+- Lint passes with zero errors.
+
+Stage Summary:
+- All 5 visual polish enhancements applied to ModuleCardSwiper.tsx
+- No card content, gradient, or aspect ratio changes
+- All GSAP imports remain SSR-safe (dynamic import inside useEffect/event handlers)
+- Zero ESLint errors confirmed

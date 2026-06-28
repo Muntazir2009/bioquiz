@@ -57,11 +57,21 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
 
           gsap.to(track, {
             x: -index * 100 + "vw",
-            duration: 0.7,
+            duration: 0.8,
             ease: "power3.inOut",
             onComplete: () => {
               isAnimating.current = false;
             },
+          });
+
+          // Slight parallax — scale current slide out, next slide in
+          const slides = track.children;
+          Array.from(slides).forEach((slide, i) => {
+            if (i === index) {
+              gsap.fromTo(slide, { scale: 0.96, opacity: 0.8 }, { scale: 1, opacity: 1, duration: 0.8, ease: "power3.inOut" });
+            } else if (i === activeIndexRef.current) {
+              gsap.to(slide, { scale: 0.96, opacity: 0.8, duration: 0.8, ease: "power3.inOut" });
+            }
           });
 
           activeIndexRef.current = index;
@@ -184,8 +194,8 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
         {/* Dot indicators — hidden on modules slide (index > 0) */}
         <div
           ref={dotsContainerRef}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 transition-opacity duration-300"
-          style={{ opacity: activeIndex === 0 ? 1 : 0, pointerEvents: activeIndex === 0 ? "auto" : "none" }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 transition-all duration-500"
+          style={{ opacity: activeIndex === 0 ? 1 : 0, pointerEvents: activeIndex === 0 ? "auto" : "none", transform: `translateX(-50%) translateY(${activeIndex === 0 ? 0 : 8}px)` }}
         >
           {children.map((_, i) => (
             <button
@@ -195,10 +205,12 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
               aria-label={`Go to slide ${i + 1}`}
               className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               style={{
-                width: i === activeIndex ? 24 : 8,
+                width: i === activeIndex ? 28 : 8,
                 height: 8,
-                background: i === activeIndex ? "#C4A882" : "rgba(196,168,130,0.3)",
+                background: i === activeIndex ? "#C4A882" : "rgba(196,168,130,0.25)",
                 borderRadius: 4,
+                transition: "background 0.3s ease",
+                boxShadow: i === activeIndex ? "0 0 12px rgba(196,168,130,0.3)" : "none",
               }}
             />
           ))}
