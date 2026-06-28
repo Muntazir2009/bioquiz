@@ -1234,3 +1234,25 @@ Stage Summary:
 - 4 bugs fixed: loading screen stuck, broken ask.html image, missing footer heart, Sketchfab iframe fallback
 - All files pass ESLint, server returns HTTP 200, browser verification confirmed slide navigation works
 - Pre-existing issues noted: better-sqlite3 doesn't work in Turbopack dev (affects existing D1 routes too), chat-widget.js has rePaintPoll errors (untouchable file)
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Complete homepage layout redesign — 2-slide horizontal layout, Apple Hello loader, immersive card swiper
+
+Work Log:
+- Removed 3rd slide (StatsFooterSlide) entirely; moved stats + footer to hero slide bottom
+- Rewrote Loader.tsx: Apple "Hello" style with botanical Unsplash background (blur 40px → 0), "Welcome to BioQuiz" in Cormorant Garamond 300 white letter-spaced, thin GSAP progress line (2s fill), blur lift + text fade on complete, 5s fallback, sessionStorage skip
+- Created Slideshow.tsx: 2-slide horizontal GSAP system (x: -index*100vw, 0.7s power3.inOut), touch swipe (horizontal-only, >50px, only on hero slide to avoid conflict with card swiper), keyboard nav (ArrowRight/Left, skips INPUT/TEXTAREA), dot indicators (hidden on modules slide via opacity transition), imperative handle via forwardRef/useImperativeHandle, SSR-safe (import("gsap") inside useEffect only)
+- Created ModuleCardSwiper.tsx: Netflix/app-drawer horizontal card swiper, 75vw cards on mobile / 520px on desktop, 1 card visible + next card peeking, GSAP snap animation (power3.out), touch swipe with stopPropagation to avoid parent slideshow conflict, per-card dot indicators (20px active / 6px inactive with GSAP back.out scaling), back button for slide navigation, resize handler
+- Rewrote page.tsx: compact hero slide (BioQuiz title, subtitle, "6 MODULES · AI RESEARCH · 3D VIEWER" stats, Get Started CTA, swipe hint, mini footer with status/brand/heart), modules slide via ModuleCardSwiper, fixed TopBar overlay (z-40), GSAP stagger entrance for .hero-anim elements
+- Updated layout.tsx: added Cormorant Garamond (300-700 weights) + Inter via next/font/google, removed grain overlay div
+- Fixed TopBar overlap: increased hero pt-16→pt-20, modules header pt-6→pt-20 (TopBar h-14 = 56px)
+- Fixed touch event conflict: card swiper calls e.stopPropagation() in touchmove/touchend to prevent parent slideshow from intercepting card swipes
+- Fixed activeIndex closure: Slideshow uses activeIndexRef to avoid stale closures in goToSlide callback
+
+Stage Summary:
+- All 5 user requirements implemented: (1) 2-slide layout, (2) compact hero, (3) Netflix card swiper, (4) Apple Hello loader, (5) SSR-safe GSAP
+- Verified via agent-browser: slide transitions (Get Started / Back), card swiper dots, track transforms, all 6 modules rendered, correct dot states
+- Lint passes clean
+- Pre-existing issues not fixed (out of scope): chat-widget.js rePaintPoll errors, better-sqlite3 Turbopack incompatibility
