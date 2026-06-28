@@ -1305,3 +1305,21 @@ Stage Summary:
 - No card content, gradient, or aspect ratio changes
 - All GSAP imports remain SSR-safe (dynamic import inside useEffect/event handlers)
 - Zero ESLint errors confirmed
+---
+Task ID: quiz-module-add
+Agent: Main Agent
+Task: Add Quiz module as Module 001 (first card, featured) + push to GitHub + trigger Cloudflare deploy
+
+Work Log:
+- Discovered quiz.html and questions.json (550+ lines of biology questions) already exist in /public/
+- Quiz was never listed in src/lib/modules.ts
+- Added BrainCircuit icon import from lucide-react
+- Inserted Quiz as Module 001 with blue gradient accent (#3b6cff), featured: true
+- Renumbered all other modules (002–007)
+- Verified 0 TS errors in src/
+- Pushed to GitHub, Cloudflare Actions deploy triggered
+
+Stage Summary:
+- Quiz is now the FIRST card in the module swiper with a bold blue gradient
+- All 7 modules renumbered correctly
+- Fresh deploy triggered after resolving stale conflict-marker build error
