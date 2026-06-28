@@ -56,7 +56,6 @@ function BioMolecules() {
           <circle cx="80" cy="80" r="30" stroke="#C4A882" strokeWidth="1" opacity="0.6" />
           <circle cx="80" cy="80" r="18" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
           <circle cx="80" cy="80" r="6" fill="#C4A882" opacity="0.5" />
-          {/* Organelle dots */}
           <circle cx="95" cy="65" r="8" stroke="#C4A882" strokeWidth="0.8" opacity="0.5" />
           <circle cx="65" cy="90" r="6" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
           <circle cx="90" cy="95" r="5" stroke="#C4A882" strokeWidth="0.8" opacity="0.3" />
@@ -93,6 +92,18 @@ function BioMolecules() {
         <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
         <span className="w-2 h-2 rounded-full bg-[#C4A882]" />
       </div>
+
+      {/* ── Floating particles (CSS-animated dots) ── */}
+      <span className="hero-particle" style={{ width: 3, height: 3, left: '8%',  bottom: '5%',  '--duration': '22s', '--delay': '0s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 2, height: 2, left: '22%', bottom: '8%',  '--duration': '26s', '--delay': '3s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 2.5, height: 2.5, left: '45%', bottom: '3%',  '--duration': '20s', '--delay': '6s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '62%', bottom: '10%', '--duration': '28s', '--delay': '2s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 2, height: 2, left: '78%', bottom: '6%',  '--duration': '24s', '--delay': '8s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '35%', bottom: '12%', '--duration': '30s', '--delay': '5s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 2.5, height: 2.5, left: '88%', bottom: '4%',  '--duration': '19s', '--delay': '10s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 2, height: 2, left: '15%', bottom: '15%', '--duration': '25s', '--delay': '12s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '55%', bottom: '7%',  '--duration': '21s', '--delay': '7s' } as React.CSSProperties} />
+      <span className="hero-particle" style={{ width: 3, height: 3, left: '70%', bottom: '14%', '--duration': '27s', '--delay': '4s' } as React.CSSProperties} />
     </div>
   );
 }
@@ -199,18 +210,21 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Title */}
-              <h1
-                className="hero-anim opacity-0 font-light tracking-tight"
-                style={{
-                  color: "#1C1C1C",
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: "clamp(3rem, 10vw, 5.2rem)",
-                  lineHeight: 1.08,
-                }}
-              >
-                BioQuiz
-              </h1>
+              {/* Title with breathing glow */}
+              <div className="hero-anim opacity-0 relative inline-block">
+                <div className="hero-title-glow" aria-hidden />
+                <h1
+                  className="relative font-light tracking-tight"
+                  style={{
+                    color: "#1C1C1C",
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontSize: "clamp(3rem, 10vw, 5.2rem)",
+                    lineHeight: 1.08,
+                  }}
+                >
+                  BioQuiz
+                </h1>
+              </div>
 
               {/* Decorative underline */}
               <div
@@ -221,13 +235,16 @@ export default function Home() {
                 }}
               />
 
-              {/* Subtitle */}
-              <p
-                className="hero-anim opacity-0 mt-3 text-sm sm:text-[15px] leading-relaxed"
-                style={{ color: "#8A8580", maxWidth: 440 }}
-              >
-                The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
-              </p>
+              {/* Subtitle with animated underline */}
+              <div className="hero-anim opacity-0 mt-3 relative inline-block">
+                <p
+                  className="text-sm sm:text-[15px] leading-relaxed"
+                  style={{ color: "#8A8580", maxWidth: 440 }}
+                >
+                  The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
+                </p>
+                <div className="hero-subtitle-underline mt-1" aria-hidden />
+              </div>
 
               {/* Stats line */}
               <div
@@ -244,10 +261,10 @@ export default function Home() {
                 <span>3D VIEWER</span>
               </div>
 
-              {/* CTA button with animated border */}
+              {/* CTA button with animated border + hover gradient glow */}
               <div className="hero-anim opacity-0 mt-7">
                 <div
-                  className="hero-cta-border"
+                  className="hero-cta-border hero-cta-hover"
                   style={{ borderRadius: 9999, display: "inline-block" }}
                 >
                   <button
@@ -290,9 +307,9 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Swipe hint */}
+              {/* Swipe hint (mobile) */}
               <div
-                className="hero-anim opacity-0 flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
+                className="hero-anim opacity-0 sm:hidden flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
                 style={{ color: "#A09A94" }}
               >
                 <svg
@@ -304,6 +321,25 @@ export default function Home() {
                   <path d="m12 5 7 7-7 7" />
                 </svg>
                 Swipe to explore
+              </div>
+
+              {/* Keyboard hint (desktop only) */}
+              <div
+                className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
+                style={{ color: "#A09A94" }}
+              >
+                Press{" "}
+                <kbd
+                  className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded text-[10px] font-mono"
+                  style={{
+                    background: "rgba(196,168,130,0.10)",
+                    border: "1px solid rgba(196,168,130,0.15)",
+                    color: "#A09A94",
+                  }}
+                >
+                  →
+                </kbd>{" "}
+                to explore
               </div>
 
               {/* Mini footer */}

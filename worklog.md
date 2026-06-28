@@ -1323,3 +1323,40 @@ Stage Summary:
 - Quiz is now the FIRST card in the module swiper with a bold blue gradient
 - All 7 modules renumbered correctly
 - Fresh deploy triggered after resolving stale conflict-marker build error
+---
+Task ID: visual-enhancement-round
+Agent: Style Agent
+Task: Enhance hero slide, module cards, add CSS animations, keyboard hints
+
+Work Log:
+- globals.css: Replaced old `shimmer` keyframe with corrected version (250% → -250%)
+- globals.css: Added `@keyframes glow-pulse` for active card border breathing effect
+- globals.css: Replaced old `float-particle` keyframe with new hero-optimized version (gentle 80vh rise, smooth fade)
+- globals.css: Added `@keyframes breathing-glow` for title glow opacity/scale pulse
+- globals.css: Added `@keyframes subtitle-underline` for animated width reveal
+- globals.css: Removed duplicate `status-pulse` keyframe (was defined twice)
+- globals.css: Added `.hero-particle` utility class with CSS custom property support (--duration, --delay)
+- globals.css: Added `.hero-title-glow` class (radial gradient blur + breathing animation)
+- globals.css: Added `.hero-subtitle-underline` class (gradient underline with width animation)
+- globals.css: Added `.hero-cta-hover` class with `::before` pseudo-element for conic-gradient border on hover
+- globals.css: Added `.card-glow-pulse` class for active card border animation
+- globals.css: Added `.feature-ribbon` class with angled ribbon shape and `::after` fold triangle
+- globals.css: Added `.progress-dot` utility class for progress bar glowing end dot
+- globals.css: Added `@media (prefers-reduced-motion: reduce)` block disabling all new animations
+- page.tsx: Added 10 CSS-animated floating particles (`.hero-particle`) to BioMolecules component with staggered durations/delays
+- page.tsx: Wrapped BioQuiz title in relative container with `.hero-title-glow` breathing glow div
+- page.tsx: Wrapped subtitle in relative container with `.hero-subtitle-underline` animated underline
+- page.tsx: Added `.hero-cta-hover` class to CTA button wrapper for gradient border on hover
+- page.tsx: Split swipe hint into mobile-only (sm:hidden) and desktop keyboard hint (hidden sm:flex)
+- page.tsx: Added "Press → to explore" keyboard shortcut hint with styled `<kbd>` element, desktop only
+- ModuleCardSwiper.tsx: Added `card-glow-pulse` class to active card anchor element via template literal
+- ModuleCardSwiper.tsx: Upgraded progress bar from 2px to 3px height, w-32 to w-40, added gradient background
+- ModuleCardSwiper.tsx: Added glowing dot (7px circle with box-shadow) at end of progress bar
+- ModuleCardSwiper.tsx: Added "★ MOST POPULAR" feature ribbon on quiz card (index 0) with `.feature-ribbon` class
+
+Stage Summary:
+- All 4 tasks completed: hero visual enhancements, module card enhancements, CSS animations, keyboard hints
+- 5 new @keyframes animations added (shimmer improved, glow-pulse, float-particle improved, breathing-glow, subtitle-underline)
+- All new animations respect prefers-reduced-motion: reduce
+- Zero TypeScript errors confirmed
+- Zero ESLint errors confirmed

@@ -400,19 +400,28 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
       {/* ── Dot indicators + counter ── */}
       <div className="flex-shrink-0 flex flex-col items-center gap-2 pb-5 pt-1">
-        {/* Progress bar */}
+        {/* Progress bar — 3px tall with gradient + glowing dot */}
         <div
-          className="w-32 h-[2px] rounded-full overflow-hidden"
+          className="w-40 h-[3px] rounded-full overflow-visible relative"
           style={{ background: "rgba(196,168,130,0.12)" }}
         >
           <div
-            className="h-full rounded-full transition-all duration-500 ease-out"
+            className="h-full rounded-full transition-all duration-500 ease-out relative"
             style={{
               width: `${((activeIndex + 1) / modules.length) * 100}%`,
-              background: modules[activeIndex]?.accent?.border ?? "#C4A882",
+              background: `linear-gradient(90deg, ${modules[activeIndex]?.accent?.border ?? "#C4A882"}, ${modules[activeIndex]?.accent?.from ?? "#C4A882"})`,
               boxShadow: `0 0 8px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
             }}
-          />
+          >
+            {/* Glowing dot at the end of progress */}
+            <span
+              className="absolute top-1/2 -translate-y-1/2 -right-[3px] w-[7px] h-[7px] rounded-full transition-colors duration-300"
+              style={{
+                background: modules[activeIndex]?.accent?.border ?? "#C4A882",
+                boxShadow: `0 0 6px 2px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+              }}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {modules.map((m, i) => (
@@ -496,7 +505,7 @@ function ModuleCard({
       ref={mergedRef}
       href={m.href}
       aria-label={`Open ${m.title} module`}
-      className="flex-shrink-0 relative overflow-hidden group"
+      className={`flex-shrink-0 relative overflow-hidden group${isActive ? " card-glow-pulse" : ""}`}
       style={{
         width: "min(72vw, 420px)",
         maxWidth: "85vw",
@@ -590,6 +599,13 @@ function ModuleCard({
             animation: "shimmer 3s ease-in-out infinite",
           }}
         />
+      )}
+
+      {/* ── Feature ribbon on quiz card (module index 0) ── */}
+      {index === 0 && (
+        <span className="feature-ribbon" aria-label="Most popular module">
+          ★ MOST POPULAR
+        </span>
       )}
 
       {/* ── Decorative emoji watermark ── */}
