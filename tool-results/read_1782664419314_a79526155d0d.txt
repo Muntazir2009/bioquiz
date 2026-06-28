@@ -1,0 +1,885 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→@custom-variant dark (&:is(.dark *, .brown *));
+     5→
+     6→@theme inline {
+     7→  --color-background: var(--background);
+     8→  --color-foreground: var(--foreground);
+     9→  --font-sans: var(--font-geist-sans);
+    10→  --font-mono: var(--font-geist-mono);
+    11→  --color-sidebar-ring: var(--sidebar-ring);
+    12→  --color-sidebar-border: var(--sidebar-border);
+    13→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    14→  --color-sidebar-accent: var(--sidebar-accent);
+    15→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    16→  --color-sidebar-primary: var(--sidebar-primary);
+    17→  --color-sidebar-foreground: var(--sidebar-foreground);
+    18→  --color-sidebar: var(--sidebar);
+    19→  --color-chart-5: var(--chart-5);
+    20→  --color-chart-4: var(--chart-4);
+    21→  --color-chart-3: var(--chart-3);
+    22→  --color-chart-2: var(--chart-2);
+    23→  --color-chart-1: var(--chart-1);
+    24→  --color-ring: var(--ring);
+    25→  --color-input: var(--input);
+    26→  --color-border: var(--border);
+    27→  --color-destructive: var(--destructive);
+    28→  --color-accent-foreground: var(--accent-foreground);
+    29→  --color-accent: var(--accent);
+    30→  --color-muted-foreground: var(--muted-foreground);
+    31→  --color-muted: var(--muted);
+    32→  --color-secondary-foreground: var(--secondary-foreground);
+    33→  --color-secondary: var(--secondary);
+    34→  --color-primary-foreground: var(--primary-foreground);
+    35→  --color-primary: var(--primary);
+    36→  --color-popover-foreground: var(--popover-foreground);
+    37→  --color-popover: var(--popover);
+    38→  --color-card-foreground: var(--card-foreground);
+    39→  --color-card: var(--card);
+    40→  --radius-sm: calc(var(--radius) - 4px);
+    41→  --radius-md: calc(var(--radius) - 2px);
+    42→  --radius-lg: var(--radius);
+    43→  --radius-xl: calc(var(--radius) + 4px);
+    44→}
+    45→
+    46→/* ═══════════════════════════════════════════════════════
+    47→   DARK THEME (default / :root)
+    48→   No flash — :root IS the dark theme, .brown overrides it
+    49→   ═══════════════════════════════════════════════════════ */
+    50→
+    51→:root {
+    52→  --radius: 0.625rem;
+    53→  --background: oklch(0.12 0 0);
+    54→  --foreground: oklch(0.985 0 0);
+    55→  --card: oklch(0.17 0 0);
+    56→  --card-foreground: oklch(0.985 0 0);
+    57→  --popover: oklch(0.17 0 0);
+    58→  --popover-foreground: oklch(0.985 0 0);
+    59→  --primary: oklch(0.922 0 0);
+    60→  --primary-foreground: oklch(0.205 0 0);
+    61→  --secondary: oklch(0.22 0 0);
+    62→  --secondary-foreground: oklch(0.985 0 0);
+    63→  --muted: oklch(0.22 0 0);
+    64→  --muted-foreground: oklch(0.6 0 0);
+    65→  --accent: oklch(0.22 0 0);
+    66→  --accent-foreground: oklch(0.985 0 0);
+    67→  --destructive: oklch(0.704 0.191 22.216);
+    68→  --border: oklch(1 0 0 / 8%);
+    69→  --input: oklch(1 0 0 / 12%);
+    70→  --ring: oklch(0.556 0 0);
+    71→  --chart-1: oklch(0.488 0.243 264.376);
+    72→  --chart-2: oklch(0.696 0.17 162.48);
+    73→  --chart-3: oklch(0.769 0.188 70.08);
+    74→  --chart-4: oklch(0.627 0.265 303.9);
+    75→  --chart-5: oklch(0.645 0.246 16.439);
+    76→  --sidebar: oklch(0.17 0 0);
+    77→  --sidebar-foreground: oklch(0.985 0 0);
+    78→  --sidebar-primary: oklch(0.488 0.243 264.376);
+    79→  --sidebar-primary-foreground: oklch(0.985 0 0);
+    80→  --sidebar-accent: oklch(0.22 0 0);
+    81→  --sidebar-accent-foreground: oklch(0.985 0 0);
+    82→  --sidebar-border: oklch(1 0 0 / 8%);
+    83→  --sidebar-ring: oklch(0.556 0 0);
+    84→}
+    85→
+    86→/* ═══════════════════════════════════════════════════════
+    87→   BROWN THEME (.brown class)
+    88→   Rich chocolate, warm caramel, deep espresso
+    89→   ═══════════════════════════════════════════════════════ */
+    90→
+    91→.brown {
+    92→  --background: oklch(0.19 0.035 55);
+    93→  --foreground: oklch(0.94 0.025 72);
+    94→  --card: oklch(0.24 0.04 55);
+    95→  --card-foreground: oklch(0.94 0.025 72);
+    96→  --popover: oklch(0.24 0.04 55);
+    97→  --popover-foreground: oklch(0.94 0.025 72);
+    98→  --primary: oklch(0.65 0.17 58);
+    99→  --primary-foreground: oklch(0.12 0.04 48);
+   100→  --secondary: oklch(0.30 0.04 50);
+   101→  --secondary-foreground: oklch(0.92 0.02 72);
+   102→  --muted: oklch(0.29 0.035 50);
+   103→  --muted-foreground: oklch(0.62 0.04 60);
+   104→  --accent: oklch(0.33 0.05 48);
+   105→  --accent-foreground: oklch(0.94 0.025 72);
+   106→  --destructive: oklch(0.577 0.245 27.325);
+   107→  --border: oklch(0.38 0.05 55 / 45%);
+   108→  --input: oklch(0.38 0.05 55 / 45%);
+   109→  --ring: oklch(0.65 0.17 58);
+   110→  --chart-1: oklch(0.62 0.16 65);
+   111→  --chart-2: oklch(0.55 0.12 45);
+   112→  --chart-3: oklch(0.70 0.10 80);
+   113→  --chart-4: oklch(0.50 0.08 35);
+   114→  --chart-5: oklch(0.75 0.12 70);
+   115→  --sidebar: oklch(0.22 0.04 55);
+   116→  --sidebar-foreground: oklch(0.94 0.025 72);
+   117→  --sidebar-primary: oklch(0.65 0.17 58);
+   118→  --sidebar-primary-foreground: oklch(0.12 0.04 48);
+   119→  --sidebar-accent: oklch(0.30 0.04 50);
+   120→  --sidebar-accent-foreground: oklch(0.94 0.025 72);
+   121→  --sidebar-border: oklch(0.38 0.05 55 / 45%);
+   122→  --sidebar-ring: oklch(0.65 0.17 58);
+   123→}
+   124→
+   125→@layer base {
+   126→  * {
+   127→    @apply border-border outline-ring/50;
+   128→  }
+   129→  body {
+   130→    @apply bg-background text-foreground;
+   131→    /* Optimize text rendering — subpixel AA gives crispier text on most
+   132→       displays and is faster than the browser's grayscale fallback. */
+   133→    -webkit-font-smoothing: antialiased;
+   134→    -moz-osx-font-smoothing: grayscale;
+   135→    /* Newer browsers: hint that we'll do scroll-driven effects so the
+   136→       compositor can prepare. Cheap to set, ignored if unused. */
+   137→    overscroll-behavior-y: none;
+   138→  }
+   139→  html {
+   140→    scroll-behavior: smooth;
+   141→  }
+   142→}
+   143→
+   144→/* Respect reduced-motion for smooth scroll — the @layer base rule above
+   145→   applies regardless of motion preference, which can be jarring. */
+   146→@media (prefers-reduced-motion: reduce) {
+   147→  html {
+   148→    scroll-behavior: auto;
+   149→  }
+   150→}
+   151→
+   152→/* ──────────────────────────────────────────────────────────
+   153→   Motion utilities for prefers-reduced-motion:
+   154→
+   155→   `.motion-ok`  — applied to elements whose ANIMATIONS should be
+   156→                   killed under reduced motion, but the element itself
+   157→                   MUST stay visible (e.g. a button wrapped in an
+   158→                   animated border, a status dot with a ping ring).
+   159→
+   160→   `.decorative-motion` — applied to elements that are PURELY decorative
+   161→                          (Hero spotlight, floating orbs, particle field).
+   162→                          Under reduced motion they are hidden entirely,
+   163→                          which is cheaper than freezing the first frame
+   164→                          and avoids compositing a static layer.
+   165→   ────────────────────────────────────────────────────────── */
+   166→@media (prefers-reduced-motion: reduce) {
+   167→  .motion-ok,
+   168→  .motion-ok * {
+   169→    animation: none !important;
+   170→    transition-duration: 0.01ms !important;
+   171→  }
+   172→  .decorative-motion {
+   173→    display: none !important;
+   174→  }
+   175→}
+   176→
+   177→/* ═══════════════════════════════════════════════════════
+   178→   CUSTOM UTILITIES & ANIMATIONS
+   179→   ═══════════════════════════════════════════════════════ */
+   180→
+   181→/* ── Dot grid ── */
+   182→.bg-grid {
+   183→  background-image:
+   184→    radial-gradient(circle, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+   185→  background-size: 24px 24px;
+   186→}
+   187→
+   188→.brown .bg-grid {
+   189→  background-image:
+   190→    radial-gradient(circle, oklch(0.65 0.06 55 / 0.10) 1px, transparent 1px);
+   191→}
+   192→
+   193→/* ── Entrance animations ── */
+   194→@keyframes fade-up {
+   195→  from { opacity: 0; transform: translateY(12px); }
+   196→  to   { opacity: 1; transform: translateY(0); }
+   197→}
+   198→
+   199→@keyframes card-in {
+   200→  from { opacity: 0; transform: perspective(800px) rotateX(3deg) translateY(12px) scale(0.98); }
+   201→  to   { opacity: 1; transform: perspective(800px) rotateX(0deg) translateY(0) scale(1); }
+   202→}
+   203→
+   204→@keyframes upload-enter {
+   205→  from { opacity: 0; transform: translateY(6px); }
+   206→  to   { opacity: 1; transform: translateY(0); }
+   207→}
+   208→
+   209→/* ═══════════════════════════════════════════════════════
+   210→   LOADER — "MONO" Black monochrome aesthetic
+   211→   ═══════════════════════════════════════════════════════ */
+   212→
+   213→/* ── Base — pure black ── */
+   214→.loader-mono {
+   215→  background: #050505;
+   216→}
+   217→
+   218→/* ── Dot matrix ── */
+   219→.loader-mono-dots {
+   220→  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+   221→  background-size: 24px 24px;
+   222→  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 15%, transparent 70%);
+   223→  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 15%, transparent 70%);
+   224→}
+   225→
+   226→/* ── Atom / Cell icon ── */
+   227→.loader-atom {
+   228→  width: 90px;
+   229→  height: 90px;
+   230→  perspective: 500px;
+   231→}
+   232→
+   233→.loader-atom-scene {
+   234→  position: relative;
+   235→  width: 100%;
+   236→  height: 100%;
+   237→  transform-style: preserve-3d;
+   238→  animation: atom-scene-drift 25s linear infinite;
+   239→  will-change: transform;
+   240→}
+   241→
+   242→@keyframes atom-scene-drift {
+   243→  from { transform: rotateY(0deg); }
+   244→  to   { transform: rotateY(360deg); }
+   245→}
+   246→
+   247→.loader-atom-nucleus {
+   248→  position: absolute;
+   249→  top: 50%;
+   250→  left: 50%;
+   251→  width: 7px;
+   252→  height: 7px;
+   253→  margin: -3.5px;
+   254→  border-radius: 50%;
+   255→  background: rgba(255,255,255,0.85);
+   256→  animation: atom-nucleus-pulse 2.5s ease-in-out infinite;
+   257→  will-change: transform, opacity;
+   258→}
+   259→
+   260→@keyframes atom-nucleus-pulse {
+   261→  0%, 100% { opacity: 0.7; transform: scale(1); }
+   262→  50%      { opacity: 1; transform: scale(1.12); }
+   263→}
+   264→
+   265→.loader-atom-orbit {
+   266→  position: absolute;
+   267→  top: 50%;
+   268→  left: 50%;
+   269→  width: 82px;
+   270→  height: 82px;
+   271→  margin: -41px;
+   272→  border: 1px solid rgba(255,255,255,0.1);
+   273→  border-radius: 50%;
+   274→  transform-style: preserve-3d;
+   275→}
+   276→
+   277→.loader-atom-orbit-1 { transform: rotateZ(0deg) rotateX(72deg); }
+   278→.loader-atom-orbit-2 { transform: rotateZ(60deg) rotateX(72deg); }
+   279→.loader-atom-orbit-3 { transform: rotateZ(-60deg) rotateX(72deg); }
+   280→
+   281→.loader-atom-electron-spin {
+   282→  position: absolute;
+   283→  inset: -1px;
+   284→  border-radius: 50%;
+   285→  transform-style: preserve-3d;
+   286→  animation: atom-electron-orbit 2.5s linear infinite;
+   287→  will-change: transform;
+   288→}
+   289→
+   290→.loader-atom-electron-delay-2 { animation-delay: -0.83s; }
+   291→.loader-atom-electron-delay-3 { animation-delay: -1.67s; }
+   292→
+   293→.loader-atom-electron {
+   294→  position: absolute;
+   295→  top: -2px;
+   296→  left: 50%;
+   297→  width: 4px;
+   298→  height: 4px;
+   299→  margin-left: -2px;
+   300→  border-radius: 50%;
+   301→  background: rgba(255,255,255,0.7);
+   302→  will-change: transform;
+   303→}
+   304→
+   305→@keyframes atom-electron-orbit {
+   306→  from { transform: rotateZ(0deg); }
+   307→  to   { transform: rotateZ(360deg); }
+   308→}
+   309→
+   310→/* ── Brand letters ── */
+   311→.loader-mono-brand-letter {
+   312→  font-size: 12px;
+   313→  font-weight: 300;
+   314→  letter-spacing: 0.35em;
+   315→  color: rgba(255,255,255,0.75);
+   316→}
+   317→
+   318→/* ── Subtitle ── */
+   319→.loader-mono-subtitle {
+   320→  font-size: 9px;
+   321→  letter-spacing: 0.35em;
+   322→  text-transform: uppercase;
+   323→  color: rgba(255,255,255,0.2);
+   324→}
+   325→
+   326→/* ── Divider ── */
+   327→.loader-mono-divider {
+   328→  height: 1px;
+   329→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 80%, transparent);
+   330→  transform-origin: center;
+   331→}
+   332→
+   333→/* ── Progress bar ── */
+   334→.loader-mono-bar-track {
+   335→  background: rgba(255,255,255,0.04);
+   336→  border: 1px solid rgba(255,255,255,0.06);
+   337→}
+   338→
+   339→.loader-mono-bar-fill {
+   340→  background: rgba(255,255,255,0.75);
+   341→  transition: width 0.08s linear;
+   342→  will-change: width;
+   343→}
+   344→
+   345→/* ── Phase label ── */
+   346→.loader-mono-phase {
+   347→  font-size: 9px;
+   348→  letter-spacing: 0.2em;
+   349→  text-transform: uppercase;
+   350→  color: rgba(255,255,255,0.18);
+   351→}
+   352→
+   353→/* ── Percentage ── */
+   354→.loader-mono-pct {
+   355→  font-size: 11px;
+   356→  font-weight: 400;
+   357→  font-variant-numeric: tabular-nums;
+   358→  color: rgba(255,255,255,0.5);
+   359→  letter-spacing: 0.05em;
+   360→}
+   361→
+   362→.loader-mono-pct-sign {
+   363→  font-size: 8px;
+   364→  color: rgba(255,255,255,0.2);
+   365→  margin-left: 1px;
+   366→}
+   367→
+   368→/* ── Skeleton ── */
+   369→.loader-mono-skeleton {
+   370→  background: rgba(255,255,255,0.04);
+   371→  animation: mono-skeleton-pulse 2s ease-in-out infinite;
+   372→}
+   373→
+   374→@keyframes mono-skeleton-pulse {
+   375→  0%, 100% { opacity: 0.3; }
+   376→  50%      { opacity: 0.7; }
+   377→}
+   378→
+   379→/* ═══════════════════════════════════════════════════════
+   380→   HERO — Aceternity/21st.dev inspired
+   381→   ═══════════════════════════════════════════════════════ */
+   382→
+   383→@property --hero-border-angle {
+   384→  syntax: "<angle>";
+   385→  initial-value: 0deg;
+   386→  inherits: false;
+   387→}
+   388→
+   389→/* ── Spotlight ── */
+   390→.hero-spotlight {
+   391→  position: absolute;
+   392→  top: -30%;
+   393→  left: 25%;
+   394→  width: 50%;
+   395→  height: 100%;
+   396→  background: radial-gradient(
+   397→    ellipse 60% 50% at 50% 0%,
+   398→    oklch(0.7 0.15 250 / 0.08),
+   399→    oklch(0.6 0.1 200 / 0.03) 40%,
+   400→    transparent 70%
+   401→  );
+   402→  animation: spotlight-drift 14s ease-in-out infinite alternate;
+   403→  pointer-events: none;
+   404→}
+   405→
+   406→.brown .hero-spotlight {
+   407→  background: radial-gradient(
+   408→    ellipse 60% 50% at 50% 0%,
+   409→    oklch(0.72 0.14 60 / 0.14),
+   410→    oklch(0.65 0.10 55 / 0.06) 40%,
+   411→    transparent 70%
+   412→  );
+   413→}
+   414→
+   415→@keyframes spotlight-drift {
+   416→  0%   { transform: translateX(-10%) rotate(-2deg); opacity: 0.6; }
+   417→  50%  { transform: translateX(10%) rotate(2deg); opacity: 1; }
+   418→  100% { transform: translateX(-5%) rotate(-1deg); opacity: 0.75; }
+   419→}
+   420→
+   421→/* ── Floating orbs ── */
+   422→.hero-orb {
+   423→  position: absolute;
+   424→  border-radius: 50%;
+   425→  filter: blur(80px);
+   426→  will-change: transform;
+   427→  animation: hero-orb-float 20s ease-in-out infinite alternate;
+   428→}
+   429→
+   430→.hero-orb-1 {
+   431→  width: 350px;
+   432→  height: 350px;
+   433→  top: -10%;
+   434→  right: -5%;
+   435→  background: oklch(0.45 0.12 270 / 0.06);
+   436→  animation-duration: 18s;
+   437→}
+   438→
+   439→.hero-orb-2 {
+   440→  width: 280px;
+   441→  height: 280px;
+   442→  bottom: -15%;
+   443→  left: 10%;
+   444→  background: oklch(0.4 0.1 180 / 0.04);
+   445→  animation-duration: 22s;
+   446→  animation-delay: -8s;
+   447→}
+   448→
+   449→.brown .hero-orb-1 { background: oklch(0.55 0.12 55 / 0.12); }
+   450→.brown .hero-orb-2 { background: oklch(0.45 0.10 45 / 0.08); }
+   451→
+   452→@keyframes hero-orb-float {
+   453→  0%   { transform: translate(0, 0) scale(1); }
+   454→  50%  { transform: translate(15px, -10px) scale(1.03); }
+   455→  100% { transform: translate(-8px, 8px) scale(0.98); }
+   456→}
+   457→
+   458→/* ── Gradient shimmer text ── */
+   459→.hero-gradient-text {
+   460→  background: linear-gradient(
+   461→    135deg,
+   462→    oklch(0.7 0.12 250) 0%,
+   463→    oklch(0.85 0.16 200) 30%,
+   464→    oklch(0.8 0.14 160) 60%,
+   465→    oklch(0.7 0.12 250) 100%
+   466→  );
+   467→  background-size: 300% 100%;
+   468→  -webkit-background-clip: text;
+   469→  background-clip: text;
+   470→  -webkit-text-fill-color: transparent;
+   471→  animation: gradient-shift 8s ease-in-out infinite;
+   472→}
+   473→
+   474→.brown .hero-gradient-text {
+   475→  background: linear-gradient(
+   476→    135deg,
+   477→    oklch(0.55 0.14 60) 0%,
+   478→    oklch(0.65 0.18 55) 30%,
+   479→    oklch(0.58 0.15 45) 60%,
+   480→    oklch(0.55 0.14 60) 100%
+   481→  );
+   482→  background-size: 300% 100%;
+   483→  -webkit-background-clip: text;
+   484→  background-clip: text;
+   485→  -webkit-text-fill-color: transparent;
+   486→}
+   487→
+   488→@keyframes gradient-shift {
+   489→  0%   { background-position: 0% center; }
+   490→  50%  { background-position: 100% center; }
+   491→  100% { background-position: 0% center; }
+   492→}
+   493→
+   494→/* ── Moving border ── */
+   495→.hero-cta-border {
+   496→  position: relative;
+   497→  border-radius: 12px;
+   498→  padding: 1.5px;
+   499→  background: conic-gradient(
+   500→    from var(--hero-border-angle),
+   501→    transparent 40%,
+   502→    oklch(0.65 0.16 60 / 0.60),
+   503→    oklch(0.75 0.12 55 / 0.30),
+   504→    transparent 80%
+   505→  );
+   506→  animation: border-rotate 4s linear infinite;
+   507→}
+   508→
+   509→@supports not (background: conic-gradient(from 0deg, red, blue)) {
+   510→  .hero-cta-border {
+   511→    background: oklch(0.65 0.14 60 / 0.50);
+   512→  }
+   513→}
+   514→
+   515→.brown .hero-cta-border {
+   516→  background: conic-gradient(
+   517→    from var(--hero-border-angle),
+   518→    transparent 40%,
+   519→    oklch(0.65 0.16 58 / 0.50),
+   520→    oklch(0.70 0.12 55 / 0.30),
+   521→    transparent 80%
+   522→  );
+   523→}
+   524→
+   525→.hero-cta-inner {
+   526→  border-radius: 10.5px;
+   527→}
+   528→
+   529→@keyframes border-rotate {
+   530→  to { --hero-border-angle: 360deg; }
+   531→}
+   532→
+   533→@supports not (background: conic-gradient(from 0deg, red, blue)) {
+   534→  .hero-cta-border::before {
+   535→    content: "";
+   536→    position: absolute;
+   537→    inset: -1px;
+   538→    border-radius: 12px;
+   539→    background: linear-gradient(135deg, oklch(0.75 0.15 250 / 0.4), oklch(0.7 0.12 200 / 0.2));
+   540→    z-index: -1;
+   541→    animation: border-glow 3s ease-in-out infinite alternate;
+   542→  }
+   543→  .brown .hero-cta-border::before {
+   544→    background: linear-gradient(135deg, oklch(0.65 0.14 58 / 0.40), oklch(0.55 0.10 55 / 0.25));
+   545→  }
+   546→}
+   547→
+   548→@keyframes border-glow {
+   549→  0%   { opacity: 0.5; }
+   550→  100% { opacity: 1; }
+   551→}
+   552→
+   553→/* ── Badge pulse ── */
+   554→.hero-badge-pulse {
+   555→  animation: badge-pulse 2.5s ease-in-out infinite;
+   556→}
+   557→
+   558→@keyframes badge-pulse {
+   559→  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.2 150 / 0); }
+   560→  50%      { box-shadow: 0 0 0 4px oklch(0.65 0.2 150 / 0.12); }
+   561→}
+   562→
+   563→.brown .hero-badge-pulse {
+   564→  animation: badge-pulse-brown 2.5s ease-in-out infinite;
+   565→}
+   566→
+   567→@keyframes badge-pulse-brown {
+   568→  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.17 58 / 0); }
+   569→  50%      { box-shadow: 0 0 0 4px oklch(0.65 0.17 58 / 0.12); }
+   570→}
+   571→
+   572→/* ═══════════════════════════════════════════════════════
+   573→   FLOATING FILE PANEL
+   574→   ═══════════════════════════════════════════════════════ */
+   575→
+   576→.file-panel-floating {
+   577→  top: 56px;
+   578→  right: 16px;
+   579→  width: 400px;
+   580→  max-height: calc(100vh - 80px);
+   581→  animation: panel-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+   582→}
+   583→
+   584→@media (max-width: 640px) {
+   585→  .file-panel-floating {
+   586→    left: 8px;
+   587→    right: 8px;
+   588→    width: auto;
+   589→    top: 56px;
+   590→  }
+   591→}
+   592→
+   593→@keyframes panel-in {
+   594→  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+   595→  to   { opacity: 1; transform: translateY(0) scale(1); }
+   596→}
+   597→
+   598→.upload-item {
+   599→  animation: upload-enter 0.15s ease both;
+   600→}
+   601→
+   602→/* ═══════════════════════════════════════════════════════
+   603→   REDUCED MOTION
+   604→   ═══════════════════════════════════════════════════════
+   605→
+   606→   Note: the global "kill all animations" rule is intentionally
+   607→   scoped to elements that NEED it (the loader orbital scene,
+   608→   hero spotlight, etc.) via the `.motion-ok` / `.decorative-motion`
+   609→   utilities above. A blanket `animation-duration: 0.01ms !important`
+   610→   on every element breaks things like the loader progress bar
+   611→   transition (which uses width, not animation) and is overkill.
+   612→
+   613→   The rules below are additional, element-specific overrides
+   614→   that complement the utility classes. */
+   615→
+   616→@media (prefers-reduced-motion: reduce) {
+   617→  /* The loader orbital scene animates a 3D rotation — disable it.
+   618→     The Loader component itself also short-circuits via useReducedMotion. */
+   619→  .loader-atom-scene,
+   620→  .loader-atom-nucleus,
+   621→  .loader-atom-electron-spin,
+   622→  .loader-mono-skeleton { animation: none !important; }
+   623→
+   624→  /* Gradient text normally shifts position — freeze it on the first frame. */
+   625→  .hero-gradient-text { animation: none !important; }
+   626→
+   627→  /* Hero badge pulse — freeze. */
+   628→  .hero-badge-pulse { animation: none !important; }
+   629→
+   630→  /* Floating orbs — hidden entirely (purely decorative). */
+   631→  .hero-orb { display: none !important; }
+   632→
+   633→  /* CTA border rotating gradient — kill the animation but keep the
+   634→     static gradient so the button still looks intentional. */
+   635→  .hero-cta-border { animation: none !important; }
+   636→}
+   637→
+   638→/* ── Custom scrollbar ── */
+   639→::-webkit-scrollbar { width: 5px; height: 5px; }
+   640→::-webkit-scrollbar-track { background: transparent; }
+   641→::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 0.06); border-radius: 3px; }
+   642→::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.12); }
+   643→.brown ::-webkit-scrollbar-thumb { background: oklch(0.50 0.06 55 / 0.25); }
+   644→.brown ::-webkit-scrollbar-thumb:hover { background: oklch(0.50 0.06 55 / 0.4); }
+   645→
+   646→/* ═══════════════════════════════════════════════════════
+   647→   PREMIUM EFFECTS — 21st.dev inspired
+   648→   ═══════════════════════════════════════════════════════ */
+   649→
+   650→/* ── 3D Card — layered shadows for physical depth ── */
+   651→.card-3d {
+   652→  position: relative;
+   653→  box-shadow:
+   654→    0 1px 2px oklch(0 0 0 / 0.3),
+   655→    0 2px 4px oklch(0 0 0 / 0.2),
+   656→    0 4px 8px oklch(0 0 0 / 0.15),
+   657→    0 8px 16px oklch(0 0 0 / 0.10),
+   658→    0 16px 32px oklch(0 0 0 / 0.06),
+   659→    0 24px 48px oklch(0 0 0 / 0.03);
+   660→}
+   661→
+   662→/* 3D card bottom edge — visible thickness */
+   663→.card-3d::after {
+   664→  content: "";
+   665→  position: absolute;
+   666→  left: 3px;
+   667→  right: 3px;
+   668→  bottom: -4px;
+   669→  height: 4px;
+   670→  border-radius: 0 0 16px 16px;
+   671→  background: oklch(0.14 0 0);
+   672→  z-index: -1;
+   673→}
+   674→
+   675→.brown .card-3d::after {
+   676→  background: oklch(0.20 0.03 55);
+   677→}
+   678→
+   679→/* ── Subtle grain texture ──
+   680→   Disabled on mobile (small screens) and reduced-motion because it forces
+   681→   a full-viewport fixed-position repaint layer that costs GPU memory on
+   682→   low-end devices. */
+   683→.grain-overlay::after {
+   684→  content: "";
+   685→  position: fixed;
+   686→  inset: 0;
+   687→  z-index: 9999;
+   688→  pointer-events: none;
+   689→  opacity: 0.015;
+   690→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+   691→  background-repeat: repeat;
+   692→  background-size: 128px 128px;
+   693→  /* Hint to the compositor: this layer won't change, so it can be cached. */
+   694→  will-change: auto;
+   695→}
+   696→
+   697→/* Skip the grain layer on small screens — it's barely visible at 0.015
+   698→   opacity but still costs a full-viewport paint layer. */
+   699→@media (max-width: 640px) {
+   700→  .grain-overlay::after {
+   701→    content: none;
+   702→    display: none;
+   703→  }
+   704→}
+   705→
+   706→@media (prefers-reduced-motion: reduce) {
+   707→  .grain-overlay::after {
+   708→    content: none;
+   709→    display: none;
+   710→  }
+   711→}
+   712→
+   713→/* ── Smooth button press ── */
+   714→.btn-press {
+   715→  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), 
+   716→              box-shadow 0.2s ease-out,
+   717→              opacity 0.15s ease;
+   718→}
+   719→.btn-press:active {
+   720→  transform: scale(0.97);
+   721→}
+   722→
+   723→/* ── Glass morphism card ── */
+   724→.glass-card {
+   725→  background: oklch(1 0 0 / 0.03);
+   726→  backdrop-filter: blur(16px) saturate(1.4);
+   727→  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+   728→  border: 1px solid oklch(1 0 0 / 0.06);
+   729→}
+   730→
+   731→.brown .glass-card {
+   732→  background: oklch(0.65 0.06 55 / 0.06);
+   733→  border-color: oklch(0.50 0.06 55 / 0.12);
+   734→}
+   735→
+   736→/* ── Smooth focus ring ── */
+   737→.focus-ring {
+   738→  outline: none;
+   739→  transition: box-shadow 0.2s ease;
+   740→}
+   741→.focus-ring:focus-visible {
+   742→  box-shadow: 0 0 0 2px oklch(0.7 0.15 250 / 0.5);
+   743→}
+   744→.brown .focus-ring:focus-visible {
+   745→  box-shadow: 0 0 0 2px oklch(0.65 0.17 58 / 0.5);
+   746→}
+   747→
+   748→/* ── Staggered entrance animation ── */
+   749→.stagger-in > * {
+   750→  animation: fade-up 0.5s ease both;
+   751→}
+   752→.stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+   753→.stagger-in > *:nth-child(2) { animation-delay: 60ms; }
+   754→.stagger-in > *:nth-child(3) { animation-delay: 120ms; }
+   755→.stagger-in > *:nth-child(4) { animation-delay: 180ms; }
+   756→.stagger-in > *:nth-child(5) { animation-delay: 240ms; }
+   757→.stagger-in > *:nth-child(6) { animation-delay: 300ms; }
+   758→.stagger-in > *:nth-child(7) { animation-delay: 360ms; }
+   759→
+   760→/* ── Typing cursor ── */
+   761→@keyframes blink-cursor {
+   762→  0%, 100% { opacity: 1; }
+   763→  50% { opacity: 0; }
+   764→}
+   765→.typing-cursor::after {
+   766→  content: "|";
+   767→  animation: blink-cursor 1s step-end infinite;
+   768→  color: oklch(0.7 0.15 250);
+   769→  margin-left: 2px;
+   770→}
+   771→.brown .typing-cursor::after {
+   772→  color: oklch(0.65 0.17 58);
+   773→}
+   774→
+   775→/* ── Floating particles ── */
+   776→@keyframes float-particle {
+   777→  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+   778→  10%  { opacity: 1; }
+   779→  90%  { opacity: 1; }
+   780→  100% { transform: translateY(-100vh) translateX(20px) scale(0.5); opacity: 0; }
+   781→}
+   782→
+   783→.particle {
+   784→  position: absolute;
+   785→  width: 2px;
+   786→  height: 2px;
+   787→  border-radius: 50%;
+   788→  background: oklch(0.7 0.12 250 / 0.3);
+   789→  animation: float-particle var(--duration, 15s) linear infinite;
+   790→  animation-delay: var(--delay, 0s);
+   791→  pointer-events: none;
+   792→}
+   793→
+   794→.brown .particle {
+   795→  background: oklch(0.65 0.14 58 / 0.3);
+   796→}
+   797→
+   798→/* ── Micro shine on hover ── */
+   799→.micro-shine {
+   800→  position: relative;
+   801→  overflow: hidden;
+   802→}
+   803→.micro-shine::before {
+   804→  content: "";
+   805→  position: absolute;
+   806→  inset: 0;
+   807→  background: linear-gradient(
+   808→    105deg,
+   809→    transparent 40%,
+   810→    oklch(1 0 0 / 0.03) 45%,
+   811→    oklch(1 0 0 / 0.06) 50%,
+   812→    oklch(1 0 0 / 0.03) 55%,
+   813→    transparent 60%
+   814→  );
+   815→  transform: translateX(-100%);
+   816→  transition: transform 0.8s ease;
+   817→  pointer-events: none;
+   818→  z-index: 1;
+   819→}
+   820→.micro-shine:hover::before {
+   821→  transform: translateX(100%);
+   822→}
+   823→
+   824→/* ── Shake animation (wrong password) ── */
+   825→@keyframes shake {
+   826→  0%, 100% { transform: translateX(0); }
+   827→  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+   828→  20%, 40%, 60%, 80% { transform: translateX(4px); }
+   829→}
+   830→.animate-shake {
+   831→  animation: shake 0.5s ease-in-out;
+   832→}
+   833→
+   834→/* ═══════════════════════════════════════════════════════
+   835→   MODULE CARD EFFECTS
+   836→   ═══════════════════════════════════════════════════════ */
+   837→
+   838→/* ── Card shimmer sweep ── */
+   839→@keyframes shimmer {
+   840→  0%   { background-position: 200% 0; }
+   841→  100% { background-position: -200% 0; }
+   842→}
+   843→
+   844→/* ── Animated gradient border for active module card ── */
+   845→@property --card-border-angle {
+   846→  syntax: "<angle>";
+   847→  initial-value: 0deg;
+   848→  inherits: false;
+   849→}
+   850→
+   851→@keyframes card-border-rotate {
+   852→  to { --card-border-angle: 360deg; }
+   853→}
+   854→
+   855→/* ── Floating bio-molecules on hero ── */
+   856→@keyframes bio-float-1 {
+   857→  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+   858→  25% { transform: translate(10px, -15px) rotate(90deg); }
+   859→  50% { transform: translate(-5px, -25px) rotate(180deg); }
+   860→  75% { transform: translate(-15px, -10px) rotate(270deg); }
+   861→}
+   862→@keyframes bio-float-2 {
+   863→  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+   864→  25% { transform: translate(-12px, -8px) rotate(-90deg); }
+   865→  50% { transform: translate(8px, -20px) rotate(-180deg); }
+   866→  75% { transform: translate(15px, -5px) rotate(-270deg); }
+   867→}
+   868→@keyframes bio-float-3 {
+   869→  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+   870→  33% { transform: translate(8px, -18px) rotate(120deg) scale(1.1); }
+   871→  66% { transform: translate(-10px, -12px) rotate(240deg) scale(0.95); }
+   872→}
+   873→
+   874→/* ── Subtle pulse for status dots ── */
+   875→@keyframes status-pulse {
+   876→  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+   877→  50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+   878→}
+   879→
+   880→/* ── Card entrance with 3D tilt ── */
+   881→@keyframes card-tilt-in {
+   882→  from { opacity: 0; transform: perspective(800px) rotateY(-8deg) translateY(20px) scale(0.92); }
+   883→  to   { opacity: 1; transform: perspective(800px) rotateY(0deg) translateY(0) scale(1); }
+   884→}
+   885→
