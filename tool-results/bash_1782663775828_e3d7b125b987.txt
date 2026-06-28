@@ -1,0 +1,2667 @@
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 176ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 194ms
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 164ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 134ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 139ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 178ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 155ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 193ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 114ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 210ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 160ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 143ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 280ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 122ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 149ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 210ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 739ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 333ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 267ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 253ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 416ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 139ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 121ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 136ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 160ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 539ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 406ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 1167ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 925ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 139ms
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 415ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 156ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [Fast Refresh] rebuilding
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [Fast Refresh] done in 154ms
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 147ms
+[log] [Fast Refresh] rebuilding
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[clear] console.clear
+[error] ./src/components/site/Loader.tsx:111:7
+Expected a semicolon
+  109 |   if (typeof window === "undefined" || !show) return null;
+  110 | =======
+> 111 |     } catch { /* ignore */ }
+      |       ^^^^^
+  112 |
+  113 |     setMounted(true);
+  114 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/layout.tsx:57:1
+Merge conflict marker encountered.
+  55 | =======
+  56 |         className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${in...
+> 57 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+     | ^^^^^^^
+  58 |       >
+  59 |         <ThemeProvider>
+  60 |           {children}
+
+Parsing ecmascript source code failed
+[error] ./src/app/page.tsx:251:1
+Merge conflict marker encountered.
+  249 |
+  250 |   return (
+> 251 | <<<<<<< HEAD
+      | ^^^^^^^
+  252 |     <div className="min-h-screen flex flex-col" style={{ background: "#F8F5F0" }}>
+  253 |       <Loader />
+  254 |       <TopBar onFilePanelOpen={openFiles} />
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:110:1
+Merge conflict marker encountered.
+  108 |
+  109 |   if (typeof window === "undefined" || !show) return null;
+> 110 | =======
+      | ^^^^^^^
+  111 |     } catch { /* ignore */ }
+  112 |
+  113 |     setMounted(true);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Slideshow.tsx:358:1
+Merge conflict marker encountered.
+  356 |   }
+  357 | );
+> 358 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      | ^^^^^^^
+  359 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Slideshow.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Slideshow.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/components/site/Loader.tsx:202:5
+Return statement is not allowed here
+  200 |     });
+  201 |
+> 202 |     return () => {
+      |     ^^^^^^^^^^^^^
+> 203 |       clearTimeout(fallback);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 204 |     };
+      | ^^^^^^
+  205 |   }, [dismiss]);
+  206 |
+  207 |   if (!mounted || !show) return null;
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/site/Loader.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/site/Loader.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:369:7
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  367 |         </Slideshow>
+  368 |       </main>
+> 369 | >>>>>>> b95149c (50b70751-7430-40c8-88cc-3cd29eb557b6)
+      |       ^
+  370 |
+  371 |       <FilePanel open={filePanelOpen} onClose={() => setFilePanelOpen(false)} />
+  372 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[error] ./src/app/page.tsx:380:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  378 |     </div>
+  379 |   );
+> 380 | }
+      | ^
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] rebuilding
+[warning] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree.
+[warning] [Fast Refresh] performing full reload because your application had an unrecoverable error
+[clear] console.clear
+[log] [Fast Refresh] done in 1478ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[log] [Fast Refresh] rebuilding
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [Fast Refresh] done in 315ms
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 172ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 627ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 19ms
+[warning] Unexpected import of module [project]/src/components/site/FilePanel.tsx [app-client] (ecmascript, next/dynamic entry) from module [project]/src/app/page.tsx [app-client] (ecmascript), which was deleted by an HMR update
+[warning] Unexpected import of module [project]/src/components/site/ChatWidget.tsx [app-client] (ecmascript, next/dynamic entry) from module [project]/src/app/page.tsx [app-client] (ecmascript), which was deleted by an HMR update
+[warning] Unexpected import of module [project]/node_modules/gsap/index.js [app-client] (ecmascript) from module [project]/src/components/site/ModuleCardSwiper.tsx [app-client] (ecmascript), which was deleted by an HMR update
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 296ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[error] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 136ms
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 149ms
+[log] [Fast Refresh] rebuilding
+[log] [Fast Refresh] done in 140ms
+[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[log] [HMR] connected
+[info] [bq-widget] v19 patch loaded — gestures, multi-select, themes, polish
+[info] [bq-widget] v20 patch loaded — Noir theme, last-online, animated swipe-to-reply, DM hardening
+[info] [bq-widget] v21 patch loaded — WA swipe-to-reply, themes in Settings, 3 new themes (midnight/rose/ocean), jump-to-bottom, in-chat search
+[info] [BioQuiz] chat-widget v23.0.0 loaded
+[info] [BioQuiz] chat-widget v24.0.0 loaded
+[info] [BioQuiz] chat-widget v26.0.0 loaded (v26 — slash + dead code stripped)
+[log] [bq] v30 patch loaded — 2 themes + living reactions
+[log] [bq] v31 patch loaded — pure-black widget-wide
+[log] [bq] v34 patch loaded — golden shadow scrub, synced burst reactions, micro-animations
+[log] [bq] v43 patch loaded — Replies V2 + GIF picker pagination
+[log] [bq] v45 patch loaded — Modern GIF Picker + Reply chip fix
+[log] [bq] v64 patch loaded — Minimal sticker tray, GIF stacking fix
+[log] [bq] v65 patch loaded — Fix sticker All tab, GIF picker CSS, Widget disguise
+[log] [bq] v69 patch loaded — Liquid Glass / Glassmorphism for DM chats
+[log] [bq] v71 definitive patch loaded — single source of truth, MutationObserver active
+[log] [bq] v65+67 patch loaded — Ghost/Reply/Scroll fixes (AI Assistant removed)
+[log] [bq] v67 patch loaded — Bug Monitor + Performance + Stability + Enhanced Monitoring
+[log] [bq] v68 patch loaded — UI Immersion + Performance + Polish
+[log] [bq] V83.0.0 Graphite patch loaded — pure CSS, zero observers, no lag
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V85.0.0 Lumen patch loaded — text visibility FIXED (ID-level selectors), beautiful indigo/violet redesign
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V89.0.0 patch loaded — self indicator removed, UI beautified, better components
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V92.0.0 patch loaded — global self-indicator removal + bubble redesign + UI/UX enhancements
+[log] [bq] V93.0.0 patch loaded — DM online indicator removed, edit UI redesigned, edit logic fixed
+[log] [bq] V95.0.0 patch loaded — enhanced last online/last seen indicator + cleanup
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V101 patch loaded — status pill removed from DM header, profile removed from nav
+[log] [bq] V103 patch loaded — profile redesign
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] V108.0.0 patch loaded — schedule dispatch fix + forwarding UI enhancement
+[log] [bq] V112 patch loaded — last seen restored + blue/bloom colors
+[log] [bq] V113 patch loaded — last seen redesigned
+[log] [bq] V116 patch loaded — indicator visibility + colors fixed
+[log] [bq] v35 patch loaded — enhanced conversation UI, realtime fixes, micro-interactions
+[log] [bq] V80 patch loaded — Sliding-pill V1/V2 toggle, single toggle in DMs header
+[log] [bq] v36.1 patch loaded — fixed notification system (bq_user_dms path, cross-IIFE scope)
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [bq] v44 patch loaded — Replies V2 + Performance + GIF Fix
+[log] [bq] v78 boot — push notifications removed, service workers unregistered
+[log] [BQ Monitor] Bug Monitor v67 started 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V84.0.0 patch loaded — killed V69.2 observer, settings redesigned, error fallback added
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V88.0.0 patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined
+[log] [bq] V91.0.0 patch loaded — scroll lag fixed, duplicate toggle removed, V2 design enhanced
+[log] [bq] V96.0.0 patch loaded — fullscreen mode + navigation redesign
+[log] [bq] V97.0.0 patch loaded — true fullscreen API + last seen fix
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [bq] V99.0.0 patch loaded — @muntazir buffs removed, profile nav button added
+[log] [bq] V100.0.0 patch loaded — header declutter, profile avatar top-left, online text removed
+[log] [bq] V104.0.0 patch loaded — founder badge killed, admin capabilities for @muntazir
+[log] [bq] V105.0.0 patch loaded — last seen flicker fixed, SW cleanup
+[log] [bq] V106.0.0 patch loaded — admin timing fix, profile CSS force, schedule rework
+[log] [BQ Monitor] Scroll monitors attached 
+[log] [bq] V81.0.0 Aurora patch loaded — beautiful DM V2 ❤️
+[log] [bq] V86.0.0 patch loaded — enhanced forwarding + V2 design additions
+[log] [bq] V87.0.0 patch loaded — text selection disabled, enhanced disguise, V2 UI/UX additions, stability fixes
+[log] [bq] V98.0.0 patch loaded — edit/delete meta fix, mobile design, @muntazir buffs
+[log] [BQ Monitor] All monitors active — DOM, Scroll, Firebase, Render, ReplyChips, Memory, Ghost 
