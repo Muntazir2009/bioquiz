@@ -1,0 +1,736 @@
+     1→new file mode 100644
+     2→index 0000000..24ce31e
+     3→"use client";
+     4→
+     5→import { useEffect, useRef, useState, useCallback } from "react";
+     6→
+     7→/* ═══════════════════════════════════════════════════════════════
+     8→ *  STEALTH CHAT MODE — DM disguised as a news article
+     9→ *  ───────────────────────────────────────────────────────────────
+    10→ *  Reuses:
+    11→ *    - Firebase config from chat-widget.js (same project, same DB)
+    12→ *    - localStorage UID key ('bq_chat_uid') and username key
+    13→ *      ('bq_chat_uname') so identity is shared with the main widget
+    14→ *    - DM path:  bq_dms/{dmId}/messages/
+    15→ *    - Message schema: { uid, uname, text, ts }
+    16→ *    - dmKey(a,b) = [a,b].sort().join('__')   (same as widget)
+    17→ *
+    18→ *  The dmId below is intentionally a manual variable. Set it to:
+    19→ *    - A literal dmId string ("uidA__uidB") if you know both UIDs, OR
+    20→ *    - Leave it as `null` to use dmKey(MY_UID, PARTNER_UID) computed
+    21→ *      at runtime from the two UIDs you provide.
+    22→ * ═══════════════════════════════════════════════════════════════ */
+    23→
+    24→// ─── MANUAL CONFIG ─────────────────────────────────────────────
+    25→// Set this to the DM thread you want to render as an article.
+    26→// Examples:
+    27→//   const STEALTH_DM_ID = "u123abc__u456def";
+    28→//   const STEALTH_DM_ID = null;  // → uses dmKey(MY_UID, PARTNER_UID)
+    29→const STEALTH_DM_ID: string | null = null;
+    30→
+    31→// Only used when STEALTH_DM_ID is null — computes dmKey(MY_UID, PARTNER_UID)
+    32→const MY_UID = "";       // e.g. "u1a2b3c4d"  — leave blank to read from localStorage
+    33→const PARTNER_UID = "";  // e.g. "u9z8y7x6w"
+    34→// ─── /MANUAL CONFIG ────────────────────────────────────────────
+    35→
+    36→// Same Firebase config as chat-widget.js — single source of truth
+    37→const FIREBASE_CONFIG = {
+    38→  apiKey: "AIzaSyBvsLNXMGsr-XQF-GE-EET1YOnICSMicOA",
+    39→  authDomain: "bioquiz-chat.firebaseapp.com",
+    40→  databaseURL: "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
+    41→  projectId: "bioquiz-chat",
+    42→  storageBucket: "bioquiz-chat.firebasestorage.app",
+    43→  messagingSenderId: "616382882153",
+    44→  appId: "1:616382882153:web:9c8a32401be847468d1df8",
+    45→};
+    46→
+    47→const LS_UID = "bq_chat_uid";
+    48→const LS_NAME = "bq_chat_uname";
+    49→const MAX_MSG = 50;
+    50→
+    51→// dmKey — identical to chat-widget.js
+    52→function dmKey(a: string, b: string) {
+    53→  return [a, b].sort().join("__");
+    54→}
+    55→
+    56→// genUID — identical pattern to chat-widget.js
+    57→function genUID() {
+    58→  const id = "u" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    59→  try { localStorage.setItem(LS_UID, id); } catch {}
+    60→  return id;
+    61→}
+    62→
+    63→// Load Firebase compat SDKs in the correct order (app first, then database)
+    64→function loadFirebaseSDK(): Promise<void> {
+    65→  return new Promise((resolve, reject) => {
+    66→    if ((window as any).firebase?.database) return resolve();
+    67→
+    68→    const s1 = document.createElement("script");
+    69→    s1.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js";
+    70→    s1.onload = () => {
+    71→      const s2 = document.createElement("script");
+    72→      s2.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js";
+    73→      s2.onload = () => resolve();
+    74→      s2.onerror = reject;
+    75→      document.head.appendChild(s2);
+    76→    };
+    77→    s1.onerror = reject;
+    78→    document.head.appendChild(s1);
+    79→  });
+    80→}
+    81→
+    82→// Escaper for any user text injected into HTML
+    83→function escHtml(s: string) {
+    84→  return String(s || "")
+    85→    .replace(/&/g, "&amp;")
+    86→    .replace(/</g, "&lt;")
+    87→    .replace(/>/g, "&gt;")
+    88→    .replace(/"/g, "&quot;")
+    89→    .replace(/'/g, "&#39;");
+    90→}
+    91→
+    92→// Convert bare URLs in text to anchor tags
+    93→function linkify(s: string) {
+    94→  return s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    95→}
+    96→
+    97→type ArticleMsg = { key: string; text: string; uid: string; uname?: string; ts: number };
+    98→
+    99→export default function NewsPage() {
+   100→  const [ready, setReady] = useState(false);
+   101→  const [msgs, setMsgs] = useState<ArticleMsg[]>([]);
+   102→  const [error, setError] = useState<string | null>(null);
+   103→  const [openParaKey, setOpenParaKey] = useState<string | null>(null);
+   104→  const [sending, setSending] = useState(false);
+   105→
+   106→  const dbRef = useRef<any>(null);
+   107→  const msgListenerRef = useRef<any>(null);
+   108→  const uidRef = useRef<string>("");
+   109→  const unameRef = useRef<string>("");
+   110→  const dmIdRef = useRef<string>("");
+   111→  const paraContainerRef = useRef<HTMLDivElement>(null);
+   112→
+   113→  // ─── Bootstrap: load SDK, resolve UID/dmId, subscribe to DM thread ──────
+   114→  useEffect(() => {
+   115→    let cancelled = false;
+   116→
+   117→    (async () => {
+   118→      try {
+   119→        // Resolve UID (same key as widget → same identity)
+   120→        let uid = MY_UID;
+   121→        if (!uid) {
+   122→          try { uid = localStorage.getItem(LS_UID) || ""; } catch {}
+   123→        }
+   124→        if (!uid) uid = genUID();
+   125→        uidRef.current = uid;
+   126→
+   127→        // Resolve uname (same key as widget)
+   128→        try { unameRef.current = localStorage.getItem(LS_NAME) || "Reader"; } catch {}
+   129→        if (!unameRef.current) unameRef.current = "Reader";
+   130→
+   131→        // Resolve dmId
+   132→        let dmId = STEALTH_DM_ID;
+   133→        if (!dmId) {
+   134→          if (MY_UID && PARTNER_UID) {
+   135→            dmId = dmKey(MY_UID, PARTNER_UID);
+   136→          } else {
+   137→            throw new Error("STEALTH_DM_ID is null and MY_UID/PARTNER_UID not set. Edit src/app/news/page.tsx to configure.");
+   138→          }
+   139→        }
+   140→        dmIdRef.current = dmId;
+   141→
+   142→        // Load Firebase SDK
+   143→        await loadFirebaseSDK();
+   144→        if (cancelled) return;
+   145→
+   146→        if (!(window as any).firebase?.apps?.length) {
+   147→          (window as any).firebase.initializeApp(FIREBASE_CONFIG);
+   148→        }
+   149→        dbRef.current = (window as any).firebase.database();
+   150→
+   151→        // Subscribe to last 50 DM messages
+   152→        const ref = dbRef.current.ref(`bq_dms/${dmId}/messages`).limitToLast(MAX_MSG);
+   153→
+   154→        // Initial load (one batch, no animation)
+   155→        ref.once("value", (snap: any) => {
+   156→          if (cancelled) return;
+   157→          const val = snap.val() || {};
+   158→          const arr: ArticleMsg[] = Object.entries(val).map(([k, v]: [string, any]) => ({
+   159→            key: k,
+   160→            text: v.text || "",
+   161→            uid: v.uid || "",
+   162→            uname: v.uname || "",
+   163→            ts: v.ts || 0,
+   164→          }));
+   165→          arr.sort((a, b) => a.ts - b.ts);
+   166→          setMsgs(arr);
+   167→          setReady(true);
+   168→        });
+   169→
+   170→        // Live updates: append new messages with fade-in
+   171→        ref.on("child_added", (snap: any) => {
+   172→          if (cancelled) return;
+   173→          const v = snap.val();
+   174→          if (!v) return;
+   175→          setMsgs((prev) => {
+   176→            if (prev.some((m) => m.key === snap.key)) return prev;
+   177→            return [...prev, {
+   178→              key: snap.key,
+   179→              text: v.text || "",
+   180→              uid: v.uid || "",
+   181→              uname: v.uname || "",
+   182→              ts: v.ts || 0,
+   183→            }].sort((a, b) => a.ts - b.ts);
+   184→          });
+   185→        });
+   186→
+   187→        ref.on("child_removed", (snap: any) => {
+   188→          if (cancelled) return;
+   189→          setMsgs((prev) => prev.filter((m) => m.key !== snap.key));
+   190→        });
+   191→
+   192→        ref.on("child_changed", (snap: any) => {
+   193→          if (cancelled) return;
+   194→          const v = snap.val();
+   195→          if (!v) return;
+   196→          setMsgs((prev) => prev.map((m) =>
+   197→            m.key === snap.key ? { ...m, text: v.text || m.text, ts: v.ts || m.ts } : m
+   198→          ));
+   199→        });
+   200→
+   201→        msgListenerRef.current = ref;
+   202→      } catch (e: any) {
+   203→        console.error("[stealth] init error:", e);
+   204→        setError(e?.message || "Failed to load article.");
+   205→      }
+   206→    })();
+   207→
+   208→    return () => {
+   209→      cancelled = true;
+   210→      try { msgListenerRef.current?.off(); } catch {}
+   211→    };
+   212→  }, []);
+   213→
+   214→  // Auto-scroll to bottom when new paragraphs arrive (subtle, like infinite scroll)
+   215→  useEffect(() => {
+   216→    if (!paraContainerRef.current) return;
+   217→    const el = paraContainerRef.current;
+   218→    // Only auto-scroll if user is already near the bottom (don't yank them up)
+   219→    const nearBottom = window.innerHeight - el.getBoundingClientRect().bottom > -200;
+   220→    if (nearBottom) {
+   221→      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+   222→    }
+   223→  }, [msgs]);
+   224→
+   225→  // ─── Send a reply ───────────────────────────────────────────────
+   226→  const sendReply = useCallback(async (text: string) => {
+   227→    const trimmed = text.trim();
+   228→    if (!trimmed || !dbRef.current || !dmIdRef.current) return;
+   229→    setSending(true);
+   230→    try {
+   231→      const p = {
+   232→        uid: uidRef.current,
+   233→        uname: unameRef.current || "Reader",
+   234→        text: trimmed.slice(0, 2000),
+   235→        ts: Date.now(),
+   236→      };
+   237→      dbRef.current.ref(`bq_dms/${dmIdRef.current}/messages`).push(p);
+   238→      // Update DM meta so the main widget's DM list stays in sync
+   239→      const metaRef = dbRef.current.ref(`bq_dms/${dmIdRef.current}/meta`);
+   240→      metaRef.transaction((m: any) => {
+   241→        m = m || {};
+   242→        m.lastMsg = trimmed.slice(0, 80);
+   243→        m.lastTs = Date.now();
+   244→        return m;
+   245→      });
+   246→    } catch (e) {
+   247→      console.error("[stealth] send error:", e);
+   248→    } finally {
+   249→      setSending(false);
+   250→    }
+   251→  }, []);
+   252→
+   253→  const onParaClick = useCallback((key: string) => {
+   254→    setOpenParaKey((prev) => (prev === key ? null : key));
+   255→  }, []);
+   256→
+   257→  const onReplyKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>, paraKey: string) => {
+   258→    if (e.key === "Enter" && !e.shiftKey) {
+   259→      e.preventDefault();
+   260→      const val = (e.target as HTMLTextAreaElement).value;
+   261→      if (val.trim()) {
+   262→        sendReply(val);
+   263→        (e.target as HTMLTextAreaElement).value = "";
+   264→        setOpenParaKey(null);
+   265→      }
+   266→    } else if (e.key === "Escape") {
+   267→      setOpenParaKey(null);
+   268→    }
+   269→  }, [sendReply]);
+   270→
+   271→  // ─── Render ─────────────────────────────────────────────────────
+   272→  return (
+   273→    <div className="stealth-article">
+   274→      {/* ─── Publication header ─── */}
+   275→      <header className="stealth-masthead">
+   276→        <div className="stealth-masthead-inner">
+   277→          <div className="stealth-pub-name">The BioQuiz Review</div>
+   278→          <div className="stealth-pub-meta">
+   279→            <span>Vol. XII · No. 47</span>
+   280→            <span className="stealth-dot">·</span>
+   281→            <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+   282→            <span className="stealth-dot">·</span>
+   283→            <span>Edition: Late Digital</span>
+   284→          </div>
+   285→        </div>
+   286→      </header>
+   287→
+   288→      {/* ─── Article body ─── */}
+   289→      <main className="stealth-article-body" ref={paraContainerRef}>
+   290→        <div className="stealth-article-inner">
+   291→
+   292→          {/* Category tag */}
+   293→          <div className="stealth-category">Science · Cell Biology</div>
+   294→
+   295→          {/* Headline */}
+   296→          <h1 className="stealth-headline">
+   297→            Inside the Cell&apos;s Quiet Machinery: A Conversation on Membrane Dynamics
+   298→          </h1>
+   299→
+   300→          {/* Deck / subhead */}
+   301→          <p className="stealth-deck">
+   302→            Researchers are rethinking how organelles coordinate under stress.
+   303→            What emerges is less a machine and more a long, ongoing correspondence
+   304→            between parts — each paragraph adding to the last.
+   305→          </p>
+   306→
+   307→          {/* Byline */}
+   308→          <div className="stealth-byline">
+   309→            <span>By Editorial Staff</span>
+   310→            <span className="stealth-dot">·</span>
+   311→            <span>Reading time: ~{Math.max(2, Math.ceil(msgs.length / 3))} min</span>
+   312→            <span className="stealth-dot">·</span>
+   313→            <span>Updated {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+   314→          </div>
+   315→
+   316→          <hr className="stealth-rule" />
+   317→
+   318→          {/* Error state */}
+   319→          {error && (
+   320→            <p className="stealth-paragraph stealth-paragraph-error">
+   321→              {error}
+   322→            </p>
+   323→          )}
+   324→
+   325→          {/* Loading state — realistic filler paragraphs */}
+   326→          {!ready && !error && (
+   327→            <>
+   328→              <p className="stealth-paragraph stealth-loading">
+   329→                <span className="stealth-loading-line" style={{ width: "96%" }} />
+   330→              </p>
+   331→              <p className="stealth-paragraph stealth-loading">
+   332→                <span className="stealth-loading-line" style={{ width: "88%" }} />
+   333→                <span className="stealth-loading-line" style={{ width: "92%" }} />
+   334→              </p>
+   335→              <p className="stealth-paragraph stealth-loading">
+   336→                <span className="stealth-loading-line" style={{ width: "100%" }} />
+   337→                <span className="stealth-loading-line" style={{ width: "74%" }} />
+   338→              </p>
+   339→            </>
+   340→          )}
+   341→
+   342→          {/* Empty state — invitation disguised as editorial note */}
+   343→          {ready && msgs.length === 0 && !error && (
+   344→            <p className="stealth-paragraph stealth-editorial-note">
+   345→              The piece is still developing. Notes from contributors will appear
+   346→              here as the conversation unfolds — read on, or tap any paragraph
+   347→              to add your own annotation.
+   348→            </p>
+   349→          )}
+   350→
+   351→          {/* Actual DM messages rendered as article paragraphs */}
+   352→          {msgs.map((m) => (
+   353→            <div key={m.key} className="stealth-paragraph-block">
+   354→              <p
+   355→                className={`stealth-paragraph ${openParaKey === m.key ? "stealth-paragraph-active" : ""}`}
+   356→                onClick={() => onParaClick(m.key)}
+   357→                tabIndex={0}
+   358→                role="button"
+   359→                aria-label="Paragraph — click to annotate"
+   360→                onKeyDown={(e) => {
+   361→                  if (e.key === "Enter" || e.key === " ") {
+   362→                    e.preventDefault();
+   363→                    onParaClick(m.key);
+   364→                  }
+   365→                }}
+   366→                dangerouslySetInnerHTML={{ __html: linkify(escHtml(m.text)) }}
+   367→              />
+   368→
+   369→              {/* Inline annotation input — opens below the clicked paragraph */}
+   370→              {openParaKey === m.key && (
+   371→                <div className="stealth-annotation">
+   372→                  <div className="stealth-annotation-label">
+   373→                    <span className="stealth-annotation-marker">†</span>
+   374→                    <span className="stealth-annotation-title">Add a note</span>
+   375→                  </div>
+   376→                  <textarea
+   377→                    className="stealth-annotation-input"
+   378→                    placeholder="Type your note and press Enter — Shift+Enter for a new line."
+   379→                    autoFocus
+   380→                    rows={2}
+   381→                    onKeyDown={(e) => onReplyKeyDown(e, m.key)}
+   382→                    disabled={sending}
+   383→                  />
+   384→                  <div className="stealth-annotation-hint">
+   385→                    {sending ? "Saving…" : "Press Enter to submit · Esc to close"}
+   386→                  </div>
+   387→                </div>
+   388→              )}
+   389→            </div>
+   390→          ))}
+   391→
+   392→          {/* Closing editorial flourish */}
+   393→          {ready && msgs.length > 0 && (
+   394→            <>
+   395→              <hr className="stealth-rule stealth-rule-end" />
+   396→              <p className="stealth-signoff">
+   397→                <em>The piece remains open. Further contributions will appear above as they arrive.</em>
+   398→              </p>
+   399→            </>
+   400→          )}
+   401→
+   402→        </div>
+   403→      </main>
+   404→
+   405→      {/* ─── Article footer ─── */}
+   406→      <footer className="stealth-footer">
+   407→        <div className="stealth-footer-inner">
+   408→          <span>© {new Date().getFullYear()} The BioQuiz Review</span>
+   409→          <span className="stealth-dot">·</span>
+   410→          <span>All rights reserved</span>
+   411→          <span className="stealth-dot">·</span>
+   412→          <a href="/" className="stealth-footer-link">Return to front page</a>
+   413→        </div>
+   414→      </footer>
+   415→
+   416→      {/* ─── Local styles — scoped to .stealth-article ─── */}
+   417→      <style jsx global>{`
+   418→        .stealth-article {
+   419→          --stealth-bg: #fafaf7;
+   420→          --stealth-text: #1a1a1a;
+   421→          --stealth-text-soft: #4a4a4a;
+   422→          --stealth-text-mute: #8a8a82;
+   423→          --stealth-accent: #8b1e1e;
+   424→          --stealth-rule: #d8d4c8;
+   425→          --stealth-masthead-bg: #1a1a1a;
+   426→          --stealth-masthead-text: #fafaf7;
+   427→          --stealth-highlight: #fff8c4;
+   428→          --stealth-annotation-bg: #f5f2ea;
+   429→          --stealth-annotation-border: #d8d4c8;
+   430→
+   431→          background: var(--stealth-bg);
+   432→          color: var(--stealth-text);
+   433→          font-family: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+   434→          font-size: 19px;
+   435→          line-height: 1.75;
+   436→          -webkit-font-smoothing: antialiased;
+   437→          text-rendering: optimizeLegibility;
+   438→          min-height: 100vh;
+   439→        }
+   440→
+   441→        /* ── Masthead ── */
+   442→        .stealth-masthead {
+   443→          background: var(--stealth-masthead-bg);
+   444→          color: var(--stealth-masthead-text);
+   445→          border-bottom: 3px double var(--stealth-masthead-text);
+   446→        }
+   447→        .stealth-masthead-inner {
+   448→          max-width: 720px;
+   449→          margin: 0 auto;
+   450→          padding: 18px 24px 14px;
+   451→          text-align: center;
+   452→          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+   453→        }
+   454→        .stealth-pub-name {
+   455→          font-family: Georgia, "Times New Roman", serif;
+   456→          font-size: 30px;
+   457→          font-weight: 700;
+   458→          letter-spacing: -0.01em;
+   459→          line-height: 1.1;
+   460→        }
+   461→        .stealth-pub-meta {
+   462→          margin-top: 6px;
+   463→          font-size: 11px;
+   464→          letter-spacing: 0.12em;
+   465→          text-transform: uppercase;
+   466→          opacity: 0.7;
+   467→          display: flex;
+   468→          justify-content: center;
+   469→          flex-wrap: wrap;
+   470→          gap: 6px;
+   471→        }
+   472→        .stealth-dot { margin: 0 2px; opacity: 0.5; }
+   473→
+   474→        /* ── Article body ── */
+   475→        .stealth-article-body {
+   476→          padding: 40px 0 60px;
+   477→        }
+   478→        .stealth-article-inner {
+   479→          max-width: 680px;
+   480→          margin: 0 auto;
+   481→          padding: 0 24px;
+   482→        }
+   483→
+   484→        .stealth-category {
+   485→          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+   486→          font-size: 11px;
+   487→          font-weight: 700;
+   488→          letter-spacing: 0.18em;
+   489→          text-transform: uppercase;
+   490→          color: var(--stealth-accent);
+   491→          margin-bottom: 14px;
+   492→        }
+   493→
+   494→        .stealth-headline {
+   495→          font-family: Georgia, "Times New Roman", serif;
+   496→          font-size: 38px;
+   497→          font-weight: 700;
+   498→          line-height: 1.18;
+   499→          letter-spacing: -0.015em;
+   500→          margin: 0 0 14px;
+   501→          color: var(--stealth-text);
+   502→        }
+   503→
+   504→        .stealth-deck {
+   505→          font-family: Georgia, serif;
+   506→          font-size: 21px;
+   507→          line-height: 1.5;
+   508→          font-style: italic;
+   509→          color: var(--stealth-text-soft);
+   510→          margin: 0 0 24px;
+   511→        }
+   512→
+   513→        .stealth-byline {
+   514→          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+   515→          font-size: 12px;
+   516→          color: var(--stealth-text-mute);
+   517→          letter-spacing: 0.04em;
+   518→          display: flex;
+   519→          flex-wrap: wrap;
+   520→          gap: 4px;
+   521→          margin-bottom: 20px;
+   522→        }
+   523→
+   524→        .stealth-rule {
+   525→          border: none;
+   526→          border-top: 1px solid var(--stealth-rule);
+   527→          margin: 0 0 28px;
+   528→        }
+   529→        .stealth-rule-end { margin: 36px 0 20px; }
+   530→
+   531→        /* ── Paragraphs (DM messages) ── */
+   532→        .stealth-paragraph-block {
+   533→          position: relative;
+   534→        }
+   535→
+   536→        .stealth-paragraph {
+   537→          font-family: Georgia, "Times New Roman", serif;
+   538→          font-size: 19px;
+   539→          line-height: 1.78;
+   540→          margin: 0 0 1.3em;
+   541→          color: var(--stealth-text);
+   542→          cursor: text;
+   543→          transition: background 0.18s ease;
+   544→          padding: 2px 6px;
+   545→          margin-left: -6px;
+   546→          margin-right: -6px;
+   547→          border-radius: 3px;
+   548→          outline: none;
+   549→        }
+   550→        .stealth-paragraph:hover {
+   551→          background: rgba(0,0,0,0.025);
+   552→        }
+   553→        .stealth-paragraph:focus-visible {
+   554→          background: rgba(0,0,0,0.04);
+   555→          box-shadow: 0 0 0 2px rgba(139,30,30,0.25);
+   556→        }
+   557→        .stealth-paragraph-active {
+   558→          background: var(--stealth-highlight);
+   559→          box-shadow: 0 0 0 1px rgba(139,30,30,0.18);
+   560→        }
+   561→        .stealth-paragraph-active:hover {
+   562→          background: var(--stealth-highlight);
+   563→        }
+   564→        .stealth-paragraph a {
+   565→          color: var(--stealth-accent);
+   566→          text-decoration: underline;
+   567→          text-decoration-color: rgba(139,30,30,0.35);
+   568→          text-underline-offset: 2px;
+   569→        }
+   570→
+   571→        /* Fade-in for new paragraphs */
+   572→        .stealth-paragraph-block {
+   573→          animation: stealthFadeIn 0.6s ease both;
+   574→        }
+   575→        @keyframes stealthFadeIn {
+   576→          from { opacity: 0; transform: translateY(8px); }
+   577→          to   { opacity: 1; transform: translateY(0); }
+   578→        }
+   579→
+   580→        .stealth-paragraph-error {
+   581→          color: var(--stealth-accent);
+   582→          font-style: italic;
+   583→          cursor: default;
+   584→        }
+   585→        .stealth-paragraph-error:hover { background: transparent; }
+   586→
+   587→        .stealth-editorial-note {
+   588→          font-style: italic;
+   589→          color: var(--stealth-text-soft);
+   590→          border-left: 3px solid var(--stealth-rule);
+   591→          padding-left: 18px;
+   592→          margin-left: 6px;
+   593→        }
+   594→
+   595→        .stealth-signoff {
+   596→          font-family: Georgia, serif;
+   597→          font-size: 17px;
+   598→          color: var(--stealth-text-mute);
+   599→          text-align: center;
+   600→          margin: 0 0 40px;
+   601→        }
+   602→
+   603→        /* ── Annotation / reply input ── */
+   604→        .stealth-annotation {
+   605→          background: var(--stealth-annotation-bg);
+   606→          border: 1px solid var(--stealth-annotation-border);
+   607→          border-left: 3px solid var(--stealth-accent);
+   608→          border-radius: 4px;
+   609→          padding: 14px 18px 12px;
+   610→          margin: -4px 0 22px 6px;
+   611→          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+   612→          animation: stealthFadeIn 0.2s ease both;
+   613→        }
+   614→        @keyframes stealthFadeIn {
+   615→          from { opacity: 0; transform: translateY(-4px); }
+   616→          to   { opacity: 1; transform: translateY(0); }
+   617→        }
+   618→        .stealth-annotation-label {
+   619→          display: flex;
+   620→          align-items: baseline;
+   621→          gap: 8px;
+   622→          margin-bottom: 8px;
+   623→        }
+   624→        .stealth-annotation-marker {
+   625→          font-family: Georgia, serif;
+   626→          font-size: 18px;
+   627→          color: var(--stealth-accent);
+   628→          font-weight: 700;
+   629→          line-height: 1;
+   630→        }
+   631→        .stealth-annotation-title {
+   632→          font-size: 11px;
+   633→          font-weight: 700;
+   634→          letter-spacing: 0.14em;
+   635→          text-transform: uppercase;
+   636→          color: var(--stealth-text-soft);
+   637→        }
+   638→        .stealth-annotation-input {
+   639→          width: 100%;
+   640→          border: none;
+   641→          background: transparent;
+   642→          outline: none;
+   643→          resize: none;
+   644→          font-family: Georgia, "Times New Roman", serif;
+   645→          font-size: 17px;
+   646→          line-height: 1.55;
+   647→          color: var(--stealth-text);
+   648→          padding: 0;
+   649→        }
+   650→        .stealth-annotation-input::placeholder {
+   651→          color: var(--stealth-text-mute);
+   652→          font-style: italic;
+   653→        }
+   654→        .stealth-annotation-hint {
+   655→          margin-top: 8px;
+   656→          font-size: 10px;
+   657→          color: var(--stealth-text-mute);
+   658→          letter-spacing: 0.06em;
+   659→        }
+   660→
+   661→        /* ── Loading state ── */
+   662→        .stealth-loading {
+   663→          cursor: default;
+   664→        }
+   665→        .stealth-loading:hover { background: transparent; }
+   666→        .stealth-loading-line {
+   667→          display: block;
+   668→          height: 14px;
+   669→          background: linear-gradient(90deg, #e8e4d8 0%, #f0ece0 50%, #e8e4d8 100%);
+   670→          background-size: 200% 100%;
+   671→          border-radius: 2px;
+   672→          margin-bottom: 10px;
+   673→          animation: stealthShimmer 1.6s ease-in-out infinite;
+   674→        }
+   675→        @keyframes stealthShimmer {
+   676→          0%   { background-position: 200% 0; }
+   677→          100% { background-position: -200% 0; }
+   678→        }
+   679→
+   680→        /* ── Footer ── */
+   681→        .stealth-footer {
+   682→          border-top: 1px solid var(--stealth-rule);
+   683→          padding: 22px 0 40px;
+   684→          background: var(--stealth-bg);
+   685→        }
+   686→        .stealth-footer-inner {
+   687→          max-width: 720px;
+   688→          margin: 0 auto;
+   689→          padding: 0 24px;
+   690→          text-align: center;
+   691→          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+   692→          font-size: 11px;
+   693→          letter-spacing: 0.08em;
+   694→          text-transform: uppercase;
+   695→          color: var(--stealth-text-mute);
+   696→          display: flex;
+   697→          justify-content: center;
+   698→          flex-wrap: wrap;
+   699→          gap: 6px;
+   700→        }
+   701→        .stealth-footer-link {
+   702→          color: var(--stealth-accent);
+   703→          text-decoration: none;
+   704→        }
+   705→        .stealth-footer-link:hover { text-decoration: underline; }
+   706→
+   707→        /* ── Mobile responsive ── */
+   708→        @media (max-width: 640px) {
+   709→          .stealth-article { font-size: 17px; }
+   710→          .stealth-pub-name { font-size: 24px; }
+   711→          .stealth-headline { font-size: 28px; }
+   712→          .stealth-deck { font-size: 18px; }
+   713→          .stealth-paragraph { font-size: 17px; line-height: 1.72; }
+   714→          .stealth-article-inner { padding: 0 18px; }
+   715→          .stealth-masthead-inner { padding: 14px 18px 12px; }
+   716→          .stealth-pub-meta { font-size: 10px; gap: 4px; }
+   717→          .stealth-byline { font-size: 11px; }
+   718→          .stealth-annotation { margin-left: 0; padding: 12px 14px 10px; }
+   719→          .stealth-annotation-input { font-size: 16px; }
+   720→          .stealth-footer-inner { font-size: 10px; gap: 4px; }
+   721→        }
+   722→
+   723→        /* ── Reduced motion ── */
+   724→        @media (prefers-reduced-motion: reduce) {
+   725→          .stealth-paragraph-block,
+   726→          .stealth-annotation,
+   727→          .stealth-loading-line {
+   728→            animation: none !important;
+   729→          }
+   730→          .stealth-paragraph { transition: none; }
+   731→        }
+   732→      `}</style>
+   733→    </div>
+   734→  );
+   735→}
+   736→
