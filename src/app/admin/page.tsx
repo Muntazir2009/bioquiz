@@ -8,14 +8,14 @@ import {
 import {
   getDatabase, ref, onValue, off, set, remove, push, get,
   query, orderByChild, limitToLast,
-  type Database,
+
 } from "firebase/database";
 import {
   ShieldCheck, HardDrive, Files, Download, Trash2, Search, Lock,
   Pencil, Check, X, ArrowLeft, BarChart3, Eye, EyeOff, Filter,
   RefreshCw, Copy, Globe, FileText, Image as ImageIcon, Video,
   Music, FileArchive, File, Activity, Trash, LogOut, Calendar,
-  Hash, CopyPlus, Database, TrendingUp, Zap, MessageSquare,
+  Hash, CopyPlus, Database as DatabaseIcon, TrendingUp, Zap, MessageSquare,
   Settings, RotateCcw, Users, Palette, SlidersHorizontal, Shield,
   Save, Upload, Bell, Wrench, AlertTriangle,
   Type, MessageCircle, Megaphone, LayoutDashboard, ChevronRight,
@@ -53,9 +53,9 @@ const FB_PATHS = {
 };
 
 let fbApp: ReturnType<typeof initializeApp> | null = null;
-let fbDb: Database | null = null;
+let fbDb: ReturnType<typeof getDatabase> | null = null;
 
-function getFirebaseDb(): Database {
+function getFirebaseDb(): ReturnType<typeof getDatabase> {
   if (fbDb) return fbDb;
   if (getApps().length === 0) {
     fbApp = initializeApp(FIREBASE_CONFIG);
@@ -209,13 +209,13 @@ const SIDEBAR: SidebarCategory[] = [
     { id: "general", label: "General", icon: SlidersHorizontal },
     { id: "security", label: "Security", icon: Lock },
     { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "data", label: "Data", icon: Database },
+    { id: "data", label: "Data", icon: DatabaseIcon },
     { id: "maintenance", label: "Maintenance", icon: Wrench },
     { id: "emergency", label: "Emergency", icon: ShieldAlert },
   ]},
   { id: "storage", icon: HardDrive, label: "Storage", items: [
     { id: "files", label: "Files", icon: FileText },
-    { id: "disk-usage", label: "Disk Usage", icon: Database },
+    { id: "disk-usage", label: "Disk Usage", icon: DatabaseIcon },
   ]},
 ];
 
@@ -945,7 +945,7 @@ export default function AdminPage() {
         case "regex": try { matched = new RegExp(rule.pattern, "i").test(text); } catch { matched = false; } break;
         case "caps": matched = text.length > 5 && text === text.toUpperCase() && /[A-Z]/.test(text); break;
         case "spam": matched = (text.match(/(.)\1{4,}/g) || []).length > 0; break;
-        case "length": matched = text.length > parseInt(rule.pattern) || 500; break;
+        case "length": matched = text.length > (parseInt(rule.pattern) || 500); break;
       }
       return { rule, matched };
     });
@@ -1188,6 +1188,38 @@ export default function AdminPage() {
     setNewPassword(""); setConfirmPassword(""); setTimeout(() => setPasswordMsg(""), 3000);
   }, [newPassword, confirmPassword]);
 
+  // ─── Magic Link History ──────────────────────────────────────────────────
+
+  const loadMagicLinkHistory = useCallback(async () => {
+    setMagicLinkLoading(true);
+    try {
+      const db = getFirebaseDb();
+      const snap = await get(ref(db, "bq_admin_magic_links"));
+      if (!snap.exists()) { setMagicLinkHistory([]); setMagicLinkLoading(false); return; }
+      const links: typeof magicLinkHistory = [];
+      snap.forEach((child) => {
+        const v = child.val();
+        links.push({
+          token: child.key || "",
+          username: v.username || "?",
+          createdAt: v.createdAt || 0,
+          expiresAt: v.expiresAt || 0,
+          oneTime: v.oneTime ?? true,
+          used: v.used ?? false,
+          usedBy: v.usedBy,
+          usedAt: v.usedAt,
+        });
+      });
+      // Sort newest first
+      links.sort((a, b) => b.createdAt - a.createdAt);
+      setMagicLinkHistory(links);
+    } catch {
+      setMagicLinkHistory([]);
+    } finally {
+      setMagicLinkLoading(false);
+    }
+  }, []);
+
   // ─── Magic Link Generation ──────────────────────────────────────────────────
 
   const generateMagicLink = useCallback(async () => {
@@ -1237,37 +1269,7 @@ export default function AdminPage() {
     } finally {
       setMagicLinkGenerating(false);
     }
-  }, [magicLinkUsername, magicLinkExpiry, magicLinkOneTime]);
-
-  const loadMagicLinkHistory = useCallback(async () => {
-    setMagicLinkLoading(true);
-    try {
-      const db = getFirebaseDb();
-      const snap = await get(ref(db, "bq_admin_magic_links"));
-      if (!snap.exists()) { setMagicLinkHistory([]); setMagicLinkLoading(false); return; }
-      const links: typeof magicLinkHistory = [];
-      snap.forEach((child) => {
-        const v = child.val();
-        links.push({
-          token: child.key || "",
-          username: v.username || "?",
-          createdAt: v.createdAt || 0,
-          expiresAt: v.expiresAt || 0,
-          oneTime: v.oneTime ?? true,
-          used: v.used ?? false,
-          usedBy: v.usedBy,
-          usedAt: v.usedAt,
-        });
-      });
-      // Sort newest first
-      links.sort((a, b) => b.createdAt - a.createdAt);
-      setMagicLinkHistory(links);
-    } catch {
-      setMagicLinkHistory([]);
-    } finally {
-      setMagicLinkLoading(false);
-    }
-  }, []);
+  }, [magicLinkUsername, magicLinkExpiry, magicLinkOneTime, loadMagicLinkHistory]);
 
   const revokeMagicLink = useCallback(async (token: string) => {
     try {
@@ -1357,10 +1359,10 @@ export default function AdminPage() {
   };
 
   // Active warnings = non-expired
-  const activeWarnings = warnings.filter((w) => !isExpired(w.expiresAt));
-  const expiredWarnings = warnings.filter((w) => isExpired(w.expiresAt));
-  const activeBans = bannedUsers.filter((b) => !isExpired(b.expiresAt));
-  const activeMutes = mutedUsers.filter((m) => !isExpired(m.expiresAt));
+  const activeWarnings = warnings.filter((w) => !isExpired(w.expiresAt ?? 0));
+  const expiredWarnings = warnings.filter((w) => isExpired(w.expiresAt ?? 0));
+  const activeBans = bannedUsers.filter((b) => !isExpired(b.expiresAt ?? 0));
+  const activeMutes = mutedUsers.filter((m) => !isExpired(m.expiresAt ?? 0));
 
   // Resolve username from uid
   const resolveUserName = (uid: string) => {
@@ -2403,13 +2405,13 @@ export default function AdminPage() {
                               })
                               .sort((a, b) => {
                                 // Active first, then by time
-                                const aExpired = isExpired(a.expiresAt);
-                                const bExpired = isExpired(b.expiresAt);
+                                const aExpired = isExpired(a.expiresAt ?? 0);
+                                const bExpired = isExpired(b.expiresAt ?? 0);
                                 if (aExpired !== bExpired) return aExpired ? 1 : -1;
                                 return b.ts - a.ts;
                               })
                               .map((w) => {
-                              const expired = isExpired(w.expiresAt);
+                              const expired = isExpired(w.expiresAt ?? 0);
                               const userName = w.userName || resolveUserName(w.uid);
                               return (
                                 <div key={w.key} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
@@ -2423,17 +2425,17 @@ export default function AdminPage() {
                                         ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
                                         : <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-500">ACTIVE</span>
                                       }
-                                      {w.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(w.duration)}</span>}
+                                      {(w.duration ?? 0) > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(w.duration!)}</span>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                       <span className="text-[10px] text-muted-foreground">{w.reason}</span>
                                       <span className="text-[10px] text-muted-foreground">·</span>
                                       <span className="text-[10px] text-muted-foreground">{new Date(w.ts).toLocaleString()}</span>
-                                      {w.expiresAt > 0 && (
+                                      {(w.expiresAt ?? 0) > 0 && (
                                         <>
                                           <span className="text-[10px] text-muted-foreground">·</span>
                                           <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
-                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(w.expiresAt)}
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(w.expiresAt ?? 0)}
                                           </span>
                                         </>
                                       )}
@@ -2480,7 +2482,7 @@ export default function AdminPage() {
                                 return b.uid.toLowerCase().includes(q) || (b.reason && b.reason.toLowerCase().includes(q));
                               })
                               .map((user) => {
-                              const expired = isExpired(user.expiresAt);
+                              const expired = isExpired(user.expiresAt ?? 0);
                               return (
                                 <div key={user.uid} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
                                   <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-red-500/10 text-red-500"}`}>
@@ -2493,16 +2495,16 @@ export default function AdminPage() {
                                         ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
                                         : <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-500">BANNED</span>
                                       }
-                                      {user.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration)}</span>}
+                                      {(user.duration ?? 0) > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration ?? 0)}</span>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                       {user.reason && <span className="text-[10px] text-muted-foreground">{user.reason}</span>}
                                       <span className="text-[10px] text-muted-foreground">· Banned {user.bannedAt > 0 ? new Date(user.bannedAt).toLocaleString() : "unknown"}</span>
-                                      {user.expiresAt > 0 && (
+                                      {(user.expiresAt ?? 0) > 0 && (
                                         <>
                                           <span className="text-[10px] text-muted-foreground">·</span>
                                           <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
-                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt)}
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt ?? 0)}
                                           </span>
                                         </>
                                       )}
@@ -2537,7 +2539,7 @@ export default function AdminPage() {
                                 return m.uid.toLowerCase().includes(q) || (m.reason && m.reason.toLowerCase().includes(q));
                               })
                               .map((user) => {
-                              const expired = isExpired(user.expiresAt);
+                              const expired = isExpired(user.expiresAt ?? 0);
                               return (
                                 <div key={user.uid} className={`flex items-center gap-3 px-6 py-4 transition-colors hover:bg-foreground/[0.01] ${expired ? "opacity-50" : ""}`}>
                                   <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${expired ? "bg-foreground/5 text-muted-foreground" : "bg-yellow-500/10 text-yellow-600"}`}>
@@ -2550,16 +2552,16 @@ export default function AdminPage() {
                                         ? <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">EXPIRED</span>
                                         : <span className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-medium text-yellow-600">MUTED</span>
                                       }
-                                      {user.duration > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration)}</span>}
+                                      {(user.duration ?? 0) > 0 && <span className="flex items-center gap-1 text-[9px] text-muted-foreground"><Timer className="h-2.5 w-2.5" />{formatDuration(user.duration ?? 0)}</span>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                       {user.reason && <span className="text-[10px] text-muted-foreground">{user.reason}</span>}
                                       <span className="text-[10px] text-muted-foreground">· Muted {user.mutedAt > 0 ? new Date(user.mutedAt).toLocaleString() : "unknown"}</span>
-                                      {user.expiresAt > 0 && (
+                                      {(user.expiresAt ?? 0) > 0 && (
                                         <>
                                           <span className="text-[10px] text-muted-foreground">·</span>
                                           <span className={`text-[10px] ${expired ? "text-muted-foreground" : "text-amber-500"}`}>
-                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt)}
+                                            <Hourglass className="h-2.5 w-2.5 inline mr-0.5" />{formatExpiry(user.expiresAt ?? 0)}
                                           </span>
                                         </>
                                       )}
@@ -2588,7 +2590,7 @@ export default function AdminPage() {
                       <div className="relative pl-6">
                         <div className="absolute left-2.5 top-0 bottom-0 w-px bg-border" />
                         {[...warnings.sort((a, b) => b.ts - a.ts).slice(0, 10)].map((w, i) => {
-                          const expired = isExpired(w.expiresAt);
+                          const expired = isExpired(w.expiresAt ?? 0);
                           return (
                             <div key={w.key} className="relative pb-4 last:pb-0">
                               <div className={`absolute -left-3.5 top-1 h-3.5 w-3.5 rounded-full border-2 border-background ${expired ? "bg-muted-foreground/30" : "bg-orange-500"}`} />
@@ -2773,9 +2775,9 @@ export default function AdminPage() {
                 <div className="rounded-2xl border border-border bg-card p-6">
                   <div className="flex items-center gap-2 mb-5"><Bell className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Notifications</h2></div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <ConfigToggle label="Push Notifications" value={widgetConfig.pushNotifications ?? false} syncing={syncingKey === "pushNotifications"} onChange={(v) => writeWidgetConfig("pushNotifications", v)} />
-                    <ConfigToggle label="Sound on Message" value={widgetConfig.soundOnMessage ?? false} syncing={syncingKey === "soundOnMessage"} onChange={(v) => writeWidgetConfig("soundOnMessage", v)} />
-                    <ConfigToggle label="Haptic Feedback" value={widgetConfig.hapticFeedback ?? false} syncing={syncingKey === "hapticFeedback"} onChange={(v) => writeWidgetConfig("hapticFeedback", v)} />
+                    <ConfigToggle label="Push Notifications" value={Boolean(widgetConfig.pushNotifications)} syncing={syncingKey === "pushNotifications"} onChange={(v) => writeWidgetConfig("pushNotifications", v)} />
+                    <ConfigToggle label="Sound on Message" value={Boolean(widgetConfig.soundOnMessage)} syncing={syncingKey === "soundOnMessage"} onChange={(v) => writeWidgetConfig("soundOnMessage", v)} />
+                    <ConfigToggle label="Haptic Feedback" value={Boolean(widgetConfig.hapticFeedback)} syncing={syncingKey === "hapticFeedback"} onChange={(v) => writeWidgetConfig("hapticFeedback", v)} />
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-4">These settings are saved to Firebase and apply in real-time to all connected widgets.</p>
                 </div>
@@ -2784,7 +2786,7 @@ export default function AdminPage() {
               {/* ─── DATA ──────────────────────────────────────────────── */}
               {section === "data" && (
                 <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex items-center gap-2 mb-5"><Database className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Data Management</h2></div>
+                  <div className="flex items-center gap-2 mb-5"><DatabaseIcon className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Data Management</h2></div>
                   <div className="flex flex-wrap gap-3">
                     <button onClick={handleExportConfig} className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5"><Download className="h-3.5 w-3.5" />Export Config</button>
                     <label className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-border text-xs font-medium transition-colors hover:bg-foreground/5 cursor-pointer"><Upload className="h-3.5 w-3.5" />Import Config<input type="file" accept=".json" onChange={handleImportConfig} className="hidden" /></label>
@@ -2940,7 +2942,7 @@ export default function AdminPage() {
                       <StatCard icon={Zap} label="Avg Size" value={storageData.disk.filesOnDisk > 0 ? formatFileSize(storageData.disk.used / storageData.disk.filesOnDisk) : "0 B"} color="oklch(0.75 0.15 200)" />
                     </div>
                     <div className="rounded-2xl border border-border bg-card p-6">
-                      <div className="flex items-center gap-2 mb-5"><Database className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Type Breakdown</h2></div>
+                      <div className="flex items-center gap-2 mb-5"><DatabaseIcon className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Type Breakdown</h2></div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs"><thead><tr className="border-b border-border"><th className="text-left py-2.5 font-medium text-muted-foreground">Type</th><th className="text-right py-2.5 font-medium text-muted-foreground">Files</th><th className="text-right py-2.5 font-medium text-muted-foreground">Size</th><th className="text-right py-2.5 font-medium text-muted-foreground">Downloads</th></tr></thead><tbody>{storageData.typeBreakdown.map((row) => (<tr key={row.type} className="border-b border-border/50"><td className="py-2.5 capitalize font-medium">{row.type}</td><td className="text-right py-2.5 tabular-nums">{row.count}</td><td className="text-right py-2.5 tabular-nums">{row.sizeFormatted}</td><td className="text-right py-2.5 tabular-nums">{row.downloads}</td></tr>))}</tbody></table>
                       </div>
@@ -2954,7 +2956,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-3 py-24 text-center"><div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><Database className="h-5 w-5 text-muted-foreground" /></div><div><p className="text-sm font-medium">Storage data unavailable</p><p className="mt-1 text-xs text-muted-foreground">Could not load storage analytics. Database may not be configured.</p></div></div>
+                  <div className="flex flex-col items-center justify-center gap-3 py-24 text-center"><div className="grid h-12 w-12 place-items-center rounded-xl bg-foreground/5"><DatabaseIcon className="h-5 w-5 text-muted-foreground" /></div><div><p className="text-sm font-medium">Storage data unavailable</p><p className="mt-1 text-xs text-muted-foreground">Could not load storage analytics. Database may not be configured.</p></div></div>
                 )
               )}
 
@@ -3396,9 +3398,9 @@ export default function AdminPage() {
                     const userName = (onlineUser?.name as string) || (() => { const m = globalMessages.find(m => m.uid === uid); return m?.uname || uid; })();
                     const userMsgs = globalMessages.filter(m => m.uid === uid);
                     const userWarnings = warnings.filter(w => w.uid === uid);
-                    const activeWarningsCount = userWarnings.filter(w => !isExpired(w.expiresAt)).length;
-                    const isBannedUser = bannedUsers.some(b => b.uid === uid && !isExpired(b.expiresAt));
-                    const isMutedUser = mutedUsers.some(m => m.uid === uid && !isExpired(m.expiresAt));
+                    const activeWarningsCount = userWarnings.filter(w => !isExpired(w.expiresAt ?? 0)).length;
+                    const isBannedUser = bannedUsers.some(b => b.uid === uid && !isExpired(b.expiresAt ?? 0));
+                    const isMutedUser = mutedUsers.some(m => m.uid === uid && !isExpired(m.expiresAt ?? 0));
                     const banInfo = bannedUsers.find(b => b.uid === uid);
                     const muteInfo = mutedUsers.find(m => m.uid === uid);
                     const userDms = dmConversations.filter(d => d.participants?.includes(uid));
@@ -3445,8 +3447,8 @@ export default function AdminPage() {
                         {(isBannedUser || isMutedUser) && (
                           <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
                             <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4 text-red-500" /><span className="text-xs font-medium text-red-500">Active Restrictions</span></div>
-                            {isBannedUser && banInfo && <p className="text-[10px] text-muted-foreground">Banned: {banInfo.reason || "No reason"} · Since {new Date(banInfo.bannedAt).toLocaleString()} {banInfo.expiresAt > 0 ? `· Expires ${formatExpiry(banInfo.expiresAt)}` : "· Permanent"}</p>}
-                            {isMutedUser && muteInfo && <p className="text-[10px] text-muted-foreground">Muted: {muteInfo.reason || "No reason"} · Since {new Date(muteInfo.mutedAt).toLocaleString()} {muteInfo.expiresAt > 0 ? `· Expires ${formatExpiry(muteInfo.expiresAt)}` : "· Permanent"}</p>}
+                            {isBannedUser && banInfo && <p className="text-[10px] text-muted-foreground">Banned: {banInfo.reason || "No reason"} · Since {new Date(banInfo.bannedAt).toLocaleString()} {(banInfo.expiresAt ?? 0) > 0 ? `· Expires ${formatExpiry(banInfo.expiresAt ?? 0)}` : "· Permanent"}</p>}
+                            {isMutedUser && muteInfo && <p className="text-[10px] text-muted-foreground">Muted: {muteInfo.reason || "No reason"} · Since {new Date(muteInfo.mutedAt).toLocaleString()} {(muteInfo.expiresAt ?? 0) > 0 ? `· Expires ${formatExpiry(muteInfo.expiresAt ?? 0)}` : "· Permanent"}</p>}
                           </div>
                         )}
 
@@ -3748,7 +3750,7 @@ export default function AdminPage() {
                     <StatCard icon={Heart} label="Status" value={fbHealthStatus === "healthy" ? "Healthy" : fbHealthStatus === "degraded" ? "Degraded" : fbHealthStatus === "down" ? "Down" : "Checking..."} color={fbHealthStatus === "healthy" ? "oklch(0.72 0.16 140)" : fbHealthStatus === "degraded" ? "oklch(0.75 0.15 60)" : "oklch(0.65 0.2 25)"} />
                     <StatCard icon={Zap} label="Latency" value={fbLatency !== null ? `${fbLatency}ms` : "..."} color="oklch(0.7 0.12 250)" />
                     <StatCard icon={Activity} label="Connection" value={fbConnected ? "Connected" : "Disconnected"} color={fbConnected ? "oklch(0.72 0.16 140)" : "oklch(0.65 0.2 25)"} />
-                    <StatCard icon={Database} label="Messages Node" value={String(totalMessageCount)} color="oklch(0.75 0.15 200)" />
+                    <StatCard icon={DatabaseIcon} label="Messages Node" value={String(totalMessageCount)} color="oklch(0.75 0.15 200)" />
                   </div>
 
                   {/* Connection Status Card */}
@@ -3781,7 +3783,7 @@ export default function AdminPage() {
 
                   {/* Database Size Estimate */}
                   <div className="rounded-2xl border border-border bg-card p-6">
-                    <div className="flex items-center gap-2 mb-5"><Database className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Database Overview</h2></div>
+                    <div className="flex items-center gap-2 mb-5"><DatabaseIcon className="h-4 w-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Database Overview</h2></div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
                         { label: "Messages", count: totalMessageCount || globalMessages.length, color: "oklch(0.7 0.12 250)" },

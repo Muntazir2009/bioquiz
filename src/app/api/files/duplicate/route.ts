@@ -26,14 +26,10 @@ export async function POST(request: Request) {
 
     const shareId = generateShareId();
     const duplicate = await db.fileCreate({
-      name: original.name,
+      ...original,
+      id: undefined as unknown as string,
       originalName: `${original.originalName} (copy)`,
-      size: original.size,
-      mimeType: original.mimeType,
-      storagePath: original.storagePath,
       shareId,
-      isPublic: original.isPublic,
-      description: original.description,
       downloads: 0,
     });
 

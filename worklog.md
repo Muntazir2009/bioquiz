@@ -1256,3 +1256,33 @@ Stage Summary:
 - Verified via agent-browser: slide transitions (Get Started / Back), card swiper dots, track transforms, all 6 modules rendered, correct dot states
 - Lint passes clean
 - Pre-existing issues not fixed (out of scope): chat-widget.js rePaintPoll errors, better-sqlite3 Turbopack incompatibility
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Fix all TypeScript errors blocking deployment + runtime TopBar error + redesign module cards
+
+Work Log:
+- Fixed 55+ TypeScript errors across 6 files in src/
+- admin/page.tsx: Resolved duplicate `Database` identifier (Firebase type vs Lucide icon) by renaming Lucide import to `DatabaseIcon` and replacing all JSX usages
+- admin/page.tsx: Fixed Firebase `Database` type reference using `ReturnType<typeof getDatabase>`
+- admin/page.tsx: Fixed ~20 `number | undefined` errors with `?? 0` fallbacks on expiresAt/duration fields
+- admin/page.tsx: Fixed 3 boolean type errors with `Boolean()` coercion for widgetConfig properties
+- admin/page.tsx: Moved `loadMagicLinkHistory` declaration before its usage to fix react-hooks lint error
+- widget-config/page.tsx: Added missing `mobileOpen` and `onMobileClose` props to Sidebar component
+- api/files/duplicate/route.ts: Fixed type mismatch by spreading original record in fileCreate call
+- Created src/types/cloudflare.d.ts with global R2Bucket, D1Database, CloudflareEnv type declarations
+- web-push-compat.ts: Fixed 6 Uint8Array<ArrayBufferLike> vs BufferSource errors with `as BufferSource` casts
+- TopBar.tsx: Fixed runtime TypeError "Cannot create property '_interval' on number" — replaced property-on-timeout hack with closure-scoped `let intervalId` variable
+- Redesigned ModuleCardSwiper cards: white rectangle → square gradient cards with glassmorphism
+- Cards now use aspect-ratio: 1/1, full gradient background from module accent colors
+- Added dot-grid texture overlay, soft glow effects, glass-morphism badges and icon container
+- All text is white on gradient, larger icon (96px desktop), line-clamped description
+- Reduced card width to min(72vw, 420px) for better viewport fit
+
+Stage Summary:
+- Zero TypeScript errors in src/ (confirmed with `npx tsc --noEmit`)
+- Zero ESLint errors (confirmed with `bun run lint`)
+- Zero runtime console errors (confirmed via agent-browser)
+- Module cards are now visually striking square gradient cards with cover-flow GSAP effect
+- All GSAP imports remain SSR-safe (dynamic inside useEffect only)

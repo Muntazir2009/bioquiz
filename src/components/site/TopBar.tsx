@@ -30,18 +30,14 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
     // could be up to 30s stale — now it flips within ~1s of the actual minute.
     const now = new Date();
     const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    let intervalId: ReturnType<typeof setInterval> | undefined;
     const startupTimer = setTimeout(() => {
       update();
-      const id = setInterval(update, 60_000);
-      // Store cleanup on the timeout so the outer return can clear both.
-      // (We can't reference `id` in the outer return because it's defined
-      // inside this closure, so we attach it to the timeout function.)
-      (startupTimer as unknown as { _interval?: ReturnType<typeof setInterval> })._interval = id;
+      intervalId = setInterval(update, 60_000);
     }, msUntilNextMinute);
 
     return () => {
       clearTimeout(startupTimer);
-      const intervalId = (startupTimer as unknown as { _interval?: ReturnType<typeof setInterval> })._interval;
       if (intervalId) clearInterval(intervalId);
     };
   }, []);

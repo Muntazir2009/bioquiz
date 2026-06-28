@@ -58,7 +58,7 @@ async function createVapidJwt(aud: string, exp: number): Promise<string> {
   const signature = await crypto.subtle.sign(
     { name: "ECDSA", hash: "SHA-256" },
     privateKey,
-    stringToUint8Array(signingInput)
+    stringToUint8Array(signingInput) as BufferSource
   );
 
   const signatureB64 = base64UrlEncode(signature);
@@ -89,7 +89,7 @@ async function deriveSharedSecret(
 function importEcdhPublicKey(keyBytes: Uint8Array): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
-    keyBytes,
+    keyBytes as BufferSource,
     { name: "ECDH", namedCurve: "P-256" },
     true,
     []
@@ -104,7 +104,7 @@ async function hkdfExpand(
 ): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
-    prk,
+    prk as BufferSource,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
@@ -211,7 +211,7 @@ export async function sendWebPush(
     // AES-128-GCM encryption
     const aesKey = await crypto.subtle.importKey(
       "raw",
-      encryptionKey,
+      encryptionKey as BufferSource,
       { name: "AES-GCM" },
       false,
       ["encrypt"]
@@ -246,7 +246,7 @@ export async function sendWebPush(
 
     const finalAesKey = await crypto.subtle.importKey(
       "raw",
-      finalKey,
+      finalKey as BufferSource,
       { name: "AES-GCM" },
       false,
       ["encrypt"]
@@ -261,9 +261,9 @@ export async function sendWebPush(
     // padBytes are all zeros
 
     const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: finalNonce },
+      { name: "AES-GCM", iv: finalNonce as BufferSource },
       finalAesKey,
-      paddedPlaintext
+      paddedPlaintext as BufferSource
     );
 
     // Construct the push message body (aes128gcm format)

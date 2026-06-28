@@ -31,7 +31,7 @@ export default function WidgetConfigPage() {
       <BackgroundBeams />
 
       {/* Sidebar */}
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} mobileOpen={false} onMobileClose={() => {}} />
 
       {/* Main content area */}
       <div className="relative z-10 flex flex-1 overflow-hidden">
