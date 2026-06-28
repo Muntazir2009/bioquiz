@@ -1,4 +1,5 @@
 import {
+  BrainCircuit,
   MonitorPlay,
   Sparkles,
   Microscope,
@@ -31,8 +32,28 @@ export type Module = {
 
 export const modules: Module[] = [
   {
-    id: "presentation",
+    id: "quiz",
     num: "001",
+    title: "BioQuiz",
+    desc: "Challenge yourself with 50+ curated biology questions. Timed rounds, difficulty levels, instant scoring and detailed results.",
+    href: "/quiz.html",
+    icon: BrainCircuit,
+    status: "LIVE",
+    color: "#3b6cff",
+    accent: {
+      from: "#6d8cff",
+      via: "#3b6cff",
+      to: "#1a3fc7",
+      ring: "rgba(59, 108, 255, 0.40)",
+      glow: "rgba(59, 108, 255, 0.12)",
+      border: "rgba(59, 108, 255, 0.55)",
+    },
+    emoji: "🧠",
+    featured: true,
+  },
+  {
+    id: "presentation",
+    num: "002",
     title: "Presentation",
     desc: "Structured biology lesson slides covering all major topics — perfect for study sessions and exam revision.",
     href: "/presentation.html",
@@ -52,7 +73,7 @@ export const modules: Module[] = [
   },
   {
     id: "ask",
-    num: "002",
+    num: "003",
     title: "Ask Panel",
     desc: "AI-powered research terminal. Ask anything, get instant explanations from Wikipedia and Cloudflare AI.",
     href: "/ask.html",
@@ -71,7 +92,7 @@ export const modules: Module[] = [
   },
   {
     id: "organelles",
-    num: "003",
+    num: "004",
     title: "Organelle Explorer",
     desc: "Deep-dive visual cards for every organelle. Diagrams, functions, and key facts for each structure.",
     href: "/organelles.html",
@@ -90,7 +111,7 @@ export const modules: Module[] = [
   },
   {
     id: "cell-3d",
-    num: "004",
+    num: "005",
     title: "3D Cell Viewer",
     desc: "Interactive three-dimensional cell model. Rotate, zoom, and explore cell structure in real-time 3D.",
     href: "/cell-3d.html",
@@ -109,7 +130,7 @@ export const modules: Module[] = [
   },
   {
     id: "solutions",
-    num: "005",
+    num: "006",
     title: "Q&A Solutions",
     desc: "Complete exercise answers with detailed explanations. Review and reinforce every key concept.",
     href: "/solutions.html",
@@ -128,7 +149,7 @@ export const modules: Module[] = [
   },
   {
     id: "suggestions",
-    num: "006",
+    num: "007",
     title: "Suggestions",
     desc: "Share ideas, report issues, or suggest new features. Help shape the future of BioQuiz directly.",
     href: "/suggestions.html",
