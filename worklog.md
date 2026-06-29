@@ -1475,3 +1475,33 @@ Stage Summary:
 - Flower wallpaper: permanent fullscreen site background, visible through both slides
 - No caching: loader shows on every page load
 - Pushed to GitHub successfully — Cloudflare deployment triggered
+---
+Task ID: fix-upload-wallpaper
+Agent: Main Agent
+Task: Fix file upload failure (reaches 100% then fails) and replace wallpaper containing a woman with flower-only image
+
+Work Log:
+- Diagnosed upload failure: FileUploadZone.tsx POSTs to `/api/files/upload` but that route did NOT exist — only `/api/files` (GET) existed
+- Created `/api/files/upload/route.ts` with POST handler that:
+  - Parses FormData to extract file, isPublic flag, and uploaderId header
+  - Validates file size (max 50MB)
+  - Reads file as ArrayBuffer and saves via `saveFile()` (R2 or local disk fallback)
+  - Generates unique shareId via `generateShareId()`
+  - Creates database record via `db.fileCreate()`
+  - Returns file metadata with 200 status
+- Verified upload works: tested with curl POST, got 200 response, file persisted in SQLite database
+- For wallpaper issue: searched for flower-only wallpaper using `z-ai image-search`
+- Found high-res (6016x3900) glowing roses image — soft peach/red roses, green leaves, pink/teal gradient background
+- Verified with VLM: confirmed NO people, NO faces in the image
+- Compressed from 12MB PNG to 155KB JPEG (2400x1556) using ffmpeg for fast page loads
+- Replaced `public/claura-flowers.png` (with woman) → `public/claura-flowers.jpg` (flowers only)
+- Updated all code references from `.png` to `.jpg` in Loader.tsx and page.tsx
+- Removed old wallpaper file with woman
+- Lint passes clean
+
+Stage Summary:
+- **File upload FIXED**: Created missing `/api/files/upload/route.ts` POST endpoint
+- **Wallpaper FIXED**: Replaced woman-containing image with verified flower-only wallpaper (soft roses, no people)
+- Files modified: `src/app/api/files/upload/route.ts` (new), `src/components/site/Loader.tsx` (reference update), `src/app/page.tsx` (reference update)
+- Files removed: `public/claura-flowers.png` (had woman)
+- Files added: `public/claura-flowers.jpg` (flowers only, 155KB, 2400x1556)

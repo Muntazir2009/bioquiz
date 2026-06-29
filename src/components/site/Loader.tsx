@@ -206,7 +206,7 @@ export function Loader() {
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          backgroundImage: "url('/claura-flowers.png')",
+          backgroundImage: "url('/claura-flowers.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           filter: "blur(40px) brightness(0.7)",

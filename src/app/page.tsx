@@ -157,7 +157,7 @@ export default function Home() {
     <div
       className="h-screen w-screen overflow-hidden flex flex-col"
       style={{
-        backgroundImage: "url('/claura-flowers.png')",
+        backgroundImage: "url('/claura-flowers.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
