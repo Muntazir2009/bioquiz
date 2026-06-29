@@ -66,3 +66,4 @@ bun.lock
 cloudflare-env.d.ts
 # upload archive (top-level only)
 /upload/
+tool-results/
