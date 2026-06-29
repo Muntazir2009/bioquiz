@@ -189,7 +189,7 @@ export default function Home() {
       <main id="main-content" className="flex-1 flex flex-col">
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
-          <div className="w-full h-full flex flex-col justify-between px-6 sm:px-10 lg:px-16 pt-20 pb-10 relative">
+          <div className="w-full h-full flex flex-col justify-center items-center px-6 sm:px-10 lg:px-16 pt-20 pb-6 relative">
             {/* Floating bio-molecules */}
             <BioMolecules />
 
@@ -307,9 +307,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom: Module pills + hints + footer — liquid glass panel */}
+            {/* Bottom: Module pills + hints + footer — liquid glass panel (right below hero glass) */}
             <div
-              className="flex flex-col items-center gap-3 relative z-10"
+              className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
                 background: 'rgba(255,255,255,0.30)',
                 backdropFilter: 'blur(16px) saturate(160%)',
@@ -317,7 +317,8 @@ export default function Home() {
                 border: '1px solid rgba(255,255,255,0.45)',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
                 borderRadius: 16,
-                padding: 'clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem)',
+                padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
+                marginTop: 12,
               }}
             >
               {/* Module preview pills */}

@@ -135,9 +135,11 @@
     /* Newer browsers: hint that we'll do scroll-driven effects so the
        compositor can prepare. Cheap to set, ignored if unused. */
     overscroll-behavior-y: none;
+    overflow: hidden;
   }
   html {
     scroll-behavior: smooth;
+    overflow: hidden;
   }
 }
 
