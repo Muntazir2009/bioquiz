@@ -312,69 +312,38 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
   return (
     <div className="w-full h-full flex flex-col relative" style={{ background: "transparent" }}>
-      {/* ── Compact header — liquid glass ── */}
-      <div
-        className="flex-shrink-0 px-5 sm:px-8 pt-16 sm:pt-[72px] pb-3"
-        style={{
-          background: 'rgba(255,255,255,0.40)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          borderBottom: '1px solid rgba(255,255,255,0.50)',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="flex h-7 w-7 items-center justify-center rounded-lg btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                style={{
-                  background: "rgba(28,28,28,0.05)",
-                  color: "#6B6560",
-                }}
-                aria-label="Back to home"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-              </button>
-            )}
-            <div className="leading-tight">
-              <div className="relative inline-block">
-                <h2
-                  className="font-semibold tracking-tight"
-                  style={{
-                    color: "#1C1C1C",
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontSize: "clamp(1rem, 2.5vw, 1.35rem)",
-                  }}
-                >
-                  Modules
-                </h2>
-                <span
-                  className="absolute -bottom-1 left-0 block h-[2px] w-10 rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, #C4A882, rgba(196,168,130,0.2))",
-                    opacity: 0.5,
-                  }}
-                />
-              </div>
-              <p
-                className="text-[10px] sm:text-[11px] leading-tight"
-                style={{ color: "#1C1C1C" }}
-              >
-                Swipe to explore all {modules.length} modules
-              </p>
-            </div>
-          </div>
+      {/* ── Compact header — centered liquid glass pill ── */}
+      <div className="flex-shrink-0 flex items-center justify-center pt-16 sm:pt-[72px] pb-3 px-5">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex h-8 w-8 items-center justify-center rounded-full btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              style={{
+                background: 'rgba(255,255,255,0.40)',
+                backdropFilter: 'blur(16px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                border: '1px solid rgba(255,255,255,0.50)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+                color: '#1C1C1C',
+              }}
+              aria-label="Back to home"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </button>
+          )}
           <span
-            className="text-[9px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full"
+            className="text-xs font-semibold tracking-wide px-5 py-2 rounded-full select-none"
             style={{
-              color: "#1C1C1C",
-              background: "rgba(196,168,130,0.15)",
-              border: "1px solid rgba(196,168,130,0.25)",
+              color: '#1C1C1C',
+              background: 'rgba(255,255,255,0.40)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+              border: '1px solid rgba(255,255,255,0.50)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
             }}
           >
-            {modules.length} MODULES
+            Modules
           </span>
         </div>
       </div>
