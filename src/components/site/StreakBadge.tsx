@@ -194,7 +194,7 @@ export function StreakBadge() {
   // Placeholder matches the final badge dimensions closely (h-8, ~80–96px wide)
   // so there's no visible layout shift when the real badge mounts.
   if (!state) {
-    return <div className="h-8 w-[84px] rounded-full border border-border bg-card/60 animate-pulse" aria-hidden />;
+    return <div className="h-8 w-[84px] rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(0,0,0,0.06)' }} aria-hidden />;
   }
 
   return (
@@ -202,7 +202,14 @@ export function StreakBadge() {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative inline-flex h-8 items-center gap-2 overflow-hidden rounded-full border border-border bg-card pl-2.5 pr-3 text-[12px] font-medium text-foreground"
+      className="group relative inline-flex h-8 items-center gap-2 overflow-hidden rounded-full pl-2.5 pr-3 text-[12px] font-medium"
+      style={{
+        background: 'rgba(255,255,255,0.50)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        color: '#1C1C1C',
+      }}
       title={`You've visited ${state.count} day${state.count === 1 ? "" : "s"} in a row (best: ${state.bestStreak})`}
     >
       <span
@@ -242,7 +249,7 @@ export function StreakBadge() {
             {state.count}
           </motion.span>
         </AnimatePresence>{" "}
-        <span className="text-muted-foreground">day{state.count === 1 ? "" : "s"}</span>
+        <span style={{ color: '#6B6560' }}>day{state.count === 1 ? "" : "s"}</span>
       </span>
     </motion.div>
   );

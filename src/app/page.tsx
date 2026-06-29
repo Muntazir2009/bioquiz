@@ -205,16 +205,27 @@ export default function Home() {
               }}
             />
 
-            {/* Top content: Title, subtitle, stats, CTA */}
-            <div className="flex flex-col items-center text-center relative z-10">
+            {/* Top content: Title, subtitle, stats, CTA — liquid glass panel */}
+            <div
+              className="flex flex-col items-center text-center relative z-10"
+              style={{
+                background: 'rgba(255,255,255,0.35)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                border: '1px solid rgba(255,255,255,0.50)',
+                boxShadow: '0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+                borderRadius: 24,
+                padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
+              }}
+            >
               {/* Version badge above title */}
               <div className="hero-anim opacity-0 mb-3">
                 <span
                   className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
                   style={{
-                    color: "#2C2C2C",
-                    background: "rgba(196,168,130,0.08)",
-                    border: "1px solid rgba(196,168,130,0.12)",
+                    color: "#1C1C1C",
+                    background: "rgba(196,168,130,0.15)",
+                    border: "1px solid rgba(196,168,130,0.25)",
                   }}
                 >
                   <span className="relative flex h-1.5 w-1.5">
@@ -235,7 +246,6 @@ export default function Home() {
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "clamp(3rem, 10vw, 5.2rem)",
                     lineHeight: 1.08,
-                    textShadow: "0 1px 12px rgba(255,255,255,0.8)",
                   }}
                 >
                   BioQuiz
@@ -255,7 +265,7 @@ export default function Home() {
               <div className="hero-anim opacity-0 mt-3 relative inline-block">
                 <p
                   className="text-sm sm:text-[15px] font-medium leading-relaxed"
-                  style={{ color: "#2C2C2C", maxWidth: 440, textShadow: "0 1px 8px rgba(255,255,255,0.7)" }}
+                  style={{ color: "#1C1C1C", maxWidth: 440 }}
                 >
                   The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
                 </p>
@@ -265,7 +275,7 @@ export default function Home() {
               {/* Stats line */}
               <div
                 className="hero-anim opacity-0 mt-5 inline-flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium px-4 py-2 rounded-full"
-                style={{ color: "#2C2C2C", fontWeight: 500, background: "rgba(196,168,130,0.06)", border: "1px solid rgba(196,168,130,0.10)", textShadow: "0 1px 6px rgba(255,255,255,0.6)" }}
+                style={{ color: "#1C1C1C", fontWeight: 500, background: "rgba(196,168,130,0.08)", border: "1px solid rgba(196,168,130,0.15)" }}
               >
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full" style={{ background: "#C4A882" }} />
@@ -297,18 +307,31 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom: Swipe hint + mini footer */}
-            <div className="flex flex-col items-center gap-3 relative z-10">
+            {/* Bottom: Module pills + hints + footer — liquid glass panel */}
+            <div
+              className="flex flex-col items-center gap-3 relative z-10"
+              style={{
+                background: 'rgba(255,255,255,0.30)',
+                backdropFilter: 'blur(16px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+                border: '1px solid rgba(255,255,255,0.45)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+                borderRadius: 16,
+                padding: 'clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem)',
+              }}
+            >
               {/* Module preview pills */}
-              <div className="hero-anim opacity-0 flex items-center gap-2 flex-wrap justify-center" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}>
+              <div className="hero-anim opacity-0 flex items-center gap-2 flex-wrap justify-center">
                 {modules.slice(0, 4).map((m) => (
                   <span
                     key={m.id}
                     className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full transition-transform duration-200 hover:scale-105 cursor-default"
                     style={{
                       color: m.color,
-                      background: `${m.color}10`,
-                      border: `1px solid ${m.color}18`,
+                      background: `rgba(255,255,255,0.50)`,
+                      border: `1px solid ${m.color}30`,
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
                     }}
                   >
                     <m.icon className="h-2.5 w-2.5" />
@@ -317,7 +340,7 @@ export default function Home() {
                 ))}
                 <span
                   className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ color: "#2C2C2C", background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.06)", textShadow: "0 1px 3px rgba(255,255,255,0.5)" }}
+                  style={{ color: "#1C1C1C", background: "rgba(255,255,255,0.50)", border: "1px solid rgba(0,0,0,0.08)", backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
                 >
                   +{modules.length - 4} more
                 </span>
@@ -326,7 +349,7 @@ export default function Home() {
               {/* Swipe hint (mobile) */}
               <div
                 className="hero-anim opacity-0 sm:hidden flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
-                style={{ color: "#2C2C2C", textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}
+                style={{ color: "#1C1C1C" }}
               >
                 <svg
                   className="animate-bounce"
@@ -342,16 +365,15 @@ export default function Home() {
               {/* Keyboard hint (desktop only) */}
               <div
                 className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
-                style={{ color: "#2C2C2C", textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}
+                style={{ color: "#1C1C1C" }}
               >
                 Press{" "}
                 <kbd
                   className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded text-[10px] font-mono"
                   style={{
-                    background: "rgba(196,168,130,0.10)",
-                    border: "1px solid rgba(196,168,130,0.15)",
-                    color: "#2C2C2C",
-                    textShadow: "0 1px 3px rgba(255,255,255,0.5)",
+                    background: "rgba(196,168,130,0.15)",
+                    border: "1px solid rgba(196,168,130,0.25)",
+                    color: "#1C1C1C",
                   }}
                 >
                   →
@@ -362,7 +384,7 @@ export default function Home() {
               {/* Mini footer */}
               <div
                 className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
-                style={{ color: "#2C2C2C", textShadow: "0 1px 3px rgba(255,255,255,0.5)" }}
+                style={{ color: "#1C1C1C" }}
               >
                 <span>&copy; {new Date().getFullYear()} BioQuiz</span>
                 <span>·</span>

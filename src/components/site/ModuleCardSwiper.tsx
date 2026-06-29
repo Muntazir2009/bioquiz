@@ -312,10 +312,16 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
   return (
     <div className="w-full h-full flex flex-col relative" style={{ background: "transparent" }}>
-      {/* ── Compact header ── */}
+      {/* ── Compact header — liquid glass ── */}
       <div
         className="flex-shrink-0 px-5 sm:px-8 pt-16 sm:pt-[72px] pb-3"
-        style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+        style={{
+          background: 'rgba(255,255,255,0.40)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderBottom: '1px solid rgba(255,255,255,0.50)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -354,18 +360,18 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
               </div>
               <p
                 className="text-[10px] sm:text-[11px] leading-tight"
-                style={{ color: "#8A8580" }}
+                style={{ color: "#1C1C1C" }}
               >
                 Swipe to explore all {modules.length} modules
               </p>
             </div>
           </div>
           <span
-            className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
+            className="text-[9px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full"
             style={{
-              color: "#C4A882",
-              background: "rgba(196,168,130,0.1)",
-              border: "1px solid rgba(196,168,130,0.2)",
+              color: "#1C1C1C",
+              background: "rgba(196,168,130,0.15)",
+              border: "1px solid rgba(196,168,130,0.25)",
             }}
           >
             {modules.length} MODULES
@@ -398,8 +404,17 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         </div>
       </div>
 
-      {/* ── Dot indicators + counter ── */}
-      <div className="flex-shrink-0 flex flex-col items-center gap-2 pb-5 pt-1">
+      {/* ── Dot indicators + counter — liquid glass ── */}
+      <div
+        className="flex-shrink-0 flex flex-col items-center gap-2 pb-5 pt-3"
+        style={{
+          background: 'rgba(255,255,255,0.35)',
+          backdropFilter: 'blur(16px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+          borderTop: '1px solid rgba(255,255,255,0.45)',
+          boxShadow: '0 -2px 12px rgba(0,0,0,0.04)',
+        }}
+      >
         {/* Progress bar — 3px tall with gradient + glowing dot */}
         <div
           className="w-40 h-[3px] rounded-full overflow-visible relative"
@@ -516,7 +531,7 @@ function ModuleCard({
           : "0 4px 20px -4px rgba(0,0,0,0.06)",
         border: isActive
           ? `1.5px solid ${m.accent.border}`
-          : `1px solid rgba(255,255,255,0.10)`,
+          : "1px solid rgba(255,255,255,0.10)",
         transition: "box-shadow 0.4s ease, border-color 0.4s ease",
         transformStyle: "preserve-3d",
       }}
@@ -547,13 +562,7 @@ function ModuleCard({
         });
       } : undefined}
     >
-      {/* ── Solid white background for text readability ── */}
-      <div
-        className="absolute inset-0"
-        style={{ background: "rgba(255,255,255,0.85)" }}
-      />
-
-      {/* ── Full gradient background ── */}
+      {/* ── Solid 3D gradient background ── */}
       <div
         className="absolute inset-0"
         style={{ background: gradientStops }}
@@ -645,16 +654,17 @@ function ModuleCard({
 
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col h-full p-5 sm:p-6">
-        {/* Top row: module num + status */}
+        {/* Top row: module num + status — glass pills */}
         <div className="flex items-start justify-between flex-shrink-0">
           <span
             className="text-[9px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-lg"
             style={{
-              color: "rgba(255,255,255,0.90)",
-              background: "rgba(255,255,255,0.14)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.18)",
+              color: "rgba(255,255,255,0.95)",
+              background: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)",
             }}
           >
             MODULE {m.num}
@@ -663,10 +673,11 @@ function ModuleCard({
             className="text-[8px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
             style={{
               color: "rgba(255,255,255,0.95)",
-              background: "rgba(255,255,255,0.14)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.18)",
+              background: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)",
             }}
           >
             {m.status}
@@ -680,12 +691,12 @@ function ModuleCard({
             style={{
               width: "clamp(72px, 16vw, 100px)",
               height: "clamp(72px, 16vw, 100px)",
-              background: "rgba(255,255,255,0.14)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.22)",
+              background: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid rgba(255,255,255,0.28)",
               boxShadow:
-                "0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.30)",
+                "0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.40)",
             }}
           >
             <Icon
@@ -699,21 +710,30 @@ function ModuleCard({
           </div>
         </div>
 
-        {/* Bottom: Title + desc + CTA */}
-        <div className="space-y-1.5 flex-shrink-0">
+        {/* Bottom: Title + desc + CTA — liquid glass panel */}
+        <div
+          className="space-y-1.5 flex-shrink-0 rounded-xl px-3 py-2.5"
+          style={{
+            background: 'rgba(255,255,255,0.14)',
+            backdropFilter: 'blur(12px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(150%)',
+            border: '1px solid rgba(255,255,255,0.22)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.30)',
+          }}
+        >
           <h3
             className="font-bold tracking-tight leading-tight"
             style={{
               color: "#FFFFFF",
               fontFamily: "'Cormorant Garamond', Georgia, serif",
               fontSize: "clamp(1.25rem, 3.5vw, 1.65rem)",
-              textShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              textShadow: "0 2px 8px rgba(0,0,0,0.20)",
             }}
           >
             {m.title}
           </h3>
-          <p className="text-white/60 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
-            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.10)" }}
+          <p className="text-white/70 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.15)" }}
           >
             {m.desc}
           </p>
@@ -729,18 +749,18 @@ function ModuleCard({
                   animation: "status-pulse 2s ease-in-out infinite",
                 }}
               />
-              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/70">
+              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/80">
                 {m.status}
               </span>
             </div>
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
               style={{
-                background: "rgba(255,255,255,0.16)",
+                background: "rgba(255,255,255,0.18)",
                 backdropFilter: "blur(8px)",
                 WebkitBackdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.22)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                border: "1px solid rgba(255,255,255,0.28)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.30)",
               }}
             >
               <ArrowUpRight className="h-3.5 w-3.5 text-white transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

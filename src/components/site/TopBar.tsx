@@ -46,28 +46,42 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
     setTheme(theme === "dark" ? "brown" : "dark");
   }, [theme, setTheme]);
 
-  const iconBtnClass =
-    "group grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60";
+  const iconBtnStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.50)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    border: '1px solid rgba(0,0,0,0.06)',
+    color: '#1C1C1C',
+  };
 
   return (
     <TooltipProvider delayDuration={300}>
-      <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
+      <header
+        className="sticky top-0 z-40"
+        style={{
+          background: 'rgba(255,255,255,0.45)',
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          borderBottom: '1px solid rgba(255,255,255,0.55)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
+        }}
+      >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Brand */}
           <a href="/" className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 rounded-md" aria-label="BioQuiz home">
             <div className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground text-[11px] font-semibold tracking-tight transition-transform group-hover:scale-105">
               B
             </div>
-            <span className="text-[14px] font-semibold tracking-tight">BioQuiz</span>
-            <span className="hidden rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
+            <span className="text-[14px] font-semibold tracking-tight" style={{ color: '#1C1C1C' }}>BioQuiz</span>
+            <span className="hidden rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium sm:inline" style={{ color: '#1C1C1C', background: 'rgba(196,168,130,0.12)', borderColor: 'rgba(196,168,130,0.20)' }}>
               v2.0
             </span>
           </a>
 
           {/* Actions */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" style={{ color: '#1C1C1C' }}>
             {mounted && (
-              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground mr-1" aria-label={`Current time ${time}`}>
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] mr-1" style={{ color: '#1C1C1C' }} aria-label={`Current time ${time}`}>
                 <Clock className="h-3 w-3" aria-hidden />
                 <span className="tabular-nums">{time}</span>
               </div>
@@ -80,7 +94,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={toggleTheme}
-                    className={iconBtnClass}
+                    className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    style={iconBtnStyle}
                     aria-label={theme === "dark" ? "Switch to brown mode" : "Switch to dark mode"}
                   >
                     {theme === "dark" ? (
@@ -100,7 +115,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <a
                   href="/admin"
-                  className={iconBtnClass}
+                  className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  style={iconBtnStyle}
                   aria-label="Open admin panel"
                 >
                   <ShieldCheck className="h-4 w-4" aria-hidden />
@@ -113,7 +129,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={onFilePanelOpen}
-                  className={iconBtnClass}
+                  className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  style={iconBtnStyle}
                   aria-label="Open files panel"
                 >
                   <CloudUpload className="h-4 w-4" aria-hidden />

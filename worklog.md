@@ -1530,3 +1530,24 @@ Stage Summary:
 - page.tsx: permanent fixed background div with brightness(0.85) saturate(0.7) filter
 - All homepage text remains dark (#1C1C1C) and readable against light flower background
 - No cron jobs created or existing
+---
+Task ID: 1
+Agent: Main
+Task: Add liquid glass UI — frosted glass panels on all text for visibility against flower background
+
+Work Log:
+- Added liquid glass panel (backdrop-filter: blur 20px saturate 180%, rgba white bg, inset shadow) behind hero text section (title, subtitle, stats, CTA)
+- Added liquid glass panel behind bottom section (module pills, swipe hint, footer)
+- Applied liquid glass to TopBar header with explicit #1C1C1C text colors
+- Applied liquid glass to StreakBadge with explicit styling
+- Applied liquid glass to ModuleCardSwiper header — simplified to centered pill saying "Modules" with back arrow
+- Reverted module cards to solid 3D gradient backgrounds (no flower bleed-through)
+- Added liquid glass sub-panel behind card text sections (title, description, status, arrow CTA)
+- Applied liquid glass to module swiper footer (dot indicators)
+- Removed all text-shadow hacks in favor of glass panel backgrounds
+- All text colors set to explicit #1C1C1C for maximum contrast
+
+Stage Summary:
+- VLM verification: Homepage hero text visibility 10/10
+- VLM verification: Modules slide all 5 checks pass (centered pill, solid 3D cards, glass text sections, no flower bleed-through, glass back arrow)
+- Pushed to GitHub: commit 3c3e5a8

@@ -1,0 +1,754 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useEffect, useRef, useState, useCallback } from "react";
+     4→     4→import { ArrowUpRight, ArrowLeft, Search } from "lucide-react";
+     5→     5→import { modules, type Module } from "@/lib/modules";
+     6→     6→
+     7→     7→/**
+     8→     8→ * Horizontal module card swiper — Netflix / Cover-flow style.
+     9→     9→ *
+    10→    10→ * - Cards responsive: ~72vw mobile, ~48vw tablet, ~32vw desktop
+    11→    11→ * - Active card centered, GSAP-powered snap (NOT native scroll)
+    12→    12→ * - Cover flow: active = scale 1.0 / opacity 1, neighbours = 0.88 / 0.65
+    13→    13→ * - 3D rotateY on side cards with perspective
+    14→    14→ * - Touch swipe + keyboard nav + dot indicators + progress bar
+    15→    15→ * - SSR-safe: all GSAP via dynamic import inside useEffect
+    16→    16→ */
+    17→    17→
+    18→    18→const CARD_GAP = 20;
+    19→    19→
+    20→    20→/** Consistent card width used everywhere (CSS, JS calculations, resize) */
+    21→    21→function getCardWidthPx(vw: number): number {
+    22→    22→  return vw < 640 ? vw * 0.72 : vw < 1024 ? Math.min(vw * 0.48, 400) : Math.min(vw * 0.32, 420);
+    23→    23→}
+    24→    24→
+    25→    25→interface ModuleCardSwiperProps {
+    26→    26→  onBack?: () => void;
+    27→    27→}
+    28→    28→
+    29→    29→export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
+    30→    30→  const [activeIndex, setActiveIndex] = useState(0);
+    31→    31→  const [mounted, setMounted] = useState(false);
+    32→    32→
+    33→    33→  const trackRef = useRef<HTMLDivElement>(null);
+    34→    34→  const containerRef = useRef<HTMLDivElement>(null);
+    35→    35→  const dotRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    36→    36→  const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+    37→    37→  const isAnimating = useRef(false);
+    38→    38→  const activeIndexRef = useRef(0);
+    39→    39→  const totalCards = modules.length;
+    40→    40→
+    41→    41→  useEffect(() => {
+    42→    42→    activeIndexRef.current = activeIndex;
+    43→    43→  }, [activeIndex]);
+    44→    44→
+    45→    45→  /* ------------------------------------------------------------------ */
+    46→    46→  /*  Helpers                                                            */
+    47→    47→  /* ------------------------------------------------------------------ */
+    48→    48→
+    49→    49→  const getCardWidth = useCallback(() => {
+    50→    50→    if (typeof window === "undefined") return 420;
+    51→    51→    return getCardWidthPx(window.innerWidth);
+    52→    52→  }, []);
+    53→    53→
+    54→    54→  /** Apply cover-flow scale/opacity to every card (GSAP) */
+    55→    55→  const applyCoverFlow = useCallback(
+    56→    56→    (gsap: any, index: number, duration: number) => {
+    57→    57→      cardRefs.current.forEach((card, i) => {
+    58→    58→        if (!card) return;
+    59→    59→        if (i === index) {
+    60→    60→          gsap.to(card, { scale: 1, opacity: 1, z: 30, duration, ease: "power3.out" });
+    61→    61→        } else if (Math.abs(i - index) === 1) {
+    62→    62→          gsap.to(card, {
+    63→    63→            scale: 0.88,
+    64→    64→            opacity: 0.65,
+    65→    65→            z: 0,
+    66→    66→            rotateY: i < index ? 4 : -4,
+    67→    67→            duration,
+    68→    68→            ease: "power3.out",
+    69→    69→          });
+    70→    70→        } else {
+    71→    71→          gsap.to(card, {
+    72→    72→            scale: 0.82,
+    73→    73→            opacity: 0.35,
+    74→    74→            z: -20,
+    75→    75→            rotateY: i < index ? 6 : -6,
+    76→    76→            duration,
+    77→    77→            ease: "power3.out",
+    78→    78→          });
+    79→    79→        }
+    80→    80→      });
+    81→    81→    },
+    82→    82→    []
+    83→    83→  );
+    84→    84→
+    85→    85→  /* ------------------------------------------------------------------ */
+    86→    86→  /*  goToCard — center + cover-flow in one GSAP pass                    */
+    87→    87→  /* ------------------------------------------------------------------ */
+    88→    88→
+    89→    89→  const goToCard = useCallback(
+    90→    90→    (index: number) => {
+    91→    91→      if (isAnimating.current) return;
+    92→    92→      if (index < 0 || index >= totalCards) return;
+    93→    93→
+    94→    94→      isAnimating.current = true;
+    95→    95→      setActiveIndex(index);
+    96→    96→      activeIndexRef.current = index;
+    97→    97→
+    98→    98→      import("gsap").then(({ default: gsap }) => {
+    99→    99→        const track = trackRef.current;
+   100→   100→        if (!track) {
+   101→   101→          isAnimating.current = false;
+   102→   102→          return;
+   103→   103→        }
+   104→   104→
+   105→   105→        const vw = window.innerWidth;
+   106→   106→        const cardWidth = getCardWidth();
+   107→   107→        const containerWidth = vw;
+   108→   108→        // Center the target card:  container/2 − card/2 − index*(card+gap)
+   109→   109→        const offsetX =
+   110→   110→          containerWidth / 2 - cardWidth / 2 - index * (cardWidth + CARD_GAP);
+   111→   111→
+   112→   112→        // 1. Slide the track
+   113→   113→        gsap.to(track, {
+   114→   114→          x: offsetX,
+   115→   115→          duration: 0.55,
+   116→   116→          ease: "power3.out",
+   117→   117→          onComplete: () => {
+   118→   118→            isAnimating.current = false;
+   119→   119→          },
+   120→   120→        });
+   121→   121→
+   122→   122→        // 2. Cover-flow scale/opacity/rotate (simultaneous)
+   123→   123→        applyCoverFlow(gsap, index, 0.55);
+   124→   124→
+   125→   125→        // 3. Dots
+   126→   126→        dotRefs.current.forEach((dot, i) => {
+   127→   127→          if (!dot) return;
+   128→   128→          if (i === index) {
+   129→   129→            gsap.to(dot, {
+   130→   130→              scale: 1.4,
+   131→   131→              opacity: 1,
+   132→   132→              duration: 0.3,
+   133→   133→              ease: "back.out(2)",
+   134→   134→            });
+   135→   135→          } else {
+   136→   136→            gsap.to(dot, {
+   137→   137→              scale: 1,
+   138→   138→              opacity: 0.35,
+   139→   139→              duration: 0.25,
+   140→   140→              ease: "power2.out",
+   141→   141→            });
+   142→   142→          }
+   143→   143→        });
+   144→   144→      });
+   145→   145→    },
+   146→   146→    [totalCards, getCardWidth, applyCoverFlow]
+   147→   147→  );
+   148→   148→
+   149→   149→  /* ------------------------------------------------------------------ */
+   150→   150→  /*  Keyboard navigation (left/right arrows)                            */
+   151→   151→  /* ------------------------------------------------------------------ */
+   152→   152→
+   153→   153→  useEffect(() => {
+   154→   154→    if (typeof window === "undefined") return;
+   155→   155→
+   156→   156→    const handleKey = (e: KeyboardEvent) => {
+   157→   157→      const tag = (e.target as HTMLElement)?.tagName;
+   158→   158→      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+   159→   159→
+   160→   160→      if (e.key === "ArrowRight") {
+   161→   161→        e.preventDefault();
+   162→   162→        e.stopPropagation();
+   163→   163→        goToCard(activeIndexRef.current + 1);
+   164→   164→      } else if (e.key === "ArrowLeft") {
+   165→   165→        e.preventDefault();
+   166→   166→        e.stopPropagation();
+   167→   167→        goToCard(activeIndexRef.current - 1);
+   168→   168→      }
+   169→   169→    };
+   170→   170→
+   171→   171→    window.addEventListener("keydown", handleKey);
+   172→   172→    return () => window.removeEventListener("keydown", handleKey);
+   173→   173→  }, [goToCard]);
+   174→   174→
+   175→   175→  /* ------------------------------------------------------------------ */
+   176→   176→  /*  Touch swipe (stops propagation to parent Slideshow)                */
+   177→   177→  /* ------------------------------------------------------------------ */
+   178→   178→
+   179→   179→  useEffect(() => {
+   180→   180→    if (typeof window === "undefined") return;
+   181→   181→    const container = containerRef.current;
+   182→   182→    if (!container) return;
+   183→   183→
+   184→   184→    let startX = 0;
+   185→   185→    let startY = 0;
+   186→   186→    let isHorizontal: boolean | null = null;
+   187→   187→
+   188→   188→    const onTouchStart = (e: TouchEvent) => {
+   189→   189→      startX = e.touches[0].clientX;
+   190→   190→      startY = e.touches[0].clientY;
+   191→   191→      isHorizontal = null;
+   192→   192→    };
+   193→   193→
+   194→   194→    const onTouchMove = (e: TouchEvent) => {
+   195→   195→      if (isHorizontal !== null) return;
+   196→   196→      const dx = Math.abs(e.touches[0].clientX - startX);
+   197→   197→      const dy = Math.abs(e.touches[0].clientY - startY);
+   198→   198→      if (dx > 8 || dy > 8) {
+   199→   199→        isHorizontal = dx > dy;
+   200→   200→      }
+   201→   201→      if (isHorizontal) {
+   202→   202→        e.preventDefault();
+   203→   203→        e.stopPropagation();
+   204→   204→      }
+   205→   205→    };
+   206→   206→
+   207→   207→    const onTouchEnd = (e: TouchEvent) => {
+   208→   208→      if (!isHorizontal) return;
+   209→   209→      e.stopPropagation();
+   210→   210→      const dx = e.changedTouches[0].clientX - startX;
+   211→   211→      if (Math.abs(dx) > 40) {
+   212→   212→        if (dx < 0) goToCard(activeIndexRef.current + 1);
+   213→   213→        else goToCard(activeIndexRef.current - 1);
+   214→   214→      }
+   215→   215→    };
+   216→   216→
+   217→   217→    container.addEventListener("touchstart", onTouchStart, { passive: true });
+   218→   218→    container.addEventListener("touchmove", onTouchMove, { passive: false });
+   219→   219→    container.addEventListener("touchend", onTouchEnd, { passive: true });
+   220→   220→
+   221→   221→    return () => {
+   222→   222→      container.removeEventListener("touchstart", onTouchStart);
+   223→   223→      container.removeEventListener("touchmove", onTouchMove);
+   224→   224→      container.removeEventListener("touchend", onTouchEnd);
+   225→   225→    };
+   226→   226→  }, [goToCard]);
+   227→   227→
+   228→   228→  /* ------------------------------------------------------------------ */
+   229→   229→  /*  Initial mount: position + entrance + cover-flow                     */
+   230→   230→  /* ------------------------------------------------------------------ */
+   231→   231→
+   232→   232→  useEffect(() => {
+   233→   233→    if (typeof window === "undefined") return;
+   234→   234→    setMounted(true);
+   235→   235→
+   236→   236→    import("gsap").then(({ default: gsap }) => {
+   237→   237→      const track = trackRef.current;
+   238→   238→      if (track) {
+   239→   239→        const vw = window.innerWidth;
+   240→   240→        const cardWidth = getCardWidthPx(vw);
+   241→   241→        const containerWidth = vw;
+   242→   242→        const offsetX = containerWidth / 2 - cardWidth / 2;
+   243→   243→        gsap.set(track, { x: offsetX });
+   244→   244→      }
+   245→   245→
+   246→   246→      // Entrance: cards start invisible, then fade in with cover-flow values
+   247→   247→      cardRefs.current.forEach((card, i) => {
+   248→   248→        if (!card) return;
+   249→   249→        gsap.set(card, { opacity: 0, y: 16 });
+   250→   250→        gsap.to(card, {
+   251→   251→          opacity: i === 0 ? 1 : Math.abs(i) === 1 ? 0.65 : 0.35,
+   252→   252→          y: 0,
+   253→   253→          scale: i === 0 ? 1 : Math.abs(i) === 1 ? 0.88 : 0.82,
+   254→   254→          rotateY: i === 0 ? 0 : i < 0 ? -6 : i === 1 ? -4 : 6,
+   255→   255→          z: i === 0 ? 30 : 0,
+   256→   256→          duration: 0.5,
+   257→   257→          ease: "power2.out",
+   258→   258→          delay: i * 0.05,
+   259→   259→        });
+   260→   260→      });
+   261→   261→
+   262→   262→      // One-time swipe hint nudge (plays 1.5s after mount)
+   263→   263→      if (track && totalCards > 1) {
+   264→   264→        const currentX = gsap.getProperty(track, "x") as number;
+   265→   265→        gsap.to(track, {
+   266→   266→          x: currentX - 12,
+   267→   267→          duration: 0.35,
+   268→   268→          ease: "power2.inOut",
+   269→   269→          delay: 1.5,
+   270→   270→          onComplete: () => {
+   271→   271→            gsap.to(track, {
+   272→   272→              x: currentX,
+   273→   273→              duration: 0.4,
+   274→   274→              ease: "power2.inOut",
+   275→   275→            });
+   276→   276→          },
+   277→   277→        });
+   278→   278→      }
+   279→   279→    });
+   280→   280→  }, []);
+   281→   281→
+   282→   282→  /* ------------------------------------------------------------------ */
+   283→   283→  /*  Resize handler                                                     */
+   284→   284→  /* ------------------------------------------------------------------ */
+   285→   285→
+   286→   286→  useEffect(() => {
+   287→   287→    if (typeof window === "undefined") return;
+   288→   288→
+   289→   289→    const handleResize = () => {
+   290→   290→      import("gsap").then(({ default: gsap }) => {
+   291→   291→        const track = trackRef.current;
+   292→   292→        if (track) {
+   293→   293→          const vw = window.innerWidth;
+   294→   294→          const cardWidth = getCardWidthPx(vw);
+   295→   295→          const containerWidth = vw;
+   296→   296→          const idx = activeIndexRef.current;
+   297→   297→          const offsetX =
+   298→   298→            containerWidth / 2 - cardWidth / 2 - idx * (cardWidth + CARD_GAP);
+   299→   299→          gsap.set(track, { x: offsetX });
+   300→   300→        }
+   301→   301→        applyCoverFlow(gsap, activeIndexRef.current, 0);
+   302→   302→      });
+   303→   303→    };
+   304→   304→
+   305→   305→    window.addEventListener("resize", handleResize);
+   306→   306→    return () => window.removeEventListener("resize", handleResize);
+   307→   307→  }, [applyCoverFlow]);
+   308→   308→
+   309→   309→  /* ------------------------------------------------------------------ */
+   310→   310→  /*  Render                                                             */
+   311→   311→  /* ------------------------------------------------------------------ */
+   312→   312→
+   313→   313→  return (
+   314→   314→    <div className="w-full h-full flex flex-col relative" style={{ background: "transparent" }}>
+   315→   315→      {/* ── Compact header ── */}
+   316→   316→      <div
+   317→   317→        className="flex-shrink-0 px-5 sm:px-8 pt-16 sm:pt-[72px] pb-3"
+   318→   318→        style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+   319→   319→      >
+   320→   320→        <div className="flex items-center justify-between">
+   321→   321→          <div className="flex items-center gap-2.5">
+   322→   322→            {onBack && (
+   323→   323→              <button
+   324→   324→                onClick={onBack}
+   325→   325→                className="flex h-7 w-7 items-center justify-center rounded-lg btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+   326→   326→                style={{
+   327→   327→                  background: "rgba(28,28,28,0.05)",
+   328→   328→                  color: "#6B6560",
+   329→   329→                }}
+   330→   330→                aria-label="Back to home"
+   331→   331→              >
+   332→   332→                <ArrowLeft className="h-3.5 w-3.5" />
+   333→   333→              </button>
+   334→   334→            )}
+   335→   335→            <div className="leading-tight">
+   336→   336→              <div className="relative inline-block">
+   337→   337→                <h2
+   338→   338→                  className="font-semibold tracking-tight"
+   339→   339→                  style={{
+   340→   340→                    color: "#1C1C1C",
+   341→   341→                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+   342→   342→                    fontSize: "clamp(1rem, 2.5vw, 1.35rem)",
+   343→   343→                  }}
+   344→   344→                >
+   345→   345→                  Modules
+   346→   346→                </h2>
+   347→   347→                <span
+   348→   348→                  className="absolute -bottom-1 left-0 block h-[2px] w-10 rounded-full"
+   349→   349→                  style={{
+   350→   350→                    background: "linear-gradient(90deg, #C4A882, rgba(196,168,130,0.2))",
+   351→   351→                    opacity: 0.5,
+   352→   352→                  }}
+   353→   353→                />
+   354→   354→              </div>
+   355→   355→              <p
+   356→   356→                className="text-[10px] sm:text-[11px] leading-tight"
+   357→   357→                style={{ color: "#8A8580" }}
+   358→   358→              >
+   359→   359→                Swipe to explore all {modules.length} modules
+   360→   360→              </p>
+   361→   361→            </div>
+   362→   362→          </div>
+   363→   363→          <span
+   364→   364→            className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
+   365→   365→            style={{
+   366→   366→              color: "#C4A882",
+   367→   367→              background: "rgba(196,168,130,0.1)",
+   368→   368→              border: "1px solid rgba(196,168,130,0.2)",
+   369→   369→            }}
+   370→   370→          >
+   371→   371→            {modules.length} MODULES
+   372→   372→          </span>
+   373→   373→        </div>
+   374→   374→      </div>
+   375→   375→
+   376→   376→      {/* ── Cards area ── */}
+   377→   377→      <div
+   378→   378→        ref={containerRef}
+   379→   379→        className="flex-1 relative overflow-hidden min-h-0"
+   380→   380→        style={{ perspective: 1200 }}
+   381→   381→      >
+   382→   382→        <div
+   383→   383→          ref={trackRef}
+   384→   384→          className="flex items-center h-full"
+   385→   385→          style={{ gap: CARD_GAP, willChange: "transform", transformStyle: "preserve-3d" }}
+   386→   386→        >
+   387→   387→          {modules.map((m: Module, i: number) => (
+   388→   388→            <ModuleCard
+   389→   389→              key={m.id}
+   390→   390→              module={m}
+   391→   391→              index={i}
+   392→   392→              isActive={mounted && i === activeIndex}
+   393→   393→              cardRef={(el) => {
+   394→   394→                cardRefs.current[i] = el;
+   395→   395→              }}
+   396→   396→            />
+   397→   397→          ))}
+   398→   398→        </div>
+   399→   399→      </div>
+   400→   400→
+   401→   401→      {/* ── Dot indicators + counter ── */}
+   402→   402→      <div className="flex-shrink-0 flex flex-col items-center gap-2 pb-5 pt-1">
+   403→   403→        {/* Progress bar — 3px tall with gradient + glowing dot */}
+   404→   404→        <div
+   405→   405→          className="w-40 h-[3px] rounded-full overflow-visible relative"
+   406→   406→          style={{ background: "rgba(196,168,130,0.12)" }}
+   407→   407→        >
+   408→   408→          <div
+   409→   409→            className="h-full rounded-full transition-all duration-500 ease-out relative"
+   410→   410→            style={{
+   411→   411→              width: `${((activeIndex + 1) / modules.length) * 100}%`,
+   412→   412→              background: `linear-gradient(90deg, ${modules[activeIndex]?.accent?.border ?? "#C4A882"}, ${modules[activeIndex]?.accent?.from ?? "#C4A882"})`,
+   413→   413→              boxShadow: `0 0 8px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+   414→   414→            }}
+   415→   415→          >
+   416→   416→            {/* Glowing dot at the end of progress */}
+   417→   417→            <span
+   418→   418→              className="absolute top-1/2 -translate-y-1/2 -right-[3px] w-[7px] h-[7px] rounded-full transition-colors duration-300"
+   419→   419→              style={{
+   420→   420→                background: modules[activeIndex]?.accent?.border ?? "#C4A882",
+   421→   421→                boxShadow: `0 0 6px 2px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+   422→   422→              }}
+   423→   423→            />
+   424→   424→          </div>
+   425→   425→        </div>
+   426→   426→        <div className="flex items-center gap-2">
+   427→   427→          {modules.map((m, i) => (
+   428→   428→            <button
+   429→   429→              key={i}
+   430→   430→              ref={(el) => {
+   431→   431→                dotRefs.current[i] = el;
+   432→   432→              }}
+   433→   433→              onClick={() => goToCard(i)}
+   434→   434→              aria-label={`Go to module ${i + 1}`}
+   435→   435→              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 transition-colors duration-300"
+   436→   436→              style={{
+   437→   437→                width: i === activeIndex ? 20 : 6,
+   438→   438→                height: 6,
+   439→   439→                background: i === activeIndex
+   440→   440→                  ? (m.accent?.border ?? "#C4A882")
+   441→   441→                  : "rgba(196,168,130,0.25)",
+   442→   442→                borderRadius: 3,
+   443→   443→                boxShadow: i === activeIndex
+   444→   444→                  ? `0 0 10px ${m.accent?.ring ?? "rgba(196,168,130,0.3)"}`
+   445→   445→                  : "none",
+   446→   446→              }}
+   447→   447→            />
+   448→   448→          ))}
+   449→   449→        </div>
+   450→   450→        <div className="flex items-center gap-2">
+   451→   451→          <span
+   452→   452→            className="text-[10px] font-medium tabular-nums tracking-wide"
+   453→   453→            style={{ color: modules[activeIndex]?.accent?.border ?? "#A09A94" }}
+   454→   454→          >
+   455→   455→            {activeIndex + 1}
+   456→   456→          </span>
+   457→   457→          <span className="text-[10px] text-[#C4A882]/40">/</span>
+   458→   458→          <span
+   459→   459→            className="text-[10px] tabular-nums tracking-wide"
+   460→   460→            style={{ color: "#A09A94" }}
+   461→   461→          >
+   462→   462→            {modules.length}
+   463→   463→          </span>
+   464→   464→        </div>
+   465→   465→      </div>
+   466→   466→    </div>
+   467→   467→  );
+   468→   468→}
+   469→   469→
+   470→   470→/* ================================================================== */
+   471→   471→/*  ModuleCard — square gradient, cover-flow ready, rich visual       */
+   472→   472→/* ================================================================== */
+   473→   473→
+   474→   474→function ModuleCard({
+   475→   475→  module: m,
+   476→   476→  index,
+   477→   477→  isActive,
+   478→   478→  cardRef,
+   479→   479→}: {
+   480→   480→  module: Module;
+   481→   481→  index: number;
+   482→   482→  isActive: boolean;
+   483→   483→  cardRef?: (el: HTMLAnchorElement | null) => void;
+   484→   484→}) {
+   485→   485→  const internalRef = useRef<HTMLAnchorElement>(null);
+   486→   486→
+   487→   487→  const mergedRef = useCallback(
+   488→   488→    (el: HTMLAnchorElement | null) => {
+   489→   489→      (internalRef as React.MutableRefObject<HTMLAnchorElement | null>).current =
+   490→   490→        el;
+   491→   491→      cardRef?.(el);
+   492→   492→    },
+   493→   493→    [cardRef]
+   494→   494→  );
+   495→   495→
+   496→   496→  const Icon = m.icon;
+   497→   497→
+   498→   498→  // Build gradient string (2 or 3 stops)
+   499→   499→  const gradientStops = m.accent.via
+   500→   500→    ? `linear-gradient(145deg, ${m.accent.from} 0%, ${m.accent.via} 45%, ${m.accent.to} 100%)`
+   501→   501→    : `linear-gradient(145deg, ${m.accent.from} 0%, ${m.accent.to} 100%)`;
+   502→   502→
+   503→   503→  return (
+   504→   504→    <a
+   505→   505→      ref={mergedRef}
+   506→   506→      href={m.href}
+   507→   507→      aria-label={`Open ${m.title} module`}
+   508→   508→      className={`flex-shrink-0 relative overflow-hidden group${isActive ? " card-glow-pulse" : ""}`}
+   509→   509→      style={{
+   510→   510→        width: "min(72vw, 420px)",
+   511→   511→        maxWidth: "85vw",
+   512→   512→        aspectRatio: "1/1",
+   513→   513→        borderRadius: 28,
+   514→   514→        boxShadow: isActive
+   515→   515→          ? `0 8px 40px -8px ${m.accent.ring}, 0 24px 64px -12px rgba(0,0,0,0.22)`
+   516→   516→          : "0 4px 20px -4px rgba(0,0,0,0.06)",
+   517→   517→        border: isActive
+   518→   518→          ? `1.5px solid ${m.accent.border}`
+   519→   519→          : `1px solid rgba(255,255,255,0.10)`,
+   520→   520→        transition: "box-shadow 0.4s ease, border-color 0.4s ease",
+   521→   521→        transformStyle: "preserve-3d",
+   522→   522→      }}
+   523→   523→      onMouseEnter={isActive ? () => {
+   524→   524→        if (typeof window === "undefined") return;
+   525→   525→        const el = internalRef.current;
+   526→   526→        if (!el) return;
+   527→   527→        import("gsap").then(({ default: gsap }) => {
+   528→   528→          gsap.to(el, {
+   529→   529→            y: -6,
+   530→   530→            boxShadow: `0 16px 56px -8px ${m.accent.ring}, 0 32px 80px -12px rgba(0,0,0,0.30)`,
+   531→   531→            duration: 0.3,
+   532→   532→            ease: "power2.out",
+   533→   533→          });
+   534→   534→        });
+   535→   535→      } : undefined}
+   536→   536→      onMouseLeave={isActive ? () => {
+   537→   537→        if (typeof window === "undefined") return;
+   538→   538→        const el = internalRef.current;
+   539→   539→        if (!el) return;
+   540→   540→        import("gsap").then(({ default: gsap }) => {
+   541→   541→          gsap.to(el, {
+   542→   542→            y: 0,
+   543→   543→            boxShadow: `0 8px 40px -8px ${m.accent.ring}, 0 24px 64px -12px rgba(0,0,0,0.22)`,
+   544→   544→            duration: 0.35,
+   545→   545→            ease: "power2.out",
+   546→   546→          });
+   547→   547→        });
+   548→   548→      } : undefined}
+   549→   549→    >
+   550→   550→      {/* ── Solid white background for text readability ── */}
+   551→   551→      <div
+   552→   552→        className="absolute inset-0"
+   553→   553→        style={{ background: "rgba(255,255,255,0.85)" }}
+   554→   554→      />
+   555→   555→
+   556→   556→      {/* ── Full gradient background ── */}
+   557→   557→      <div
+   558→   558→        className="absolute inset-0"
+   559→   559→        style={{ background: gradientStops }}
+   560→   560→      />
+   561→   561→
+   562→   562→      {/* ── Secondary diagonal overlay for depth ── */}
+   563→   563→      <div
+   564→   564→        className="absolute inset-0 pointer-events-none"
+   565→   565→        style={{
+   566→   566→          background: `linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 40%, rgba(0,0,0,0.15) 100%)`,
+   567→   567→        }}
+   568→   568→      />
+   569→   569→
+   570→   570→      {/* ── Dot-grid texture overlay ── */}
+   571→   571→      <div
+   572→   572→        className="absolute inset-0 pointer-events-none"
+   573→   573→        style={{
+   574→   574→          opacity: 0.06,
+   575→   575→          backgroundImage:
+   576→   576→            "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
+   577→   577→          backgroundSize: "20px 20px",
+   578→   578→        }}
+   579→   579→      />
+   580→   580→
+   581→   581→      {/* ── Soft light glow bottom-left ── */}
+   582→   582→      <div
+   583→   583→        className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full pointer-events-none"
+   584→   584→        style={{
+   585→   585→          background: `radial-gradient(circle, rgba(255,255,255,0.15), transparent 65%)`,
+   586→   586→        }}
+   587→   587→      />
+   588→   588→
+   589→   589→      {/* ── Dark vignette top-right ── */}
+   590→   590→      <div
+   591→   591→        className="absolute -top-20 -right-20 w-56 h-56 rounded-full pointer-events-none"
+   592→   592→        style={{
+   593→   593→          background: `radial-gradient(circle, rgba(0,0,0,0.20), transparent 65%)`,
+   594→   594→        }}
+   595→   595→      />
+   596→   596→
+   597→   597→      {/* ── Animated shimmer sweep (active card) ── */}
+   598→   598→      {isActive && (
+   599→   599→        <div
+   600→   600→          className="absolute inset-0 z-[2] pointer-events-none motion-ok"
+   601→   601→          style={{
+   602→   602→            background:
+   603→   603→              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 42%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 58%, transparent 70%)",
+   604→   604→            backgroundSize: "250% 100%",
+   605→   605→            animation: "shimmer 3s ease-in-out infinite",
+   606→   606→          }}
+   607→   607→        />
+   608→   608→      )}
+   609→   609→
+   610→   610→      {/* ── Feature ribbon on quiz card (module index 0) ── */}
+   611→   611→      {index === 0 && (
+   612→   612→        <span className="feature-ribbon" aria-label="Most popular module">
+   613→   613→          ★ MOST POPULAR
+   614→   614→        </span>
+   615→   615→      )}
+   616→   616→
+   617→   617→      {/* ── Decorative emoji watermark ── */}
+   618→   618→      <span
+   619→   619→        className="absolute bottom-3 right-4 pointer-events-none select-none z-[1]"
+   620→   620→        style={{
+   621→   621→          fontSize: "clamp(60px, 16vw, 100px)",
+   622→   622→          lineHeight: 1,
+   623→   623→          opacity: 0.08,
+   624→   624→          filter: "blur(1px)",
+   625→   625→        }}
+   626→   626→        aria-hidden
+   627→   627→      >
+   628→   628→        {m.emoji}
+   629→   629→      </span>
+   630→   630→
+   631→   631→      {/* ── Module number watermark ── */}
+   632→   632→      <span
+   633→   633→        className="absolute top-4 right-4 pointer-events-none select-none z-[1]"
+   634→   634→        style={{
+   635→   635→          fontSize: "clamp(48px, 12vw, 80px)",
+   636→   636→          fontWeight: 800,
+   637→   637→          color: "rgba(255,255,255,0.05)",
+   638→   638→          lineHeight: 1,
+   639→   639→          fontFamily: "'Cormorant Garamond', Georgia, serif",
+   640→   640→        }}
+   641→   641→        aria-hidden
+   642→   642→      >
+   643→   643→        {String(parseInt(m.num))}
+   644→   644→      </span>
+   645→   645→
+   646→   646→      {/* ── Content ── */}
+   647→   647→      <div className="relative z-10 flex flex-col h-full p-5 sm:p-6">
+   648→   648→        {/* Top row: module num + status */}
+   649→   649→        <div className="flex items-start justify-between flex-shrink-0">
+   650→   650→          <span
+   651→   651→            className="text-[9px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-lg"
+   652→   652→            style={{
+   653→   653→              color: "rgba(255,255,255,0.90)",
+   654→   654→              background: "rgba(255,255,255,0.14)",
+   655→   655→              backdropFilter: "blur(8px)",
+   656→   656→              WebkitBackdropFilter: "blur(8px)",
+   657→   657→              border: "1px solid rgba(255,255,255,0.18)",
+   658→   658→            }}
+   659→   659→          >
+   660→   660→            MODULE {m.num}
+   661→   661→          </span>
+   662→   662→          <span
+   663→   663→            className="text-[8px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
+   664→   664→            style={{
+   665→   665→              color: "rgba(255,255,255,0.95)",
+   666→   666→              background: "rgba(255,255,255,0.14)",
+   667→   667→              backdropFilter: "blur(8px)",
+   668→   668→              WebkitBackdropFilter: "blur(8px)",
+   669→   669→              border: "1px solid rgba(255,255,255,0.18)",
+   670→   670→            }}
+   671→   671→          >
+   672→   672→            {m.status}
+   673→   673→          </span>
+   674→   674→        </div>
+   675→   675→
+   676→   676→        {/* Center: Icon in glass container */}
+   677→   677→        <div className="flex-1 flex items-center justify-center py-2">
+   678→   678→          <div
+   679→   679→            className="rounded-2xl flex items-center justify-center"
+   680→   680→            style={{
+   681→   681→              width: "clamp(72px, 16vw, 100px)",
+   682→   682→              height: "clamp(72px, 16vw, 100px)",
+   683→   683→              background: "rgba(255,255,255,0.14)",
+   684→   684→              backdropFilter: "blur(12px)",
+   685→   685→              WebkitBackdropFilter: "blur(12px)",
+   686→   686→              border: "1px solid rgba(255,255,255,0.22)",
+   687→   687→              boxShadow:
+   688→   688→                "0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.30)",
+   689→   689→            }}
+   690→   690→          >
+   691→   691→            <Icon
+   692→   692→              className="text-white drop-shadow-sm"
+   693→   693→              style={{
+   694→   694→                width: "clamp(30px, 6.5vw, 42px)",
+   695→   695→                height: "clamp(30px, 6.5vw, 42px)",
+   696→   696→              }}
+   697→   697→              strokeWidth={1.4}
+   698→   698→            />
+   699→   699→          </div>
+   700→   700→        </div>
+   701→   701→
+   702→   702→        {/* Bottom: Title + desc + CTA */}
+   703→   703→        <div className="space-y-1.5 flex-shrink-0">
+   704→   704→          <h3
+   705→   705→            className="font-bold tracking-tight leading-tight"
+   706→   706→            style={{
+   707→   707→              color: "#FFFFFF",
+   708→   708→              fontFamily: "'Cormorant Garamond', Georgia, serif",
+   709→   709→              fontSize: "clamp(1.25rem, 3.5vw, 1.65rem)",
+   710→   710→              textShadow: "0 2px 8px rgba(0,0,0,0.15)",
+   711→   711→            }}
+   712→   712→          >
+   713→   713→            {m.title}
+   714→   714→          </h3>
+   715→   715→          <p className="text-white/60 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
+   716→   716→            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.10)" }}
+   717→   717→          >
+   718→   718→            {m.desc}
+   719→   719→          </p>
+   720→   720→
+   721→   721→          {/* Bottom bar */}
+   722→   722→          <div className="flex items-center justify-between pt-1.5">
+   723→   723→            <div className="flex items-center gap-1.5">
+   724→   724→              <span
+   725→   725→                className="relative flex h-2 w-2 rounded-full"
+   726→   726→                style={{
+   727→   727→                  background: "rgba(255,255,255,0.85)",
+   728→   728→                  boxShadow: `0 0 8px rgba(255,255,255,0.5), 0 0 2px ${m.accent.border}`,
+   729→   729→                  animation: "status-pulse 2s ease-in-out infinite",
+   730→   730→                }}
+   731→   731→              />
+   732→   732→              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/70">
+   733→   733→                {m.status}
+   734→   734→              </span>
+   735→   735→            </div>
+   736→   736→            <div
+   737→   737→              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
+   738→   738→              style={{
+   739→   739→                background: "rgba(255,255,255,0.16)",
+   740→   740→                backdropFilter: "blur(8px)",
+   741→   741→                WebkitBackdropFilter: "blur(8px)",
+   742→   742→                border: "1px solid rgba(255,255,255,0.22)",
+   743→   743→                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+   744→   744→              }}
+   745→   745→            >
+   746→   746→              <ArrowUpRight className="h-3.5 w-3.5 text-white transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+   747→   747→            </div>
+   748→   748→          </div>
+   749→   749→        </div>
+   750→   750→      </div>
+   751→   751→    </a>
+   752→   752→  );
+   753→   753→}
+   754→   754→
