@@ -1,0 +1,1091 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→@custom-variant dark (&:is(.dark *, .brown *));
+     5→
+     6→@theme inline {
+     7→  --color-background: var(--background);
+     8→  --color-foreground: var(--foreground);
+     9→  --font-sans: var(--font-geist-sans);
+    10→  --font-mono: var(--font-geist-mono);
+    11→  --color-sidebar-ring: var(--sidebar-ring);
+    12→  --color-sidebar-border: var(--sidebar-border);
+    13→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    14→  --color-sidebar-accent: var(--sidebar-accent);
+    15→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    16→  --color-sidebar-primary: var(--sidebar-primary);
+    17→  --color-sidebar-foreground: var(--sidebar-foreground);
+    18→  --color-sidebar: var(--sidebar);
+    19→  --color-chart-5: var(--chart-5);
+    20→  --color-chart-4: var(--chart-4);
+    21→  --color-chart-3: var(--chart-3);
+    22→  --color-chart-2: var(--chart-2);
+    23→  --color-chart-1: var(--chart-1);
+    24→  --color-ring: var(--ring);
+    25→  --color-input: var(--input);
+    26→  --color-border: var(--border);
+    27→  --color-destructive: var(--destructive);
+    28→  --color-accent-foreground: var(--accent-foreground);
+    29→  --color-accent: var(--accent);
+    30→  --color-muted-foreground: var(--muted-foreground);
+    31→  --color-muted: var(--muted);
+    32→  --color-secondary-foreground: var(--secondary-foreground);
+    33→  --color-secondary: var(--secondary);
+    34→  --color-primary-foreground: var(--primary-foreground);
+    35→  --color-primary: var(--primary);
+    36→  --color-popover-foreground: var(--popover-foreground);
+    37→  --color-popover: var(--popover);
+    38→  --color-card-foreground: var(--card-foreground);
+    39→  --color-card: var(--card);
+    40→  --radius-sm: calc(var(--radius) - 4px);
+    41→  --radius-md: calc(var(--radius) - 2px);
+    42→  --radius-lg: var(--radius);
+    43→  --radius-xl: calc(var(--radius) + 4px);
+    44→}
+    45→
+    46→/* ═══════════════════════════════════════════════════════
+    47→   DARK THEME (default / :root)
+    48→   No flash — :root IS the dark theme, .brown overrides it
+    49→   ═══════════════════════════════════════════════════════ */
+    50→
+    51→:root {
+    52→  --radius: 0.625rem;
+    53→  --background: oklch(0.12 0 0);
+    54→  --foreground: oklch(0.985 0 0);
+    55→  --card: oklch(0.17 0 0);
+    56→  --card-foreground: oklch(0.985 0 0);
+    57→  --popover: oklch(0.17 0 0);
+    58→  --popover-foreground: oklch(0.985 0 0);
+    59→  --primary: oklch(0.922 0 0);
+    60→  --primary-foreground: oklch(0.205 0 0);
+    61→  --secondary: oklch(0.22 0 0);
+    62→  --secondary-foreground: oklch(0.985 0 0);
+    63→  --muted: oklch(0.22 0 0);
+    64→  --muted-foreground: oklch(0.6 0 0);
+    65→  --accent: oklch(0.22 0 0);
+    66→  --accent-foreground: oklch(0.985 0 0);
+    67→  --destructive: oklch(0.704 0.191 22.216);
+    68→  --border: oklch(1 0 0 / 8%);
+    69→  --input: oklch(1 0 0 / 12%);
+    70→  --ring: oklch(0.556 0 0);
+    71→  --chart-1: oklch(0.488 0.243 264.376);
+    72→  --chart-2: oklch(0.696 0.17 162.48);
+    73→  --chart-3: oklch(0.769 0.188 70.08);
+    74→  --chart-4: oklch(0.627 0.265 303.9);
+    75→  --chart-5: oklch(0.645 0.246 16.439);
+    76→  --sidebar: oklch(0.17 0 0);
+    77→  --sidebar-foreground: oklch(0.985 0 0);
+    78→  --sidebar-primary: oklch(0.488 0.243 264.376);
+    79→  --sidebar-primary-foreground: oklch(0.985 0 0);
+    80→  --sidebar-accent: oklch(0.22 0 0);
+    81→  --sidebar-accent-foreground: oklch(0.985 0 0);
+    82→  --sidebar-border: oklch(1 0 0 / 8%);
+    83→  --sidebar-ring: oklch(0.556 0 0);
+    84→}
+    85→
+    86→/* ═══════════════════════════════════════════════════════
+    87→   BROWN THEME (.brown class)
+    88→   Rich chocolate, warm caramel, deep espresso
+    89→   ═══════════════════════════════════════════════════════ */
+    90→
+    91→.brown {
+    92→  --background: oklch(0.19 0.035 55);
+    93→  --foreground: oklch(0.94 0.025 72);
+    94→  --card: oklch(0.24 0.04 55);
+    95→  --card-foreground: oklch(0.94 0.025 72);
+    96→  --popover: oklch(0.24 0.04 55);
+    97→  --popover-foreground: oklch(0.94 0.025 72);
+    98→  --primary: oklch(0.65 0.17 58);
+    99→  --primary-foreground: oklch(0.12 0.04 48);
+   100→  --secondary: oklch(0.30 0.04 50);
+   101→  --secondary-foreground: oklch(0.92 0.02 72);
+   102→  --muted: oklch(0.29 0.035 50);
+   103→  --muted-foreground: oklch(0.62 0.04 60);
+   104→  --accent: oklch(0.33 0.05 48);
+   105→  --accent-foreground: oklch(0.94 0.025 72);
+   106→  --destructive: oklch(0.577 0.245 27.325);
+   107→  --border: oklch(0.38 0.05 55 / 45%);
+   108→  --input: oklch(0.38 0.05 55 / 45%);
+   109→  --ring: oklch(0.65 0.17 58);
+   110→  --chart-1: oklch(0.62 0.16 65);
+   111→  --chart-2: oklch(0.55 0.12 45);
+   112→  --chart-3: oklch(0.70 0.10 80);
+   113→  --chart-4: oklch(0.50 0.08 35);
+   114→  --chart-5: oklch(0.75 0.12 70);
+   115→  --sidebar: oklch(0.22 0.04 55);
+   116→  --sidebar-foreground: oklch(0.94 0.025 72);
+   117→  --sidebar-primary: oklch(0.65 0.17 58);
+   118→  --sidebar-primary-foreground: oklch(0.12 0.04 48);
+   119→  --sidebar-accent: oklch(0.30 0.04 50);
+   120→  --sidebar-accent-foreground: oklch(0.94 0.025 72);
+   121→  --sidebar-border: oklch(0.38 0.05 55 / 45%);
+   122→  --sidebar-ring: oklch(0.65 0.17 58);
+   123→}
+   124→
+   125→@layer base {
+   126→  * {
+   127→    @apply border-border outline-ring/50;
+   128→  }
+   129→  body {
+   130→    @apply bg-background text-foreground;
+   131→    -webkit-font-smoothing: antialiased;
+   132→    -moz-osx-font-smoothing: grayscale;
+   133→    overscroll-behavior-y: none;
+   134→    overflow: hidden;
+   135→    /* Force GPU layer for the entire body — eliminates paint-on-scroll jank */
+   136→    transform: translateZ(0);
+   137→    backface-visibility: hidden;
+   138→  }
+   139→  html {
+   140→    scroll-behavior: smooth;
+   141→    overflow: hidden;
+   142→    /* Promote to own compositor layer — smoother repaints */
+   143→    transform: translateZ(0);
+   144→  }
+   145→}
+   146→
+   147→/* Respect reduced-motion for smooth scroll — the @layer base rule above
+   148→   applies regardless of motion preference, which can be jarring. */
+   149→@media (prefers-reduced-motion: reduce) {
+   150→  html {
+   151→    scroll-behavior: auto;
+   152→  }
+   153→}
+   154→
+   155→/* ──────────────────────────────────────────────────────────
+   156→   Motion utilities for prefers-reduced-motion:
+   157→
+   158→   `.motion-ok`  — applied to elements whose ANIMATIONS should be
+   159→                   killed under reduced motion, but the element itself
+   160→                   MUST stay visible (e.g. a button wrapped in an
+   161→                   animated border, a status dot with a ping ring).
+   162→
+   163→   `.decorative-motion` — applied to elements that are PURELY decorative
+   164→                          (Hero spotlight, floating orbs, particle field).
+   165→                          Under reduced motion they are hidden entirely,
+   166→                          which is cheaper than freezing the first frame
+   167→                          and avoids compositing a static layer.
+   168→   ────────────────────────────────────────────────────────── */
+   169→@media (prefers-reduced-motion: reduce) {
+   170→  .motion-ok,
+   171→  .motion-ok * {
+   172→    animation: none !important;
+   173→    transition-duration: 0.01ms !important;
+   174→  }
+   175→  .decorative-motion {
+   176→    display: none !important;
+   177→  }
+   178→}
+   179→
+   180→/* ═══════════════════════════════════════════════════════
+   181→   SMOOTH MOTION SYSTEM
+   182→   GPU-accelerated spring-like transitions for everything
+   183→   ═══════════════════════════════════════════════════════ */
+   184→
+   185→/* ── Spring easing curves (cubic-bezier approximations) ── */
+   186→:root {
+   187→  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+   188→  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+   189→  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+   190→  --ease-in-out-smooth: cubic-bezier(0.42, 0, 0.58, 1);
+   191→  --duration-fast: 150ms;
+   192→  --duration-normal: 250ms;
+   193→  --duration-smooth: 350ms;
+   194→  --duration-slow: 500ms;
+   195→}
+   196→
+   197→/* ── Global interactive transition defaults ── */
+   198→a, button, [role="button"], input, select, textarea,
+   199→[tabindex] {
+   200→  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+   201→  transition-duration: var(--duration-normal);
+   202→  transition-timing-function: var(--ease-smooth);
+   203→  -webkit-tap-highlight-color: transparent;
+   204→}
+   205→
+   206→/* ── Hover lift for interactive cards ── */
+   207→.btn-press {
+   208→  transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-smooth);
+   209→  will-change: transform;
+   210→}
+   211→.btn-press:active {
+   212→  transform: scale(0.96);
+   213→}
+   214→
+   215→/* ── Glass panels — smooth appear ── */
+   216→[class*="backdrop-filter"], [style*="backdrop-filter"] {
+   217→  -webkit-backface-visibility: hidden;
+   218→  backface-visibility: hidden;
+   219→}
+   220→
+   221→/* ── Smooth opacity transitions everywhere ── */
+   222→[style*="opacity"] {
+   223→  transition: opacity var(--duration-normal) var(--ease-smooth);
+   224→}
+   225→
+   226→/* ── GPU layer hints for animated containers ── */
+   227→.hero-anim {
+   228→  will-change: transform, opacity;
+   229→  backface-visibility: hidden;
+   230→}
+   231→
+   232→/* ═══════════════════════════════════════════════════════
+   233→   CUSTOM UTILITIES & ANIMATIONS
+   234→   ═══════════════════════════════════════════════════════ */
+   235→
+   236→/* ── Dot grid ── */
+   237→.bg-grid {
+   238→  background-image:
+   239→    radial-gradient(circle, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+   240→  background-size: 24px 24px;
+   241→}
+   242→
+   243→.brown .bg-grid {
+   244→  background-image:
+   245→    radial-gradient(circle, oklch(0.65 0.06 55 / 0.10) 1px, transparent 1px);
+   246→}
+   247→
+   248→/* ── Entrance animations ── */
+   249→@keyframes fade-up {
+   250→  from { opacity: 0; transform: translateY(12px); }
+   251→  to   { opacity: 1; transform: translateY(0); }
+   252→}
+   253→
+   254→@keyframes card-in {
+   255→  from { opacity: 0; transform: perspective(800px) rotateX(3deg) translateY(12px) scale(0.98); }
+   256→  to   { opacity: 1; transform: perspective(800px) rotateX(0deg) translateY(0) scale(1); }
+   257→}
+   258→
+   259→@keyframes upload-enter {
+   260→  from { opacity: 0; transform: translateY(6px); }
+   261→  to   { opacity: 1; transform: translateY(0); }
+   262→}
+   263→
+   264→/* ═══════════════════════════════════════════════════════
+   265→   LOADER — "MONO" Black monochrome aesthetic
+   266→   ═══════════════════════════════════════════════════════ */
+   267→
+   268→/* ── Base — pure black ── */
+   269→.loader-mono {
+   270→  background: #050505;
+   271→}
+   272→
+   273→/* ── Dot matrix ── */
+   274→.loader-mono-dots {
+   275→  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+   276→  background-size: 24px 24px;
+   277→  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 15%, transparent 70%);
+   278→  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 15%, transparent 70%);
+   279→}
+   280→
+   281→/* ── Atom / Cell icon ── */
+   282→.loader-atom {
+   283→  width: 90px;
+   284→  height: 90px;
+   285→  perspective: 500px;
+   286→}
+   287→
+   288→.loader-atom-scene {
+   289→  position: relative;
+   290→  width: 100%;
+   291→  height: 100%;
+   292→  transform-style: preserve-3d;
+   293→  animation: atom-scene-drift 25s linear infinite;
+   294→  will-change: transform;
+   295→}
+   296→
+   297→@keyframes atom-scene-drift {
+   298→  from { transform: rotateY(0deg); }
+   299→  to   { transform: rotateY(360deg); }
+   300→}
+   301→
+   302→.loader-atom-nucleus {
+   303→  position: absolute;
+   304→  top: 50%;
+   305→  left: 50%;
+   306→  width: 7px;
+   307→  height: 7px;
+   308→  margin: -3.5px;
+   309→  border-radius: 50%;
+   310→  background: rgba(255,255,255,0.85);
+   311→  animation: atom-nucleus-pulse 2.5s ease-in-out infinite;
+   312→  will-change: transform, opacity;
+   313→}
+   314→
+   315→@keyframes atom-nucleus-pulse {
+   316→  0%, 100% { opacity: 0.7; transform: scale(1); }
+   317→  50%      { opacity: 1; transform: scale(1.12); }
+   318→}
+   319→
+   320→.loader-atom-orbit {
+   321→  position: absolute;
+   322→  top: 50%;
+   323→  left: 50%;
+   324→  width: 82px;
+   325→  height: 82px;
+   326→  margin: -41px;
+   327→  border: 1px solid rgba(255,255,255,0.1);
+   328→  border-radius: 50%;
+   329→  transform-style: preserve-3d;
+   330→}
+   331→
+   332→.loader-atom-orbit-1 { transform: rotateZ(0deg) rotateX(72deg); }
+   333→.loader-atom-orbit-2 { transform: rotateZ(60deg) rotateX(72deg); }
+   334→.loader-atom-orbit-3 { transform: rotateZ(-60deg) rotateX(72deg); }
+   335→
+   336→.loader-atom-electron-spin {
+   337→  position: absolute;
+   338→  inset: -1px;
+   339→  border-radius: 50%;
+   340→  transform-style: preserve-3d;
+   341→  animation: atom-electron-orbit 2.5s linear infinite;
+   342→  will-change: transform;
+   343→}
+   344→
+   345→.loader-atom-electron-delay-2 { animation-delay: -0.83s; }
+   346→.loader-atom-electron-delay-3 { animation-delay: -1.67s; }
+   347→
+   348→.loader-atom-electron {
+   349→  position: absolute;
+   350→  top: -2px;
+   351→  left: 50%;
+   352→  width: 4px;
+   353→  height: 4px;
+   354→  margin-left: -2px;
+   355→  border-radius: 50%;
+   356→  background: rgba(255,255,255,0.7);
+   357→  will-change: transform;
+   358→}
+   359→
+   360→@keyframes atom-electron-orbit {
+   361→  from { transform: rotateZ(0deg); }
+   362→  to   { transform: rotateZ(360deg); }
+   363→}
+   364→
+   365→/* ── Brand letters ── */
+   366→.loader-mono-brand-letter {
+   367→  font-size: 12px;
+   368→  font-weight: 300;
+   369→  letter-spacing: 0.35em;
+   370→  color: rgba(255,255,255,0.75);
+   371→}
+   372→
+   373→/* ── Subtitle ── */
+   374→.loader-mono-subtitle {
+   375→  font-size: 9px;
+   376→  letter-spacing: 0.35em;
+   377→  text-transform: uppercase;
+   378→  color: rgba(255,255,255,0.2);
+   379→}
+   380→
+   381→/* ── Divider ── */
+   382→.loader-mono-divider {
+   383→  height: 1px;
+   384→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 80%, transparent);
+   385→  transform-origin: center;
+   386→}
+   387→
+   388→/* ── Progress bar ── */
+   389→.loader-mono-bar-track {
+   390→  background: rgba(255,255,255,0.04);
+   391→  border: 1px solid rgba(255,255,255,0.06);
+   392→}
+   393→
+   394→.loader-mono-bar-fill {
+   395→  background: rgba(255,255,255,0.75);
+   396→  transition: width 0.08s linear;
+   397→  will-change: width;
+   398→}
+   399→
+   400→/* ── Phase label ── */
+   401→.loader-mono-phase {
+   402→  font-size: 9px;
+   403→  letter-spacing: 0.2em;
+   404→  text-transform: uppercase;
+   405→  color: rgba(255,255,255,0.18);
+   406→}
+   407→
+   408→/* ── Percentage ── */
+   409→.loader-mono-pct {
+   410→  font-size: 11px;
+   411→  font-weight: 400;
+   412→  font-variant-numeric: tabular-nums;
+   413→  color: rgba(255,255,255,0.5);
+   414→  letter-spacing: 0.05em;
+   415→}
+   416→
+   417→.loader-mono-pct-sign {
+   418→  font-size: 8px;
+   419→  color: rgba(255,255,255,0.2);
+   420→  margin-left: 1px;
+   421→}
+   422→
+   423→/* ── Skeleton ── */
+   424→.loader-mono-skeleton {
+   425→  background: rgba(255,255,255,0.04);
+   426→  animation: mono-skeleton-pulse 2s ease-in-out infinite;
+   427→}
+   428→
+   429→@keyframes mono-skeleton-pulse {
+   430→  0%, 100% { opacity: 0.3; }
+   431→  50%      { opacity: 0.7; }
+   432→}
+   433→
+   434→/* ═══════════════════════════════════════════════════════
+   435→   HERO — Aceternity/21st.dev inspired
+   436→   ═══════════════════════════════════════════════════════ */
+   437→
+   438→@property --hero-border-angle {
+   439→  syntax: "<angle>";
+   440→  initial-value: 0deg;
+   441→  inherits: false;
+   442→}
+   443→
+   444→/* ── Spotlight ── */
+   445→.hero-spotlight {
+   446→  position: absolute;
+   447→  top: -30%;
+   448→  left: 25%;
+   449→  width: 50%;
+   450→  height: 100%;
+   451→  background: radial-gradient(
+   452→    ellipse 60% 50% at 50% 0%,
+   453→    oklch(0.7 0.15 250 / 0.08),
+   454→    oklch(0.6 0.1 200 / 0.03) 40%,
+   455→    transparent 70%
+   456→  );
+   457→  animation: spotlight-drift 14s ease-in-out infinite alternate;
+   458→  pointer-events: none;
+   459→}
+   460→
+   461→.brown .hero-spotlight {
+   462→  background: radial-gradient(
+   463→    ellipse 60% 50% at 50% 0%,
+   464→    oklch(0.72 0.14 60 / 0.14),
+   465→    oklch(0.65 0.10 55 / 0.06) 40%,
+   466→    transparent 70%
+   467→  );
+   468→}
+   469→
+   470→@keyframes spotlight-drift {
+   471→  0%   { transform: translateX(-10%) rotate(-2deg); opacity: 0.6; }
+   472→  50%  { transform: translateX(10%) rotate(2deg); opacity: 1; }
+   473→  100% { transform: translateX(-5%) rotate(-1deg); opacity: 0.75; }
+   474→}
+   475→
+   476→/* ── Floating orbs ── */
+   477→.hero-orb {
+   478→  position: absolute;
+   479→  border-radius: 50%;
+   480→  filter: blur(80px);
+   481→  will-change: transform;
+   482→  animation: hero-orb-float 20s ease-in-out infinite alternate;
+   483→}
+   484→
+   485→.hero-orb-1 {
+   486→  width: 350px;
+   487→  height: 350px;
+   488→  top: -10%;
+   489→  right: -5%;
+   490→  background: oklch(0.45 0.12 270 / 0.06);
+   491→  animation-duration: 18s;
+   492→}
+   493→
+   494→.hero-orb-2 {
+   495→  width: 280px;
+   496→  height: 280px;
+   497→  bottom: -15%;
+   498→  left: 10%;
+   499→  background: oklch(0.4 0.1 180 / 0.04);
+   500→  animation-duration: 22s;
+   501→  animation-delay: -8s;
+   502→}
+   503→
+   504→.brown .hero-orb-1 { background: oklch(0.55 0.12 55 / 0.12); }
+   505→.brown .hero-orb-2 { background: oklch(0.45 0.10 45 / 0.08); }
+   506→
+   507→@keyframes hero-orb-float {
+   508→  0%   { transform: translate(0, 0) scale(1); }
+   509→  50%  { transform: translate(15px, -10px) scale(1.03); }
+   510→  100% { transform: translate(-8px, 8px) scale(0.98); }
+   511→}
+   512→
+   513→/* ── Gradient shimmer text ── */
+   514→.hero-gradient-text {
+   515→  background: linear-gradient(
+   516→    135deg,
+   517→    oklch(0.7 0.12 250) 0%,
+   518→    oklch(0.85 0.16 200) 30%,
+   519→    oklch(0.8 0.14 160) 60%,
+   520→    oklch(0.7 0.12 250) 100%
+   521→  );
+   522→  background-size: 300% 100%;
+   523→  -webkit-background-clip: text;
+   524→  background-clip: text;
+   525→  -webkit-text-fill-color: transparent;
+   526→  animation: gradient-shift 8s ease-in-out infinite;
+   527→}
+   528→
+   529→.brown .hero-gradient-text {
+   530→  background: linear-gradient(
+   531→    135deg,
+   532→    oklch(0.55 0.14 60) 0%,
+   533→    oklch(0.65 0.18 55) 30%,
+   534→    oklch(0.58 0.15 45) 60%,
+   535→    oklch(0.55 0.14 60) 100%
+   536→  );
+   537→  background-size: 300% 100%;
+   538→  -webkit-background-clip: text;
+   539→  background-clip: text;
+   540→  -webkit-text-fill-color: transparent;
+   541→}
+   542→
+   543→@keyframes gradient-shift {
+   544→  0%   { background-position: 0% center; }
+   545→  50%  { background-position: 100% center; }
+   546→  100% { background-position: 0% center; }
+   547→}
+   548→
+   549→/* ── Moving border ── */
+   550→.hero-cta-border {
+   551→  position: relative;
+   552→  border-radius: 12px;
+   553→  padding: 1.5px;
+   554→  background: conic-gradient(
+   555→    from var(--hero-border-angle),
+   556→    transparent 40%,
+   557→    oklch(0.65 0.16 60 / 0.60),
+   558→    oklch(0.75 0.12 55 / 0.30),
+   559→    transparent 80%
+   560→  );
+   561→  animation: border-rotate 4s linear infinite;
+   562→}
+   563→
+   564→@supports not (background: conic-gradient(from 0deg, red, blue)) {
+   565→  .hero-cta-border {
+   566→    background: oklch(0.65 0.14 60 / 0.50);
+   567→  }
+   568→}
+   569→
+   570→.brown .hero-cta-border {
+   571→  background: conic-gradient(
+   572→    from var(--hero-border-angle),
+   573→    transparent 40%,
+   574→    oklch(0.65 0.16 58 / 0.50),
+   575→    oklch(0.70 0.12 55 / 0.30),
+   576→    transparent 80%
+   577→  );
+   578→}
+   579→
+   580→.hero-cta-inner {
+   581→  border-radius: 10.5px;
+   582→}
+   583→
+   584→@keyframes border-rotate {
+   585→  to { --hero-border-angle: 360deg; }
+   586→}
+   587→
+   588→@supports not (background: conic-gradient(from 0deg, red, blue)) {
+   589→  .hero-cta-border::before {
+   590→    content: "";
+   591→    position: absolute;
+   592→    inset: -1px;
+   593→    border-radius: 12px;
+   594→    background: linear-gradient(135deg, oklch(0.75 0.15 250 / 0.4), oklch(0.7 0.12 200 / 0.2));
+   595→    z-index: -1;
+   596→    animation: border-glow 3s ease-in-out infinite alternate;
+   597→  }
+   598→  .brown .hero-cta-border::before {
+   599→    background: linear-gradient(135deg, oklch(0.65 0.14 58 / 0.40), oklch(0.55 0.10 55 / 0.25));
+   600→  }
+   601→}
+   602→
+   603→@keyframes border-glow {
+   604→  0%   { opacity: 0.5; }
+   605→  100% { opacity: 1; }
+   606→}
+   607→
+   608→/* ── Badge pulse ── */
+   609→.hero-badge-pulse {
+   610→  animation: badge-pulse 2.5s ease-in-out infinite;
+   611→}
+   612→
+   613→@keyframes badge-pulse {
+   614→  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.2 150 / 0); }
+   615→  50%      { box-shadow: 0 0 0 4px oklch(0.65 0.2 150 / 0.12); }
+   616→}
+   617→
+   618→.brown .hero-badge-pulse {
+   619→  animation: badge-pulse-brown 2.5s ease-in-out infinite;
+   620→}
+   621→
+   622→@keyframes badge-pulse-brown {
+   623→  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.17 58 / 0); }
+   624→  50%      { box-shadow: 0 0 0 4px oklch(0.65 0.17 58 / 0.12); }
+   625→}
+   626→
+   627→/* ═══════════════════════════════════════════════════════
+   628→   FLOATING FILE PANEL
+   629→   ═══════════════════════════════════════════════════════ */
+   630→
+   631→.file-panel-floating {
+   632→  top: 56px;
+   633→  right: 16px;
+   634→  width: 400px;
+   635→  max-height: calc(100vh - 80px);
+   636→  animation: panel-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+   637→}
+   638→
+   639→@media (max-width: 640px) {
+   640→  .file-panel-floating {
+   641→    left: 8px;
+   642→    right: 8px;
+   643→    width: auto;
+   644→    top: 56px;
+   645→  }
+   646→}
+   647→
+   648→@keyframes panel-in {
+   649→  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+   650→  to   { opacity: 1; transform: translateY(0) scale(1); }
+   651→}
+   652→
+   653→.upload-item {
+   654→  animation: upload-enter 0.15s ease both;
+   655→}
+   656→
+   657→/* ═══════════════════════════════════════════════════════
+   658→   REDUCED MOTION
+   659→   ═══════════════════════════════════════════════════════
+   660→
+   661→   Note: the global "kill all animations" rule is intentionally
+   662→   scoped to elements that NEED it (the loader orbital scene,
+   663→   hero spotlight, etc.) via the `.motion-ok` / `.decorative-motion`
+   664→   utilities above. A blanket `animation-duration: 0.01ms !important`
+   665→   on every element breaks things like the loader progress bar
+   666→   transition (which uses width, not animation) and is overkill.
+   667→
+   668→   The rules below are additional, element-specific overrides
+   669→   that complement the utility classes. */
+   670→
+   671→@media (prefers-reduced-motion: reduce) {
+   672→  /* The loader orbital scene animates a 3D rotation — disable it.
+   673→     The Loader component itself also short-circuits via useReducedMotion. */
+   674→  .loader-atom-scene,
+   675→  .loader-atom-nucleus,
+   676→  .loader-atom-electron-spin,
+   677→  .loader-mono-skeleton { animation: none !important; }
+   678→
+   679→  /* Gradient text normally shifts position — freeze it on the first frame. */
+   680→  .hero-gradient-text { animation: none !important; }
+   681→
+   682→  /* Hero badge pulse — freeze. */
+   683→  .hero-badge-pulse { animation: none !important; }
+   684→
+   685→  /* Floating orbs — hidden entirely (purely decorative). */
+   686→  .hero-orb { display: none !important; }
+   687→
+   688→  /* CTA border rotating gradient — kill the animation but keep the
+   689→     static gradient so the button still looks intentional. */
+   690→  .hero-cta-border { animation: none !important; }
+   691→}
+   692→
+   693→/* ── Custom scrollbar ── */
+   694→::-webkit-scrollbar { width: 5px; height: 5px; }
+   695→::-webkit-scrollbar-track { background: transparent; }
+   696→::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 0.06); border-radius: 3px; }
+   697→::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.12); }
+   698→.brown ::-webkit-scrollbar-thumb { background: oklch(0.50 0.06 55 / 0.25); }
+   699→.brown ::-webkit-scrollbar-thumb:hover { background: oklch(0.50 0.06 55 / 0.4); }
+   700→
+   701→/* ═══════════════════════════════════════════════════════
+   702→   PREMIUM EFFECTS — 21st.dev inspired
+   703→   ═══════════════════════════════════════════════════════ */
+   704→
+   705→/* ── 3D Card — layered shadows for physical depth ── */
+   706→.card-3d {
+   707→  position: relative;
+   708→  box-shadow:
+   709→    0 1px 2px oklch(0 0 0 / 0.3),
+   710→    0 2px 4px oklch(0 0 0 / 0.2),
+   711→    0 4px 8px oklch(0 0 0 / 0.15),
+   712→    0 8px 16px oklch(0 0 0 / 0.10),
+   713→    0 16px 32px oklch(0 0 0 / 0.06),
+   714→    0 24px 48px oklch(0 0 0 / 0.03);
+   715→}
+   716→
+   717→/* 3D card bottom edge — visible thickness */
+   718→.card-3d::after {
+   719→  content: "";
+   720→  position: absolute;
+   721→  left: 3px;
+   722→  right: 3px;
+   723→  bottom: -4px;
+   724→  height: 4px;
+   725→  border-radius: 0 0 16px 16px;
+   726→  background: oklch(0.14 0 0);
+   727→  z-index: -1;
+   728→}
+   729→
+   730→.brown .card-3d::after {
+   731→  background: oklch(0.20 0.03 55);
+   732→}
+   733→
+   734→/* ── Subtle grain texture ──
+   735→   Disabled on mobile (small screens) and reduced-motion because it forces
+   736→   a full-viewport fixed-position repaint layer that costs GPU memory on
+   737→   low-end devices. */
+   738→.grain-overlay::after {
+   739→  content: "";
+   740→  position: fixed;
+   741→  inset: 0;
+   742→  z-index: 9999;
+   743→  pointer-events: none;
+   744→  opacity: 0.015;
+   745→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+   746→  background-repeat: repeat;
+   747→  background-size: 128px 128px;
+   748→  /* Hint to the compositor: this layer won't change, so it can be cached. */
+   749→  will-change: auto;
+   750→}
+   751→
+   752→/* Skip the grain layer on small screens — it's barely visible at 0.015
+   753→   opacity but still costs a full-viewport paint layer. */
+   754→@media (max-width: 640px) {
+   755→  .grain-overlay::after {
+   756→    content: none;
+   757→    display: none;
+   758→  }
+   759→}
+   760→
+   761→@media (prefers-reduced-motion: reduce) {
+   762→  .grain-overlay::after {
+   763→    content: none;
+   764→    display: none;
+   765→  }
+   766→}
+   767→
+   768→/* ── Smooth button press ── */
+   769→.btn-press {
+   770→  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), 
+   771→              box-shadow 0.2s ease-out,
+   772→              opacity 0.15s ease;
+   773→}
+   774→.btn-press:active {
+   775→  transform: scale(0.97);
+   776→}
+   777→
+   778→/* ── Glass morphism card ── */
+   779→.glass-card {
+   780→  background: oklch(1 0 0 / 0.03);
+   781→  backdrop-filter: blur(16px) saturate(1.4);
+   782→  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+   783→  border: 1px solid oklch(1 0 0 / 0.06);
+   784→}
+   785→
+   786→.brown .glass-card {
+   787→  background: oklch(0.65 0.06 55 / 0.06);
+   788→  border-color: oklch(0.50 0.06 55 / 0.12);
+   789→}
+   790→
+   791→/* ── Smooth focus ring ── */
+   792→.focus-ring {
+   793→  outline: none;
+   794→  transition: box-shadow 0.2s ease;
+   795→}
+   796→.focus-ring:focus-visible {
+   797→  box-shadow: 0 0 0 2px oklch(0.7 0.15 250 / 0.5);
+   798→}
+   799→.brown .focus-ring:focus-visible {
+   800→  box-shadow: 0 0 0 2px oklch(0.65 0.17 58 / 0.5);
+   801→}
+   802→
+   803→/* ── Staggered entrance animation ── */
+   804→.stagger-in > * {
+   805→  animation: fade-up 0.5s ease both;
+   806→}
+   807→.stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+   808→.stagger-in > *:nth-child(2) { animation-delay: 60ms; }
+   809→.stagger-in > *:nth-child(3) { animation-delay: 120ms; }
+   810→.stagger-in > *:nth-child(4) { animation-delay: 180ms; }
+   811→.stagger-in > *:nth-child(5) { animation-delay: 240ms; }
+   812→.stagger-in > *:nth-child(6) { animation-delay: 300ms; }
+   813→.stagger-in > *:nth-child(7) { animation-delay: 360ms; }
+   814→
+   815→/* ── Typing cursor ── */
+   816→@keyframes blink-cursor {
+   817→  0%, 100% { opacity: 1; }
+   818→  50% { opacity: 0; }
+   819→}
+   820→.typing-cursor::after {
+   821→  content: "|";
+   822→  animation: blink-cursor 1s step-end infinite;
+   823→  color: oklch(0.7 0.15 250);
+   824→  margin-left: 2px;
+   825→}
+   826→.brown .typing-cursor::after {
+   827→  color: oklch(0.65 0.17 58);
+   828→}
+   829→
+   830→/* ── Floating particles (used by .hero-particles) ── */
+   831→.hero-particle {
+   832→  position: absolute;
+   833→  border-radius: 50%;
+   834→  background: rgba(196,168,130,0.25);
+   835→  animation: float-particle var(--duration, 18s) linear infinite;
+   836→  animation-delay: var(--delay, 0s);
+   837→  pointer-events: none;
+   838→  will-change: transform, opacity;
+   839→}
+   840→
+   841→/* ── Generic .particle (kept for backwards compat) ── */
+   842→.particle {
+   843→  position: absolute;
+   844→  width: 2px;
+   845→  height: 2px;
+   846→  border-radius: 50%;
+   847→  background: oklch(0.7 0.12 250 / 0.3);
+   848→  animation: float-particle var(--duration, 15s) linear infinite;
+   849→  animation-delay: var(--delay, 0s);
+   850→  pointer-events: none;
+   851→}
+   852→
+   853→.brown .particle {
+   854→  background: oklch(0.65 0.14 58 / 0.3);
+   855→}
+   856→
+   857→/* ── Micro shine on hover ── */
+   858→.micro-shine {
+   859→  position: relative;
+   860→  overflow: hidden;
+   861→}
+   862→.micro-shine::before {
+   863→  content: "";
+   864→  position: absolute;
+   865→  inset: 0;
+   866→  background: linear-gradient(
+   867→    105deg,
+   868→    transparent 40%,
+   869→    oklch(1 0 0 / 0.03) 45%,
+   870→    oklch(1 0 0 / 0.06) 50%,
+   871→    oklch(1 0 0 / 0.03) 55%,
+   872→    transparent 60%
+   873→  );
+   874→  transform: translateX(-100%);
+   875→  transition: transform 0.8s ease;
+   876→  pointer-events: none;
+   877→  z-index: 1;
+   878→}
+   879→.micro-shine:hover::before {
+   880→  transform: translateX(100%);
+   881→}
+   882→
+   883→/* ── Shake animation (wrong password) ── */
+   884→@keyframes shake {
+   885→  0%, 100% { transform: translateX(0); }
+   886→  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+   887→  20%, 40%, 60%, 80% { transform: translateX(4px); }
+   888→}
+   889→.animate-shake {
+   890→  animation: shake 0.5s ease-in-out;
+   891→}
+   892→
+   893→/* ═══════════════════════════════════════════════════════
+   894→   MODULE CARD EFFECTS
+   895→   ═══════════════════════════════════════════════════════ */
+   896→
+   897→/* ── Card shimmer sweep ── */
+   898→@keyframes shimmer {
+   899→  0%   { background-position: 250% 0; }
+   900→  100% { background-position: -250% 0; }
+   901→}
+   902→
+   903→/* ── Glow pulse for active card border breathing ── */
+   904→@keyframes glow-pulse {
+   905→  0%, 100% { box-shadow: 0 0 0 0 rgba(196,168,130,0.25); }
+   906→  50% { box-shadow: 0 0 16px 2px rgba(196,168,130,0.12); }
+   907→}
+   908→
+   909→/* ── Floating particles for hero background ── */
+   910→@keyframes float-particle {
+   911→  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+   912→  8%   { opacity: 0.7; }
+   913→  50%  { transform: translateY(-40vh) translateX(15px) scale(0.8); opacity: 0.5; }
+   914→  92%  { opacity: 0.15; }
+   915→  100% { transform: translateY(-80vh) translateX(-10px) scale(0.4); opacity: 0; }
+   916→}
+   917→
+   918→/* ── Breathing glow behind title ── */
+   919→@keyframes breathing-glow {
+   920→  0%, 100% { opacity: 0.30; transform: scale(1); }
+   921→  50% { opacity: 0.55; transform: scale(1.06); }
+   922→}
+   923→
+   924→/* ── Subtle pulse for status dots ── */
+   925→@keyframes status-pulse {
+   926→  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+   927→  50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+   928→}
+   929→
+   930→/* ── Animated subtitle underline ── */
+   931→@keyframes subtitle-underline {
+   932→  0%   { width: 0; opacity: 0; }
+   933→  100% { width: 100%; opacity: 1; }
+   934→}
+   935→
+   936→/* ── Animated gradient border for active module card ── */
+   937→@property --card-border-angle {
+   938→  syntax: "<angle>";
+   939→  initial-value: 0deg;
+   940→  inherits: false;
+   941→}
+   942→
+   943→@keyframes card-border-rotate {
+   944→  to { --card-border-angle: 360deg; }
+   945→}
+   946→
+   947→/* ── Floating bio-molecules on hero ── */
+   948→@keyframes bio-float-1 {
+   949→  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+   950→  25% { transform: translate(10px, -15px) rotate(90deg); }
+   951→  50% { transform: translate(-5px, -25px) rotate(180deg); }
+   952→  75% { transform: translate(-15px, -10px) rotate(270deg); }
+   953→}
+   954→@keyframes bio-float-2 {
+   955→  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+   956→  25% { transform: translate(-12px, -8px) rotate(-90deg); }
+   957→  50% { transform: translate(8px, -20px) rotate(-180deg); }
+   958→  75% { transform: translate(15px, -5px) rotate(-270deg); }
+   959→}
+   960→@keyframes bio-float-3 {
+   961→  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+   962→  33% { transform: translate(8px, -18px) rotate(120deg) scale(1.1); }
+   963→  66% { transform: translate(-10px, -12px) rotate(240deg) scale(0.95); }
+   964→}
+   965→
+   966→/* ── Card entrance with 3D tilt ── */
+   967→@keyframes card-tilt-in {
+   968→  from { opacity: 0; transform: perspective(800px) rotateY(-8deg) translateY(20px) scale(0.92); }
+   969→  to   { opacity: 1; transform: perspective(800px) rotateY(0deg) translateY(0) scale(1); }
+   970→}
+   971→
+   972→/* ═══════════════════════════════════════════════════════
+   973→   HERO VISUAL ENHANCEMENTS
+   974→   ═══════════════════════════════════════════════════════ */
+   975→
+   976→/* ── Breathing glow behind title ── */
+   977→.hero-title-glow {
+   978→  position: absolute;
+   979→  width: 200px;
+   980→  height: 80px;
+   981→  border-radius: 50%;
+   982→  background: radial-gradient(ellipse, rgba(196,168,130,0.25) 0%, transparent 70%);
+   983→ filter: blur(30px);
+   984→  animation: breathing-glow 4s ease-in-out infinite;
+   985→  pointer-events: none;
+   986→  will-change: transform, opacity;
+   987→}
+   988→
+   989→/* ── Animated subtitle underline ── */
+   990→.hero-subtitle-underline {
+   991→  height: 1.5px;
+   992→  border-radius: 9999px;
+   993→  background: linear-gradient(90deg, rgba(196,168,130,0.5), rgba(196,168,130,0.08));
+   994→  animation: subtitle-underline 1.2s ease-out 0.8s both;
+   995→}
+   996→
+   997→/* ── CTA gradient border on hover ── */
+   998→.hero-cta-hover {
+   999→  position: relative;
+  1000→  transition: box-shadow 0.3s ease;
+  1001→}
+  1002→.hero-cta-hover::before {
+  1003→  content: "";
+  1004→  position: absolute;
+  1005→  inset: -2px;
+  1006→  border-radius: 9999px;
+  1007→  background: conic-gradient(
+  1008→    from 0deg,
+  1009→    transparent 30%,
+  1010→    rgba(196,168,130,0.5) 50%,
+  1011→    transparent 70%
+  1012→  );
+  1013→  opacity: 0;
+  1014→  transition: opacity 0.4s ease;
+  1015→  z-index: -1;
+  1016→}
+  1017→.hero-cta-hover:hover::before {
+  1018→  opacity: 1;
+  1019→  animation: border-rotate 3s linear infinite;
+  1020→}
+  1021→
+  1022→/* ═══════════════════════════════════════════════════════
+  1023→   MODULE CARD VISUAL ENHANCEMENTS
+  1024→   ═══════════════════════════════════════════════════════ */
+  1025→
+  1026→/* ── Glow pulse border for active card ── */
+  1027→.card-glow-pulse {
+  1028→  animation: glow-pulse 2.5s ease-in-out infinite;
+  1029→}
+  1030→
+  1031→/* ── Feature ribbon ── */
+  1032→.feature-ribbon {
+  1033→  position: absolute;
+  1034→  top: 14px;
+  1035→  right: -8px;
+  1036→  z-index: 20;
+  1037→  padding: 3px 14px 3px 10px;
+  1038→  font-size: 9px;
+  1039→  font-weight: 700;
+  1040→  letter-spacing: 0.08em;
+  1041→  text-transform: uppercase;
+  1042→  color: #FFFFFF;
+  1043→  background: linear-gradient(135deg, #f59e42, #e85d75);
+  1044→  border-radius: 4px 0 0 4px;
+  1045→ box-shadow: 0 2px 8px rgba(245,158,66,0.3);
+  1046→}
+  1047→.feature-ribbon::after {
+  1048→  content: "";
+  1049→  position: absolute;
+  1050→  top: 100%;
+  1051→  right: 0;
+  1052→  width: 0;
+  1053→  height: 0;
+  1054→  border-style: solid;
+  1055→  border-width: 0 8px 8px 0;
+  1056→  border-color: transparent #b8452a transparent transparent;
+  1057→}
+  1058→
+  1059→/* ── Progress bar glowing dot ── */
+  1060→.progress-dot {
+  1061→  position: absolute;
+  1062→  top: 50%;
+  1063→  right: -3px;
+  1064→  width: 7px;
+  1065→  height: 7px;
+  1066→  border-radius: 50%;
+  1067→  transform: translateY(-50%);
+  1068→  background: inherit;
+  1069→  box-shadow: 0 0 6px 2px currentColor;
+  1070→  transition: left 0.5s ease-out, background 0.3s ease, box-shadow 0.3s ease;
+  1071→}
+  1072→
+  1073→/* ═══════════════════════════════════════════════════════
+  1074→   REDUCED MOTION — new visual enhancements
+  1075→   ═══════════════════════════════════════════════════════ */
+  1076→
+  1077→@media (prefers-reduced-motion: reduce) {
+  1078→  .hero-particle,
+  1079→  .hero-title-glow,
+  1080→  .hero-subtitle-underline,
+  1081→  .hero-cta-hover::before,
+  1082→  .card-glow-pulse,
+  1083→  .feature-ribbon,
+  1084→  .motion-ok {
+  1085→    animation: none !important;
+  1086→  }
+  1087→  .hero-title-glow { opacity: 0.3 !important; }
+  1088→  .hero-subtitle-underline { width: 100% !important; opacity: 1 !important; }
+  1089→  .hero-cta-hover::before { display: none !important; }
+  1090→}
+  1091→

@@ -55,22 +55,38 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
             return;
           }
 
+          const goingForward = index > activeIndexRef.current;
+          const slides = track.children as HTMLCollectionOf<HTMLElement>;
+
+          // Smooth slide track translation
           gsap.to(track, {
             x: -index * 100 + "vw",
-            duration: 0.8,
-            ease: "power3.inOut",
+            duration: 0.9,
+            ease: "power2.inOut",
             onComplete: () => {
               isAnimating.current = false;
             },
           });
 
-          // Slight parallax — scale current slide out, next slide in
-          const slides = track.children;
+          // Parallax + fade with staggered content children
           Array.from(slides).forEach((slide, i) => {
             if (i === index) {
-              gsap.fromTo(slide, { scale: 0.96, opacity: 0.8 }, { scale: 1, opacity: 1, duration: 0.8, ease: "power3.inOut" });
+              // Entering slide
+              gsap.fromTo(slide, 
+                { scale: 0.97, opacity: 0 }, 
+                { scale: 1, opacity: 1, duration: 0.9, ease: "power2.out" }
+              );
+              // Stagger children inside for a cascade effect
+              const kids = slide.querySelectorAll('.hero-anim');
+              if (kids.length) {
+                gsap.fromTo(kids,
+                  { y: 14, opacity: 0 },
+                  { y: 0, opacity: 1, duration: 0.5, ease: "power3.out", stagger: 0.06, delay: 0.25 }
+                );
+              }
             } else if (i === activeIndexRef.current) {
-              gsap.to(slide, { scale: 0.96, opacity: 0.8, duration: 0.8, ease: "power3.inOut" });
+              // Exiting slide
+              gsap.to(slide, { scale: 0.97, opacity: 0, duration: 0.7, ease: "power2.in" });
             }
           });
 
@@ -185,6 +201,7 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
             <div
               key={i}
               className="w-screen h-screen flex-shrink-0 flex items-center justify-center overflow-hidden"
+              style={{ willChange: "transform, opacity", backfaceVisibility: "hidden" }}
             >
               {child}
             </div>

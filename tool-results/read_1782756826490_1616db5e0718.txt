@@ -1,0 +1,2002 @@
+  3625→      };
+  3626→      s2.onerror=rej;
+  3627→      document.head.appendChild(s2);
+  3628→      // Load messaging SDK non-critically — push won't work without it but core chat will
+  3629→      const s3=document.createElement('script');
+  3630→      s3.src='https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
+  3631→      s3.onerror=()=>console.warn('[Chat] Messaging SDK unavailable');
+  3632→      document.head.appendChild(s3);
+  3633→    };
+  3634→    s1.onerror=rej;
+  3635→    document.head.appendChild(s1);
+  3636→  });
+  3637→}
+  3638→
+  3639→async function startDB(){
+  3640→  if(db)return;
+  3641→  try{
+  3642→    await loadSDK();
+  3643→    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  3644→    db=firebase.database();
+  3645→    subscribeGlobal();subscribeGlobalTyping();startPresence();subscribeDmList();
+  3646→  }catch(e){console.warn('[BioQuiz Chat]',e);}
+  3647→}
+  3648→
+  3649→/* ─────────────────────────────────────────
+  3650→   USERNAME REGISTRY
+  3651→───────────────────────────────────────── */
+  3652→function ckUN(raw){
+  3653→  const name=sanitUN(raw);
+  3654→  const inp=document.getElementById('bqnminp');
+  3655→  const st=document.getElementById('bqnmst');
+  3656→  const btn=document.getElementById('bqnmbtn');
+  3657→  const av=document.getElementById('bqnmav');
+  3658→  if(inp.value!==name) inp.value=name;
+  3659→  if(name){const c=uColor(name);av.style.background=c;av.style.color='#000';av.textContent=uInit(name);}
+  3660→  else{av.style.background='rgba(96,165,250,.2)';av.textContent='?';}
+  3661→  if(!name||name.length<2){st.textContent=name.length===1?'Min 2 characters':'';st.className='bqnmst';inp.className='bqnmi';btn.disabled=true;return;}
+  3662→  if(name===uname){st.textContent='Your current username';st.className='bqnmst ok';inp.className='bqnmi ok';btn.disabled=false;return;}
+  3663→  clearTimeout(nmCkT);st.textContent='Checking...';st.className='bqnmst chk';inp.className='bqnmi chk';btn.disabled=true;
+  3664→  nmCkT=setTimeout(async()=>{
+  3665→    if(!db){st.textContent='Available!';st.className='bqnmst ok';inp.className='bqnmi ok';btn.disabled=false;return;}
+  3666→    try{
+  3667→      const s=await db.ref('bq_usernames/'+name).once('value');const o=s.val();
+  3668→      if(o&&o!==uid){st.textContent='@'+name+' is taken';st.className='bqnmst tkn';inp.className='bqnmi tkn';btn.disabled=true;}
+  3669→      else{st.textContent='@'+name+' is available!';st.className='bqnmst ok';inp.className='bqnmi ok';btn.disabled=false;}
+  3670→    }catch(_){st.textContent='Looks good';st.className='bqnmst ok';btn.disabled=false;}
+  3671→  },480);
+  3672→}
+  3673→
+  3674→async function claimUN(name){
+  3675→  if(!db)return;
+  3676→  if(uname&&uname!==name) await db.ref('bq_usernames/'+uname).remove().catch(()=>{});
+  3677→  await db.ref('bq_usernames/'+name).set(uid).catch(()=>{});
+  3678→}
+  3679→
+  3680→/* ─────────────────────────────────────────
+  3681→   NAME MODAL
+  3682→───────────────────────────────────────── */
+  3683→function showModal(rename){
+  3684→  const m=document.getElementById('bqnm');
+  3685→  const inp=document.getElementById('bqnminp');
+  3686→  const btn=document.getElementById('bqnmbtn');
+  3687→  const st=document.getElementById('bqnmst');
+  3688→  m.style.display='flex';
+  3689→  inp.value=rename?(uname||''):'';
+  3690→  btn.textContent=rename?'UPDATE':'JOIN CHAT';
+  3691→  btn.disabled=true;st.textContent='';st.className='bqnmst';inp.className='bqnmi';
+  3692→  const av=document.getElementById('bqnmav');
+  3693→  if(rename&&uname){av.style.background=uColor(uname);av.textContent=uInit(uname);ckUN(uname);}
+  3694→  else{av.style.background='rgba(96,165,250,.2)';av.textContent='?';}
+  3695→  if(!('ontouchstart' in window)) setTimeout(()=>inp.focus(),60);
+  3696→}
+  3697→
+  3698→function hideModal(){ document.getElementById('bqnm').style.display='none'; }
+  3699→
+  3700→async function submitName(){
+  3701→  const name=sanitUN(document.getElementById('bqnminp').value);
+  3702→  if(!name||name.length<2)return;
+  3703→  const btn=document.getElementById('bqnmbtn');
+  3704→  btn.disabled=true;btn.textContent='JOINING...';
+  3705→  const isFirst=!uname,oldName=uname;
+  3706→  await startDB();
+  3707→  if(db&&name!==uname){
+  3708→    try{
+  3709→      const s=await db.ref('bq_usernames/'+name).once('value');const o=s.val();
+  3710→      if(o&&o!==uid){
+  3711→        document.getElementById('bqnmst').textContent='@'+name+' was just taken!';
+  3712→        document.getElementById('bqnmst').className='bqnmst tkn';
+  3713→        btn.disabled=false;btn.textContent='JOIN CHAT';return;
+  3714→      }
+  3715→    }catch(_){}
+  3716→  }
+  3717→  await claimUN(name);
+  3718→  uname=name;localStorage.setItem(LS_NAME,uname);
+  3719→  hideModal();startPresence();
+  3720→  if(isFirst) sendSys('bq_messages','@'+uname+' joined the chat');
+  3721→  else if(oldName&&oldName!==uname) sendSys('bq_messages','@'+oldName+' is now @'+uname);
+  3722→  btn.textContent='JOIN CHAT';btn.disabled=false;
+  3723→  refreshMeAvatar();
+  3724→  if(activeView==='profile') refreshProfileView();
+  3725→}
+  3726→
+  3727→/* ─────────────────────────────────────────
+  3728→   COLOUR HELPER
+  3729→───────────────────────────────────────── */
+  3730→function getColor(userId, userName){
+  3731→  if(userId===uid&&myProfile.color) return myProfile.color;
+  3732→  if(onlineU[userId]&&onlineU[userId].color) return onlineU[userId].color;
+  3733→  return uColor(userName||'');
+  3734→}
+  3735→
+  3736→/* ─────────────────────────────────────────
+  3737→   PRESENCE
+  3738→───────────────────────────────────────── */
+  3739→let _presenceListenerRef = null; // v2: track presence listener ref for cleanup
+  3740→function startPresence(){
+  3741→  if(!db||!uname)return;
+  3742→  const ref=db.ref('bq_presence/'+uid);
+  3743→  const beat=()=>ref.set({
+  3744→    uname,ts:Date.now(),
+  3745→    status:myProfile.status||'online',
+  3746→    activity:myProfile.activity||'',
+  3747→    bio:myProfile.bio||'',
+  3748→    color:myProfile.color||'',
+  3749→    initials:myProfile.initials||'',
+  3750→    avatar:myProfile.avatar||'',
+  3751→    banner:'',
+  3752→    displayName:myProfile.displayName||'',
+  3753→    pronouns:myProfile.pronouns||'',
+  3754→    customStatus:myProfile.customStatus||'',
+  3755→    nameColor:myProfile.nameColor||'',
+  3756→    bannerColor:myProfile.bannerColor||'',
+  3757→  });
+  3758→  beat();clearInterval(presInt);
+  3759→  presInt=setInterval(beat,PRESENCE_TTL*.7);
+  3760→  // v35 fix: on disconnect, write last-seen data instead of removing entirely
+  3761→  // This preserves "Last seen X" info and doesn't conflict with v20's bq_lastseen
+  3762→  ref.onDisconnect().set({uname,ts:firebase.database.ServerValue.TIMESTAMP,status:'offline',displayName:myProfile.displayName||'',initials:myProfile.initials||'',avatar:myProfile.avatar||'',color:myProfile.color||''});
+  3763→  // v2: detach previous presence listener before adding a new one to prevent memory leak
+  3764→  if(_presenceListenerRef){
+  3765→    try{ db.ref('bq_presence').off('value', _presenceListenerRef); }catch(_){}
+  3766→  }
+  3767→  // v9: debounced presence handler (was firing renderOnlineList on every micro-update)
+  3768→  let _presT=null;
+  3769→  _presenceListenerRef = db.ref('bq_presence').on('value',snap=>{
+  3770→    const now=Date.now();onlineU={};
+  3771→    snap.forEach(c=>{
+  3772→      const d=c.val();
+  3773→      if(d&&now-d.ts<PRESENCE_TTL*1.6){
+  3774→        onlineU[c.key]=d;
+  3775→        _cacheAvatarFromPresence(c.key, d);
+  3776→      } else if(c.key!==uid) {
+  3777→        // v35 fix: don't delete other users' presence — their clock may be skewed
+  3778→        // Instead just don't add them to onlineU (treat as offline)
+  3779→      } else {
+  3780→        c.ref.remove(); // only clean up own stale presence
+  3781→      }
+  3782→    });
+  3783→    if(_presT) clearTimeout(_presT);
+  3784→    _presT=setTimeout(()=>{
+  3785→      _presT=null;
+  3786→      debouncedRenderOnlineList();updateDmHdrStatus();
+  3787→      const n=Object.keys(onlineU).length;
+  3788→      const el=document.getElementById('bqocnt');if(el) el.textContent=n+' online';
+  3789→      const nb=document.getElementById('bqonb');
+  3790→      if(nb&&n>0){nb.textContent=n;nb.classList.add('show');}else if(nb) nb.classList.remove('show');
+  3791→      _debouncedApplyAvatars();
+  3792→    }, 100);
+  3793→  });
+  3794→}
+  3795→
+  3796→function updateDmHdrStatus(){
+  3797→  if(activeView!=='dmconv'||!activeDmPuid)return;
+  3798→  const pdata=onlineU[activeDmPuid]||{};
+  3799→  const pm=presenceMeta(activeDmPuid,pdata);
+  3800→  const hav=document.getElementById('bqdmhav');
+  3801→  if(hav){hav.className='bqdmhav';hav.dataset.status=pm.isOnline?(pdata.status||''):'';}
+  3802→  const hsTxt=document.getElementById('bqdmhs-txt');
+  3803→  const hsDot=document.getElementById('bqdmhs-dot');
+  3804→  if(hsTxt){
+  3805→    hsTxt.textContent=pm.detail;
+  3806→    hsTxt.style.color=pm.color;
+  3807→    if(hsDot){
+  3808→      hsDot.style.display='inline-block';
+  3809→      hsDot.style.background=pm.color;
+  3810→      hsDot.style.opacity=pm.isOnline?'1':'.55';
+  3811→      hsDot.style.animation=pm.isOnline?'bqPresencePulse 1.8s ease-in-out infinite':'none';
+  3812→    }
+  3813→  }
+  3814→  }
+  3815→
+  3816→function renderOnlineList(){
+  3817→  const list=document.getElementById('bqol');if(!list)return;
+  3818→  list.innerHTML='';
+  3819→  const entries=Object.entries(onlineU);
+  3820→  if(!entries.length){
+  3821→    // v2: use DOM API instead of innerHTML for security
+  3822→    const e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
+  3823→    const ic=document.createElement('div');ic.className='bqempty-ic';
+  3824→    ic.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+  3825→    const tx=document.createElement('div');tx.className='bqempty-tx';tx.textContent='No One Online';
+  3826→    const sub=document.createElement('div');sub.className='bqempty-sub';sub.textContent='Check back later';
+  3827→    e.append(ic,tx,sub);
+  3828→    list.appendChild(e);
+  3829→    return;
+  3830→  }
+  3831→  entries.sort((a,b)=>a[0]===uid?-1:b[0]===uid?1:(a[1].uname||'').localeCompare(b[1].uname||''));
+  3832→  entries.forEach(([id,d])=>{
+  3833→    const me=id===uid,n=d.uname||'?';
+  3834→    const c=getColor(id,n);
+  3835→    const pm=presenceMeta(id,d);
+  3836→    const row=document.createElement('div');
+  3837→    row.className='bqurow'+(me?' isme':'');
+  3838→    row.innerHTML=`
+  3839→      <div class="bquav" style="background:${c};color:#000" data-status="${esc(pm.isOnline?(d.status||'online'):'')}">${uInit(n)}</div>
+  3840→      <div class="bquinfo">
+  3841→        <div class="bquu">@${esc(n)}${me?'<span class="bquyou">YOU</span>':''}</div>
+  3842→        <div class="bqust">${presenceBadgeHTML(pm, pm.label)}</div>
+  3843→        ${d.activity?`<div class="bquact">${esc(d.activity)}</div>`:''}
+  3844→      </div>
+  3845→      ${!me?'<div class="bqudmh">Message</div>':''}`;
+  3846→    if(!me) row.addEventListener('click',e=>{
+  3847→      e.stopPropagation();
+  3848→      if(!uname){showModal(false);return;}
+  3849→      openProfileCard(id,n,d);
+  3850→    });
+  3851→    list.appendChild(row);
+  3852→  });
+  3853→}
+  3854→
+  3855→/* ─────────────────────────────────────────
+  3856→   PROFILE CARD
+  3857→───────────────────────────────────────── */
+  3858→let pcTargetUid=null,pcTargetName=null;
+  3859→
+  3860→function openProfileCard(targetUid,targetName,presData){
+  3861→  pcTargetUid=targetUid;pcTargetName=targetName;
+  3862→  const isMe=targetUid===uid;
+  3863→  const color=getColor(targetUid,targetName);
+  3864→  const pd=presData||onlineU[targetUid]||{};
+  3865→  const pm=presenceMeta(targetUid,pd);
+  3866→
+  3867→  // v10: banner removed
+  3868→  document.getElementById('bqpc-name').textContent='@'+targetName;
+  3869→  const stEl=document.getElementById('bqpc-status');
+  3870→  stEl.innerHTML=presenceBadgeHTML(pm, pm.label);
+  3871→  
+  3872→  // Last seen
+  3873→  const lsEl=document.getElementById('bqpc-lastseen');
+  3874→  if(lsEl){
+  3875→    lsEl.textContent=pm.isOnline?'Active now':pm.detail;
+  3876→    lsEl.className='bqls'+(pm.isOnline?' bqls-online':'');
+  3877→  }
+  3878→  
+  3879→  const actEl=document.getElementById('bqpc-activity');
+  3880→  if(pd.activity){actEl.textContent=pd.activity;actEl.style.display='flex';}
+  3881→  else actEl.style.display='none';
+  3882→  const bioEl=document.getElementById('bqpc-bio');
+  3883→  if(pd.bio){bioEl.textContent=pd.bio;bioEl.style.display='block';}
+  3884→  else bioEl.style.display='none';
+  3885→  
+  3886→  const aliasWrap=document.getElementById('bqpc-aliasw');
+  3887→  const aliasInp=document.getElementById('bqpc-aliasinp');
+  3888→  if(!isMe&&aliasWrap&&aliasInp){
+  3889→    aliasWrap.style.display='block';
+  3890→    aliasInp.value=getAlias(targetUid)||'';
+  3891→    aliasInp.oninput=()=>{
+  3892→      clearTimeout(aliasT);
+  3893→      aliasT=setTimeout(()=>{setAlias(targetUid,aliasInp.value);renderDmList();renderOnlineList();toast(aliasInp.value.trim()?'Alias saved':'Alias removed');},600);
+  3894→    };
+  3895→  } else if(aliasWrap){aliasWrap.style.display='none';}
+  3896→
+  3897→  const actsEl=document.getElementById('bqpc-actions');
+  3898→  actsEl.innerHTML='';
+  3899→  if(!isMe){
+  3900→    const dmBtn=document.createElement('button');
+  3901→    dmBtn.className='bqpc-btn dm';
+  3902→    dmBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Message';
+  3903→    dmBtn.onclick=function(e){
+  3904→      e.stopPropagation();
+  3905→      closeProfileCard();
+  3906→      showDmConvo(targetUid,targetName);
+  3907→    };
+  3908→    actsEl.appendChild(dmBtn);
+  3909→  } else {
+  3910→    const editBtn=document.createElement('button');
+  3911→    editBtn.className='bqpc-btn edit';
+  3912→    editBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Edit Profile';
+  3913→    editBtn.onclick=function(e){
+  3914→      e.stopPropagation();
+  3915→      closeProfileCard();
+  3916→      bqNav('profile');
+  3917→    };
+  3918→    actsEl.appendChild(editBtn);
+  3919→  }
+  3920→  document.getElementById('bqpc').classList.add('open');
+  3921→}
+  3922→
+  3923→function closeProfileCard(){
+  3924→  document.getElementById('bqpc').classList.remove('open');
+  3925→  pcTargetUid=null;pcTargetName=null;
+  3926→}
+  3927→
+  3928→/* ─────────────────────────────────────────
+  3929→   GLOBAL CHAT
+  3930→───────────────────────────────────────── */
+  3931→function subscribeGlobal(){
+  3932→  const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
+  3933→  ref.on('child_added',s=>renderMsg('global',s.val(),s.key));
+  3934→  ref.on('child_changed',s=>onMsgChanged('global',s));
+  3935→  ref.on('child_removed',s=>document.getElementById('bqmsg-global-'+s.key)?.remove());
+  3936→}
+  3937→
+  3938→function subscribeGlobalTyping(){
+  3939→  db.ref('bq_typing').on('value',snap=>{
+  3940→    const now=Date.now(),ty=[];
+  3941→    snap.forEach(c=>{const d=c.val();if(c.key!==uid&&d&&now-d.ts<3800)ty.push('@'+(d.uname||'?'));});
+  3942→    const el=document.getElementById('bqgtyp');if(!el)return;
+  3943→    if(!ty.length){el.innerHTML='';return;}
+  3944→    const lb=ty.length>2?ty.slice(0,2).join(', ')+' +'+(ty.length-2):ty.join(' & ');
+  3945→    el.innerHTML=`<div class="bqtd"><span></span><span></span><span></span></div><span>${lb} typing</span>`;
+  3946→  });
+  3947→}
+  3948→
+  3949→function sendGlobal(text){
+  3950→  if(!db||!text.trim()||!uname)return;
+  3951→  const disappearingEnabled = localStorage.getItem('bq_disappearing') === 'true';
+  3952→  const p={uid,uname,text:text.trim().slice(0,CHAR_LIMIT),ts:Date.now()};
+  3953→  if(disappearingEnabled) p.expiresAt = Date.now() + 3600000; // 1 hour
+  3954→  if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
+  3955→  db.ref('bq_messages').push(p);
+  3956→  // v37: trigger web push for offline users
+  3957→  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('global', p); }catch(_){}
+  3958→  db.ref('bq_messages').once('value',snap=>{
+  3959→    const keys=[];snap.forEach(c=>keys.push(c.key));
+  3960→    if(keys.length>MAX_MSG+25) keys.slice(0,keys.length-MAX_MSG).forEach(k=>db.ref('bq_messages/'+k).remove());
+  3961→  });
+  3962→  
+  3963→  clearReply('g');
+  3964→}
+  3965→
+  3966→/* ─────────────────────────────────────────
+  3967→   DM LIST
+  3968→───────────────────────────────────────── */
+  3969→let dmRenderT=null;
+  3970→let _dmIndexRef=null;
+  3971→let _dmMetaRefs={};       // {dmId: ref}
+  3972→let _dmIndexFired=false;
+  3973→let _dmIndexWatchdog=null;
+  3974→let _dmMigrated=false;
+  3975→
+  3976→// v22: scoped per-user DM index — no more whole-tree scans.
+  3977→function subscribeDmList(){
+  3978→  if(!db||!uid) return;
+  3979→
+  3980→  // Tear down previous listeners
+  3981→  if(_dmIndexRef){ try{_dmIndexRef.off();}catch(_){} _dmIndexRef=null; }
+  3982→  Object.entries(_dmMetaRefs).forEach(([id,r])=>{ try{r.off();}catch(_){} });
+  3983→  _dmMetaRefs={};
+  3984→  dmMeta={};
+  3985→  _dmIndexFired=false;
+  3986→
+  3987→  // One-time legacy migration: backfill bq_user_dms/{uid} from existing bq_dms
+  3988→  // for accounts created before v22. Keyed in localStorage so it runs once.
+  3989→  const MIG_KEY='bq_user_dms_migrated_v22_'+uid;
+  3990→  if(!_dmMigrated && !localStorage.getItem(MIG_KEY)){
+  3991→    _dmMigrated=true;
+  3992→    db.ref('bq_dms').once('value').then(snap=>{
+  3993→      const updates={};
+  3994→      snap.forEach(ch=>{
+  3995→        const m=ch.val();
+  3996→        if(m&&m.meta&&(m.meta.p1===uid||m.meta.p2===uid)){
+  3997→          updates['bq_user_dms/'+uid+'/'+ch.key]=true;
+  3998→        }
+  3999→      });
+  4000→      if(Object.keys(updates).length){ db.ref().update(updates).catch(()=>{}); }
+  4001→      localStorage.setItem(MIG_KEY,'1');
+  4002→    }).catch(()=>{ /* ignore — empty account is fine */ });
+  4003→  }
+  4004→
+  4005→  const idxRef=db.ref('bq_user_dms/'+uid);
+  4006→  _dmIndexRef=idxRef;
+  4007→
+  4008→  const attachMeta=(dmId)=>{
+  4009→    if(_dmMetaRefs[dmId]) return;
+  4010→    const mref=db.ref('bq_dms/'+dmId+'/meta');
+  4011→    _dmMetaRefs[dmId]=mref;
+  4012→    mref.on('value',ms=>{
+  4013→      const meta=ms.val();
+  4014→      if(meta && (meta.p1===uid||meta.p2===uid)){
+  4015→        dmMeta[dmId]=meta;
+  4016→      } else {
+  4017→        delete dmMeta[dmId];
+  4018→      }
+  4019→      clearTimeout(dmRenderT);
+  4020→      dmRenderT=setTimeout(()=>{ renderDmList(); updateBadges(); },80);
+  4021→    });
+  4022→  };
+  4023→  const detachMeta=(dmId)=>{
+  4024→    if(_dmMetaRefs[dmId]){ try{_dmMetaRefs[dmId].off();}catch(_){} delete _dmMetaRefs[dmId]; }
+  4025→    delete dmMeta[dmId];
+  4026→  };
+  4027→
+  4028→  idxRef.on('child_added',  s=>{ _dmIndexFired=true; attachMeta(s.key); });
+  4029→  idxRef.on('child_removed',s=>{ detachMeta(s.key); clearTimeout(dmRenderT); dmRenderT=setTimeout(()=>{ renderDmList(); updateBadges(); },80); });
+  4030→  idxRef.on('value', ()=>{ _dmIndexFired=true; });
+  4031→
+  4032→  // Watchdog: if nothing fires within 4s, retry once and surface a hint.
+  4033→  clearTimeout(_dmIndexWatchdog);
+  4034→  _dmIndexWatchdog=setTimeout(()=>{
+  4035→    if(!_dmIndexFired){
+  4036→      const list=document.getElementById('bqdml');
+  4037→      if(list && !list.querySelector('.bqdmr')){
+  4038→        let hint=list.querySelector('.bq-reconnect-hint');
+  4039→        if(!hint){
+  4040→          hint=document.createElement('div');
+  4041→          hint.className='bqempty bq-reconnect-hint';
+  4042→          hint.style.marginTop='40px';
+  4043→          hint.innerHTML='<div class="bqempty-tx">Reconnecting…</div><div class="bqempty-sub">If this persists, try refreshing.</div>';
+  4044→          list.innerHTML=''; list.appendChild(hint);
+  4045→        }
+  4046→      }
+  4047→      try{ idxRef.off(); }catch(_){}
+  4048→      setTimeout(()=>subscribeDmList(),800);
+  4049→    }
+  4050→  },4000);
+  4051→}
+  4052→
+  4053→function renderDmList(){
+  4054→  const list=document.getElementById('bqdml');if(!list)return;
+  4055→  const items=Object.entries(dmMeta);
+  4056→  if(!items.length){
+  4057→    if(!list.querySelector('.bqdmr')){
+  4058→      list.innerHTML='';
+  4059→      const e=document.createElement('div');e.className='bqempty';e.style.marginTop='40px';
+  4060→      e.innerHTML='<div class="bqempty-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="bqempty-tx">No DMs Yet</div><div class="bqempty-sub">Go to Online to start</div>';
+  4061→      list.appendChild(e);
+  4062→    }
+  4063→    return;
+  4064→  }
+  4065→  
+  4066→  const existingKeys=new Set([...list.querySelectorAll('.bqdmr')].map(r=>r.dataset.did));
+  4067→  const newKeys=new Set(items.map(([k])=>k));
+  4068→  existingKeys.forEach(k=>{ if(!newKeys.has(k)) list.querySelector(`[data-did="${k}"]`)?.remove(); });
+  4069→  list.querySelector('.bqempty')?.remove();
+  4070→
+  4071→  const pins=getPins();
+  4072→  items.sort((a,b)=>{const ap=pins.includes(a[0])?1:0,bp=pins.includes(b[0])?1:0;if(ap!==bp)return bp-ap;return(b[1].lastTs||0)-(a[1].lastTs||0);});
+  4073→
+  4074→  items.forEach(([did,meta])=>{
+  4075→    const puid =meta.p1===uid?meta.p2:meta.p1;
+  4076→    const pname=meta.p1===uid?(meta.n2||'?'):(meta.n1||'?');
+  4077→    const alias=getAlias(puid);
+  4078→    const shown=alias||('@'+pname);
+  4079→    const unrd =meta.unread&&meta.unread[uid]?meta.unread[uid]:0;
+  4080→    const pdata=onlineU[puid]||{};
+  4081→    const c    =getColor(puid,pname);
+  4082→    const preview=meta.lastMsg?esc(meta.lastMsg.slice(0,50)):'';
+  4083→    const ts   =meta.lastTs?tsStr(meta.lastTs):'';
+  4084→    const stCls=pdata.status||'';
+  4085→    const pinned=pins.includes(did);
+  4086→
+  4087→    let row=list.querySelector(`[data-did="${did}"]`);
+  4088→    const isNew=!row;
+  4089→    if(isNew){row=document.createElement('div');row.className='bqdmr';row.dataset.did=did;}
+  4090→    row.dataset.puid=puid;row.dataset.pname=pname;
+  4091→    row.innerHTML=`
+  4092→      <div class="bqdmav" data-status="${esc(stCls)}" style="background:${c};color:#000">${uInit(pname)}</div>
+  4093→      <div class="bqdmin">
+  4094→        <div class="bqdmn">${pinned?'<span class="bqdm-pin bqdmn-pin">📌</span>':''}${esc(shown)}${alias?`<span class="bqdmn-alias"> (@${esc(pname)})</span>`:''}</div>
+  4095→        <div class="bqdmp${unrd?' unr':''}">${preview||'<span style="opacity:.35">No messages yet</span>'}</div>
+  4096→      </div>
+  4097→      <div class="bqdmm">
+  4098→        <div class="bqdmt">${ts}</div>
+  4099→        ${unrd?`<div class="bqdmub">${unrd>9?'9+':unrd}</div>`:''}
+  4100→      </div>
+  4101→      <div class="bqdmr-acts">
+  4102→        <button class="bqdmr-act bq-pin${pinned?' pinned':''}" data-did="${did}" title="${pinned?'Unpin':'Pin'}">
+  4103→          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+  4104→        </button>
+  4105→        <button class="bqdmr-act bq-del" data-did="${did}" title="Delete">
+  4106→          <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+  4107→        </button>
+  4108→      </div>
+  4109→      <div class="bqdmr-confirm">
+  4110→        <div class="bqdmr-confirm-msg">Delete conversation?</div>
+  4111→        <button class="bqdmr-cyes" data-did="${did}">Delete</button>
+  4112→        <button class="bqdmr-cno">Cancel</button>
+  4113→      </div>`;
+  4114→    // mark unread row for left-border accent
+  4115→    row.classList.toggle('unread-row', unrd > 0);
+  4116→    row.classList.toggle('active-row', did === activeDmId);
+  4117→    if(isNew) list.appendChild(row);
+  4118→  });
+  4119→  // Re-append in sorted order (ensures pinned appear first)
+  4120→  const frag = document.createDocumentFragment();
+  4121→  items.forEach(([did])=>{const r=list.querySelector(`[data-did="${did}"]`);if(r) frag.appendChild(r);});
+  4122→  list.appendChild(frag);
+  4123→  // Apply search filter if active
+  4124→  const q=(document.getElementById('bqdm-search-inp')?.value||'').toLowerCase().trim();
+  4125→  if(q) _filterDmList(q);
+  4126→}
+  4127→
+  4128→function _filterDmList(q){
+  4129→  const list=document.getElementById('bqdml');if(!list)return;
+  4130→  list.querySelectorAll('.bqdmr').forEach(row=>{
+  4131→    const name=(row.dataset.pname||'').toLowerCase();
+  4132→    const preview=row.querySelector('.bqdmp')?.textContent?.toLowerCase()||'';
+  4133→    row.style.display=(!q||name.includes(q)||preview.includes(q))?'':'none';
+  4134→  });
+  4135→}
+  4136→
+  4137→
+  4138→function initDmDelegate(){
+  4139→  // Wire up DM search
+  4140→  document.getElementById('bqdm-search-inp')?.addEventListener('input',e=>{
+  4141→    _filterDmList(e.target.value.toLowerCase().trim());
+  4142→  });
+  4143→
+  4144→  const list=document.getElementById('bqdml');if(!list||list.dataset.delegated)return;
+  4145→  list.dataset.delegated='1';
+  4146→  list.addEventListener('click',function(e){
+  4147→    const row=e.target.closest('.bqdmr');if(!row)return;
+  4148→    if(e.target.closest('.bq-pin')){e.stopPropagation();togglePin(e.target.closest('.bq-pin').dataset.did);return;}
+  4149→    if(e.target.closest('.bq-del')){e.stopPropagation();const cf=row.querySelector('.bqdmr-confirm');if(cf)cf.classList.toggle('show');return;}
+  4150→    if(e.target.closest('.bqdmr-cyes')){e.stopPropagation();deleteDmConvo(e.target.closest('.bqdmr-cyes').dataset.did);return;}
+  4151→    if(e.target.closest('.bqdmr-cno')){e.stopPropagation();row.querySelector('.bqdmr-confirm')?.classList.remove('show');return;}
+  4152→    if(e.target.closest('.bqdmr-acts')||e.target.closest('.bqdmr-confirm'))return;
+  4153→    e.stopPropagation();
+  4154→    const pid=row.dataset.puid,pn=row.dataset.pname;
+  4155→    if(!pid||!pn)return;
+  4156→    if(!uname){showModal(false);return;}
+  4157→    showDmConvo(pid,pn);
+  4158→  });
+  4159→}
+  4160→
+  4161→function deleteDmConvo(did){
+  4162→  if(!db||!did)return;
+  4163→  db.ref('bq_dms/'+did).remove();
+  4164→  // v22 — remove from per-user index for both sides
+  4165→  const meta=dmMeta[did];
+  4166→  if(meta){
+  4167→    if(meta.p1) db.ref('bq_user_dms/'+meta.p1+'/'+did).remove().catch(()=>{});
+  4168→    if(meta.p2) db.ref('bq_user_dms/'+meta.p2+'/'+did).remove().catch(()=>{});
+  4169→  } else {
+  4170→    db.ref('bq_user_dms/'+uid+'/'+did).remove().catch(()=>{});
+  4171→  }
+  4172→  delete dmMeta[did];delete dmUnread[did];
+  4173→  if(dmListeners[did]){dmListeners[did].off();delete dmListeners[did];}
+  4174→  if(_dmMetaRefs && _dmMetaRefs[did]){ try{_dmMetaRefs[did].off();}catch(_){} delete _dmMetaRefs[did]; }
+  4175→  if(activeDmId===did&&activeView==='dmconv'){
+  4176→    activeDmId=null;activeDmPuid=null;activeDmPname=null;
+  4177→    if(db && uid) db.ref('bq_presence/'+uid+'/activeDmId').set(null).catch(()=>{});
+  4178→    bqNav('dms');
+  4179→  }
+  4180→  renderDmList();updateBadges();toast('Conversation deleted');
+  4181→}
+  4182→
+  4183→/* ─────────────────────────────────────────
+  4184→   DM SEND
+  4185→───────────────────────────────────────── */
+  4186→function sendDm(text){
+  4187→  if(!db||!uname||!activeDmId||!activeDmPuid)return;
+  4188→  const trimmed=text.trim();
+  4189→  if(!trimmed&&!pendingImageData) return;
+  4190→  const pname=activeDmPname||'?';
+  4191→  const p={uid,uname,text:trimmed.slice(0,CHAR_LIMIT),ts:Date.now()};
+  4192→  if(pendingImageData){ p.imageData=pendingImageData; clearMediaPreview(); }
+  4193→  if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
+  4194→  // Disappearing message
+  4195→  const dis=getDisappear();
+  4196→  if(activeDmId&&dis[activeDmId]) p.expiresAt=Date.now()+5*60*1000;
+  4197→  db.ref('bq_dms/'+activeDmId+'/messages').push(p);
+  4198→  // v37: trigger web push for offline partner
+  4199→  try{ if(typeof window._bqTriggerPush === 'function') window._bqTriggerPush('dm', p, activeDmId, activeDmPuid, activeDmPname); }catch(_){}
+  4200→  _dmFinalize(activeDmId, activeDmPuid, pname, trimmed||(p.imageData?'📷 Image':''));
+  4201→  clearReply('dm');
+  4202→}
+  4203→
+  4204→/* ─────────────────────────────────────────
+  4205→   GIPHY — fetch + send
+  4206→───────────────────────────────────────── */
+  4207→let _giphyCache = {};
+  4208→async function giphyFetch(category, query, offset=0){
+  4209→  const key = _resolvedGiphyKey;
+  4210→  if(!key || key === 'PASTE_YOUR_GIPHY_KEY_HERE'){
+  4211→    return { error: 'Add your Giphy API key in chat-widget.js (GIPHY_API_KEY) or set window.GIPHY_API_KEY.' };
+  4212→  }
+  4213→  const cacheKey = (query||'')+'|'+(category||'trending')+'|'+offset;
+  4214→  if(_giphyCache[cacheKey]) return { data: _giphyCache[cacheKey].data, pagination: _giphyCache[cacheKey].pagination };
+  4215→  let url;
+  4216→  const limit = 6;
+  4217→  if(query && query.trim()){
+  4218→    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=pg-13&bundle=messaging_non_clips`;
+  4219→  } else if(category === 'trending' || !category){
+  4220→    url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=${limit}&offset=${offset}&rating=pg-13&bundle=messaging_non_clips`;
+  4221→  } else {
+  4222→    const cat = GIPHY_CATEGORIES.find(c=>c.id===category);
+  4223→    const q = cat ? cat.q : category;
+  4224→    url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(q||category)}&limit=${limit}&offset=${offset}&rating=pg-13&bundle=messaging_non_clips`;
+  4225→  }
+  4226→  try{
+  4227→    const r = await fetch(url);
+  4228→    if(!r.ok) return { error: 'Giphy request failed ('+r.status+')' };
+  4229→    const j = await r.json();
+  4230→    _giphyCache[cacheKey] = { data: j.data||[], pagination: j.pagination||{} };
+  4231→    return { data: j.data||[], pagination: j.pagination||{} };
+  4232→  } catch(err){
+  4233→    return { error: 'Network error fetching GIFs' };
+  4234→  }
+  4235→}
+  4236→
+  4237→function sendGifGlobal(gifUrl, w, h){
+  4238→  if(!db||!uname||!gifUrl) return;
+  4239→  const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
+  4240→  if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
+  4241→  db.ref('bq_messages').push(p);
+  4242→  clearReply('g');
+  4243→}
+  4244→
+  4245→function sendGifDm(gifUrl, w, h){
+  4246→  if(!db||!uname||!activeDmId||!activeDmPuid||!gifUrl) return;
+  4247→  const pname=activeDmPname||'?';
+  4248→  const p={uid,uname,text:'',type:'gif',gifUrl,gifW:w||0,gifH:h||0,ts:Date.now()};
+  4249→  if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
+  4250→  db.ref('bq_dms/'+activeDmId+'/messages').push(p);
+  4251→  _dmFinalize(activeDmId, activeDmPuid, pname, '🎞️ GIF');
+  4252→}
+  4253→
+  4254→/* Sticker (one-tap big-emoji) — sends as type:'sticker' */
+  4255→function sendStickerGlobal(emoji){
+  4256→  if(!db||!uname||!emoji) return;
+  4257→  const p={uid,uname,text:'',type:'sticker',sticker:emoji,ts:Date.now()};
+  4258→  if(gReply) p.replyTo={key:gReply.key,uname:gReply.uname,text:gReply.text.slice(0,80)};
+  4259→  db.ref('bq_messages').push(p);
+  4260→  clearReply('g');
+  4261→}
+  4262→function sendStickerDm(emoji){
+  4263→  if(!db||!uname||!activeDmId||!activeDmPuid||!emoji) return;
+  4264→  const pname=activeDmPname||'?';
+  4265→  const p={uid,uname,text:'',type:'sticker',sticker:emoji,ts:Date.now()};
+  4266→  if(dmReply) p.replyTo={key:dmReply.key,uname:dmReply.uname,text:dmReply.text.slice(0,80)};
+  4267→  db.ref('bq_dms/'+activeDmId+'/messages').push(p);
+  4268→  _dmFinalize(activeDmId, activeDmPuid, pname, emoji+' Sticker');
+  4269→  clearReply('dm');
+  4270→}
+  4271→
+  4272→function attachGifPicker(ctx){
+  4273→  const isG = ctx==='global';
+  4274→  const btn = document.getElementById(isG?'bqggif':'bqdmgif');
+  4275→  const row = btn?.closest('.bqirow');
+  4276→  if(!btn||!row) return;
+  4277→  if(btn.dataset.bound) return;
+  4278→  btn.dataset.bound='1';
+  4279→
+  4280→  /* v65: Clean GIF picker — infinite scroll, no page nav */
+  4281→  const panel = document.createElement('div');
+  4282→  panel.className = 'bqgifp';
+  4283→  panel._bqCtx = ctx;
+  4284→  panel.innerHTML =
+  4285→    '<div class="bqgifp-head">'+
+  4286→      '<div class="bqgifp-search">'+
+  4287→        '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+  4288→        '<input type="text" placeholder="Search GIFs..." autocomplete="off" autocapitalize="off" autocorrect="off">'+
+  4289→      '</div>'+
+  4290→      '<div class="bqgifp-cats">'+
+  4291→        GIPHY_CATEGORIES.map((c,i)=>'<button class="bqgifp-cat'+(i===0?' sel':'')+'" data-cat="'+c.id+'">'+c.label+'</button>').join('')+
+  4292→      '</div>'+
+  4293→    '</div>'+
+  4294→    '<div class="bqgifp-grid"></div>';
+  4295→  row.appendChild(panel);
+  4296→
+  4297→  const grid = panel.querySelector('.bqgifp-grid');
+  4298→  const inp  = panel.querySelector('input');
+  4299→  const cats = panel.querySelectorAll('.bqgifp-cat');
+  4300→  if(!grid || !inp || !cats) return;
+  4301→
+  4302→  let curCat = 'trending', curQ = '', searchT = null;
+  4303→  let _gifLoaded = false, _loading = false, _offset = 0, _hasMore = true;
+  4304→
+  4305→  function appendGifItems(data){
+  4306→    data.forEach(g=>{
+  4307→      const thumb = g.images?.fixed_width_downsampled || g.images?.fixed_width_small || g.images?.fixed_width || g.images?.downsized_small;
+  4308→      const display = g.images?.fixed_width?.url || g.images?.downsized_medium?.url || (thumb ? thumb.url : null);
+  4309→      const full = g.images?.original?.url || display;
+  4310→      if(!thumb&&!display) return;
+  4311→      const item = document.createElement('div');
+  4312→      item.className = 'bqgifp-item';
+  4313→      const img = document.createElement('img');
+  4314→      img.loading = 'lazy';
+  4315→      img.decoding = 'async';
+  4316→      img.src = thumb ? esc(thumb.url) : esc(display);
+  4317→      img.alt = esc(g.title||'GIF');
+  4318→      img.addEventListener('error', function(){ item.classList.add('bqgifp-err'); });
+  4319→      item.appendChild(img);
+  4320→      item.addEventListener('click', ()=>{
+  4321→        const w = parseInt(g.images?.original?.width||0);
+  4322→        const h = parseInt(g.images?.original?.height||0);
+  4323→        if(isG) sendGifGlobal(display||full, w, h, full); else sendGifDm(display||full, w, h, full);
+  4324→        panel.classList.remove('open');
+  4325→        btn.classList.remove('active');
+  4326→      });
+  4327→      grid.appendChild(item);
+  4328→    });
+  4329→  }
+  4330→
+  4331→  function showSkeletons(){
+  4332→    for(let i=0;i<6;i++){
+  4333→      const s = document.createElement('div');
+  4334→      s.className='bqgifp-skel';
+  4335→      grid.appendChild(s);
+  4336→    }
+  4337→  }
+  4338→
+  4339→  async function load(){
+  4340→    grid.innerHTML = '';
+  4341→    _offset = 0; _hasMore = true; _loading = true;
+  4342→    showSkeletons();
+  4343→    const res = await giphyFetch(curCat, curQ, 0);
+  4344→    _loading = false;
+  4345→    grid.innerHTML = '';
+  4346→    if(res.error){
+  4347→      grid.innerHTML = '<div class="bqgifp-empty">'+esc(res.error)+'</div>';
+  4348→      _hasMore = false; return;
+  4349→    }
+  4350→    if(!res.data||!res.data.length){
+  4351→      grid.innerHTML = '<div class="bqgifp-empty">No GIFs found.</div>';
+  4352→      _hasMore = false; return;
+  4353→    }
+  4354→    _offset = res.data.length;
+  4355→    _hasMore = res.data.length >= 4;
+  4356→    appendGifItems(res.data);
+  4357→  }
+  4358→
+  4359→  async function loadMore(){
+  4360→    if(_loading || !_hasMore) return;
+  4361→    _loading = true;
+  4362→    var loader = document.createElement('div');
+  4363→    loader.className = 'bqgifp-loading';
+  4364→    loader.textContent = 'Loading more...';
+  4365→    grid.appendChild(loader);
+  4366→    const res = await giphyFetch(curCat, curQ, _offset);
+  4367→    if(loader.parentNode) loader.remove();
+  4368→    _loading = false;
+  4369→    if(res.data && res.data.length){
+  4370→      _offset += res.data.length;
+  4371→      _hasMore = res.data.length >= 4;
+  4372→      appendGifItems(res.data);
+  4373→    } else {
+  4374→      _hasMore = false;
+  4375→    }
+  4376→  }
+  4377→
+  4378→  /* Infinite scroll */
+  4379→  grid.addEventListener('scroll', function(){
+  4380→    if(_loading || !_hasMore) return;
+  4381→    if(grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100){
+  4382→      loadMore();
+  4383→    }
+  4384→  });
+  4385→
+  4386→  cats.forEach(c=>{
+  4387→    c.addEventListener('click', ()=>{
+  4388→      cats.forEach(x=>x.classList.remove('sel'));
+  4389→      c.classList.add('sel');
+  4390→      curCat = c.dataset.cat; curQ = ''; inp.value = '';
+  4391→      load();
+  4392→    });
+  4393→  });
+  4394→  inp.addEventListener('input', ()=>{
+  4395→    clearTimeout(searchT);
+  4396→    searchT = setTimeout(()=>{
+  4397→      curQ = inp.value.trim();
+  4398→      if(curQ){ cats.forEach(x=>x.classList.remove('sel')); }
+  4399→      else { cats[0]?.classList.add('sel'); curCat='trending'; }
+  4400→      load();
+  4401→    }, 300);
+  4402→  });
+  4403→
+  4404→  btn.addEventListener('click', e=>{
+  4405→    e.stopPropagation();
+  4406→    const opening = !panel.classList.contains('open');
+  4407→    document.querySelectorAll('.bqgifp.open').forEach(p=>p.classList.remove('open'));
+  4408→    document.querySelectorAll('.bqgifbtn.active').forEach(b=>b.classList.remove('active'));
+  4409→    if(opening){
+  4410→      panel.classList.add('open');
+  4411→      btn.classList.add('active');
+  4412→      if(!_gifLoaded){ _gifLoaded=true; load(); }
+  4413→      else if(!grid.children.length) load();
+  4414→      setTimeout(()=>inp.focus(), 50);
+  4415→    }
+  4416→  });
+  4417→
+  4418→  document.getElementById('bqp')?.addEventListener('click', e=>{
+  4419→    if(!panel.classList.contains('open')) return;
+  4420→    if(panel.contains(e.target) || btn.contains(e.target)) return;
+  4421→    panel.classList.remove('open');
+  4422→    btn.classList.remove('active');
+  4423→  });
+  4424→}
+  4425→
+  4426→const LS_STARS  = 'bq_starred';
+  4427→const LS_MUTED  = 'bq_muted';
+  4428→const LS_THEMES = 'bq_themes';
+  4429→const LS_DISAPP = 'bq_disappear';
+  4430→
+  4431→function getStarred(){ try{return JSON.parse(localStorage.getItem(LS_STARS)||'{}')}catch{return {}}}
+  4432→function getMuted(){   try{return JSON.parse(localStorage.getItem(LS_MUTED)||'[]')}catch{return []}}
+  4433→function getThemes(){  try{return JSON.parse(localStorage.getItem(LS_THEMES)||'{}')}catch{return {}}}
+  4434→function getDisappear(){try{return JSON.parse(localStorage.getItem(LS_DISAPP)||'{}')}catch{return {}}}
+  4435→
+  4436→function isMuted(did){ return getMuted().includes(did); }
+  4437→function toggleMute(did){
+  4438→  const m=getMuted(),i=m.indexOf(did);
+  4439→  if(i>-1) m.splice(i,1); else m.push(did);
+  4440→  localStorage.setItem(LS_MUTED,JSON.stringify(m));
+  4441→  updateDmInfoPanel();
+  4442→  toast(isMuted(did)?'🔕 Muted':'🔔 Unmuted');
+  4443→}
+  4444→
+  4445→/* v9: global theme (persists across refresh, separate from per-DM theme) */
+  4446→function getGlobalTheme(){
+  4447→  try { return localStorage.getItem(LS_THEME) || 'none'; } catch(_) { return 'none'; }
+  4448→}
+  4449→function setGlobalTheme(t){
+  4450→  try { localStorage.setItem(LS_THEME, t||'none'); } catch(_){}
+  4451→  applyGlobalTheme(t||'none');
+  4452→  if(db && uid) db.ref('bq_presence/'+uid+'/theme').set(t||'none');
+  4453→}
+  4454→function applyGlobalTheme(theme){
+  4455→  const panel=document.getElementById('bqp');
+  4456→  if(!panel) return;
+  4457→  Array.from(panel.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) panel.classList.remove(c); });
+  4458→  panel.classList.add('bq-theme-'+(theme||'none'));
+  4459→  document.querySelectorAll('.bq-theme-chip').forEach(ch=>{
+  4460→    ch.classList.toggle('sel', ch.dataset.t===theme);
+  4461→  });
+  4462→}
+  4463→
+  4464→function getDmTheme(did){ return getThemes()[did]||getGlobalTheme()||'none'; }
+  4465→function setDmTheme(did,theme){
+  4466→  const t=getThemes(); t[did]=theme; localStorage.setItem(LS_THEMES,JSON.stringify(t));
+  4467→  // v9: also remember as the global default so a refresh keeps the theme
+  4468→  try { localStorage.setItem(LS_THEME, theme||'none'); } catch(_){}
+  4469→  if(db && uid) db.ref('bq_presence/'+uid+'/theme').set(theme||'none');
+  4470→  applyDmTheme(did,theme);
+  4471→}
+  4472→function applyDmTheme(did,theme){
+  4473→  // v29: accept any theme id with a matching CSS rule. Only normalise legacy aliases.
+  4474→  if(!theme) theme='none';
+  4475→  if(theme==='whatsapp') theme='walight';
+  4476→  else if(theme==='paper') theme='light';
+  4477→  const v=document.getElementById('bqv-dmconv'); if(!v) return;
+  4478→  v.className='bqv bq-active bq-theme-'+theme;
+  4479→  const panel=document.getElementById('bqp');
+  4480→  if(panel){
+  4481→    Array.from(panel.classList).forEach(c=>{ if(c.indexOf('bq-theme-')===0) panel.classList.remove(c); });
+  4482→    panel.classList.add('bq-theme-'+theme);
+  4483→  }
+  4484→  document.querySelectorAll('.bq-theme-chip').forEach(ch=>{
+  4485→    ch.classList.toggle('sel', ch.dataset.t===theme);
+  4486→  });
+  4487→}
+  4488→
+  4489→/* ── READ RECEIPTS ── */
+  4490→function markDmRead(dmId){
+  4491→  if(!db||!uid||!dmId) return;
+  4492→  db.ref('bq_dms/'+dmId+'/read/'+uid).set(Date.now());
+  4493→}
+  4494→/* ─── READ RECEIPT SVG CONSTANTS ─── */
+  4495→const TICK_SINGLE = '<svg viewBox="0 0 16 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5L4.5 9L12 1"/></svg>';
+  4496→const TICK_DOUBLE = '<svg viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5L4.5 9L12 1"/><path d="M8 5.5L11.5 9L19 1"/></svg>';
+  4497→
+  4498→function subscribeDmRead(dmId){
+  4499→  if(!db) return;
+  4500→  // Detach previous listener cleanly
+  4501→  if(dmReadRef){ db.ref('bq_dms/'+(dmReadRef._dmId||dmId)+'/read').off('value', dmReadRef); dmReadRef=null; }
+  4502→  const handler = snap=>{
+  4503→    if(!dmReadCache[dmId]) dmReadCache[dmId]={};
+  4504→    snap.forEach(ch=>{ dmReadCache[dmId][ch.key]=ch.val(); });
+  4505→    updateAllReadReceipts(dmId);
+  4506→  };
+  4507→  handler._dmId = dmId;
+  4508→  dmReadRef = handler;
+  4509→  db.ref('bq_dms/'+dmId+'/read').on('value', handler);
+  4510→}
+  4511→
+  4512→let _receiptRAF=0;
+  4513→function updateAllReadReceipts(dmId){
+  4514→  dmId = dmId||activeDmId;
+  4515→  if(!dmId||!activeDmPuid) return;
+  4516→  // Debounce with rAF to batch updates and avoid per-message innerHTML cascades
+  4517→  if(_receiptRAF) cancelAnimationFrame(_receiptRAF);
+  4518→  _receiptRAF=requestAnimationFrame(()=>{
+  4519→    _receiptRAF=0;
+  4520→    const reads = dmReadCache[dmId]||{};
+  4521→    const partnerTs = reads[activeDmPuid]||0;
+  4522→    document.querySelectorAll('#bqdmmsgs .bqr.mine').forEach(row=>{
+  4523→      const msgTs = parseInt(row.dataset.ts||'0');
+  4524→      if(!msgTs) return;
+  4525→      const tickEl = row.querySelector('.bqbbl-tick');
+  4526→      const metaEl = row.querySelector('.bqbbl-meta');
+  4527→      if(!tickEl||!metaEl) return;
+  4528→      // Skip if already correct state
+  4529→      const isSeen = metaEl.classList.contains('seen');
+  4530→      const isDelivered = metaEl.classList.contains('delivered');
+  4531→      if(partnerTs && partnerTs >= msgTs){
+  4532→        if(!isSeen){ tickEl.innerHTML = TICK_DOUBLE; metaEl.className='bqbbl-meta seen'; metaEl.title='Seen'; }
+  4533→      } else if(partnerTs){
+  4534→        if(!isDelivered){ tickEl.innerHTML = TICK_DOUBLE; metaEl.className='bqbbl-meta delivered'; metaEl.title='Delivered'; }
+  4535→      } else {
+  4536→        if(isSeen||isDelivered){ tickEl.innerHTML = TICK_SINGLE; metaEl.className='bqbbl-meta'; metaEl.title='Sent'; }
+  4537→      }
+  4538→    });
+  4539→  });
+  4540→}
+  4541→
+  4542→/* ── STAR MESSAGE ── */
+  4543→function starMessage(ctx, key, msg){
+  4544→  const stars=getStarred();
+  4545→  const dmId=ctx==='global'?'global':(activeDmId||'');
+  4546→  if(!stars[dmId]) stars[dmId]={};
+  4547→  const isStarred=!!stars[dmId][key];
+  4548→  if(isStarred){ delete stars[dmId][key]; }
+  4549→  else { stars[dmId][key]={text:msg.text,uname:msg.uname,ts:msg.ts,key}; }
+  4550→  localStorage.setItem(LS_STARS,JSON.stringify(stars));
+  4551→  // Update star button appearance
+  4552→  const pfx='bqmsg-'+ctx+'-';
+  4553→  const row=document.getElementById(pfx+key); const btn=row;
+  4554→  if(btn) btn.classList.toggle('bq-starred',!isStarred);
+  4555→  updateStarCount();
+  4556→  toast(isStarred?'Unstarred':'⭐ Starred');
+  4557→}
+  4558→
+  4559→function updateStarCount(){
+  4560→  const stars=getStarred();
+  4561→  const dmId=activeDmId||'global';
+  4562→  const count=stars[dmId]?Object.keys(stars[dmId]).length:0;
+  4563→  const el=document.getElementById('bq-info-star-count');
+  4564→  if(el) el.textContent=count;
+  4565→}
+  4566→
+  4567→function openStarredPanel(){
+  4568→  const panel=document.getElementById('bq-starred-panel'); if(!panel) return;
+  4569→  panel.classList.add('open');
+  4570→  renderStarredList();
+  4571→}
+  4572→function renderStarredList(){
+  4573→  const list=document.getElementById('bq-starred-list'); if(!list) return;
+  4574→  const stars=getStarred();
+  4575→  const dmId=activeDmId||'global';
+  4576→  const items=stars[dmId]?Object.values(stars[dmId]):[];
+  4577→  if(!items.length){
+  4578→    list.innerHTML='<div style="padding:32px;text-align:center;font-family:Inter,sans-serif;font-size:13px;color:var(--bq-text-subtle)">No starred messages</div>';
+  4579→    return;
+  4580→  }
+  4581→  list.innerHTML='';
+  4582→  items.sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(item=>{
+  4583→    const d=document.createElement('div'); d.className='bq-starred-item';
+  4584→    d.innerHTML=(
+  4585→      '<div class="bq-starred-from">@'+esc(item.uname||'')+'</div>'+
+  4586→      '<div class="bq-starred-text">'+esc(item.text||'').slice(0,200)+'</div>'+
+  4587→      '<div class="bq-starred-ts">'+new Date(item.ts||0).toLocaleString()+'</div>'+
+  4588→      '<button class="bq-starred-unstar" data-key="'+item.key+'" title="Unstar">'+
+  4589→      '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+  4590→    );
+  4591→    d.querySelector('.bq-starred-unstar').onclick=e=>{
+  4592→      e.stopPropagation();
+  4593→      const s=getStarred();
+  4594→      if(s[dmId]) delete s[dmId][item.key];
+  4595→      localStorage.setItem(LS_STARS,JSON.stringify(s));
+  4596→      d.remove(); updateStarCount();
+  4597→      if(!list.children.length) list.innerHTML='<div style="padding:32px;text-align:center;font-family:Inter,sans-serif;font-size:13px;color:var(--bq-text-subtle)">No starred messages</div>';
+  4598→    };
+  4599→    // Click to scroll to message
+  4600→    d.addEventListener('click',e=>{ if(e.target.closest('.bq-starred-unstar')) return;
+  4601→      const row=document.getElementById('bqmsg-dm-'+item.key);
+  4602→      if(row){ document.getElementById('bq-starred-panel').classList.remove('open');
+  4603→        row.scrollIntoView({behavior:'smooth',block:'center'});
+  4604→        row.classList.add('bq-msg-jump');
+  4605→        setTimeout(()=>row.classList.remove('bq-msg-jump'),1200);
+  4606→      }
+  4607→    });
+  4608→    list.appendChild(d);
+  4609→  });
+  4610→}
+  4611→
+  4612→/* ── PIN MESSAGE IN DM ── */
+  4613→function pinMessage(ctx, key, msg){
+  4614→  if(!db||ctx==='global') return;
+  4615→  const dmId=activeDmId; if(!dmId) return;
+  4616→  db.ref('bq_dms/'+dmId+'/pinned').once('value',snap=>{
+  4617→    const cur=snap.val();
+  4618→    if(cur&&cur.key===key){
+  4619→      // Unpin
+  4620→      db.ref('bq_dms/'+dmId+'/pinned').remove();
+  4621→      toast('Message unpinned');
+  4622→    } else {
+  4623→      db.ref('bq_dms/'+dmId+'/pinned').set({key,text:msg.text.slice(0,80),uname:msg.uname,ts:Date.now()});
+  4624→      toast('📌 Message pinned');
+  4625→    }
+  4626→  });
+  4627→}
+  4628→function subscribeDmPinned(dmId){
+  4629→  if(!db) return;
+  4630→  db.ref('bq_dms/'+dmId+'/pinned').on('value',snap=>{
+  4631→    const data=snap.val();
+  4632→    const bar=document.getElementById('bq-pinned-bar');
+  4633→    const txt=document.getElementById('bq-pinbar-text');
+  4634→    if(!bar||!txt) return;
+  4635→    if(data){ bar.classList.add('show'); txt.textContent=data.text||''; }
+  4636→    else bar.classList.remove('show');
+  4637→  });
+  4638→}
+  4639→
+  4640→/* ── DM INFO PANEL ── */
+  4641→function openDmInfo(){
+  4642→  // v3: route legacy "Conversation Info" to the new floating card
+  4643→  document.getElementById('bq-dm-menu')?.classList.remove('open');
+  4644→  if(typeof openInfoFloat==='function') openInfoFloat();
+  4645→}
+  4646→function closeDmInfo(){
+  4647→  document.getElementById('bq-dm-info')?.classList.remove('open');
+  4648→}
+  4649→function updateDmInfoPanel(){
+  4650→  if(!activeDmPuid) return;
+  4651→  const color=getColor(activeDmPuid,activeDmPname||'');
+  4652→  const pdata=onlineU[activeDmPuid]||{};
+  4653→  const pm=presenceMeta(activeDmPuid,pdata);
+  4654→  const av=document.getElementById('bq-info-av');
+  4655→  if(av){ av.style.background=color; av.style.color='#000'; av.textContent=uInit(activeDmPname||'?');
+  4656→    av.className='bq-info-av'+(pm.isOnline&&pdata.status?' '+pdata.status:''); }
+  4657→  const nm=document.getElementById('bq-info-name'); if(nm) nm.textContent='@'+(activeDmPname||'');
+  4658→  const st=document.getElementById('bq-info-status');
+  4659→  if(st){ st.innerHTML=presenceBadgeHTML(pm, pm.detail); }
+  4660→  const bio=document.getElementById('bq-info-bio'); if(bio) bio.textContent=pdata.bio||'';
+  4661→  // Mute toggle
+  4662→  const mc=document.getElementById('bq-mute-chk'); if(mc) mc.checked=isMuted(activeDmId||'');
+  4663→  // Theme chips
+  4664→  const theme=getDmTheme(activeDmId||'');
+  4665→  document.querySelectorAll('.bq-theme-chip').forEach(ch=>ch.classList.toggle('sel',ch.dataset.t===theme));
+  4666→  // Disappear toggle
+  4667→  const dc=document.getElementById('bq-disappear-chk');
+  4668→  const ds=document.getElementById('bq-disappear-sub');
+  4669→  const dis=getDisappear();
+  4670→  const disOn=!!(activeDmId&&dis[activeDmId]);
+  4671→  if(dc) dc.checked=disOn;
+  4672→  if(ds) ds.textContent=disOn?'5 minutes':'Off';
+  4673→  updateStarCount();
+  4674→}
+  4675→
+  4676→
+  4677→/* ── DISAPPEARING MESSAGES TOGGLE ── */
+  4678→function toggleDisappear(did){
+  4679→  const dis=getDisappear();
+  4680→  dis[did]=!dis[did]; localStorage.setItem(LS_DISAPP,JSON.stringify(dis));
+  4681→  const sub=document.getElementById('bq-disappear-sub');
+  4682→  if(sub) sub.textContent=dis[did]?'5 minutes':'Off';
+  4683→  toast(dis[did]?'⏱ Disappearing messages on (5 min)':'Disappearing messages off');
+  4684→}
+  4685→
+  4686→/* ── IMAGE PASTE / MEDIA ── */
+  4687→let pendingImageData=null;
+  4688→function handleDmPaste(e){
+  4689→  const items=e.clipboardData?.items; if(!items) return;
+  4690→  for(const item of items){
+  4691→    if(item.type.startsWith('image/')){
+  4692→      e.preventDefault();
+  4693→      const file=item.getAsFile(); if(!file) return;
+  4694→      // Guard: Firebase 1MB write limit — compress large images
+  4695→      if(file.size > 400*1024){
+  4696→        toast('Image too large — max ~400KB'); return;
+  4697→      }
+  4698→      const reader=new FileReader();
+  4699→      reader.onload=ev=>{
+  4700→        // Compress via canvas if needed
+  4701→        const img=new Image();
+  4702→        img.onload=()=>{
+  4703→          const MAX=600;
+  4704→          const canvas=document.createElement('canvas');
+  4705→          const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+  4706→          canvas.width=Math.round(img.width*scale);
+  4707→          canvas.height=Math.round(img.height*scale);
+  4708→          canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+  4709→          const compressed=canvas.toDataURL('image/jpeg',0.7);
+  4710→          if(compressed.length>800*1024){ toast('Image too large after compression'); return; }
+  4711→          pendingImageData=compressed;
+  4712→          const prev=document.getElementById('bq-media-preview');
+  4713→          const thumb=document.getElementById('bq-media-thumb');
+  4714→          const name=document.getElementById('bq-media-name');
+  4715→          if(prev) prev.classList.add('show');
+  4716→          if(thumb) thumb.src=pendingImageData;
+  4717→          if(name) name.textContent='Image (~'+Math.round(compressed.length/1024)+'KB)';
+  4718→        };
+  4719→        img.src=ev.target.result;
+  4720→      };
+  4721→      reader.readAsDataURL(file);
+  4722→      return;
+  4723→    }
+  4724→  }
+  4725→}
+  4726→function clearMediaPreview(){
+  4727→  pendingImageData=null;
+  4728→  document.getElementById('bq-media-preview')?.classList.remove('show');
+  4729→  document.getElementById('bq-media-thumb').src='';
+  4730→}
+  4731→
+  4732→/* ── INIT DM FEATURES ── */
+  4733→function initDmFeatures(){
+  4734→  // DM menu button — v62: removed old toggle handler, v4 ensureDmMenuBindings handles positioning
+  4735→  const menuBtn=document.getElementById('bq-dm-menu-btn');
+  4736→  const menuDrop=document.getElementById('bq-dm-menu');
+  4737→  // v62: Old simple toggle removed — v4's ensureDmMenuBindings handles viewport-aware positioning
+  4738→  document.getElementById('bq-dm-menu-info')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openDmInfo(); });
+  4739→  document.getElementById('bq-dm-menu-starred')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openStarredPanel(); });
+  4740→  document.getElementById('bq-dm-menu-theme')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); openDmInfo(); });
+  4741→  document.getElementById('bq-dm-menu-mute')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); if(activeDmId) toggleMute(activeDmId); });
+  4742→  document.getElementById('bq-dm-menu-clear')?.addEventListener('click',()=>{ menuDrop?.classList.remove('open'); if(activeDmId&&db){ db.ref('bq_dms/'+activeDmId+'/messages').remove(); toast('Conversation cleared'); } });
+  4743→
+  4744→  // Close menu on outside click
+  4745→  document.getElementById('bqp')?.addEventListener('click',e=>{
+  4746→    if(!menuBtn?.contains(e.target)) menuDrop?.classList.remove('open');
+  4747→  });
+  4748→
+  4749→  // DM info panel
+  4750→  document.getElementById('bq-info-close')?.addEventListener('click',closeDmInfo);
+  4751→  
+  4752→  // Starred panel back
+  4753→  document.getElementById('bq-starred-back')?.addEventListener('click',()=>{
+  4754→    document.getElementById('bq-starred-panel')?.classList.remove('open');
+  4755→  });
+  4756→  
+  4757→  // Starred in info panel
+  4758→  document.getElementById('bq-info-starred-row')?.addEventListener('click',openStarredPanel);
+  4759→  
+  4760→  // Clear in info panel
+  4761→  document.getElementById('bq-info-clear-row')?.addEventListener('click',()=>{
+  4762→    if(activeDmId&&db){ db.ref('bq_dms/'+activeDmId+'/messages').remove(); closeDmInfo(); toast('Conversation cleared'); }
+  4763→  });
+  4764→  
+  4765→  // Theme chips
+  4766→  document.querySelectorAll('.bq-theme-chip').forEach(ch=>{
+  4767→    ch.addEventListener('click',()=>{ if(activeDmId) setDmTheme(activeDmId,ch.dataset.t); });
+  4768→  });
+  4769→  
+  4770→  // Mute toggle
+  4771→  document.getElementById('bq-mute-chk')?.addEventListener('change',()=>{ if(activeDmId) toggleMute(activeDmId); });
+  4772→  
+  4773→  // Disappear toggle
+  4774→  document.getElementById('bq-disappear-chk')?.addEventListener('change',()=>{ if(activeDmId) toggleDisappear(activeDmId); });
+  4775→  
+  4776→  // Pinned bar click → jump to message; unpin button
+  4777→  document.getElementById('bq-pinned-bar')?.addEventListener('click',e=>{
+  4778→    if(e.target.closest('#bq-pinbar-unpin')) return;
+  4779→    // Jump to pinned message (if visible)
+  4780→  });
+  4781→  document.getElementById('bq-pinbar-unpin')?.addEventListener('click',e=>{
+  4782→    e.stopPropagation();
+  4783→    if(activeDmId&&db) db.ref('bq_dms/'+activeDmId+'/pinned').remove();
+  4784→  });
+  4785→  
+  4786→  // Media paste
+  4787→  document.getElementById('bqdminp')?.addEventListener('paste',handleDmPaste);
+  4788→  document.getElementById('bq-media-rm')?.addEventListener('click',clearMediaPreview);
+  4789→  
+  4790→  // Image / GIF lightbox — centered preview overlay (no external link)
+  4791→  document.getElementById('bqp')?.addEventListener('click',e=>{
+  4792→    const t=e.target;
+  4793→    if(t.classList.contains('bq-msg-img')||t.classList.contains('bq-msg-gif')){
+  4794→      e.stopPropagation();
+  4795→      openMediaLightbox(t.src, t.classList.contains('bq-msg-gif')?'gif':'image', t.closest('.bqr'));
+  4796→    }
+  4797→  });
+  4798→}
+  4799→
+  4800→
+  4801→/* ─────────────────────────────────────────
+  4802→   TYPING
+  4803→───────────────────────────────────────── */
+  4804→function setGTyp(on){
+  4805→  if(!db||!uname)return;
+  4806→  on?_throttledTypingWrite('bq_typing/'+uid,{uname,ts:Date.now()}):db.ref('bq_typing/'+uid).remove();
+  4807→  isGTyp=on;
+  4808→}
+  4809→function setDmTyp(on){
+  4810→  if(!db||!uname||!activeDmId)return;
+  4811→  // v2: throttle DM typing same as global typing
+  4812→  on?_throttledTypingWrite('bq_dm_typing/'+activeDmId+'/'+uid,{uname,ts:Date.now()}):db.ref('bq_dm_typing/'+activeDmId+'/'+uid).remove();
+  4813→  isDmTyp=on;
+  4814→}
+  4815→
+  4816→/* ─────────────────────────────────────────
+  4817→   SYSTEM MSG
+  4818→───────────────────────────────────────── */
+  4819→function sendSys(path,text){
+  4820→  if(!db)return;
+  4821→  db.ref(path).push({type:'system',text,ts:Date.now()});
+  4822→}
+  4823→
+  4824→/* ─────────────────────────────────────────
+  4825→   REACTIONS
+  4826→───────────────────────────────────────── */
+  4827→function toggleRxn(ctx,key,emoji){
+  4828→  if(!db)return;
+  4829→  const p=(ctx==='global'?'bq_messages':'bq_dms/'+activeDmId+'/messages')+'/'+key+'/reactions/'+emoji+'/'+uid;
+  4830→  db.ref(p).once('value',s=>s.val()?db.ref(p).remove():db.ref(p).set(true));
+  4831→}
+  4832→
+  4833→function onMsgChanged(ctx,snap){
+  4834→  const el=document.getElementById('bqmsg-'+ctx+'-'+snap.key);if(!el)return;
+  4835→  const msg=snap.val()||{};
+  4836→  // v22 — handle deleted-for-everyone tombstone
+  4837→  if(msg.deleted){
+  4838→    const bbl=el.querySelector('.bqbbl');
+  4839→    if(bbl){
+  4840→      bbl.innerHTML='<span style="opacity:.55;font-style:italic">Message deleted</span>';
+  4841→      bbl.classList.add('bq-tombstone');
+  4842→    }
+  4843→    el.querySelector('.bqrxns')?.remove();
+  4844→    return;
+  4845→  }
+  4846→  // v22 — sync edited text to ALL clients (was previously sender-only)
+  4847→  if(typeof msg.text==='string'){
+  4848→    const bbl=el.querySelector('.bqbbl');
+  4849→    if(bbl && !bbl.classList.contains('editing')){
+  4850→      // Preserve any reply/voice/image/sticker children — only update text node + edited marker
+  4851→      const reply=bbl.querySelector('.bqrp');
+  4852→      const media=bbl.querySelector('.bq-img, .bq-gif, .bq-sticker, .bq-voice');
+  4853→      const meta=bbl.querySelector('.bqmt, .bqmeta, .bq-msg-meta');
+  4854→      const replyHTML=reply?reply.outerHTML:'';
+  4855→      const mediaHTML=media?media.outerHTML:'';
+  4856→      const metaHTML=meta?meta.outerHTML:'';
+  4857→      const txtHTML=msg.text?('<div class="bqtxt">'+(window.linkify?linkify(esc(msg.text)):esc(msg.text))+'</div>'):'';
+  4858→      const editedHTML=msg.edited?'<span class="bqedited">(edited)</span>':'';
+  4859→      bbl.innerHTML=replyHTML+mediaHTML+txtHTML+editedHTML+metaHTML;
+  4860→    }
+  4861→  }
+  4862→  el.querySelector('.bqrxns')?.remove();
+  4863→  if(msg.reactions) renderRxns(ctx,el,msg.reactions,snap.key);
+  4864→}
+  4865→
+  4866→function renderRxns(ctx,rowEl,rxns,key){
+  4867→  if(!rxns||typeof rxns!=='object')return;
+  4868→  const bw=rowEl.querySelector('.bqbw');if(!bw)return;
+  4869→  const div=document.createElement('div');div.className='bqrxns';
+  4870→  Object.entries(rxns).forEach(([e,users])=>{
+  4871→    if(!users||typeof users!=='object')return;
+  4872→    const uids=Object.keys(users);if(!uids.length)return;
+  4873→    const mine=uids.includes(uid);
+  4874→    const btn=document.createElement('button');
+  4875→    btn.className='bqrxn'+(mine?' mr':'');
+  4876→    btn.innerHTML=`${e}<span class="bqrxn-n">${uids.length}</span>`;
+  4877→    btn.addEventListener('click',ev=>{ev.stopPropagation();toggleRxn(ctx,key,e);});
+  4878→    div.appendChild(btn);
+  4879→  });
+  4880→  if(div.children.length) bw.appendChild(div);
+  4881→}
+  4882→
+  4883→/* ─────────────────────────────────────────
+  4884→   REPLY
+  4885→───────────────────────────────────────── */
+  4886→function setReply(ctx,data){
+  4887→  if(ctx==='g'){
+  4888→    gReply=data;
+  4889→    const bar=document.getElementById('bqgrbar');bar.classList.add('show');
+  4890→    document.getElementById('bqgrbn').textContent='@'+data.uname;
+  4891→    // Show nested reply context if available
+  4892→    var barText = data.text || '';
+  4893→    if(data.replyTo && data.replyTo.runame) barText = '↩ @'+data.replyTo.runame+': '+(data.replyTo.rtext||'') + ' → ' + barText;
+  4894→    document.getElementById('bqgrbt').textContent=barText;
+  4895→  } else {
+  4896→    dmReply=data;
+  4897→    const bar=document.getElementById('bqdmrbar');bar.classList.add('show');
+  4898→    document.getElementById('bqdmrbn').textContent='@'+data.uname;
+  4899→    var barText2 = data.text || '';
+  4900→    if(data.replyTo && data.replyTo.runame) barText2 = '↩ @'+data.replyTo.runame+': '+(data.replyTo.rtext||'') + ' → ' + barText2;
+  4901→    document.getElementById('bqdmrbt').textContent=barText2;
+  4902→  }
+  4903→}
+  4904→function clearReply(ctx){
+  4905→  if(ctx==='g'){gReply=null;document.getElementById('bqgrbar').classList.remove('show');}
+  4906→  else{dmReply=null;document.getElementById('bqdmrbar').classList.remove('show');}
+  4907→}
+  4908→// Export for v44+ patches
+  4909→window._bqSetReply = setReply;
+  4910→window._bqClearReply = clearReply;
+  4911→window._bqGetReply = function(ctx){ return ctx==='g'?gReply:dmReply; };
+  4912→
+  4913→/* ───────────────────────────────────��─────
+  4914→   RENDER MESSAGE
+  4915→───────────────────────────────────────── */
+  4916→function renderMsg(ctx,msg,key){
+  4917→  const isG=ctx==='global';
+  4918→  const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
+  4919→  if(!msgsEl)return;
+  4920→  
+  4921→  // Check if message has expired (disappearing messages)
+  4922→  if(msg.expiresAt && Date.now() > msg.expiresAt){
+  4923→    // Delete expired message from DB
+  4924→    if(db && isG) db.ref('bq_messages/'+key).remove();
+  4925→    else if(db && activeDmId) db.ref('bq_dms/'+activeDmId+'/messages/'+key).remove();
+  4926→    return;
+  4927→  }
+  4928→  
+  4929→  document.getElementById(isG?'bqgempty':'bqdmempty')?.remove();
+  4930→
+  4931→  // ── DEDUP FIX: limitToLast re-fires child_added on delete ──
+  4932→  // If this message element already exists in the DOM, skip re-render.
+  4933→  // v35: moved BEFORE date separator logic to prevent duplicate separators
+  4934→  const pfx='bqmsg-'+ctx+'-';
+  4935→  if (document.getElementById(pfx + key)) return;
+  4936→
+  4937→  if(msg.type==='system'){
+  4938→    if(document.getElementById(pfx+key)) return; // dedup
+  4939→    const d=document.createElement('div');d.id=pfx+key;d.className='bqsys';d.textContent=msg.text;
+  4940→    msgsEl.appendChild(d);scrollD(ctx);return;
+  4941→  }
+  4942→
+  4943→  const isMine=msg.uid===uid;
+  4944→  const ts=msg.ts||Date.now();
+  4945→  const msgDate=new Date(ts);
+  4946→
+  4947→  // Date sep — keyed: only insert if no sep for this date already exists
+  4948→  const dateKey = msgDate.toDateString();
+  4949→  const existingSep = msgsEl.querySelector('.bqds[data-date="'+dateKey+'"]');
+  4950→  const lastEl=msgsEl.lastElementChild;
+  4951→  if(!existingSep){
+  4952→    const sep=document.createElement('div');sep.className='bqds';sep.textContent=dateLabel(ts);sep.dataset.date=dateKey;
+  4953→    msgsEl.appendChild(sep);
+  4954→    if(isG) gLastU=null; else dLastU=null;
+  4955→  }
+  4956→
+  4957→  const lU=isG?gLastU:dLastU,lT=isG?gLastT:dLastT;
+  4958→  const consec=lU===msg.uid&&(ts-lT)<120000;
+  4959→  if(isG){gLastU=msg.uid;gLastT=ts;}else{dLastU=msg.uid;dLastT=ts;}
+  4960→
+  4961→  const presD=onlineU[msg.uid]||{};
+  4962→  const col=getColor(msg.uid,msg.uname||'');
+  4963→  const ini=uInit(msg.uname||'?');
+  4964→  const tStr=tsStr(ts);
+  4965→  const rpHTML=msg.replyTo?`<div class="bqrp" data-reply-key="${esc(msg.replyTo.key||'')}"><div class="bqrp-n">@${esc(msg.replyTo.uname||'')}</div><div class="bqrp-t">${esc(msg.replyTo.text||'')}</div></div>`:'';
+  4966→  const timerHTML=msg.expiresAt?`<span class="bq-timer-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`:'';
+  4967→  /* v62: Store message text + type on row for correct reply extraction */
+  4968→  var _msgDisplayText = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':msg.gifUrl?'🎬 GIF':msg.imageData?'📷 Photo':'');
+  4969→  const row=document.createElement('div');
+  4970→  row.id=pfx+key;
+  4971→  row.className='bqr '+(isMine?'mine':'theirs')+(consec?' consec':'');
+  4972→  row.dataset.msgText = _msgDisplayText.slice(0,80);
+  4973→  row.dataset.msgUname = msg.uname||'';
+  4974→  if(msg.replyTo){ row.dataset.replyToKey = msg.replyTo.key||''; row.dataset.replyToUname = msg.replyTo.uname||''; row.dataset.replyToText = (msg.replyTo.text||'').slice(0,80); }
+  4975→  row.dataset.date=msgDate.toDateString();
+  4976→  row.dataset.ts=String(ts);
+  4977→  row.dataset.msguid=msg.uid;
+  4978→  // v18: mark rows rendered after initial load as "new" so they get the
+  4979→  // directional slide-in animation; strip the class after it plays.
+  4980→  if(ts && (Date.now()-ts) < 15000){
+  4981→    row.classList.add('bq-new');
+  4982→    setTimeout(()=>{ try{ row.classList.remove('bq-new'); }catch(_){}},600);
+  4983→  }
+  4984→
+  4985→  var _imgHtml  = msg.imageData ? '<img class="bq-msg-img" src="'+esc(msg.imageData)+'" alt="" loading="lazy">' : '';
+  4986→  var _gifHtml  = (msg.type==='gif' && msg.gifUrl) ? '<img class="bq-msg-gif" src="'+esc(msg.gifUrl)+'" alt="GIF" loading="lazy">' : '';
+  4987→  var _stkClass = '';
+  4988→  if(msg.type==='sticker' && msg.sticker){
+  4989→    // v35: assign animation class based on emoji category
+  4990→    var _stkAnimMap = {
+  4991→      '❤️':'stk-love','🔥':'stk-party','😂':'stk-party','🎉':'stk-party','🥰':'stk-love','😮':'stk-mood','💯':'stk-party','✨':'stk-party',
+  4992→      '🫶':'stk-love','🙏':'stk-mood','👏':'stk-party','🤝':'stk-mood','💪':'stk-sport','🫡':'stk-mood','🤌':'stk-mood','👌':'stk-mood',
+  4993→      '💀':'stk-mood','🤯':'stk-mood','😭':'stk-mood','👀':'stk-mood','😈':'stk-mood','🤡':'stk-mood','💅':'stk-mood','🫠':'stk-mood',
+  4994→      '🌙':'stk-nature','⚡':'stk-nature','🎯':'stk-sport','💎':'stk-nature','🚀':'stk-travel','🌊':'stk-nature','🎸':'stk-sport','🍀':'stk-nature',
+  4995→      '🦋':'stk-animal','🐺':'stk-animal','🦊':'stk-animal','🐸':'stk-animal','🦅':'stk-animal','🐬':'stk-animal','🌸':'stk-nature','🦜':'stk-animal',
+  4996→      '💕':'stk-love','💗':'stk-love','💖':'stk-love','🤗':'stk-love','😘':'stk-love','🥹':'stk-love','💑':'stk-love','🫂':'stk-love',
+  4997→      '🎊':'stk-party','🥳':'stk-party','🍾':'stk-party','🪩':'stk-party','🪅':'stk-party','🎆':'stk-party','🎈':'stk-party','🏆':'stk-party',
+  4998→      '😌':'stk-mood','🧘':'stk-mood','🥱':'stk-mood','😴':'stk-mood','🤭':'stk-mood','😏':'stk-mood','🫣':'stk-mood','🤓':'stk-mood',
+  4999→      '🍕':'stk-food','🍜':'stk-food','🧋':'stk-food','☕':'stk-food','🍰':'stk-food','🌮':'stk-food','🍱':'stk-food','🥂':'stk-food',
+  5000→      '✈️':'stk-travel','🗼':'stk-travel','🏖️':'stk-travel','🌍':'stk-travel','🏔️':'stk-travel','🌅':'stk-travel','🌋':'stk-nature','🏰':'stk-travel',
+  5001→      '⚽':'stk-sport','🏀':'stk-sport','🎨':'stk-sport','🎮':'stk-sport','🎲':'stk-sport','🧩':'stk-sport','🎭':'stk-sport','🤸':'stk-sport',
+  5002→      '🧪':'stk-science','🔬':'stk-science','🧬':'stk-science','🔭':'stk-science','🌡️':'stk-science','🧫':'stk-science','💡':'stk-science','🪐':'stk-science',
+  5003→      '🎵':'stk-music','🎶':'stk-music','🎤':'stk-music','💃':'stk-music','🕺':'stk-music','🪗':'stk-music','🎹':'stk-music','🥁':'stk-music',
+  5004→      '☀️':'stk-weather','🌈':'stk-weather','⭐':'stk-weather','❄️':'stk-weather','🌪️':'stk-weather','☄️':'stk-weather','🌤️':'stk-weather','🪶':'stk-weather',
+  5005→      '👋':'stk-greet','🤞':'stk-greet','✌️':'stk-greet','🤙':'stk-greet','🫰':'stk-greet','🫱':'stk-greet','🫲':'stk-greet','🤟':'stk-greet',
+  5006→      // v62: New sticker animation mappings
+  5007→      '📚':'stk-school','✏️':'stk-school','🎓':'stk-school','📝':'stk-school','🧠':'stk-school','📖':'stk-school','🎒':'stk-school','📐':'stk-school',
+  5008→      '💻':'stk-tech','⌨️':'stk-tech','🖥️':'stk-tech','📱':'stk-tech','🔋':'stk-tech','📡':'stk-tech','🤖':'stk-tech','🔌':'stk-tech',
+  5009→      '🧸':'stk-comfort','🛋️':'stk-comfort','🕯️':'stk-comfort','🧣':'stk-comfort','☕':'stk-comfort','🛏️':'stk-comfort','🪴':'stk-comfort','🧶':'stk-comfort',
+  5010→      '🏕️':'stk-adventure','🧗':'stk-adventure','🚴':'stk-adventure','⛷️':'stk-adventure','🚣':'stk-adventure','🏹':'stk-adventure','🧭':'stk-adventure','🎣':'stk-adventure',
+  5011→    };
+  5012→    _stkClass = _stkAnimMap[msg.sticker] || '';
+  5013→  }
+  5014→  var _stickerHtml = (msg.type==='sticker' && msg.sticker) ? '<span class="bqsticker '+_stkClass+'">'+esc(msg.sticker)+'</span>' : '';
+  5015→  var _voiceHtml = (msg.type==='voice' && msg.audio) ? buildVoiceHtml(msg) : '';
+  5016→  var _isSticker = !!_stickerHtml;
+  5017→  var _hasMedia = !!(_imgHtml || _gifHtml);
+  5018→  var _txtHtml  = msg.text ? '<div class="bqtxt">'+mentionify(linkify(esc(msg.text)))+'</div>' : '';
+  5019→  var _hasText  = !!_txtHtml;
+  5020→  var _bblCls   = 'bqbbl'+(msg.expiresAt?' disappearing':'')+(_hasMedia?' media':'')+(_hasMedia&&_hasText?' has-text':'')+(_isSticker?' sticker':'');
+  5021→  var _unName   = isMine ? 'You' : '@'+esc(presD.displayName||msg.uname||'?');
+  5022→
+  5023→  // Inline meta INSIDE bubble — timestamp + (mine&dm) tick
+  5024→  var _tickHtml = (isMine&&!isG) ? '<span class="bqbbl-tick">'+TICK_SINGLE+'</span>' : '';
+  5025→  var _metaHtml = '<span class="bqbbl-meta" title="Sent">'+tStr+_tickHtml+'</span><span class="bqbbl-meta-clear"></span>';
+  5026→
+  5027→  row.innerHTML =
+  5028→    '<div class="bqri">'+
+  5029→      '<div class="bqav" style="'+(presD.avatar?('background:url('+esc(presD.avatar)+') center/cover;color:transparent;'):('background:'+col+';color:#000;'))+'"'+
+  5030→        ' data-status="'+esc(presD.status||'')+'"'+
+  5031→        ' data-uid="'+esc(msg.uid)+'"'+
+  5032→        ' data-uname="'+esc(msg.uname||'')+'">'+(presD.avatar?'':((presD.initials||ini)))+'</div>'+
+  5033→      '<div class="bqcol">'+
+  5034→        '<div class="bqmeta">'+
+  5035→          '<span class="bqun" style="color:'+col+'"'+
+  5036→            ' data-uid="'+esc(msg.uid)+'"'+
+  5037→            ' data-uname="'+esc(msg.uname||'')+'">'+_unName+'</span>'+
+  5038→        '</div>'+
+  5039→        '<div class="bqbw">'+
+  5040→          '<div class="'+_bblCls+'">'+rpHTML+_imgHtml+_gifHtml+_stickerHtml+_voiceHtml+_txtHtml+(msg.edited?'<span class="bqedited">(edited)</span>':'')+timerHTML+_metaHtml+'</div>'+
+  5041→        '</div>'+
+  5042→      '</div>'+
+  5043→    '</div>';
+  5044→
+  5045→  if(msg.reactions) renderRxns(ctx,row,msg.reactions,key);
+  5046→  // Mark if starred
+  5047→  const _stars=getStarred();
+  5048→  const _sdid=ctx==='global'?'global':(activeDmId||'');
+  5049→  if(_stars[_sdid]&&_stars[_sdid][key]){ row.classList.add('bq-starred'); }
+  5050→  msgsEl.appendChild(row);
+  5051→  // Apply any cached read receipts to this newly rendered message
+  5052→  if(isMine&&!isG) requestAnimationFrame(()=>updateAllReadReceipts(activeDmId));
+  5053→
+  5054→  // Avatar / username click
+  5055→  row.querySelectorAll('.bqav,.bqun').forEach(el=>{
+  5056→    el.addEventListener('click',e=>{
+  5057→      e.stopPropagation();
+  5058→      const tuid=el.dataset.uid||msg.uid;
+  5059→      const tname=el.dataset.uname||msg.uname||'?';
+  5060→      openProfileCard(tuid,tname,onlineU[tuid]);
+  5061→    });
+  5062→  });
+  5063→  // v9.3: Mobile/tap support — tap a message bubble to toggle the action toolbar.
+  5064→  // Hover still works on desktop; tap is additive for touch devices.
+  5065→  const _bbl=row.querySelector('.bqbbl');
+  5066→  if(_bbl){
+  5067→    _bbl.addEventListener('click',e=>{
+  5068→      if(e.target.closest('a,img,.bq-voice-play,.bqrp')) return;
+  5069→      e.stopPropagation();
+  5070→      renderMsgActionSheet(ctx,key,msg,pfx,_bbl);
+  5071→    });
+  5072→  }
+  5073→
+  5074→  // Notification + badge
+  5075→  if(!isOpen&&!isMine){
+  5076→    if(isG) gUnread++; else {dmUnread[activeDmId]=(dmUnread[activeDmId]||0)+1;}
+  5077→    updateBadges();
+  5078→    /* notifications removed */
+  5079→  }
+  5080→  // Mark DM as read if currently viewing this DM
+  5081→  if(!isG&&isOpen&&activeView==='dmconv'&&!isMine){
+  5082→    markDmRead(activeDmId);
+  5083→  }
+  5084→  scrollD(ctx,isMine);
+  5085→}
+  5086→
+  5087→
+  5088→function ensureReactionPicker(){
+  5089→  let el=document.getElementById('bq-rx-picker');
+  5090→  if(el) return el;
+  5091→  el=document.createElement('div');
+  5092→  el.id='bq-rx-picker';
+  5093→  const cats=Object.keys(REACTION_CATEGORIES);
+  5094→  const tabs=cats.map((c,i)=>'<button class="bq-rx-tab'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+c+'</button>').join('');
+  5095→  const panes=cats.map((c,i)=>{
+  5096→    const btns=REACTION_CATEGORIES[c].map(e=>'<button class="bq-rx-emo" data-e="'+esc(e)+'">'+e+'</button>').join('');
+  5097→    return '<div class="bq-rx-pane'+(i===0?' active':'')+'" data-cat="'+esc(c)+'">'+btns+'</div>';
+  5098→  }).join('');
+  5099→  el.innerHTML='<div class="bq-rx-back" data-close="1"></div>'+
+  5100→    '<div class="bq-rx-panel" role="dialog" aria-label="Pick a reaction">'+
+  5101→      '<div class="bq-rx-tabs">'+tabs+'</div>'+
+  5102→      '<div class="bq-rx-panes">'+panes+'</div>'+
+  5103→    '</div>';
+  5104→  (document.getElementById('bqp')||document.body).appendChild(el);
+  5105→  // Prevent mousedown from bubbling to document outside-click handler
+  5106→  el.addEventListener('mousedown',e=>e.stopPropagation());
+  5107→  el.addEventListener('click',e=>{
+  5108→    if(e.target.dataset.close==='1'||e.target===el) closeReactionPicker();
+  5109→  });
+  5110→  el.querySelectorAll('.bq-rx-tab').forEach(t=>{
+  5111→    t.addEventListener('click',e=>{
+  5112→      e.stopPropagation();
+  5113→      el.querySelectorAll('.bq-rx-tab').forEach(x=>x.classList.toggle('active',x===t));
+  5114→      el.querySelectorAll('.bq-rx-pane').forEach(p=>p.classList.toggle('active',p.dataset.cat===t.dataset.cat));
+  5115→    });
+  5116→  });
+  5117→  el.querySelectorAll('.bq-rx-emo').forEach(b=>{
+  5118→    b.addEventListener('click',e=>{
+  5119→      e.stopPropagation();
+  5120→      const ctx=el.dataset.ctx, key=el.dataset.key;
+  5121→      if(ctx&&key) toggleRxn(ctx,key,b.dataset.e);
+  5122→      closeReactionPicker();
+  5123→    });
+  5124→  });
+  5125→  return el;
+  5126→}
+  5127→function openReactionPicker(ctx,key){
+  5128→  const el=ensureReactionPicker();
+  5129→  el.dataset.ctx=ctx; el.dataset.key=key;
+  5130→  el.classList.add('open');
+  5131→}
+  5132→function closeReactionPicker(){
+  5133→  const el=document.getElementById('bq-rx-picker');
+  5134→  if(!el) return;
+  5135→  el.classList.remove('open');
+  5136→  el.dataset.ctx=''; el.dataset.key='';
+  5137→}
+  5138→
+  5139→function ensureMsgActionSheet(){
+  5140→  let el=document.getElementById('bq-msg-sheet');
+  5141→  if(el) return el;
+  5142→  el=document.createElement('div');
+  5143→  el.id='bq-msg-sheet';
+  5144→  el.innerHTML=''+
+  5145→    '<div class="bq-ms-backdrop" data-close="1"></div>'+
+  5146→    '<div class="bq-ms-panel" role="dialog" aria-label="Message actions">'+
+  5147→      '<div class="bq-ms-preview" id="bq-ms-preview"></div>'+
+  5148→      '<div class="bq-ms-actions" id="bq-ms-actions"></div>'+
+  5149→    '</div>';
+  5150→  (document.getElementById('bqp')||document.body).appendChild(el);
+  5151→  // Prevent mousedown from bubbling to document outside-click handler
+  5152→  el.addEventListener('mousedown',e=>e.stopPropagation());
+  5153→  el.addEventListener('pointerdown',e=>{
+  5154→    if(e.target.closest('.bq-ms-panel')) e.stopPropagation();
+  5155→  },true);
+  5156→  el.addEventListener('click',e=>{
+  5157→    if(e.target.dataset.close==='1' || e.target===el) closeMsgActionSheet();
+  5158→  });
+  5159→  return el;
+  5160→}
+  5161→function closeMsgActionSheet(){
+  5162→  document.querySelectorAll('.bq-msg-inline').forEach(el=>el.remove());
+  5163→  document.querySelectorAll('.bqbbl.msg-menu-open').forEach(el=>el.classList.remove('msg-menu-open'));
+  5164→  const legacy=document.getElementById('bq-msg-sheet');
+  5165→  if(legacy) legacy.classList.remove('open');
+  5166→}
+  5167→function renderMsgActionSheet(ctx,key,msg,pfx,anchorEl){
+  5168→  const bubble=anchorEl||document.querySelector('#'+pfx+key+' .bqbbl');
+  5169→  const bw=bubble?.closest('.bqbw');
+  5170→  if(!bubble||!bw) return;
+  5171→  const openBar=bw.querySelector('.bq-msg-inline');
+  5172→  if(openBar && openBar.dataset.key===key && openBar.dataset.ctx===ctx){
+  5173→    closeMsgActionSheet();
+  5174→    return;
+  5175→  }
+  5176→  closeMsgActionSheet();
+  5177→  bubble.classList.add('msg-menu-open');
+  5178→  const isG = ctx==='global';
+  5179→  const isMine=msg.uid===uid;
+  5180→  const _stars=getStarred();
+  5181→  const _sdid=isG?'global':(activeDmId||'');
+  5182→  const isStarred = !!(_stars[_sdid]&&_stars[_sdid][key]);
+  5183→  const items = [
+  5184→    {a:'react', label:'React', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>'},
+  5185→    {a:'reply', label:'Reply', icon:'<svg viewBox="0 0 24 24"><polyline points="9,17 4,12 9,7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'},
+  5186→    {a:'copy', label:'Copy', icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'},
+  5187→    {a:'star', label:isStarred?'Unstar':'Star', icon:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+  5188→  ];
+  5189→  if(!isG) items.push({a:'pin', label:'Pin', icon:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'});
+  5190→  if(isMine){
+  5191→    items.push({a:'edit', label:'Edit', icon:'<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>'});
+  5192→    items.push({a:'del', label:'Delete', danger:true, icon:'<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>'});
+  5193→  }
+  5194→  const bar=document.createElement('div');
+  5195→  bar.className='bq-msg-inline'+(isMine?' mine':'');
+  5196→  bar.dataset.key=key;
+  5197→  bar.dataset.ctx=ctx;
+  5198→  bar.innerHTML = items.map(item=>'<button class="bq-ms-btn'+(item.danger?' danger':'')+'" type="button" data-a="'+item.a+'">'+item.icon+'<span>'+item.label+'</span></button>').join('');
+  5199→  bar.querySelectorAll('.bq-ms-btn').forEach(btn=>{
+  5200→    btn.addEventListener('pointerdown',e=>e.stopPropagation(),true);
+  5201→    btn.addEventListener('click',e=>{
+  5202→      e.preventDefault();
+  5203→      e.stopPropagation();
+  5204→      const action=btn.dataset.a;
+  5205→      closeMsgActionSheet();
+  5206→      doAction(ctx, action, key, msg, pfx, true);
+  5207→    });
+  5208→  });
+  5209→  bw.appendChild(bar);
+  5210→  // Ensure menu is visible inside the scrolling chat list
+  5211→  try{ bar.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){}
+  5212→}
+  5213→
+  5214→function doAction(ctx,a,key,msg,pfx,fromSheet){
+  5215→  if(a==='react'){
+  5216→    openReactionPicker(ctx,key);
+  5217→  }
+  5218→  else if(a==='reply'){
+  5219→    var _rpText = msg.text || (msg.type==='gif'?'🎬 GIF':msg.type==='voice'?'🎤 Voice note':msg.type==='sticker'?'👾 Sticker':msg.gifUrl?'🎬 GIF':msg.imageData?'📷 Photo':'');
+  5220→    // For replies to replies, include the original reply info
+  5221→    var _rpExtra = msg.replyTo ? {rkey:msg.replyTo.key,runame:msg.replyTo.uname,rtext:msg.replyTo.text} : null;
+  5222→    setReply(ctx==='global'?'g':'dm',{key,uname:msg.uname,text:_rpText,replyTo:_rpExtra});
+  5223→    document.getElementById(ctx==='global'?'bqginp':'bqdminp')?.focus();
+  5224→  }
+  5225→  else if(a==='copy'){
+  5226→    const copyText = msg.text || (msg.type==='voice' ? '🎤 Voice note' : msg.gifUrl || msg.imageData || '');
+  5227→    navigator.clipboard?.writeText(copyText).then(()=>toast('Copied!'));
+  5228→  }
+  5229→  else if(a==='del'){
+  5230→    if(msg.uid!==uid)return;
+  5231→    const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
+  5232→    document.getElementById(pfx+key)?.remove();
+  5233→    db.ref(p).remove();
+  5234→  }
+  5235→  else if(a==='edit'){if(msg.uid!==uid)return;startEditMsg(ctx,key,msg,pfx);}
+  5236→  else if(a==='star'){starMessage(ctx,key,msg);}
+  5237→  else if(a==='pin'){pinMessage(ctx,key,msg);}
+  5238→}
+  5239→  
+  5240→function startEditMsg(ctx,key,msg,pfx){
+  5241→  const row=document.getElementById(pfx+key);
+  5242→  if(!row)return;
+  5243→  const bbl=row.querySelector('.bqbbl');
+  5244→  if(!bbl||bbl.classList.contains('editing'))return;
+  5245→  
+  5246→  const originalText=msg.text||'';
+  5247→  bbl.classList.add('editing');
+  5248→  bbl.innerHTML=`
+  5249→    <textarea class="bqedit-inp">${esc(originalText)}</textarea>
+  5250→    <div class="bqedit-btns">
+  5251→      <button class="bqedit-btn cancel">Cancel</button>
+  5252→      <button class="bqedit-btn save">Save</button>
+  5253→    </div>
+  5254→  `;
+  5255→  
+  5256→  const inp=bbl.querySelector('.bqedit-inp');
+  5257→  const saveBtn=bbl.querySelector('.bqedit-btn.save');
+  5258→  const cancelBtn=bbl.querySelector('.bqedit-btn.cancel');
+  5259→  
+  5260→  inp.focus();
+  5261→  inp.setSelectionRange(inp.value.length,inp.value.length);
+  5262→  autoH(inp);
+  5263→  inp.addEventListener('input',()=>autoH(inp));
+  5264→  
+  5265→  cancelBtn.addEventListener('click',e=>{
+  5266→    e.stopPropagation();
+  5267→    bbl.classList.remove('editing');
+  5268→    bbl.innerHTML=linkify(esc(originalText));
+  5269→  });
+  5270→  
+  5271→  saveBtn.addEventListener('click',e=>{
+  5272→    e.stopPropagation();
+  5273→    const newText=inp.value.trim();
+  5274→    if(!newText){toast('Message cannot be empty');return;}
+  5275→    if(newText===originalText){
+  5276→      bbl.classList.remove('editing');
+  5277→      bbl.innerHTML=linkify(esc(originalText));
+  5278→      return;
+  5279→    }
+  5280→    const p=ctx==='global'?'bq_messages/'+key:'bq_dms/'+activeDmId+'/messages/'+key;
+  5281→    db.ref(p).update({text:newText,edited:true,editedAt:Date.now()});
+  5282→    bbl.classList.remove('editing');
+  5283→    bbl.innerHTML=linkify(esc(newText))+'<span class="bqedited">(edited)</span>';
+  5284→    toast('Message edited');
+  5285→  });
+  5286→  
+  5287→  inp.addEventListener('keydown',e=>{
+  5288→    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveBtn.click();}
+  5289→    if(e.key==='Escape'){cancelBtn.click();}
+  5290→  });
+  5291→  }
+  5292→
+  5293→/* ─────────────────────────────────────────
+  5294→   BADGES
+  5295→───────────────────────────────────────── */
+  5296→function updateBadges(){
+  5297→  // v29: derive unread truth from dmMeta (not the locally cached dmUnread
+  5298→  // counter, which can drift). For each thread sum meta.unread[uid] but
+  5299→  // discard stale counts where lastTs is older than our last read marker.
+  5300→  let dmTotal=0;
+  5301→  try{
+  5302→    Object.keys(dmMeta||{}).forEach(did=>{
+  5303→      const m=dmMeta[did]; if(!m||!m.unread) return;
+  5304→      const n=Number(m.unread[uid]||0); if(!n||n<=0) return;
+  5305→      // Skip the conversation we're actively reading.
+  5306→      if(activeView==='dmconv' && did===activeDmId) return;
+  5307→      const lastTs=Number(m.lastTs||0);
+  5308→      const myRead=Number((dmReadCache && dmReadCache[did] && dmReadCache[did][uid])||0);
+  5309→      if(lastTs && myRead && lastTs<=myRead){
+  5310→        // Stale counter — heal it in the background.
+  5311→        if(db) db.ref('bq_dms/'+did+'/meta/unread/'+uid).set(0).catch(()=>{});
+  5312→        return;
+  5313→      }
+  5314→      dmTotal+=n;
+  5315→      dmUnread[did]=n;
+  5316→    });
+  5317→  }catch(_){ dmTotal=Object.values(dmUnread).reduce((s,n)=>s+n,0); }
+  5318→  const nb=document.getElementById('bqdmnb');
+  5319→  if(nb){if(dmTotal>0){nb.textContent=dmTotal>9?'9+':dmTotal;nb.classList.add('show');}else nb.classList.remove('show');}
+  5320→  const total=gUnread+dmTotal;
+  5321→  const badge=document.getElementById('bqbadge');
+  5322→  if(!badge)return;
+  5323→  if(total>0){badge.textContent=total>9?'9+':total;badge.classList.add('show');}else badge.classList.remove('show');
+  5324→}
+  5325→
+  5326→// v29: clear unread for the active conversation when the tab regains focus.
+  5327→(function bqWireFocusRead(){
+  5328→  if(window.__bqFocusReadWired) return; window.__bqFocusReadWired=true;
+  5329→  const onFocus=()=>{
+  5330→    try{
+  5331→      if(activeView==='dmconv' && activeDmId && db && uid){
+  5332→        markDmRead(activeDmId);
+  5333→        db.ref('bq_dms/'+activeDmId+'/meta/unread/'+uid).set(0).catch(()=>{});
+  5334→        if(dmUnread) dmUnread[activeDmId]=0;
+  5335→        updateBadges();
+  5336→      }
+  5337→    }catch(_){}
+  5338→  };
+  5339→  window.addEventListener('focus', onFocus);
+  5340→  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) onFocus(); });
+  5341→})();
+  5342→
+  5343→/* ─────────────────────────────────────────
+  5344→  IMAGE PREVIEW
+  5345→───────────────────────────────────────── */
+  5346→function openImagePreview(src){
+  5347→  const preview=document.getElementById('bqimg-preview');
+  5348→  const img=document.getElementById('bqimg-full');
+  5349→  if(preview&&img){
+  5350→    img.src=src;
+  5351→    preview.classList.add('open');
+  5352→  }
+  5353→}
+  5354→
+  5355→/* ─────────────────────────────────────────
+  5356→  SCROLL
+  5357→───────────────────────────────────────── */
+  5358→function scrollD(ctx, isMyMsg){
+  5359→  const isG=ctx==='global';
+  5360→  const msgsEl=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
+  5361→  if(!msgsEl) return;
+  5362→  const distFromBot=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+  5363→  // v18: wider threshold (220px) so replies/short bursts reliably scroll
+  5364→  // into view. Use smooth scroll for incoming, instant for our own sends.
+  5365→  if(isMyMsg||(isG?gAtBot:dAtBot)||distFromBot<220){
+  5366→    requestAnimationFrame(()=>{
+  5367→      try{
+  5368→        if(isMyMsg){
+  5369→          const prev=msgsEl.style.scrollBehavior;
+  5370→          msgsEl.style.scrollBehavior='auto';
+  5371→          msgsEl.scrollTop=msgsEl.scrollHeight;
+  5372→          requestAnimationFrame(()=>{ msgsEl.style.scrollBehavior=prev||''; });
+  5373→        } else {
+  5374→          msgsEl.scrollTo({top:msgsEl.scrollHeight, behavior:'smooth'});
+  5375→        }
+  5376→      }catch(_){ msgsEl.scrollTop=msgsEl.scrollHeight; }
+  5377→      if(isG) gAtBot=true; else dAtBot=true;
+  5378→    });
+  5379→    // Second pass to catch image/GIF reflows after decode
+  5380→    setTimeout(()=>{
+  5381→      const d2=msgsEl.scrollHeight-msgsEl.scrollTop-msgsEl.clientHeight;
+  5382→      if(d2<260) msgsEl.scrollTop=msgsEl.scrollHeight;
+  5383→    }, 260);
+  5384→  }
+  5385→}
+  5386→
+  5387→/* ─────────────────────────────────────────
+  5388→   PANEL OPEN/CLOSE
+  5389→───────────────────────────────────────── */
+  5390→function openPanel(){
+  5391→  document.getElementById('bqp').classList.add('open');
+  5392→  document.getElementById('bqb').classList.add('open');
+  5393→  isOpen=true;gUnread=0;updateBadges();gAtBot=true;
+  5394→  refreshMeAvatar();
+  5395→  const m=document.getElementById('bqgmsgs');
+  5396→  if(m) requestAnimationFrame(()=>m.scrollTop=m.scrollHeight);
+  5397→  if(activeView==='chat'&&!('ontouchstart' in window)) document.getElementById('bqginp')?.focus();
+  5398→  // If DM is open, mark as read + refresh receipts
+  5399→  if(activeView==='dmconv'&&activeDmId){
+  5400→    markDmRead(activeDmId);
+  5401→    setTimeout(()=>updateAllReadReceipts(activeDmId),200);
+  5402→  }
+  5403→}
+  5404→
+  5405→function closePanel(){
+  5406→  document.getElementById('bqp').classList.remove('open');
+  5407→  document.getElementById('bqb').classList.remove('open');
+  5408→  isOpen=false;setGTyp(false);clearTimeout(gTypT);
+  5409→  if(activeDmId){setDmTyp(false);clearTimeout(dmTypT);}
+  5410→  closeProfileCard();
+  5411→}
+  5412→
+  5413→function togglePanel(){
+  5414→  if(isOpen){closePanel();return;}
+  5415→  openPanel();
+  5416→  if(!uname) showModal(false);
+  5417→  else if(!db) startDB();
+  5418→}
+  5419→
+  5420→/* ─────────────────────────────────────────
+  5421→   PROFILE SETTINGS VIEW (FIXED)
+  5422→───────────────────────────────────────── */
+  5423→function refreshProfileView(){
+  5424→  const col=myProfile.color||uColor(uname||'');
+  5425→  const bannerCol=myProfile.bannerColor||col;
+  5426→  const initials=myInit();
+  5427→  const av=document.getElementById('bqpfav');
+  5428→  if(av){av.style.background=col;av.style.color='#000';av.textContent=initials;}
+  5429→  const un=document.getElementById('bqpfuname');
+  5430→  if(un) un.textContent='@'+(uname||'...');
+  5431→  
+  5432→  // Custom initials input
+  5433→  const initInp=document.getElementById('bqpf-initials');
+  5434→  if(initInp){
+  5435→    initInp.value=myProfile.initials||'';
+  5436→    initInp.style.background=col;
+  5437→    initInp.style.color='#000';
+  5438→    initInp.style.borderColor=col;
+  5439→    initInp.addEventListener('input',()=>{
+  5440→      const val=initInp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2);
+  5441→      initInp.value=val;
+  5442→      myProfile.initials=val;
+  5443→      if(av) av.textContent=val||uInit(uname||'?');
+  5444→    });
+  5445→  }
+  5446→  
+  5447→  // Banner preview
+  5448→  const bannerPreview=document.getElementById('bqpf-banner-preview');
+  5449→  if(bannerPreview){
+  5450→    bannerPreview.style.background=`linear-gradient(135deg,${bannerCol}88,${bannerCol}44)`;
+  5451→  }
+  5452→  
+  5453→  // Banner colour chips
+  5454→  const bannerCols=document.getElementById('bqpf-banner-cols');
+  5455→  if(bannerCols){
+  5456→    bannerCols.innerHTML='';
+  5457→    PALETTE.forEach(c=>{
+  5458→      const chip=document.createElement('div');
+  5459→      chip.className='bqpf-col'+(c===bannerCol?' sel':'');
+  5460→      chip.style.background=c;
+  5461→      chip.addEventListener('click',()=>{
+  5462→        myProfile.bannerColor=c;
+  5463→        bannerCols.querySelectorAll('.bqpf-col').forEach(x=>x.classList.toggle('sel',x.style.background===c||x.style.backgroundColor===c));
+  5464→        if(bannerPreview) bannerPreview.style.background=`linear-gradient(135deg,${c}88,${c}44)`;
+  5465→      });
+  5466→      bannerCols.appendChild(chip);
+  5467→    });
+  5468→  }
+  5469→  
+  5470→  // Colour chips
+  5471→  const cols=document.getElementById('bqpfcols');
+  5472→  if(cols){
+  5473→    cols.innerHTML='';
+  5474→    PALETTE.forEach(c=>{
+  5475→      const chip=document.createElement('div');
+  5476→      chip.className='bqpf-col'+(c===col?' sel':'');
+  5477→      chip.style.background=c;
+  5478→      chip.addEventListener('click',()=>{
+  5479→        myProfile.color=c;
+  5480→        cols.querySelectorAll('.bqpf-col').forEach(x=>x.classList.toggle('sel',x.style.background===c||x.style.backgroundColor===c));
+  5481→        if(av){av.style.background=c;}
+  5482→        if(initInp){initInp.style.background=c;initInp.style.borderColor=c;}
+  5483→      });
+  5484→      cols.appendChild(chip);
+  5485→    });
+  5486→  }
+  5487→  
+  5488→  // Status chips
+  5489→  const sts=document.getElementById('bqpfsts');
+  5490→  if(sts){
+  5491→    sts.innerHTML='';
+  5492→    STATUS_LIST.forEach(s=>{
+  5493→      const chip=document.createElement('div');
+  5494→      chip.className='bqpf-st'+(s.id===myProfile.status?' sel':'');
+  5495→      chip.innerHTML=`<div class="bqpf-st-dot" style="background:${s.color}"></div><span class="bqpf-st-lbl">${s.label}</span>`;
+  5496→      chip.addEventListener('click',()=>{
+  5497→        myProfile.status=s.id;
+  5498→        sts.querySelectorAll('.bqpf-st').forEach(x=>x.classList.toggle('sel',x===chip));
+  5499→      });
+  5500→      sts.appendChild(chip);
+  5501→    });
+  5502→  }
+  5503→  
+  5504→  // Font size chips
+  5505→  const fontRow=document.getElementById('bqpf-fontsize');
+  5506→  if(fontRow){
+  5507→    fontRow.querySelectorAll('.bqpf-fontsize').forEach(chip=>{
+  5508→      const size=chip.dataset.size;
+  5509→      chip.classList.toggle('sel',size===myProfile.fontSize);
+  5510→      chip.onclick=()=>{
+  5511→        myProfile.fontSize=size;
+  5512→        fontRow.querySelectorAll('.bqpf-fontsize').forEach(x=>x.classList.toggle('sel',x.dataset.size===size));
+  5513→        // Apply immediately for preview
+  5514→        const panel=document.getElementById('bqp');
+  5515→        if(panel){
+  5516→          panel.classList.remove('bq-font-sm','bq-font-lg');
+  5517→          if(size==='sm') panel.classList.add('bq-font-sm');
+  5518→          else if(size==='lg') panel.classList.add('bq-font-lg');
+  5519→        }
+  5520→      };
+  5521→    });
+  5522→  }
+  5523→  
+  5524→  // Activity + bio
+  5525→  const act=document.getElementById('bqpfact');
+  5526→  const bio=document.getElementById('bqpfbio');
+  5527→  if(act) act.value=myProfile.activity||'';
+  5528→  if(bio) bio.value=myProfile.bio||'';
+  5529→  
+  5530→  // Update push UI
+  5531→  updatePushUI();
+  5532→}
+  5533→
+  5534→function saveProfile(){
+  5535→  const act=document.getElementById('bqpfact')?.value.trim()||'';
+  5536→  const bio=document.getElementById('bqpfbio')?.value.trim()||'';
+  5537→  const initials=document.getElementById('bqpf-initials')?.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'';
+  5538→  myProfile.activity=act;
+  5539→  myProfile.bio=bio;
+  5540→  myProfile.initials=initials;
+  5541→  localStorage.setItem(LS_PROF,JSON.stringify(myProfile));
+  5542→  if(db&&uname) startPresence();
+  5543→  refreshMeAvatar();
+  5544→  const msg=document.getElementById('bqpfmsg');
+  5545→  if(msg){msg.textContent='Profile saved!';msg.style.opacity='1';setTimeout(()=>msg.style.opacity='0',2500);}
+  5546→  toast('Profile saved');
+  5547→}
+  5548→
+  5549→/* ──────��──────────────────────────────────
+  5550→   INPUT SETUP
+  5551→───────────────────────────────────────── */
+  5552→function setupInput(ctx){
+  5553→  const isG=ctx==='global';
+  5554→  const inp =document.getElementById(isG?'bqginp':'bqdminp');
+  5555→  const snd =document.getElementById(isG?'bqgsnd':'bqdmsnd');
+  5556→  const cc  =document.getElementById(isG?'bqgcc':'bqdmcc');
+  5557→  const tray=document.getElementById(isG?'bqget':'bqdmet');
+  5558→  const eoB =document.getElementById(isG?'bqgeo':'bqdmeo');
+  5559→  const scrB=document.getElementById(isG?'bqgscr':'bqdmscr');
+  5560→  const msgs=document.getElementById(isG?'bqgmsgs':'bqdmmsgs');
+  5561→  if(!inp||!snd)return;
+  5562→
+  5563→  // v64: Minimal sticker tray — simple flex-wrap like original emoji tray
+  5564→  // Categories as scrollable row of small labels, stickers in a flat grid
+  5565→  const _stkCats = [
+  5566→    {label:'All', start:0, len:QUICK_STICKERS.length},
+  5567→    {label:'🔥 Hot', start:0, len:8},
+  5568→    {label:'😊 Express', start:8, len:8},
+  5569→    {label:'💀 Fun', start:16, len:8},
+  5570→    {label:'🌿 Nature', start:24, len:8},
+  5571→    {label:'🐾 Animals', start:32, len:8},
+  5572→    {label:'💕 Love', start:40, len:8},
+  5573→    {label:'🎉 Party', start:48, len:8},
+  5574→    {label:'😴 Mood', start:56, len:8},
+  5575→    {label:'🍕 Food', start:64, len:8},
+  5576→    {label:'✈️ Travel', start:72, len:8},
+  5577→    {label:'⚽ Sports', start:80, len:8},
+  5578→    {label:'🔬 Science', start:88, len:8},
+  5579→    {label:'🎵 Music', start:96, len:8},
+  5580→    {label:'☀️ Weather', start:104, len:8},
+  5581→    {label:'👋 Greet', start:112, len:8},
+  5582→    {label:'📚 School', start:120, len:8},
+  5583→    {label:'💻 Tech', start:128, len:8},
+  5584→    {label:'🧸 Cozy', start:136, len:8},
+  5585→    {label:'🏕️ Adventure', start:144, len:8},
+  5586→  ];
+  5587→  // Build minimal sticker tray
+  5588→  tray.innerHTML = '';
+  5589→  tray.className = 'bqiet bqstk-min';
+  5590→  // Category pill row
+  5591→  var stkPills = document.createElement('div');
+  5592→  stkPills.className = 'bqstk-pills';
+  5593→  tray.appendChild(stkPills);
+  5594→  // Sticker button container (flat flex-wrap)
+  5595→  var stkWrap = document.createElement('div');
+  5596→  stkWrap.className = 'bqstk-wrap';
+  5597→  tray.appendChild(stkWrap);
+  5598→  // Active category
+  5599→  var _activeStkCat = 0;
+  5600→  function renderStkCat(catIdx){
+  5601→    stkWrap.innerHTML = '';
+  5602→    var cat = _stkCats[catIdx];
+  5603→    for(var i=cat.start;i<cat.start+cat.len&&i<QUICK_STICKERS.length;i++){
+  5604→      var e = QUICK_STICKERS[i];
+  5605→      var b = document.createElement('button');
+  5606→      b.className = 'bqietb';
+  5607→      b.textContent = e;
+  5608→      b.title = 'Send '+e+' sticker';
+  5609→      b.addEventListener('click', function(){
+  5610→        if(!uname){showModal(false);return;}
+  5611→        if(isG) sendStickerGlobal(this.textContent); else sendStickerDm(this.textContent);
+  5612→        tray.classList.remove('open');
+  5613→      });
+  5614→      stkWrap.appendChild(b);
+  5615→    }
+  5616→  }
+  5617→  // Build category pills
+  5618→  _stkCats.forEach(function(cat, idx){
+  5619→    var pill = document.createElement('button');
+  5620→    pill.className = 'bqstk-pill' + (idx===0?' active':'');
+  5621→    pill.textContent = cat.label;
+  5622→    pill.addEventListener('click', function(){
+  5623→      _activeStkCat = idx;
+  5624→      stkPills.querySelectorAll('.bqstk-pill').forEach(function(p){ p.classList.remove('active'); });
+
+[showing lines 3625-5624 of 15749; use offset=5625 with limit to continue reading]

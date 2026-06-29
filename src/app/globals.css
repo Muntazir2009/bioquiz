@@ -128,18 +128,19 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Optimize text rendering — subpixel AA gives crispier text on most
-       displays and is faster than the browser's grayscale fallback. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Newer browsers: hint that we'll do scroll-driven effects so the
-       compositor can prepare. Cheap to set, ignored if unused. */
     overscroll-behavior-y: none;
     overflow: hidden;
+    /* Force GPU layer for the entire body — eliminates paint-on-scroll jank */
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   html {
     scroll-behavior: smooth;
     overflow: hidden;
+    /* Promote to own compositor layer — smoother repaints */
+    transform: translateZ(0);
   }
 }
 
@@ -174,6 +175,58 @@
   .decorative-motion {
     display: none !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SMOOTH MOTION SYSTEM
+   GPU-accelerated spring-like transitions for everything
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Spring easing curves (cubic-bezier approximations) ── */
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.42, 0, 0.58, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-smooth: 350ms;
+  --duration-slow: 500ms;
+}
+
+/* ── Global interactive transition defaults ── */
+a, button, [role="button"], input, select, textarea,
+[tabindex] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--duration-normal);
+  transition-timing-function: var(--ease-smooth);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Hover lift for interactive cards ── */
+.btn-press {
+  transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-smooth);
+  will-change: transform;
+}
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* ── Glass panels — smooth appear ── */
+[class*="backdrop-filter"], [style*="backdrop-filter"] {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ── Smooth opacity transitions everywhere ── */
+[style*="opacity"] {
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+}
+
+/* ── GPU layer hints for animated containers ── */
+.hero-anim {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 /* ═══════════════════════════════════════════════════════
