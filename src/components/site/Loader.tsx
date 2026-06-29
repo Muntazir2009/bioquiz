@@ -112,7 +112,7 @@ export function Loader() {
           tl.to(
             bg,
             {
-              filter: "blur(0px) brightness(1)",
+              filter: "blur(0px) brightness(0.85) saturate(0.7)",
               duration: 1.2,
               ease: "power2.inOut",
             },
@@ -176,7 +176,7 @@ export function Loader() {
             tl.fromTo(subtitleRef.current, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.2");
           }
 
-          tl.to(bg, { filter: "blur(0px) brightness(1)", duration: 1.2, ease: "power2.inOut" }, "-=0.3");
+          tl.to(bg, { filter: "blur(0px) brightness(0.85) saturate(0.7)", duration: 1.2, ease: "power2.inOut" }, "-=0.3");
           tl.to(overlay, { opacity: 0, duration: 1.0, ease: "power2.inOut" }, "<");
           tl.to(container, { opacity: 0, duration: 0.5, ease: "power2.out" }, "-=0.3");
         }).catch(() => {
@@ -206,10 +206,10 @@ export function Loader() {
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          backgroundImage: "url('/claura-flowers.jpg')",
+          backgroundImage: "url('/flower.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(40px) brightness(0.7)",
+          filter: "blur(40px) brightness(0.85) saturate(0.7)",
         }}
       />
 
@@ -218,7 +218,7 @@ export function Loader() {
         ref={overlayRef}
         aria-hidden="true"
         className="absolute inset-0"
-        style={{ background: "rgba(0, 0, 0, 0.35)" }}
+        style={{ background: "rgba(0, 0, 0, 0.5)" }}
       />
 
       {/* ── SVG "Hello." with stroke-draw animation ── */}

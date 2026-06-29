@@ -155,14 +155,20 @@ export default function Home() {
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col"
-      style={{
-        backgroundImage: "url('/claura-flowers.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
+      className="h-screen w-screen overflow-hidden flex flex-col relative"
     >
+      {/* ── Permanent fullscreen flower background ── */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10"
+        style={{
+          backgroundImage: "url('/flower.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          filter: "brightness(0.85) saturate(0.7)",
+        }}
+      />
 
       {/* Skip-to-content link */}
       <a

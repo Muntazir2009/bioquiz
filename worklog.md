@@ -1505,3 +1505,28 @@ Stage Summary:
 - Files modified: `src/app/api/files/upload/route.ts` (new), `src/components/site/Loader.tsx` (reference update), `src/app/page.tsx` (reference update)
 - Files removed: `public/claura-flowers.png` (had woman)
 - Files added: `public/claura-flowers.jpg` (flowers only, 155KB, 2400x1556)
+
+---
+Task ID: bg-fix
+Agent: Main Agent
+Task: Fix background image (wrong image showing person's face), apply correct flower photo, update Loader blur/overlay/filters
+
+Work Log:
+- Downloaded correct botanical flower image (pink roses, peonies, eucalyptus) from image-search to public/flower.jpg (2495x1664 JPEG, 215KB)
+- Original Unsplash URL (photo-1490750967868-88df5691cc6e) returned 404, used equivalent search result
+- Updated Loader.tsx: changed bg from /claura-flowers.jpg to /flower.jpg, blur(40px) brightness(0.85) saturate(0.7), dark overlay rgba(0,0,0,0.5)
+- Updated GSAP animation target: blur lifts to blur(0px) brightness(0.85) saturate(0.7) (keeps desaturation permanently)
+- Updated page.tsx: permanent fullscreen flower background as fixed div with filter brightness(0.85) saturate(0.7)
+- Separated background into its own div to avoid filter affecting child text
+- Verified with agent-browser + VLM at 3 stages (1s, 3s, 6s):
+  - Loading: blurred flower bg ✅, dark overlay ✅, "Hello." cursive ✅, no faces ✅
+  - After load: clear flower bg ✅, dark text (#1C1C1C) ✅, readable ✅, no faces ✅
+- Confirmed no cron jobs exist
+- Lint passes clean
+
+Stage Summary:
+- public/flower.jpg: correct botanical flower image (no people)
+- Loader.tsx: fullscreen flower bg with blur(40px) + rgba(0,0,0,0.5) overlay during loading, GSAP lifts blur to 0
+- page.tsx: permanent fixed background div with brightness(0.85) saturate(0.7) filter
+- All homepage text remains dark (#1C1C1C) and readable against light flower background
+- No cron jobs created or existing

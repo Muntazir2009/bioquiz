@@ -1475,4 +1475,34 @@
   1475→- Flower wallpaper: permanent fullscreen site background, visible through both slides
   1476→- No caching: loader shows on every page load
   1477→- Pushed to GitHub successfully — Cloudflare deployment triggered
-  1478→
+  1478→---
+  1479→Task ID: fix-upload-wallpaper
+  1480→Agent: Main Agent
+  1481→Task: Fix file upload failure (reaches 100% then fails) and replace wallpaper containing a woman with flower-only image
+  1482→
+  1483→Work Log:
+  1484→- Diagnosed upload failure: FileUploadZone.tsx POSTs to `/api/files/upload` but that route did NOT exist — only `/api/files` (GET) existed
+  1485→- Created `/api/files/upload/route.ts` with POST handler that:
+  1486→  - Parses FormData to extract file, isPublic flag, and uploaderId header
+  1487→  - Validates file size (max 50MB)
+  1488→  - Reads file as ArrayBuffer and saves via `saveFile()` (R2 or local disk fallback)
+  1489→  - Generates unique shareId via `generateShareId()`
+  1490→  - Creates database record via `db.fileCreate()`
+  1491→  - Returns file metadata with 200 status
+  1492→- Verified upload works: tested with curl POST, got 200 response, file persisted in SQLite database
+  1493→- For wallpaper issue: searched for flower-only wallpaper using `z-ai image-search`
+  1494→- Found high-res (6016x3900) glowing roses image — soft peach/red roses, green leaves, pink/teal gradient background
+  1495→- Verified with VLM: confirmed NO people, NO faces in the image
+  1496→- Compressed from 12MB PNG to 155KB JPEG (2400x1556) using ffmpeg for fast page loads
+  1497→- Replaced `public/claura-flowers.png` (with woman) → `public/claura-flowers.jpg` (flowers only)
+  1498→- Updated all code references from `.png` to `.jpg` in Loader.tsx and page.tsx
+  1499→- Removed old wallpaper file with woman
+  1500→- Lint passes clean
+  1501→
+  1502→Stage Summary:
+  1503→- **File upload FIXED**: Created missing `/api/files/upload/route.ts` POST endpoint
+  1504→- **Wallpaper FIXED**: Replaced woman-containing image with verified flower-only wallpaper (soft roses, no people)
+  1505→- Files modified: `src/app/api/files/upload/route.ts` (new), `src/components/site/Loader.tsx` (reference update), `src/app/page.tsx` (reference update)
+  1506→- Files removed: `public/claura-flowers.png` (had woman)
+  1507→- Files added: `public/claura-flowers.jpg` (flowers only, 155KB, 2400x1556)
+  1508→
