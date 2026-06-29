@@ -209,10 +209,10 @@ export default function Home() {
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.50)',
-                backdropFilter: 'blur(32px) saturate(200%)',
-                WebkitBackdropFilter: 'blur(32px) saturate(200%)',
-                border: '1px solid rgba(255,255,255,0.65)',
+                background: 'rgba(255,255,255,0.72)',
+                backdropFilter: 'blur(50px) saturate(220%)',
+                WebkitBackdropFilter: 'blur(50px) saturate(220%)',
+                border: '1px solid rgba(255,255,255,0.80)',
                 boxShadow: '0 4px 30px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
@@ -311,10 +311,10 @@ export default function Home() {
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.45)',
-                backdropFilter: 'blur(28px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-                border: '1px solid rgba(255,255,255,0.60)',
+                background: 'rgba(255,255,255,0.65)',
+                backdropFilter: 'blur(45px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(45px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.75)',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.65)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
