@@ -52,12 +52,13 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
     WebkitBackdropFilter: 'blur(8px)',
     border: '1px solid rgba(0,0,0,0.06)',
     color: '#1C1C1C',
+    willChange: 'transform',
   };
 
   return (
     <TooltipProvider delayDuration={300}>
       <header
-        className="sticky top-0 z-40"
+        className="sticky top-0 z-40 topbar-enter"
         style={{
           background: 'rgba(255,255,255,0.45)',
           backdropFilter: 'blur(24px) saturate(200%)',

@@ -61,8 +61,8 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
           // Smooth slide track translation
           gsap.to(track, {
             x: -index * 100 + "vw",
-            duration: 0.9,
-            ease: "power2.inOut",
+            duration: 0.8,
+            ease: "power3.inOut",
             onComplete: () => {
               isAnimating.current = false;
             },

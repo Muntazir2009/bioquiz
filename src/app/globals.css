@@ -1071,6 +1071,182 @@ a, button, [role="button"], input, select, textarea,
 }
 
 /* ═══════════════════════════════════════════════════════
+   SMOOTH ANIMATIONS — Performance-first micro-interactions
+   ═══════════════════════════════════════════════════════ */
+
+/* ── GPU layer hint — use on elements that animate frequently ── */
+.gpu-layer {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* ── Smooth scale on hover — for cards, pills, buttons ── */
+.smooth-scale {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.smooth-scale:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+.smooth-scale:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* ── Enhanced button press feedback ── */
+.btn-press {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+.btn-press:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-press:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  transition-duration: 0.08s;
+}
+
+/* ── Smooth opacity fade-in for any element ── */
+.fade-in {
+  animation: smooth-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes smooth-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Slide up + fade entrance ── */
+.slide-up {
+  animation: smooth-slide-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes smooth-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Slide down entrance (for topbars, headers) ── */
+.slide-down {
+  animation: smooth-slide-down 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes smooth-slide-down {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scale-in entrance for modals, panels ── */
+.scale-in {
+  animation: smooth-scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes smooth-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Smooth text reveal (character fade) ── */
+.text-reveal {
+  animation: smooth-text-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes smooth-text-reveal {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* ── Smooth glow pulse (subtle, for active states) ── */
+.smooth-glow {
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.smooth-glow:hover {
+  box-shadow: 0 0 20px rgba(196,168,130,0.15), 0 0 40px rgba(196,168,130,0.05);
+}
+
+/* ── Smooth icon rotation ── */
+.smooth-rotate {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.smooth-rotate:hover {
+  transform: rotate(15deg) scale(1.1);
+}
+
+/* ── Smooth width transition (for progress bars) ── */
+.smooth-width {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Smooth color transition ── */
+.smooth-color {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ── Smooth backdrop filter transition (for glass effects) ── */
+.smooth-glass {
+  transition: backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease, background 0.3s ease;
+}
+
+/* ── TopBar slide-in ── */
+.topbar-enter {
+  animation: topbar-slide 0.6s cubic-bezier(0.22, 1, 0.36, 1) 3.5s both;
+}
+@keyframes topbar-slide {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Module card entrance stagger ── */
+.card-stagger > * {
+  animation: card-stagger-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.card-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.card-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.card-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.card-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.card-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.card-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.card-stagger > *:nth-child(8) { animation-delay: 350ms; }
+@keyframes card-stagger-in {
+  from { opacity: 0; transform: perspective(800px) rotateY(-4deg) translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: perspective(800px) rotateY(0deg) translateY(0) scale(1); }
+}
+
+/* ── Liquid glass hover lift ── */
+.glass-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+.glass-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* ── Ripple effect on click ── */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(196,168,130,0.2) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.ripple-container:active::after {
+  opacity: 1;
+  transition-duration: 0s;
+}
+
+/* ── Decorative motion optimization ── */
+.decorative-motion * {
+  animation-play-state: paused;
+}
+.decorative-motion.ready * {
+  animation-play-state: running;
+}
+
+/* ═══════════════════════════════════════════════════════
    REDUCED MOTION — new visual enhancements
    ═══════════════════════════════════════════════════════ */
 
@@ -1087,4 +1263,28 @@ a, button, [role="button"], input, select, textarea,
   .hero-title-glow { opacity: 0.3 !important; }
   .hero-subtitle-underline { width: 100% !important; opacity: 1 !important; }
   .hero-cta-hover::before { display: none !important; }
+  .smooth-scale,
+  .btn-press,
+  .smooth-glow,
+  .smooth-rotate,
+  .glass-lift {
+    transition: none !important;
+  }
+  .smooth-scale:hover,
+  .btn-press:hover,
+  .smooth-scale:active,
+  .btn-press:active {
+    transform: none !important;
+  }
+  .fade-in,
+  .slide-up,
+  .slide-down,
+  .scale-in,
+  .text-reveal,
+  .topbar-enter,
+  .card-stagger > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

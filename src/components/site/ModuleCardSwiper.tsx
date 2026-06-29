@@ -259,6 +259,24 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         });
       });
 
+      // Smooth entrance: fade + slide up for the entire container
+      const container = containerRef.current;
+      if (container) {
+        gsap.fromTo(container,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 0.1 }
+        );
+      }
+
+      // Stagger card entrance
+      const cards = cardRefs.current.filter(Boolean);
+      if (cards.length) {
+        gsap.fromTo(cards,
+          { opacity: 0, y: 30, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power3.out", stagger: 0.04, delay: 0.2 }
+        );
+      }
+
       // One-time swipe hint nudge (plays 1.5s after mount)
       if (track && totalCards > 1) {
         const currentX = gsap.getProperty(track, "x") as number;
