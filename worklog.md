@@ -1443,3 +1443,35 @@ Stage Summary:
 - Loader uses the same flower image with blur/darken treatment
 - All changes pushed to GitHub — Cloudflare deployment triggered
 - Lint: 0 errors
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Rewrite loading screen with SVG stroke Hello., Dancing Script, permanent flower background
+
+Work Log:
+- Verified claura-flowers.png exists in public/ (from previous session)
+- Rewrote Loader.tsx completely:
+  - Imported Dancing_Script 700 via next/font/google
+  - SVG text "Hello." at 80px with stroke animation
+  - document.fonts.load() waits for font before getComputedTextLength()
+  - GSAP timeline: stroke (2.2s, power2.inOut) → fill (0.8s @ 1.5s delay) → subtitle → blur lift (1.2s) + overlay fade simultaneously → container fade
+  - Background: flower div with blur(40px) brightness(0.7), animates to blur(0px) brightness(1)
+  - Removed ALL sessionStorage/cache skip logic — shows every page load
+  - SSR safe: returns null if typeof window === "undefined"
+  - All GSAP via dynamic import("gsap").then() inside useEffect
+  - 10s fallback timeout
+  - Font load fallback: if document.fonts.load() fails, still runs GSAP with fallback measurement
+- Updated page.tsx: root div now has flower as permanent fullscreen background (cover, fixed)
+- Removed redundant per-slide flower div from hero slide
+- Updated ModuleCardSwiper.tsx: removed per-slide flower div, background changed to transparent
+- Browser verified: stroke animation visible at 1.5s, loader completes ~5s, flower persists as site background
+- 0 console errors, 0 lint errors
+- Fixed GitHub push protection (removed token from worklog history via soft reset + recommit)
+- Force pushed clean history as commit 13b04e2
+
+Stage Summary:
+- Loading screen: Apple Hello. handwriting animation with Dancing Script, SVG stroke-draw, GSAP timeline
+- Flower wallpaper: permanent fullscreen site background, visible through both slides
+- No caching: loader shows on every page load
+- Pushed to GitHub successfully — Cloudflare deployment triggered
