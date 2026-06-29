@@ -1,136 +1,189 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Dancing_Script } from "next/font/google";
+
+const dancingScript = Dancing_Script({
+  weight: "700",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 /**
- * Apple "Hello"-style loading screen for BioQuiz.
+ * Apple "Hello."-style loading screen for BioQuiz.
  *
- * - Soft botanical blurred background (warm tones)
- * - "Welcome to BioQuiz" in Cormorant Garamond 300, white, centered, letter-spaced
- * - Thin animated progress line, fills left→right over 2 seconds
- * - On complete: blur lifts smoothly, text fades, loader dismisses
- * - GSAP dynamic import inside useEffect (SSR-safe for Cloudflare Pages)
- * - Session-based skip via sessionStorage
- * - 5-second fallback setTimeout guarantees dismissal
+ * - Fullscreen flower background, blurred (blur 40px, brightness 0.7)
+ * - "Hello." in Dancing Script 700, 80px, white — SVG stroke-draw animation
+ * - strokeDashoffset from full length → 0 over 2.2s (power2.inOut)
+ * - Fill fades in at 1.5s delay
+ * - After complete: "— BioQuiz" fades in (18px Inter, #C4A882)
+ * - Then: overlay fades out + blur lifts to 0px (1.2s) simultaneously
+ * - Shows every page load — no skip, no cache
+ * - SSR safe: returns null if typeof window === "undefined"
+ * - All GSAP via dynamic import("gsap") inside useEffect
  */
-
-const SESSION_KEY = "bq.loader.seen";
 
 export function Loader() {
   const [show, setShow] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLHeadingElement>(null);
-  const lineTrackRef = useRef<HTMLDivElement>(null);
-  const lineFillRef = useRef<HTMLDivElement>(null);
+  const svgTextRef = useRef<SVGTextElement>(null);
+  const subtitleRef = useRef<HTMLDivElement>(null);
 
   const dismiss = useCallback(() => {
     setShow(false);
-    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Skip if already seen this session
-    try {
-      if (sessionStorage.getItem(SESSION_KEY) === "1") {
-        setShow(false);
-        return;
-      }
-    } catch { /* ignore */ }
-
     setMounted(true);
 
-    // 5-second fallback — guarantees dismissal even if GSAP fails
+    // 10s fallback — guarantees dismissal even if GSAP or font fails
     const fallback = setTimeout(() => {
       dismiss();
-    }, 5000);
+    }, 10000);
 
-    import("gsap").then(({ default: gsap }) => {
-      const container = containerRef.current;
-      const img = imgRef.current;
-      const overlay = overlayRef.current;
-      const text = textRef.current;
-      const track = lineTrackRef.current;
-      const fill = lineFillRef.current;
+    // Wait for Dancing Script font before measuring stroke length
+    document.fonts
+      .load("700 80px 'Dancing Script'")
+      .then(() => {
+        import("gsap").then(({ default: gsap }) => {
+          const container = containerRef.current;
+          const bg = bgRef.current;
+          const overlay = overlayRef.current;
+          const text = svgTextRef.current;
+          const subtitle = subtitleRef.current;
 
-      if (!container || !text || !fill || !track) {
-        clearTimeout(fallback);
-        dismiss();
-        return;
-      }
+          if (!container || !text || !bg || !overlay) {
+            clearTimeout(fallback);
+            dismiss();
+            return;
+          }
 
-      const tl = gsap.timeline({
-        onComplete: () => {
+          // Measure stroke length for the handwriting animation
+          const length = text.getComputedTextLength();
+          text.style.strokeDasharray = String(length);
+          text.style.strokeDashoffset = String(length);
+
+          const tl = gsap.timeline({
+            onComplete: () => {
+              clearTimeout(fallback);
+              dismiss();
+            },
+          });
+
+          // 1. Stroke draw: full length → 0 over 2.2s, power2.inOut
+          tl.to(
+            text,
+            {
+              strokeDashoffset: 0,
+              duration: 2.2,
+              ease: "power2.inOut",
+            },
+            0.5
+          );
+
+          // 2. Fill fades in at 1.5s delay (0.8s duration)
+          tl.to(
+            text,
+            {
+              fillOpacity: 1,
+              duration: 0.8,
+              ease: "power2.out",
+            },
+            1.5
+          );
+
+          // 3. After stroke complete: subtitle fades in
+          if (subtitle) {
+            tl.fromTo(
+              subtitle,
+              { opacity: 0, y: 10 },
+              { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+              "-=0.2"
+            );
+          }
+
+          // 4. Blur lifts (1.2s) + overlay fades out simultaneously
+          tl.to(
+            bg,
+            {
+              filter: "blur(0px) brightness(1)",
+              duration: 1.2,
+              ease: "power2.inOut",
+            },
+            "-=0.3"
+          );
+
+          tl.to(
+            overlay,
+            {
+              opacity: 0,
+              duration: 1.0,
+              ease: "power2.inOut",
+            },
+            "<"
+          );
+
+          // 5. Container fades out
+          tl.to(
+            container,
+            {
+              opacity: 0,
+              duration: 0.5,
+              ease: "power2.out",
+            },
+            "-=0.3"
+          );
+        }).catch(() => {
           clearTimeout(fallback);
           dismiss();
-        },
+        });
+      })
+      .catch(() => {
+        // Font failed to load — still run GSAP with fallback measurement
+        import("gsap").then(({ default: gsap }) => {
+          const container = containerRef.current;
+          const bg = bgRef.current;
+          const overlay = overlayRef.current;
+          const text = svgTextRef.current;
+
+          if (!container || !text || !bg || !overlay) {
+            clearTimeout(fallback);
+            dismiss();
+            return;
+          }
+
+          const length = text.getComputedTextLength();
+          text.style.strokeDasharray = String(length);
+          text.style.strokeDashoffset = String(length);
+
+          const tl = gsap.timeline({
+            onComplete: () => {
+              clearTimeout(fallback);
+              dismiss();
+            },
+          });
+
+          tl.to(text, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut" }, 0.5);
+          tl.to(text, { fillOpacity: 1, duration: 0.8, ease: "power2.out" }, 1.5);
+
+          if (subtitleRef.current) {
+            tl.fromTo(subtitleRef.current, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.2");
+          }
+
+          tl.to(bg, { filter: "blur(0px) brightness(1)", duration: 1.2, ease: "power2.inOut" }, "-=0.3");
+          tl.to(overlay, { opacity: 0, duration: 1.0, ease: "power2.inOut" }, "<");
+          tl.to(container, { opacity: 0, duration: 0.5, ease: "power2.out" }, "-=0.3");
+        }).catch(() => {
+          clearTimeout(fallback);
+          dismiss();
+        });
       });
-
-      // 1. Text fades in (0.6s)
-      tl.fromTo(
-        text,
-        { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-        0.3
-      );
-
-      // 2. Progress line fills (2s)
-      tl.fromTo(
-        fill,
-        { width: "0%" },
-        { width: "100%", duration: 2, ease: "power1.inOut" },
-        0.5
-      );
-
-      // 3. Track fades in
-      tl.fromTo(
-        track,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.4, ease: "power2.out" },
-        0.3
-      );
-
-      // 4. When progress is done: lift blur, fade text/line, fade out container
-      tl.to(
-        overlay,
-        { opacity: 0, duration: 0.8, ease: "power2.inOut" },
-        "-=0.1"
-      );
-      tl.to(
-        text,
-        { opacity: 0, y: -20, duration: 0.5, ease: "power2.in" },
-        "<"
-      );
-      tl.to(
-        track,
-        { opacity: 0, duration: 0.4, ease: "power2.in" },
-        "<"
-      );
-
-      // 5. Un-blur the background image
-      if (img) {
-        tl.to(
-          img,
-          { filter: "blur(0px) brightness(1.05)", duration: 0.8, ease: "power2.inOut" },
-          "-=0.3"
-        );
-      }
-
-      // 6. Fade out entire loader
-      tl.to(
-        container,
-        { opacity: 0, duration: 0.5, ease: "power2.out" },
-        "-=0.2"
-      );
-    }).catch(() => {
-      clearTimeout(fallback);
-      dismiss();
-    });
 
     return () => {
       clearTimeout(fallback);
@@ -146,61 +199,67 @@ export function Loader() {
       aria-label="Loading BioQuiz"
       aria-live="polite"
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: "#1a1410" }}
     >
-      {/* Botanical background — blurred 40px, darkened overlay */}
-      <img
-        ref={imgRef}
-        src="/claura-flowers.png"
-        alt=""
+      {/* ── Blurred flower background ── */}
+      <div
+        ref={bgRef}
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover scale-110"
+        className="absolute inset-0"
         style={{
-          filter: "blur(40px) brightness(0.55) saturate(1.3)",
-          transformOrigin: "center center",
+          backgroundImage: "url('/claura-flowers.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(40px) brightness(0.7)",
         }}
       />
-      {/* Warm overlay for extra depth */}
+
+      {/* ── Dark overlay for text contrast ── */}
       <div
         ref={overlayRef}
         aria-hidden="true"
         className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(26,20,16,0.3) 0%, rgba(26,20,16,0.15) 50%, rgba(26,20,16,0.5) 100%)",
-        }}
+        style={{ background: "rgba(0, 0, 0, 0.35)" }}
       />
 
-      {/* Content: Text + Progress line */}
-      <div className="relative z-10 flex flex-col items-center px-8 w-full max-w-lg">
-        <h1
-          ref={textRef}
-          className="text-center font-light tracking-[0.18em] text-white/95 opacity-0"
+      {/* ── SVG "Hello." with stroke-draw animation ── */}
+      <svg
+        className="relative z-10"
+        width="420"
+        height="130"
+        viewBox="0 0 420 130"
+        aria-hidden="true"
+      >
+        <text
+          ref={svgTextRef}
+          x="210"
+          y="92"
+          textAnchor="middle"
+          className={dancingScript.className}
           style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: "clamp(1.6rem, 5vw, 2.8rem)",
-            fontWeight: 300,
-            lineHeight: 1.25,
+            fontSize: "80px",
+            fontWeight: 700,
+            fill: "white",
+            stroke: "white",
+            strokeWidth: 1,
+            fillOpacity: 0,
           }}
         >
-          Welcome to BioQuiz
-        </h1>
+          Hello.
+        </text>
+      </svg>
 
-        {/* Progress line */}
-        <div
-          ref={lineTrackRef}
-          className="mt-8 w-48 h-px opacity-0"
-          style={{ background: "rgba(255,255,255,0.15)" }}
-        >
-          <div
-            ref={lineFillRef}
-            className="h-full rounded-full"
-            style={{
-              width: "0%",
-              background: "rgba(255,255,255,0.7)",
-            }}
-          />
-        </div>
+      {/* ── Subtitle: — BioQuiz ── */}
+      <div
+        ref={subtitleRef}
+        className="relative z-10 mt-1 opacity-0"
+        style={{
+          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+          fontSize: "18px",
+          color: "#C4A882",
+          letterSpacing: "0.04em",
+        }}
+      >
+        — BioQuiz
       </div>
     </div>
   );

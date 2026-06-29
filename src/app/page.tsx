@@ -154,7 +154,15 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ background: "#F8F5F0" }}>
+    <div
+      className="h-screen w-screen overflow-hidden flex flex-col"
+      style={{
+        backgroundImage: "url('/claura-flowers.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
 
       {/* Skip-to-content link */}
       <a
@@ -176,19 +184,6 @@ export default function Home() {
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
           <div className="w-full h-full flex flex-col justify-between px-6 sm:px-10 lg:px-16 pt-20 pb-10 relative">
-            {/* ── Claura flower wallpaper — full background ── */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 pointer-events-none select-none"
-              style={{
-                backgroundImage: "url('/claura-flowers.png')",
-                backgroundSize: "cover",
-                backgroundPosition: "center 30%",
-                opacity: 0.4,
-                filter: "saturate(1.3)",
-              }}
-            />
-
             {/* Floating bio-molecules */}
             <BioMolecules />
 

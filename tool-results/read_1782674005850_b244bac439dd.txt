@@ -1305,4 +1305,113 @@
   1305→- No card content, gradient, or aspect ratio changes
   1306→- All GSAP imports remain SSR-safe (dynamic import inside useEffect/event handlers)
   1307→- Zero ESLint errors confirmed
-  1308→
+  1308→---
+  1309→Task ID: quiz-module-add
+  1310→Agent: Main Agent
+  1311→Task: Add Quiz module as Module 001 (first card, featured) + push to GitHub + trigger Cloudflare deploy
+  1312→
+  1313→Work Log:
+  1314→- Discovered quiz.html and questions.json (550+ lines of biology questions) already exist in /public/
+  1315→- Quiz was never listed in src/lib/modules.ts
+  1316→- Added BrainCircuit icon import from lucide-react
+  1317→- Inserted Quiz as Module 001 with blue gradient accent (#3b6cff), featured: true
+  1318→- Renumbered all other modules (002–007)
+  1319→- Verified 0 TS errors in src/
+  1320→- Pushed to GitHub, Cloudflare Actions deploy triggered
+  1321→
+  1322→Stage Summary:
+  1323→- Quiz is now the FIRST card in the module swiper with a bold blue gradient
+  1324→- All 7 modules renumbered correctly
+  1325→- Fresh deploy triggered after resolving stale conflict-marker build error
+  1326→---
+  1327→Task ID: visual-enhancement-round
+  1328→Agent: Style Agent
+  1329→Task: Enhance hero slide, module cards, add CSS animations, keyboard hints
+  1330→
+  1331→Work Log:
+  1332→- globals.css: Replaced old `shimmer` keyframe with corrected version (250% → -250%)
+  1333→- globals.css: Added `@keyframes glow-pulse` for active card border breathing effect
+  1334→- globals.css: Replaced old `float-particle` keyframe with new hero-optimized version (gentle 80vh rise, smooth fade)
+  1335→- globals.css: Added `@keyframes breathing-glow` for title glow opacity/scale pulse
+  1336→- globals.css: Added `@keyframes subtitle-underline` for animated width reveal
+  1337→- globals.css: Removed duplicate `status-pulse` keyframe (was defined twice)
+  1338→- globals.css: Added `.hero-particle` utility class with CSS custom property support (--duration, --delay)
+  1339→- globals.css: Added `.hero-title-glow` class (radial gradient blur + breathing animation)
+  1340→- globals.css: Added `.hero-subtitle-underline` class (gradient underline with width animation)
+  1341→- globals.css: Added `.hero-cta-hover` class with `::before` pseudo-element for conic-gradient border on hover
+  1342→- globals.css: Added `.card-glow-pulse` class for active card border animation
+  1343→- globals.css: Added `.feature-ribbon` class with angled ribbon shape and `::after` fold triangle
+  1344→- globals.css: Added `.progress-dot` utility class for progress bar glowing end dot
+  1345→- globals.css: Added `@media (prefers-reduced-motion: reduce)` block disabling all new animations
+  1346→- page.tsx: Added 10 CSS-animated floating particles (`.hero-particle`) to BioMolecules component with staggered durations/delays
+  1347→- page.tsx: Wrapped BioQuiz title in relative container with `.hero-title-glow` breathing glow div
+  1348→- page.tsx: Wrapped subtitle in relative container with `.hero-subtitle-underline` animated underline
+  1349→- page.tsx: Added `.hero-cta-hover` class to CTA button wrapper for gradient border on hover
+  1350→- page.tsx: Split swipe hint into mobile-only (sm:hidden) and desktop keyboard hint (hidden sm:flex)
+  1351→- page.tsx: Added "Press → to explore" keyboard shortcut hint with styled `<kbd>` element, desktop only
+  1352→- ModuleCardSwiper.tsx: Added `card-glow-pulse` class to active card anchor element via template literal
+  1353→- ModuleCardSwiper.tsx: Upgraded progress bar from 2px to 3px height, w-32 to w-40, added gradient background
+  1354→- ModuleCardSwiper.tsx: Added glowing dot (7px circle with box-shadow) at end of progress bar
+  1355→- ModuleCardSwiper.tsx: Added "★ MOST POPULAR" feature ribbon on quiz card (index 0) with `.feature-ribbon` class
+  1356→
+  1357→Stage Summary:
+  1358→- All 4 tasks completed: hero visual enhancements, module card enhancements, CSS animations, keyboard hints
+  1359→- 5 new @keyframes animations added (shimmer improved, glow-pulse, float-particle improved, breathing-glow, subtitle-underline)
+  1360→- All new animations respect prefers-reduced-motion: reduce
+  1361→- Zero TypeScript errors confirmed
+  1362→- Zero ESLint errors confirmed
+  1363→
+  1364→---
+  1365→Task ID: handoff-round-1
+  1366→Agent: Main Agent
+  1367→Task: Full QA, bug fixes, quiz module addition, visual enhancements, push to GitHub
+  1368→
+  1369→Work Log:
+  1370→- QA with agent-browser: fresh browser session = 0 console errors, all 7 modules render
+  1371→- Quiz module (quiz.html + questions.json) existed in public/ but was missing from modules list
+  1372→- Added Quiz as Module 001 with BrainCircuit icon, blue gradient (#3b6cff), featured: true
+  1373→- Renumbered all modules 001-007
+  1374→- Visual enhancements: floating particles, breathing glow, card ribbon, gradient progress bar, keyboard hints
+  1375→- Added 5 CSS keyframe animations (shimmer, glow-pulse, float-particle, breathing-glow, status-pulse)
+  1376→- All animations respect prefers-reduced-motion
+  1377→- Fixed stale .next cache causing phantom conflict-marker errors
+  1378→- Deleted accidentally created cron job per user request
+  1379→- All changes committed and pushed to GitHub (Cloudflare Actions triggers deploy)
+  1380→
+  1381→Stage Summary:
+  1382→- Homepage: 2-slide layout (Hero → Module Card Swiper), Apple Hello loader, 7 modules
+  1383→- Quiz is Module 001 (first card, featured, "★ MOST POPULAR" ribbon)
+  1384→- Zero TS errors, zero ESLint errors, zero console errors
+  1385→- Deployed to GitHub, Cloudflare Actions builds via opennextjs-cloudflare
+  1386→
+  1387→---
+  1388→## Handoff Document
+  1389→
+  1390→### 1. 项目当前状态描述/判断
+  1391→- **状态**: 稳定 ✅ — 零 TypeScript 错误、零 ESLint 错误、零控制台运行时错误
+  1392→- **部署**: GitHub main → Cloudflare Actions (deploy.yml) → opennextjs-cloudflare build → wrangler deploy
+  1393→- **架构**: Next.js 16.2.9 App Router, Tailwind CSS 4, GSAP (SSR-safe dynamic import), Turbopack dev
+  1394→- **主题**: Claura暖色调编辑风格 (#F8F5F0 bg, #1C1C1C text, #C4A882 accent)
+  1395→- **模块**: 7个模块 (Quiz→Presentation→Ask Panel→Organelle Explorer→3D Cell→Q&A Solutions→Suggestions)
+  1396→- **首页**: 2-slide水平布局 (Hero + ModuleCardSwiper), Apple Hello加载器, GSAP动画
+  1397→
+  1398→### 2. 当前目标/已完成的修改/验证结果
+  1399→- ✅ Quiz模块添加为Module 001（首个卡片，蓝色渐变，featured）
+  1400→- ✅ Hero页面增强：浮动粒子背景、标题呼吸光晕、副标题渐变下划线、CTA旋转渐变边框
+  1401→- ✅ 模块卡片增强：活动卡片光晕脉冲、3px渐变进度条+发光端点、Quiz卡片"★ MOST POPULAR"角标
+  1402→- ✅ 桌面端键盘提示"Press → to explore"
+  1403→- ✅ 5个CSS关键帧动画（全部支持prefers-reduced-motion）
+  1404→- ✅ agent-browser QA验证：0错误，所有交互正常
+  1405→- ✅ 已推送至GitHub，Cloudflare Actions部署已触发
+  1406→
+  1407→### 3. 未解决问题或风险，建议下一阶段优先事项
+  1408→- **web-push-compat.ts**: ~3个 `as BufferSource` 类型转换（非阻塞，不影响部署）
+  1409→- **chat-widget.js**: 聊天组件有rePaintPoll错误（public/静态文件，不在src/范围内）
+  1410→- **better-sqlite3**: Turbopack开发模式下不兼容（仅影响本地开发，Cloudflare用D1无影响）
+  1411→- **建议下一步**:
+  1412→  1. 为Quiz模块添加在线排行榜功能（Prisma + API）
+  1413→  2. 添加暗色主题切换动画
+  1414→  3. 优化移动端卡片尺寸和触摸反馈
+  1415→  4. 添加模块页面的微交互动画
+  1416→  5. 为卡片添加加载骨架屏
+  1417→
