@@ -547,6 +547,12 @@ function ModuleCard({
         });
       } : undefined}
     >
+      {/* ── Solid white background for text readability ── */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(255,255,255,0.85)" }}
+      />
+
       {/* ── Full gradient background ── */}
       <div
         className="absolute inset-0"

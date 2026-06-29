@@ -166,7 +166,7 @@ export default function Home() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
-          filter: "brightness(0.85) saturate(0.7)",
+          filter: "blur(3px) brightness(0.88) saturate(0.5)",
         }}
       />
 
@@ -212,7 +212,7 @@ export default function Home() {
                 <span
                   className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
                   style={{
-                    color: "#A09A94",
+                    color: "#2C2C2C",
                     background: "rgba(196,168,130,0.08)",
                     border: "1px solid rgba(196,168,130,0.12)",
                   }}
@@ -229,12 +229,13 @@ export default function Home() {
               <div className="hero-anim opacity-0 relative inline-block">
                 <div className="hero-title-glow" aria-hidden />
                 <h1
-                  className="relative font-light tracking-tight"
+                  className="relative font-bold tracking-tight"
                   style={{
                     color: "#1C1C1C",
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "clamp(3rem, 10vw, 5.2rem)",
                     lineHeight: 1.08,
+                    textShadow: "0 1px 12px rgba(255,255,255,0.8)",
                   }}
                 >
                   BioQuiz
@@ -253,8 +254,8 @@ export default function Home() {
               {/* Subtitle with animated underline */}
               <div className="hero-anim opacity-0 mt-3 relative inline-block">
                 <p
-                  className="text-sm sm:text-[15px] leading-relaxed"
-                  style={{ color: "#8A8580", maxWidth: 440 }}
+                  className="text-sm sm:text-[15px] font-medium leading-relaxed"
+                  style={{ color: "#2C2C2C", maxWidth: 440, textShadow: "0 1px 8px rgba(255,255,255,0.7)" }}
                 >
                   The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
                 </p>
@@ -264,7 +265,7 @@ export default function Home() {
               {/* Stats line */}
               <div
                 className="hero-anim opacity-0 mt-5 inline-flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium px-4 py-2 rounded-full"
-                style={{ color: "#6B6560", background: "rgba(196,168,130,0.06)", border: "1px solid rgba(196,168,130,0.10)" }}
+                style={{ color: "#2C2C2C", fontWeight: 500, background: "rgba(196,168,130,0.06)", border: "1px solid rgba(196,168,130,0.10)", textShadow: "0 1px 6px rgba(255,255,255,0.6)" }}
               >
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full" style={{ background: "#C4A882" }} />
@@ -299,7 +300,7 @@ export default function Home() {
             {/* Bottom: Swipe hint + mini footer */}
             <div className="flex flex-col items-center gap-3 relative z-10">
               {/* Module preview pills */}
-              <div className="hero-anim opacity-0 flex items-center gap-2 flex-wrap justify-center">
+              <div className="hero-anim opacity-0 flex items-center gap-2 flex-wrap justify-center" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}>
                 {modules.slice(0, 4).map((m) => (
                   <span
                     key={m.id}
@@ -316,7 +317,7 @@ export default function Home() {
                 ))}
                 <span
                   className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ color: "#A09A94", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}
+                  style={{ color: "#2C2C2C", background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.06)", textShadow: "0 1px 3px rgba(255,255,255,0.5)" }}
                 >
                   +{modules.length - 4} more
                 </span>
@@ -325,7 +326,7 @@ export default function Home() {
               {/* Swipe hint (mobile) */}
               <div
                 className="hero-anim opacity-0 sm:hidden flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
-                style={{ color: "#A09A94" }}
+                style={{ color: "#2C2C2C", textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}
               >
                 <svg
                   className="animate-bounce"
@@ -341,7 +342,7 @@ export default function Home() {
               {/* Keyboard hint (desktop only) */}
               <div
                 className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
-                style={{ color: "#A09A94" }}
+                style={{ color: "#2C2C2C", textShadow: "0 1px 4px rgba(255,255,255,0.5)" }}
               >
                 Press{" "}
                 <kbd
@@ -349,7 +350,8 @@ export default function Home() {
                   style={{
                     background: "rgba(196,168,130,0.10)",
                     border: "1px solid rgba(196,168,130,0.15)",
-                    color: "#A09A94",
+                    color: "#2C2C2C",
+                    textShadow: "0 1px 3px rgba(255,255,255,0.5)",
                   }}
                 >
                   →
@@ -360,7 +362,7 @@ export default function Home() {
               {/* Mini footer */}
               <div
                 className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
-                style={{ color: "#A09A94" }}
+                style={{ color: "#2C2C2C", textShadow: "0 1px 3px rgba(255,255,255,0.5)" }}
               >
                 <span>&copy; {new Date().getFullYear()} BioQuiz</span>
                 <span>·</span>
