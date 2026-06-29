@@ -313,7 +313,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
   return (
     <div className="w-full h-full flex flex-col relative" style={{ background: "transparent" }}>
       {/* ── Compact header — centered liquid glass pill ── */}
-      <div className="flex-shrink-0 flex items-center justify-center pt-16 sm:pt-[72px] pb-3 px-5">
+      <div className="flex-shrink-0 flex items-center justify-center pt-20 sm:pt-24 pb-3 px-5">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
@@ -373,41 +373,64 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         </div>
       </div>
 
-      {/* ── Dot indicators + counter — liquid glass ── */}
+      {/* ── Beautiful bottom slider — liquid glass dock ── */}
       <div
-        className="flex-shrink-0 flex flex-col items-center gap-2 pb-5 pt-3"
+        className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(255,255,255,0.35)',
-          backdropFilter: 'blur(16px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-          borderTop: '1px solid rgba(255,255,255,0.45)',
-          boxShadow: '0 -2px 12px rgba(0,0,0,0.04)',
+          background: 'rgba(255,255,255,0.40)',
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          borderTop: '1px solid rgba(255,255,255,0.55)',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.65)',
         }}
       >
-        {/* Progress bar — 3px tall with gradient + glowing dot */}
+        {/* Active module name */}
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[11px] font-bold tracking-[0.08em] uppercase"
+            style={{ color: modules[activeIndex]?.accent?.border ?? "#C4A882" }}
+          >
+            {modules[activeIndex]?.title}
+          </span>
+          <span
+            className="text-[10px] font-semibold tabular-nums px-2 py-0.5 rounded-full"
+            style={{
+              color: '#1C1C1C',
+              background: 'rgba(196,168,130,0.12)',
+              border: '1px solid rgba(196,168,130,0.20)',
+            }}
+          >
+            {activeIndex + 1}<span className="text-[#C4A882]/40">/{modules.length}</span>
+          </span>
+        </div>
+
+        {/* Progress track — wider, taller, with gradient */}
         <div
-          className="w-40 h-[3px] rounded-full overflow-visible relative"
-          style={{ background: "rgba(196,168,130,0.12)" }}
+          className="w-56 sm:w-72 h-[5px] rounded-full overflow-visible relative"
+          style={{ background: 'rgba(196,168,130,0.10)' }}
         >
           <div
             className="h-full rounded-full transition-all duration-500 ease-out relative"
             style={{
               width: `${((activeIndex + 1) / modules.length) * 100}%`,
-              background: `linear-gradient(90deg, ${modules[activeIndex]?.accent?.border ?? "#C4A882"}, ${modules[activeIndex]?.accent?.from ?? "#C4A882"})`,
-              boxShadow: `0 0 8px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+              background: `linear-gradient(90deg, ${modules[activeIndex]?.accent?.border ?? "#C4A882"}88, ${modules[activeIndex]?.accent?.border ?? "#C4A882"})`,
+              boxShadow: `0 0 12px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
             }}
           >
             {/* Glowing dot at the end of progress */}
             <span
-              className="absolute top-1/2 -translate-y-1/2 -right-[3px] w-[7px] h-[7px] rounded-full transition-colors duration-300"
+              className="absolute top-1/2 -translate-y-1/2 -right-[4px] w-[9px] h-[9px] rounded-full transition-all duration-300"
               style={{
                 background: modules[activeIndex]?.accent?.border ?? "#C4A882",
-                boxShadow: `0 0 6px 2px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+                boxShadow: `0 0 8px 3px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
+                border: '1.5px solid rgba(255,255,255,0.60)',
               }}
             />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Dot indicators */}
+        <div className="flex items-center gap-2.5">
           {modules.map((m, i) => (
             <button
               key={i}
@@ -416,35 +439,20 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
               }}
               onClick={() => goToCard(i)}
               aria-label={`Go to module ${i + 1}`}
-              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 transition-colors duration-300"
+              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 transition-all duration-300"
               style={{
-                width: i === activeIndex ? 20 : 6,
-                height: 6,
+                width: i === activeIndex ? 24 : 7,
+                height: 7,
                 background: i === activeIndex
-                  ? (m.accent?.border ?? "#C4A882")
-                  : "rgba(196,168,130,0.25)",
-                borderRadius: 3,
+                  ? `linear-gradient(90deg, ${m.accent?.border ?? "#C4A882"}, ${m.accent?.from ?? "#C4A882"})`
+                  : "rgba(196,168,130,0.20)",
+                borderRadius: 4,
                 boxShadow: i === activeIndex
-                  ? `0 0 10px ${m.accent?.ring ?? "rgba(196,168,130,0.3)"}`
+                  ? `0 0 12px ${m.accent?.ring ?? "rgba(196,168,130,0.3)"}`
                   : "none",
               }}
             />
           ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className="text-[10px] font-medium tabular-nums tracking-wide"
-            style={{ color: modules[activeIndex]?.accent?.border ?? "#A09A94" }}
-          >
-            {activeIndex + 1}
-          </span>
-          <span className="text-[10px] text-[#C4A882]/40">/</span>
-          <span
-            className="text-[10px] tabular-nums tracking-wide"
-            style={{ color: "#A09A94" }}
-          >
-            {modules.length}
-          </span>
         </div>
       </div>
     </div>
