@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const BUILD_VERSION = Date.now().toString(36);
-
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,

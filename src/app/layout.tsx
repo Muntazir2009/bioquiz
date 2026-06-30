@@ -47,8 +47,8 @@ export default function RootLayout({
       <head>
         {/* Synchronous theme script — runs before paint, no flash */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="brown"){document.documentElement.className="brown"}else if(t==="dark"){document.documentElement.className="dark"}else{document.documentElement.className="dark"}}catch(e){}})();(function(){if(typeof window.rePaintPoll==="undefined"){window.rePaintPoll=function(){};}})();` }} />
-        {/* Cache-bust: poll for version changes every 60s and force reload */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var INTERVAL=60000;var KEY="_bq_v";var CV="${Date.now().toString(36)}";function check(){try{var sv=localStorage.getItem(KEY);if(!sv){localStorage.setItem(KEY,CV);return}if(sv!==CV){localStorage.setItem(KEY,CV);window.location.reload(true)}}catch(e){}}check();setInterval(check,INTERVAL);window.addEventListener("focus",function(){check()});})();` }} />
+        {/* Cache-bust: static version — bump this string on each deploy to force reload on open tabs */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var KEY="_bq_v",CV="v7";try{var sv=localStorage.getItem(KEY);if(sv&&sv!==CV){localStorage.setItem(KEY,CV);location.reload()}}catch(e){}localStorage.setItem(KEY,CV)})();` }} />
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
