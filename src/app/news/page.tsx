@@ -902,25 +902,8 @@ export default function NewsPage() {
       </footer>
 
       <style jsx global>{`
-        /* Override the home page's scroll lock — /news must be scrollable.
-           The root cause: globals.css applies transform: translateZ(0) to both
-           html and body (for GPU compositing). A transform on html/body creates
-           a new containing block that traps scroll inside the viewport.
-           We must neutralise those transforms AND force overflow auto. */
-        html {
-          overflow: auto !important;
-          height: auto !important;
-          max-height: none !important;
-          transform: none !important;
-          backface-visibility: visible !important;
-        }
-        body {
-          overflow: auto !important;
-          height: auto !important;
-          max-height: none !important;
-          transform: none !important;
-          backface-visibility: visible !important;
-        }
+        /* /news is a long article — ensure scroll works (no transforms from globals) */
+        html, body { overflow: auto !important; }
 
         .stealth-article {
           --stealth-bg: #fbfaf6;
