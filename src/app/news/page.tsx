@@ -664,6 +664,68 @@ export default function NewsPage() {
             </p>
           </div>
 
+          {/* ─── Diagram: Cloud vs Local inference ─── */}
+          <div className="stealth-diagram">
+            <svg viewBox="0 0 520 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{maxWidth:'480px',margin:'0 auto',display:'block'}}>
+              {/* Cloud side */}
+              <rect x="10" y="60" width="160" height="80" rx="14" fill="rgba(184,57,14,0.06)" stroke="rgba(184,57,14,0.2)" strokeWidth="1.2"/>
+              <text x="90" y="42" textAnchor="middle" fill="#7a7a72" fontSize="11" fontFamily="-apple-system,sans-serif" fontWeight="600" letterSpacing="0.08em">CLOUD</text>
+              {/* Server icon */}
+              <rect x="55" y="78" width="30" height="8" rx="2" fill="#b8390e" opacity="0.5"/>
+              <rect x="55" y="90" width="30" height="8" rx="2" fill="#b8390e" opacity="0.35"/>
+              <rect x="55" y="102" width="30" height="8" rx="2" fill="#b8390e" opacity="0.2"/>
+              <circle cx="78" cy="82" r="2" fill="#b8390e"/>
+              <circle cx="78" cy="94" r="2" fill="#b8390e" opacity="0.7"/>
+              <circle cx="78" cy="106" r="2" fill="#b8390e" opacity="0.4"/>
+              {/* Latency label */}
+              <text x="90" y="134" textAnchor="middle" fill="#b8390e" fontSize="9" fontFamily="-apple-system,sans-serif" opacity="0.7">~200ms round-trip</text>
+              {/* User dots */}
+              <circle cx="35" cy="78" r="4" fill="#3d3d3d" opacity="0.3"/><circle cx="50" cy="78" r="4" fill="#3d3d3d" opacity="0.25"/>
+              <circle cx="35" cy="92" r="4" fill="#3d3d3d" opacity="0.2"/><circle cx="50" cy="92" r="4" fill="#3d3d3d" opacity="0.15"/>
+              <text x="42" y="118" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">users</text>
+
+              {/* Arrow */}
+              <line x1="185" y1="100" x2="215" y2="100" stroke="#d8d4c8" strokeWidth="1.5" strokeDasharray="4 3"/>
+              <polygon points="213,96 221,100 213,104" fill="#d8d4c8"/>
+              <text x="200" y="88" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif" fontStyle="italic">shift</text>
+
+              {/* Local side */}
+              <rect x="230" y="60" width="160" height="80" rx="14" fill="rgba(40,120,80,0.06)" stroke="rgba(40,120,80,0.2)" strokeWidth="1.2"/>
+              <text x="310" y="42" textAnchor="middle" fill="#7a7a72" fontSize="11" fontFamily="-apple-system,sans-serif" fontWeight="600" letterSpacing="0.08em">LOCAL</text>
+              {/* Laptop icon */}
+              <rect x="278" y="80" width="40" height="26" rx="3" fill="none" stroke="#3d3d3d" strokeWidth="1.2" opacity="0.4"/>
+              <rect x="282" y="84" width="32" height="18" rx="1" fill="rgba(40,120,80,0.1)"/>
+              <rect x="273" y="106" width="50" height="3" rx="1.5" fill="#3d3d3d" opacity="0.3"/>
+              {/* Neural net dots inside laptop */}
+              <circle cx="292" cy="90" r="2" fill="rgba(40,120,80,0.5)"/><circle cx="298" cy="90" r="2" fill="rgba(40,120,80,0.5)"/>
+              <circle cx="304" cy="90" r="2" fill="rgba(40,120,80,0.5)"/>
+              <circle cx="295" cy="97" r="2" fill="rgba(40,120,80,0.4)"/><circle cx="301" cy="97" r="2" fill="rgba(40,120,80,0.4)"/>
+              <line x1="292" y1="92" x2="295" y2="95" stroke="rgba(40,120,80,0.3)" strokeWidth="0.7"/>
+              <line x1="298" y1="92" x2="295" y2="95" stroke="rgba(40,120,80,0.3)" strokeWidth="0.7"/>
+              <line x1="298" y1="92" x2="301" y2="95" stroke="rgba(40,120,80,0.3)" strokeWidth="0.7"/>
+              <line x1="304" y1="92" x2="301" y2="95" stroke="rgba(40,120,80,0.3)" strokeWidth="0.7"/>
+              {/* Latency label */}
+              <text x="310" y="134" textAnchor="middle" fill="rgba(40,120,80,0.7)" fontSize="9" fontFamily="-apple-system,sans-serif">&lt;10ms on-device</text>
+              {/* Lock icon */}
+              <rect x="375" y="82" width="12" height="10" rx="2" fill="none" stroke="rgba(40,120,80,0.4)" strokeWidth="1"/>
+              <path d="M377 82 V78 a4 4 0 0 1 8 0 V82" fill="none" stroke="rgba(40,120,80,0.4)" strokeWidth="1"/>
+              <text x="381" y="108" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">privacy</text>
+
+              {/* Timeline arrow */}
+              <line x1="90" y1="165" x2="310" y2="165" stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+              <polygon points="308,162 314,165 308,168" fill="rgba(0,0,0,0.12)"/>
+              <text x="200" y="180" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontStyle="italic">2023 → 2025</text>
+              {/* Milestone dots */}
+              <circle cx="130" cy="165" r="3" fill="rgba(184,57,14,0.3)"/>
+              <text x="130" y="158" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">LLaMA</text>
+              <circle cx="200" cy="165" r="3" fill="rgba(0,0,0,0.15)"/>
+              <text x="200" y="158" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">4-bit</text>
+              <circle cx="270" cy="165" r="3" fill="rgba(40,120,80,0.4)"/>
+              <text x="270" y="158" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">8GB</text>
+            </svg>
+            <div className="stealth-diagram-caption">Fig. 1 — The inference axis is tilting toward the edge. Latency drops from hundreds of milliseconds to single digits; data stays on-device.</div>
+          </div>
+
           {/* ─── Compact controls bar (only when not hidden) ─── */}
           {!hideConversation && (
             <div className="stealth-controls">
@@ -838,6 +900,53 @@ export default function NewsPage() {
           {((!hideConversation && ready && msgs.length > 0) || hideConversation) && (
             <div className="stealth-section-break">❦</div>
           )}
+
+          {/* ─── Diagram: Model size convergence ─── */}
+          <div className="stealth-diagram">
+            <svg viewBox="0 0 480 180" fill="none" xmlns="http://www.w3.org/2000/svg" style={{maxWidth:'440px',margin:'0 auto',display:'block'}}>
+              {/* Axes */}
+              <line x1="50" y1="20" x2="50" y2="140" stroke="rgba(0,0,0,0.12)" strokeWidth="1"/>
+              <line x1="50" y1="140" x2="440" y2="140" stroke="rgba(0,0,0,0.12)" strokeWidth="1"/>
+              <text x="20" y="82" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif" transform="rotate(-90,20,82)">Parameters (billions)</text>
+              <text x="245" y="160" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">Year</text>
+              {/* Grid lines */}
+              <line x1="50" y1="50" x2="440" y2="50" stroke="rgba(0,0,0,0.04)" strokeWidth="0.5"/>
+              <line x1="50" y1="80" x2="440" y2="80" stroke="rgba(0,0,0,0.04)" strokeWidth="0.5"/>
+              <line x1="50" y1="110" x2="440" y2="110" stroke="rgba(0,0,0,0.04)" strokeWidth="0.5"/>
+              {/* Cloud models - declining trend */}
+              <polyline points="80,30 150,35 220,38 290,42 360,45 430,48" fill="none" stroke="rgba(184,57,14,0.5)" strokeWidth="1.5" strokeDasharray="6 3"/>
+              <circle cx="80" cy="30" r="3" fill="rgba(184,57,14,0.4)"/>
+              <circle cx="150" cy="35" r="3" fill="rgba(184,57,14,0.35)"/>
+              <circle cx="220" cy="38" r="3" fill="rgba(184,57,14,0.3)"/>
+              <circle cx="290" cy="42" r="3" fill="rgba(184,57,14,0.25)"/>
+              <circle cx="360" cy="45" r="3" fill="rgba(184,57,14,0.2)"/>
+              <circle cx="430" cy="48" r="3" fill="rgba(184,57,14,0.15)"/>
+              {/* Local models - rising trend */}
+              <polyline points="80,130 150,120 220,105 290,88 360,72 430,58" fill="none" stroke="rgba(40,120,80,0.6)" strokeWidth="2"/>
+              <circle cx="80" cy="130" r="3" fill="rgba(40,120,80,0.3)"/>
+              <circle cx="150" cy="120" r="3" fill="rgba(40,120,80,0.4)"/>
+              <circle cx="220" cy="105" r="3" fill="rgba(40,120,80,0.5)"/>
+              <circle cx="290" cy="88" r="3.5" fill="rgba(40,120,80,0.6)"/>
+              <circle cx="360" cy="72" r="3.5" fill="rgba(40,120,80,0.7)"/>
+              <circle cx="430" cy="58" r="4" fill="rgba(40,120,80,0.8)"/>
+              {/* Convergence zone */}
+              <rect x="390" y="44" width="50" height="20" rx="4" fill="rgba(184,57,14,0.04)" stroke="rgba(184,57,14,0.12)" strokeWidth="0.7" strokeDasharray="3 2"/>
+              <text x="415" y="57" textAnchor="middle" fill="#b8390e" fontSize="7" fontFamily="-apple-system,sans-serif" opacity="0.6">converge</text>
+              {/* Year labels */}
+              <text x="80" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'20</text>
+              <text x="150" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'21</text>
+              <text x="220" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'22</text>
+              <text x="290" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'23</text>
+              <text x="360" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'24</text>
+              <text x="430" y="153" textAnchor="middle" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">'25</text>
+              {/* Legend */}
+              <line x1="60" y1="18" x2="78" y2="18" stroke="rgba(184,57,14,0.5)" strokeWidth="1.5" strokeDasharray="6 3"/>
+              <text x="82" y="21" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">Cloud-deployed</text>
+              <line x1="170" y1="18" x2="188" y2="18" stroke="rgba(40,120,80,0.6)" strokeWidth="2"/>
+              <text x="192" y="21" fill="#7a7a72" fontSize="8" fontFamily="-apple-system,sans-serif">Local-capable</text>
+            </svg>
+            <div className="stealth-diagram-caption">Fig. 2 — Model capability curves are converging. By 2025, local-capable models approach the quality ceiling once reserved for cloud-only deployments.</div>
+          </div>
 
           {/* ─── Closing analysis (always visible, makes article feel complete) ─── */}
           <h2 className="stealth-subheadline">What comes next</h2>
@@ -1267,20 +1376,31 @@ export default function NewsPage() {
            The whole article body fades in once on load (see .stealth-article-body). */
         .stealth-paragraph-block {
           position: relative;
+          padding: 12px 18px;
+          margin-bottom: 6px;
+          background: rgba(255,255,255,0.35);
+          backdrop-filter: blur(30px) saturate(180%);
+          -webkit-backdrop-filter: blur(30px) saturate(180%);
+          border: 1px solid rgba(255,255,255,0.55);
+          border-radius: 12px;
+          box-shadow: 0 1px 8px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.6);
+          transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .stealth-paragraph-block:hover {
+          border-color: rgba(255,255,255,0.75);
+          box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
         }
 
         .stealth-paragraph {
           font-family: var(--stealth-serif);
           font-size: 19px;
           line-height: 1.82;
-          margin: 0 0 0.55em;
+          margin: 0;
           color: var(--stealth-text);
           cursor: text;
           transition: background 0.15s ease;
-          padding: 1px 6px;
-          margin-left: -6px;
-          margin-right: -6px;
-          border-radius: 2px;
+          padding: 0;
+          border-radius: 0;
           outline: none;
           /* Classic article typography: first-line indent on all paragraphs
              EXCEPT the lead (which has a drop cap instead). */
@@ -1296,11 +1416,17 @@ export default function NewsPage() {
         }
         .stealth-paragraph:focus-visible {
           background: rgba(184,57,14,0.04);
-          box-shadow: 0 0 0 2px rgba(184,57,14,0.2);
+          box-shadow: none;
         }
         .stealth-paragraph-active {
           background: var(--stealth-highlight);
-          box-shadow: 0 0 0 1px var(--stealth-highlight-border);
+          box-shadow: none;
+        }
+        /* Active/hover glow moves to the parent glass block */
+        .stealth-paragraph-block:has(.stealth-paragraph-active),
+        .stealth-paragraph-block:has(.stealth-paragraph:focus-visible) {
+          border-color: var(--stealth-highlight-border);
+          box-shadow: 0 0 0 1px var(--stealth-highlight-border), 0 2px 20px rgba(232,200,70,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
         }
         .stealth-paragraph a {
           color: var(--stealth-accent);
@@ -1333,6 +1459,30 @@ export default function NewsPage() {
           border-left: 3px solid var(--stealth-accent-soft);
           padding-left: 20px;
           margin-left: 8px;
+        }
+
+        /* ── Diagram / illustration wrapper ── */
+        .stealth-diagram {
+          margin: 32px 0;
+          padding: 20px;
+          background: rgba(255,255,255,0.40);
+          backdrop-filter: blur(35px) saturate(190%);
+          -webkit-backdrop-filter: blur(35px) saturate(190%);
+          border: 1px solid rgba(255,255,255,0.60);
+          border-radius: 14px;
+          box-shadow: 0 2px 16px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.7);
+          text-align: center;
+        }
+        .stealth-diagram svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .stealth-diagram-caption {
+          margin-top: 12px;
+          font-family: var(--stealth-sans);
+          font-size: 11px;
+          color: var(--stealth-text-mute);
+          letter-spacing: 0.04em;
         }
 
         /* ── Subheadline ── */
@@ -1744,6 +1894,8 @@ export default function NewsPage() {
           .stealth-headline { font-size: 30px; }
           .stealth-deck { font-size: 18px; }
           .stealth-paragraph { font-size: 17px; line-height: 1.72; }
+          .stealth-paragraph-block { padding: 10px 14px; border-radius: 10px; }
+          .stealth-diagram { padding: 16px; margin: 24px 0; }
           .stealth-paragraph-lead::first-letter { font-size: 52px; }
           .stealth-article-inner { padding: 0 18px; }
           .stealth-masthead-inner { padding: 12px 18px 20px; }
