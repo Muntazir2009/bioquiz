@@ -902,6 +902,9 @@ export default function NewsPage() {
       </footer>
 
       <style jsx global>{`
+        /* Override the home page's scroll lock — /news must be scrollable */
+        html, body { overflow: auto !important; }
+
         .stealth-article {
           --stealth-bg: #fbfaf6;
           --stealth-bg-warm: #f5f3ec;
