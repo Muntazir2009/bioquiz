@@ -902,15 +902,24 @@ export default function NewsPage() {
       </footer>
 
       <style jsx global>{`
-        /* Override the home page's scroll lock — /news must be scrollable */
-        html, body {
+        /* Override the home page's scroll lock — /news must be scrollable.
+           The root cause: globals.css applies transform: translateZ(0) to both
+           html and body (for GPU compositing). A transform on html/body creates
+           a new containing block that traps scroll inside the viewport.
+           We must neutralise those transforms AND force overflow auto. */
+        html {
           overflow: auto !important;
           height: auto !important;
           max-height: none !important;
-          position: static !important;
-        }
-        body > * {
           transform: none !important;
+          backface-visibility: visible !important;
+        }
+        body {
+          overflow: auto !important;
+          height: auto !important;
+          max-height: none !important;
+          transform: none !important;
+          backface-visibility: visible !important;
         }
 
         .stealth-article {
@@ -1136,11 +1145,11 @@ export default function NewsPage() {
 
         /* ── Contributor selector (partner switcher) — compact ── */
         .stealth-contributor-row {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 18px;
-          padding: 7px 14px;
+          gap: 10px;
+          margin-bottom: 20px;
+          padding: 8px 16px;
           background: rgba(255,255,255,0.45);
           backdrop-filter: blur(40px) saturate(180%);
           -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -1149,7 +1158,7 @@ export default function NewsPage() {
           font-family: var(--stealth-sans);
         }
         .stealth-contributor-label {
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 600;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -1165,13 +1174,13 @@ export default function NewsPage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 4px 10px;
+          padding: 5px 12px;
           background: transparent;
-          border: none;
-          border-radius: 3px;
+          border: 1px solid rgba(0,0,0,0.06);
+          border-radius: 6px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 14px;
+          font-size: 15px;
           color: var(--stealth-text);
           transition: color 0.15s;
           max-width: 100%;
@@ -1190,7 +1199,7 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-caret {
-          font-size: 10px;
+          font-size: 11px;
           color: var(--stealth-text-mute);
           transition: transform 0.15s;
         }
@@ -1235,7 +1244,7 @@ export default function NewsPage() {
           border-radius: 6px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 13px;
+          font-size: 14px;
           color: var(--stealth-text);
           text-align: left;
           transition: background 0.1s;
@@ -1257,16 +1266,16 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-option-meta {
-          font-size: 10px;
+          font-size: 11px;
           color: var(--stealth-text-mute);
           font-family: var(--stealth-sans);
           flex-shrink: 0;
         }
 
         @media (max-width: 640px) {
-          .stealth-contributor-row { gap: 6px; padding: 6px 10px; }
-          .stealth-contributor-label { font-size: 9px; }
-          .stealth-contributor-trigger { font-size: 13px; padding: 3px 8px; }
+          .stealth-contributor-row { gap: 8px; padding: 7px 12px; }
+          .stealth-contributor-label { font-size: 10px; }
+          .stealth-contributor-trigger { font-size: 14px; padding: 4px 10px; }
           .stealth-contributor-menu { min-width: 100%; }
         }
 
