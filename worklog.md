@@ -1572,3 +1572,30 @@ Stage Summary:
 - VLM verification: Homepage hero text visibility 10/10
 - VLM verification: Modules slide all 5 checks pass (centered pill, solid 3D cards, glass text sections, no flower bleed-through, glass back arrow)
 - Pushed to GitHub: commit 3c3e5a8
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Shrink chat UI on /news, add quick-hide button, frosted glass on news content
+
+Work Log:
+- Read and analyzed full /news page (1701 lines) to identify all chat-related UI elements
+- Shrunk DM selector: changed from block row with 12px/15px fonts to inline pill with 9px/12px fonts, glassmorphism background, rounded-20px border-radius
+- Shrunk controls bar: reduced from 14px gap/10px padding to 8px gap/6px padding, frosted glass bg, pill-shaped segments/toggles
+- Shrunk search input: 12px→10px font, compact padding, rounded pill shape
+- Shrunk typing indicator: 12px→10px font, 7px→5px dot, tighter padding
+- Shrunk shortcuts hint: 10px→8px font, frosted glass bg, compact padding
+- Added quick-hide eye icon button (stealth-quick-hide) - 26x26px, toggles hideConversation state, shows eye-open/eye-slash SVG icons
+- Added "Hide" button (stealth-hide-btn) inside controls bar for one-click chat hide
+- Wrapped all article content in .stealth-glass-wrap div with frosted glass: blur(50px) saturate(220%), rgba(255,255,255,0.50) bg, inset highlight, 16px border-radius
+- Changed article background from solid to subtle gradient for glass visibility
+- Applied glassmorphism to contributor dropdown menu: blur(50px), semi-transparent bg, rounded corners
+- Updated all mobile responsive breakpoints for new compact sizes
+- Verified: both / and /news return 200, lint passes clean
+- Committed locally, GitHub push failed due to expired token
+
+Stage Summary:
+- All 4 requested changes implemented: compact chat UI, quick-hide toggle, frosted glass content, hide button
+- Local commit: 750c3f7 (192 insertions, 143 deletions)
+- GitHub push blocked by expired token (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A)
+- No other files touched, per user's "don't touch anything else" rule
