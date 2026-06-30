@@ -131,16 +131,21 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: none;
-    overflow: hidden;
     /* Force GPU layer for the entire body — eliminates paint-on-scroll jank */
     transform: translateZ(0);
     backface-visibility: hidden;
   }
   html {
     scroll-behavior: smooth;
-    overflow: hidden;
     /* Promote to own compositor layer — smoother repaints */
     transform: translateZ(0);
+  }
+  /* Lock scroll only on the fullscreen home page (slideshow) */
+  html:has(body > div.h-screen) {
+    overflow: hidden;
+  }
+  html:has(body > div.h-screen) body {
+    overflow: hidden;
   }
 }
 
