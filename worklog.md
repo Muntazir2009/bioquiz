@@ -1599,3 +1599,26 @@ Stage Summary:
 - Local commit: 750c3f7 (192 insertions, 143 deletions)
 - GitHub push blocked by expired token (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A)
 - No other files touched, per user's "don't touch anything else" rule
+---
+Task ID: 1
+Agent: Main Agent
+Task: Cache busting, liquid glass enhancement, diagrams, and text beautification for /news page
+
+Work Log:
+- Added comprehensive cache-busting: `next.config.ts` headers (Cache-Control: no-store), layout meta tags, and auto-reload script that polls localStorage version every 60s and force-reloads when version changes (also on window focus)
+- Enhanced `.stealth-paragraph-block` liquid glass: stronger gradient background (0.52→0.32), increased blur (40px/200% saturation), multi-layer box shadows with inset highlights, added `::before` shimmer gradient (top 50% white fade) and `::after` edge glow (centered 1px highlight line), hover lift effect (translateY(-0.5px))
+- Enhanced `.stealth-paragraph` typography: increased line-height (1.85), wider text-indent (1.8em), subtle letter-spacing (0.003em), position z-index for glass layering
+- Enhanced drop cap: larger (64px), tighter line-height (0.85), subtle text-shadow
+- Enhanced `.stealth-subheadline` with liquid glass: gradient background, blur, border, inset shadows, top highlight pseudo-element
+- Enhanced `.stealth-diagram` liquid glass: stronger gradient, higher blur (45px/210%), dual pseudo-elements for shimmer, hover elevation
+- Added new `.stealth-pullquote` component: gradient glass background, accent left border, italic serif text, shimmer overlay
+- Added 2 new SVG diagrams: (1) Quantization pipeline (FP16→INT8→INT4→GGUF with size labels and quality gradient bar), (2) Inference stack layers (Application→Runtime→Model→Hardware with open/proprietary annotation)
+- Added decorative inline neural network vector between intro paragraphs
+- Added 2 pull quotes with liquid glass styling
+- Updated mobile responsive styles for new elements
+
+Stage Summary:
+- Cache busting deployed via 3-layer strategy (headers + meta tags + auto-reload JS)
+- Liquid glass now visible on every content element (paragraphs, subheadlines, diagrams, pull quotes)
+- 4 total SVG diagrams in article, 2 pull quotes, 1 decorative neural net vector
+- All changes pushed to GitHub (commit b74f524)
