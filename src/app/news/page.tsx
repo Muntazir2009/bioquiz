@@ -903,7 +903,15 @@ export default function NewsPage() {
 
       <style jsx global>{`
         /* Override the home page's scroll lock — /news must be scrollable */
-        html, body { overflow: auto !important; }
+        html, body {
+          overflow: auto !important;
+          height: auto !important;
+          max-height: none !important;
+          position: static !important;
+        }
+        body > * {
+          transform: none !important;
+        }
 
         .stealth-article {
           --stealth-bg: #fbfaf6;
@@ -1130,9 +1138,9 @@ export default function NewsPage() {
         .stealth-contributor-row {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          margin-bottom: 16px;
-          padding: 5px 10px;
+          gap: 8px;
+          margin-bottom: 18px;
+          padding: 7px 14px;
           background: rgba(255,255,255,0.45);
           backdrop-filter: blur(40px) saturate(180%);
           -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -1141,9 +1149,9 @@ export default function NewsPage() {
           font-family: var(--stealth-sans);
         }
         .stealth-contributor-label {
-          font-size: 9px;
+          font-size: 10px;
           font-weight: 600;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
           color: var(--stealth-text-mute);
           flex-shrink: 0;
@@ -1156,14 +1164,14 @@ export default function NewsPage() {
         .stealth-contributor-trigger {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          padding: 3px 8px;
+          gap: 6px;
+          padding: 4px 10px;
           background: transparent;
           border: none;
           border-radius: 3px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 12px;
+          font-size: 14px;
           color: var(--stealth-text);
           transition: color 0.15s;
           max-width: 100%;
@@ -1182,7 +1190,7 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-caret {
-          font-size: 9px;
+          font-size: 10px;
           color: var(--stealth-text-mute);
           transition: transform 0.15s;
         }
@@ -1198,13 +1206,13 @@ export default function NewsPage() {
           position: absolute;
           top: calc(100% + 4px);
           left: 0;
-          min-width: 180px;
+          min-width: 200px;
           max-width: 100%;
-          max-height: 200px;
+          max-height: 240px;
           overflow-y: auto;
           list-style: none;
           margin: 0;
-          padding: 3px;
+          padding: 4px;
           background: rgba(255,255,255,0.88);
           backdrop-filter: blur(50px) saturate(220%);
           -webkit-backdrop-filter: blur(50px) saturate(220%);
@@ -1221,13 +1229,13 @@ export default function NewsPage() {
           align-items: center;
           gap: 8px;
           width: 100%;
-          padding: 5px 8px;
+          padding: 6px 10px;
           background: transparent;
           border: none;
           border-radius: 6px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 12px;
+          font-size: 13px;
           color: var(--stealth-text);
           text-align: left;
           transition: background 0.1s;
@@ -1249,16 +1257,16 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-option-meta {
-          font-size: 9px;
+          font-size: 10px;
           color: var(--stealth-text-mute);
           font-family: var(--stealth-sans);
           flex-shrink: 0;
         }
 
         @media (max-width: 640px) {
-          .stealth-contributor-row { gap: 5px; padding: 4px 8px; }
-          .stealth-contributor-label { font-size: 8px; }
-          .stealth-contributor-trigger { font-size: 11px; padding: 2px 6px; }
+          .stealth-contributor-row { gap: 6px; padding: 6px 10px; }
+          .stealth-contributor-label { font-size: 9px; }
+          .stealth-contributor-trigger { font-size: 13px; padding: 3px 8px; }
           .stealth-contributor-menu { min-width: 100%; }
         }
 
