@@ -545,6 +545,7 @@ export default function NewsPage() {
       {/* ─── Article body ─── */}
       <main className="stealth-article-body" ref={paraContainerRef}>
         <div className="stealth-article-inner">
+          <div className="stealth-glass-wrap">
 
           <div className="stealth-category-row">
             <span className="stealth-category">Artificial Intelligence</span>
@@ -577,10 +578,25 @@ export default function NewsPage() {
             </div>
           </div>
 
-          {/* ─── Contributor selector (disguised as editorial element) ─── */}
-          {partners.length > 0 && (
+          {/* ─── Quick-hide toggle button ─── */}
+          <button
+            type="button"
+            className="stealth-quick-hide"
+            onClick={() => setHideConversation((v) => !v)}
+            title={hideConversation ? "Show conversation" : "Hide conversation"}
+            aria-label={hideConversation ? "Show conversation" : "Hide conversation"}
+          >
+            {hideConversation ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            )}
+          </button>
+
+          {/* ─── Contributor selector (compact inline) ─── */}
+          {partners.length > 0 && !hideConversation && (
             <div className="stealth-contributor-row">
-              <span className="stealth-contributor-label">In conversation with</span>
+              <span className="stealth-contributor-label">With</span>
               <div className={`stealth-contributor-select ${partnerPickerOpen ? "stealth-contributor-select-open" : ""}`}>
                 <button
                   type="button"
@@ -648,12 +664,10 @@ export default function NewsPage() {
             </p>
           </div>
 
-          {/* ─── Reading preferences bar (disguised controls) ─── */}
+          {/* ─── Compact controls bar (only when not hidden) ─── */}
           {!hideConversation && (
             <div className="stealth-controls">
-              <span className="stealth-controls-label">Reading preferences</span>
               <div className="stealth-controls-group">
-                <span className="stealth-controls-key">Text flow</span>
                 <div className="stealth-controls-segments">
                   {(["space", "period", "emdash", "pipe"] as Separator[]).map((s) => (
                     <button
@@ -661,30 +675,26 @@ export default function NewsPage() {
                       type="button"
                       className={`stealth-seg ${separator === s ? "stealth-seg-active" : ""}`}
                       onClick={() => setSeparator(s)}
-                      title={`Separate messages with ${s === "space" ? "a space" : s === "period" ? "a period" : s === "emdash" ? "an em-dash" : "a pipe"}`}
+                      title={`Separate with ${s}`}
                     >
                       {s === "space" ? "␣" : s === "period" ? "." : s === "emdash" ? "—" : "|"}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="stealth-controls-group">
-                <span className="stealth-controls-key">Emojis</span>
-                <button
-                  type="button"
-                  className={`stealth-toggle ${hideEmojis ? "stealth-toggle-off" : "stealth-toggle-on"}`}
-                  onClick={() => setHideEmojis((v) => !v)}
-                >
-                  {hideEmojis ? "Hidden" : "Shown"}
-                </button>
-              </div>
-              <div className="stealth-controls-group stealth-search-group">
-                <span className="stealth-controls-key">Find</span>
+              <button
+                type="button"
+                className={`stealth-toggle ${hideEmojis ? "stealth-toggle-off" : "stealth-toggle-on"}`}
+                onClick={() => setHideEmojis((v) => !v)}
+              >
+                {hideEmojis ? "No emoji" : "Emoji"}
+              </button>
+              <div className="stealth-search-group">
                 <input
                   ref={searchInputRef}
                   type="text"
                   className="stealth-search-input"
-                  placeholder="Search article…"
+                  placeholder="Search…"
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Escape") { setSearchQuery(""); (e.target as HTMLInputElement).value = ""; (e.target as HTMLInputElement).blur(); } }}
                 />
@@ -698,30 +708,18 @@ export default function NewsPage() {
                 type="button"
                 className="stealth-hide-btn"
                 onClick={() => setHideConversation(true)}
-                title="Hide the conversation — show article filler instead (shortcut: H)"
               >
-                Hide contributions
-              </button>
-            </div>
-          )}
-
-          {/* ─── Show-conversation button (only when hidden) ─── */}
-          {hideConversation && (
-            <div className="stealth-controls stealth-controls-minimal">
-              <button
-                type="button"
-                className="stealth-hide-btn stealth-hide-btn-show"
-                onClick={() => setHideConversation(false)}
-              >
-                Show contributions
+                Hide
               </button>
             </div>
           )}
 
           {/* ─── Subheadline introducing the conversation section ─── */}
-          <h2 className="stealth-subheadline">
-            The 8-gigabyte threshold
-          </h2>
+          {!hideConversation && (
+            <h2 className="stealth-subheadline">
+              The 8-gigabyte threshold
+            </h2>
+          )}
 
           {/* ─── Typing indicator (disguised as "developing story" note) ─── */}
           {partnerTyping && !hideConversation && (
@@ -884,6 +882,8 @@ export default function NewsPage() {
             </ul>
           </div>
 
+          </div>{/* end .stealth-glass-wrap */}
+
         </div>
       </main>
 
@@ -924,7 +924,7 @@ export default function NewsPage() {
           --stealth-serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
           --stealth-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-          background: var(--stealth-bg);
+          background: linear-gradient(180deg, #f0ece4 0%, #e8e4d8 30%, #f2efe8 60%, #eae6dc 100%);
           color: var(--stealth-text);
           font-family: var(--stealth-serif);
           font-size: 19px;
@@ -1014,6 +1014,18 @@ export default function NewsPage() {
           padding: 0 24px;
         }
 
+        /* ── Frosted glass content wrapper ── */
+        .stealth-glass-wrap {
+          padding: 24px 28px;
+          margin: 0 -4px;
+          background: rgba(255,255,255,0.50);
+          backdrop-filter: blur(50px) saturate(220%);
+          -webkit-backdrop-filter: blur(50px) saturate(220%);
+          border: 1px solid rgba(255,255,255,0.72);
+          border-radius: 16px;
+          box-shadow: 0 4px 32px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
         .stealth-category-row {
           display: flex;
           align-items: center;
@@ -1089,22 +1101,49 @@ export default function NewsPage() {
         }
         .stealth-rule-end { margin: 40px 0 22px; }
 
-        /* ── Contributor selector (partner switcher) ── */
-        .stealth-contributor-row {
-          display: flex;
+        /* ── Quick-hide toggle button (eye icon) ── */
+        .stealth-quick-hide {
+          display: inline-flex;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 24px;
-          padding: 12px 16px;
-          background: var(--stealth-bg-warm);
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          padding: 0;
+          margin-bottom: 8px;
+          background: rgba(184,57,14,0.06);
           border: 1px solid var(--stealth-rule-soft);
-          border-radius: 4px;
+          border-radius: 6px;
+          cursor: pointer;
+          color: var(--stealth-text-mute);
+          transition: all 0.2s ease;
+        }
+        .stealth-quick-hide:hover {
+          background: rgba(184,57,14,0.12);
+          color: var(--stealth-accent);
+          border-color: var(--stealth-accent);
+        }
+        .stealth-quick-hide:active {
+          transform: scale(0.92);
+        }
+
+        /* ── Contributor selector (partner switcher) — compact ── */
+        .stealth-contributor-row {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 16px;
+          padding: 5px 10px;
+          background: rgba(255,255,255,0.45);
+          backdrop-filter: blur(40px) saturate(180%);
+          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          border: 1px solid rgba(255,255,255,0.6);
+          border-radius: 20px;
           font-family: var(--stealth-sans);
         }
         .stealth-contributor-label {
-          font-size: 11px;
+          font-size: 9px;
           font-weight: 600;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           color: var(--stealth-text-mute);
           flex-shrink: 0;
@@ -1117,24 +1156,23 @@ export default function NewsPage() {
         .stealth-contributor-trigger {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 6px 12px;
-          background: var(--stealth-bg);
-          border: 1px solid var(--stealth-rule);
+          gap: 5px;
+          padding: 3px 8px;
+          background: transparent;
+          border: none;
           border-radius: 3px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 15px;
+          font-size: 12px;
           color: var(--stealth-text);
-          transition: border-color 0.15s, box-shadow 0.15s;
+          transition: color 0.15s;
           max-width: 100%;
         }
         .stealth-contributor-trigger:hover {
-          border-color: var(--stealth-accent);
+          color: var(--stealth-accent);
         }
         .stealth-contributor-select-open .stealth-contributor-trigger {
-          border-color: var(--stealth-accent);
-          box-shadow: 0 0 0 2px rgba(184,57,14,0.15);
+          color: var(--stealth-accent);
         }
         .stealth-contributor-name {
           font-weight: 600;
@@ -1144,7 +1182,7 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-caret {
-          font-size: 11px;
+          font-size: 9px;
           color: var(--stealth-text-mute);
           transition: transform 0.15s;
         }
@@ -1160,17 +1198,19 @@ export default function NewsPage() {
           position: absolute;
           top: calc(100% + 4px);
           left: 0;
-          min-width: 220px;
+          min-width: 180px;
           max-width: 100%;
-          max-height: 280px;
+          max-height: 200px;
           overflow-y: auto;
           list-style: none;
           margin: 0;
-          padding: 4px;
-          background: var(--stealth-bg);
-          border: 1px solid var(--stealth-rule);
-          border-radius: 4px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+          padding: 3px;
+          background: rgba(255,255,255,0.88);
+          backdrop-filter: blur(50px) saturate(220%);
+          -webkit-backdrop-filter: blur(50px) saturate(220%);
+          border: 1px solid rgba(255,255,255,0.7);
+          border-radius: 10px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
           z-index: 51;
           font-family: var(--stealth-sans);
           animation: stealthFadeIn 0.15s ease both;
@@ -1179,29 +1219,29 @@ export default function NewsPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
           width: 100%;
-          padding: 8px 12px;
+          padding: 5px 8px;
           background: transparent;
           border: none;
-          border-radius: 3px;
+          border-radius: 6px;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 14px;
+          font-size: 12px;
           color: var(--stealth-text);
           text-align: left;
           transition: background 0.1s;
         }
         .stealth-contributor-option:hover {
-          background: var(--stealth-bg-warm);
+          background: rgba(184,57,14,0.06);
         }
         .stealth-contributor-option-active {
-          background: rgba(184,57,14,0.06);
+          background: rgba(184,57,14,0.1);
           color: var(--stealth-accent);
           font-weight: 600;
         }
         .stealth-contributor-option-active:hover {
-          background: rgba(184,57,14,0.1);
+          background: rgba(184,57,14,0.14);
         }
         .stealth-contributor-option-name {
           white-space: nowrap;
@@ -1209,16 +1249,16 @@ export default function NewsPage() {
           text-overflow: ellipsis;
         }
         .stealth-contributor-option-meta {
-          font-size: 11px;
+          font-size: 9px;
           color: var(--stealth-text-mute);
           font-family: var(--stealth-sans);
           flex-shrink: 0;
         }
 
         @media (max-width: 640px) {
-          .stealth-contributor-row { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
-          .stealth-contributor-label { font-size: 10px; }
-          .stealth-contributor-trigger { font-size: 14px; padding: 5px 10px; }
+          .stealth-contributor-row { gap: 5px; padding: 4px 8px; }
+          .stealth-contributor-label { font-size: 8px; }
+          .stealth-contributor-trigger { font-size: 11px; padding: 2px 6px; }
           .stealth-contributor-menu { min-width: 100%; }
         }
 
@@ -1320,28 +1360,30 @@ export default function NewsPage() {
           letter-spacing: 0.3em;
         }
 
-        /* ── Reading preferences / controls bar ── */
+        /* ── Reading preferences / controls bar — compact ── */
         .stealth-controls {
           display: flex;
           align-items: center;
           flex-wrap: wrap;
-          gap: 14px;
-          margin: 24px 0 28px;
-          padding: 10px 14px;
-          background: var(--stealth-bg-warm);
-          border: 1px solid var(--stealth-rule-soft);
-          border-radius: 4px;
+          gap: 8px;
+          margin: 16px 0 20px;
+          padding: 6px 10px;
+          background: rgba(255,255,255,0.45);
+          backdrop-filter: blur(40px) saturate(180%);
+          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          border: 1px solid rgba(255,255,255,0.6);
+          border-radius: 20px;
           font-family: var(--stealth-sans);
-          font-size: 12px;
+          font-size: 11px;
         }
         .stealth-controls-minimal {
           justify-content: center;
-          margin: 20px 0 28px;
+          margin: 16px 0 20px;
         }
         .stealth-controls-label {
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
           color: var(--stealth-text-mute);
           flex-shrink: 0;
@@ -1349,34 +1391,34 @@ export default function NewsPage() {
         .stealth-controls-group {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
         }
         .stealth-controls-key {
-          font-size: 11px;
+          font-size: 9px;
           color: var(--stealth-text-mute);
           font-weight: 500;
         }
         .stealth-controls-segments {
           display: inline-flex;
-          border: 1px solid var(--stealth-rule);
-          border-radius: 3px;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 12px;
           overflow: hidden;
-          background: var(--stealth-bg);
+          background: rgba(255,255,255,0.5);
         }
         .stealth-seg {
-          padding: 4px 10px;
+          padding: 2px 7px;
           border: none;
           background: transparent;
           cursor: pointer;
           font-family: var(--stealth-serif);
-          font-size: 14px;
+          font-size: 11px;
           color: var(--stealth-text-soft);
           transition: background 0.1s, color 0.1s;
-          min-width: 28px;
+          min-width: 22px;
           text-align: center;
         }
         .stealth-seg:hover {
-          background: var(--stealth-bg-warm);
+          background: rgba(0,0,0,0.04);
         }
         .stealth-seg-active {
           background: var(--stealth-accent);
@@ -1386,34 +1428,34 @@ export default function NewsPage() {
           background: var(--stealth-accent);
         }
         .stealth-toggle {
-          padding: 4px 10px;
-          border: 1px solid var(--stealth-rule);
-          border-radius: 3px;
+          padding: 2px 7px;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 12px;
           cursor: pointer;
           font-family: var(--stealth-sans);
-          font-size: 11px;
+          font-size: 9px;
           font-weight: 600;
           transition: all 0.1s;
-          background: var(--stealth-bg);
+          background: transparent;
         }
         .stealth-toggle-on {
           color: var(--stealth-text);
-          border-color: var(--stealth-rule);
+          border-color: rgba(0,0,0,0.08);
         }
         .stealth-toggle-off {
           color: var(--stealth-text-mute);
-          background: var(--stealth-bg-warm);
+          background: rgba(0,0,0,0.03);
         }
         .stealth-hide-btn {
           margin-left: auto;
-          padding: 5px 12px;
-          border: 1px solid var(--stealth-accent);
-          border-radius: 3px;
+          padding: 2px 8px;
+          border: 1px solid rgba(184,57,14,0.25);
+          border-radius: 12px;
           background: transparent;
           color: var(--stealth-accent);
           cursor: pointer;
           font-family: var(--stealth-sans);
-          font-size: 11px;
+          font-size: 9px;
           font-weight: 600;
           letter-spacing: 0.04em;
           transition: all 0.15s;
@@ -1426,20 +1468,23 @@ export default function NewsPage() {
           margin: 0 auto;
         }
 
-        /* ── Search input ── */
+        /* ── Search input — compact ── */
         .stealth-search-group {
           flex: 1;
-          min-width: 140px;
+          min-width: 100px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
         }
         .stealth-search-input {
           flex: 1;
           min-width: 0;
-          padding: 4px 8px;
-          border: 1px solid var(--stealth-rule);
-          border-radius: 3px;
-          background: var(--stealth-bg);
+          padding: 2px 6px;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 12px;
+          background: rgba(255,255,255,0.4);
           font-family: var(--stealth-sans);
-          font-size: 12px;
+          font-size: 10px;
           color: var(--stealth-text);
           outline: none;
           transition: border-color 0.15s;
@@ -1452,31 +1497,31 @@ export default function NewsPage() {
           font-style: italic;
         }
         .stealth-search-count {
-          font-size: 10px;
+          font-size: 8px;
           color: var(--stealth-text-mute);
           font-family: var(--stealth-sans);
           white-space: nowrap;
           font-variant-numeric: tabular-nums;
         }
 
-        /* ── Typing / developing story indicator ── */
+        /* ── Typing / developing story indicator — compact ── */
         .stealth-developing {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin: 0 0 20px;
-          padding: 8px 14px;
+          gap: 6px;
+          margin: 0 0 16px;
+          padding: 5px 10px;
           background: rgba(184,57,14,0.04);
           border-left: 2px solid var(--stealth-accent);
           border-radius: 2px;
           font-family: var(--stealth-sans);
-          font-size: 12px;
+          font-size: 10px;
           color: var(--stealth-text-soft);
           font-style: italic;
         }
         .stealth-developing-dot {
-          width: 7px;
-          height: 7px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: var(--stealth-accent);
           flex-shrink: 0;
@@ -1487,35 +1532,37 @@ export default function NewsPage() {
           50% { opacity: 1; }
         }
 
-        /* ── Keyboard shortcut hint (subtle, bottom of page) ── */
+        /* ── Keyboard shortcut hint — compact ── */
         .stealth-shortcuts {
-          margin: 24px 0;
-          padding: 12px 16px;
-          background: var(--stealth-bg-warm);
-          border: 1px solid var(--stealth-rule-soft);
-          border-radius: 4px;
+          margin: 16px 0;
+          padding: 6px 10px;
+          background: rgba(255,255,255,0.4);
+          backdrop-filter: blur(20px) saturate(150%);
+          -webkit-backdrop-filter: blur(20px) saturate(150%);
+          border: 1px solid rgba(255,255,255,0.5);
+          border-radius: 12px;
           font-family: var(--stealth-sans);
-          font-size: 10px;
+          font-size: 8px;
           color: var(--stealth-text-mute);
           text-align: center;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.03em;
         }
         .stealth-shortcuts kbd {
           display: inline-block;
-          padding: 1px 5px;
-          margin: 0 2px;
-          background: var(--stealth-bg);
-          border: 1px solid var(--stealth-rule);
-          border-radius: 2px;
+          padding: 1px 4px;
+          margin: 0 1px;
+          background: rgba(255,255,255,0.6);
+          border: 1px solid rgba(0,0,0,0.06);
+          border-radius: 4px;
           font-family: var(--stealth-sans);
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 600;
           color: var(--stealth-text);
         }
 
         @media (max-width: 640px) {
           .stealth-search-group { width: 100%; }
-          .stealth-search-input { font-size: 13px; padding: 5px 8px; }
+          .stealth-search-input { font-size: 11px; padding: 3px 6px; }
         }
 
         /* ── Related coverage ── */
@@ -1557,11 +1604,11 @@ export default function NewsPage() {
         }
 
         @media (max-width: 640px) {
-          .stealth-controls { gap: 8px; padding: 8px 10px; }
-          .stealth-controls-label { font-size: 9px; }
-          .stealth-controls-key { font-size: 10px; }
-          .stealth-seg { padding: 3px 8px; font-size: 13px; min-width: 24px; }
-          .stealth-hide-btn { margin-left: 0; width: 100%; text-align: center; padding: 6px; }
+          .stealth-controls { gap: 6px; padding: 5px 8px; }
+          .stealth-controls-label { font-size: 8px; }
+          .stealth-controls-key { font-size: 8px; }
+          .stealth-seg { padding: 2px 6px; font-size: 10px; min-width: 20px; }
+          .stealth-hide-btn { margin-left: 0; padding: 2px 6px; }
           .stealth-subheadline { font-size: 22px; }
           .stealth-related-list a { font-size: 15px; }
         }
@@ -1706,6 +1753,8 @@ export default function NewsPage() {
           .stealth-footer-inner { padding: 0 18px; }
           .stealth-footer-meta { font-size: 10px; gap: 4px; }
           .stealth-article-body { padding: 32px 0 48px; }
+          .stealth-glass-wrap { padding: 18px 16px; margin: 0 -2px; border-radius: 12px; }
+          .stealth-quick-hide { width: 24px; height: 24px; }
         }
 
         /* ── Reduced motion ── */
