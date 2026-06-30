@@ -655,6 +655,13 @@ export default function NewsPage() {
               the infrastructure around it can adapt.
             </p>
           </div>
+
+          {/* ── Pull quote ── */}
+          <div className="stealth-pullquote">
+            <p>"The model is a tool you run, not a service you query. That distinction changes everything."</p>
+            <div className="stealth-pullquote-cite">— A common refrain in open-source inference circles, 2024</div>
+          </div>
+
           <div className="stealth-paragraph-block">
             <p className="stealth-paragraph">
               The change isn't driven by a single breakthrough. It's the compounding effect of
@@ -662,6 +669,55 @@ export default function NewsPage() {
               sometime in the last eighteen months. What used to require a data center now runs —
               not perfectly, but usably — on hardware that fits in a backpack.
             </p>
+          </div>
+
+          {/* ── Decorative inline vector: neural network layers ── */}
+          <div style={{ textAlign:'center', margin:'20px 0', opacity: 0.5 }}>
+            <svg width="200" height="32" viewBox="0 0 200 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="5" fill="none" stroke="rgba(184,57,14,0.25)" strokeWidth="0.8"/>
+              <circle cx="16" cy="16" r="2" fill="rgba(184,57,14,0.2)"/>
+              <circle cx="52" cy="10" r="4" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.8"/>
+              <circle cx="52" cy="22" r="4" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.8"/>
+              <circle cx="52" cy="10" r="1.5" fill="rgba(0,0,0,0.08)"/>
+              <circle cx="52" cy="22" r="1.5" fill="rgba(0,0,0,0.08)"/>
+              <circle cx="88" cy="6" r="3.5" fill="none" stroke="rgba(40,120,80,0.2)" strokeWidth="0.8"/>
+              <circle cx="88" cy="16" r="3.5" fill="none" stroke="rgba(40,120,80,0.2)" strokeWidth="0.8"/>
+              <circle cx="88" cy="26" r="3.5" fill="none" stroke="rgba(40,120,80,0.2)" strokeWidth="0.8"/>
+              <circle cx="124" cy="10" r="3" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.8"/>
+              <circle cx="124" cy="22" r="3" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.8"/>
+              <circle cx="160" cy="6" r="4" fill="none" stroke="rgba(40,120,80,0.25)" strokeWidth="0.8"/>
+              <circle cx="160" cy="16" r="4" fill="none" stroke="rgba(40,120,80,0.25)" strokeWidth="0.8"/>
+              <circle cx="160" cy="26" r="4" fill="none" stroke="rgba(40,120,80,0.25)" strokeWidth="0.8"/>
+              <circle cx="160" cy="16" r="1.8" fill="rgba(40,120,80,0.15)"/>
+              <circle cx="184" cy="16" r="5" fill="none" stroke="rgba(184,57,14,0.25)" strokeWidth="0.8"/>
+              <circle cx="184" cy="16" r="2" fill="rgba(184,57,14,0.2)"/>
+              {/* Connections layer 1→2 */}
+              <line x1="21" y1="14" x2="48" y2="10" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="21" y1="16" x2="48" y2="10" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="21" y1="18" x2="48" y2="22" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="21" y1="16" x2="48" y2="22" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              {/* Connections layer 2→3 */}
+              <line x1="56" y1="10" x2="84" y2="6" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="56" y1="10" x2="84" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="56" y1="22" x2="84" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="56" y1="22" x2="84" y2="26" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="56" y1="10" x2="84" y2="26" stroke="rgba(0,0,0,0.04)" strokeWidth="0.4"/>
+              <line x1="56" y1="22" x2="84" y2="6" stroke="rgba(0,0,0,0.04)" strokeWidth="0.4"/>
+              {/* Connections layer 3→4 */}
+              <line x1="92" y1="6" x2="121" y2="10" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="92" y1="16" x2="121" y2="10" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="92" y1="16" x2="121" y2="22" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="92" y1="26" x2="121" y2="22" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              {/* Connections layer 4→5 */}
+              <line x1="127" y1="10" x2="156" y2="6" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="127" y1="10" x2="156" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="127" y1="22" x2="156" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="127" y1="22" x2="156" y2="26" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              {/* Connections layer 5→6 */}
+              <line x1="164" y1="6" x2="179" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="164" y1="16" x2="179" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+              <line x1="164" y1="26" x2="179" y2="16" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+            </svg>
           </div>
 
           {/* ─── Diagram: Cloud vs Local inference ─── */}
@@ -839,6 +895,58 @@ export default function NewsPage() {
                   predictable API bill to a one-time hardware purchase that not everyone can afford.
                 </p>
               </div>
+
+              {/* ── Diagram: Quantization pipeline ── */}
+              <div className="stealth-diagram">
+                <svg viewBox="0 0 460 160" fill="none" xmlns="http://www.w3.org/2000/svg" style={{maxWidth:'420px',margin:'0 auto',display:'block'}}>
+                  {/* Pipeline stages */}
+                  <rect x="10" y="40" width="80" height="55" rx="10" fill="rgba(184,57,14,0.06)" stroke="rgba(184,57,14,0.2)" strokeWidth="1"/>
+                  <text x="50" y="62" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="600">FP16</text>
+                  <text x="50" y="76" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">16-bit float</text>
+
+                  <line x1="95" y1="67" x2="115" y2="67" stroke="rgba(0,0,0,0.12)" strokeWidth="1.2"/>
+                  <polygon points="113,64 119,67 113,70" fill="rgba(0,0,0,0.15)"/>
+
+                  <rect x="120" y="40" width="80" height="55" rx="10" fill="rgba(184,57,14,0.04)" stroke="rgba(184,57,14,0.15)" strokeWidth="1"/>
+                  <text x="160" y="62" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="600">INT8</text>
+                  <text x="160" y="76" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">8-bit integer</text>
+
+                  <line x1="205" y1="67" x2="225" y2="67" stroke="rgba(0,0,0,0.12)" strokeWidth="1.2"/>
+                  <polygon points="223,64 229,67 223,70" fill="rgba(0,0,0,0.15)"/>
+
+                  <rect x="230" y="40" width="80" height="55" rx="10" fill="rgba(40,120,80,0.06)" stroke="rgba(40,120,80,0.2)" strokeWidth="1"/>
+                  <text x="270" y="62" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="600">INT4</text>
+                  <text x="270" y="76" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">4-bit quantized</text>
+
+                  <line x1="315" y1="67" x2="335" y2="67" stroke="rgba(0,0,0,0.12)" strokeWidth="1.2"/>
+                  <polygon points="333,64 339,67 333,70" fill="rgba(0,0,0,0.15)"/>
+
+                  <rect x="340" y="40" width="80" height="55" rx="10" fill="rgba(40,120,80,0.08)" stroke="rgba(40,120,80,0.25)" strokeWidth="1.2"/>
+                  <text x="380" y="58" textAnchor="middle" fill="rgba(40,120,80,0.7)" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="600">GGUF</text>
+                  <text x="380" y="72" textAnchor="middle" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">on-device</text>
+                  <text x="380" y="84" textAnchor="middle" fill="rgba(40,120,80,0.5)" fontSize="7" fontFamily="-apple-system,sans-serif">ready</text>
+
+                  {/* Size labels below */}
+                  <text x="50" y="114" textAnchor="middle" fill="rgba(184,57,14,0.5)" fontSize="8" fontFamily="-apple-system,sans-serif">~14 GB</text>
+                  <text x="160" y="114" textAnchor="middle" fill="rgba(184,57,14,0.4)" fontSize="8" fontFamily="-apple-system,sans-serif">~7 GB</text>
+                  <text x="270" y="114" textAnchor="middle" fill="rgba(40,120,80,0.5)" fontSize="8" fontFamily="-apple-system,sans-serif">~3.5 GB</text>
+                  <text x="380" y="114" textAnchor="middle" fill="rgba(40,120,80,0.6)" fontSize="8" fontFamily="-apple-system,sans-serif">~2 GB</text>
+
+                  {/* Quality bar */}
+                  <rect x="10" y="130" width="410" height="4" rx="2" fill="rgba(0,0,0,0.04)"/>
+                  <rect x="10" y="130" width="410" height="4" rx="2" fill="url(#qualGrad)"/>
+                  <defs>
+                    <linearGradient id="qualGrad" x1="10" y1="0" x2="420" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="rgba(184,57,14,0.35)"/>
+                      <stop offset="100%" stopColor="rgba(40,120,80,0.3)"/>
+                    </linearGradient>
+                  </defs>
+                  <text x="20" y="148" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">Full quality</text>
+                  <text x="390" y="148" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif">Compact</text>
+                </svg>
+                <div className="stealth-diagram-caption">Fig. 3 — The quantization pipeline: from full-precision weights to on-device deployment. Each stage compresses the model with diminishing quality loss.</div>
+              </div>
+
               <div className="stealth-paragraph-block">
                 <p className="stealth-paragraph">
                   What's clearer is the philosophical shift. When inference happens on a device you
@@ -846,6 +954,13 @@ export default function NewsPage() {
                   no quiet retention policy. The model is a tool you run, not a service you query.
                 </p>
               </div>
+
+              {/* ── Pull quote ── */}
+              <div className="stealth-pullquote">
+                <p>"When the data never leaves, the trust model fundamentally changes. You're not asking permission — you're exercising ownership."</p>
+                <div className="stealth-pullquote-cite">— Privacy researchers, EFF, 2024</div>
+              </div>
+
               <div className="stealth-paragraph-block">
                 <p className="stealth-paragraph">
                   Whether that matters to most users is an open question. But it matters to the
@@ -959,6 +1074,36 @@ export default function NewsPage() {
               can keep pace with the resources of a handful of large labs.
             </p>
           </div>
+
+          {/* ── Decorative vector: layered architecture ── */}
+          <div className="stealth-diagram">
+            <svg viewBox="0 0 420 140" fill="none" xmlns="http://www.w3.org/2000/svg" style={{maxWidth:'380px',margin:'0 auto',display:'block'}}>
+              {/* Stack layers */}
+              <rect x="40" y="10" width="340" height="24" rx="6" fill="rgba(184,57,14,0.06)" stroke="rgba(184,57,14,0.18)" strokeWidth="0.8"/>
+              <text x="210" y="26" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="500">Application Layer  —  Chat UI · Editors · Agents</text>
+
+              <rect x="60" y="40" width="300" height="24" rx="6" fill="rgba(184,57,14,0.04)" stroke="rgba(184,57,14,0.12)" strokeWidth="0.8"/>
+              <text x="210" y="56" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="500">Runtime  —  llama.cpp · ONNX · vLLM</text>
+
+              <rect x="80" y="70" width="260" height="24" rx="6" fill="rgba(40,120,80,0.06)" stroke="rgba(40,120,80,0.18)" strokeWidth="0.8"/>
+              <text x="210" y="86" textAnchor="middle" fill="#7a7a72" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="500">Model  —  Quantized weights · GGUF · Safetensors</text>
+
+              <rect x="100" y="100" width="220" height="24" rx="6" fill="rgba(40,120,80,0.08)" stroke="rgba(40,120,80,0.22)" strokeWidth="0.8"/>
+              <text x="210" y="116" textAnchor="middle" fill="rgba(40,120,80,0.6)" fontSize="9" fontFamily="-apple-system,sans-serif" fontWeight="600">Hardware  —  GPU · NPU · RAM</text>
+
+              {/* Side annotation */}
+              <line x1="385" y1="22" x2="395" y2="60" stroke="rgba(0,0,0,0.08)" strokeWidth="0.7" strokeDasharray="2 2"/>
+              <line x1="385" y1="82" x2="395" y2="108" stroke="rgba(0,0,0,0.08)" strokeWidth="0.7" strokeDasharray="2 2"/>
+              <text x="400" y="65" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif" fontStyle="italic">open</text>
+              <text x="400" y="112" fill="#7a7a72" fontSize="7" fontFamily="-apple-system,sans-serif" fontStyle="italic">proprietary</text>
+            </svg>
+            <div className="stealth-diagram-caption">Fig. 4 — The inference stack. Open-source now dominates every layer above hardware — and even there, alternatives are emerging.</div>
+          </div>
+
+          <div className="stealth-pullquote">
+            <p>"The most interesting work is happening in the margins — in conversations between researchers, in pull requests on quiet repositories."</p>
+          </div>
+
           <div className="stealth-paragraph-block">
             <p className="stealth-paragraph">
               For now, the most interesting work is happening in the margins — in conversations
@@ -1372,39 +1517,73 @@ export default function NewsPage() {
         }
 
         /* ── Paragraphs (article typography) ── */
-        /* No per-paragraph animation — articles don't fade in paragraph by paragraph.
-           The whole article body fades in once on load (see .stealth-article-body). */
         .stealth-paragraph-block {
           position: relative;
-          padding: 12px 18px;
-          margin-bottom: 6px;
-          background: rgba(255,255,255,0.35);
-          backdrop-filter: blur(30px) saturate(180%);
-          -webkit-backdrop-filter: blur(30px) saturate(180%);
-          border: 1px solid rgba(255,255,255,0.55);
-          border-radius: 12px;
-          box-shadow: 0 1px 8px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.6);
-          transition: box-shadow 0.25s ease, border-color 0.25s ease;
+          padding: 14px 20px;
+          margin-bottom: 8px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.32) 100%);
+          backdrop-filter: blur(40px) saturate(200%);
+          -webkit-backdrop-filter: blur(40px) saturate(200%);
+          border: 1px solid rgba(255,255,255,0.65);
+          border-radius: 14px;
+          box-shadow:
+            0 1px 3px rgba(0,0,0,0.03),
+            0 4px 12px rgba(0,0,0,0.02),
+            inset 0 1px 0 rgba(255,255,255,0.85),
+            inset 0 -1px 0 rgba(0,0,0,0.02);
+          transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+          overflow: hidden;
+        }
+        /* Top highlight shimmer — liquid glass inner light */
+        .stealth-paragraph-block::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 50%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+          border-radius: 14px 14px 0 0;
+          pointer-events: none;
+        }
+        /* Subtle edge glow */
+        .stealth-paragraph-block::after {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: 20%;
+          right: 20%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+          pointer-events: none;
         }
         .stealth-paragraph-block:hover {
-          border-color: rgba(255,255,255,0.75);
-          box-shadow: 0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8);
+          border-color: rgba(255,255,255,0.85);
+          box-shadow:
+            0 2px 6px rgba(0,0,0,0.04),
+            0 8px 24px rgba(0,0,0,0.04),
+            inset 0 1px 0 rgba(255,255,255,0.9),
+            inset 0 -1px 0 rgba(0,0,0,0.02);
+          transform: translateY(-0.5px);
         }
 
         .stealth-paragraph {
           font-family: var(--stealth-serif);
           font-size: 19px;
-          line-height: 1.82;
+          line-height: 1.85;
           margin: 0;
           color: var(--stealth-text);
           cursor: text;
-          transition: background 0.15s ease;
+          transition: background 0.2s ease, letter-spacing 0.2s ease;
           padding: 0;
           border-radius: 0;
           outline: none;
+          position: relative;
+          z-index: 1;
           /* Classic article typography: first-line indent on all paragraphs
              EXCEPT the lead (which has a drop cap instead). */
-          text-indent: 1.6em;
+          text-indent: 1.8em;
+          letter-spacing: 0.003em;
         }
         .stealth-paragraph-lead {
           text-indent: 0;
@@ -1438,12 +1617,13 @@ export default function NewsPage() {
         /* Drop cap on lead paragraph only (first paragraph of the article) */
         .stealth-paragraph-lead::first-letter {
           font-family: var(--stealth-serif);
-          font-size: 60px;
+          font-size: 64px;
           font-weight: 700;
           float: left;
-          line-height: 0.88;
-          margin: 5px 10px 0 -2px;
+          line-height: 0.85;
+          margin: 4px 12px 0 -3px;
           color: var(--stealth-accent);
+          text-shadow: 0 1px 2px rgba(184,57,14,0.08);
         }
 
         .stealth-paragraph-error {
@@ -1464,25 +1644,111 @@ export default function NewsPage() {
         /* ── Diagram / illustration wrapper ── */
         .stealth-diagram {
           margin: 32px 0;
-          padding: 20px;
-          background: rgba(255,255,255,0.40);
-          backdrop-filter: blur(35px) saturate(190%);
-          -webkit-backdrop-filter: blur(35px) saturate(190%);
-          border: 1px solid rgba(255,255,255,0.60);
-          border-radius: 14px;
-          box-shadow: 0 2px 16px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.7);
+          padding: 24px;
+          background: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.30) 100%);
+          backdrop-filter: blur(45px) saturate(210%);
+          -webkit-backdrop-filter: blur(45px) saturate(210%);
+          border: 1px solid rgba(255,255,255,0.70);
+          border-radius: 16px;
+          box-shadow:
+            0 2px 8px rgba(0,0,0,0.03),
+            0 8px 24px rgba(0,0,0,0.03),
+            inset 0 1px 0 rgba(255,255,255,0.9),
+            inset 0 -1px 0 rgba(0,0,0,0.02);
           text-align: center;
+          position: relative;
+          overflow: hidden;
+          transition: box-shadow 0.3s ease;
+        }
+        .stealth-diagram::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 10%;
+          right: 10%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent);
+          pointer-events: none;
+        }
+        .stealth-diagram::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 40%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
+          border-radius: 16px 16px 0 0;
+          pointer-events: none;
+        }
+        .stealth-diagram:hover {
+          box-shadow:
+            0 4px 12px rgba(0,0,0,0.04),
+            0 12px 32px rgba(0,0,0,0.04),
+            inset 0 1px 0 rgba(255,255,255,0.95),
+            inset 0 -1px 0 rgba(0,0,0,0.02);
         }
         .stealth-diagram svg {
           max-width: 100%;
           height: auto;
+          position: relative;
+          z-index: 1;
         }
         .stealth-diagram-caption {
-          margin-top: 12px;
+          margin-top: 14px;
           font-family: var(--stealth-sans);
           font-size: 11px;
           color: var(--stealth-text-mute);
           letter-spacing: 0.04em;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* ── Pull-quote style block ── */
+        .stealth-pullquote {
+          margin: 28px 12px;
+          padding: 20px 24px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.25) 100%);
+          backdrop-filter: blur(38px) saturate(195%);
+          -webkit-backdrop-filter: blur(38px) saturate(195%);
+          border: 1px solid rgba(255,255,255,0.60);
+          border-left: 3px solid var(--stealth-accent);
+          border-radius: 0 14px 14px 0;
+          box-shadow:
+            0 1px 4px rgba(0,0,0,0.02),
+            0 4px 16px rgba(0,0,0,0.02),
+            inset 0 1px 0 rgba(255,255,255,0.8);
+          position: relative;
+          overflow: hidden;
+        }
+        .stealth-pullquote::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 45%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+          pointer-events: none;
+        }
+        .stealth-pullquote p {
+          font-family: var(--stealth-serif);
+          font-size: 20px;
+          line-height: 1.65;
+          font-style: italic;
+          color: var(--stealth-text);
+          margin: 0;
+          position: relative;
+          z-index: 1;
+        }
+        .stealth-pullquote-cite {
+          margin-top: 10px;
+          font-family: var(--stealth-sans);
+          font-size: 11px;
+          color: var(--stealth-text-mute);
+          letter-spacing: 0.04em;
+          position: relative;
+          z-index: 1;
         }
 
         /* ── Subheadline ── */
@@ -1493,7 +1759,29 @@ export default function NewsPage() {
           line-height: 1.2;
           letter-spacing: -0.012em;
           margin: 36px 0 18px;
+          padding: 14px 20px;
           color: var(--stealth-text);
+          background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.20) 100%);
+          backdrop-filter: blur(36px) saturate(190%);
+          -webkit-backdrop-filter: blur(36px) saturate(190%);
+          border: 1px solid rgba(255,255,255,0.55);
+          border-radius: 14px;
+          box-shadow:
+            0 1px 3px rgba(0,0,0,0.02),
+            0 4px 12px rgba(0,0,0,0.02),
+            inset 0 1px 0 rgba(255,255,255,0.85);
+          position: relative;
+          overflow: hidden;
+        }
+        .stealth-subheadline::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 15%;
+          right: 15%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent);
+          pointer-events: none;
         }
 
         /* First DM paragraph — no indent (starts a new section), no drop cap */
@@ -1893,10 +2181,13 @@ export default function NewsPage() {
           .stealth-masthead-top { font-size: 9.5px; gap: 8px; }
           .stealth-headline { font-size: 30px; }
           .stealth-deck { font-size: 18px; }
-          .stealth-paragraph { font-size: 17px; line-height: 1.72; }
-          .stealth-paragraph-block { padding: 10px 14px; border-radius: 10px; }
+          .stealth-paragraph { font-size: 17px; line-height: 1.72; text-indent: 1.4em; }
+          .stealth-paragraph-block { padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; }
           .stealth-diagram { padding: 16px; margin: 24px 0; }
           .stealth-paragraph-lead::first-letter { font-size: 52px; }
+          .stealth-subheadline { font-size: 22px; padding: 12px 16px; }
+          .stealth-pullquote { margin: 20px 8px; padding: 16px 18px; }
+          .stealth-pullquote p { font-size: 17px; }
           .stealth-article-inner { padding: 0 18px; }
           .stealth-masthead-inner { padding: 12px 18px 20px; }
           .stealth-byline { font-size: 11px; }
