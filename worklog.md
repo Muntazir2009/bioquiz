@@ -1622,3 +1622,21 @@ Stage Summary:
 - Liquid glass now visible on every content element (paragraphs, subheadlines, diagrams, pull quotes)
 - 4 total SVG diagrams in article, 2 pull quotes, 1 decorative neural net vector
 - All changes pushed to GitHub (commit b74f524)
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix issues from previous deployment (infinite reload, chat widget lag, dev server crashes)
+
+Work Log:
+- Diagnosed infinite reload loop: `Date.now()` in layout server component generates new value on each render → replaced with static `"v8"` version string that only reloads when manually bumped
+- Diagnosed chat widget lag: `no-store` headers in next.config.ts applied to ALL routes including the 30K-line `/chat-widget.js` → first targeted with regex (caused Turbopack crashes), then removed entirely
+- Removed `<meta http-equiv="Cache-Control">` tags from layout (redundant, can cause unexpected behavior)
+- Removed all custom `headers()` from next.config.ts — they were causing Turbopack dev server crashes with complex regex patterns
+- Cache busting now relies solely on the version-bump script in layout.tsx (`_bq_v` localStorage key, static version string `v8`)
+
+Stage Summary:
+- Cache busting: Simple version-bump script in layout (bump `"v8"` → `"v9"` on next deploy to force reload)
+- Chat widget: No longer affected by cache headers, uses its own version polling
+- Dev server: Stable without custom headers; `next build` compiles successfully
+- All 4 commits pushed to GitHub (0b28e3a latest)
