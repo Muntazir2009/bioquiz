@@ -517,7 +517,12 @@ function dateLabel(ts){
 function dmKey(a,b){ return [a,b].sort().join('__'); }
 function genUID(){ const id='u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(LS_UID,id); return id; }
 function sanitUN(v){ return (v||'').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,20); }
-function autoH(el){ requestAnimationFrame(()=>{ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,96)+'px'; }); }
+function autoH(el){
+  // Skip if height hasn't changed — avoids unnecessary reflows
+  var needed = Math.min(el.scrollHeight, 96);
+  if(parseInt(el.style.height,10) === needed) return;
+  el.style.height = needed + 'px';
+}
 function statusInfo(id){ return STATUS_LIST.find(s=>s.id===id)||STATUS_LIST[0]; }
 function presenceMeta(targetUid,pdata){
   const data=pdata||onlineU[targetUid]||{};
@@ -1121,7 +1126,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 .bqtd-txt{color:var(--bq-text-muted);font-weight:500;margin-left:2px;}
 
 /* ── INPUT ── */
-.bqiw{border-top:1px solid var(--bq-glass-border);padding:12px 14px;flex-shrink:0;background:var(--bq-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.bqiw{border-top:1px solid var(--bq-glass-border);padding:12px 14px;flex-shrink:0;background:var(--bq-glass-bg);}
 /* Quick Stickers panel (replaces plain emoji tray) */
 .bqiet{
   display:none;flex-wrap:wrap;gap:4px;padding:8px 10px 10px;margin-bottom:8px;
@@ -13198,12 +13203,11 @@ function wireTypingInput(){
    ────────────────────────────────────────────────────────────────────── */
 function autoGrow(inp){
   if(!inp || inp._v2grow) return; inp._v2grow=true;
-  if(inp.tagName!=='TEXTAREA'){
-    // many composers use <input>; convert to textarea-like behavior is risky, just leave
-    return;
-  }
+  if(inp.tagName!=='TEXTAREA') return;
   const fit=()=>{
-    requestAnimationFrame(()=>{ inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight, 6*20+16)+'px'; });
+    var needed = Math.min(inp.scrollHeight, 6*20+16);
+    if(parseInt(inp.style.height,10) === needed) return;
+    inp.style.height = needed + 'px';
   };
   inp.addEventListener('input', fit); fit();
 }
