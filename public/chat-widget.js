@@ -517,7 +517,7 @@ function dateLabel(ts){
 function dmKey(a,b){ return [a,b].sort().join('__'); }
 function genUID(){ const id='u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(LS_UID,id); return id; }
 function sanitUN(v){ return (v||'').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,20); }
-function autoH(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,96)+'px'; }
+function autoH(el){ requestAnimationFrame(()=>{ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,96)+'px'; }); }
 function statusInfo(id){ return STATUS_LIST.find(s=>s.id===id)||STATUS_LIST[0]; }
 function presenceMeta(targetUid,pdata){
   const data=pdata||onlineU[targetUid]||{};
@@ -1227,8 +1227,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
   padding:10px 14px;color:var(--bq-text);
   font-family:'Inter',sans-serif;font-size:13.5px;font-weight:450;
   letter-spacing:.01em;resize:none;outline:none;min-height:38px;max-height:96px;line-height:1.5;
-  transition:border-color .2s,background .2s,box-shadow .2s;scrollbar-width:none;
-  backdrop-filter:blur(8px);
+  transition:border-color .2s,box-shadow .2s;scrollbar-width:none;
 }
 .bqinp::-webkit-scrollbar{display:none;}
 .bqinp::placeholder{color:rgba(255,255,255,.2);}
@@ -13204,8 +13203,7 @@ function autoGrow(inp){
     return;
   }
   const fit=()=>{
-    inp.style.height='auto';
-    inp.style.height=Math.min(inp.scrollHeight, 6*20+16)+'px';
+    requestAnimationFrame(()=>{ inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight, 6*20+16)+'px'; });
   };
   inp.addEventListener('input', fit); fit();
 }
