@@ -369,6 +369,8 @@ function _throttledTypingWrite(path, data){
 const CHAR_LIMIT   = 320;
 const TYPING_TTL   = 3000;
 const PRESENCE_TTL = 9000;
+// v120: Built-in last-seen cache — works without v20 patch
+var _bqLastSeen = window._bqLastSeen || (window._bqLastSeen = {});
 const LS_UID   = 'bq_chat_uid';
 const LS_NAME  = 'bq_chat_uname';
 const LS_PROF  = 'bq_chat_profile';
@@ -528,11 +530,17 @@ function presenceMeta(targetUid,pdata){
   const data=pdata||onlineU[targetUid]||{};
   const st=statusInfo(data.status||'online');
   const isOnline=!!onlineU[targetUid];
+  // v120: Use built-in last-seen cache when offline
+  var ls = null;
+  if(!isOnline){
+    if(data && data.ts) ls = data.ts;
+    else ls = (_bqLastSeen[targetUid] || {}).ts || null;
+  }
   return {
     data,
     isOnline,
     label:isOnline?st.label:'Offline',
-    detail:isOnline?st.label:(data.ts?'last seen '+lastSeenStr(data.ts):'offline'),
+    detail:isOnline?st.label:(ls?'Last seen '+lastSeenStr(ls):'offline'),
     color:isOnline?st.color:'var(--bq-text-subtle)',
     status:isOnline?(data.status||'online'):'offline'
   };
@@ -4568,6 +4576,33 @@ function startPresence(){
   // v35 fix: on disconnect, write last-seen data instead of removing entirely
   // This preserves "Last seen X" info and doesn't conflict with v20's bq_lastseen
   ref.onDisconnect().set({uname,ts:firebase.database.ServerValue.TIMESTAMP,status:'offline',displayName:myProfile.displayName||'',initials:myProfile.initials||'',avatar:myProfile.avatar||'',color:myProfile.color||''});
+  // v120: Also write to bq_lastseen on disconnect for cross-client last-seen
+  try{
+    var lsRef = db.ref('bq_lastseen/'+uid);
+    lsRef.onDisconnect().set({ts:firebase.database.ServerValue.TIMESTAMP, uname:uname||''});
+    // Heartbeat lastseen alongside presence
+    var lsBeat = function(){ try{ lsRef.set({ts:Date.now(), uname:uname||''}); }catch(_){} };
+    lsBeat();
+    setInterval(lsBeat, 25000);
+    window.addEventListener('beforeunload', lsBeat);
+    window.addEventListener('pagehide', lsBeat);
+    // Merge bq_lastseen data into built-in cache
+    db.ref('bq_lastseen').on('value', function(snap){
+      var v = snap.val() || {};
+      for(var k in v){
+        if(v[k] && v[k].ts){
+          var existing = _bqLastSeen[k];
+          if(!existing || !existing.ts || v[k].ts > existing.ts){
+            _bqLastSeen[k] = v[k];
+          }
+        }
+      }
+      // Refresh DM header if showing an offline user
+      if(typeof activeDmPuid!=='undefined' && activeDmPuid && !onlineU[activeDmPuid]){
+        try{ updateDmHdrStatus(); }catch(_){}
+      }
+    });
+  }catch(_){}
 
   // v74: Check if user is banned (with expiration support)
   try {
@@ -4665,7 +4700,11 @@ function startPresence(){
       if(d&&now-d.ts<PRESENCE_TTL*1.6){
         onlineU[c.key]=d;
         _cacheAvatarFromPresence(c.key, d);
+        // v120: Cache ts while online so we have it when they go offline
+        if(c.key!==uid && d.ts) _bqLastSeen[c.key]={ts:d.ts, uname:d.uname||''};
       } else if(c.key!==uid) {
+        // v120: User went offline — save their last-seen ts to cache
+        if(d && d.ts) _bqLastSeen[c.key]={ts:d.ts, uname:d.uname||''};
         // v35 fix: don't delete other users' presence — their clock may be skewed
         // Instead just don't add them to onlineU (treat as offline)
       } else {
@@ -9914,7 +9953,9 @@ setTimeout(_injectProfileUploads,1500);
         const ex=row.querySelector('.bqdmrow-lastseen'); if(ex) ex.remove();
         return;
       }
-      const ls = lastSeenCache[puid]; if(!ls || !ls.ts) return;
+      // v120: Check both v20 cache and built-in cache
+      const ls = lastSeenCache[puid] || (typeof _bqLastSeen!=='undefined' ? _bqLastSeen[puid] : null);
+      if(!ls || !ls.ts) return;
       let el = row.querySelector('.bqdmrow-lastseen');
       const txt = 'Last seen ' + (typeof lastSeenStr==='function'?lastSeenStr(ls.ts):'');
       if(!el){
