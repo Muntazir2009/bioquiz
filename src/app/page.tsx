@@ -18,10 +18,7 @@ const SharedFileView = dynamic(
   () => import("@/components/site/SharedFileView").then((mod) => ({ default: mod.SharedFileView })),
   { ssr: false }
 );
-const ChatWidget = dynamic(
-  () => import("@/components/site/ChatWidget").then((mod) => ({ default: mod.ChatWidget })),
-  { ssr: false }
-);
+
 
 /* ── Floating bio-molecule decorations ── */
 function BioMolecules() {
@@ -166,7 +163,8 @@ export default function Home() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
-          filter: "blur(3px) brightness(0.88) saturate(0.5)",
+          filter: "brightness(0.88)",
+          contain: "layout style paint",
         }}
       />
 
@@ -210,8 +208,8 @@ export default function Home() {
               className="flex flex-col items-center text-center relative z-10"
               style={{
                 background: 'rgba(255,255,255,0.35)',
-                backdropFilter: 'blur(20px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                backdropFilter: 'blur(12px) saturate(150%)',
+                WebkitBackdropFilter: 'blur(12px) saturate(150%)',
                 border: '1px solid rgba(255,255,255,0.50)',
                 boxShadow: '0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
                 borderRadius: 24,
@@ -312,8 +310,8 @@ export default function Home() {
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
                 background: 'rgba(255,255,255,0.30)',
-                backdropFilter: 'blur(16px) saturate(160%)',
-                WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+                backdropFilter: 'blur(10px) saturate(140%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(140%)',
                 border: '1px solid rgba(255,255,255,0.45)',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
                 borderRadius: 16,
@@ -331,8 +329,6 @@ export default function Home() {
                       color: m.color,
                       background: `rgba(255,255,255,0.50)`,
                       border: `1px solid ${m.color}30`,
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
                     }}
                   >
                     <m.icon className="h-2.5 w-2.5" />
@@ -341,7 +337,7 @@ export default function Home() {
                 ))}
                 <span
                   className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ color: "#1C1C1C", background: "rgba(255,255,255,0.50)", border: "1px solid rgba(0,0,0,0.08)", backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+                  style={{ color: "#1C1C1C", background: "rgba(255,255,255,0.50)", border: "1px solid rgba(0,0,0,0.08)" }}
                 >
                   +{modules.length - 4} more
                 </span>
@@ -405,7 +401,6 @@ export default function Home() {
         <SharedFileView shareId={shareId} onClose={closeShareView} />
       )}
 
-      <ChatWidget />
     </div>
   );
 }

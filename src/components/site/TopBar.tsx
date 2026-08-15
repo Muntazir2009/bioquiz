@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { StreakBadge } from "./StreakBadge";
-import { CloudUpload, ShieldCheck, Sun, Moon, Clock } from "lucide-react";
+import { CloudUpload, ShieldCheck, Sun, Moon, Clock, MessageCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -48,8 +48,7 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
 
   const iconBtnStyle: React.CSSProperties = {
     background: 'rgba(255,255,255,0.50)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+
     border: '1px solid rgba(0,0,0,0.06)',
     color: '#1C1C1C',
     willChange: 'transform',
@@ -61,8 +60,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
         className="sticky top-0 z-40 topbar-enter"
         style={{
           background: 'rgba(255,255,255,0.45)',
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          backdropFilter: 'blur(12px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(12px) saturate(150%)',
           borderBottom: '1px solid rgba(255,255,255,0.55)',
           boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
         }}
@@ -111,6 +110,20 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                 </TooltipContent>
               </Tooltip>
             )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href="/chat"
+                  className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  style={iconBtnStyle}
+                  aria-label="Open chat"
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">Chat</TooltipContent>
+            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>

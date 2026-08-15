@@ -12,7 +12,7 @@ const dancingScript = Dancing_Script({
 /**
  * Apple "Hello."-style loading screen for BioQuiz.
  *
- * - Fullscreen flower background, blurred (blur 40px, brightness 0.7)
+ * - Fullscreen flower background, blurred (blur 20px, brightness 0.7)
  * - "Hello." in Dancing Script 700, 80px, white — SVG stroke-draw animation
  * - strokeDashoffset from full length → 0 over 2.2s (power2.inOut)
  * - Fill fades in at 1.5s delay
@@ -209,7 +209,7 @@ export function Loader() {
           backgroundImage: "url('/flower.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(40px) brightness(0.88) saturate(0.5)",
+          filter: "blur(20px) brightness(0.88) saturate(0.5)",
         }}
       />
 
