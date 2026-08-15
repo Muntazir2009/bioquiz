@@ -47,8 +47,8 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
   }, [theme, setTheme]);
 
   const iconBtnStyle: React.CSSProperties = {
-    background: 'rgba(190,210,240,0.55)',
-    border: '1px solid rgba(200,220,250,0.5)',
+    background: 'rgba(255,255,255,0.10)',
+    border: '1px solid rgba(255,255,255,0.15)',
     color: '#0D1B2A',
     willChange: 'transform',
   };
@@ -58,11 +58,11 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
       <header
         className="sticky top-0 z-40 topbar-enter"
         style={{
-          background: 'rgba(190,210,240,0.45)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(200,220,250,0.55)',
-          boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+          background: 'rgba(180,210,255,0.06)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          borderBottom: '1px solid rgba(255,255,255,0.20)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.12)',
         }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">

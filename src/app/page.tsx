@@ -164,7 +164,6 @@ export default function Home() {
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
           filter: "brightness(0.88)",
-          contain: "layout style paint",
         }}
       />
 
@@ -207,11 +206,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(190,210,240,0.40)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(200,220,250,0.55)',
-                boxShadow: '0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+                background: 'rgba(180,210,255,0.08)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                boxShadow: '0 4px 30px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
               }}
@@ -310,11 +309,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(190,210,240,0.35)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(200,220,250,0.50)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.4)',
+                background: 'rgba(180,210,255,0.06)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.20)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.12)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
                 marginTop: 12,

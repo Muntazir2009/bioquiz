@@ -32,7 +32,6 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const dotRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const isAnimating = useRef(false);
   const activeIndexRef = useRef(0);
@@ -121,26 +120,6 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
         // 2. Cover-flow scale/opacity/rotate (simultaneous)
         applyCoverFlow(gsap, index, 0.55);
-
-        // 3. Dots
-        dotRefs.current.forEach((dot, i) => {
-          if (!dot) return;
-          if (i === index) {
-            gsap.to(dot, {
-              scale: 1.4,
-              opacity: 1,
-              duration: 0.3,
-              ease: "back.out(2)",
-            });
-          } else {
-            gsap.to(dot, {
-              scale: 1,
-              opacity: 0.35,
-              duration: 0.25,
-              ease: "power2.out",
-            });
-          }
-        });
       });
     },
     [totalCards, getCardWidth, applyCoverFlow]
@@ -338,11 +317,8 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
               onClick={onBack}
               className="flex h-8 w-8 items-center justify-center rounded-full btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               style={{
-                background: 'rgba(190,210,240,0.50)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid rgba(200,220,250,0.55)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.20)',
                 color: '#1C1C1C',
               }}
               aria-label="Back to home"
@@ -355,11 +331,8 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
             style={{
               color: '#0D1B2A',
               textShadow: '0 1px 3px rgba(255,255,255,0.4)',
-              background: 'rgba(190,210,240,0.50)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid rgba(200,220,250,0.55)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+              background: 'rgba(255,255,255,0.10)',
+              border: '1px solid rgba(255,255,255,0.20)',
             }}
           >
             Modules
@@ -396,11 +369,8 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(190,210,240,0.45)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(200,220,250,0.55)',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+          background: 'rgba(255,255,255,0.06)',
+          borderTop: '1px solid rgba(255,255,255,0.15)',
         }}
       >
         {/* Active module name */}
@@ -414,64 +384,13 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           <span
             className="text-[10px] font-semibold tabular-nums px-2 py-0.5 rounded-full"
             style={{
-              color: '#1C1C1C',
-              background: 'rgba(196,168,130,0.12)',
-              border: '1px solid rgba(196,168,130,0.20)',
+              color: '#0D1B2A',
+              background: 'rgba(196,168,130,0.15)',
+              border: '1px solid rgba(196,168,130,0.25)',
             }}
           >
             {activeIndex + 1}<span className="text-[#C4A882]/40">/{modules.length}</span>
           </span>
-        </div>
-
-        {/* Progress track — wider, taller, with gradient */}
-        <div
-          className="w-56 sm:w-72 h-[5px] rounded-full overflow-visible relative"
-          style={{ background: 'rgba(196,168,130,0.10)' }}
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500 ease-out relative"
-            style={{
-              width: `${((activeIndex + 1) / modules.length) * 100}%`,
-              background: `linear-gradient(90deg, ${modules[activeIndex]?.accent?.border ?? "#C4A882"}88, ${modules[activeIndex]?.accent?.border ?? "#C4A882"})`,
-              boxShadow: `0 0 12px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
-            }}
-          >
-            {/* Glowing dot at the end of progress */}
-            <span
-              className="absolute top-1/2 -translate-y-1/2 -right-[4px] w-[9px] h-[9px] rounded-full transition-all duration-300"
-              style={{
-                background: modules[activeIndex]?.accent?.border ?? "#C4A882",
-                boxShadow: `0 0 8px 3px ${modules[activeIndex]?.accent?.ring ?? "rgba(196,168,130,0.3)"}`,
-                border: '1.5px solid rgba(255,255,255,0.60)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Dot indicators */}
-        <div className="flex items-center gap-2.5">
-          {modules.map((m, i) => (
-            <button
-              key={i}
-              ref={(el) => {
-                dotRefs.current[i] = el;
-              }}
-              onClick={() => goToCard(i)}
-              aria-label={`Go to module ${i + 1}`}
-              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 transition-all duration-300"
-              style={{
-                width: i === activeIndex ? 24 : 7,
-                height: 7,
-                background: i === activeIndex
-                  ? `linear-gradient(90deg, ${m.accent?.border ?? "#C4A882"}, ${m.accent?.from ?? "#C4A882"})`
-                  : "rgba(196,168,130,0.20)",
-                borderRadius: 4,
-                boxShadow: i === activeIndex
-                  ? `0 0 12px ${m.accent?.ring ?? "rgba(196,168,130,0.3)"}`
-                  : "none",
-              }}
-            />
-          ))}
         </div>
       </div>
     </div>
