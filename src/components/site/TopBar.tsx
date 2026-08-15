@@ -47,10 +47,9 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
   }, [theme, setTheme]);
 
   const iconBtnStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.50)',
-
-    border: '1px solid rgba(0,0,0,0.06)',
-    color: '#1C1C1C',
+    background: 'rgba(190,210,240,0.55)',
+    border: '1px solid rgba(200,220,250,0.5)',
+    color: '#0D1B2A',
     willChange: 'transform',
   };
 
@@ -59,11 +58,11 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
       <header
         className="sticky top-0 z-40 topbar-enter"
         style={{
-          background: 'rgba(255,255,255,0.45)',
-          backdropFilter: 'blur(12px) saturate(150%)',
-          WebkitBackdropFilter: 'blur(12px) saturate(150%)',
-          borderBottom: '1px solid rgba(255,255,255,0.55)',
-          boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
+          background: 'rgba(190,210,240,0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(200,220,250,0.55)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
         }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -72,16 +71,16 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
             <div className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground text-[11px] font-semibold tracking-tight transition-transform group-hover:scale-105">
               B
             </div>
-            <span className="text-[14px] font-semibold tracking-tight" style={{ color: '#1C1C1C' }}>BioQuiz</span>
-            <span className="hidden rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium sm:inline" style={{ color: '#1C1C1C', background: 'rgba(196,168,130,0.12)', borderColor: 'rgba(196,168,130,0.20)' }}>
+            <span className="text-[14px] font-semibold tracking-tight" style={{ color: '#0D1B2A', textShadow: '0 1px 3px rgba(255,255,255,0.4)' }}>BioQuiz</span>
+            <span className="hidden rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium sm:inline" style={{ color: '#0D1B2A', background: 'rgba(196,168,130,0.15)', borderColor: 'rgba(196,168,130,0.25)' }}>
               v2.0
             </span>
           </a>
 
           {/* Actions */}
-          <div className="flex items-center gap-1.5" style={{ color: '#1C1C1C' }}>
+          <div className="flex items-center gap-1.5" style={{ color: '#0D1B2A' }}>
             {mounted && (
-              <div className="hidden sm:flex items-center gap-1.5 text-[11px] mr-1" style={{ color: '#1C1C1C' }} aria-label={`Current time ${time}`}>
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] mr-1" style={{ color: '#0D1B2A', textShadow: '0 1px 2px rgba(255,255,255,0.3)' }} aria-label={`Current time ${time}`}>
                 <Clock className="h-3 w-3" aria-hidden />
                 <span className="tabular-nums">{time}</span>
               </div>

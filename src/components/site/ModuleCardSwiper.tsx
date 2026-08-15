@@ -195,7 +195,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       if (isHorizontal !== null) return;
       const dx = Math.abs(e.touches[0].clientX - startX);
       const dy = Math.abs(e.touches[0].clientY - startY);
-      if (dx > 8 || dy > 8) {
+      if (dx > 5 || dy > 5) {
         isHorizontal = dx > dy;
       }
       if (isHorizontal) {
@@ -208,7 +208,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       if (!isHorizontal) return;
       e.stopPropagation();
       const dx = e.changedTouches[0].clientX - startX;
-      if (Math.abs(dx) > 40) {
+      if (Math.abs(dx) > 25) {
         if (dx < 0) goToCard(activeIndexRef.current + 1);
         else goToCard(activeIndexRef.current - 1);
       }
@@ -338,11 +338,11 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
               onClick={onBack}
               className="flex h-8 w-8 items-center justify-center rounded-full btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               style={{
-                background: 'rgba(255,255,255,0.40)',
-                backdropFilter: 'blur(16px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-                border: '1px solid rgba(255,255,255,0.50)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+                background: 'rgba(190,210,240,0.50)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(200,220,250,0.55)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
                 color: '#1C1C1C',
               }}
               aria-label="Back to home"
@@ -353,12 +353,13 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           <span
             className="text-xs font-semibold tracking-wide px-5 py-2 rounded-full select-none"
             style={{
-              color: '#1C1C1C',
-              background: 'rgba(255,255,255,0.40)',
-              backdropFilter: 'blur(20px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-              border: '1px solid rgba(255,255,255,0.50)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+              color: '#0D1B2A',
+              textShadow: '0 1px 3px rgba(255,255,255,0.4)',
+              background: 'rgba(190,210,240,0.50)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(200,220,250,0.55)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
             }}
           >
             Modules
@@ -395,11 +396,11 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(255,255,255,0.40)',
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-          borderTop: '1px solid rgba(255,255,255,0.55)',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.65)',
+          background: 'rgba(190,210,240,0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderTop: '1px solid rgba(200,220,250,0.55)',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
         }}
       >
         {/* Active module name */}
@@ -655,11 +656,9 @@ function ModuleCard({
             className="text-[9px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-lg"
             style={{
               color: "rgba(255,255,255,0.95)",
-              background: "rgba(255,255,255,0.18)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
+              background: "rgba(255,255,255,0.22)",
               border: "1px solid rgba(255,255,255,0.25)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}
           >
             MODULE {m.num}
@@ -668,11 +667,9 @@ function ModuleCard({
             className="text-[8px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
             style={{
               color: "rgba(255,255,255,0.95)",
-              background: "rgba(255,255,255,0.18)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
+              background: "rgba(255,255,255,0.22)",
               border: "1px solid rgba(255,255,255,0.25)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.35)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}
           >
             {m.status}
@@ -686,12 +683,10 @@ function ModuleCard({
             style={{
               width: "clamp(72px, 16vw, 100px)",
               height: "clamp(72px, 16vw, 100px)",
-              background: "rgba(255,255,255,0.18)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
+              background: "rgba(255,255,255,0.22)",
               border: "1px solid rgba(255,255,255,0.28)",
               boxShadow:
-                "0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.40)",
+                "0 8px 32px rgba(0,0,0,0.10)",
             }}
           >
             <Icon
@@ -709,11 +704,9 @@ function ModuleCard({
         <div
           className="space-y-1.5 flex-shrink-0 rounded-xl px-3 py-2.5"
           style={{
-            background: 'rgba(255,255,255,0.14)',
-            backdropFilter: 'blur(12px) saturate(150%)',
-            WebkitBackdropFilter: 'blur(12px) saturate(150%)',
-            border: '1px solid rgba(255,255,255,0.22)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.30)',
+            background: 'rgba(0,0,0,0.25)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
           }}
         >
           <h3
@@ -751,11 +744,9 @@ function ModuleCard({
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110"
               style={{
-                background: "rgba(255,255,255,0.18)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
+                background: "rgba(255,255,255,0.22)",
                 border: "1px solid rgba(255,255,255,0.28)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.30)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
               <ArrowUpRight className="h-3.5 w-3.5 text-white transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

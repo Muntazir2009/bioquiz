@@ -207,11 +207,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.35)',
-                backdropFilter: 'blur(12px) saturate(150%)',
-                WebkitBackdropFilter: 'blur(12px) saturate(150%)',
-                border: '1px solid rgba(255,255,255,0.50)',
-                boxShadow: '0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+                background: 'rgba(190,210,240,0.40)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(200,220,250,0.55)',
+                boxShadow: '0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
               }}
@@ -221,9 +221,9 @@ export default function Home() {
                 <span
                   className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
                   style={{
-                    color: "#1C1C1C",
-                    background: "rgba(196,168,130,0.15)",
-                    border: "1px solid rgba(196,168,130,0.25)",
+                    color: "#0D1B2A",
+                    background: "rgba(196,168,130,0.18)",
+                    border: "1px solid rgba(196,168,130,0.28)",
                   }}
                 >
                   <span className="relative flex h-1.5 w-1.5">
@@ -240,7 +240,8 @@ export default function Home() {
                 <h1
                   className="relative font-bold tracking-tight"
                   style={{
-                    color: "#1C1C1C",
+                    color: "#0D1B2A",
+                    textShadow: "0 1px 4px rgba(255,255,255,0.5)",
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "clamp(3rem, 10vw, 5.2rem)",
                     lineHeight: 1.08,
@@ -263,7 +264,7 @@ export default function Home() {
               <div className="hero-anim opacity-0 mt-3 relative inline-block">
                 <p
                   className="text-sm sm:text-[15px] font-medium leading-relaxed"
-                  style={{ color: "#1C1C1C", maxWidth: 440 }}
+                  style={{ color: "#0D1B2A", textShadow: "0 1px 3px rgba(255,255,255,0.4)", maxWidth: 440 }}
                 >
                   The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
                 </p>
@@ -273,7 +274,7 @@ export default function Home() {
               {/* Stats line */}
               <div
                 className="hero-anim opacity-0 mt-5 inline-flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium px-4 py-2 rounded-full"
-                style={{ color: "#1C1C1C", fontWeight: 500, background: "rgba(196,168,130,0.08)", border: "1px solid rgba(196,168,130,0.15)" }}
+                style={{ color: "#0D1B2A", fontWeight: 500, textShadow: "0 1px 3px rgba(255,255,255,0.3)", background: "rgba(196,168,130,0.08)", border: "1px solid rgba(196,168,130,0.15)" }}
               >
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full" style={{ background: "#C4A882" }} />
@@ -309,11 +310,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.30)',
-                backdropFilter: 'blur(10px) saturate(140%)',
-                WebkitBackdropFilter: 'blur(10px) saturate(140%)',
-                border: '1px solid rgba(255,255,255,0.45)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)',
+                background: 'rgba(190,210,240,0.35)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(200,220,250,0.50)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.4)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
                 marginTop: 12,
@@ -337,7 +338,7 @@ export default function Home() {
                 ))}
                 <span
                   className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ color: "#1C1C1C", background: "rgba(255,255,255,0.50)", border: "1px solid rgba(0,0,0,0.08)" }}
+                  style={{ color: "#0D1B2A", background: "rgba(255,255,255,0.60)", border: "1px solid rgba(0,0,0,0.10)", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
                 >
                   +{modules.length - 4} more
                 </span>
@@ -346,7 +347,7 @@ export default function Home() {
               {/* Swipe hint (mobile) */}
               <div
                 className="hero-anim opacity-0 sm:hidden flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
-                style={{ color: "#1C1C1C" }}
+                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
               >
                 <svg
                   className="animate-bounce"
@@ -362,7 +363,7 @@ export default function Home() {
               {/* Keyboard hint (desktop only) */}
               <div
                 className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
-                style={{ color: "#1C1C1C" }}
+                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
               >
                 Press{" "}
                 <kbd
@@ -370,7 +371,7 @@ export default function Home() {
                   style={{
                     background: "rgba(196,168,130,0.15)",
                     border: "1px solid rgba(196,168,130,0.25)",
-                    color: "#1C1C1C",
+                    color: "#0D1B2A",
                   }}
                 >
                   →
@@ -381,7 +382,7 @@ export default function Home() {
               {/* Mini footer */}
               <div
                 className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
-                style={{ color: "#1C1C1C" }}
+                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
               >
                 <span>&copy; {new Date().getFullYear()} BioQuiz</span>
                 <span>·</span>

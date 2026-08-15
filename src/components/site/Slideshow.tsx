@@ -154,7 +154,7 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
         const dx = Math.abs(e.touches[0].clientX - startX);
         const dy = Math.abs(e.touches[0].clientY - startY);
 
-        if (dx > 8 || dy > 8) {
+        if (dx > 5 || dy > 5) {
           isHorizontal = dx > dy;
         }
 
@@ -169,7 +169,7 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
 
         const dx = e.changedTouches[0].clientX - startX;
 
-        if (Math.abs(dx) > 50) {
+        if (Math.abs(dx) > 30) {
           if (dx < 0) {
             goToSlide(activeIndexRef.current + 1);
           } else {
