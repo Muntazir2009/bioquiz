@@ -56,24 +56,20 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       cardRefs.current.forEach((card, i) => {
         if (!card) return;
         if (i === index) {
-          gsap.to(card, { scale: 1, opacity: 1, z: 30, duration, ease: "power3.out" });
+          gsap.to(card, { scale: 1, opacity: 1, duration, ease: "power2.out" });
         } else if (Math.abs(i - index) === 1) {
           gsap.to(card, {
             scale: 0.88,
             opacity: 0.65,
-            z: 0,
-            rotateY: i < index ? 4 : -4,
             duration,
-            ease: "power3.out",
+            ease: "power2.out",
           });
         } else {
           gsap.to(card, {
             scale: 0.82,
             opacity: 0.35,
-            z: -20,
-            rotateY: i < index ? 6 : -6,
             duration,
-            ease: "power3.out",
+            ease: "power2.out",
           });
         }
       });
@@ -222,7 +218,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         gsap.set(track, { x: offsetX });
       }
 
-      // Entrance: cards fade in with cover-flow values
+      // Entrance: cards fade in with cover-flow values (no 3D)
       cardRefs.current.forEach((card, i) => {
         if (!card) return;
         gsap.set(card, { opacity: 0, y: 16 });
@@ -230,11 +226,9 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           opacity: i === 0 ? 1 : Math.abs(i) === 1 ? 0.65 : 0.35,
           y: 0,
           scale: i === 0 ? 1 : Math.abs(i) === 1 ? 0.88 : 0.82,
-          rotateY: i === 0 ? 0 : i < 0 ? -6 : i === 1 ? -4 : 6,
-          z: i === 0 ? 30 : 0,
-          duration: 0.5,
+          duration: 0.4,
           ease: "power2.out",
-          delay: i * 0.05,
+          delay: i * 0.04,
         });
       });
 
@@ -313,9 +307,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
             style={{
               color: 'rgba(255,255,255,0.92)',
               textShadow: '0 1px 6px rgba(0,0,0,0.4)',
-              background: 'rgba(25,55,120,0.40)',
-              backdropFilter: 'blur(16px) saturate(1.4)',
-              WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+              background: 'rgba(25,55,120,0.55)',
               border: '1px solid rgba(100,150,255,0.15)',
             }}
           >
@@ -328,7 +320,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         ref={containerRef}
         className="flex-1 relative overflow-hidden min-h-0"
-        style={{ perspective: 1200 }}
+        style={{}}
       >
         <div
           ref={trackRef}
@@ -353,10 +345,8 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(25,55,120,0.45)',
-          backdropFilter: 'blur(18px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
-          borderTop: '1px solid rgba(100,150,255,0.15)',
+          background: 'rgba(15,35,80,0.70)',
+          borderTop: '1px solid rgba(100,150,255,0.12)',
         }}
       >
         {/* Active module name */}
@@ -434,34 +424,21 @@ function ModuleCard({
         border: isActive
           ? `1.5px solid ${m.accent.border}`
           : "1px solid rgba(255,255,255,0.10)",
-        transition: "box-shadow 0.4s ease, border-color 0.4s ease",
-        transformStyle: "preserve-3d",
+        transition: "box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease",
       }}
       onMouseEnter={isActive ? () => {
-        if (typeof window === "undefined") return;
         const el = internalRef.current;
         if (!el) return;
-        import("gsap").then(({ default: gsap }) => {
-          gsap.to(el, {
-            y: -6,
-            boxShadow: `0 16px 56px -8px ${m.accent.ring}, 0 32px 80px -12px rgba(0,0,0,0.30)`,
-            duration: 0.3,
-            ease: "power2.out",
-          });
-        });
+        el.style.transform = 'translateY(-6px)';
+        el.style.boxShadow = `0 16px 56px -8px ${m.accent.ring}, 0 32px 80px -12px rgba(0,0,0,0.30)`;
       } : undefined}
       onMouseLeave={isActive ? () => {
-        if (typeof window === "undefined") return;
         const el = internalRef.current;
         if (!el) return;
-        import("gsap").then(({ default: gsap }) => {
-          gsap.to(el, {
-            y: 0,
-            boxShadow: `0 8px 40px -8px ${m.accent.ring}, 0 24px 64px -12px rgba(0,0,0,0.22)`,
-            duration: 0.35,
-            ease: "power2.out",
-          });
-        });
+        el.style.transform = '';
+        el.style.boxShadow = isActive
+          ? `0 8px 40px -8px ${m.accent.ring}, 0 24px 64px -12px rgba(0,0,0,0.22)`
+          : '0 4px 20px -4px rgba(0,0,0,0.06)';
       } : undefined}
     >
       {/* ── Solid 3D gradient background ── */}
