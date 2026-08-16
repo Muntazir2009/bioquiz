@@ -35,8 +35,6 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
     const slideCount = children.length;
 
     const trackRef = useRef<HTMLDivElement>(null);
-    const dotsContainerRef = useRef<HTMLDivElement>(null);
-    const dotsRef = useRef<(HTMLButtonElement | null)[]>([]);
     const isAnimating = useRef(false);
     const activeIndexRef = useRef(0);
 
@@ -93,15 +91,7 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
           activeIndexRef.current = index;
           setActiveIndex(index);
 
-          // Animate dots
-          dotsRef.current.forEach((dot, i) => {
-            if (!dot) return;
-            if (i === index) {
-              gsap.to(dot, { scale: 1.3, duration: 0.4, ease: "back.out(2)" });
-            } else {
-              gsap.to(dot, { scale: 1, duration: 0.3, ease: "power2.out" });
-            }
-          });
+
         });
       },
       [slideCount]
@@ -208,30 +198,6 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
           ))}
         </div>
 
-        {/* Dot indicators — hidden on modules slide (index > 0) */}
-        <div
-          ref={dotsContainerRef}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 transition-all duration-500"
-          style={{ opacity: activeIndex === 0 ? 1 : 0, pointerEvents: activeIndex === 0 ? "auto" : "none", transform: `translateX(-50%) translateY(${activeIndex === 0 ? 0 : 8}px)` }}
-        >
-          {children.map((_, i) => (
-            <button
-              key={i}
-              ref={(el) => { dotsRef.current[i] = el; }}
-              onClick={() => goToSlide(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-              style={{
-                width: i === activeIndex ? 28 : 8,
-                height: 8,
-                background: i === activeIndex ? "#C4A882" : "rgba(196,168,130,0.25)",
-                borderRadius: 4,
-                transition: "background 0.3s ease",
-                boxShadow: i === activeIndex ? "0 0 12px rgba(196,168,130,0.3)" : "none",
-              }}
-            />
-          ))}
-        </div>
       </div>
     );
   }

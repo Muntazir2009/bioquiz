@@ -163,7 +163,7 @@ export default function Home() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
-          filter: "brightness(0.88)",
+          filter: "brightness(0.75) saturate(1.1)",
         }}
       />
 
@@ -202,15 +202,15 @@ export default function Home() {
               }}
             />
 
-            {/* Top content: Title, subtitle, stats, CTA — liquid glass panel */}
+            {/* Top content: Title, subtitle, stats, CTA — frosted glass panel */}
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(180,210,255,0.08)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255,255,255,0.25)',
-                boxShadow: '0 4px 30px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'rgba(25,55,120,0.55)',
+                backdropFilter: 'blur(24px) saturate(1.6)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+                border: '1px solid rgba(100,150,255,0.18)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
               }}
@@ -220,14 +220,15 @@ export default function Home() {
                 <span
                   className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
                   style={{
-                    color: "#0D1B2A",
-                    background: "rgba(196,168,130,0.18)",
-                    border: "1px solid rgba(196,168,130,0.28)",
+                    color: "rgba(255,255,255,0.92)",
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.4)",
                   }}
                 >
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-40" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-50" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-400" />
                   </span>
                   v2.0 — Live
                 </span>
@@ -239,8 +240,8 @@ export default function Home() {
                 <h1
                   className="relative font-bold tracking-tight"
                   style={{
-                    color: "#0D1B2A",
-                    textShadow: "0 1px 4px rgba(255,255,255,0.5)",
+                    color: "#FFFFFF",
+                    textShadow: "0 2px 16px rgba(0,0,0,0.5), 0 0 4px rgba(0,0,0,0.3)",
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: "clamp(3rem, 10vw, 5.2rem)",
                     lineHeight: 1.08,
@@ -255,7 +256,7 @@ export default function Home() {
                 className="hero-anim opacity-0 mt-1 h-[2px] rounded-full"
                 style={{
                   width: "clamp(40px, 8vw, 72px)",
-                  background: "linear-gradient(90deg, #C4A882, rgba(196,168,130,0.15))",
+                  background: "linear-gradient(90deg, rgba(196,168,130,0.9), rgba(196,168,130,0.15))",
                 }}
               />
 
@@ -263,7 +264,7 @@ export default function Home() {
               <div className="hero-anim opacity-0 mt-3 relative inline-block">
                 <p
                   className="text-sm sm:text-[15px] font-medium leading-relaxed"
-                  style={{ color: "#0D1B2A", textShadow: "0 1px 3px rgba(255,255,255,0.4)", maxWidth: 440 }}
+                  style={{ color: "rgba(255,255,255,0.92)", textShadow: "0 1px 8px rgba(0,0,0,0.5)", maxWidth: 440 }}
                 >
                   The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
                 </p>
@@ -273,15 +274,15 @@ export default function Home() {
               {/* Stats line */}
               <div
                 className="hero-anim opacity-0 mt-5 inline-flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-medium px-4 py-2 rounded-full"
-                style={{ color: "#0D1B2A", fontWeight: 500, textShadow: "0 1px 3px rgba(255,255,255,0.3)", background: "rgba(196,168,130,0.08)", border: "1px solid rgba(196,168,130,0.15)" }}
+                style={{ color: "rgba(255,255,255,0.88)", fontWeight: 500, textShadow: "0 1px 6px rgba(0,0,0,0.4)", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
               >
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full" style={{ background: "#C4A882" }} />
                   {modules.length} MODULES
                 </span>
-                <span style={{ color: "#C4A882" }}>·</span>
+                <span style={{ color: "rgba(196,168,130,0.7)" }}>·</span>
                 <span>AI RESEARCH</span>
-                <span style={{ color: "#C4A882" }}>·</span>
+                <span style={{ color: "rgba(196,168,130,0.7)" }}>·</span>
                 <span>3D VIEWER</span>
               </div>
 
@@ -295,7 +296,8 @@ export default function Home() {
                     onClick={goToModules}
                     className="hero-cta-inner group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 relative z-10"
                     style={{
-                      background: "#1C1C1C",
+                      background: "linear-gradient(135deg, #1a3a6a, #0D1B2A)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
                     }}
                   >
                     Get Started
@@ -305,15 +307,15 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom: Module pills + hints + footer — liquid glass panel (right below hero glass) */}
+            {/* Bottom: Module pills + hints + footer — frosted glass panel */}
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(180,210,255,0.06)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.20)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.12)',
+                background: 'rgba(25,55,120,0.45)',
+                backdropFilter: 'blur(20px) saturate(1.5)',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
+                border: '1px solid rgba(100,150,255,0.15)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
                 marginTop: 12,
@@ -326,9 +328,10 @@ export default function Home() {
                     key={m.id}
                     className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full transition-transform duration-200 hover:scale-105 cursor-default"
                     style={{
-                      color: m.color,
-                      background: `rgba(255,255,255,0.50)`,
-                      border: `1px solid ${m.color}30`,
+                      color: "rgba(255,255,255,0.90)",
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      textShadow: "0 1px 4px rgba(0,0,0,0.4)",
                     }}
                   >
                     <m.icon className="h-2.5 w-2.5" />
@@ -337,7 +340,7 @@ export default function Home() {
                 ))}
                 <span
                   className="text-[10px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ color: "#0D1B2A", background: "rgba(255,255,255,0.60)", border: "1px solid rgba(0,0,0,0.10)", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
+                  style={{ color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
                 >
                   +{modules.length - 4} more
                 </span>
@@ -346,7 +349,7 @@ export default function Home() {
               {/* Swipe hint (mobile) */}
               <div
                 className="hero-anim opacity-0 sm:hidden flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase"
-                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
+                style={{ color: "rgba(255,255,255,0.75)", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
               >
                 <svg
                   className="animate-bounce"
@@ -362,15 +365,16 @@ export default function Home() {
               {/* Keyboard hint (desktop only) */}
               <div
                 className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
-                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
+                style={{ color: "rgba(255,255,255,0.75)", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
               >
                 Press{" "}
                 <kbd
                   className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded text-[10px] font-mono"
                   style={{
-                    background: "rgba(196,168,130,0.15)",
-                    border: "1px solid rgba(196,168,130,0.25)",
-                    color: "#0D1B2A",
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(255,255,255,0.90)",
+                    textShadow: "0 1px 3px rgba(0,0,0,0.4)",
                   }}
                 >
                   →
@@ -381,11 +385,11 @@ export default function Home() {
               {/* Mini footer */}
               <div
                 className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
-                style={{ color: "#0D1B2A", textShadow: "0 1px 2px rgba(255,255,255,0.3)" }}
+                style={{ color: "rgba(255,255,255,0.55)", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
               >
                 <span>&copy; {new Date().getFullYear()} BioQuiz</span>
                 <span>·</span>
-                <span>Built with <span style={{ color: "#C4A882" }}>&#9829;</span></span>
+                <span>Built with <span style={{ color: "rgba(196,168,130,0.8)" }}>&#9829;</span></span>
               </div>
             </div>
           </div>

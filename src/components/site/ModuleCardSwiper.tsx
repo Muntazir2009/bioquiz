@@ -222,7 +222,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         gsap.set(track, { x: offsetX });
       }
 
-      // Entrance: cards start invisible, then fade in with cover-flow values
+      // Entrance: cards fade in with cover-flow values
       cardRefs.current.forEach((card, i) => {
         if (!card) return;
         gsap.set(card, { opacity: 0, y: 16 });
@@ -237,24 +237,6 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           delay: i * 0.05,
         });
       });
-
-      // Smooth entrance: fade + slide up for the entire container
-      const container = containerRef.current;
-      if (container) {
-        gsap.fromTo(container,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 0.1 }
-        );
-      }
-
-      // Stagger card entrance
-      const cards = cardRefs.current.filter(Boolean);
-      if (cards.length) {
-        gsap.fromTo(cards,
-          { opacity: 0, y: 30, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power3.out", stagger: 0.04, delay: 0.2 }
-        );
-      }
 
       // One-time swipe hint nudge (plays 1.5s after mount)
       if (track && totalCards > 1) {
@@ -319,7 +301,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
               style={{
                 background: 'rgba(255,255,255,0.10)',
                 border: '1px solid rgba(255,255,255,0.20)',
-                color: '#1C1C1C',
+                color: 'rgba(255,255,255,0.90)',
               }}
               aria-label="Back to home"
             >
@@ -329,10 +311,12 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           <span
             className="text-xs font-semibold tracking-wide px-5 py-2 rounded-full select-none"
             style={{
-              color: '#0D1B2A',
-              textShadow: '0 1px 3px rgba(255,255,255,0.4)',
-              background: 'rgba(255,255,255,0.10)',
-              border: '1px solid rgba(255,255,255,0.20)',
+              color: 'rgba(255,255,255,0.92)',
+              textShadow: '0 1px 6px rgba(0,0,0,0.4)',
+              background: 'rgba(25,55,120,0.40)',
+              backdropFilter: 'blur(16px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+              border: '1px solid rgba(100,150,255,0.15)',
             }}
           >
             Modules
@@ -369,8 +353,10 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(255,255,255,0.06)',
-          borderTop: '1px solid rgba(255,255,255,0.15)',
+          background: 'rgba(25,55,120,0.45)',
+          backdropFilter: 'blur(18px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
+          borderTop: '1px solid rgba(100,150,255,0.15)',
         }}
       >
         {/* Active module name */}
@@ -384,9 +370,10 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
           <span
             className="text-[10px] font-semibold tabular-nums px-2 py-0.5 rounded-full"
             style={{
-              color: '#0D1B2A',
-              background: 'rgba(196,168,130,0.15)',
-              border: '1px solid rgba(196,168,130,0.25)',
+              color: 'rgba(255,255,255,0.90)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.15)',
             }}
           >
             {activeIndex + 1}<span className="text-[#C4A882]/40">/{modules.length}</span>
@@ -518,18 +505,7 @@ function ModuleCard({
         }}
       />
 
-      {/* ── Animated shimmer sweep (active card) ── */}
-      {isActive && (
-        <div
-          className="absolute inset-0 z-[2] pointer-events-none motion-ok"
-          style={{
-            background:
-              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 42%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 58%, transparent 70%)",
-            backgroundSize: "250% 100%",
-            animation: "shimmer 3s ease-in-out infinite",
-          }}
-        />
-      )}
+      {/* Shimmer removed for performance */}
 
       {/* ── Feature ribbon on quiz card (module index 0) ── */}
       {index === 0 && (

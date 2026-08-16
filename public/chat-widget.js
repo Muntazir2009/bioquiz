@@ -3600,6 +3600,10 @@ let _bqGlobalInitialDone=false; // initial global load complete?
 let _bqRenderBypass=false;  // bypass ghost check for explicit loads (reply navigation)
 let _bqNotifSuppressed=true; // suppress notifications during initial load — set false after first value event
 let _bqNotifWarmupUntil=Date.now()+8000; // V74: global warm-up — no sound/push for first 8s after page load (prevents old message replay)
+let _globalOldestTs = Infinity; // V92: track oldest loaded message timestamp for pagination
+let _globalLoadingOlder = false; // V92: prevent concurrent older-message fetches
+let _dmOldestTs = Infinity; // V92: track oldest DM message timestamp
+let _dmLoadingOlder = false; // V92: prevent concurrent DM older-message fetches
 let nmCkT     = null;
 let toastT    = null;
 let dmReadCache = {}; // {dmId:{uid:timestamp}} — cached partner read timestamps
@@ -3977,13 +3981,16 @@ function showDmConvo(pUid, pName) {
   if (db) {
     const ref = db.ref('bq_dms/' + activeDmId + '/messages').limitToLast(MAX_MSG);
     _bqDmLoadedKeys = {}; _bqDmInitialDone = false;
+    _dmOldestTs = Infinity;
     _bqBatchRendering=true;
     _bqNotifSuppressed=true; // suppress notifications during initial DM load
     _bqNotifWarmupUntil=Date.now()+5000; // V74: warm-up for DM switch — suppress sound/push for 5s
     var _dmBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
     ref.on('child_added', s => {
+      var d=s.val();
       _bqDmLoadedKeys[s.key] = true;
-      renderMsg('dm', s.val(), s.key);
+      if(d && d.ts && d.ts < _dmOldestTs) _dmOldestTs = d.ts;
+      renderMsg('dm', d, s.key);
     });
     ref.once('value', () => {
       _bqDmInitialDone = true;
@@ -3992,6 +3999,15 @@ function showDmConvo(pUid, pName) {
       _bqNotifSuppressed=false; // initial DM load done — allow notifications
       var el=document.getElementById('bqdmmsgs');
       if(el) el.scrollTop=el.scrollHeight;
+      // V92: Attach scroll-to-top pagination listener for DM
+      if(el && !el._bqPaginationAttached){
+        el._bqPaginationAttached = true;
+        el.addEventListener('scroll', function(){
+          if(this.scrollTop < 120 && !_dmLoadingOlder && _dmOldestTs < Infinity && activeDmId){
+            loadOlderDm();
+          }
+        });
+      }
     });
     ref.on('child_changed', s => onMsgChanged('dm', s));
     ref.on('child_removed', s => {
@@ -4819,13 +4835,16 @@ function closeProfileCard(){
 function subscribeGlobal(){
   const ref=db.ref('bq_messages').limitToLast(MAX_MSG);
   _bqGlobalLoadedKeys = {}; _bqGlobalInitialDone = false;
+  _globalOldestTs = Infinity;
   _bqBatchRendering=true;
   _bqNotifSuppressed=true; // suppress notifications during initial load
   _bqNotifWarmupUntil=Date.now()+5000; // V74: warm-up for global load — suppress sound/push for 5s
   var _gBatchSafety=setTimeout(function(){ _bqBatchRendering=false; _bqNotifSuppressed=false; },10000); // safety: reset after 10s
   ref.on('child_added',s=>{
+    var d=s.val();
     _bqGlobalLoadedKeys[s.key] = true;
-    renderMsg('global',s.val(),s.key);
+    if(d && d.ts && d.ts < _globalOldestTs) _globalOldestTs = d.ts;
+    renderMsg('global',d,s.key);
   });
   ref.once('value',()=>{
     _bqGlobalInitialDone=true;
@@ -4834,12 +4853,102 @@ function subscribeGlobal(){
     _bqNotifSuppressed=false; // initial load done — allow notifications for new messages
     var el=document.getElementById('bqgmsgs');
     if(el) el.scrollTop=el.scrollHeight;
+    // V92: Attach scroll-to-top pagination listener
+    if(el && !el._bqPaginationAttached){
+      el._bqPaginationAttached = true;
+      el.addEventListener('scroll', function(){
+        if(this.scrollTop < 120 && !_globalLoadingOlder && _globalOldestTs < Infinity){
+          loadOlderGlobal();
+        }
+      });
+    }
   });
   ref.on('child_changed',s=>onMsgChanged('global',s));
   ref.on('child_removed',s=>{
     document.getElementById('bqmsg-global-'+s.key)?.remove();
     delete _bqGlobalLoadedKeys[s.key];
   });
+}
+
+// V92: Load older global messages when scrolling to top
+function loadOlderGlobal(){
+  if(_globalLoadingOlder || !db || _globalOldestTs >= Infinity) return;
+  _globalLoadingOlder = true;
+  var el = document.getElementById('bqgmsgs');
+  if(!el){ _globalLoadingOlder = false; return; }
+  var prevScrollH = el.scrollHeight;
+  var prevScrollT = el.scrollTop;
+  // Show a small loading indicator at the top
+  var loader = document.createElement('div');
+  loader.className = 'bqsys';
+  loader.id = 'bq-loading-older';
+  loader.textContent = 'Loading older messages...';
+  loader.style.cssText = 'text-align:center;padding:8px;font-size:12px;color:rgba(255,255,255,0.5);';
+  el.prepend(loader);
+  db.ref('bq_messages').orderByChild('ts').endAt(_globalOldestTs - 1).limitToLast(MAX_MSG).once('value', function(snap){
+    if(loader.parentNode) loader.remove();
+    if(!snap || !snap.exists()){ _globalLoadingOlder = false; return; }
+    var msgs = [];
+    snap.forEach(function(c){ msgs.push({key: c.key, val: c.val()}); });
+    if(!msgs.length){ _globalLoadingOlder = false; return; }
+    // Track scroll delta to preserve position
+    var newScrollH = el.scrollHeight;
+    var firstChild = el.firstElementChild;
+    _bqRenderBypass = true; // bypass ghost check
+    msgs.forEach(function(m){
+      if(!_bqGlobalLoadedKeys[m.key] && m.val && m.val.ts){
+        _bqGlobalLoadedKeys[m.key] = true;
+        if(m.val.ts < _globalOldestTs) _globalOldestTs = m.val.ts;
+        // Insert at the beginning (before existing messages)
+        var emptyEl = document.getElementById('bqgempty');
+        if(emptyEl) emptyEl.remove();
+        renderMsg('global', m.val, m.key);
+      }
+    });
+    _bqRenderBypass = false;
+    // Restore scroll position: keep the same messages visible
+    var addedH = el.scrollHeight - newScrollH;
+    el.scrollTop = prevScrollT + addedH;
+    _globalLoadingOlder = false;
+  }).catch(function(){ if(loader.parentNode) loader.remove(); _globalLoadingOlder = false; });
+}
+
+// V92: Load older DM messages when scrolling to top
+function loadOlderDm(){
+  if(_dmLoadingOlder || !db || _dmOldestTs >= Infinity || !activeDmId) return;
+  _dmLoadingOlder = true;
+  var el = document.getElementById('bqdmmsgs');
+  if(!el){ _dmLoadingOlder = false; return; }
+  var prevScrollH = el.scrollHeight;
+  var prevScrollT = el.scrollTop;
+  var loader = document.createElement('div');
+  loader.className = 'bqsys';
+  loader.id = 'bq-dm-loading-older';
+  loader.textContent = 'Loading older messages...';
+  loader.style.cssText = 'text-align:center;padding:8px;font-size:12px;color:rgba(255,255,255,0.5);';
+  el.prepend(loader);
+  db.ref('bq_dms/' + activeDmId + '/messages').orderByChild('ts').endAt(_dmOldestTs - 1).limitToLast(MAX_MSG).once('value', function(snap){
+    if(loader.parentNode) loader.remove();
+    if(!snap || !snap.exists()){ _dmLoadingOlder = false; return; }
+    var msgs = [];
+    snap.forEach(function(c){ msgs.push({key: c.key, val: c.val()}); });
+    if(!msgs.length){ _dmLoadingOlder = false; return; }
+    var newScrollH = el.scrollHeight;
+    _bqRenderBypass = true;
+    msgs.forEach(function(m){
+      if(!_bqDmLoadedKeys[m.key] && m.val && m.val.ts){
+        _bqDmLoadedKeys[m.key] = true;
+        if(m.val.ts < _dmOldestTs) _dmOldestTs = m.val.ts;
+        var emptyEl = document.getElementById('bqdmempty');
+        if(emptyEl) emptyEl.remove();
+        renderMsg('dm', m.val, m.key);
+      }
+    });
+    _bqRenderBypass = false;
+    var addedH = el.scrollHeight - newScrollH;
+    el.scrollTop = prevScrollT + addedH;
+    _dmLoadingOlder = false;
+  }).catch(function(){ if(loader.parentNode) loader.remove(); _dmLoadingOlder = false; });
 }
 
 function subscribeGlobalTyping(){
