@@ -58,11 +58,11 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
       <header
         className="sticky top-0 z-40 topbar-enter"
         style={{
-          background: 'rgba(25,55,120,0.50)',
-          backdropFilter: 'blur(20px) saturate(1.5)',
-          WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
-          borderBottom: '1px solid rgba(100,150,255,0.15)',
-          boxShadow: '0 2px 20px rgba(0,0,0,0.12)',
+          background: 'rgba(255,255,255,0.07)',
+          backdropFilter: 'blur(24px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
+          borderBottom: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
         }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">

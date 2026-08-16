@@ -9,7 +9,6 @@ import { ModuleCardSwiper } from "@/components/site/ModuleCardSwiper";
 import { modules } from "@/lib/modules";
 import { ArrowRight } from "lucide-react";
 
-// Dynamic imports for heavy / rarely-used components
 const FilePanel = dynamic(
   () => import("@/components/site/FilePanel").then((mod) => ({ default: mod.FilePanel })),
   { ssr: false }
@@ -18,92 +17,6 @@ const SharedFileView = dynamic(
   () => import("@/components/site/SharedFileView").then((mod) => ({ default: mod.SharedFileView })),
   { ssr: false }
 );
-
-
-/* ── Floating bio-molecule decorations ── */
-function BioMolecules() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none decorative-motion" aria-hidden>
-      {/* DNA helix dot pattern — top right */}
-      <div
-        className="absolute top-16 right-[15%] w-32 h-32 opacity-[0.12]"
-        style={{ animation: "bio-float-1 18s ease-in-out infinite" }}
-      >
-        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="4" fill="#C4A882" />
-          <circle cx="60" cy="40" r="3" fill="#C4A882" />
-          <circle cx="100" cy="20" r="4" fill="#C4A882" />
-          <circle cx="40" cy="60" r="3.5" fill="#C4A882" />
-          <circle cx="80" cy="80" r="3" fill="#C4A882" />
-          <circle cx="20" cy="100" r="4" fill="#C4A882" />
-          <circle cx="100" cy="100" r="3" fill="#C4A882" />
-          <line x1="20" y1="20" x2="60" y2="40" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
-          <line x1="60" y1="40" x2="100" y2="20" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
-          <line x1="40" y1="60" x2="80" y2="80" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
-          <line x1="20" y1="100" x2="100" y2="100" stroke="#C4A882" strokeWidth="1" opacity="0.5" />
-        </svg>
-      </div>
-
-      {/* Cell-like circle cluster — bottom left */}
-      <div
-        className="absolute bottom-24 left-[10%] w-40 h-40 opacity-[0.10]"
-        style={{ animation: "bio-float-2 22s ease-in-out infinite" }}
-      >
-        <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="80" cy="80" r="30" stroke="#C4A882" strokeWidth="1" opacity="0.6" />
-          <circle cx="80" cy="80" r="18" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
-          <circle cx="80" cy="80" r="6" fill="#C4A882" opacity="0.5" />
-          <circle cx="95" cy="65" r="8" stroke="#C4A882" strokeWidth="0.8" opacity="0.5" />
-          <circle cx="65" cy="90" r="6" stroke="#C4A882" strokeWidth="0.8" opacity="0.4" />
-          <circle cx="90" cy="95" r="5" stroke="#C4A882" strokeWidth="0.8" opacity="0.3" />
-        </svg>
-      </div>
-
-      {/* Floating hexagon molecule — mid left */}
-      <div
-        className="absolute top-[40%] left-[5%] w-24 h-24 opacity-[0.09] hidden sm:block"
-        style={{ animation: "bio-float-3 20s ease-in-out infinite" }}
-      >
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" stroke="#C4A882" strokeWidth="1.2" fill="none" />
-          <circle cx="50" cy="50" r="12" stroke="#C4A882" strokeWidth="0.8" fill="none" />
-          <circle cx="50" cy="50" r="3" fill="#C4A882" />
-          <line x1="50" y1="38" x2="50" y2="5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
-          <line x1="50" y1="62" x2="50" y2="95" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
-          <line x1="38" y1="44" x2="5" y2="27.5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
-          <line x1="62" y1="56" x2="95" y2="72.5" stroke="#C4A882" strokeWidth="0.6" opacity="0.5" />
-        </svg>
-      </div>
-
-      {/* Small dots scattered — top left area */}
-      <div className="absolute top-[25%] left-[20%] flex gap-3 opacity-[0.14]" style={{ animation: "bio-float-1 25s ease-in-out infinite reverse" }}>
-        <span className="w-1.5 h-1.5 rounded-full bg-[#C4A882]" />
-        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
-        <span className="w-2 h-2 rounded-full bg-[#C4A882]" />
-      </div>
-
-      {/* Small dots — bottom right */}
-      <div className="absolute bottom-[30%] right-[8%] flex gap-2 opacity-[0.12]" style={{ animation: "bio-float-2 16s ease-in-out infinite" }}>
-        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
-        <span className="w-1.5 h-1.5 rounded-full bg-[#C4A882]" />
-        <span className="w-1 h-1 rounded-full bg-[#C4A882]" />
-        <span className="w-2 h-2 rounded-full bg-[#C4A882]" />
-      </div>
-
-      {/* ── Floating particles (CSS-animated dots) ── */}
-      <span className="hero-particle" style={{ width: 3, height: 3, left: '8%',  bottom: '5%',  '--duration': '22s', '--delay': '0s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 2, height: 2, left: '22%', bottom: '8%',  '--duration': '26s', '--delay': '3s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 2.5, height: 2.5, left: '45%', bottom: '3%',  '--duration': '20s', '--delay': '6s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '62%', bottom: '10%', '--duration': '28s', '--delay': '2s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 2, height: 2, left: '78%', bottom: '6%',  '--duration': '24s', '--delay': '8s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '35%', bottom: '12%', '--duration': '30s', '--delay': '5s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 2.5, height: 2.5, left: '88%', bottom: '4%',  '--duration': '19s', '--delay': '10s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 2, height: 2, left: '15%', bottom: '15%', '--duration': '25s', '--delay': '12s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 1.5, height: 1.5, left: '55%', bottom: '7%',  '--duration': '21s', '--delay': '7s' } as React.CSSProperties} />
-      <span className="hero-particle" style={{ width: 3, height: 3, left: '70%', bottom: '14%', '--duration': '27s', '--delay': '4s' } as React.CSSProperties} />
-    </div>
-  );
-}
 
 export default function Home() {
   const [filePanelOpen, setFilePanelOpen] = useState(false);
@@ -125,36 +38,26 @@ export default function Home() {
   }, []);
 
   const openFiles = useCallback(() => setFilePanelOpen(true), []);
+  const goToModules = useCallback(() => slideRef.current?.goToSlide(1), []);
+  const goToHero = useCallback(() => slideRef.current?.goToSlide(0), []);
 
-  const goToModules = useCallback(() => {
-    slideRef.current?.goToSlide(1);
-  }, []);
-
-  const goToHero = useCallback(() => {
-    slideRef.current?.goToSlide(0);
-  }, []);
-
-  // GSAP entrance animations for hero elements
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (heroAnimDone.current) return;
     heroAnimDone.current = true;
-
     import("gsap").then(({ default: gsap }) => {
       const elements = document.querySelectorAll(".hero-anim");
       gsap.fromTo(
         elements,
-        { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.08, delay: 0.2 }
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", stagger: 0.07, delay: 0.15 }
       );
     });
   }, []);
 
   return (
-    <div
-      className="h-screen w-screen overflow-hidden flex flex-col relative"
-    >
-      {/* ── Permanent fullscreen flower background ── */}
+    <div className="h-screen w-screen overflow-hidden flex flex-col relative">
+      {/* Fullscreen flower background */}
       <div
         aria-hidden="true"
         className="fixed inset-0 -z-10"
@@ -163,59 +66,49 @@ export default function Home() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
-          filter: "brightness(0.75) saturate(1.1)",
+          filter: "brightness(0.70) saturate(1.15)",
         }}
       />
 
-      {/* Skip-to-content link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:border focus:border-border"
-      >
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:border focus:border-border">
         Skip to content
       </a>
 
       <Loader />
 
-      {/* TopBar — absolute positioned over slideshow */}
       <div className="fixed top-0 left-0 right-0 z-40">
         <TopBar onFilePanelOpen={openFiles} />
       </div>
 
-      {/* Main slideshow */}
       <main id="main-content" className="flex-1 flex flex-col">
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
           <div className="w-full h-full flex flex-col justify-center items-center px-6 sm:px-10 lg:px-16 pt-20 pb-6 relative">
-            {/* Floating bio-molecules */}
-            <BioMolecules />
-
-            {/* Subtle gradient mesh background */}
+            {/* Subtle ambient light */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: `
-                  radial-gradient(ellipse 600px 400px at 50% 20%, rgba(196,168,130,0.03) 0%, transparent 70%),
-                  radial-gradient(ellipse 400px 300px at 80% 80%, rgba(196,168,130,0.02) 0%, transparent 60%),
-                  radial-gradient(ellipse 300px 250px at 15% 70%, rgba(196,168,130,0.02) 0%, transparent 60%)
+                  radial-gradient(ellipse 500px 350px at 50% 25%, rgba(196,168,130,0.04) 0%, transparent 70%),
+                  radial-gradient(ellipse 350px 250px at 80% 75%, rgba(196,168,130,0.03) 0%, transparent 60%)
                 `,
               }}
             />
 
-            {/* Top content: Title, subtitle, stats, CTA — frosted glass panel */}
+            {/* Hero frosted glass panel */}
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(25,55,120,0.55)',
-                backdropFilter: 'blur(24px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-                border: '1px solid rgba(100,150,255,0.18)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(28px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(28px) saturate(1.4)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.10)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
               }}
             >
-              {/* Version badge above title */}
+              {/* Version badge */}
               <div className="hero-anim opacity-0 mb-3">
                 <span
                   className="inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.12em] uppercase px-3 py-1 rounded-full"
@@ -234,9 +127,8 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Title with breathing glow */}
+              {/* Title */}
               <div className="hero-anim opacity-0 relative inline-block">
-                <div className="hero-title-glow" aria-hidden />
                 <h1
                   className="relative font-bold tracking-tight"
                   style={{
@@ -253,22 +145,21 @@ export default function Home() {
 
               {/* Decorative underline */}
               <div
-                className="hero-anim opacity-0 mt-1 h-[2px] rounded-full"
+                className="hero-anim opacity-0 mt-2 h-[2px] rounded-full"
                 style={{
                   width: "clamp(40px, 8vw, 72px)",
                   background: "linear-gradient(90deg, rgba(196,168,130,0.9), rgba(196,168,130,0.15))",
                 }}
               />
 
-              {/* Subtitle with animated underline */}
-              <div className="hero-anim opacity-0 mt-3 relative inline-block">
+              {/* Subtitle */}
+              <div className="hero-anim opacity-0 mt-3">
                 <p
                   className="text-sm sm:text-[15px] font-medium leading-relaxed"
                   style={{ color: "rgba(255,255,255,0.92)", textShadow: "0 1px 8px rgba(0,0,0,0.5)", maxWidth: 440 }}
                 >
                   The biology workspace — AI research, 3D cell viewer, organelles, slides and solutions.
                 </p>
-                <div className="hero-subtitle-underline mt-1" aria-hidden />
               </div>
 
               {/* Stats line */}
@@ -286,36 +177,32 @@ export default function Home() {
                 <span>3D VIEWER</span>
               </div>
 
-              {/* CTA button with animated border + hover gradient glow */}
+              {/* CTA button */}
               <div className="hero-anim opacity-0 mt-7">
-                <div
-                  className="hero-cta-border hero-cta-hover"
-                  style={{ borderRadius: 9999, display: "inline-block" }}
+                <button
+                  onClick={goToModules}
+                  className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  style={{
+                    background: "linear-gradient(135deg, #1a3a6a, #0D1B2A)",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                    border: '1px solid rgba(255,255,255,0.12)',
+                  }}
                 >
-                  <button
-                    onClick={goToModules}
-                    className="hero-cta-inner group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 relative z-10"
-                    style={{
-                      background: "linear-gradient(135deg, #1a3a6a, #0D1B2A)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-                    }}
-                  >
-                    Get Started
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                  </button>
-                </div>
+                  Get Started
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                </button>
               </div>
             </div>
 
-            {/* Bottom: Module pills + hints + footer — frosted glass panel */}
+            {/* Bottom frosted glass panel */}
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(25,55,120,0.45)',
-                backdropFilter: 'blur(20px) saturate(1.5)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.5)',
-                border: '1px solid rgba(100,150,255,0.15)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(22px) saturate(1.3)',
+                WebkitBackdropFilter: 'blur(22px) saturate(1.3)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.08)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
                 marginTop: 12,
@@ -362,7 +249,7 @@ export default function Home() {
                 Swipe to explore
               </div>
 
-              {/* Keyboard hint (desktop only) */}
+              {/* Keyboard hint (desktop) */}
               <div
                 className="hero-anim opacity-0 hidden sm:flex items-center gap-2 text-[11px] tracking-[0.1em] uppercase"
                 style={{ color: "rgba(255,255,255,0.75)", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
@@ -382,7 +269,7 @@ export default function Home() {
                 to explore
               </div>
 
-              {/* Mini footer */}
+              {/* Footer */}
               <div
                 className="hero-anim opacity-0 flex items-center gap-4 text-[10px]"
                 style={{ color: "rgba(255,255,255,0.55)", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
@@ -404,7 +291,6 @@ export default function Home() {
       {shareId && (
         <SharedFileView shareId={shareId} onClose={closeShareView} />
       )}
-
     </div>
   );
 }
