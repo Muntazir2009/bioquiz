@@ -417,7 +417,7 @@ function ModuleCard({
       ref={mergedRef}
       href={m.href}
       aria-label={`Open ${m.title} module`}
-      className={`flex-shrink-0 relative overflow-hidden group${isActive ? "" : ""}`
+      className="flex-shrink-0 relative overflow-hidden group"
       style={{
         width: "min(72vw, 420px)",
         maxWidth: "85vw",
