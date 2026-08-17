@@ -307,8 +307,10 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
             style={{
               color: 'rgba(255,255,255,0.92)',
               textShadow: '0 1px 6px rgba(0,0,0,0.4)',
-              background: 'rgba(25,55,120,0.55)',
-              border: '1px solid rgba(100,150,255,0.15)',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(16px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+              border: '1px solid rgba(255,255,255,0.22)',
             }}
           >
             Modules
@@ -345,8 +347,11 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       <div
         className="flex-shrink-0 flex flex-col items-center gap-3 px-6 pb-6 pt-5"
         style={{
-          background: 'rgba(15,35,80,0.70)',
-          borderTop: '1px solid rgba(100,150,255,0.12)',
+          background: 'rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(18px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
+          borderTop: '1px solid rgba(255,255,255,0.18)',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.06)',
         }}
       >
         {/* Active module name */}

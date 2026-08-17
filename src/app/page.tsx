@@ -67,6 +67,7 @@ export default function Home() {
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
           filter: "brightness(0.70) saturate(1.15)",
+          isolation: 'isolate',
         }}
       />
 
@@ -99,11 +100,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center text-center relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(28px) saturate(1.4)',
-                WebkitBackdropFilter: 'blur(28px) saturate(1.4)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.18)',
+                backdropFilter: 'blur(24px) saturate(1.5)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.15)',
                 borderRadius: 24,
                 padding: 'clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 4vw, 3rem)',
               }}
@@ -198,11 +199,11 @@ export default function Home() {
             <div
               className="flex flex-col items-center gap-2.5 relative z-10"
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                backdropFilter: 'blur(22px) saturate(1.3)',
-                WebkitBackdropFilter: 'blur(22px) saturate(1.3)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.14)',
+                backdropFilter: 'blur(20px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                border: '1px solid rgba(255,255,255,0.22)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.12)',
                 borderRadius: 16,
                 padding: 'clamp(0.6rem, 1.5vw, 1rem) clamp(1rem, 3vw, 2rem)',
                 marginTop: 12,
