@@ -85,6 +85,17 @@ export default function Home() {
         <Slideshow ref={slideRef}>
           {/* ── SLIDE 1: Hero ── */}
           <div className="w-full h-full flex flex-col justify-center items-center px-6 sm:px-10 lg:px-16 pt-20 pb-6 relative">
+            {/* Local background for backdrop-filter to blur (stacking context fix) */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -z-[1]"
+              style={{
+                backgroundImage: "url('/flower.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "brightness(0.70) saturate(1.15)",
+              }}
+            />
             {/* Subtle ambient light */}
             <div
               className="absolute inset-0 pointer-events-none"

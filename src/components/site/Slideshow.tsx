@@ -169,7 +169,6 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
             <div
               key={i}
               className="w-screen h-screen flex-shrink-0 flex items-center justify-center overflow-hidden"
-              style={{ willChange: "transform, opacity", backfaceVisibility: "hidden" }}
             >
               {child}
             </div>
