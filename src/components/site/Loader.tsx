@@ -12,23 +12,17 @@ const dancingScript = Dancing_Script({
 /**
  * Apple "Hello."-style loading screen for BioQuiz.
  *
- * - Fullscreen flower background, blurred (blur 20px, brightness 0.7)
- * - "Hello." in Dancing Script 700, 80px, white — SVG stroke-draw animation
- * - strokeDashoffset from full length → 0 over 2.2s (power2.inOut)
- * - Fill fades in at 1.5s delay
- * - After complete: "— BioQuiz" fades in (18px Inter, #C4A882)
- * - Then: overlay fades out + blur lifts to 0px (1.2s) simultaneously
+ * - Rendered on the server: visible in the initial HTML, before hydration
+ * - Fullscreen flower background, blurred via CSS (static, GPU-composited)
+ * - "Hello." stroke-draw + fade, then overlay fades out
+ * - Only transform/opacity are animated (compositor-only → holds 60fps)
  * - Shows every page load — no skip, no cache
- * - SSR safe: returns null if typeof window === "undefined"
- * - All GSAP via dynamic import("gsap") inside useEffect
  */
 
 export function Loader() {
   const [show, setShow] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const bgRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const svgTextRef = useRef<SVGTextElement>(null);
   const subtitleRef = useRef<HTMLDivElement>(null);
@@ -38,159 +32,71 @@ export function Loader() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    // 6s fallback — guarantees dismissal even if GSAP or the font fails
+    const fallback = setTimeout(dismiss, 6000);
 
-    setMounted(true);
+    const run = () => {
+      const text = svgTextRef.current;
+      const overlay = overlayRef.current;
+      const container = containerRef.current;
+      if (!text || !overlay || !container) {
+        clearTimeout(fallback);
+        dismiss();
+        return;
+      }
 
-    // 10s fallback — guarantees dismissal even if GSAP or font fails
-    const fallback = setTimeout(() => {
-      dismiss();
-    }, 10000);
+      text.style.strokeDasharray = "1000";
+      text.style.strokeDashoffset = "1000";
 
-    // Wait for Dancing Script font before measuring stroke length
+      import("gsap")
+        .then(({ default: gsap }) => {
+          // Measure the real stroke length, then draw it
+          const length = text.getComputedTextLength();
+          text.style.strokeDasharray = String(length);
+          text.style.strokeDashoffset = String(length);
+
+          const tl = gsap.timeline({
+            onComplete: () => {
+              clearTimeout(fallback);
+              dismiss();
+            },
+          });
+
+          // 1. Stroke draw over 1.3s
+          tl.to(text, { strokeDashoffset: 0, duration: 1.3, ease: "power2.inOut" }, 0.2);
+
+          // 2. Fill fades in
+          tl.to(text, { fillOpacity: 1, duration: 0.4, ease: "power2.out" }, 0.9);
+
+          // 3. Subtitle fades in
+          tl.fromTo(
+            subtitleRef.current,
+            { opacity: 0, y: 8 },
+            { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+            "-=0.1"
+          );
+
+          // 4. Overlay + container fade out — opacity only, no filter tweens
+          tl.to(overlay, { opacity: 0, duration: 0.6, ease: "power2.inOut" }, "-=0.1");
+          tl.to(container, { opacity: 0, duration: 0.4, ease: "power2.out" }, "<0.2");
+        })
+        .catch(() => {
+          clearTimeout(fallback);
+          dismiss();
+        });
+    };
+
     document.fonts
       .load("700 80px 'Dancing Script'")
-      .then(() => {
-        import("gsap").then(({ default: gsap }) => {
-          const container = containerRef.current;
-          const bg = bgRef.current;
-          const overlay = overlayRef.current;
-          const text = svgTextRef.current;
-          const subtitle = subtitleRef.current;
-
-          if (!container || !text || !bg || !overlay) {
-            clearTimeout(fallback);
-            dismiss();
-            return;
-          }
-
-          // Measure stroke length for the handwriting animation
-          const length = text.getComputedTextLength();
-          text.style.strokeDasharray = String(length);
-          text.style.strokeDashoffset = String(length);
-
-          const tl = gsap.timeline({
-            onComplete: () => {
-              clearTimeout(fallback);
-              dismiss();
-            },
-          });
-
-          // 1. Stroke draw: full length → 0 over 2.2s, power2.inOut
-          tl.to(
-            text,
-            {
-              strokeDashoffset: 0,
-              duration: 2.2,
-              ease: "power2.inOut",
-            },
-            0.5
-          );
-
-          // 2. Fill fades in at 1.5s delay (0.8s duration)
-          tl.to(
-            text,
-            {
-              fillOpacity: 1,
-              duration: 0.8,
-              ease: "power2.out",
-            },
-            1.5
-          );
-
-          // 3. After stroke complete: subtitle fades in
-          if (subtitle) {
-            tl.fromTo(
-              subtitle,
-              { opacity: 0, y: 10 },
-              { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-              "-=0.2"
-            );
-          }
-
-          // 4. Blur lifts (1.2s) + overlay fades out simultaneously
-          tl.to(
-            bg,
-            {
-              filter: "blur(3px) brightness(0.88) saturate(0.5)",
-              duration: 1.2,
-              ease: "power2.inOut",
-            },
-            "-=0.3"
-          );
-
-          tl.to(
-            overlay,
-            {
-              opacity: 0,
-              duration: 1.0,
-              ease: "power2.inOut",
-            },
-            "<"
-          );
-
-          // 5. Container fades out
-          tl.to(
-            container,
-            {
-              opacity: 0,
-              duration: 0.5,
-              ease: "power2.out",
-            },
-            "-=0.3"
-          );
-        }).catch(() => {
-          clearTimeout(fallback);
-          dismiss();
-        });
-      })
-      .catch(() => {
-        // Font failed to load — still run GSAP with fallback measurement
-        import("gsap").then(({ default: gsap }) => {
-          const container = containerRef.current;
-          const bg = bgRef.current;
-          const overlay = overlayRef.current;
-          const text = svgTextRef.current;
-
-          if (!container || !text || !bg || !overlay) {
-            clearTimeout(fallback);
-            dismiss();
-            return;
-          }
-
-          const length = text.getComputedTextLength();
-          text.style.strokeDasharray = String(length);
-          text.style.strokeDashoffset = String(length);
-
-          const tl = gsap.timeline({
-            onComplete: () => {
-              clearTimeout(fallback);
-              dismiss();
-            },
-          });
-
-          tl.to(text, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut" }, 0.5);
-          tl.to(text, { fillOpacity: 1, duration: 0.8, ease: "power2.out" }, 1.5);
-
-          if (subtitleRef.current) {
-            tl.fromTo(subtitleRef.current, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.2");
-          }
-
-          tl.to(bg, { filter: "blur(3px) brightness(0.88) saturate(0.5)", duration: 1.2, ease: "power2.inOut" }, "-=0.3");
-          tl.to(overlay, { opacity: 0, duration: 1.0, ease: "power2.inOut" }, "<");
-          tl.to(container, { opacity: 0, duration: 0.5, ease: "power2.out" }, "-=0.3");
-        }).catch(() => {
-          clearTimeout(fallback);
-          dismiss();
-        });
-      });
+      .then(run)
+      .catch(run);
 
     return () => {
       clearTimeout(fallback);
     };
   }, [dismiss]);
 
-  if (!mounted || !show) return null;
+  if (!show) return null;
 
   return (
     <div
@@ -200,9 +106,8 @@ export function Loader() {
       aria-live="polite"
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* ── Blurred flower background ── */}
+      {/* ── Blurred flower background (static filter, composited once) ── */}
       <div
-        ref={bgRef}
         aria-hidden="true"
         className="absolute inset-0"
         style={{
@@ -210,6 +115,7 @@ export function Loader() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           filter: "blur(20px) brightness(0.88) saturate(0.5)",
+          transform: "scale(1.1)",
         }}
       />
 
