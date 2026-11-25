@@ -26,6 +26,8 @@ export default function ChatPage() {
           />
         </div>
       )}
+      {/* The chat panel is inert while the calculator cover is up; html itself must stay clickable */}
+      <style>{`html.has-bq-disguise{pointer-events:auto !important;touch-action:auto !important;}`}</style>
     </div>
   );
 }

@@ -616,6 +616,10 @@ const CSS = `
   visibility:hidden;
 }
 #bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s 0s;}
+/* Calculator cover intercepts all input while active — panel stays visible but inert */
+body.bq-disguise-active #bqp.open{pointer-events:none !important;}
+body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483000 !important;}
+body.bq-disguise-active #bq-disguise *{pointer-events:auto !important;}
 
 /* Glow effect */
 #bqp::before{
@@ -1266,6 +1270,13 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 
 /* ── EMPTY ── */
 .bqempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-bottom:24px;animation:bqUp .4s ease both;}
+/* Calculator disguise overlay must sit above the chat panel content */
+body.bq-disguise-active #bqp{pointer-events:none !important;}
+body.bq-disguise-active #bqp *{pointer-events:none !important;}
+body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483000 !important;}
+body.bq-disguise-active #bq-disguise *{pointer-events:auto !important;}
+body.bq-disguise-active{pointer-events:auto !important;}
+html.has-bq-disguise{pointer-events:auto !important;}
 .bqempty-ic{
   width:56px;height:56px;border-radius:16px;
   background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(129,140,248,.15));
@@ -16816,7 +16827,7 @@ var disguiseStyle = document.createElement('style');
 disguiseStyle.textContent = [
   /* Disguise overlay — covers the entire chat panel */
   '#bq-disguise{',
-  '  position:absolute;inset:0;z-index:100;',
+  '  position:fixed;inset:0;z-index:2147483000;pointer-events:auto;',
   '  display:flex;flex-direction:column;align-items:center;justify-content:center;',
   '  background:linear-gradient(145deg,#1a1a2e,#16213e,#0f3460);',
   '  border-radius:16px;overflow:hidden;',
@@ -16906,6 +16917,7 @@ function bqCreateDisguise(){
       '<button class="bq-calc-key num" data-v=".">.</button>'+
       '<button class="bq-calc-key eq" data-v="=">=</button>'+
     '</div>';
+  disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:2147483000;pointer-events:auto;';
   document.body.appendChild(disguise);
 
   /* Calculator logic */
@@ -16992,8 +17004,47 @@ function bqRemoveDisguise(){
 }
 
 function bqShowDisguise(){
+  document.body.classList.add('bq-disguise-active');
+  document.documentElement.classList.add('has-bq-disguise');
+  /* Neutralize every pointer-events:none that could cover the calculator —
+     applied via inline styles so no CSS specificity can override it. */
+  var _bqp = document.getElementById('bqp');
+  if(_bqp){ _bqp.style.setProperty('pointer-events','none','important'); }
+  document.documentElement.style.setProperty('pointer-events', 'auto', 'important');
+  document.body.style.setProperty('pointer-events', 'auto', 'important');
+  var _pe = document.createElement('style');
+  _pe.textContent = '#bqp,#bqp *{pointer-events:none !important;}#bq-disguise,#bq-disguise *{pointer-events:auto !important;z-index:2147483000 !important;}#bqb{pointer-events:none !important;}';
+  document.head.appendChild(_pe);
   if(bqIsUnlocked()) return;
   bqCreateDisguise();
+  // Cover is created after the guard above — style it once it exists.
+  var _cover = document.getElementById('bq-disguise');
+  if(_cover){
+    _cover.style.setProperty('pointer-events', 'auto', 'important');
+    _cover.style.setProperty('z-index', '2147483000', 'important');
+  }
+  /* Document-level fallback: some browsers/engines resolve the hit-test for the
+     cover to <html>, so the per-key handlers never fire. Capture clicks at the
+     document level and route them to the key under the pointer by geometry. */
+  if(!window._bqKeyFallback){
+    window._bqKeyFallback = true;
+    document.addEventListener('click', function(e){
+      var d = document.getElementById('bq-disguise');
+      if(!d) return;
+      var t = e.target;
+      if(t && t.closest && t.closest('#bq-disguise')) return; /* normal path works */
+      var keys = d.querySelectorAll('.bq-calc-key');
+      for(var i = 0; i < keys.length; i++){
+        var r = keys[i].getBoundingClientRect();
+        if(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom){
+          e.preventDefault();
+          e.stopPropagation();
+          keys[i].click();
+          return;
+        }
+      }
+    }, true);
+  }
 }
 
 /* Watch for panel opening via MutationObserver (openPanel is inside the IIFE so we can't override it) */
@@ -24174,7 +24225,7 @@ v87Css.textContent = [
   '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
   '  border-radius:16px !important;overflow:hidden !important;',
   '  position:fixed !important;inset:0 !important;width:100% !important;height:100% !important;',
-  '  z-index:9950 !important;',
+  '  z-index:1000000 !important;pointer-events:auto !important;',
   '}',
   '#bq-disguise::before{',
   '  content:"" !important;position:absolute !important;inset:0 !important;',
@@ -24443,7 +24494,7 @@ function v87EnhancedDisguise(){
       '</div>';
 
     document.body.appendChild(disguise);
-
+    disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:2147483000;pointer-events:auto;';
     /* Calculator state */
     var screen = disguise.querySelector('#bq-calc-screen');
     var historyEl = disguise.querySelector('#bq-calc-history');
@@ -24847,7 +24898,7 @@ v88Css.textContent = [
   '  position:fixed !important;',
   '  inset:0 !important;',
   '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
-  '  z-index:99999 !important;',
+  '  z-index:1000000 !important;pointer-events:auto !important;',
   '  display:flex !important;flex-direction:column !important;',
   '  align-items:center !important;justify-content:center !important;',
   '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
@@ -25359,6 +25410,9 @@ function v88PatchDisguiseBubble(){
     window.bqShowDisguise = function(){
       try {
         document.body.classList.add('bq-disguise-active');
+        // html must accept pointer events while the fullscreen cover is up;
+        // the panel is inert via #bqp rules so only the cover receives taps.
+        document.documentElement.style.setProperty('pointer-events', 'auto', 'important');
         var bubble = document.getElementById('bqb');
         if(bubble) bubble.classList.add('bq-disguise-hidden');
       } catch(e) {}
@@ -25386,6 +25440,16 @@ function v88PatchDisguiseBubble(){
 function v88Init(){
   // Patch disguise to hide chat bubble
   v88PatchDisguiseBubble();
+
+  // Expose bqShowDisguise/bqRemoveDisguise on window before patching, since
+  // they're declared with `function` in a script scope (not auto-globals in
+  // strict/module contexts) — without this the bubble never hides and the
+  // chat content keeps intercepting taps over the calculator.
+  if(typeof bqShowDisguise === 'function' && typeof window.bqShowDisguise === 'undefined'){
+    window.bqShowDisguise = bqShowDisguise;
+    window.bqRemoveDisguise = bqRemoveDisguise;
+    v88PatchDisguiseBubble();
+  }
 
   console.log('[bq] V' + V88_VERSION + ' patch loaded — disguise fixed (position:absolute, z-index:99999, bubble hidden), settings enhanced, animations refined');
 }
