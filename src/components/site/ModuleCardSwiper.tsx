@@ -35,7 +35,15 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const isAnimating = useRef(false);
   const activeIndexRef = useRef(0);
+  const gsapRef = useRef<any>(null);
   const totalCards = modules.length;
+
+  /* Load gsap once and keep it cached — no per-tap dynamic import delay */
+  useEffect(() => {
+    import("gsap").then(({ default: gsap }) => {
+      gsapRef.current = gsap;
+    });
+  }, []);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -56,13 +64,20 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
       cardRefs.current.forEach((card, i) => {
         if (!card) return;
         if (i === index) {
-          gsap.to(card, { scale: 1, opacity: 1, duration, ease: "power2.out" });
+          gsap.to(card, {
+            scale: 1,
+            opacity: 1,
+            duration,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
         } else if (Math.abs(i - index) === 1) {
           gsap.to(card, {
             scale: 0.88,
             opacity: 0.65,
             duration,
             ease: "power2.out",
+            overwrite: "auto",
           });
         } else {
           gsap.to(card, {
@@ -70,6 +85,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
             opacity: 0.35,
             duration,
             ease: "power2.out",
+            overwrite: "auto",
           });
         }
       });
@@ -83,14 +99,13 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
 
   const goToCard = useCallback(
     (index: number) => {
-      if (isAnimating.current) return;
       if (index < 0 || index >= totalCards) return;
 
       isAnimating.current = true;
       setActiveIndex(index);
       activeIndexRef.current = index;
 
-      import("gsap").then(({ default: gsap }) => {
+      const start = (gsap: any) => {
         const track = trackRef.current;
         if (!track) {
           isAnimating.current = false;
@@ -104,19 +119,25 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         const offsetX =
           containerWidth / 2 - cardWidth / 2 - index * (cardWidth + CARD_GAP);
 
-        // 1. Slide the track
+        // 1. Slide the track — overwrite any in-flight tween so quick
+        // successive swipes retarget instantly instead of being dropped
         gsap.to(track, {
           x: offsetX,
-          duration: 0.55,
+          duration: 0.35,
           ease: "power3.out",
+          overwrite: "auto",
           onComplete: () => {
             isAnimating.current = false;
           },
         });
 
         // 2. Cover-flow scale/opacity/rotate (simultaneous)
-        applyCoverFlow(gsap, index, 0.55);
-      });
+        applyCoverFlow(gsap, index, 0.35);
+      };
+
+      const cached = gsapRef.current;
+      if (cached) start(cached);
+      else import("gsap").then(({ default: gsap }) => start(gsap));
     },
     [totalCards, getCardWidth, applyCoverFlow]
   );
@@ -429,7 +450,7 @@ function ModuleCard({
         border: isActive
           ? `1.5px solid ${m.accent.border}`
           : "1px solid rgba(255,255,255,0.10)",
-        transition: "box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease",
+        transition: "box-shadow 0.3s ease, border-color 0.3s ease",
       }}
       onMouseEnter={isActive ? () => {
         const el = internalRef.current;

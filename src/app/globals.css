@@ -1149,8 +1149,8 @@ a, button, [role="button"], input, select, textarea,
   animation: smooth-text-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes smooth-text-reveal {
-  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Smooth glow pulse (subtle, for active states) ── */
@@ -1180,8 +1180,9 @@ a, button, [role="button"], input, select, textarea,
 }
 
 /* ── Smooth backdrop filter transition (for glass effects) ── */
+/* backdrop-filter transitions force full repaints every frame — toggle instantly instead */
 .smooth-glass {
-  transition: backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease, background 0.3s ease;
+  transition: background 0.3s ease;
 }
 
 /* ── TopBar slide-in ── */
