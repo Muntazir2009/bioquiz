@@ -37,30 +37,35 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
     const trackRef = useRef<HTMLDivElement>(null);
     const isAnimating = useRef(false);
     const activeIndexRef = useRef(0);
+    const gsapRef = useRef<any>(null);
+
+    // Load gsap once and keep it cached — no per-swipe dynamic import delay
+    useEffect(() => {
+      import("gsap").then(({ default: gsap }) => {
+        gsapRef.current = gsap;
+      });
+    }, []);
 
     const goToSlide = useCallback(
       (index: number) => {
-        if (isAnimating.current) return;
         if (index < 0 || index >= slideCount) return;
         if (index === activeIndexRef.current) return;
 
         isAnimating.current = true;
         const track = trackRef.current;
 
-        import("gsap").then(({ default: gsap }) => {
+        const start = (gsap: any) => {
           if (!track) {
             isAnimating.current = false;
             return;
           }
 
-          const goingForward = index > activeIndexRef.current;
-          const slides = track.children as HTMLCollectionOf<HTMLElement>;
-
-          // Smooth slide track translation
+          // Overwrite any in-flight tween so quick swipes retarget instantly
           gsap.to(track, {
             x: -index * 100 + "vw",
-            duration: 0.6,
+            duration: 0.45,
             ease: "power2.inOut",
+            overwrite: "auto",
             onComplete: () => {
               isAnimating.current = false;
             },
@@ -68,9 +73,11 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
 
           activeIndexRef.current = index;
           setActiveIndex(index);
+        };
 
-
-        });
+        const cached = gsapRef.current;
+        if (cached) start(cached);
+        else import("gsap").then(({ default: gsap }) => start(gsap));
       },
       [slideCount]
     );
