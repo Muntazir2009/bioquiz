@@ -6826,6 +6826,9 @@ function openPanel(){
   document.getElementById('bqp').classList.add('open');
   document.getElementById('bqb').classList.add('open');
   isOpen=true;gUnread=0;updateBadges();gAtBot=true;
+  // On the dedicated /chat page, start in fullscreen so the calculator
+  // cover fills the screen and is visible for everyone.
+  if(!isFull && location.pathname === '/chat' && typeof toggleFS === 'function') toggleFS();
   // V75: Set a brief warmup when opening to prevent any stale notifications
   _bqNotifWarmupUntil=Date.now()+2000;
   refreshMeAvatar();
@@ -11098,6 +11101,15 @@ function boot(){
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(boot, 600));
 else setTimeout(boot, 600);
+
+/* On the dedicated /chat page, open the panel fullscreen right after boot so
+   the calculator cover is visible for everyone (no bubble tap needed). */
+setTimeout(function(){
+  if(location.pathname !== '/chat') return;
+  var p = document.getElementById('bqp');
+  if(!p) return;
+  if(!isOpen && typeof openPanel === 'function') openPanel();
+}, 900);
 
 setInterval(()=>{ try{ wrapSenders(); patchEditWindow(); }catch(_){} }, 3000);
 
@@ -16791,10 +16803,12 @@ var BQ_PIN = '1306';
 var BQ_UNLOCK_KEY = 'bq_widget_unlocked';
 
 function bqIsUnlocked(){
-  try { return localStorage.getItem(BQ_UNLOCK_KEY) === 'true'; } catch(e){ return false; }
+  /* Unlock lasts for the browser session only (sessionStorage), so the
+     calculator cover shows for everyone on every new visit. */
+  try { return sessionStorage.getItem(BQ_UNLOCK_KEY) === 'true'; } catch(e){ return false; }
 }
 function bqSetUnlocked(val){
-  try { localStorage.setItem(BQ_UNLOCK_KEY, val ? 'true' : ''); } catch(e){}
+  try { sessionStorage.setItem(BQ_UNLOCK_KEY, val ? 'true' : ''); } catch(e){}
 }
 
 /* Add disguise styles */
@@ -16892,7 +16906,7 @@ function bqCreateDisguise(){
       '<button class="bq-calc-key num" data-v=".">.</button>'+
       '<button class="bq-calc-key eq" data-v="=">=</button>'+
     '</div>';
-  panel.appendChild(disguise);
+  document.body.appendChild(disguise);
 
   /* Calculator logic */
   var screen = disguise.querySelector('.bq-calc-screen');
@@ -24159,7 +24173,8 @@ v87Css.textContent = [
   '#bq-disguise{',
   '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
   '  border-radius:16px !important;overflow:hidden !important;',
-  '  position:relative !important;',
+  '  position:fixed !important;inset:0 !important;width:100% !important;height:100% !important;',
+  '  z-index:9950 !important;',
   '}',
   '#bq-disguise::before{',
   '  content:"" !important;position:absolute !important;inset:0 !important;',
@@ -24427,7 +24442,7 @@ function v87EnhancedDisguise(){
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
       '</div>';
 
-    panel.appendChild(disguise);
+    document.body.appendChild(disguise);
 
     /* Calculator state */
     var screen = disguise.querySelector('#bq-calc-screen');
@@ -24827,9 +24842,9 @@ v88Css.textContent = [
      FIX DISGUISE — restore position:absolute, raise z-index, hide bubble
      ════════════════════════════════════════════════════════════════════ */
 
-  /* Restore position:absolute + inset:0 (V87 broke this with position:relative) */
+  /* Restore full-viewport overlay (was absolute inside the clipped chat panel) */
   '#bq-disguise{',
-  '  position:absolute !important;',
+  '  position:fixed !important;',
   '  inset:0 !important;',
   '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
   '  z-index:99999 !important;',
@@ -24844,8 +24859,8 @@ v88Css.textContent = [
   '  to{opacity:1;transform:none;}',
   '}',
 
-  /* Kill the V87 position:relative override */
-  '#bq-disguise{position:absolute !important;}',
+  /* Disguise is now a full-viewport overlay on body */
+  '#bq-disguise{position:fixed !important;}',
 
   /* Hide the chat bubble (#bqb) when disguise is active */
   'body.bq-disguise-active #bqb,',

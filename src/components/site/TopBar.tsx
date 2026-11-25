@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { StreakBadge } from "./StreakBadge";
-import { CloudUpload, ShieldCheck, Sun, Moon, Clock } from "lucide-react";
+import { CloudUpload, Sun, Moon, Clock } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -95,19 +95,6 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               </Tooltip>
             )}
 
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href="/admin"
-                  className="icon-btn group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  aria-label="Open admin panel"
-                >
-                  <ShieldCheck className="h-4 w-4" aria-hidden />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">Admin</TooltipContent>
-            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
