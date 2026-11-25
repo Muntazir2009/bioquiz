@@ -294,7 +294,17 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border">
+        <div className="relative flex border-b border-border">
+          {/* Sliding active-tab indicator */}
+          <span
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 h-0.5 w-1/2 rounded-full bg-foreground"
+            style={{
+              transform: `translateX(${tab === "upload" ? "0%" : "100%"})`,
+              transition: "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform",
+            }}
+          />
           {([
             { id: "upload" as Tab, label: "Upload", icon: Upload },
             { id: "files" as Tab, label: "Files", icon: FolderOpen },
@@ -304,11 +314,11 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-xs font-medium transition-colors ${
-                  isActive ? "text-foreground border-b-2 border-foreground" : "text-muted-foreground hover:text-foreground"
+                className={`relative z-10 flex flex-1 items-center justify-center gap-2 border-b-2 py-2.5 text-xs font-medium transition-colors duration-200 ${
+                  isActive ? "text-foreground border-transparent" : "text-muted-foreground hover:text-foreground border-transparent"
                 }`}
               >
-                <t.icon className="h-3.5 w-3.5" />
+                <t.icon className={`h-3.5 w-3.5 transition-transform duration-200 ${isActive ? "scale-110" : ""}`} />
                 {t.label}
                 {t.id === "files" && files.length > 0 && (
                   <span className="rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] tabular-nums">{files.length}</span>
@@ -411,10 +421,11 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4" style={{ maxHeight: "50vh" }}>
-          {tab === "upload" && (
-            <FileUploadZone onUploadComplete={handleUploadComplete} uploaderId={uploaderId} />
-          )}
-          {tab === "files" && (
+          <div key={tab} className="tab-content-enter">
+            {tab === "upload" && (
+              <FileUploadZone onUploadComplete={handleUploadComplete} uploaderId={uploaderId} />
+            )}
+            {tab === "files" && (
             <FileList
               files={filteredFiles}
               onDelete={handleDelete}
@@ -432,7 +443,8 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
               }}
               uploaderId={uploaderId}
             />
-          )}
+            )}
+          </div>
         </div>
 
         {/* Footer */}

@@ -287,6 +287,18 @@ a, button, [role="button"], input, select, textarea,
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Tab content switch — fast, transform/opacity only (compositor-safe) */
+@keyframes tab-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tab-content-enter {
+  animation: tab-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-content-enter { animation: none; }
+}
+
 @keyframes card-in {
   from { opacity: 0; transform: perspective(800px) rotateX(3deg) translateY(12px) scale(0.98); }
   to   { opacity: 1; transform: perspective(800px) rotateX(0deg) translateY(0) scale(1); }
