@@ -46,24 +46,10 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
     setTheme(theme === "dark" ? "brown" : "dark");
   }, [theme, setTheme]);
 
-  const iconBtnStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.10)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: 'rgba(255,255,255,0.90)',
-    willChange: 'transform',
-  };
-
   return (
     <TooltipProvider delayDuration={300}>
       <header
-        className="sticky top-0 z-40 topbar-enter"
-        style={{
-          background: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(24px) saturate(1.3)',
-          WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
-          borderBottom: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 2px 20px rgba(0,0,0,0.08)',
-        }}
+        className="topbar-surface sticky top-0 z-40 topbar-enter"
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Brand */}
@@ -93,8 +79,7 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={toggleTheme}
-                    className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                    style={iconBtnStyle}
+                    className="icon-btn group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                     aria-label={theme === "dark" ? "Switch to brown mode" : "Switch to dark mode"}
                   >
                     {theme === "dark" ? (
@@ -115,8 +100,7 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <a
                   href="/admin"
-                  className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  style={iconBtnStyle}
+                  className="icon-btn group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                   aria-label="Open admin panel"
                 >
                   <ShieldCheck className="h-4 w-4" aria-hidden />
@@ -129,8 +113,7 @@ export function TopBar({ onFilePanelOpen }: { onFilePanelOpen?: () => void }) {
               <TooltipTrigger asChild>
                 <button
                   onClick={onFilePanelOpen}
-                  className="group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  style={iconBtnStyle}
+                  className="icon-btn group grid h-8 w-8 place-items-center rounded-lg transition-all hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                   aria-label="Open files panel"
                 >
                   <CloudUpload className="h-4 w-4" aria-hidden />

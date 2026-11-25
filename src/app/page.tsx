@@ -60,16 +60,16 @@ export default function Home() {
       {/* Fullscreen flower background */}
       <div
         aria-hidden="true"
-        className="fixed inset-0 -z-10"
+        className="page-wallpaper fixed inset-0 -z-10"
         style={{
           backgroundImage: "url('/flower.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(22px) brightness(0.70) saturate(1.15)",
           transform: "scale(1.12)",
           isolation: 'isolate',
         }}
       />
+      <div aria-hidden="true" className="page-wallpaper-tint fixed inset-0 -z-10" />
 
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:border focus:border-border">
         Skip to content
