@@ -1276,7 +1276,14 @@ body.bq-disguise-active #bqp *{pointer-events:none !important;}
 body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483647 !important;}
 body.bq-disguise-active #bq-disguise *{pointer-events:auto !important;}
 body.bq-disguise-active{pointer-events:auto !important;}
+body.bq-disguise-active #bqp{pointer-events:auto !important;}
 html.has-bq-disguise{pointer-events:auto !important;}
+html.has-bq-disguise #bqp{pointer-events:auto !important;}
+/* While the cover is up, only the cover itself receives taps — kill the
+   page-level handlers that let <html> swallow the click before Playwright's
+   (or a finger's) event reaches the dialog. */
+html.has-bq-disguise body *{pointer-events:none !important;}
+html.has-bq-disguise body #bq-disguise, html.has-bq-disguise body #bq-disguise *{pointer-events:auto !important;}
 .bqempty-ic{
   width:56px;height:56px;border-radius:16px;
   background:linear-gradient(135deg,rgba(96,165,250,.15),rgba(129,140,248,.15));
