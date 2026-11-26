@@ -618,7 +618,7 @@ const CSS = `
 #bqp.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all;visibility:visible;transition:transform .32s var(--bq-transition),opacity .26s ease,visibility 0s 0s;}
 /* Calculator cover intercepts all input while active — panel stays visible but inert */
 body.bq-disguise-active #bqp.open{pointer-events:none !important;}
-body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483000 !important;}
+body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483647 !important;}
 body.bq-disguise-active #bq-disguise *{pointer-events:auto !important;}
 
 /* Glow effect */
@@ -1273,7 +1273,7 @@ body.bq-fs-mode #bqb{opacity:0!important;pointer-events:none!important;}
 /* Calculator disguise overlay must sit above the chat panel content */
 body.bq-disguise-active #bqp{pointer-events:none !important;}
 body.bq-disguise-active #bqp *{pointer-events:none !important;}
-body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483000 !important;}
+body.bq-disguise-active #bq-disguise{pointer-events:auto !important;z-index:2147483647 !important;}
 body.bq-disguise-active #bq-disguise *{pointer-events:auto !important;}
 body.bq-disguise-active{pointer-events:auto !important;}
 html.has-bq-disguise{pointer-events:auto !important;}
@@ -10625,7 +10625,7 @@ setTimeout(_injectProfileUploads,1500);
 
 const $ = (id)=>document.getElementById(id);
 const _esc = (s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const _toast = (m)=>{ try{ const t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:8px;z-index:2147483646;font:13px/1.4 system-ui'; document.body.appendChild(t); setTimeout(()=>t.remove(),2400);}catch(_){} };
+const _toast = (m)=>{ try{ const t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:8px;z-index:2147483647;font:13px/1.4 system-ui'; document.body.appendChild(t); setTimeout(()=>t.remove(),2400);}catch(_){} };
 
 async function sha256Hex(s){
   const enc=new TextEncoder().encode(s);
@@ -12090,11 +12090,11 @@ function activeDmPuid(){
   /* Draft chip */
   .bq-draft-chip{font-size:10px;background:rgba(245,158,11,.18);color:#fbbf24;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
   /* Schedule menu */
-  #bq-sched-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:8px;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #bq-sched-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:8px;z-index:2147483647;box-shadow:0 12px 40px rgba(0,0,0,.5)}
   #bq-sched-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font:13px system-ui}
   #bq-sched-menu button:hover{background:#2a3040}
   /* Disappearing menu */
-  #bq-disappear-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:6px;z-index:2147483646;box-shadow:0 12px 40px rgba(0,0,0,.5);min-width:200px}
+  #bq-disappear-menu{position:fixed;background:#1a1d24;border:1px solid #2a3040;border-radius:10px;padding:6px;z-index:2147483647;box-shadow:0 12px 40px rgba(0,0,0,.5);min-width:200px}
   #bq-disappear-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:9px 12px;border-radius:6px;cursor:pointer;font:13px system-ui}
   #bq-disappear-menu button:hover{background:#2a3040}
   #bq-disappear-menu button.active{background:rgba(59,130,246,.2);color:#9ad7ff}
@@ -12690,7 +12690,7 @@ function showSchedMenu(anchor){
   const dmId=ctx==='dm'?activeDmId():'';
 
   const m=document.createElement('div'); m.id='bq-sched-v24';
-  m.style.cssText='position:fixed;background:#0f0f0f;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;min-width:200px;z-index:2147483646;box-shadow:0 12px 36px rgba(0,0,0,.6);font:13px/1.35 -apple-system,system-ui,sans-serif;color:#e5e5e5';
+  m.style.cssText='position:fixed;background:#0f0f0f;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;min-width:200px;z-index:2147483647;box-shadow:0 12px 36px rgba(0,0,0,.6);font:13px/1.35 -apple-system,system-ui,sans-serif;color:#e5e5e5';
   const hdr=document.createElement('div');
   hdr.style.cssText='padding:6px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:4px';
   hdr.textContent='Send later'; m.appendChild(hdr);
@@ -16830,7 +16830,7 @@ var disguiseStyle = document.createElement('style');
 disguiseStyle.textContent = [
   /* Disguise overlay — covers the entire chat panel */
   '#bq-disguise{',
-  '  position:fixed;inset:0;z-index:2147483000;pointer-events:auto;',
+  '  position:fixed;inset:0;z-index:2147483647;pointer-events:auto;',
   '  display:flex;flex-direction:column;align-items:center;justify-content:center;',
   '  background:linear-gradient(145deg,#1a1a2e,#16213e,#0f3460);',
   '  border-radius:16px;overflow:hidden;',
@@ -16892,7 +16892,7 @@ function bqCreateDisguise(){
   var panel = document.getElementById('bqp');
   if(!panel || document.getElementById('bq-disguise')) return;
 
-  var disguise = document.createElement('div');
+  var disguise = document.createElement('dialog');
   disguise.id = 'bq-disguise';
   disguise.innerHTML =
     '<div class="bq-calc-brand">Calculator Pro</div>'+
@@ -16920,8 +16920,11 @@ function bqCreateDisguise(){
       '<button class="bq-calc-key num" data-v=".">.</button>'+
       '<button class="bq-calc-key eq" data-v="=">=</button>'+
     '</div>';
-  disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483000;pointer-events:auto;';
+  disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483647;pointer-events:auto;';
   document.body.appendChild(disguise);
+  /* Native <dialog> puts the cover in the browser's top layer, which paints
+     above every z-index — the fullscreen chat panel can never cover it. */
+  try { if(!disguise.open) disguise.show(); } catch(e){}
 
   /* Calculator logic */
   var screen = disguise.querySelector('.bq-calc-screen');
@@ -17016,7 +17019,7 @@ function bqShowDisguise(){
   document.documentElement.style.setProperty('pointer-events', 'auto', 'important');
   document.body.style.setProperty('pointer-events', 'auto', 'important');
   var _pe = document.createElement('style');
-  _pe.textContent = '#bqp,#bqp *{pointer-events:none !important;}#bq-disguise,#bq-disguise *{pointer-events:auto !important;z-index:2147483000 !important;}#bqb{pointer-events:none !important;}';
+  _pe.textContent = '#bqp,#bqp *{pointer-events:none !important;}#bq-disguise,#bq-disguise *{pointer-events:auto !important;z-index:2147483647 !important;}#bqb{pointer-events:none !important;}';
   document.head.appendChild(_pe);
   if(bqIsUnlocked()) return;
   bqCreateDisguise();
@@ -17024,7 +17027,11 @@ function bqShowDisguise(){
   var _cover = document.getElementById('bq-disguise');
   if(_cover){
     _cover.style.setProperty('pointer-events', 'auto', 'important');
-    _cover.style.setProperty('z-index', '2147483000', 'important');
+    _cover.style.setProperty("z-index", "2147483647", "important");
+    /* Move the cover to the end of <body>: with equal z-index values paint order
+       follows DOM order, and the fullscreen chat panel (#bqp.bq-fs) may sit in a
+       wrapper appended later than the cover's original position. */
+    document.body.appendChild(_cover);
   }
   /* Document-level fallback: some browsers/engines resolve the hit-test for the
      cover to <html>, so the per-key handlers never fire. Capture clicks at the
@@ -17665,7 +17672,7 @@ function _mlOverlay(){
   _mlEnsureStyles();
   var o=document.createElement('div');
   o.id='bq-magic-overlay';
-  o.style.cssText='position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,4,8,.78);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);animation:bqMlIn .25s ease both';
+  o.style.cssText='position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,4,8,.78);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);animation:bqMlIn .25s ease both';
   // Animated background orbs
   var o1=document.createElement('div');
   o1.style.cssText='position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 70%);top:20%;left:10%;animation:bqMlOrb 8s ease-in-out infinite;pointer-events:none';
@@ -24228,7 +24235,7 @@ v87Css.textContent = [
   '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
   '  border-radius:16px !important;overflow:hidden !important;',
   '  position:fixed !important;inset:0 !important;width:100% !important;height:100% !important;',
-  '  z-index:1000000 !important;pointer-events:auto !important;',
+  '  z-index:2147483647 !important;pointer-events:auto !important;',
   '}',
   '#bq-disguise::before{',
   '  content:"" !important;position:absolute !important;inset:0 !important;',
@@ -24444,7 +24451,7 @@ function v87EnhancedDisguise(){
     var panel = document.getElementById('bqp');
     if(!panel || document.getElementById('bq-disguise')) return;
 
-    var disguise = document.createElement('div');
+    var disguise = document.createElement('dialog');
     disguise.id = 'bq-disguise';
     disguise.innerHTML =
       '<div class="bq-calc-brand">' +
@@ -24497,7 +24504,8 @@ function v87EnhancedDisguise(){
       '</div>';
 
     document.body.appendChild(disguise);
-    disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483000;pointer-events:auto;';
+    disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483647;pointer-events:auto;';
+    try { if(!disguise.open) disguise.show(); } catch(e){}
     /* Calculator state */
     var screen = disguise.querySelector('#bq-calc-screen');
     var historyEl = disguise.querySelector('#bq-calc-history');
@@ -24901,7 +24909,7 @@ v88Css.textContent = [
   '  position:fixed !important;',
   '  inset:0 !important;',
   '  top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;',
-  '  z-index:1000000 !important;pointer-events:auto !important;',
+  '  z-index:2147483647 !important;pointer-events:auto !important;',
   '  display:flex !important;flex-direction:column !important;',
   '  align-items:center !important;justify-content:center !important;',
   '  background:linear-gradient(160deg,#0f0f1a 0%,#1a1a2e 40%,#16213e 100%) !important;',
@@ -29637,7 +29645,7 @@ css.textContent = [
   '#bqp .bqpf-savemsg{text-align:center !important;font:500 12px Inter,-apple-system,sans-serif !important;color:#22c55e !important;padding:8px !important;transition:opacity .3s !important;}',
 
   /* Schedule menu — reworked */
-  '#bq-sched-menu{position:fixed !important;background:#18181b !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:14px !important;padding:6px !important;z-index:2147483646 !important;box-shadow:0 12px 40px rgba(0,0,0,0.6) !important;min-width:200px !important;animation:bqSchedIn .2s ease both !important;}',
+  '#bq-sched-menu{position:fixed !important;background:#18181b !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:14px !important;padding:6px !important;z-index:2147483647 !important;box-shadow:0 12px 40px rgba(0,0,0,0.6) !important;min-width:200px !important;animation:bqSchedIn .2s ease both !important;}',
   '@keyframes bqSchedIn{from{opacity:0;transform:translateY(-6px) scale(0.96);}to{opacity:1;transform:none;}}',
   '#bq-sched-menu .bq-sched-header{font:600 11px Inter,-apple-system,sans-serif !important;color:#71717a !important;padding:8px 12px 6px !important;text-transform:uppercase !important;letter-spacing:0.06em !important;}',
   '#bq-sched-menu button{display:flex !important;align-items:center !important;gap:8px !important;width:100% !important;text-align:left !important;background:none !important;border:none !important;color:#f4f4f5 !important;padding:9px 12px !important;border-radius:8px !important;cursor:pointer !important;font:500 13px Inter,-apple-system,sans-serif !important;transition:background .15s ease !important;}',
