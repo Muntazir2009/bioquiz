@@ -1,5 +1,5 @@
 /* ===============================
-   🌌 SPACE BACKGROUND (ANIMATED)
+   🌌 SPACE BACKGROUND (STATIC — GPU CHEAP)
    =============================== */
 
 *{
@@ -13,62 +13,18 @@ body{
   color:#eaf1ff;
   overflow-x:hidden;
 
+  /* single painted background: stars + nebula glow baked in,
+     no fixed layers, no continuous animation */
   background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.9), transparent 50%),
+    radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,.8), transparent 50%),
+    radial-gradient(1px 1px at 60% 40%, rgba(255,255,255,.9), transparent 50%),
+    radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,.75), transparent 50%),
     radial-gradient(1200px 800px at 15% 10%, #0b1d3a 0%, transparent 60%),
     radial-gradient(1000px 700px at 85% 90%, #2a0b3f 0%, transparent 55%),
     linear-gradient(180deg,#02040c,#010208);
-
-  position:relative;
-}
-
-/* ===== STAR LAYER ===== */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, white, transparent),
-    radial-gradient(1px 1px at 30% 80%, white, transparent),
-    radial-gradient(1px 1px at 60% 40%, white, transparent),
-    radial-gradient(1px 1px at 80% 70%, white, transparent);
-
-  background-size:300px 300px;
-  opacity:.4;
-  animation:starsMove 120s linear infinite;
-  pointer-events:none;
-  z-index:-2;
-}
-
-/* ===== NEBULA GLOW ===== */
-body::after{
-  content:"";
-  position:fixed;
-  inset:-40%;
-
-  background:
-    conic-gradient(
-      from 180deg,
-      rgba(111,182,255,.15),
-      rgba(245,193,108,.12),
-      rgba(180,100,255,.15),
-      rgba(111,182,255,.15)
-    );
-
-  animation:nebulaSpin 160s linear infinite;
-  opacity:.25;
-  pointer-events:none;
-  z-index:-1;
-}
-
-/* ===== ANIMATIONS ===== */
-@keyframes starsMove{
-  from{background-position:0 0}
-  to{background-position:1000px 2000px}
-}
-
-@keyframes nebulaSpin{
-  to{transform:rotate(360deg)}
+  background-size:300px 300px, 300px 300px, 300px 300px, 300px 300px, 100% 100%, 100% 100%, 100% 100%;
+  background-attachment:scroll;
 }
 
 /* ===============================
@@ -100,4 +56,75 @@ body::after{
   color:#8cc8ff;
   text-decoration:none;
   font-size:.9rem;
+}
+
+/* ===============================
+   🪟 ORGANELLE MODAL (top level — was nested in a media query)
+   =============================== */
+
+.organelle-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(5,8,20,.85);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+
+  transition:opacity .25s ease, visibility .25s ease;
+  z-index:999;
+}
+
+.organelle-modal.active{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+.organelle-modal-content{
+  position:relative;
+  max-width:720px;
+  width:calc(100% - 40px);
+  max-height:80vh;
+  overflow:auto;
+  padding:32px;
+  border-radius:22px;
+
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,215,150,.25), transparent 60%),
+    linear-gradient(180deg,#0b0f25,#050713);
+  border:1px solid rgba(255,255,255,.16);
+
+  box-shadow:0 60px 180px rgba(0,0,0,.9);
+
+  transform:translateY(14px) scale(.98);
+  transition:transform .25s cubic-bezier(.22,1,.36,1);
+}
+
+.organelle-modal.active .organelle-modal-content{
+  transform:none;
+}
+
+.organelle-modal-close{
+  position:absolute;
+  top:16px;
+  right:20px;
+  font-size:1.4rem;
+  cursor:pointer;
+  opacity:.7;
+}
+
+.organelle-modal-close:hover{
+  opacity:1;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation:none !important;
+    transition:none !important;
+  }
 }

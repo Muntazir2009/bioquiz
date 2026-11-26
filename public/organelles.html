@@ -22,7 +22,7 @@
   <article class="organelle-card">
 
     <div class="organelle-visual">
-      <img src="images/organelles/nucleus.png" alt="Nucleus diagram">
+      <img loading="lazy" decoding="async" src="images/organelles/nucleus.png" alt="Nucleus diagram">
       <span class="size-badge">5–10 µm</span>
     </div>
 
@@ -52,7 +52,7 @@
   <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/mitochondria.png" alt="Mitochondria diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/mitochondria.png" alt="Mitochondria diagram">
     <span class="size-badge">0.5–1 µm</span>
   </div>
 
@@ -82,7 +82,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/er.png" alt="Endoplasmic Reticulum diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/er.png" alt="Endoplasmic Reticulum diagram">
     <span class="size-badge">~0.03–0.05 µm</span>
   </div>
 
@@ -113,7 +113,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/golgi.png" alt="Golgi apparatus diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/golgi.png" alt="Golgi apparatus diagram">
     <span class="size-badge">1–3 µm</span>
   </div>
 
@@ -143,7 +143,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/lysosome.png" alt="Lysosome diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/lysosome.png" alt="Lysosome diagram">
     <span class="size-badge">0.1–1.2 µm</span>
   </div>
 
@@ -171,7 +171,7 @@
 </article>
   <article class="organelle-card">
   <div class="organelle-visual">
-    <img src="images/organelles/ribosome.png" alt="Ribosome diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/ribosome.png" alt="Ribosome diagram">
     <span class="size-badge">0.02–0.03 µm</span>
   </div>
 
@@ -199,7 +199,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/vacuole.png" alt="Vacuole diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/vacuole.png" alt="Vacuole diagram">
     <span class="size-badge">5–90 µm</span>
   </div>
 
@@ -229,7 +229,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/chloroplast.png" alt="Chloroplast diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/chloroplast.png" alt="Chloroplast diagram">
     <span class="size-badge">4–10 µm</span>
   </div>
 
@@ -259,7 +259,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/centrosome.png" alt="Centrosome diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/centrosome.png" alt="Centrosome diagram">
     <span class="size-badge">~0.5 µm</span>
   </div>
 
@@ -289,7 +289,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/cytoskeleton.png" alt="Cytoskeleton diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/cytoskeleton.png" alt="Cytoskeleton diagram">
     <span class="size-badge">~0.007-0.025 µm</span>
   </div>
 
@@ -319,7 +319,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/plasma_membrane.png" alt="Plasma membrane diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/plasma_membrane.png" alt="Plasma membrane diagram">
     <span class="size-badge">~0.007–0.01 µm</span>
   </div>
 
@@ -349,7 +349,7 @@
 <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/cell_wall.png" alt="Cell wall diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/cell_wall.png" alt="Cell wall diagram">
     <span class="size-badge">~0.1–0.5 µm</span>
   </div>
 
@@ -378,7 +378,7 @@
   <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/prokaryotic_cell.png" alt="Prokaryotic cell diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/prokaryotic_cell.png" alt="Prokaryotic cell diagram">
     <span class="size-badge">0.5-5 µm</span>
   </div>
 
@@ -407,7 +407,7 @@
   <article class="organelle-card">
 
   <div class="organelle-visual">
-    <img src="images/organelles/eukaryotic_cell.png" alt="Eukaryotic cell diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/eukaryotic_cell.png" alt="Eukaryotic cell diagram">
     <span class="size-badge">10–100 µm</span>
   </div>
 
@@ -437,7 +437,7 @@
 <article class="organelle-card no-center">
 
   <div class="organelle-visual">
-    <img src="images/organelles/ProvsEu.png" alt="Prokaryotic vs Eukaryotic Cell diagram">
+    <img loading="lazy" decoding="async" src="images/organelles/ProvsEu.png" alt="Prokaryotic vs Eukaryotic Cell diagram">
   </div>
 
   <div class="organelle-content">
@@ -488,12 +488,7 @@ cards.forEach(card=>{
       card.classList.add('active');
       container.classList.add('center-mode');
 
-      card.scrollIntoView({
-        behavior:'smooth',
-        block:'center'
-      });
-
-      // Modal content clone
+      // Modal content clone (modal is the single focus — no scroll/scale juggling)
       modalBody.innerHTML = card.querySelector('.organelle-content').innerHTML;
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -501,20 +496,28 @@ cards.forEach(card=>{
   });
 });
 
+/* CLOSE EVERYTHING */
+function closeAll(){
+  cards.forEach(c=>c.classList.remove('active'));
+  container.classList.remove('center-mode');
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+/* CLICK INSIDE MODAL MUST NOT CLOSE IT */
+modal.addEventListener('click',e=>e.stopPropagation());
+
 /* CLICK OUTSIDE TO CLOSE */
-document.addEventListener('click',()=>{
-  cards.forEach(c=>c.classList.remove('active'));
-  container.classList.remove('center-mode');
-  modal.classList.remove('active');
-  document.body.style.overflow = '';
-});
+document.addEventListener('click',closeAll);
 /* CLOSE BUTTON */
-modalClose.onclick = ()=>{
-  cards.forEach(c=>c.classList.remove('active'));
-  container.classList.remove('center-mode');
-  modal.classList.remove('active');
-  document.body.style.overflow = '';
-};
+modalClose.addEventListener('click',e=>{
+  e.stopPropagation();
+  closeAll();
+});
+/* ESC TO CLOSE */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeAll();
+});
   </script>
 </body>
 </html>
