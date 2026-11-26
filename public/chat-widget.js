@@ -16899,7 +16899,7 @@ function bqCreateDisguise(){
   var panel = document.getElementById('bqp');
   if(!panel || document.getElementById('bq-disguise')) return;
 
-  var disguise = document.createElement('dialog');
+  var disguise = document.createElement('div');
   disguise.id = 'bq-disguise';
   disguise.innerHTML =
     '<div class="bq-calc-brand">Calculator Pro</div>'+
@@ -16929,9 +16929,6 @@ function bqCreateDisguise(){
     '</div>';
   disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483647;pointer-events:auto;';
   document.body.appendChild(disguise);
-  /* Native <dialog> puts the cover in the browser's top layer, which paints
-     above every z-index — the fullscreen chat panel can never cover it. */
-  try { if(!disguise.open) disguise.show(); } catch(e){}
 
   /* Calculator logic */
   var screen = disguise.querySelector('.bq-calc-screen');
@@ -24470,7 +24467,7 @@ function v87EnhancedDisguise(){
     var panel = document.getElementById('bqp');
     if(!panel || document.getElementById('bq-disguise')) return;
 
-    var disguise = document.createElement('dialog');
+    var disguise = document.createElement('div');
     disguise.id = 'bq-disguise';
     disguise.innerHTML =
       '<div class="bq-calc-brand">' +
@@ -24524,7 +24521,6 @@ function v87EnhancedDisguise(){
 
     document.body.appendChild(disguise);
     disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483647;pointer-events:auto;';
-    try { if(!disguise.open) disguise.show(); } catch(e){}
     /* Calculator state */
     var screen = disguise.querySelector('#bq-calc-screen');
     var historyEl = disguise.querySelector('#bq-calc-history');
