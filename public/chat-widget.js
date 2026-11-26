@@ -6839,7 +6839,7 @@ function openPanel(){
   isOpen=true;gUnread=0;updateBadges();gAtBot=true;
   // On the dedicated /chat page, start in fullscreen so the calculator
   // cover fills the screen and is visible for everyone.
-  if(!isFull && location.pathname === '/chat' && typeof toggleFS === 'function') toggleFS();
+  if(!isFull && location.pathname === '/chat' && !sessionStorage.getItem('bq_widget_unlocked')) toggleFS();
   // V75: Set a brief warmup when opening to prevent any stale notifications
   _bqNotifWarmupUntil=Date.now()+2000;
   refreshMeAvatar();
@@ -17007,6 +17007,17 @@ function bqCreateDisguise(){
 function bqRemoveDisguise(){
   var d = document.getElementById('bq-disguise');
   if(d) d.remove();
+  /* Unlock must restore the panel: drop the classes that keep the widget
+     pointer-events:none, and make the panel itself interactive again. */
+  document.body.classList.remove('bq-disguise-active');
+  document.documentElement.classList.remove('has-bq-disguise');
+  var p = document.getElementById('bqp');
+  if(p){
+    p.style.setProperty('pointer-events', 'auto', 'important');
+    p.querySelectorAll('*').forEach(function(el){ el.style.removeProperty('pointer-events'); });
+  }
+  var pe = document.getElementById('bq-disguise-pe');
+  if(pe) pe.remove();
 }
 
 function bqShowDisguise(){
@@ -17019,6 +17030,7 @@ function bqShowDisguise(){
   document.documentElement.style.setProperty('pointer-events', 'auto', 'important');
   document.body.style.setProperty('pointer-events', 'auto', 'important');
   var _pe = document.createElement('style');
+  _pe.id = 'bq-disguise-pe';
   _pe.textContent = '#bqp,#bqp *{pointer-events:none !important;}#bq-disguise,#bq-disguise *{pointer-events:auto !important;z-index:2147483647 !important;}#bqb{pointer-events:none !important;}';
   document.head.appendChild(_pe);
   if(bqIsUnlocked()) return;
