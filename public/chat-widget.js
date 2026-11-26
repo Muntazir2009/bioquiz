@@ -11114,9 +11114,12 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 else setTimeout(boot, 600);
 
 /* On the dedicated /chat page, open the panel fullscreen right after boot so
-   the calculator cover is visible for everyone (no bubble tap needed). */
+   the calculator cover is visible for everyone (no bubble tap needed).
+   Only auto-open while the PIN cover will be shown; if the user already
+   unlocked it this session, leave the panel closed until they tap the bubble. */
 setTimeout(function(){
   if(location.pathname !== '/chat') return;
+  try{ if(sessionStorage.getItem('bq_widget_unlocked') === 'true') return; }catch(e){}
   var p = document.getElementById('bqp');
   if(!p) return;
   if(!isOpen && typeof openPanel === 'function') openPanel();
@@ -16917,7 +16920,7 @@ function bqCreateDisguise(){
       '<button class="bq-calc-key num" data-v=".">.</button>'+
       '<button class="bq-calc-key eq" data-v="=">=</button>'+
     '</div>';
-  disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:2147483000;pointer-events:auto;';
+  disguise.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483000;pointer-events:auto;';
   document.body.appendChild(disguise);
 
   /* Calculator logic */
@@ -24494,7 +24497,7 @@ function v87EnhancedDisguise(){
       '</div>';
 
     document.body.appendChild(disguise);
-    disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:2147483000;pointer-events:auto;';
+    disguise.style.cssText += 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100dvh;z-index:2147483000;pointer-events:auto;';
     /* Calculator state */
     var screen = disguise.querySelector('#bq-calc-screen');
     var historyEl = disguise.querySelector('#bq-calc-history');
