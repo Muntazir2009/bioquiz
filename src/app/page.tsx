@@ -182,15 +182,15 @@ export default function Home() {
               <div className="hero-anim opacity-0 mt-7">
                 <button
                   onClick={goToModules}
-                  className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  style={{
-                    background: "linear-gradient(135deg, #1a3a6a, #0D1B2A)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-                    border: '1px solid rgba(255,255,255,0.12)',
-                  }}
+                  className="cta-aurora btn-press group inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                 >
-                  Get Started
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                  <span className="cta-aurora__glow" aria-hidden="true" />
+                  <span className="cta-aurora__smear" aria-hidden="true" />
+                  <span className="cta-aurora__scrim" aria-hidden="true" />
+                  <span className="relative inline-flex items-center gap-2.5">
+                    Get Started
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                  </span>
                 </button>
               </div>
             </div>

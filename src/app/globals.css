@@ -1333,3 +1333,97 @@ a, button, [role="button"], input, select, textarea,
     transform: none !important;
   }
 }
+
+/* ── Hero CTA — colour-cycling aurora with a drifting smear ── */
+.cta-aurora {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #0d1b2a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.cta-aurora__glow,
+.cta-aurora__smear,
+.cta-aurora__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Rotating conic gradient — many colours, blurred so they bleed into each other */
+.cta-aurora__glow {
+  inset: -140% -40%;
+  background: conic-gradient(
+    from 0deg,
+    #ff4d8d,
+    #ff7a45,
+    #ffd166,
+    #7bf1a8,
+    #4fd1ff,
+    #7c7bff,
+    #d16bff,
+    #ff4d8d
+  );
+  filter: blur(16px) saturate(1.35);
+  animation: cta-spin 8s linear infinite;
+  opacity: 0.9;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+}
+
+/* Diagonal streaks drifting across the colour field — the smear */
+.cta-aurora__smear {
+  inset: -50% -140%;
+  background: repeating-linear-gradient(
+    100deg,
+    transparent 0 18px,
+    rgba(255, 255, 255, 0.55) 22px 26px,
+    transparent 30px 62px
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.6;
+  animation: cta-smear 5.5s linear infinite;
+}
+
+/* Dark scrim keeps the white label readable over the brightest hues */
+.cta-aurora__scrim {
+  background: linear-gradient(180deg, rgba(9, 14, 24, 0.44), rgba(9, 14, 24, 0.6));
+}
+
+.cta-aurora:hover {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 26px rgba(120, 150, 255, 0.32);
+}
+.cta-aurora:hover .cta-aurora__glow {
+  opacity: 1;
+}
+.cta-aurora:active .cta-aurora__glow {
+  opacity: 0.8;
+}
+
+@keyframes cta-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* 124px = two pattern periods, so the loop is seamless */
+@keyframes cta-smear {
+  to {
+    transform: translate3d(124px, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-aurora__glow {
+    animation: none;
+    transform: rotate(35deg);
+  }
+  .cta-aurora__smear {
+    animation: none;
+    opacity: 0.35;
+  }
+}
