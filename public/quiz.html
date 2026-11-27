@@ -510,6 +510,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="/js/variety.js"></script>
 <script>
 const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
 
@@ -527,7 +528,41 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
     {q:"What is the basic unit of heredity passed from parents to offspring?",options:["Gene","Protein","Enzyme","Ribosome"],explanation:"A gene is a section of DNA that carries the instructions for a trait."}
   ];
 
-  const LS = { SET:'cosmos.set.v2', QSET:'cosmos.data.v3', BEST:'cosmos.best.v2', PLAYED:'cosmos.played.v2', RESUME:'cosmos.resume.v3', HISTORY:'cosmos.history.v1' };
+  const LS = { SET:'cosmos.set.v2', QSET:'cosmos.data.v3', BEST:'cosmos.best.v2', PLAYED:'cosmos.played.v2', RESUME:'cosmos.resume.v3', HISTORY:'cosmos.history.v1', SEEN:'cosmos.seen.v1', LAST:'cosmos.lastset.v1' };
+  const variety = window.QuizVariety;
+
+  /* Questions already asked per topic, so the next AI set on the same topic is
+     built from new material instead of the same textbook classics. */
+  function topicKey(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function getSeen(topic) {
+    const all = safeJSON(localStorage.getItem(LS.SEEN)) || {};
+    const list = all[topicKey(topic)];
+    return Array.isArray(list) ? list : [];
+  }
+  function addSeen(topic, list) {
+    const all = safeJSON(localStorage.getItem(LS.SEEN)) || {};
+    const key = topicKey(topic);
+    const cur = Array.isArray(all[key]) ? all[key] : [];
+    const have = new Set(cur.map(x => String(x.q).toLowerCase().replace(/\s+/g, ' ')));
+    list.forEach(q => {
+      const k = String(q.q).toLowerCase().replace(/\s+/g, ' ');
+      if (!have.has(k)) { have.add(k); cur.push(variety.record(q)); }
+    });
+    all[key] = cur.slice(-80);
+    try { localStorage.setItem(LS.SEEN, JSON.stringify(all)); } catch {}
+  }
+  /* The set just shown, so a re-run of the topic never opens with the same
+     questions even when the topic's fresh pool has run out. */
+  function getLast(topic) {
+    const all = safeJSON(localStorage.getItem(LS.LAST)) || {};
+    const list = all[topicKey(topic)];
+    return Array.isArray(list) ? list : [];
+  }
+  function setLast(topic, list) {
+    const all = safeJSON(localStorage.getItem(LS.LAST)) || {};
+    all[topicKey(topic)] = list.map(q => q.q).slice(-40);
+    try { localStorage.setItem(LS.LAST, JSON.stringify(all)); } catch {}
+  }
   const defaults = { autoStart: true, duration: 20, sound: true, explain: true };
   const settings = Object.assign({}, defaults, safeJSON(localStorage.getItem(LS.SET)) || {});
 
@@ -943,18 +978,18 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
     const status=$('#gen-status'); status.className='gen-status';
     status.innerHTML=`<span class="spinner"></span>Synthesizing ${count} questions...`;
 
-    const prompt=`Generate exactly ${count} multiple-choice quiz questions about: "${topic}". 
-    Difficulty: ${diff}. Target Audience: ${audience}.
-    Return ONLY a valid JSON array of objects. NO markdown formatting. NO backticks.
-    Format each object like this:
-    {"q":"Question text","options":["Answer A","Answer B","Answer C","Answer D"],"answer":2,"explanation":"Brief reason why that option is correct."}
-    Rules:
-    1. Exactly 4 options.
-    2. "answer" is the 0-based index of the correct option inside "options" (0, 1, 2 or 3).
-    3. The explanation must justify exactly the option named by "answer", never a different one.
-    4. Output raw JSON ONLY.`;
+    const seen=getSeen(topic);
+    const want=count;
+    let accepted=[];
+    let returned=0;
 
-    try {
+    async function askModel(ask, lens) {
+      const prompt=variety.buildPrompt({
+        topic, difficulty:diff, audience, count:ask,
+        avoid:[...seen.map(s=>s.q), ...accepted.map(q=>q.q)],
+        seed:Math.random().toString(36).slice(2,10)+'-'+Date.now().toString(36),
+        lens
+      });
       const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({query:prompt}),signal:AbortSignal.timeout(90000)});
       if(!res.ok) throw new Error(`AI service unavailable (${res.status}). Try again in a moment.`);
       const data=await res.json();
@@ -962,13 +997,48 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
       if(answer && typeof answer==='object' && !Array.isArray(answer) && Array.isArray(answer.questions)) answer=answer.questions;
       if(typeof answer==='string') answer=extractJSON(answer.replace(/```(?:json)?/gi,'').replace(/```/g,'').trim());
       if(answer && typeof answer==='object' && !Array.isArray(answer)) answer=extractJSON(JSON.stringify(answer));
-      if(!Array.isArray(answer)||answer.length===0) throw new Error('The AI service returned no questions. Try a different topic or try again shortly.');
-      const parsed=answer;
-      const norm=parsed.map(normalize).filter(q=>q&&q.q&&q.options.length>=2);
-      if(norm.length===0) throw new Error('Failed to validate quiz structure.');
-      questions=norm; currentTopic=topic;
+      return Array.isArray(answer)?answer:[];
+    }
+
+    try {
+      if(!variety) throw new Error('Quiz engine failed to load. Reload the page.');
+      /* Ask for a few extra each round, drop anything this topic already asked
+         (now or in an earlier session), and top up until the set is complete. */
+      const last=getLast(topic);
+      const spare=[];
+      const lenses=variety.pickLenses(4);
+      for(let round=0; round<4 && accepted.length<want; round++){
+        const ask=Math.min(16, want-accepted.length+3);
+        const lens=(seen.length>0||round>0) ? lenses[round%lenses.length] : '';
+        const batch=(await askModel(ask, lens)).map(normalize).filter(q=>q&&q.q&&q.options.length>=2);
+        returned+=batch.length;
+        if(!batch.length && !accepted.length) throw new Error('The AI service returned no questions. Try a different topic or try again shortly.');
+        const kept=variety.selectFresh(batch, accepted, seen, want);
+        batch.forEach(q=>{ if(!kept.includes(q)) spare.push(q); });
+        accepted=kept;
+        if(accepted.length<want) status.innerHTML=`<span class="spinner"></span>Filtering repeats, asking for fresh angles...`;
+      }
+      /* Topic exhausted: fill the rest from what is left, least similar first,
+         but never with a question from the set just played. */
+      let reused=0;
+      if(accepted.length<want && spare.length){
+        spare.sort((a,b)=>variety.maxSimilarity(a, seen)-variety.maxSimilarity(b, seen));
+        for(const q of spare){
+          if(accepted.length>=want) break;
+          if(!q||!q.q||!Array.isArray(q.options)||q.options.length<2) continue;
+          if(variety.givesItselfAway(q)) continue;
+          if(variety.isRepeat(q, [], accepted)) continue;
+          if(last.some(s=>variety.sameQuestion(variety.record(q), {q:s}))) continue;
+          accepted.push(q); reused++;
+        }
+      }
+      if(!accepted.length) throw new Error('Failed to validate quiz structure.');
+      questions=accepted; currentTopic=topic;
+      addSeen(topic, accepted); setLast(topic, accepted);
       localStorage.setItem(LS.QSET,JSON.stringify(questions));
-      status.innerHTML='Quiz built successfully. Starting...'; status.className='gen-status ok'; sfx.finish();
+      const dropped=Math.max(0, returned-accepted.length-reused);
+      status.innerHTML=`Quiz built: ${accepted.length} question${accepted.length===1?'':'s'}${dropped>0?`, ${dropped} filtered out`:''}${reused>0?` (${reused} from earlier sets - this topic is well covered)`:''}. Starting...`;
+      status.className='gen-status ok'; sfx.finish();
       setTimeout(startQuiz,800);
     } catch(err) {
       const msg = err instanceof TypeError
