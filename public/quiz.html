@@ -517,14 +517,17 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
   'use strict';
 
   const DEFAULT_QUIZ = [
-    {q:"What principle states that it is impossible to simultaneously know the exact position and momentum of a particle?",options:["Heisenberg Uncertainty Principle","Pauli Exclusion Principle","Schrödinger's Law","Planck's Postulate"],explanation:"Heisenberg's principle is a fundamental theory in quantum mechanics detailing limits of precision."},
-    {q:"Which mathematical concept is visually represented by the Mandelbrot set?",options:["Fractals","Prime Numbers","Fibonacci Sequence","Non-Euclidean Geometry"],explanation:"The Mandelbrot set is the most famous example of a fractal in complex dynamics."},
-    {q:"In computer science, what does 'Big O' notation primarily describe?",options:["Algorithm efficiency and scaling","Memory allocation limits","Database schema complexity","Network latency"],explanation:"Big O notation bounds the execution time or space used by an algorithm as input size grows."},
-    {q:"What is the heaviest naturally occurring element on Earth?",options:["Uranium","Plutonium","Lead","Osmium"],explanation:"Uranium (atomic number 92) is the heaviest element that occurs in significant natural quantities."},
-    {q:"Which protocol secures communications over a computer network by encrypting data?",options:["HTTPS","FTP","DNS","DHCP"],explanation:"HTTPS (Hypertext Transfer Protocol Secure) encrypts data via TLS/SSL."}
+    {q:"Which organelle carries out photosynthesis in a plant cell?",options:["Chloroplast","Mitochondrion","Ribosome","Nucleus"],explanation:"Chloroplasts contain chlorophyll, which absorbs light energy for photosynthesis."},
+    {q:"Which organelle assembles proteins from amino acids?",options:["Ribosome","Lysosome","Golgi apparatus","Vacuole"],explanation:"Ribosomes translate messenger RNA into chains of amino acids, forming proteins."},
+    {q:"Which organelle produces most of a cell's ATP?",options:["Mitochondrion","Chloroplast","Ribosome","Nucleolus"],explanation:"The mitochondrion is the site of aerobic respiration, where most ATP is produced."},
+    {q:"In DNA, adenine always pairs with which base?",options:["Thymine","Guanine","Cytosine","Uracil"],explanation:"Adenine pairs with thymine through two hydrogen bonds (uracil replaces thymine in RNA)."},
+    {q:"Which process produces two genetically identical daughter cells?",options:["Mitosis","Meiosis","Fertilisation","Translation"],explanation:"Mitosis copies a cell's chromosomes and divides once, giving two identical diploid cells."},
+    {q:"Most enzymes in the human body belong to which class of molecule?",options:["Proteins","Carbohydrates","Lipids","Nucleic acids"],explanation:"Enzymes are mostly proteins, and their folded shape forms the active site."},
+    {q:"Which blood cell type carries oxygen around the body?",options:["Red blood cells","White blood cells","Platelets","Plasma cells"],explanation:"Red blood cells carry oxygen bound to haemoglobin."},
+    {q:"What is the basic unit of heredity passed from parents to offspring?",options:["Gene","Protein","Enzyme","Ribosome"],explanation:"A gene is a section of DNA that carries the instructions for a trait."}
   ];
 
-  const LS = { SET:'cosmos.set.v2', QSET:'cosmos.data.v2', BEST:'cosmos.best.v2', PLAYED:'cosmos.played.v2', RESUME:'cosmos.resume.v3', HISTORY:'cosmos.history.v1' };
+  const LS = { SET:'cosmos.set.v2', QSET:'cosmos.data.v3', BEST:'cosmos.best.v2', PLAYED:'cosmos.played.v2', RESUME:'cosmos.resume.v3', HISTORY:'cosmos.history.v1' };
   const defaults = { autoStart: true, duration: 20, sound: true, explain: true };
   const settings = Object.assign({}, defaults, safeJSON(localStorage.getItem(LS.SET)) || {});
 
@@ -554,17 +557,49 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
 
   function normalize(q) {
     if (!q) return null;
-    let out = { q: q.q||q.question||'', options: q.options||q.choices||[], answer: 0, explanation: q.explanation||q.explain||'' };
-    let correctText = "";
-    if (typeof q.answer==='number' && out.options[q.answer]) correctText = out.options[q.answer];
-    else if (typeof q.answer==='string') correctText = q.answer;
-    else correctText = out.options[0];
-    out.options = out.options.map(o => String(o).replace(/^\s*[a-dA-D1-4][\.\)]\s+/,'').trim());
-    correctText = String(correctText).replace(/^\s*[a-dA-D1-4][\.\)]\s+/,'').trim();
-    if (out.options.length > 1) {
-      let s=[...out.options]; for(let i=s.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s[i],s[j]]=[s[j],s[i]];} out.options=s;
-      const ni=out.options.findIndex(o=>o.toLowerCase()===correctText.toLowerCase()); out.answer=ni>=0?ni:0;
+    const rawOptions = (q.options || q.choices || [])
+      .map(o => String(o).replace(/^\s*[a-dA-D1-4][\.\)]\s+/, '').trim());
+    if (rawOptions.length < 2) return null;
+    const out = { q: q.q || q.question || '', options: rawOptions, answer: 0, explanation: q.explanation || q.explain || '' };
+
+    // Work out which option the source says is correct
+    const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const asIndex = typeof q.answer === 'number' ? q.answer
+      : (typeof q.answer === 'string' && /^\d+$/.test(q.answer.trim()) ? Number(q.answer.trim())
+      : (typeof q.answer === 'string' && /^[a-fA-F]$/.test(q.answer.trim()) ? q.answer.trim().toUpperCase().charCodeAt(0) - 65 : null));
+    const statedText = typeof q.answer === 'string' ? q.answer.replace(/^\s*[a-dA-D1-4][\.\)]\s+/, '').trim() : '';
+    let correctText = null;
+    if (asIndex !== null && rawOptions[asIndex]) correctText = rawOptions[asIndex];
+    else if (asIndex === null && statedText) correctText = statedText;
+
+    // The explanation names the right option more reliably than an index the model
+    // may have fumbled: if it never mentions the keyed option but names exactly one
+    // other, the model swapped them - follow the explanation.
+    const win = ' ' + norm(out.explanation) + ' ';
+    const mentions = t => t.length > 2 && win.includes(' ' + t + ' ');
+    if (correctText === null) {
+      const named = win.length > 14 ? rawOptions.filter(o => mentions(norm(o))) : [];
+      correctText = named.length === 1 ? named[0] : rawOptions[0];
+    } else if (win.length > 14 && !mentions(norm(correctText))) {
+      const named = rawOptions.filter(o => mentions(norm(o)));
+      if (named.length === 1) correctText = named[0];
     }
+
+    const target = norm(correctText);
+    const findCorrect = list => {
+      let i = list.findIndex(o => norm(o) === target);
+      if (i < 0) i = list.findIndex(o => norm(o).includes(target) || target.includes(norm(o)));
+      return i;
+    };
+
+    // Shuffle the display order but keep the key attached to its option
+    const order = rawOptions.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    const shuffled = order.map(i => rawOptions[i]);
+    let ni = findCorrect(shuffled);
+    if (ni < 0) ni = order.indexOf(0); // unmatched key: fall back to the stated first option
+    out.options = shuffled;
+    out.answer = ni >= 0 ? ni : 0;
     return out;
   }
 
@@ -912,11 +947,12 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
     Difficulty: ${diff}. Target Audience: ${audience}.
     Return ONLY a valid JSON array of objects. NO markdown formatting. NO backticks.
     Format each object like this:
-    {"q":"Question text","options":["Correct Answer","Wrong Answer 1","Wrong Answer 2","Wrong Answer 3"],"explanation":"Brief reason why it's correct."}
+    {"q":"Question text","options":["Answer A","Answer B","Answer C","Answer D"],"answer":2,"explanation":"Brief reason why that option is correct."}
     Rules:
     1. Exactly 4 options.
-    2. The correct answer MUST ALWAYS be the first item in the "options" array (Index 0).
-    3. Output raw JSON ONLY.`;
+    2. "answer" is the 0-based index of the correct option inside "options" (0, 1, 2 or 3).
+    3. The explanation must justify exactly the option named by "answer", never a different one.
+    4. Output raw JSON ONLY.`;
 
     try {
       const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({query:prompt}),signal:AbortSignal.timeout(90000)});
@@ -943,10 +979,25 @@ const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
     finally { btn.disabled=false; }
   });
 
+  function repairJSON(s) {
+    return s.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'").replace(/,\s*([}\]])/g, '$1');
+  }
   function extractJSON(text) {
-    if(!text) return null; try{return JSON.parse(text);}catch{}
-    const a=text.indexOf('['),b=text.lastIndexOf(']');
-    if(a>=0&&b>a) try{return JSON.parse(text.slice(a,b+1));}catch{} return null;
+    if(!text) return null;
+    const t = String(text).replace(/```(?:json)?/gi,'').replace(/```/g,'').trim();
+    try{ const d = JSON.parse(repairJSON(t)); if(Array.isArray(d)) return d; if(d && Array.isArray(d.questions)) return d.questions; }catch{}
+    const a = t.indexOf('['), b = t.lastIndexOf(']');
+    if(a >= 0 && b > a){ try{ const d = JSON.parse(repairJSON(t.slice(a,b+1))); if(Array.isArray(d)) return d; }catch{} }
+    // Salvage each balanced {...} block on its own so one broken object costs one question, not the quiz
+    const out = []; let depth = 0, start = -1, inStr = false, esc = false;
+    for(let i = 0; i < t.length; i++){
+      const c = t[i];
+      if(inStr){ if(esc) esc = false; else if(c === '\\') esc = true; else if(c === '"') inStr = false; continue; }
+      if(c === '"'){ inStr = true; continue; }
+      if(c === '{'){ if(depth === 0) start = i; depth++; }
+      else if(c === '}' && depth > 0){ depth--; if(depth === 0 && start >= 0){ try{ out.push(JSON.parse(repairJSON(t.slice(start, i+1)))); }catch{} start = -1; } }
+    }
+    return out.length ? out : null;
   }
 
   /* Settings */
