@@ -16875,7 +16875,7 @@ disguiseStyle.textContent = [
   '#bq-disguise .bq-calc-key.num:hover{background:rgba(255,255,255,.13);}',
   '#bq-disguise .bq-calc-key.op{background:rgba(96,165,250,.15);color:#60a5fa;}',
   '#bq-disguise .bq-calc-key.op:hover{background:rgba(96,165,250,.25);}',
-  '#bq-disguise .bq-calc-key.fn{background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);}',
+  '#bq-disguise .bq-calc-key.fn{background:rgba(255,255,255,.06);color:rgba(255,255,255,.72);}',
   '#bq-disguise .bq-calc-key.fn:hover{background:rgba(255,255,255,.08);}',
   '#bq-disguise .bq-calc-key.eq{background:linear-gradient(135deg,#60a5fa,#818cf8);color:#fff;font-weight:700;}',
   '#bq-disguise .bq-calc-key.eq:hover{filter:brightness(1.15);}',

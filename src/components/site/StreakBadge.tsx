@@ -249,7 +249,7 @@ export function StreakBadge() {
             {state.count}
           </motion.span>
         </AnimatePresence>{" "}
-        <span style={{ color: '#6B6560' }}>day{state.count === 1 ? "" : "s"}</span>
+        <span className="opacity-75">day{state.count === 1 ? "" : "s"}</span>
       </span>
     </motion.div>
   );
