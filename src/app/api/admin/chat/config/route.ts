@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const ADMIN_PASSWORD = "1306";
+import { ADMIN_PASSWORD } from "@/lib/admin-auth";
 
 function auth(req: NextRequest): boolean {
   const pwd = req.headers.get("x-admin-password");

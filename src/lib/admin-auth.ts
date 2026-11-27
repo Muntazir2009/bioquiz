@@ -6,7 +6,7 @@
  * a warning is logged once on the server when that fallback is in play.
  */
 const configured = process.env.ADMIN_PASSWORD;
-const DEV_DEFAULT = "0613";
+const DEV_DEFAULT = "1306";
 
 export const ADMIN_PASSWORD =
   configured && configured.length > 0 ? configured : DEV_DEFAULT;
