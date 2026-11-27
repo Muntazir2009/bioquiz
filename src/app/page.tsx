@@ -56,7 +56,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col relative">
+    <div className="h-[100dvh] w-full overflow-hidden flex flex-col relative">
       {/* Fullscreen flower background */}
       <div
         aria-hidden="true"

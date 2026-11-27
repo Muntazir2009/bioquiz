@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { generateShareId } from "@/lib/file-storage";
 
-const ADMIN_PASSWORD = "0613";
+import { ADMIN_PASSWORD } from "@/lib/admin-auth";
 
 export async function POST(request: Request) {
   try {

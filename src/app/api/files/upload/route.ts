@@ -21,6 +21,17 @@ function isAllowedType(mimeType: string): boolean {
   return ALLOWED_PREFIXES.some((p) => mimeType.startsWith(p));
 }
 
+// Types that a browser may execute when served from our own origin
+const BLOCKED_TYPES = [
+  "text/html",
+  "application/xhtml+xml",
+  "image/svg+xml",
+  "text/xml",
+  "application/xml",
+  "text/javascript",
+  "application/javascript",
+];
+
 export async function POST(request: Request) {
   try {
     // Parse multipart form data
@@ -49,6 +60,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: `File type "${file.type || "unknown"}" is not allowed` },
         { status: 400 }
+      );
+    }
+
+    // Refuse types a browser can execute from our own origin (stored XSS)
+    if (BLOCKED_TYPES.includes(file.type.toLowerCase())) {
+      return NextResponse.json(
+        { error: `File type "${file.type}" is not accepted` },
+        { status: 415 }
       );
     }
 

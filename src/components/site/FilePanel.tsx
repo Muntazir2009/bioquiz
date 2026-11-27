@@ -43,7 +43,7 @@ export function FilePanel({ open, onClose }: { open: boolean; onClose: () => voi
     if (uploaderId) headers["x-uploader-id"] = uploaderId;
     if (typeof window !== "undefined") {
       const adminAuth = sessionStorage.getItem("admin-auth");
-      if (adminAuth === "0613") headers["x-admin-password"] = "0613";
+      if (adminAuth) headers["x-admin-password"] = adminAuth;
     }
     return headers;
   }, [uploaderId]);

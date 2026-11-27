@@ -18,7 +18,7 @@ export default function ChatPage() {
       </div>
 
       {mounted && (
-        <div className="pt-14 h-screen flex flex-col overflow-hidden">
+        <div className="pt-14 h-[100dvh] flex flex-col overflow-hidden">
           <div className="flex-1 relative min-h-0" id="chat-mount" />
           <Script
             src="/chat-widget.js"

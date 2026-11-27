@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_PASSWORD } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 const FB = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
-const PWD = "0613";
+const PWD = ADMIN_PASSWORD;
 
 function isAuth(req: NextRequest) {
   return req.headers.get("x-admin-password") === PWD;
+}
+
+/** Firebase REST read that returns null instead of throwing when unreachable */
+async function fbRead(path: string, timeoutMs = 8000): Promise<any | null> {
+  try {
+    const res = await fetch(`${FB}${path}`, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /** GET /api/admin/chat?type=global|dms — fetch messages & metadata */
@@ -18,8 +30,10 @@ export async function GET(req: NextRequest) {
   try {
     if (type === "global") {
       // Fetch global messages (no orderBy to avoid Firebase index requirements)
-      const res = await fetch(`${FB}/bq_messages.json?limitToLast=50`);
-      const data = await res.json();
+      const data = await fbRead("/bq_messages.json?limitToLast=50");
+      if (data === null) {
+        return NextResponse.json({ messages: [], total: 0, unreachable: true }, { status: 503 });
+      }
       const messages = data && typeof data === "object" ? Object.entries(data).filter(([key]) => key !== "error").map(([key, val]: [string, any]) => ({
         key,
         text: val.text || "",
@@ -39,8 +53,10 @@ export async function GET(req: NextRequest) {
 
     if (type === "dms") {
       // Fetch DM conversations metadata
-      const res = await fetch(`${FB}/bq_dms.json?shallow=true`);
-      const data = await res.json();
+      const data = await fbRead("/bq_dms.json?shallow=true");
+      if (data === null) {
+        return NextResponse.json({ conversations: [], total: 0, unreachable: true }, { status: 503 });
+      }
       const dmIds = data ? Object.keys(data) : [];
 
       // For each DM, fetch metadata and last message
@@ -48,9 +64,9 @@ export async function GET(req: NextRequest) {
         dmIds.slice(0, 30).map(async (dmId) => {
           try {
             const [metaRes, msgRes, msgCountRes] = await Promise.all([
-              fetch(`${FB}/bq_dms/${dmId}/meta.json`),
-              fetch(`${FB}/bq_dms/${dmId}/messages.json?limitToLast=1`),
-              fetch(`${FB}/bq_dms/${dmId}/messages.json?shallow=true`),
+              fetch(`${FB}/bq_dms/${dmId}/meta.json`, { signal: AbortSignal.timeout(8000) }),
+              fetch(`${FB}/bq_dms/${dmId}/messages.json?limitToLast=1`, { signal: AbortSignal.timeout(8000) }),
+              fetch(`${FB}/bq_dms/${dmId}/messages.json?shallow=true`, { signal: AbortSignal.timeout(8000) }),
             ]);
             const meta = await metaRes.json();
             const msgData = await msgRes.json();
@@ -101,12 +117,13 @@ export async function GET(req: NextRequest) {
       if (!dmId) return NextResponse.json({ error: "dmId required" }, { status: 400 });
 
       // Fetch messages and meta in parallel
-      const [msgRes, metaRes] = await Promise.all([
-        fetch(`${FB}/bq_dms/${dmId}/messages.json?limitToLast=50`),
-        fetch(`${FB}/bq_dms/${dmId}/meta.json`),
+      const [msgData, meta] = await Promise.all([
+        fbRead(`/bq_dms/${dmId}/messages.json?limitToLast=50`),
+        fbRead(`/bq_dms/${dmId}/meta.json`),
       ]);
-      const msgData = await msgRes.json();
-      const meta = await metaRes.json();
+      if (msgData === null && meta === null) {
+        return NextResponse.json({ messages: [], dmId, participantNames: [], unreachable: true }, { status: 503 });
+      }
 
       const messages = msgData ? Object.entries(msgData).filter(([key]) => key !== "error").map(([key, val]: [string, any]) => ({
         key,
@@ -159,6 +176,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msg),
+        signal: AbortSignal.timeout(8000),
       });
       if (!res.ok) {
         return NextResponse.json({ error: "Failed to send announcement" }, { status: 502 });
@@ -169,10 +187,10 @@ export async function POST(req: NextRequest) {
     if (action === "clear-all") {
       if (context === "dm" && dmId) {
         // Clear all messages in a DM conversation
-        await fetch(`${FB}/bq_dms/${dmId}/messages.json`, { method: "DELETE" });
+        await fetch(`${FB}/bq_dms/${dmId}/messages.json`, { method: "DELETE", signal: AbortSignal.timeout(8000) });
       } else {
         // Clear all global messages
-        await fetch(`${FB}/bq_messages.json`, { method: "DELETE" });
+        await fetch(`${FB}/bq_messages.json`, { method: "DELETE", signal: AbortSignal.timeout(8000) });
       }
       return NextResponse.json({ success: true });
     }
@@ -198,7 +216,7 @@ export async function DELETE(req: NextRequest) {
       ? `bq_dms/${dmId}/messages/${messageKey}`
       : `bq_messages/${messageKey}`;
 
-    await fetch(`${FB}/${path}.json`, { method: "DELETE" });
+    await fetch(`${FB}/${path}.json`, { method: "DELETE", signal: AbortSignal.timeout(8000) });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[admin/chat] Delete error:", err);

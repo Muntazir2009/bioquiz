@@ -175,7 +175,7 @@ export const Slideshow = forwardRef<SlideshowRef, SlideshowProps>(
           {children.map((child, i) => (
             <div
               key={i}
-              className="w-screen h-screen flex-shrink-0 flex items-center justify-center overflow-hidden"
+              className="w-full h-full flex-shrink-0 flex items-center justify-center overflow-hidden"
             >
               {child}
             </div>

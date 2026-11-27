@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   keywords: ["BioQuiz", "biology", "AI", "3D cell viewer", "organelles"],
   authors: [{ name: "BioQuiz Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
 };
 

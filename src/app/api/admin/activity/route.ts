@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_PASSWORD = "0613";
+import { ADMIN_PASSWORD } from "@/lib/admin-auth";
 const FIREBASE_BASE = "https://bioquiz-chat-default-rtdb.asia-southeast1.firebasedatabase.app";
 
 function isAdmin(request: Request): boolean {

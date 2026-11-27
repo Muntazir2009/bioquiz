@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#04060c" />
-<title>COSMIC | Premium Intelligence</title>
+<title>BioQuiz — Quiz</title>
 <meta name="description" content="Generate beautiful, highly intelligent quizzes instantly." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -291,7 +291,7 @@
 
 <div class="app">
   <header class="topbar">
-    <div class="brand"><span class="logo">✦</span>COSMIC</div>
+    <div class="brand"><span class="logo">✦</span>BioQuiz</div>
     <div class="topbar-actions">
       <button class="icon-btn" id="btn-history" title="Quiz History">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -313,9 +313,9 @@
     <!-- HOME -->
     <div class="card view" id="view-home">
       <div class="card-inner">
-        <div class="eyebrow">Intelligence Module</div>
-        <h1 class="h1">Test your limits.</h1>
-        <p class="lead">Take the core intelligence test, or generate a custom module using the AI Forge.</p>
+        <div class="eyebrow">Biology Module</div>
+        <h1 class="h1">Test your biology.</h1>
+        <p class="lead">Take the core biology quiz, or generate a custom quiz with the AI Forge.</p>
         <div class="cta-grid" id="home-ctas">
           <button class="cta primary" id="go-resume" style="display:none;">▶ Resume Session</button>
           <button class="cta primary" id="go-quiz">Start Default</button>
@@ -572,11 +572,37 @@ const WORKER_URL = "https://billowing-mouse-d2d4.killermunu.workers.dev/";
 
   /* Audio */
   const sfx = (() => {
-    const n = { click:new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'), hover:new Audio('https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3'), correct:new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'), wrong:new Audio('https://actions.google.com/sounds/v1/alarms/error_beep.ogg'), tick:new Audio('https://actions.google.com/sounds/v1/ui/mechanical_clock_tick.ogg'), finish:new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'), lifeline:new Audio('https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3') };
-    n.hover.volume=0.1; n.click.volume=0.4; n.tick.volume=0.3; n.correct.volume=0.5; n.wrong.volume=0.3; n.lifeline.volume=0.5;
-    let isTock=false;
-    const play=name=>{ if(!settings.sound) return; const s=n[name]; if(!s) return; if(name==='tick'){s.playbackRate=isTock?0.85:1.0;isTock=!isTock;} s.currentTime=0; s.play().catch(()=>{}); };
-    return { click:()=>play('click'), hover:()=>play('hover'), correct:()=>play('correct'), wrong:()=>play('wrong'), tick:()=>play('tick'), finish:()=>play('finish'), lifeline:()=>play('lifeline'), ensure:()=>{} };
+    let ctx = null, isTock = false;
+    const ensure = () => {
+      if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    };
+    const tone = (freq, { dur = 0.12, type = 'sine', gain = 0.12, slideTo = null, delay = 0 } = {}) => {
+      const c = ensure(); if (!c) return;
+      const t0 = c.currentTime + delay;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t0);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(gain, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g).connect(c.destination);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    };
+    const play = name => {
+      if (!settings.sound) return;
+      switch (name) {
+        case 'click': tone(520, { dur: 0.06, type: 'triangle', gain: 0.1 }); break;
+        case 'hover': tone(300, { dur: 0.03, gain: 0.04 }); break;
+        case 'correct': tone(660, { dur: 0.12, gain: 0.14 }); tone(990, { dur: 0.18, gain: 0.12, delay: 0.1 }); break;
+        case 'wrong': tone(220, { dur: 0.22, type: 'sawtooth', gain: 0.1, slideTo: 150 }); break;
+        case 'tick': tone(isTock ? 900 : 780, { dur: 0.04, type: 'square', gain: 0.05 }); isTock = !isTock; break;
+        case 'finish': [523, 659, 784, 1047].forEach((f, i) => tone(f, { dur: 0.25, gain: 0.12, delay: i * 0.11 })); break;
+        case 'lifeline': tone(440, { dur: 0.3, type: 'triangle', gain: 0.1, slideTo: 880 }); break;
+      }
+    };
+    return { click: () => play('click'), hover: () => play('hover'), correct: () => play('correct'), wrong: () => play('wrong'), tick: () => play('tick'), finish: () => play('finish'), lifeline: () => play('lifeline'), ensure: () => { try { ensure(); } catch (e) {} } };
   })();
 
   /* Timer */

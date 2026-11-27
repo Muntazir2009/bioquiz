@@ -16,7 +16,7 @@ const dancingScript = Dancing_Script({
  * - Fullscreen flower background, blurred via CSS (static, GPU-composited)
  * - "Hello." stroke-draw + fade, then overlay fades out
  * - Only transform/opacity are animated (compositor-only → holds 60fps)
- * - Shows every page load — no skip, no cache
+ * - Full animation on the first visit of a session, quick fade afterwards
  */
 
 export function Loader() {
@@ -32,8 +32,25 @@ export function Loader() {
   }, []);
 
   useEffect(() => {
+    // Respect reduced-motion: no stroke draw, just a brief branded frame
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      const quick = setTimeout(dismiss, 450);
+      return () => clearTimeout(quick);
+    }
+
     // 6s fallback — guarantees dismissal even if GSAP or the font fails
     const fallback = setTimeout(dismiss, 6000);
+
+    // First visit of a session gets the full intro; later loads fade fast
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("bq-intro-seen") === "1";
+      sessionStorage.setItem("bq-intro-seen", "1");
+    } catch {
+      /* storage unavailable — treat as first visit */
+    }
+    const speed = seen ? 0.22 : 1;
 
     const run = () => {
       const text = svgTextRef.current;
@@ -62,23 +79,23 @@ export function Loader() {
             },
           });
 
-          // 1. Stroke draw over 1.3s
-          tl.to(text, { strokeDashoffset: 0, duration: 1.3, ease: "power2.inOut" }, 0.2);
+          // 1. Stroke draw
+          tl.to(text, { strokeDashoffset: 0, duration: 1.3 * speed, ease: "power2.inOut" }, 0.2);
 
           // 2. Fill fades in
-          tl.to(text, { fillOpacity: 1, duration: 0.4, ease: "power2.out" }, 0.9);
+          tl.to(text, { fillOpacity: 1, duration: 0.4 * speed, ease: "power2.out" }, 0.9 * speed);
 
           // 3. Subtitle fades in
           tl.fromTo(
             subtitleRef.current,
             { opacity: 0, y: 8 },
-            { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+            { opacity: 1, y: 0, duration: 0.4 * speed, ease: "power2.out" },
             "-=0.1"
           );
 
           // 4. Overlay + container fade out — opacity only, no filter tweens
-          tl.to(overlay, { opacity: 0, duration: 0.6, ease: "power2.inOut" }, "-=0.1");
-          tl.to(container, { opacity: 0, duration: 0.4, ease: "power2.out" }, "<0.2");
+          tl.to(overlay, { opacity: 0, duration: 0.6 * speed, ease: "power2.inOut" }, "-=0.1");
+          tl.to(container, { opacity: 0, duration: 0.4 * speed, ease: "power2.out" }, "<0.2");
         })
         .catch(() => {
           clearTimeout(fallback);

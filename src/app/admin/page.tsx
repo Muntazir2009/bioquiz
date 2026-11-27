@@ -408,7 +408,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem("admin-auth");
-    if (saved === "0613") { queueMicrotask(() => { setIsAuthed(true); setPassword(saved); }); }
+    if (!saved) return;
+    fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: saved }) })
+      .then((res) => {
+        if (res.ok) queueMicrotask(() => { setIsAuthed(true); setPassword(saved); });
+        else sessionStorage.removeItem("admin-auth");
+      })
+      .catch(() => sessionStorage.removeItem("admin-auth"));
   }, []);
 
   // ─── Firebase Real-Time Listeners ─────────────────────────────────────────
