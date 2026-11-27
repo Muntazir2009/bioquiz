@@ -204,11 +204,11 @@ export function StreakBadge() {
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="group relative inline-flex h-8 items-center gap-2 overflow-hidden rounded-full pl-2.5 pr-3 text-[12px] font-medium"
       style={{
-        background: 'rgba(255,255,255,0.50)',
+        background: '#ffffff',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(0,0,0,0.06)',
-        color: '#1C1C1C',
+        border: '1px solid rgba(0,0,0,0.08)',
+        color: '#141414',
       }}
       title={`You've visited ${state.count} day${state.count === 1 ? "" : "s"} in a row (best: ${state.bestStreak})`}
     >
@@ -249,7 +249,7 @@ export function StreakBadge() {
             {state.count}
           </motion.span>
         </AnimatePresence>{" "}
-        <span className="opacity-75">day{state.count === 1 ? "" : "s"}</span>
+        <span className="opacity-90">day{state.count === 1 ? "" : "s"}</span>
       </span>
     </motion.div>
   );

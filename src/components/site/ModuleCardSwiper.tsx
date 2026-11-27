@@ -602,9 +602,9 @@ function ModuleCard({
         <div
           className="space-y-1.5 flex-shrink-0 rounded-xl px-3 py-2.5"
           style={{
-            background: 'rgba(0,0,0,0.25)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+            background: 'rgba(6,10,24,0.45)',
+            border: '1px solid rgba(255,255,255,0.14)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
           }}
         >
           <h3
@@ -618,7 +618,7 @@ function ModuleCard({
           >
             {m.title}
           </h3>
-          <p className="text-white/70 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
+          <p className="text-white/88 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
             style={{ textShadow: "0 1px 4px rgba(0,0,0,0.15)" }}
           >
             {m.desc}
@@ -635,7 +635,7 @@ function ModuleCard({
                   animation: "status-pulse 2s ease-in-out infinite",
                 }}
               />
-              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/80">
+              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/90">
                 {m.status}
               </span>
             </div>
