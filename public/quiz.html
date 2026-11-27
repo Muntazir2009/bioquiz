@@ -337,7 +337,7 @@
         <form class="form" id="gen-form" autocomplete="off">
           <div class="field">
             <label>Topic Target</label>
-            <textarea class="textarea" id="g-topic" placeholder="e.g. Astrophysics, Ancient Rome, The Matrix..." required></textarea>
+            <textarea class="textarea" id="g-topic" placeholder="e.g. Photosynthesis, DNA replication, Human anatomy..." required></textarea>
           </div>
           <div class="row">
             <div class="field">
@@ -366,7 +366,7 @@
             <input type="range" id="g-count" min="3" max="50" value="10" step="1" />
           </div>
           <div class="cta-grid" style="margin-top:10px;">
-            <button type="submit" class="cta primary" id="gen-submit" style="flex:2;">Execute Synthesis</button>
+            <button type="submit" class="cta primary" id="gen-submit" style="flex:2;">Generate Quiz</button>
             <button type="button" class="cta ghost" id="gen-back" style="flex:1;">Cancel</button>
           </div>
           <div class="gen-status" id="gen-status" aria-live="polite"></div>
@@ -511,7 +511,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const WORKER_URL = "https://billowing-mouse-d2d4.killermunu.workers.dev/";
+const WORKER_URL = "https://ask-ai.killermunu.workers.dev";
 
 (() => {
   'use strict';
@@ -919,20 +919,27 @@ const WORKER_URL = "https://billowing-mouse-d2d4.killermunu.workers.dev/";
     3. Output raw JSON ONLY.`;
 
     try {
-      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{response_mime_type:"application/json"}})});
+      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({query:prompt}),signal:AbortSignal.timeout(90000)});
+      if(!res.ok) throw new Error(`AI service unavailable (${res.status}). Try again in a moment.`);
       const data=await res.json();
-      if(!data.candidates){ const detail=data.error?.message||data.error?.status||JSON.stringify(data).slice(0,200); throw new Error(`API: ${detail}`); }
-      let textOutput=data.candidates[0].content.parts[0].text;
-      textOutput=textOutput.replace(/```(?:json)?/gi,'').replace(/```/g,'').trim();
-      const parsed=extractJSON(textOutput);
-      if(!Array.isArray(parsed)||parsed.length===0) throw new Error('Data format error from AI.');
+      let answer=data.answer ?? data.reply ?? data;
+      if(answer && typeof answer==='object' && !Array.isArray(answer) && Array.isArray(answer.questions)) answer=answer.questions;
+      if(typeof answer==='string') answer=extractJSON(answer.replace(/```(?:json)?/gi,'').replace(/```/g,'').trim());
+      if(answer && typeof answer==='object' && !Array.isArray(answer)) answer=extractJSON(JSON.stringify(answer));
+      if(!Array.isArray(answer)||answer.length===0) throw new Error('The AI service returned no questions. Try a different topic or try again shortly.');
+      const parsed=answer;
       const norm=parsed.map(normalize).filter(q=>q&&q.q&&q.options.length>=2);
       if(norm.length===0) throw new Error('Failed to validate quiz structure.');
       questions=norm; currentTopic=topic;
       localStorage.setItem(LS.QSET,JSON.stringify(questions));
       status.innerHTML='Quiz built successfully. Starting...'; status.className='gen-status ok'; sfx.finish();
       setTimeout(startQuiz,800);
-    } catch(err) { status.innerHTML=`ERROR: ${err.message}`; status.className='gen-status err'; sfx.wrong(); }
+    } catch(err) {
+      const msg = err instanceof TypeError
+        ? 'Could not reach the AI service. Check your connection and try again.'
+        : err.message;
+      status.innerHTML=`ERROR: ${msg}`; status.className='gen-status err'; sfx.wrong();
+    }
     finally { btn.disabled=false; }
   });
 
