@@ -1388,93 +1388,127 @@ a, button, [role="button"], input, select, textarea,
   outline-offset: 3px;
 }
 
-.cta-pump__field,
-.cta-pump__bloom,
-.cta-pump__beat,
+.cta-pump__aurora,
+.cta-pump__gas,
+.cta-pump__cloud,
 .cta-pump__scrim,
 .cta-pump__label {
   pointer-events: none;
 }
 
-/* Rotating colour field, heavily blurred so hues bleed together */
-.cta-pump__field {
+/* Slow aurora ribbons rotating behind the gas */
+.cta-pump__aurora {
   position: absolute;
-  inset: -130% -40%;
+  inset: -95% -32%;
   background: conic-gradient(
     from 0deg,
-    #0d5c47,
-    #2fae84,
-    #d9c04a,
-    #d9603f,
-    #a44f8c,
-    #3d72b8,
-    #0d5c47
+    #0b6049 0%,
+    #17607a 16%,
+    #2a3f8f 33%,
+    #6a2f6b 50%,
+    #8a5a14 67%,
+    #12735c 84%,
+    #0b6049 100%
   );
-  filter: blur(17px) saturate(1.25);
+  filter: blur(15px) saturate(1.4);
   opacity: 0.95;
-  animation: pump-spin 6.5s linear infinite;
+  animation: pump-spin 12s linear infinite;
 }
 
-/* Injected colour blobs — each swells out of the base, then fades */
-.cta-pump__bloom {
+/* Gas: colour clouds drifting and swelling inside the button */
+.cta-pump__gas {
   position: absolute;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  opacity: 0;
-  filter: blur(8px);
+  inset: -25%;
+  filter: blur(9px) saturate(1.35);
   mix-blend-mode: screen;
-  animation: pump-bloom 3.9s cubic-bezier(0.33, 0.8, 0.4, 1) infinite;
+  transition: filter 300ms ease;
 }
 
-.cta-pump__bloom--1 {
-  left: 12%;
-  bottom: -14%;
-  background: radial-gradient(circle, #6ef2c0 0%, rgba(110, 242, 192, 0) 66%);
-  animation-delay: 0s;
+.cta-pump:hover .cta-pump__gas {
+  filter: blur(9px) saturate(1.55) brightness(1.06);
 }
 
-.cta-pump__bloom--2 {
-  left: 44%;
-  bottom: -18%;
-  width: 52px;
-  height: 52px;
-  background: radial-gradient(circle, #ffd166 0%, rgba(255, 209, 102, 0) 66%);
-  animation-delay: 1.3s;
-}
-
-.cta-pump__bloom--3 {
-  left: 76%;
-  bottom: -14%;
-  background: radial-gradient(circle, #ff8f7a 0%, rgba(255, 143, 122, 0) 66%);
-  animation-delay: 2.6s;
-}
-
-/* A slow ripple keeps the pump feel under the colour washes */
-.cta-pump__beat {
+.cta-pump__cloud {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 130%;
+  width: 76%;
   aspect-ratio: 1;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  opacity: 0;
-  animation: pump-beat 3.9s ease-out infinite;
+  opacity: 0.9;
+  will-change: transform;
+  animation: gas-a 8.5s ease-in-out infinite alternate;
 }
+
+.cta-pump__cloud--1 {
+  left: -16%;
+  top: -32%;
+  background: radial-gradient(
+    circle at 46% 46%,
+    rgba(46, 205, 162, 0.95) 0%,
+    rgba(46, 205, 162, 0) 62%
+  );
+  animation-name: gas-a;
+  animation-duration: 8.5s;
+}
+
+.cta-pump__cloud--2 {
+  left: 20%;
+  top: 2%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(88, 122, 240, 0.95) 0%,
+    rgba(88, 122, 240, 0) 62%
+  );
+  animation-name: gas-b;
+  animation-duration: 7.2s;
+}
+
+.cta-pump__cloud--3 {
+  left: 56%;
+  top: -26%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(214, 112, 222, 0.92) 0%,
+    rgba(214, 112, 222, 0) 62%
+  );
+  animation-name: gas-c;
+  animation-duration: 9.8s;
+}
+
+.cta-pump__cloud--4 {
+  left: 6%;
+  top: 38%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(244, 192, 74, 0.95) 0%,
+    rgba(244, 192, 74, 0) 60%
+  );
+  animation-name: gas-d;
+  animation-duration: 6.6s;
+}
+
+.cta-pump__cloud--5 {
+  left: 60%;
+  top: 32%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(58, 214, 224, 0.9) 0%,
+    rgba(58, 214, 224, 0) 62%
+  );
+  animation-name: gas-e;
+  animation-duration: 11s;
+}
+
 
 /* Two-part scrim: colours read at the edges, the label keeps contrast */
 .cta-pump__scrim {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      ellipse 66% 112% at 50% 50%,
-      rgba(7, 22, 18, 0.78) 0%,
-      rgba(7, 22, 18, 0.7) 46%,
-      rgba(7, 22, 18, 0.4) 100%
-    ),
-    linear-gradient(rgba(7, 22, 18, 0.34), rgba(7, 22, 18, 0.42));
+  background: radial-gradient(
+    ellipse 62% 104% at 50% 50%,
+    rgba(6, 20, 16, 0.7) 0%,
+    rgba(6, 20, 16, 0.6) 48%,
+    rgba(6, 20, 16, 0.16) 100%
+  );
 }
 
 .cta-pump__label {
@@ -1500,56 +1534,65 @@ a, button, [role="button"], input, select, textarea,
   }
 }
 
-@keyframes pump-bloom {
+/* Each cloud follows its own slow, looping path so the gas keeps churning */
+@keyframes gas-a {
   0% {
-    transform: scale(0.35) translate3d(0, 26%, 0);
-    opacity: 0;
-  }
-  22% {
-    opacity: 0.95;
-  }
-  62% {
-    opacity: 0.7;
+    transform: translate3d(-8%, 6%, 0) scale(0.85) rotate(0deg);
   }
   100% {
-    transform: scale(2.1) translate3d(0, -18%, 0);
-    opacity: 0;
+    transform: translate3d(24%, -20%, 0) scale(1.4) rotate(40deg);
   }
 }
 
-@keyframes pump-beat {
+@keyframes gas-b {
   0% {
-    transform: translate(-50%, -50%) scale(0.55);
-    opacity: 0.45;
-  }
-  75% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0;
+    transform: translate3d(14%, -12%, 0) scale(1.2);
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 0;
+    transform: translate3d(-22%, 18%, 0) scale(0.8);
+  }
+}
+
+@keyframes gas-c {
+  0% {
+    transform: translate3d(6%, 10%, 0) scale(1.05) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-26%, -14%, 0) scale(1.45) rotate(-35deg);
+  }
+}
+
+@keyframes gas-d {
+  0% {
+    transform: translate3d(-14%, -10%, 0) scale(1.25);
+  }
+  100% {
+    transform: translate3d(20%, 12%, 0) scale(0.75);
+  }
+}
+
+@keyframes gas-e {
+  0% {
+    transform: translate3d(10%, 16%, 0) scale(0.9) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-20%, -18%, 0) scale(1.35) rotate(30deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta-pump__field {
+  .cta-pump__aurora {
     animation: none;
     transform: rotate(32deg);
-    opacity: 0.8;
+    opacity: 0.85;
   }
 
-  .cta-pump__bloom {
+  .cta-pump__cloud {
     animation: none;
-    opacity: 0.5;
-    transform: scale(1.4);
-  }
-
-  .cta-pump__beat {
-    display: none;
   }
 
   .cta-pump,
+  .cta-pump__gas,
   .cta-pump__label svg {
     transition: none;
   }

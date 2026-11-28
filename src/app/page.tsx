@@ -184,11 +184,14 @@ export default function Home() {
                   onClick={goToModules}
                   className="cta-pump btn-press group"
                 >
-                  <span className="cta-pump__field" aria-hidden="true" />
-                  <span className="cta-pump__beat" aria-hidden="true" />
-                  <span className="cta-pump__bloom cta-pump__bloom--1" aria-hidden="true" />
-                  <span className="cta-pump__bloom cta-pump__bloom--2" aria-hidden="true" />
-                  <span className="cta-pump__bloom cta-pump__bloom--3" aria-hidden="true" />
+                  <span className="cta-pump__aurora" aria-hidden="true" />
+                  <span className="cta-pump__gas" aria-hidden="true">
+                    <span className="cta-pump__cloud cta-pump__cloud--1" />
+                    <span className="cta-pump__cloud cta-pump__cloud--2" />
+                    <span className="cta-pump__cloud cta-pump__cloud--3" />
+                    <span className="cta-pump__cloud cta-pump__cloud--4" />
+                    <span className="cta-pump__cloud cta-pump__cloud--5" />
+                  </span>
                   <span className="cta-pump__scrim" aria-hidden="true" />
                   <span className="cta-pump__label">
                     Get Started
