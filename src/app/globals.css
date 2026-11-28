@@ -1400,7 +1400,8 @@ a, button, [role="button"], input, select, textarea,
 
 /* The neon edge glow: a filled conic pill blurred behind the opaque face,
    so only a few pixels of colour bleed past the pill — it hugs the edge
-   instead of floating away from it. */
+   instead of floating away from it. It breathes: the halo slowly swells
+   and brightens, then settles. */
 .rainbow-cta__glow {
   position: absolute;
   inset: -2px;
@@ -1410,14 +1411,27 @@ a, button, [role="button"], input, select, textarea,
   pointer-events: none;
   filter: blur(7px);
   opacity: 0.75;
-  transition:
-    opacity 240ms ease,
-    filter 240ms ease;
+  transform-origin: center;
+  animation: rainbow-breathe 4.5s ease-in-out infinite;
+  will-change: transform, opacity;
+  transition: filter 240ms ease;
 }
 
 .rainbow-cta:hover .rainbow-cta__glow {
-  opacity: 1;
   filter: blur(9px);
+  animation-duration: 3s;
+}
+
+@keyframes rainbow-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.95;
+  }
 }
 
 .rainbow-cta__glow-spin {
@@ -1511,6 +1525,13 @@ a, button, [role="button"], input, select, textarea,
   .rainbow-cta__glow-spin {
     animation: none;
     transform: rotate(35deg);
+  }
+
+  .rainbow-cta__glow {
+    animation: none;
+    transform: none;
+    opacity: 0.8;
+    transition: none;
   }
 
   .rainbow-cta,
