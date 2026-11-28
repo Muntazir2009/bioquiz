@@ -74,7 +74,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         } else if (Math.abs(i - index) === 1) {
           gsap.to(card, {
             scale: 0.88,
-            opacity: 0.65,
+            opacity: 1,
             duration,
             ease: "power2.out",
             overwrite: "auto",
@@ -82,7 +82,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         } else {
           gsap.to(card, {
             scale: 0.82,
-            opacity: 0.35,
+            opacity: 1,
             duration,
             ease: "power2.out",
             overwrite: "auto",
@@ -244,7 +244,7 @@ export function ModuleCardSwiper({ onBack }: ModuleCardSwiperProps) {
         if (!card) return;
         gsap.set(card, { opacity: 0, y: 16 });
         gsap.to(card, {
-          opacity: i === 0 ? 1 : Math.abs(i) === 1 ? 0.65 : 0.35,
+          opacity: 1,
           y: 0,
           scale: i === 0 ? 1 : Math.abs(i) === 1 ? 0.88 : 0.82,
           duration: 0.4,
@@ -517,35 +517,6 @@ function ModuleCard({
         </span>
       )}
 
-      {/* ── Decorative emoji watermark ── */}
-      <span
-        className="absolute bottom-3 right-4 pointer-events-none select-none z-[1]"
-        style={{
-          fontSize: "clamp(60px, 16vw, 100px)",
-          lineHeight: 1,
-          opacity: 0.08,
-          filter: "blur(1px)",
-        }}
-        aria-hidden
-      >
-        {m.emoji}
-      </span>
-
-      {/* ── Module number watermark ── */}
-      <span
-        className="absolute top-4 right-4 pointer-events-none select-none z-[1]"
-        style={{
-          fontSize: "clamp(48px, 12vw, 80px)",
-          fontWeight: 800,
-          color: "rgba(255,255,255,0.05)",
-          lineHeight: 1,
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-        }}
-        aria-hidden
-      >
-        {String(parseInt(m.num))}
-      </span>
-
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col h-full p-5 sm:p-6">
         {/* Top row: module num + status — glass pills */}
@@ -553,25 +524,27 @@ function ModuleCard({
           <span
             className="text-[9px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-lg"
             style={{
-              color: "rgba(255,255,255,0.95)",
-              background: "rgba(255,255,255,0.22)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              color: "#FFFFFF",
+              background: "#131c2e",
+              border: "1px solid rgba(255,255,255,0.22)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
             }}
           >
             MODULE {m.num}
           </span>
-          <span
-            className="text-[8px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
-            style={{
-              color: "rgba(255,255,255,0.95)",
-              background: "rgba(255,255,255,0.22)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            }}
-          >
-            {m.status}
-          </span>
+          {index !== 0 && (
+            <span
+              className="text-[8px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-full"
+              style={{
+                color: "#FFFFFF",
+                background: "#131c2e",
+                border: "1px solid rgba(255,255,255,0.22)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              }}
+            >
+              {m.status}
+            </span>
+          )}
         </div>
 
         {/* Center: Icon in glass container */}
@@ -602,9 +575,9 @@ function ModuleCard({
         <div
           className="space-y-1.5 flex-shrink-0 rounded-xl px-3 py-2.5"
           style={{
-            background: 'rgba(6,10,24,0.45)',
+            background: '#101a2b',
             border: '1px solid rgba(255,255,255,0.14)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
           }}
         >
           <h3
@@ -618,7 +591,7 @@ function ModuleCard({
           >
             {m.title}
           </h3>
-          <p className="text-white/88 text-[11px] sm:text-xs leading-relaxed line-clamp-2"
+          <p className="text-white text-[11px] sm:text-xs leading-relaxed line-clamp-2"
             style={{ textShadow: "0 1px 4px rgba(0,0,0,0.15)" }}
           >
             {m.desc}
@@ -635,7 +608,10 @@ function ModuleCard({
                   animation: "status-pulse 2s ease-in-out infinite",
                 }}
               />
-              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/90">
+              <span
+                className="text-[9px] font-bold tracking-[0.1em] uppercase"
+                style={{ color: "#FFFFFF" }}
+              >
                 {m.status}
               </span>
             </div>
