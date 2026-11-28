@@ -195,6 +195,9 @@ export default function Home() {
                   }}
                   className="rainbow-cta btn-press group"
                 >
+                  <span className="rainbow-cta__glow" aria-hidden="true">
+                    <span className="rainbow-cta__glow-spin" />
+                  </span>
                   <span className="rainbow-cta__ring" aria-hidden="true">
                     <span className="rainbow-cta__ring-spin" />
                   </span>

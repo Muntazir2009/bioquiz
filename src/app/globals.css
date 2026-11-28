@@ -1363,8 +1363,10 @@ a, button, [role="button"], input, select, textarea,
 }
 
 .rainbow-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 32px -18px rgba(8, 22, 18, 1);
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 32px -18px rgba(8, 22, 18, 1),
+    0 12px 30px -14px rgba(255, 61, 119, 0.5);
 }
 
 .rainbow-cta:active {
@@ -1381,7 +1383,7 @@ a, button, [role="button"], input, select, textarea,
 .rainbow-cta__ring {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   padding: 2px;
   border-radius: inherit;
   overflow: hidden;
@@ -1394,6 +1396,45 @@ a, button, [role="button"], input, select, textarea,
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   mask-composite: exclude;
+}
+
+/* The neon edge glow: a filled conic pill blurred behind the opaque face,
+   so only a few pixels of colour bleed past the pill — it hugs the edge
+   instead of floating away from it. */
+.rainbow-cta__glow {
+  position: absolute;
+  inset: -2px;
+  z-index: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+  filter: blur(7px);
+  opacity: 0.75;
+  transition:
+    opacity 240ms ease,
+    filter 240ms ease;
+}
+
+.rainbow-cta:hover .rainbow-cta__glow {
+  opacity: 1;
+  filter: blur(9px);
+}
+
+.rainbow-cta__glow-spin {
+  position: absolute;
+  inset: -160%;
+  background: conic-gradient(
+    from 0deg,
+    #ff3d77,
+    #ff8a3d,
+    #ffd93d,
+    #4ef08a,
+    #3dd6ff,
+    #6a6bff,
+    #c04dff,
+    #ff3d77
+  );
+  animation: rainbow-spin 4.5s linear infinite;
 }
 
 /* Only this layer rotates, clipped to the ring by the mask above */
@@ -1417,7 +1458,7 @@ a, button, [role="button"], input, select, textarea,
 /* Dark face with a soft light that follows the pointer */
 .rainbow-cta__inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1466,7 +1507,8 @@ a, button, [role="button"], input, select, textarea,
 
 
 @media (prefers-reduced-motion: reduce) {
-  .rainbow-cta__ring-spin {
+  .rainbow-cta__ring-spin,
+  .rainbow-cta__glow-spin {
     animation: none;
     transform: rotate(35deg);
   }
