@@ -1336,264 +1336,160 @@ a, button, [role="button"], input, select, textarea,
 
 
 /* ══════════════════════════════════════════════════════════════
-   Hero CTA — colour pumped into the button
-   A blurred colour field rotates under the label while colour
-   blooms are injected from the base and spread outwards.
+   Hero CTA — animated rainbow edge, interactive
+   A rainbow conic ring turns around the pill, a blurred copy glows
+   outside it, and a soft highlight follows the pointer inside.
    Only transform/opacity animate, so it stays on the compositor.
    ══════════════════════════════════════════════════════════════ */
 
-.cta-pump {
+.rainbow-cta {
+  --mx: 50%;
+  --my: 50%;
   position: relative;
   isolation: isolate;
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fdfbf5;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rainbow-cta:hover {
+  transform: translateY(-1px);
+}
+
+.rainbow-cta:active {
+  transform: translateY(0) scale(0.986);
+}
+
+.rainbow-cta:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(6, 20, 16, 0.55);
+}
+
+/* Rotating rainbow ring — the pill's border */
+.rainbow-cta__edge {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
   overflow: hidden;
+  pointer-events: none;
+  box-shadow: 0 14px 30px -16px rgba(8, 22, 18, 0.85);
+}
+
+.rainbow-cta__edge::before {
+  content: "";
+  position: absolute;
+  inset: -140%;
+  background: conic-gradient(
+    from 0deg,
+    #ff3d77,
+    #ff8a3d,
+    #ffd93d,
+    #4ef08a,
+    #3dd6ff,
+    #6a6bff,
+    #c04dff,
+    #ff3d77
+  );
+  animation: rainbow-spin 4.5s linear infinite;
+}
+
+/* Blurred copy of the ring leaking outwards as a glow */
+.rainbow-cta__halo {
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from 90deg,
+    #ff3d77,
+    #ffd93d,
+    #4ef08a,
+    #3dd6ff,
+    #c04dff,
+    #ff3d77
+  );
+  filter: blur(14px);
+  opacity: 0.5;
+  animation: rainbow-spin 7s linear infinite reverse;
+  transition: opacity 280ms ease;
+}
+
+.rainbow-cta:hover .rainbow-cta__halo {
+  opacity: 0.85;
+}
+
+/* Dark face with a soft light that follows the pointer */
+.rainbow-cta__inner {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  min-height: 48px;
-  padding: 0.82rem 1.45rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: #0d201b;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0.78rem 1.42rem;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      9rem 6rem at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.2),
+      transparent 72%
+    ),
+    #0b1a15;
   color: #fdfbf5;
   font-size: 0.9063rem;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0.01em;
-  text-decoration: none;
-  cursor: pointer;
-  box-shadow:
-    0 18px 36px -20px rgba(8, 22, 18, 0.95),
-    0 1px 0 rgba(255, 255, 255, 0.16) inset;
-  transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 240ms ease;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.cta-pump:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 24px 44px -20px rgba(8, 22, 18, 1),
-    0 0 24px rgba(120, 200, 170, 0.22),
-    0 1px 0 rgba(255, 255, 255, 0.2) inset;
-}
-
-.cta-pump:active {
-  transform: translateY(0) scale(0.986);
-}
-
-.cta-pump:focus-visible {
-  outline: 2px solid #9fe0c8;
-  outline-offset: 3px;
-}
-
-.cta-pump__aurora,
-.cta-pump__gas,
-.cta-pump__cloud,
-.cta-pump__scrim,
-.cta-pump__label {
-  pointer-events: none;
-}
-
-/* Slow aurora ribbons rotating behind the gas */
-.cta-pump__aurora {
-  position: absolute;
-  inset: -95% -32%;
-  background: conic-gradient(
-    from 0deg,
-    #0b6049 0%,
-    #17607a 16%,
-    #2a3f8f 33%,
-    #6a2f6b 50%,
-    #8a5a14 67%,
-    #12735c 84%,
-    #0b6049 100%
-  );
-  filter: blur(15px) saturate(1.4);
-  opacity: 0.95;
-  animation: pump-spin 12s linear infinite;
-}
-
-/* Gas: colour clouds drifting and swelling inside the button */
-.cta-pump__gas {
-  position: absolute;
-  inset: -25%;
-  filter: blur(9px) saturate(1.35);
-  mix-blend-mode: screen;
-  transition: filter 300ms ease;
-}
-
-.cta-pump:hover .cta-pump__gas {
-  filter: blur(9px) saturate(1.55) brightness(1.06);
-}
-
-.cta-pump__cloud {
-  position: absolute;
-  width: 76%;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  opacity: 0.9;
-  will-change: transform;
-  animation: gas-a 8.5s ease-in-out infinite alternate;
-}
-
-.cta-pump__cloud--1 {
-  left: -16%;
-  top: -32%;
-  background: radial-gradient(
-    circle at 46% 46%,
-    rgba(46, 205, 162, 0.95) 0%,
-    rgba(46, 205, 162, 0) 62%
-  );
-  animation-name: gas-a;
-  animation-duration: 8.5s;
-}
-
-.cta-pump__cloud--2 {
-  left: 20%;
-  top: 2%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(88, 122, 240, 0.95) 0%,
-    rgba(88, 122, 240, 0) 62%
-  );
-  animation-name: gas-b;
-  animation-duration: 7.2s;
-}
-
-.cta-pump__cloud--3 {
-  left: 56%;
-  top: -26%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(214, 112, 222, 0.92) 0%,
-    rgba(214, 112, 222, 0) 62%
-  );
-  animation-name: gas-c;
-  animation-duration: 9.8s;
-}
-
-.cta-pump__cloud--4 {
-  left: 6%;
-  top: 38%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(244, 192, 74, 0.95) 0%,
-    rgba(244, 192, 74, 0) 60%
-  );
-  animation-name: gas-d;
-  animation-duration: 6.6s;
-}
-
-.cta-pump__cloud--5 {
-  left: 60%;
-  top: 32%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(58, 214, 224, 0.9) 0%,
-    rgba(58, 214, 224, 0) 62%
-  );
-  animation-name: gas-e;
-  animation-duration: 11s;
-}
-
-
-/* Two-part scrim: colours read at the edges, the label keeps contrast */
-.cta-pump__scrim {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 62% 104% at 50% 50%,
-    rgba(6, 20, 16, 0.7) 0%,
-    rgba(6, 20, 16, 0.6) 48%,
-    rgba(6, 20, 16, 0.16) 100%
-  );
-}
-
-.cta-pump__label {
+.rainbow-cta__label {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  text-shadow: 0 1px 6px rgba(4, 14, 12, 0.6);
+  text-shadow: 0 1px 6px rgba(4, 14, 12, 0.55);
 }
 
-.cta-pump__label svg {
+.rainbow-cta__label svg {
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.cta-pump:hover .cta-pump__label svg,
-.cta-pump.group:hover .cta-pump__label svg {
+.rainbow-cta:hover .rainbow-cta__label svg {
   transform: translateX(3px);
 }
 
-@keyframes pump-spin {
+@keyframes rainbow-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* Each cloud follows its own slow, looping path so the gas keeps churning */
-@keyframes gas-a {
-  0% {
-    transform: translate3d(-8%, 6%, 0) scale(0.85) rotate(0deg);
-  }
-  100% {
-    transform: translate3d(24%, -20%, 0) scale(1.4) rotate(40deg);
-  }
-}
-
-@keyframes gas-b {
-  0% {
-    transform: translate3d(14%, -12%, 0) scale(1.2);
-  }
-  100% {
-    transform: translate3d(-22%, 18%, 0) scale(0.8);
-  }
-}
-
-@keyframes gas-c {
-  0% {
-    transform: translate3d(6%, 10%, 0) scale(1.05) rotate(0deg);
-  }
-  100% {
-    transform: translate3d(-26%, -14%, 0) scale(1.45) rotate(-35deg);
-  }
-}
-
-@keyframes gas-d {
-  0% {
-    transform: translate3d(-14%, -10%, 0) scale(1.25);
-  }
-  100% {
-    transform: translate3d(20%, 12%, 0) scale(0.75);
-  }
-}
-
-@keyframes gas-e {
-  0% {
-    transform: translate3d(10%, 16%, 0) scale(0.9) rotate(0deg);
-  }
-  100% {
-    transform: translate3d(-20%, -18%, 0) scale(1.35) rotate(30deg);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .cta-pump__aurora {
-    animation: none;
-    transform: rotate(32deg);
-    opacity: 0.85;
-  }
-
-  .cta-pump__cloud {
+  .rainbow-cta__edge::before,
+  .rainbow-cta__halo {
     animation: none;
   }
 
-  .cta-pump,
-  .cta-pump__gas,
-  .cta-pump__label svg {
+  .rainbow-cta__halo {
+    opacity: 0.6;
+  }
+
+  .rainbow-cta,
+  .rainbow-cta__halo,
+  .rainbow-cta__label svg {
     transition: none;
   }
 }

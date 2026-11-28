@@ -178,24 +178,30 @@ export default function Home() {
                 <span>3D VIEWER</span>
               </div>
 
-              {/* CTA button */}
+              {/* CTA button — animated rainbow edge, follows the pointer */}
               <div className="hero-anim opacity-0 mt-7">
                 <button
                   onClick={goToModules}
-                  className="cta-pump btn-press group"
+                  onPointerMove={(event) => {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    event.currentTarget.style.setProperty(
+                      "--mx",
+                      `${event.clientX - rect.left}px`
+                    );
+                    event.currentTarget.style.setProperty(
+                      "--my",
+                      `${event.clientY - rect.top}px`
+                    );
+                  }}
+                  className="rainbow-cta btn-press group"
                 >
-                  <span className="cta-pump__aurora" aria-hidden="true" />
-                  <span className="cta-pump__gas" aria-hidden="true">
-                    <span className="cta-pump__cloud cta-pump__cloud--1" />
-                    <span className="cta-pump__cloud cta-pump__cloud--2" />
-                    <span className="cta-pump__cloud cta-pump__cloud--3" />
-                    <span className="cta-pump__cloud cta-pump__cloud--4" />
-                    <span className="cta-pump__cloud cta-pump__cloud--5" />
-                  </span>
-                  <span className="cta-pump__scrim" aria-hidden="true" />
-                  <span className="cta-pump__label">
-                    Get Started
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="rainbow-cta__halo" aria-hidden="true" />
+                  <span className="rainbow-cta__edge" aria-hidden="true" />
+                  <span className="rainbow-cta__inner">
+                    <span className="rainbow-cta__label">
+                      Get Started
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </span>
                   </span>
                 </button>
               </div>
