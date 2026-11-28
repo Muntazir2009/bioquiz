@@ -1337,9 +1337,9 @@ a, button, [role="button"], input, select, textarea,
 
 /* ══════════════════════════════════════════════════════════════
    Hero CTA — animated rainbow edge, interactive
-   A rainbow conic ring turns around the pill, a blurred copy glows
-   outside it, and a soft highlight follows the pointer inside.
-   Only transform/opacity animate, so it stays on the compositor.
+   A rainbow conic gradient turns inside a masked 2px frame, so the
+   colour hugs the pill's edge instead of spilling outside, and a
+   soft light follows the pointer across the face.
    ══════════════════════════════════════════════════════════════ */
 
 .rainbow-cta {
@@ -1355,12 +1355,16 @@ a, button, [role="button"], input, select, textarea,
   color: #fdfbf5;
   font: inherit;
   cursor: pointer;
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 14px 28px -18px rgba(8, 22, 18, 0.9);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .rainbow-cta:hover {
   transform: translateY(-1px);
+  box-shadow: 0 18px 32px -18px rgba(8, 22, 18, 1);
 }
 
 .rainbow-cta:active {
@@ -1373,21 +1377,29 @@ a, button, [role="button"], input, select, textarea,
   box-shadow: 0 0 0 6px rgba(6, 20, 16, 0.55);
 }
 
-/* Rotating rainbow ring — the pill's border */
-.rainbow-cta__edge {
+/* The ring: a masked 2px frame, so the gradient never leaves the edge */
+.rainbow-cta__ring {
   position: absolute;
   inset: 0;
   z-index: 0;
+  padding: 2px;
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
-  box-shadow: 0 14px 30px -16px rgba(8, 22, 18, 0.85);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
-.rainbow-cta__edge::before {
-  content: "";
+/* Only this layer rotates, clipped to the ring by the mask above */
+.rainbow-cta__ring-spin {
   position: absolute;
-  inset: -140%;
+  inset: -160%;
   background: conic-gradient(
     from 0deg,
     #ff3d77,
@@ -1400,32 +1412,6 @@ a, button, [role="button"], input, select, textarea,
     #ff3d77
   );
   animation: rainbow-spin 4.5s linear infinite;
-}
-
-/* Blurred copy of the ring leaking outwards as a glow */
-.rainbow-cta__halo {
-  position: absolute;
-  inset: -5px;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: conic-gradient(
-    from 90deg,
-    #ff3d77,
-    #ffd93d,
-    #4ef08a,
-    #3dd6ff,
-    #c04dff,
-    #ff3d77
-  );
-  filter: blur(14px);
-  opacity: 0.5;
-  animation: rainbow-spin 7s linear infinite reverse;
-  transition: opacity 280ms ease;
-}
-
-.rainbow-cta:hover .rainbow-cta__halo {
-  opacity: 0.85;
 }
 
 /* Dark face with a soft light that follows the pointer */
@@ -1451,7 +1437,9 @@ a, button, [role="button"], input, select, textarea,
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0.01em;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .rainbow-cta__label {
@@ -1478,17 +1466,12 @@ a, button, [role="button"], input, select, textarea,
 
 
 @media (prefers-reduced-motion: reduce) {
-  .rainbow-cta__edge::before,
-  .rainbow-cta__halo {
+  .rainbow-cta__ring-spin {
     animation: none;
-  }
-
-  .rainbow-cta__halo {
-    opacity: 0.6;
+    transform: rotate(35deg);
   }
 
   .rainbow-cta,
-  .rainbow-cta__halo,
   .rainbow-cta__label svg {
     transition: none;
   }

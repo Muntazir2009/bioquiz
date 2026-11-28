@@ -195,8 +195,9 @@ export default function Home() {
                   }}
                   className="rainbow-cta btn-press group"
                 >
-                  <span className="rainbow-cta__halo" aria-hidden="true" />
-                  <span className="rainbow-cta__edge" aria-hidden="true" />
+                  <span className="rainbow-cta__ring" aria-hidden="true">
+                    <span className="rainbow-cta__ring-spin" />
+                  </span>
                   <span className="rainbow-cta__inner">
                     <span className="rainbow-cta__label">
                       Get Started
